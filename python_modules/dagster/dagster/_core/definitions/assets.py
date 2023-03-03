@@ -86,6 +86,7 @@ class AssetsDefinition(ResourceAddable):
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
+    _descriptions_by_key: Mapping[AssetKey, str]
 
     def __init__(
         self,
@@ -102,6 +103,7 @@ class AssetsDefinition(ResourceAddable):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
+        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -180,12 +182,23 @@ class AssetsDefinition(ResourceAddable):
                 metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
             )
         )
+        self._descriptions_by_key = dict(
+            check.opt_mapping_param(
+                descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
+            )
+        )
         for output_name, asset_key in keys_by_output_name.items():
             output_def, _ = node_def.resolve_output_to_origin(output_name, None)
             self._metadata_by_key[asset_key] = merge_dicts(
                 output_def.metadata,
                 self._metadata_by_key.get(asset_key, {}),
             )
+            description = (
+                self._descriptions_by_key.get(asset_key, output_def.description)
+                or node_def.description
+            )
+            if description:
+                self._descriptions_by_key[asset_key] = description
             self._code_versions_by_key[asset_key] = output_def.code_version
 
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
@@ -260,6 +273,7 @@ class AssetsDefinition(ResourceAddable):
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         can_subset: bool = False,
+        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -303,6 +317,8 @@ class AssetsDefinition(ResourceAddable):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
+            descriptions_by_output_name (Optional[Mapping[str, str]]): Defines a description to be
+                associated with each of the output asstes for this graph.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -319,6 +335,7 @@ class AssetsDefinition(ResourceAddable):
             freshness_policies_by_output_name=freshness_policies_by_output_name,
             key_prefix=key_prefix,
             can_subset=can_subset,
+            descriptions_by_output_name=descriptions_by_output_name,
         )
 
     @public
@@ -403,6 +420,7 @@ class AssetsDefinition(ResourceAddable):
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
+        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -486,6 +504,12 @@ class AssetsDefinition(ResourceAddable):
             if freshness_policies_by_output_name
             else None,
             can_subset=can_subset,
+            descriptions_by_key={
+                keys_by_output_name[output_name]: description
+                for output_name, description in descriptions_by_output_name.items()
+            }
+            if descriptions_by_output_name
+            else None,
         )
 
     @public
@@ -497,6 +521,11 @@ class AssetsDefinition(ResourceAddable):
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         return self._group_names_by_key
+
+    @public
+    @property
+    def descriptions_by_key(self) -> Mapping[AssetKey, str]:
+        return self._descriptions_by_key
 
     @public
     @property
@@ -684,6 +713,11 @@ class AssetsDefinition(ResourceAddable):
             for key, policy in self._freshness_policies_by_key.items()
         }
 
+        replaced_descriptions_by_key = {
+            output_asset_key_replacements.get(key, key): description
+            for key, description in self._descriptions_by_key.items()
+        }
+
         return self.__class__(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -724,6 +758,7 @@ class AssetsDefinition(ResourceAddable):
                 for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
+            descriptions_by_key=replaced_descriptions_by_key,
         )
 
     def _subset_graph_backed_asset(

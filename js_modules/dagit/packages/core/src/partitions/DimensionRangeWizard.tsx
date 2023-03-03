@@ -12,6 +12,7 @@ import {
   MenuDivider,
   MenuItem,
   Mono,
+  Spinner,
   TagSelector,
   TextInput,
 } from '@dagster-io/ui';
@@ -95,7 +96,7 @@ export const DimensionRangeWizard: React.FC<{
             }}
           >
             <StyledIcon name="add" size={24} />
-            <div>Create a partition</div>
+            <div>Add a partition</div>
           </LinkText>
         ) : (
           <PartitionStatus
@@ -117,6 +118,8 @@ export const DimensionRangeWizard: React.FC<{
             setShowCreatePartition(false);
           }}
           refetch={refetch}
+          selected={selected}
+          setSelected={setSelected}
         />
       )}
     </>
@@ -191,7 +194,7 @@ const DynamicPartitionSelector: React.FC<{
                     text={
                       <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
                         <StyledIcon name="add" size={24} />
-                        <span>Create partition</span>
+                        <span>Add partition</span>
                       </Box>
                     }
                     onClick={() => {
@@ -257,12 +260,16 @@ const CreatePartitionDialog = ({
   close,
   repoAddress,
   refetch,
+  selected,
+  setSelected,
 }: {
   isOpen: boolean;
   partitionDefinitionName?: string | null;
   close: () => void;
   repoAddress: RepoAddress;
   refetch?: () => void;
+  selected: string[];
+  setSelected: (selected: string[]) => void;
 }) => {
   const [partitionName, setPartitionName] = React.useState('');
 
@@ -271,7 +278,10 @@ const CreatePartitionDialog = ({
     AddDynamicPartitionMutationVariables
   >(CREATE_PARTITION_MUTATION);
 
+  const [isSaving, setIsSaving] = React.useState(false);
+
   const handleSave = async () => {
+    setIsSaving(true);
     const result = await createPartition({
       variables: {
         repositorySelector: repoAddressToSelector(repoAddress),
@@ -279,6 +289,7 @@ const CreatePartitionDialog = ({
         partitionKey: partitionName,
       },
     });
+    setIsSaving(false);
 
     const data = result.data?.addDynamicPartition;
     switch (data?.__typename) {
@@ -291,26 +302,27 @@ const CreatePartitionDialog = ({
       }
       case 'DuplicateDynamicPartitionError': {
         showCustomAlert({
-          title: 'Could not create partition',
+          title: 'Could not add partition',
           body: 'A partition this name already exists.',
         });
         break;
       }
       case 'UnauthorizedError': {
         showCustomAlert({
-          title: 'Could not create partition',
+          title: 'Could not add partition',
           body: 'You do not have permission to do this.',
         });
         break;
       }
       case 'AddDynamicPartitionSuccess': {
         refetch?.();
+        setSelected([...selected, partitionName]);
         close();
         break;
       }
       default: {
         showCustomAlert({
-          title: 'Could not create partition',
+          title: 'Could not add partition',
           body: 'An unknown error occurred.',
         });
         break;
@@ -326,7 +338,7 @@ const CreatePartitionDialog = ({
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name="add_circle" size={24} />
           <div>
-            Create a partition
+            Add a partition
             {partitionDefinitionName ? (
               <>
                 {' '}
@@ -343,9 +355,16 @@ const CreatePartitionDialog = ({
         <Box flex={{direction: 'column', gap: 6}}>
           <div>Partition name</div>
           <TextInput
+            rightElement={isSaving ? <Spinner purpose="body-text" /> : undefined}
+            disabled={isSaving}
             placeholder="name"
             value={partitionName}
             onChange={(e) => setPartitionName(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.code === 'Enter') {
+                handleSave();
+              }
+            }}
           />
         </Box>
       </DialogBody>

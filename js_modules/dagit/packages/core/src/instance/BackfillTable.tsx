@@ -131,6 +131,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     backfillId
     status
     hasCancelPermission
+    hasResumePermission
     numCancelable
     partitionNames
     isValidSerialization

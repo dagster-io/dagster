@@ -87,6 +87,7 @@ from dagster._config.config_type import (
 )
 from dagster._config.field import Field as Field
 from dagster._config.field_utils import (
+    EnvVar as EnvVar,
     Map as Map,
     Permissive as Permissive,
     Selector as Selector,
@@ -96,6 +97,16 @@ from dagster._config.source import (
     BoolSource as BoolSource,
     IntSource as IntSource,
     StringSource as StringSource,
+)
+from dagster._config.structured_config import (
+    Config as Config,
+    ConfigurableIOManager as ConfigurableIOManager,
+    ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
+    ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
+    ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
+    ConfigurableResource as ConfigurableResource,
+    PermissiveConfig as PermissiveConfig,
+    ResourceDependency as ResourceDependency,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -276,11 +287,15 @@ from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
 )
+from dagster._core.definitions.resource_annotation import (
+    Resource as Resource,
+)
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
     make_values_resource as make_values_resource,
     resource as resource,
 )
+from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     RunRequest as RunRequest,
     SkipReason as SkipReason,

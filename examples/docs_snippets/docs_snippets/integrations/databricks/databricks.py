@@ -17,8 +17,8 @@ def scope_define_instance():
 DATABRICKS_JOB_ID = 1
 
 
-def scope_define_databricks_custom_ops_and_assets():
-    # start_define_databricks_custom_ops_and_assets
+def scope_define_databricks_custom_asset():
+    # start_define_databricks_custom_asset
     from databricks_cli.sdk import JobsService
 
     from dagster import (
@@ -26,8 +26,6 @@ def scope_define_databricks_custom_ops_and_assets():
         OpExecutionContext,
         asset,
         define_asset_job,
-        job,
-        op,
     )
 
     @asset(required_resource_keys={"databricks"})
@@ -42,48 +40,49 @@ def scope_define_databricks_custom_ops_and_assets():
         selection=AssetSelection.keys("my_databricks_table"),
     )
 
+    # end_define_databricks_custom_asset
+
+
+def scope_define_databricks_custom_op():
+    from dagster_databricks import databricks_client as databricks_client_instance
+
+    # start_define_databricks_custom_op
+    from databricks_cli.sdk import DbfsService
+
+    from dagster import (
+        OpExecutionContext,
+        job,
+        op,
+    )
+
     @op(required_resource_keys={"databricks"})
     def my_databricks_op(context: OpExecutionContext) -> None:
         databricks_api_client = context.resources.databricks.api_client
-        jobs_service = JobsService(databricks_api_client)
+        dbfs_service = DbfsService(databricks_api_client)
 
-        jobs_service.run_now(job_id=DATABRICKS_JOB_ID)
+        dbfs_service.read(path="/tmp/HelloWorld.txt")
 
-    @job
+    @job(resource_defs={"databricks": databricks_client_instance})
     def my_databricks_job():
         my_databricks_op()
 
-    # end_define_databricks_custom_ops_and_assets
+    # end_define_databricks_custom_op
 
 
 def scope_define_databricks_op_factories():
+    from dagster_databricks import databricks_client as databricks_client_instance
+
     DATABRICKS_JOB_ID = 1
     # start_define_databricks_op_factories
-    from dagster_databricks import (
-        create_databricks_run_now_op,
-        create_databricks_submit_run_op,
-    )
+    from dagster_databricks import create_databricks_run_now_op
 
     my_databricks_run_now_op = create_databricks_run_now_op(
         databricks_job_id=DATABRICKS_JOB_ID,
     )
 
-    my_databricks_submit_run_op = create_databricks_submit_run_op(
-        databricks_job_configuration={
-            "new_cluster": {
-                "spark_version": "2.1.0-db3-scala2.11",
-                "num_workers": 2,
-            },
-            "notebook_task": {
-                "notebook_path": "/Users/dagster@example.com/PrepareData",
-            },
-        },
-    )
-
-    @job
+    @job(resource_defs={"databricks": databricks_client_instance})
     def my_databricks_job():
         my_databricks_run_now_op()
-        my_databricks_submit_run_op()
 
     # end_define_databricks_op_factories
 

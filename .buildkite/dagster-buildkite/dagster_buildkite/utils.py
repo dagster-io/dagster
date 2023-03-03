@@ -206,11 +206,15 @@ def skip_if_no_python_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def has_helm_changes():
+    return any(Path("helm") in path.parents for path in ChangedFiles.all)
+
+
 def skip_if_no_helm_changes():
     if not is_feature_branch():
         return None
 
-    if any(Path("helm") in path.parents for path in ChangedFiles.all):
+    if has_helm_changes():
         logging.info("Run helm steps because files in the helm directory changed")
         return None
 

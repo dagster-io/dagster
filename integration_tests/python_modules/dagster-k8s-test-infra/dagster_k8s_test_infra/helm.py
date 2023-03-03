@@ -842,7 +842,12 @@ def _deployment_config(docker_image):
             "includeConfigInLaunchedRuns": {
                 "enabled": True,
             },
-            "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
+            "env": (
+                [{"name": "BUILDKITE", "value": os.getenv("BUILDKITE")}]
+                if os.getenv("BUILDKITE")
+                else []
+            )
+            + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
             "envConfigMaps": ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},

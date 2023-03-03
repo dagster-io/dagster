@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.run_config import convert_config_input
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
@@ -59,6 +58,7 @@ class UnresolvedAssetJobDefinition(
             ExecutorDefinition,
             PartitionsDefinition,
         )
+        from dagster._core.definitions.run_config import convert_config_input
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,

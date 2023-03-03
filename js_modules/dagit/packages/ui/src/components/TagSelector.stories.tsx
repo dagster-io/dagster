@@ -75,7 +75,7 @@ export const Styled = () => {
               <Box flex={{direction: 'column'}} padding={{horizontal: 8}}>
                 <Box flex={{direction: 'row', alignItems: 'center'}}>
                   <StyledIcon name="add" size={24} />
-                  <span>Create Partition</span>
+                  <span>Add Partition</span>
                 </Box>
               </Box>
               <MenuDivider />

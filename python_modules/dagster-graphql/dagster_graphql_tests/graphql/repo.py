@@ -1854,6 +1854,13 @@ def multipartitions_2(multipartitions_1):
     return multipartitions_1
 
 
+@asset(partitions_def=multipartitions_def)
+def multipartitions_fail(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("multipartitions_fail")
+    return 1
+
+
 no_partitions_multipartitions_def = MultiPartitionsDefinition(
     {
         "a": StaticPartitionsDefinition([]),
@@ -1972,6 +1979,12 @@ def define_asset_jobs():
             "no_multipartitions_job",
             AssetSelection.assets(no_multipartitions_1),
             partitions_def=no_partitions_multipartitions_def,
+        ),
+        multipartitions_fail,
+        define_asset_job(
+            "multipartitions_fail_job",
+            AssetSelection.assets(multipartitions_fail),
+            partitions_def=multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,

@@ -1,5 +1,7 @@
+import click
 from dagster import (
     AssetSelection,
+    DagsterInstance,
     Definitions,
     DynamicPartitionsDefinition,
     asset,
@@ -28,3 +30,15 @@ dynamic_partitions_job = define_asset_job(
 
 
 defs = Definitions(assets=load_assets_from_current_module(), jobs=[dynamic_partitions_job])
+
+
+@click.command()
+@click.option("--num-partitions", type=int)
+def add_partitions(num_partitions):
+    with DagsterInstance.get() as instance:
+        partition_keys = [f"customer_{i}" for i in range(num_partitions)]
+        customers_partitions_def.add_partitions(partition_keys, instance=instance)
+
+
+if __name__ == "__main__":
+    add_partitions()

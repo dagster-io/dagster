@@ -20,7 +20,7 @@ from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -761,6 +761,7 @@ class _GraphBackedAsset:
             freshness_policies_by_output_name={"result": self.freshness_policy}
             if self.freshness_policy
             else None,
+            descriptions_by_output_name={"result": self.description} if self.description else None,
         )
 
 
@@ -823,6 +824,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.freshness_policy is not None
         }
 
+        # source descriptions from the AssetOuts (if any)
+        descriptions_by_output_name = {
+            output_name: out.description
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.description is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -835,6 +843,7 @@ def graph_multi_asset(
             can_subset=can_subset,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+            descriptions_by_output_name=descriptions_by_output_name,
         )
 
     return inner

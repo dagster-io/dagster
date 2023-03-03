@@ -27,7 +27,7 @@ export const buildPartitionHealthMock = (
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           materializedPartitions: ['test1'],
           __typename: 'DefaultPartitions',
         },

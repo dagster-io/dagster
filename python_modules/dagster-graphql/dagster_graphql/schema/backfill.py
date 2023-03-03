@@ -124,6 +124,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
+    hasResumePermission = graphene.NonNull(graphene.Boolean)
 
     def __init__(self, backfill_job):
         self._backfill_job = check.opt_inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -254,6 +255,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         location_name = self._backfill_job.partition_set_origin.selector.location_name
         return graphene_info.context.has_permission_for_location(
             Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        )
+
+    def resolve_hasResumePermission(self, graphene_info):
+        if self._backfill_job.partition_set_origin is None:
+            return graphene_info.context.has_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
+        location_name = self._backfill_job.partition_set_origin.selector.location_name
+        return graphene_info.context.has_permission_for_location(
+            Permissions.LAUNCH_PARTITION_BACKFILL, location_name
         )
 
 
