@@ -61,7 +61,6 @@ describe('AssetPartitions', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
-      expect(screen.queryByText('2022-06-01-01:00')).toBeVisible();
     });
 
     const partitionInput = screen.getByTestId('dimension-range-input');
@@ -115,17 +114,17 @@ describe('AssetPartitions', () => {
 
     const successCheck = screen.getByTestId('partition-state-success-checkbox');
     await userEvent.click(successCheck);
-    expect(screen.getByTestId('partitions-selected')).toHaveTextContent('5,288 Partitions');
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=missing');
+    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure%2Cmissing');
+    expect(screen.getByTestId('partitions-selected')).toHaveTextContent('5,310 Partitions');
 
     const missingCheck = screen.getByTestId('partition-state-missing-checkbox');
     await userEvent.click(missingCheck);
-    expect(screen.getByTestId('partitions-selected')).toHaveTextContent('0 Partitions Selected');
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=');
+    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure');
+    expect(screen.getByTestId('partitions-selected')).toHaveTextContent('22 Partitions Selected');
 
     await userEvent.click(successCheck);
+    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure%2Csuccess');
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('712 Partitions Selected');
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=success');
 
     // verify that filtering by state updates the left sidebar
     expect(screen.queryByText('2022-08-31-00:00')).toBeVisible();

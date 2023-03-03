@@ -161,7 +161,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
-  const [missingOnly, setMissingOnly] = React.useState(true);
+  const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
 
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
@@ -194,10 +194,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const keysFiltered = React.useMemo(
     () =>
-      missingOnly
-        ? keysInSelection.filter((key) => key.state === PartitionState.MISSING)
+      missingFailedOnly
+        ? keysInSelection.filter((key) =>
+            [PartitionState.MISSING, PartitionState.FAILURE].includes(key.state),
+          )
         : keysInSelection,
-    [keysInSelection, missingOnly],
+    [keysInSelection, missingFailedOnly],
   );
 
   const client = useApolloClient();
@@ -218,11 +220,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   }, [canLaunchWithRangesAsTags]);
 
   React.useEffect(() => {
-    launchWithRangesAsTags && setMissingOnly(false);
+    launchWithRangesAsTags && setMissingFailedOnly(false);
   }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
-    target.type === 'pureAssetBackfill' && setMissingOnly(false);
+    target.type === 'pureAssetBackfill' && setMissingFailedOnly(false);
   }, [target]);
 
   const onLaunch = async () => {
@@ -409,10 +411,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             <Box flex={{justifyContent: 'space-between'}}>
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
-                label="Missing partitions only"
-                checked={missingOnly}
+                label="Missing and failed partitions only"
+                checked={missingFailedOnly}
                 disabled={launchWithRangesAsTags}
-                onChange={() => setMissingOnly(!missingOnly)}
+                onChange={() => setMissingFailedOnly(!missingFailedOnly)}
               />
 
               <Checkbox
