@@ -5,12 +5,14 @@ import pandas as pd
 import pytest
 from dagster import (
     AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     graph,
     instance_for_test,
@@ -423,3 +425,92 @@ def test_dynamic_partition(tmp_path):
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
         assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
         duckdb_conn.close()
+
+
+def test_self_dependent_asset(tmp_path):
+    daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+    @asset(
+        partitions_def=daily_partitions,
+        key_prefix=["my_schema"],
+        ins={
+            "self_dependent_asset": AssetIn(
+                key=AssetKey(["my_schema", "self_dependent_asset"]),
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        },
+        metadata={
+            "partition_expr": "start",
+        },
+        config_schema={"value": str},
+    )
+    def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
+        start, end = context.output_asset_partitions_time_window()
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "start": [start, start, start],
+                "end": [end, end, end],
+                "a": [value, value, value],
+            }
+        )
+
+    duckdb_io_manager = duckdb_pandas_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    # test when the schema doesn't exist yet
+    materialize(
+        [self_dependent_asset],
+        partition_key="2023-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__self_dependent_asset": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    @asset(
+        partitions_def=daily_partitions,
+        key_prefix=["my_schema"],
+        ins={
+            "another_self_dependent_asset": AssetIn(
+                key=AssetKey(["my_schema", "another_self_dependent_asset"]),
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        },
+        metadata={
+            "partition_expr": "start",
+        },
+        config_schema={"value": str},
+    )
+    def another_self_dependent_asset(
+        context, another_self_dependent_asset: pd.DataFrame
+    ) -> pd.DataFrame:
+        start, end = context.output_asset_partitions_time_window()
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "start": [start, start, start],
+                "end": [end, end, end],
+                "a": [value, value, value],
+            }
+        )
+
+    # test when the schema already exists, but the table doesn't exist yet
+    materialize(
+        [another_self_dependent_asset],
+        partition_key="2023-01-01",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__another_self_dependent_asset": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.another_self_dependent_asset").fetch_df()
+
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
