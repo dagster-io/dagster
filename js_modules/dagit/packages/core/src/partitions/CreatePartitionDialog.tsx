@@ -192,6 +192,7 @@ export const CreatePartitionDialog = ({
           <div>Partition name</div>
           <PartitionBox>
             <TextInput
+              data-testid={testId('partition-input')}
               rightElement={error ?? (isSaving ? <Spinner purpose="body-text" /> : undefined)}
               disabled={isSaving}
               placeholder="name"
@@ -209,7 +210,12 @@ export const CreatePartitionDialog = ({
       </DialogBody>
       <DialogFooter>
         <Button onClick={close}>Cancel</Button>
-        <Button intent="primary" onClick={handleSave} disabled={!isValidPartitionName}>
+        <Button
+          intent="primary"
+          onClick={handleSave}
+          disabled={!isValidPartitionName}
+          data-testid={testId('save-partition-button')}
+        >
           Save
         </Button>
       </DialogFooter>
