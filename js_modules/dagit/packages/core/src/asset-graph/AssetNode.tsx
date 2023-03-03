@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner, Tooltip, IconName} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,6 +10,7 @@ import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag'
 import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {PartitionState} from '../partitions/PartitionStatus';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -48,6 +49,9 @@ export const AssetNode: React.FC<{
           ) : (
             <Description $color={Colors.Gray400}>No description</Description>
           )}
+          {definition.isPartitioned && (
+            <AssetNodePartitionsRow definition={definition} liveData={liveData} />
+          )}
           {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
@@ -74,6 +78,95 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
     {children}
   </Box>
 );
+
+export const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
+  const data = props.liveData?.partitionStats;
+  return (
+    <Box
+      style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2}}
+      padding={{bottom: 8, horizontal: 8}}
+    >
+      <AssetNodePartitionCountBox
+        state={PartitionState.MISSING}
+        value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
+        total={data?.numPartitions}
+      />
+      <AssetNodePartitionCountBox
+        state={PartitionState.SUCCESS}
+        value={data?.numMaterialized}
+        total={data?.numPartitions}
+      />
+      <AssetNodePartitionCountBox
+        state={PartitionState.FAILURE}
+        value={data?.numFailed}
+        total={data?.numPartitions}
+      />
+    </Box>
+  );
+};
+
+const StyleForPartitionState: {
+  [state: string]: {
+    background: string;
+    foreground: string;
+    border: string;
+    icon: IconName;
+    adjective: string;
+  };
+} = {
+  [PartitionState.FAILURE]: {
+    background: Colors.Red50,
+    foreground: Colors.Red700,
+    border: Colors.Red500,
+    icon: 'partition_failure',
+    adjective: 'failed',
+  },
+  [PartitionState.SUCCESS]: {
+    background: Colors.Green50,
+    foreground: Colors.Green700,
+    border: Colors.Green500,
+    icon: 'partition_success',
+    adjective: 'materialized',
+  },
+  [PartitionState.MISSING]: {
+    background: Colors.Gray100,
+    foreground: Colors.Gray900,
+    border: Colors.Gray500,
+    icon: 'partition_missing',
+    adjective: 'missing',
+  },
+};
+
+const AssetNodePartitionCountBox: React.FC<{
+  state: PartitionState;
+  value: number | undefined;
+  total: number | undefined;
+}> = ({state, value, total}) => {
+  const style = StyleForPartitionState[state];
+  const foreground = value ? style.foreground : Colors.Gray500;
+  const background = value ? style.background : Colors.Gray50;
+
+  return (
+    <Tooltip
+      display="block"
+      position="top"
+      canShow={value !== undefined}
+      content={`${value?.toLocaleString()} ${style.adjective} ${
+        value === 1 ? 'partition' : 'partitions'
+      }`}
+    >
+      <Box
+        style={{width: '100%', color: foreground, borderRadius: 6, fontSize: 12}}
+        flex={{gap: 4, alignItems: 'center', justifyContent: 'center'}}
+        padding={{horizontal: 4, vertical: 4}}
+        background={background}
+      >
+        <Icon name={style.icon} color={foreground} size={16} />
+        {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
+      </Box>
+    </Tooltip>
+  );
+};
 
 interface StatusRowProps {
   definition: AssetNodeFragment;
@@ -195,28 +288,34 @@ export function buildAssetNodeStatusRow({
 
   if (liveData.partitionStats) {
     const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
-    const numMissing = numPartitions - numMaterialized - numFailed;
+    const numMissing = numPartitions - numFailed - numMaterialized;
+    const {background, foreground, border} = StyleForPartitionState[
+      late || numFailed
+        ? PartitionState.FAILURE
+        : numMissing
+        ? PartitionState.MISSING
+        : PartitionState.SUCCESS
+    ];
 
     return {
-      background: late ? Colors.Red50 : numMissing ? Colors.Yellow50 : Colors.Green50,
-      border: late ? Colors.Red500 : numMissing ? Colors.Yellow500 : Colors.Green500,
+      background,
+      border,
       content: (
-        <>
-          <Caption color={late ? Colors.Red700 : numMissing ? Colors.Yellow700 : Colors.Green700}>
-            {`${numPartitions.toLocaleString()} partitions`}
-          </Caption>
-          <Caption>
-            <Link
-              to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {late
-                ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-                : `${numMissing.toLocaleString()} missing / ${numFailed.toLocaleString()} failed`}
-            </Link>
-          </Caption>
-        </>
+        <Caption color={foreground}>
+          <Link
+            to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {late
+              ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
+              : numFailed
+              ? `${numFailed.toLocaleString()} failed partitions`
+              : numMissing
+              ? `${numMissing.toLocaleString()} missing partitions`
+              : `${numPartitions.toLocaleString()} partitions`}
+          </Link>
+        </Caption>
       ),
     };
   }
