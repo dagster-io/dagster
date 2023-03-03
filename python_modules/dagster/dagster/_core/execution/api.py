@@ -885,29 +885,28 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline, dagster_run: DagsterRun, instance: DagsterInstance
+    pipeline: IPipeline,
+    dagster_run: DagsterRun,
+    instance: DagsterInstance,
 ) -> ExecutionPlan:
-    execution_plan_snapshot = None
-    if (
-        pipeline.solids_to_execute is None
-        and pipeline.asset_selection is None
-        and dagster_run.execution_plan_snapshot_id
-    ):
-        execution_plan_snapshot = instance.get_execution_plan_snapshot(
-            dagster_run.execution_plan_snapshot_id
-        )
-        if execution_plan_snapshot.can_reconstruct_plan:
-            return ExecutionPlan.rebuild_from_snapshot(
-                dagster_run.pipeline_name,
-                execution_plan_snapshot,
-            )
+    execution_plan_snapshot = (
+        instance.get_execution_plan_snapshot(dagster_run.execution_plan_snapshot_id)
+        if dagster_run.execution_plan_snapshot_id
+        else None
+    )
 
-    if dagster_run.has_repository_load_data:
-        # if you haven't fetched it already, get the snapshot now
-        execution_plan_snapshot = execution_plan_snapshot or instance.get_execution_plan_snapshot(
-            check.not_none(dagster_run.execution_plan_snapshot_id)
+    # Rebuild from snapshot if able and selection has not changed
+    if (
+        execution_plan_snapshot is not None
+        and execution_plan_snapshot.can_reconstruct_plan
+        and pipeline.solids_to_execute == dagster_run.solids_to_execute
+        and pipeline.asset_selection == dagster_run.asset_selection
+    ):
+        return ExecutionPlan.rebuild_from_snapshot(
+            dagster_run.pipeline_name,
+            execution_plan_snapshot,
         )
-    # need to rebuild execution plan so it matches the subsetted graph
+
     return create_execution_plan(
         pipeline,
         run_config=dagster_run.run_config,
@@ -915,6 +914,9 @@ def _get_execution_plan_from_run(
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
         repository_load_data=execution_plan_snapshot.repository_load_data
+        if execution_plan_snapshot
+        else None,
+        known_state=execution_plan_snapshot.initial_known_state
         if execution_plan_snapshot
         else None,
     )
