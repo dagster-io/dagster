@@ -108,11 +108,17 @@ def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def test_loading_columns(tmp_path):
-    resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
-    }
+    # resource_defs = {
+    #     "io_manager": duckdb_pandas_io_manager.configured(
+    #         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    #     ),
+    # }
+
+    io_manager = build_configurable_duckdb_io_manager(
+        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+    )
+
+    resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     # materialize asset twice to ensure that tables get properly deleted
     for _ in range(2):
@@ -178,10 +184,16 @@ def daily_partitioned(context) -> pd.DataFrame:
 
 
 def test_time_window_partitioned_asset(tmp_path):
-    duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
+    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # )
+    # resource_defs = {"io_manager": duckdb_io_manager}
+
+    io_manager = build_configurable_duckdb_io_manager(
+        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
     )
-    resource_defs = {"io_manager": duckdb_io_manager}
+
+    resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
         [daily_partitioned],
@@ -242,10 +254,16 @@ def static_partitioned(context) -> pd.DataFrame:
 
 
 def test_static_partitioned_asset(tmp_path):
-    duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
+    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # )
+    # resource_defs = {"io_manager": duckdb_io_manager}
+
+    io_manager = build_configurable_duckdb_io_manager(
+        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
     )
-    resource_defs = {"io_manager": duckdb_io_manager}
+
+    resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
         [static_partitioned],
@@ -308,10 +326,16 @@ def multi_partitioned(context) -> pd.DataFrame:
 
 
 def test_multi_partitioned_asset(tmp_path):
-    duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
+    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    # )
+    # resource_defs = {"io_manager": duckdb_io_manager}
+
+    io_manager = build_configurable_duckdb_io_manager(
+        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
     )
-    resource_defs = {"io_manager": duckdb_io_manager}
+
+    resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
         [multi_partitioned],
@@ -384,10 +408,17 @@ def dynamic_partitioned(context) -> pd.DataFrame:
 
 def test_dynamic_partition(tmp_path):
     with instance_for_test() as instance:
-        duckdb_io_manager = duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        # duckdb_io_manager = duckdb_pandas_io_manager.configured(
+        #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        # )
+        # resource_defs = {"io_manager": duckdb_io_manager}
+        io_manager = build_configurable_duckdb_io_manager(
+            type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
         )
-        resource_defs = {"io_manager": duckdb_io_manager}
+
+        resource_defs = {
+            "io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        }
 
         instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
 
