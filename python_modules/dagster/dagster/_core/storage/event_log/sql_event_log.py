@@ -1704,10 +1704,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                    ),
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                 )
             )
