@@ -51,7 +51,7 @@ To use Branch Deployments, you'll need a [Dagster Cloud account](https://dagster
 
 ### Supported platforms
 
-Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
+Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github) or [Dagster Gitlab app](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
 
 ### Limitations
 
@@ -125,6 +125,30 @@ There are currently two ways to set up Branch Deployments for Dagster Cloud. In 
     </tr>
     <tr>
       <td>
+        <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab">
+          Gitlab
+        </a>
+      </td>
+      <td>Gitlab CI/CD</td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You use Gitlab for version control
+          </li>
+          <li>You want Dagster to fully automate Branch Deployments</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
         <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments">
           Other git/CI platform
         </a>
@@ -145,7 +169,7 @@ There are currently two ways to set up Branch Deployments for Dagster Cloud. In 
               marginTop: "0px",
             }}
           >
-            You don't use GitHub for version control
+            You don't use GitHub or Gitlab for version control
           </li>
           <li>You use an alternate CI platform</li>
           <li>You want full control over Branch Deployment configuration</li>
