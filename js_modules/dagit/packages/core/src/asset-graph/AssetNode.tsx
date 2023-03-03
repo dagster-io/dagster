@@ -62,7 +62,7 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
   <Box
     padding={{horizontal: 8}}
     style={{
@@ -79,7 +79,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
   </Box>
 );
 
-export const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
+const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
   const data = props.liveData?.partitionStats;
   return (
     <Box
@@ -158,25 +158,35 @@ const AssetNodePartitionCountBox: React.FC<{
       canShow={value !== undefined}
       content={partitionStateToString(value, style.adjective)}
     >
-      <Box
-        style={{width: '100%', color: foreground, borderRadius: 6, fontSize: 12}}
-        flex={{gap: 4, alignItems: 'center', justifyContent: 'center'}}
-        padding={{horizontal: 4, vertical: 4}}
-        background={background}
-      >
+      <AssetNodePartitionCountContainer style={{color: foreground, background}}>
         <Icon name={style.icon} color={foreground} size={16} />
         {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
-      </Box>
+      </AssetNodePartitionCountContainer>
     </Tooltip>
   );
 };
+
+// Necessary to remove the outline we get with the tooltip applying a tabIndex
+const AssetNodePartitionCountContainer = styled.div`
+  width: 100%;
+  border-radius: 6px;
+  font-size: 12px;
+  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  &:focus {
+    outline: 0;
+  }
+`;
 
 interface StatusRowProps {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
 }
 
-export const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
+const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
   const info = buildAssetNodeStatusRow(props);
   return <AssetNodeStatusBox background={info.background}>{info.content}</AssetNodeStatusBox>;
 };
@@ -188,7 +198,7 @@ function getStepKey(definition: AssetNodeFragment) {
   return firstOp || '';
 }
 
-export function buildAssetNodeStatusRow({
+function buildAssetNodeStatusRow({
   definition,
   liveData,
 }: {
