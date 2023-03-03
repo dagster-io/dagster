@@ -41,7 +41,7 @@ When [adding a code location](/dagster-cloud/developing-testing/code-locations) 
 The following example `dagster_cloud.yaml` file illustrates the available fields:
 
 ```yaml
-## dagster_cloud.yaml
+# dagster_cloud.yaml
 
 locations:
   - location_name: cloud-examples
@@ -97,15 +97,20 @@ locations:
 Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
 
 ```yaml
-## dagster_cloud.yaml
+# dagster_cloud.yaml
 
-container_context:
-  k8s:
-    env_vars:
-      - database_name
-      - database_username=hooli_testing
-    env_secrets:
-      - database_password
+location:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      k8s:
+        env_vars:
+          - database_name
+          - database_username=hooli_testing
+        env_secrets:
+          - database_password
 ```
 
 <ReferenceTable>
