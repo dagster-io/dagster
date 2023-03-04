@@ -47,9 +47,9 @@ def upgrade():
                 ),
             )
             if _should_create_primary_key("kvs"):
-                batch_op.create_unique_constraint("kvs_id_unique", ["id"])
-            else:
                 batch_op.create_primary_key("kvs_pkey", ["id"])
+            else:
+                batch_op.create_unique_constraint("kvs_id_unique", ["id"])
 
     if has_table("instance_info") and not has_column("kvs", "id"):
         with op.batch_alter_table("instance_info") as batch_op:
@@ -61,9 +61,9 @@ def upgrade():
                 ),
             )
             if _should_create_primary_key("instance_info"):
-                batch_op.create_unique_constraint("instance_info_id_unique", ["id"])
-            else:
                 batch_op.create_primary_key("instance_info_pkey", ["id"])
+            else:
+                batch_op.create_unique_constraint("instance_info_id_unique", ["id"])
 
     if has_table("daemon_heartbeats") and not has_column("daemon_heartbeats", "id"):
         with op.batch_alter_table("daemon_heartbeats") as batch_op:
@@ -75,9 +75,9 @@ def upgrade():
                 ),
             )
             if _should_create_primary_key("daemon_heartbeats"):
-                batch_op.create_unique_constraint("daemon_heartbeats_id_unique", ["id"])
-            else:
                 batch_op.create_primary_key("daemon_heartbeats_pkey", ["id"])
+            else:
+                batch_op.create_unique_constraint("daemon_heartbeats_id_unique", ["id"])
 
 
 def downgrade():
