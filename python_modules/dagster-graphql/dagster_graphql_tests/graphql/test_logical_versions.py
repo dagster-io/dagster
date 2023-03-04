@@ -71,13 +71,7 @@ def test_stale_status():
             foo = _get_asset_node("foo", result)
             assert foo["currentLogicalVersion"] is None
             assert foo["staleStatus"] == "MISSING"
-            assert foo["staleStatusCauses"] == [
-                {
-                    "reason": "never materialized",
-                    "key": {"path": ["foo"]},
-                    "dependency": None,
-                }
-            ]
+            assert foo["staleCauses"] == []
 
             assert _materialize_assets(context, repo)
             wait_for_runs_to_finish(context.instance)
@@ -86,7 +80,7 @@ def test_stale_status():
             foo = _get_asset_node("foo", result)
             assert foo["currentLogicalVersion"] is not None
             assert foo["staleStatus"] == "FRESH"
-            assert foo["staleStatusCauses"] == []
+            assert foo["staleCauses"] == []
 
 
 def test_logical_version_from_tags():

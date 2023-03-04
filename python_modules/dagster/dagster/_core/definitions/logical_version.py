@@ -228,12 +228,11 @@ class StaleStatus(Enum):
     FRESH = "FRESH"
 
 
-class StaleStatusCause(NamedTuple):
-    status: StaleStatus
+class StaleCause(NamedTuple):
     key: AssetKey
     reason: str
     dependency: Optional[AssetKey] = None
-    children: Optional[Sequence["StaleStatusCause"]] = None
+    children: Optional[Sequence["StaleCause"]] = None
 
 
 # Root reasons for staleness. Thes differ from `StaleStatusCause`in that there is no status
@@ -273,33 +272,39 @@ class CachingStaleStatusResolver:
     def get_status(self, key: AssetKey) -> StaleStatus:
         return self._get_status(key=key)
 
-    def get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
-        return self._get_status_causes(key=key)
+    def get_stale_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+        return self._get_stale_causes(key=key)
 
-    def get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
-        return self._get_status_root_causes(key=key)
+    def get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+        return self._get_stale_root_causes(key=key)
 
     def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_current_logical_version(key=key)
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
-        causes = self._get_status_causes(key=key)
-        return StaleStatus.FRESH if len(causes) == 0 else causes[0].status
+        current_version = self._get_current_logical_version(key=key)
+        if current_version == NULL_LOGICAL_VERSION:
+            return StaleStatus.MISSING
+        elif self.asset_graph.is_source(key) or self._is_partitioned_or_downstream(key=key):
+            return StaleStatus.FRESH
+        else:
+            causes = self._get_stale_causes(key=key)
+            return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
-    def _get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
+    def _get_stale_causes(self, key: AssetKey) -> Sequence[StaleCause]:
         current_version = self._get_current_logical_version(key=key)
-        if self.asset_graph.is_source(key):
-            return []
-        elif current_version == NULL_LOGICAL_VERSION:
-            return [StaleStatusCause(StaleStatus.MISSING, key, "never materialized")]
-        elif self._is_partitioned_or_downstream(key=key):
+        if (
+            current_version == NULL_LOGICAL_VERSION
+            or self.asset_graph.is_source(key)
+            or self._is_partitioned_or_downstream(key=key)
+        ):
             return []
         else:
-            return list(self._get_stale_status_causes_materialized(key))
+            return list(self._get_stale_causes_materialized(key))
 
-    def _get_stale_status_causes_materialized(self, key: AssetKey) -> Iterator[StaleStatusCause]:
+    def _get_stale_causes_materialized(self, key: AssetKey) -> Iterator[StaleCause]:
         code_version = self.asset_graph.get_code_version(key)
         provenance = self._get_current_logical_version_provenance(key=key)
         dependency_keys = self.asset_graph.get_parents(key)
@@ -310,12 +315,11 @@ class CachingStaleStatusResolver:
 
         if provenance:
             if code_version and code_version != provenance.code_version:
-                yield StaleStatusCause(StaleStatus.STALE, key, "updated code version")
+                yield StaleCause(key, "updated code version")
 
             removed_deps = set(provenance.input_logical_versions.keys()) - set(dependency_keys)
             for dep_key in removed_deps:
-                yield StaleStatusCause(
-                    StaleStatus.STALE,
+                yield StaleCause(
                     key,
                     "removed dependency",
                     dep_key,
@@ -323,17 +327,15 @@ class CachingStaleStatusResolver:
 
         for dep_key in sorted(dependency_keys):
             if self._get_status(key=dep_key) == StaleStatus.STALE:
-                yield StaleStatusCause(
-                    StaleStatus.STALE,
+                yield StaleCause(
                     key,
                     "stale dependency",
                     dep_key,
-                    self._get_status_causes(key=dep_key),
+                    self._get_stale_causes(key=dep_key),
                 )
             elif provenance:
                 if dep_key not in provenance.input_logical_versions:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
+                    yield StaleCause(
                         key,
                         "new dependency",
                         dep_key,
@@ -341,11 +343,16 @@ class CachingStaleStatusResolver:
                 elif provenance.input_logical_versions[
                     dep_key
                 ] != self._get_current_logical_version(key=dep_key):
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
+                    yield StaleCause(
                         key,
                         "updated dependency logical version",
                         dep_key,
+                        [
+                            StaleCause(
+                                dep_key,
+                                "updated logical version",
+                            )
+                        ],
                     )
             # if no provenance, then use materialization timestamps instead of versions
             # this should be removable eventually since provenance is on all newer materializations
@@ -353,57 +360,39 @@ class CachingStaleStatusResolver:
                 dep_materialization = self._get_latest_materialization_event(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
-                    yield StaleStatusCause(StaleStatus.STALE, key, "new input", dep_key)
+                    yield StaleCause(key, "new input", dep_key)
                 elif dep_materialization.timestamp > materialization_time:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
+                    yield StaleCause(
                         key,
                         "updated dependency timestamp",
                         dep_key,
+                        [
+                            StaleCause(
+                                dep_key,
+                                "updated timestamp",
+                            )
+                        ],
                     )
 
     @cached_method
-    def _get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
-        causes = self._get_status_causes(key=key)
-        leaf_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
+    def _get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
+        causes = self._get_stale_causes(key=key)
+        root_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
         # After sorting the pairs, we can drop the level and de-dup using an
-        # ordered dict as an ordered set. This will give us unique leaf causes,
+        # ordered dict as an ordered set. This will give us unique root causes,
         # sorted by level.
-        leaves: Dict[StaleStatusCause, None] = OrderedDict()
-        for leaf_cause in [leaf_cause for _, leaf_cause in leaf_pairs]:
-            leaves[leaf_cause] = None
-        # De-dup one more time when converting leaf causes to roots
-        roots: Dict[StaleStatusRootCause, None] = OrderedDict()
-        for leaf_cause in leaves.keys():
-            root_cause = self._convert_to_root_cause(leaf_cause)
+        roots: Dict[StaleCause, None] = OrderedDict()
+        for root_cause in [leaf_cause for _, leaf_cause in root_pairs]:
             roots[root_cause] = None
         return list(roots.keys())
 
     # The leaves of the cause tree for an asset are the root causes of its staleness.
-    def _gather_leaves(
-        self, cause: StaleStatusCause, level: int = 0
-    ) -> Iterator[Tuple[int, StaleStatusCause]]:
+    def _gather_leaves(self, cause: StaleCause, level: int = 0) -> Iterator[Tuple[int, StaleCause]]:
         if cause.children is None:
             yield (level, cause)
         else:
             for child in cause.children:
                 yield from self._gather_leaves(child, level=level + 1)
-
-    def _convert_to_root_cause(self, cause: StaleStatusCause) -> StaleStatusRootCause:
-        if cause.reason == "updated dependency logical version":
-            assert cause.dependency, "[updated input] cause must have a dependency"
-            return StaleStatusRootCause(
-                cause.dependency,
-                "updated logical version",
-            )
-        elif cause.reason == "updated dependency timestamp":
-            assert cause.dependency, "[updated input] cause must have a dependency"
-            return StaleStatusRootCause(
-                cause.dependency,
-                "updated timestamp",
-            )
-        else:
-            return StaleStatusRootCause(cause.key, cause.reason, cause.dependency)
 
     @property
     def asset_graph(self) -> "AssetGraph":

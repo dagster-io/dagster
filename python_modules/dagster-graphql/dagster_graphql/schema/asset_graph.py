@@ -81,13 +81,13 @@ if TYPE_CHECKING:
 GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
 
 
-class GrapheneAssetStaleStatusCause(graphene.ObjectType):
+class GrapheneAssetStaleCause(graphene.ObjectType):
     key = graphene.NonNull(GrapheneAssetKey)
     reason = graphene.NonNull(graphene.String)
     dependency = graphene.Field(GrapheneAssetKey)
 
     class Meta:
-        name = "StaleStatusCause"
+        name = "StaleCause"
 
 
 class GrapheneAssetDependency(graphene.ObjectType):
@@ -229,7 +229,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     staleStatus = graphene.Field(GrapheneAssetStaleStatus)
-    staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
+    staleCauses = non_null_list(GrapheneAssetStaleCause)
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
 
@@ -567,14 +567,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_staleStatus(self, graphene_info: ResolveInfo) -> Any:  # (GrapheneAssetStaleStatus)
         return self.stale_status_loader.get_status(self._external_asset_node.asset_key)
 
-    def resolve_staleStatusCauses(
-        self, graphene_info: ResolveInfo
-    ) -> Sequence[GrapheneAssetStaleStatusCause]:
-        causes = self.stale_status_loader.get_status_root_causes(
-            self._external_asset_node.asset_key
-        )
+    def resolve_staleCauses(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetStaleCause]:
+        causes = self.stale_status_loader.get_stale_root_causes(self._external_asset_node.asset_key)
         return [
-            GrapheneAssetStaleStatusCause(
+            GrapheneAssetStaleCause(
                 GrapheneAssetKey(path=cause.key.path),
                 cause.reason,
                 GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,

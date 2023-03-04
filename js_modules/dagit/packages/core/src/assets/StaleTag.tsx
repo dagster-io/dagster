@@ -19,12 +19,12 @@ export const StaleTag: React.FC<{liveData?: LiveDataForNode; onClick?: () => voi
   if (!isAssetStale(liveData)) {
     return null;
   }
-  const hasCauses = liveData?.staleStatusCauses && liveData.staleStatusCauses.length > 0;
+  const hasCauses = liveData?.staleCauses && liveData.staleCauses.length > 0;
 
   return (
     <Tooltip
       position="top"
-      content={hasCauses ? <StaleCausesSummary causes={liveData.staleStatusCauses} /> : NO_CAUSES}
+      content={hasCauses ? <StaleCausesSummary causes={liveData.staleCauses} /> : NO_CAUSES}
     >
       <Box onClick={onClick}>
         <BaseTag
@@ -45,7 +45,7 @@ export const StaleTag: React.FC<{liveData?: LiveDataForNode; onClick?: () => voi
 
 const MAX_DISPLAYED_REASONS = 4;
 
-export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleStatusCauses']}> = ({
+export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({
   causes,
 }) => (
   <Tooltip
@@ -56,7 +56,7 @@ export const StaleCausesInfoDot: React.FC<{causes: LiveDataForNode['staleStatusC
   </Tooltip>
 );
 
-const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleStatusCauses']}> = ({causes}) => (
+const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleCauses']}> = ({causes}) => (
   <Box>
     <strong>This asset is marked as stale:</strong>
     <ul style={{margin: 0, padding: '4px 12px'}}>
