@@ -31,6 +31,11 @@ def has_primary_key(table_name):
     if not has_table(table_name):
         return False
     inspector = get_inspector()
+
+    # sqlite auto creates primary keys for all tables
+    if inspector.engine.dialect.name == "sqlite":
+        return True
+
     constraint = inspector.get_pk_constraint(table_name)
     return constraint and len(constraint.get("constrained_columns")) > 0
 

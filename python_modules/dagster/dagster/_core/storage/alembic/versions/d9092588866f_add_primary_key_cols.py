@@ -17,51 +17,68 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    has_primary_key("runs")
-    if has_table("kvs") and not has_column("kvs", "id"):
-        op.add_column(
-            "kvs",
-            db.Column(
-                "id",
-                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                unique=True,
-                primary_key=has_primary_key("kvs"),
-                autoincrement=True,
-            ),
-        )
+def _should_create_primary_key(tablename):
+    dialect = op.get_context().dialect.name
 
-    if has_table("instance_info") and not has_column("instance_info", "id"):
-        op.add_column(
-            "instance_info",
-            db.Column(
-                "id",
-                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                unique=True,
-                primary_key=has_primary_key("kvs"),
-                autoincrement=True,
-            ),
-        )
+    if dialect == "sqlite":
+        # Sqlite autogenerates primary keys using the rowid column, so we should skip primary key
+        # generation for sqlite
+        return False
+
+    if dialect == "mysql":
+        # Also, some instances of mysql might have invisible primary key generation turned on, which is
+        # hard to detect. in an abundance of caution, we should not attempt to create a primary key
+        # here and allow dbadmins to convert the unique id column to a primary key if they want to.
+        # See https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html
+        return False
+
+    # If the table already has a primary key, we should not create a new one
+    return not has_primary_key(tablename)
+
+
+def upgrade():
+    if has_table("kvs") and not has_column("kvs", "id"):
+        with op.batch_alter_table("kvs") as batch_op:
+            batch_op.add_column(
+                db.Column(
+                    "id",
+                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                    autoincrement=True,
+                ),
+            )
+            if _should_create_primary_key("kvs"):
+                batch_op.create_unique_constraint("kvs_id_unique", ["id"])
+            else:
+                batch_op.create_primary_key("kvs_pkey", ["id"])
+
+    if has_table("instance_info") and not has_column("kvs", "id"):
+        with op.batch_alter_table("instance_info") as batch_op:
+            batch_op.add_column(
+                db.Column(
+                    "id",
+                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                    autoincrement=True,
+                ),
+            )
+            if _should_create_primary_key("instance_info"):
+                batch_op.create_unique_constraint("instance_info_id_unique", ["id"])
+            else:
+                batch_op.create_primary_key("instance_info_pkey", ["id"])
 
     if has_table("daemon_heartbeats") and not has_column("daemon_heartbeats", "id"):
-        op.add_column(
-            "daemon_heartbeats",
-            db.Column(
-                "id",
-                db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                unique=True,
-                primary_key=has_primary_key("kvs"),
-                autoincrement=True,
-            ),
-        )
+        with op.batch_alter_table("daemon_heartbeats") as batch_op:
+            batch_op.add_column(
+                db.Column(
+                    "id",
+                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                    autoincrement=True,
+                ),
+            )
+            if _should_create_primary_key("daemon_heartbeats"):
+                batch_op.create_unique_constraint("daemon_heartbeats_id_unique", ["id"])
+            else:
+                batch_op.create_primary_key("daemon_heartbeats_pkey", ["id"])
 
 
 def downgrade():
-    if has_table("kvs") and has_column("kvs", "id"):
-        op.drop_column("kvs", "id")
-
-    if has_table("instance_info") and has_column("instance_info", "id"):
-        op.drop_column("instance_info", "id")
-
-    if has_table("daemon_heartbeats") and has_column("daemon_heartbeats", "id"):
-        op.drop_column("daemon_heartbeats", "id")
+    pass
