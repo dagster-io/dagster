@@ -30,7 +30,7 @@ services:
     expose:
       - 3307
     networks:
-      - mysqlbackcompat
+      - mysql_pinned
 
   test-mysql-db-pinned-backcompat:
     image: mysql:8.0.21
@@ -47,12 +47,15 @@ services:
     expose:
       - 3308
     networks:
-      - mysqlbackcompat
+      - mysql_pinned_backcompat
 
 networks:
   mysql:
     driver: bridge
     name: mysql
-  mysqlbackcompat:
+  mysql_pinned:
     driver: bridge
-    name: mysqlbackcompat
+    name: mysql_pinned
+  mysql_pinned_backcompat:
+    driver: bridge
+    name: mysql_pinned_backcompat
