@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -10,6 +11,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
     overload,
@@ -22,6 +24,7 @@ import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import DefaultNamedTupleSerializer, WhitelistMap, replace_storage_keys
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
