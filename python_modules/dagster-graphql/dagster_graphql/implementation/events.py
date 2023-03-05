@@ -1,5 +1,5 @@
 from math import isnan
-from typing import Any, Iterator, Sequence, Union, cast, no_type_check
+from typing import Any, Iterator, Sequence, cast, no_type_check
 
 import dagster._check as check
 import dagster._seven as seven
@@ -20,7 +20,10 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster._core.definitions.metadata import DagsterRunMetadataValue, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    DagsterRunMetadataValue,
+    MetadataEntryUnion,
+)
 from dagster._core.events import (
     DagsterEventType,
     HandledOutputData,
@@ -35,9 +38,7 @@ MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
-def iterate_metadata_entries(
-    metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
-) -> Iterator[Any]:
+def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntryUnion]) -> Iterator[Any]:
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,

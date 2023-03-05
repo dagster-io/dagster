@@ -37,6 +37,7 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataEntryUnion
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -65,7 +66,7 @@ from .executor_definition import ExecutorDefinition, multi_or_in_process_executo
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
+from .metadata import RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
@@ -106,7 +107,7 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
