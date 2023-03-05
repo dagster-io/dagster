@@ -165,7 +165,6 @@ class ExternalRepository:
         return self._external_resources.values()
 
     @property
-    @cached_method
     def _utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
         return self.external_repository_data.utilized_env_vars or {}
 

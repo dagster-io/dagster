@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from inspect import isfunction
 from typing import (
     Any,
@@ -47,15 +48,18 @@ def _find_env_vars(config_entry: Any) -> Set[str]:
     Given a part of a config dictionary, return a set of environment variables that are used in
     that part of the config.
     """
-    if isinstance(config_entry, list):
-        return set().union(*[_find_env_vars(v) for v in config_entry])
-    elif not isinstance(config_entry, dict):
-        return set()
-
-    if set(config_entry.keys()) == {"env"}:
+    # Actual env var entry
+    if isinstance(config_entry, Mapping) and set(config_entry.keys()) == {"env"}:
         return {config_entry["env"]}
+    # Recurse into dictionary of config items
+    elif isinstance(config_entry, Mapping):
+        return set().union(*[_find_env_vars(v) for v in config_entry.values()])
+    # Recurse into list of config items
+    elif isinstance(config_entry, List):
+        return set().union(*[_find_env_vars(v) for v in config_entry])
 
-    return set().union(*[_find_env_vars(v) for v in config_entry.values()])
+    # Otherwise, raw config value which is not an env var, so return empty set
+    return set()
 
 
 def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
@@ -289,12 +293,12 @@ def build_caching_repository_data_from_list(
 
     top_level_resources = top_level_resources or {}
 
-    utilized_env_vars: Mapping[str, Set[str]] = {}
+    utilized_env_vars: Dict[str, Set[str]] = defaultdict(set)
 
     for resource_key, resource_def in top_level_resources.items():
         used_env_vars = _env_vars_from_resource_defaults(resource_def)
         for env_var in used_env_vars:
-            utilized_env_vars.setdefault(env_var, set()).add(resource_key)
+            utilized_env_vars[env_var].add(resource_key)
 
     return CachingRepositoryData(
         pipelines=pipelines,
