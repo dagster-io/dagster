@@ -39,6 +39,7 @@ class DbtCliResource(DbtResource):
         docs_url: Optional[str] = None,
         json_log_format: bool = True,
         capture_logs: bool = True,
+        debug: bool = False,
     ):
         self._default_flags = default_flags
         self._executable = executable
@@ -48,6 +49,7 @@ class DbtCliResource(DbtResource):
         self._docs_url = docs_url
         self._json_log_format = json_log_format
         self._capture_logs = capture_logs
+        self._debug = debug
         super().__init__(logger)
 
     @property
@@ -105,6 +107,7 @@ class DbtCliResource(DbtResource):
             docs_url=self._docs_url,
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
+            debug=self._debug,
         )
 
     def cli_stream_json(self, command: str, **kwargs) -> Iterator[Mapping[str, Any]]:
@@ -126,6 +129,7 @@ class DbtCliResource(DbtResource):
             ignore_handled_error=self._ignore_handled_error,
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
+            debug=self._debug,
         ):
             if event.parsed_json_line is not None:
                 yield event.parsed_json_line
@@ -399,4 +403,5 @@ def dbt_cli_resource(context) -> DbtCliResource:
         docs_url=context.resource_config.get("docs_url"),
         capture_logs=context.resource_config["capture_logs"],
         json_log_format=context.resource_config["json_log_format"],
+        debug=context.resource_config["debug"],
     )
