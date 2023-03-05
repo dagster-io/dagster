@@ -16,7 +16,6 @@ from .utils import capture_error
 def get_utilized_env_vars_or_error(
     graphene_info, repository_selector
 ) -> GrapheneEnvVarWithConsumersListOrError:
-
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
