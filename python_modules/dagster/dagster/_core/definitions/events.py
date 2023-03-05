@@ -21,7 +21,6 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.metadata import MetadataEntryUnion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils import last_file_comp
@@ -31,7 +30,6 @@ from .metadata import (
     MetadataEntry,
     MetadataMapping,
     MetadataValue,
-    PartitionMetadataEntry,
     RawMetadataValue,
     normalize_metadata,
 )
@@ -226,7 +224,7 @@ class Output(Generic[T]):
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
-        metadata_entries (Optional[MetadataEntryUnion]):
+        metadata_entries (Optional[MetadataEntry]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
@@ -240,7 +238,7 @@ class Output(Generic[T]):
         self,
         value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
     ):
@@ -248,7 +246,7 @@ class Output(Generic[T]):
         metadata_entries = check.opt_sequence_param(
             metadata_entries,
             "metadata_entries",
-            of_type=(MetadataEntry, PartitionMetadataEntry),
+            of_type=MetadataEntry,
         )
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
@@ -258,7 +256,7 @@ class Output(Generic[T]):
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
 
     @property
-    def metadata_entries(self) -> Sequence[MetadataEntryUnion]:
+    def metadata_entries(self) -> Sequence[MetadataEntry]:
         return self._metadata_entries
 
     @public
@@ -304,7 +302,7 @@ class DynamicOutput(Generic[T]):
         output_name (Optional[str]):
             Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
-        metadata_entries (Optional[MetadataEntryUnion]):
+        metadata_entries (Optional[MetadataEntry]):
             (Experimental) A set of metadata entries to attach to events related to this output.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
@@ -317,7 +315,7 @@ class DynamicOutput(Generic[T]):
         value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -330,7 +328,7 @@ class DynamicOutput(Generic[T]):
         self._value = value
 
     @property
-    def metadata_entries(self) -> Sequence[MetadataEntryUnion]:
+    def metadata_entries(self) -> Sequence[MetadataEntry]:
         return self._metadata_entries
 
     @public
@@ -438,7 +436,7 @@ class AssetMaterialization(
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntryUnion]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("partition", PublicAttr[Optional[str]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
@@ -459,7 +457,7 @@ class AssetMaterialization(
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
             job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[MetadataEntryUnion]]): Arbitrary
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary
             metadata about the materialized value.
         partition (Optional[str]): The name of the partition
             that was materialized.
@@ -475,7 +473,7 @@ class AssetMaterialization(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
@@ -500,7 +498,7 @@ class AssetMaterialization(
 
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         partition = check.opt_str_param(partition, "partition")
@@ -554,8 +552,7 @@ class AssetMaterialization(
     @public
     @property
     def metadata(self) -> MetadataMapping:
-        # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.value for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}
 
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):

@@ -16,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.metadata import MetadataEntryUnion
+from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
@@ -157,7 +157,7 @@ class PipelineDefinition:
     _graph_def: GraphDefinition
     _description: Optional[str]
     _tags: Mapping[str, str]
-    _metadata: Sequence[MetadataEntryUnion]
+    _metadata: Sequence[MetadataEntry]
     _current_level_node_defs: Sequence[NodeDefinition]
     _mode_definitions: Sequence[ModeDefinition]
     _hook_defs: AbstractSet[HookDefinition]
@@ -192,7 +192,7 @@ class PipelineDefinition:
         ] = None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
-        metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         # If a graph is specified directly use it
         if isinstance(graph_def, GraphDefinition):
@@ -335,7 +335,7 @@ class PipelineDefinition:
         return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
 
     @property
-    def metadata(self) -> Sequence[MetadataEntryUnion]:
+    def metadata(self) -> Sequence[MetadataEntry]:
         return self._metadata_entries
 
     @property
