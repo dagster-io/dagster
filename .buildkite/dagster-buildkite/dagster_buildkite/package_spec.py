@@ -1,10 +1,11 @@
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Union
 
 import pkg_resources
+from typing_extensions import TypeAlias
 
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
@@ -58,8 +59,11 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
     "unknown": ":grey_question:",
 }
 
-PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
-PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
+PytestExtraCommandsFunction: TypeAlias = Callable[
+    [AvailablePythonVersion, Optional[str]], List[str]
+]
+PytestDependenciesFunction: TypeAlias = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
+UnsupportedVersionsFunction: TypeAlias = Callable[[Optional[str]], List[AvailablePythonVersion]]
 
 
 @dataclass
@@ -108,7 +112,9 @@ class PackageSpec:
     directory: str
     name: Optional[str] = None
     package_type: Optional[str] = None
-    unsupported_python_versions: List[AvailablePythonVersion] = field(default_factory=lambda: [])
+    unsupported_python_versions: Optional[
+        Union[List[AvailablePythonVersion], UnsupportedVersionsFunction]
+    ] = None
     pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None
     pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None
     pytest_tox_factors: Optional[List[str]] = None
@@ -134,18 +140,8 @@ class PackageSpec:
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
-        supported_python_versions = [
-            v for v in AvailablePythonVersion.get_all() if v not in self.unsupported_python_versions
-        ]
-
         if self.run_pytest:
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
-            pytest_python_versions = sorted(
-                list(set(default_python_versions) - set(self.unsupported_python_versions))
-            )
-            # Use lowest supported python version if no defaults match.
-            if len(pytest_python_versions) == 0:
-                pytest_python_versions = [supported_python_versions[0]]
 
             tox_factors: List[Optional[str]] = (
                 [f.lstrip("-") for f in self.pytest_tox_factors]
@@ -153,8 +149,26 @@ class PackageSpec:
                 else [None]
             )
 
-            for py_version in pytest_python_versions:
-                for other_factor in tox_factors:
+            for other_factor in tox_factors:
+                if callable(self.unsupported_python_versions):
+                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
+                else:
+                    unsupported_python_versions = self.unsupported_python_versions or []
+
+                supported_python_versions = [
+                    v
+                    for v in AvailablePythonVersion.get_all()
+                    if v not in unsupported_python_versions
+                ]
+
+                pytest_python_versions = sorted(
+                    list(set(default_python_versions) - set(unsupported_python_versions))
+                )
+                # Use lowest supported python version if no defaults match.
+                if len(pytest_python_versions) == 0:
+                    pytest_python_versions = [supported_python_versions[0]]
+
+                for py_version in pytest_python_versions:
                     version_factor = AvailablePythonVersion.to_tox_factor(py_version)
                     if other_factor is None:
                         tox_env = version_factor

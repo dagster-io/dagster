@@ -51,3 +51,6 @@ RUN apt-get update -yqq \
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*
