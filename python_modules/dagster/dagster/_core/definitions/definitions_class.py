@@ -1,7 +1,9 @@
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
     Iterable,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -112,6 +114,23 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
     )
 
 
+def _jobs_which_will_have_io_manager_replaced(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    resource_defs: Mapping[str, Any],
+) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    """
+    Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
+    the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
+    the case.
+    """
+    jobs = jobs or []
+    return [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition) and _io_manager_needs_replacement(job, resource_defs)
+    ]
+
+
 def _attach_resources_to_jobs_and_instigators(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     schedules: Optional[
@@ -220,11 +239,37 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
-    (
-        jobs_with_resources,
-        schedules_with_resources,
-        sensors_with_resources,
-    ) = _attach_resources_to_jobs_and_instigators(jobs, schedules, sensors, resource_defs)
+    if isinstance(jobs, BindResourcesToJobs):
+        (
+            jobs_with_resources,
+            schedules_with_resources,
+            sensors_with_resources,
+        ) = _attach_resources_to_jobs_and_instigators(jobs, schedules, sensors, resource_defs)
+    else:
+        jobs_to_warn = _jobs_which_will_have_io_manager_replaced(jobs, resource_defs)
+        if jobs_to_warn:
+            jobs_text = ", ".join([f"`{job.name}`" for job in jobs_to_warn[:10]])
+            if len(jobs_to_warn) > 10:
+                jobs_text += f", and {len(jobs_to_warn) - 10} others"
+            warnings.warn(
+                f"""You have overridden the default `io_manager` on `Definitions`. One or more jobs utilize the default filesystem I/O manager. In the future, these jobs will use the `Definitions`-level override instead. To silence this warning, explicitly set the `io_manager` on the jobs in question:
+
+@job(resource_defs={{io_manager': fs_io_manager}})
+def my_job():
+    ...
+    
+Alternatively, wrap the jobs input to `Definitions` with `BindResourceToJobs`:
+
+defs = Definitions(
+    jobs=BindResourcesToJobs([my_job, my_other_job, ...])
+)
+
+The following jobs are affected: {jobs_text}
+                """
+            )
+        jobs_with_resources = jobs or []
+        schedules_with_resources = schedules or []
+        sensors_with_resources = sensors or []
 
     @repository(
         name=name,
@@ -241,6 +286,10 @@ def _create_repository_using_definitions_args(
         ]
 
     return created_repo
+
+
+class BindResourcesToJobs(list):
+    pass
 
 
 class Definitions:
