@@ -276,11 +276,13 @@ class _Asset:
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
-            decorator_resource_keys = set(self.required_resource_keys).union(
-                set(self.resource_defs.keys())
-            )
+
+            bare_required_resource_keys = set(self.required_resource_keys)
+            resource_defs_keys = set(self.resource_defs.keys())
+            decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
+
             check.param_invariant(
-                len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+                len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
                 (
                     "Cannot specify resource requirements in both @asset decorator and as arguments"
                     " to the decorated function"
@@ -307,6 +309,8 @@ class _Asset:
                 code_version=self.code_version,
             )
 
+            op_required_resource_keys = decorator_resource_keys - arg_resource_keys
+
             op = _Op(
                 name=out_asset_key.to_python_identifier(),
                 description=self.description,
@@ -314,7 +318,7 @@ class _Asset:
                 out=out,
                 # Any resource requirements specified as arguments will be identified as
                 # part of the Op definition instantiation
-                required_resource_keys=decorator_resource_keys,
+                required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -426,7 +430,9 @@ def multi_asset(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
-    required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
+    bare_required_resource_keys = set(required_resource_keys)
+    resource_defs_keys = set(resource_defs.keys())
+    required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
@@ -445,7 +451,7 @@ def multi_asset(
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
-            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+            len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
             (
                 "Cannot specify resource requirements in both @multi_asset decorator and as"
                 " arguments to the decorated function"
@@ -477,12 +483,14 @@ def multi_asset(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            op_required_resource_keys = required_resource_keys - arg_resource_keys
+
             op = _Op(
                 name=op_name,
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=dict(asset_outs.values()),
-                required_resource_keys=required_resource_keys,
+                required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
