@@ -131,6 +131,12 @@ def asset_groups_repository():
 
 
 @repository
+def partitioned_assets_repository():
+    from . import partitioned_assets 
+    return load_assets_from_modules([partitioned_assets])
+
+
+@repository
 def long_asset_keys_repository():
     return [long_asset_keys_group]
 
