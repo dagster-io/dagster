@@ -282,11 +282,97 @@ def test_run_monitoring_set_max_resume_run_attempts(
     assert instance["run_monitoring"]["max_resume_run_attempts"] == 2
 
 
-def test_run_retries(
+def test_sensor_schedule_threading_default(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+
+def test_schedule_threading_disabled(
     instance_template: HelmTemplate,
 ):  # pylint: disable=redefined-outer-name
     helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(runRetries={"enabled": True})
+        dagsterDaemon=Daemon.construct(schedules={"useThreads": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["sensors"]["use_threads"] is True
+    assert instance["sensors"]["num_workers"] == 4
+
+    assert "schedules" not in instance
+
+
+def test_sensor_threading_disabled(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(sensors={"useThreads": False})
+    )
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["schedules"]["use_threads"] is True
+    assert instance["schedules"]["num_workers"] == 4
+
+    assert "sensors" not in instance
+
+
+def test_run_retries_default(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_retries"]["enabled"] is True
+    assert "max_retries" not in instance["run_retries"]
+
+
+def test_run_retries_disabled(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runRetries={"enabled": False})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "run_retries" not in instance
+
+
+def test_run_retries_max_retries(
+    instance_template: HelmTemplate,
+):  # pylint: disable=redefined-outer-name
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runRetries={"enabled": True, "maxRetries": 4})
     )
 
     configmaps = instance_template.render(helm_values)
@@ -296,6 +382,7 @@ def test_run_retries(
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
     assert instance["run_retries"]["enabled"] is True
+    assert instance["run_retries"]["max_retries"] == 4
 
 
 def test_daemon_labels(template: HelmTemplate):
