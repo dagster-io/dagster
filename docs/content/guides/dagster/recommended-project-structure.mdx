@@ -135,11 +135,11 @@ When using asset-based data pipelines, we recommend having a `jobs.py` file that
 
 ### When using ops and graphs
 
-This project does not include ops or graphs, if it did, this would be the recommendation on how to structure it.
+This project does not include ops or graphs; if it did, this would be the recommendation on how to structure it.
 
-In these situations, we recommend having a `jobs` folder rather than a `jobs.py` file. Depending on the types of jobs you have, you can create a separate file for each types of jobs.
+We recommend having a `jobs` folder rather than a `jobs.py` file in this situation. Depending on the types of jobs you have, you can create a separate file for each type of job.
 
-The ops and graphs would be defined in the job file with the job definition which utlizes the ops/graph in the file too.
+We recommend defining ops and graphs a job file along with the job definition within a single file. 
 
 ```shell
 ├──project_with_ops
@@ -164,7 +164,6 @@ So far, we've discussed our recommendations for structuring a large project whic
 We recommend setting up a separate test folder structure that mirrors the main project (e.g., having a folder for test assets with any applicable subfolders), which contains the unit tests for each of the components of the data pipeline.
 
 - Each of the components in Dagster such as assets, sensors, and resources can all be tested separately. Refer to the [Testing in Dagster](https://docs.dagster.io/concepts/testing) documentation for more info.
-- For details on [Unit Tests with stubs and mocks](/guides/dagster/transitioning-data-pipelines-from-development-to-production#advanced-unit-tests-with-stubs-and-mocks)
 
 ---
 
