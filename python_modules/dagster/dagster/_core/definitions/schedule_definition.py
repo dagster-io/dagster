@@ -100,7 +100,7 @@ def get_or_create_schedule_context(
     if len(args) + len(kwargs) > 1:
         raise DagsterInvalidInvocationError(
             "Schedule invocation received multiple arguments. Only a first "
-            "positional context parameter should be provided when invoking."
+            "positional context parameter should be provided."
         )
 
     context: Optional[ScheduleEvaluationContext] = None

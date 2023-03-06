@@ -50,8 +50,8 @@ def test_incorrect_cron_schedule_invocation():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Schedule decorated function has context argument, but no context argument was "
-            "provided."
+            "Schedule evaluation function expected context argument, but no context argument was "
+            "provided when invoking."
         ),
     ):
         basic_schedule()  # pylint: disable=no-value-for-parameter
