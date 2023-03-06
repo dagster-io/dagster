@@ -1,3 +1,4 @@
+from typing import List
 import dagster._check as check
 import graphene
 from dagster._core.host_representation.external import ExternalResource
@@ -44,21 +45,33 @@ class GrapheneConfiguredValue(graphene.ObjectType):
             self.value = external_resource_value
 
 
+class GrapheneNestedResourceEntry(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    resourceKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "NestedResourceEntry"
+
+
 class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configFields = graphene.Field(
         non_null_list(GrapheneConfigTypeField),
-        description="Snapshots of all the fields for the given Resource",
+        description="Snapshots of all the fields for the given resource",
     )
     configuredValues = graphene.Field(
         non_null_list(GrapheneConfiguredValue),
         description=(
             "List of K/V pairs of user-configured values for each of the top-level fields on the"
-            " Resource"
+            " resource"
         ),
     )
     isTopLevel = graphene.NonNull(graphene.Boolean)
+    nestedResources = graphene.Field(
+        non_null_list(GrapheneNestedResourceEntry),
+        description="List of nested resources for the given resource",
+    )
 
     class Meta:
         name = "ResourceDetails"
@@ -75,6 +88,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
 
         self._config_schema_snap = external_resource.config_schema_snap
         self.isTopLevel = external_resource.is_top_level
+        self._nested_resources = external_resource.nested_resources
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -89,6 +103,12 @@ class GrapheneResourceDetails(graphene.ObjectType):
         return [
             GrapheneConfiguredValue(key=key, external_resource_value=value)
             for key, value in self._configured_values.items()
+        ]
+
+    def resolve_nestedResources(self, _graphene_info) -> List[GrapheneNestedResourceEntry]:
+        return [
+            GrapheneNestedResourceEntry(name=k, resourceKey=v)
+            for k, v in self._nested_resources.items()
         ]
 
 

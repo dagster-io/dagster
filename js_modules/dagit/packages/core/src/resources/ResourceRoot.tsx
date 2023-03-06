@@ -9,12 +9,13 @@ import {
   Page,
   PageHeader,
   SplitPanelContainer,
+  Subheading,
   Table,
   Tag,
   Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -26,6 +27,7 @@ import {SidebarSection} from '../pipelines/SidebarComponents';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ResourceRootQuery, ResourceRootQueryVariables} from './types/ResourceRoot.types';
 
@@ -106,65 +108,117 @@ export const ResourceRoot: React.FC<Props> = (props) => {
               {value: cv.value, type: cv.type},
             ]),
           );
+          const nestedResources = Object.fromEntries(
+            topLevelResourceDetailsOrError.nestedResources.map((nr) => [nr.name, nr.resourceKey]),
+          );
 
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
                 identifier="explorer"
-                firstInitialPercent={70}
+                firstInitialPercent={50}
                 firstMinSize={400}
                 first={
                   <div style={{overflowY: 'scroll'}}>
-                    <Table $monospaceFont={false}>
-                      <thead>
-                        <tr>
-                          <th style={{width: 120}}>Key</th>
-                          <th style={{width: 90}}>Type</th>
-                          <th style={{width: 90}}>Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {topLevelResourceDetailsOrError.configFields.map((field) => {
-                          const defaultValue = field.defaultValueAsJson;
-                          const type =
-                            field.name in configuredValues
-                              ? configuredValues[field.name].type
-                              : null;
-                          const actualValue =
-                            field.name in configuredValues
-                              ? configuredValues[field.name].value
-                              : defaultValue;
-
-                          const isDefault = type === 'VALUE' && defaultValue === actualValue;
-
-                          return (
-                            <tr key={field.name}>
-                              <td>
-                                <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                                  <strong>{field.name}</strong>
-                                  <div style={{fontSize: 12, color: Colors.Gray700}}>
-                                    {field.description}
-                                  </div>
-                                </Box>
-                              </td>
-                              <td>{remapName(field.configTypeKey)}</td>
-                              <td>
-                                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                                  <Tooltip
-                                    content={<>Default: {defaultValue}</>}
-                                    canShow={!isDefault}
-                                  >
-                                    {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
-                                  </Tooltip>
-                                  {isDefault && <Tag>Default</Tag>}
-                                  {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
-                                </Box>
-                              </td>
+                    {Object.keys(nestedResources).length > 0 && (
+                      <Box>
+                        <SectionHeader>
+                          <Subheading>Resource Dependencies</Subheading>
+                        </SectionHeader>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <th style={{width: 120}}>Key</th>
+                              <th style={{width: 180}}>Resource</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </Table>
+                          </thead>
+                          <tbody>
+                            {Object.keys(nestedResources).map((key) => {
+                              return (
+                                <tr key={key}>
+                                  <td>
+                                    <Box
+                                      flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}
+                                    >
+                                      <strong>{key}</strong>
+                                    </Box>
+                                  </td>
+                                  <td colSpan={2}>
+                                    <Tag icon="resource">
+                                      {' '}
+                                      <Link
+                                        to={workspacePathFromAddress(
+                                          repoAddress,
+                                          `/resources/${nestedResources[key]}`,
+                                        )}
+                                      >
+                                        {nestedResources[key]}
+                                      </Link>
+                                    </Tag>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </Table>
+                      </Box>
+                    )}
+                    <Box>
+                      <SectionHeader>
+                        <Subheading>Configuration</Subheading>
+                      </SectionHeader>
+                      <Table>
+                        <thead>
+                          <tr>
+                            <th style={{width: 120}}>Key</th>
+                            <th style={{width: 90}}>Type</th>
+                            <th style={{width: 90}}>Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {topLevelResourceDetailsOrError.configFields.map((field) => {
+                            const defaultValue = field.defaultValueAsJson;
+                            const type =
+                              field.name in configuredValues
+                                ? configuredValues[field.name].type
+                                : null;
+                            const actualValue =
+                              field.name in configuredValues
+                                ? configuredValues[field.name].value
+                                : defaultValue;
+
+                            const isDefault = type === 'VALUE' && defaultValue === actualValue;
+                            return (
+                              <tr key={field.name}>
+                                <td>
+                                  <Box
+                                    flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}
+                                  >
+                                    <strong>{field.name}</strong>
+                                    <div style={{fontSize: 12, color: Colors.Gray700}}>
+                                      {field.description}
+                                    </div>
+                                  </Box>
+                                </td>
+                                <td>{remapName(field.configTypeKey)}</td>
+                                <td>
+                                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                    <Tooltip
+                                      content={<>Default: {defaultValue}</>}
+                                      canShow={!isDefault}
+                                    >
+                                      {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
+                                    </Tooltip>
+                                    {isDefault && <Tag>Default</Tag>}
+                                    {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
+                                  </Box>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </Table>
+                    </Box>
                   </div>
                 }
                 second={
@@ -238,9 +292,29 @@ const RESOURCE_ROOT_QUERY = gql`
           value
           type
         }
+        nestedResources {
+          name
+          resourceKey
+        }
       }
       ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const SECTION_HEADER_HEIGHT = 48;
+const SectionHeader = styled.div`
+  background-color: ${Colors.Gray50};
+  border: 0;
+  box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  margin: 0;
+  height: ${SECTION_HEADER_HEIGHT}px;
+  line-height: ${SECTION_HEADER_HEIGHT}px;
+  text-align: left;
+  padding-left: 24px;
+  font-weight: bold;
 `;

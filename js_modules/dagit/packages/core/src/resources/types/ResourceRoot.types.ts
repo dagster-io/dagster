@@ -37,6 +37,11 @@ export type ResourceRootQuery = {
           value: string;
           type: Types.ConfiguredValueType;
         }>;
+        nestedResources: Array<{
+          __typename: 'NestedResourceEntry';
+          name: string;
+          resourceKey: string;
+        }>;
       }
     | {__typename: 'ResourceNotFoundError'};
 };
