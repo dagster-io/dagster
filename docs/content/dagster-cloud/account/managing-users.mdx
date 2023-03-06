@@ -505,24 +505,55 @@ width={897}
 height={178}
 />
 
-**Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
+For Dagster Cloud Enterprise users, default user roles can be overriden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
+
+When defining user roles at the deployment level, keep the following in mind:
+
+- **Changing the user role for the deployment also removes any overrides that have been set at the code location level**. For example, if a user was a deployment **Editor** and is then changed to a **Viewer**, they'll become a **Viewer** for all code locations in the deployment.
+- **Having access to a deployment doesn't automatically grant access to Branch Deployments**. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
 
 #### Code location permissions
 
 <Note>Code location permissions are a Dagster Cloud Enterprise feature.</Note>
 
-Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. **Note**: Code location permissions are disabled for **Organization Admins** and **Admins** at the deployment level, as these user roles are the most permissive.
+Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. Overrides can only be performed if:
 
-- Disabled for: Org admins, and admins and editors at the deployment level.
+- The user is not **Organization Admin**, and
+- The current user role is a **Viewer** or **Launcher** deployment level
 
-- Also disabled for No Access at the deployment level
+Generally, overrides only apply if the override is more permissive than the deployment-level user role. For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
 
-  - If a user has a less permissive role at the deployment level, only a more permissive grant is allowed at the code location level
-  - If a user is granted a more permissive role at the deployment level, all code locations will use the new grant by default
+<Image
+alt="Overriding the Viewer user role for a code location"
+src="/images/dagster-cloud/user-token-management/code-location-override.png"
+width={538}
+height={368}
+/>
 
-- Removing overrides
+If a user is an **Organization Admin** or a deployment-level **Admin** or **Editor**, they already have the most permissive user role possible for the code location. In this case, an override is unnecessary and the **Edit user role** button next to the code location will be greyed out:
+
+<Image
+alt="Override for a code location not allowed"
+src="/images/dagster-cloud/user-token-management/not-allowed-code-location-override.png"
+width={1035}
+height={466}
+/>
+
+To remove overrides:
+
+- **For all code locations in a deployment**, change the user's role at the deployment level. When saved, the new user role will be applied to all code locations in the deployment.
+- **For a single code location**, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
+
+  <Image
+  alt="Removing the override for a code location"
+  src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
+  width={536}
+  height={383}
+  />
 
 #### Branch deployment permissions
+
+<TODO></TODO>
 
 ---
 
