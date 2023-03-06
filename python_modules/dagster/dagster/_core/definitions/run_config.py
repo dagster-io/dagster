@@ -19,7 +19,6 @@ from typing_extensions import TypeAlias
 from dagster._annotations import experimental
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
-    Array,
     ConfigType,
     Field,
     Permissive,
@@ -356,8 +355,6 @@ def get_outputs_field(
     solid: Node,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-    # if any outputs have configurable output managers, use those for the schema and ignore all type
-    # materializers
     output_manager_fields = {}
     for name, output_def in solid.definition.output_dict.items():
         output_manager_output_field = get_output_manager_output_field(
@@ -366,20 +363,7 @@ def get_outputs_field(
         if output_manager_output_field:
             output_manager_fields[name] = output_manager_output_field
 
-    if output_manager_fields:
-        return Field(Shape(output_manager_fields))
-
-    # otherwise, use any type materializers for the schema
-    type_materializer_fields = {}
-    for name, output_def in solid.definition.output_dict.items():
-        type_output_field = get_type_output_field(output_def)
-        if type_output_field:
-            type_materializer_fields[name] = type_output_field
-
-    if type_materializer_fields:
-        return Field(Array(Shape(type_materializer_fields)), is_required=False)
-
-    return None
+    return Field(Shape(output_manager_fields)) if output_manager_fields else None
 
 
 def get_output_manager_output_field(
@@ -404,13 +388,6 @@ def get_output_manager_output_field(
         and output_manager_def.output_config_schema
     ):
         return output_manager_def.output_config_schema.as_field()
-
-    return None
-
-
-def get_type_output_field(output_def: OutputDefinition) -> Optional[Field]:
-    if output_def.dagster_type.materializer:
-        return Field(output_def.dagster_type.materializer.schema_type, is_required=False)
 
     return None
 
@@ -638,8 +615,6 @@ def _gather_all_schemas(node_defs: Sequence[NodeDefinition]) -> Iterator[ConfigT
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
             yield from dagster_type.loader.schema_type.type_iterator()
-        if dagster_type.materializer:
-            yield from dagster_type.materializer.schema_type.type_iterator()
 
 
 def _gather_all_config_types(

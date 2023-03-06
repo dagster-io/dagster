@@ -207,8 +207,8 @@ class Field:
 
     Config fields are parsed according to their schemas in order to yield values available at
     job execution time through the config system. Config fields can be set on ops, on
-    loaders and materializers for custom, and on other pluggable components of the system, such as
-    resources, loggers, and executors.
+    loaders for custom, and on other pluggable components of the system, such as resources, loggers,
+    and executors.
 
 
     Args:

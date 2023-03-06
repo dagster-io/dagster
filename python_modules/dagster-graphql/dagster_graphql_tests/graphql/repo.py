@@ -55,7 +55,6 @@ from dagster import (
     asset,
     asset_sensor,
     dagster_type_loader,
-    dagster_type_materializer,
     daily_partitioned_config,
     define_asset_job,
     freshness_policy_sensor,
@@ -121,21 +120,10 @@ def df_input_schema(_context, path):
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@dagster_type_materializer(String)
-def df_output_schema(_context, path, value):
-    with open(path, "w", encoding="utf8") as fd:
-        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
-        writer.writeheader()
-        writer.writerows(rowdicts=value)
-
-    return AssetMaterialization.file(path)
-
-
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name="PoorMansDataFrame",
     loader=df_input_schema,
-    materializer=df_output_schema,
 )
 
 
