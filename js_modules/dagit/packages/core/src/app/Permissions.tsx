@@ -99,9 +99,6 @@ type PermissionsContextType = {
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
   rawUnscopedData: PermissionFragment[];
-
-  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data?: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -163,9 +160,6 @@ export const usePermissionsForLocation = (locationName: string | null | undefine
   }
   return {...permissionsForLocation, loading};
 };
-
-// todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
-export const usePermissionsDEPRECATED = useUnscopedPermissions;
 
 export const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {
