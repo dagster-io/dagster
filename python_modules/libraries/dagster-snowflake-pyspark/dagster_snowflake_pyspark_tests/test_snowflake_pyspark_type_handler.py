@@ -31,7 +31,7 @@ from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import LongType, StringType, StructField, StructType
 
@@ -53,10 +53,6 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "warehouse": "BUILDKITE",
 }
 
-SNOWFLAKE_JARS = (
-    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-)
-
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
@@ -72,14 +68,9 @@ def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -
             conn.cursor().execute(f"drop table {schema_name}.{table_name}")
 
 
-def test_handle_output():
+def test_handle_output(spark):
     with patch("pyspark.sql.DataFrame.write") as mock_write:
         handler = SnowflakePySparkTypeHandler()
-
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=SNOWFLAKE_JARS,
-        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -108,12 +99,8 @@ def test_handle_output():
         assert len(mock_write.method_calls) == 1
 
 
-def test_load_input():
+def test_load_input(spark):
     with patch("pyspark.sql.DataFrameReader.load") as mock_read:
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=SNOWFLAKE_JARS,
-        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -144,7 +131,7 @@ def test_build_snowflake_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_io_manager_with_snowflake_pyspark():
+def test_io_manager_with_snowflake_pyspark(spark):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -161,10 +148,6 @@ def test_io_manager_with_snowflake_pyspark():
             },
         )
         def emit_pyspark_df(_):
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
             columns = ["foo", "quux"]
             data = [("bar", 1), ("baz", 2)]
             df = spark.createDataFrame(data).toDF(*columns)
@@ -190,7 +173,7 @@ def test_io_manager_with_snowflake_pyspark():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_time_window_partitioned_asset():
+def test_time_window_partitioned_asset(spark):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -208,11 +191,6 @@ def test_time_window_partitioned_asset():
         def daily_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -293,7 +271,7 @@ def test_time_window_partitioned_asset():
 
 
 # @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_static_partitioned_asset():
+def test_static_partitioned_asset(spark):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -311,11 +289,6 @@ def test_static_partitioned_asset():
         def static_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -389,7 +362,7 @@ def test_static_partitioned_asset():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_multi_partitioned_asset():
+def test_multi_partitioned_asset(spark):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -412,11 +385,6 @@ def test_multi_partitioned_asset():
         def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -508,8 +476,8 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_dynamic_partitions():
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_dynamic_partitions(spark):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -527,11 +495,6 @@ def test_dynamic_partitions():
         def dynamic_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
