@@ -524,6 +524,7 @@ def parse_asset_selection(
     assets_defs: Sequence["AssetsDefinition"],
     source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
+    raise_on_clause_has_no_matches: bool = True,
 ) -> AbstractSet[AssetKey]:
     """Find assets that match the given selection query.
 
@@ -548,7 +549,7 @@ def parse_asset_selection(
     # loop over clauses
     for clause in asset_selection:
         subset = clause_to_subset(graph, clause, AssetKey.from_user_string)
-        if len(subset) == 0:
+        if len(subset) == 0 and raise_on_clause_has_no_matches:
             raise DagsterInvalidSubsetError(
                 f"No qualified assets to execute found for clause='{clause}'"
             )
