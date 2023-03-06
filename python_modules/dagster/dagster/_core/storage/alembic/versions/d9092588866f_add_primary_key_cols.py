@@ -19,9 +19,8 @@ depends_on = None
 
 def _create_primary_key(tablename):
     if op.get_context().dialect.name == "sqlite":
-        # we have to use the batch_alter_table context manager to add a primary key to an existing,
-        # which requires a new table creation with the correct schema and then copying all the data
-        # over to the new table
+        # use the batch_alter_table context manager to add a primary key to an existing table.
+        # this creates a new table with the final schema and copies all the data over.
         with op.batch_alter_table(tablename, recreate="always") as batch_op:
             batch_op.add_column(
                 db.Column(
@@ -34,14 +33,14 @@ def _create_primary_key(tablename):
     elif op.get_context().dialect.name == "mysql":
         primary_key = get_primary_key(tablename)
         if primary_key and primary_key.get("constrained_columns") == ["my_row_id"]:
-            # Some instances of mysql might have invisible primary key generation turned on, in
-            # which case we should convert the existing column.
+            # Some mysql instances might have invisible primary key generation turned on, so just
+            # rename the existing column.
             # See https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html
             op.execute(f"ALTER TABLE {tablename} ALTER COLUMN my_row_id SET VISIBLE")
             op.execute(f"ALTER TABLE {tablename} RENAME COLUMN my_row_id TO id")
         else:
-            # alembic mysql dialect disallows adding primary keys to existing tables, so we need to
-            # run it manually
+            # alembic mysql dialect prevents adding primary keys to existing tables, so run it
+            # manually
             op.execute(f"ALTER TABLE {tablename} ADD COLUMN id BIGINT PRIMARY KEY AUTO_INCREMENT")
     else:
         op.add_column(
