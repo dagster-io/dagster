@@ -368,7 +368,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
-  staleStatusCauses: [],
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
@@ -429,7 +429,7 @@ export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
-  staleStatusCauses: [],
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
