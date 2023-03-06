@@ -4,6 +4,7 @@ from typing import cast
 import pendulum.parser
 import pytest
 from dagster import (
+    DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
@@ -778,3 +779,13 @@ def test_get_first_partition_window():
     ) == time_window(
         "2023-01-01", "2023-02-01"
     )
+
+
+def test_invalid_cron_schedule():
+    # creating a new partition definition with an invalid cron schedule should raise an error
+    with pytest.raises(DagsterInvalidDefinitionError):
+        TimeWindowPartitionsDefinition(
+            start=pendulum.parse("2021-05-05"),
+            cron_schedule="0 -24 * * *",
+            fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+        )
