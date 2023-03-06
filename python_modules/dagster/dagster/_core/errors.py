@@ -305,14 +305,6 @@ class DagsterTypeLoadingError(DagsterUserCodeExecutionError):
     """
 
 
-class DagsterTypeMaterializationError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of an output
-    materialization function defined in a :py:class:`~dagster.DagsterTypeMaterializer` during
-    materialization of a custom type.
-    """
-
-
 class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method

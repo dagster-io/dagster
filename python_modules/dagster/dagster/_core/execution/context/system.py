@@ -1053,16 +1053,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
-        return DagsterTypeMaterializerContext(
-            plan_data=self.plan_data,
-            execution_data=self._execution_data,
-            log_manager=self._log_manager,
-            step=self.step,
-            output_capture=self._output_capture,
-            known_state=self._known_state,
-        )
-
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
         return DagsterTypeLoaderContext(
             plan_data=self.plan_data,
@@ -1108,32 +1098,6 @@ class TypeCheckContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._log
-
-
-class DagsterTypeMaterializerContext(StepExecutionContext):
-    """The context object provided to a :py:class:`@dagster_type_materializer <dagster_type_materializer>`-decorated function during execution.
-
-    Users should not construct this object directly.
-    """
-
-    @public
-    @property
-    def resources(self) -> "Resources":
-        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
-        """
-        return super(DagsterTypeMaterializerContext, self).resources
-
-    @public
-    @property
-    def job_def(self) -> "JobDefinition":
-        """The underlying job definition being executed."""
-        return super(DagsterTypeMaterializerContext, self).job_def
-
-    @public
-    @property
-    def op_def(self) -> "OpDefinition":
-        """The op for which type materialization is occurring."""
-        return super(DagsterTypeMaterializerContext, self).op_def
 
 
 class DagsterTypeLoaderContext(StepExecutionContext):
