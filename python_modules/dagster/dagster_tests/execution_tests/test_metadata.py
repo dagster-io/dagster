@@ -32,6 +32,10 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import execute_pipeline, pipeline
+from dagster._serdes.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 from dagster._utils import frozendict
 
 
@@ -358,6 +362,16 @@ def test_table_schema_from_name_type_dict():
             TableColumn(name="bar", type="string"),
         ],
     )
+
+
+def test_table_serialization():
+    entry = MetadataValue.table(
+        records=[
+            TableRecord(dict(foo=1, bar=2)),
+        ],
+    )
+    serialized = serialize_dagster_namedtuple(entry)
+    assert deserialize_json_to_dagster_namedtuple(serialized) == entry
 
 
 def test_bool_metadata_value():
