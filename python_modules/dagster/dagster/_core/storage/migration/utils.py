@@ -27,24 +27,15 @@ def has_column(table_name, column_name):
     return column_name in columns
 
 
-def has_primary_key(table_name):
-    if not has_table(table_name):
-        return False
-    inspector = get_inspector()
-
-    # sqlite auto creates primary keys for all tables
-    if inspector.engine.dialect.name == "sqlite":
-        return True
-
-    constraint = inspector.get_pk_constraint(table_name)
-    return constraint and len(constraint.get("constrained_columns")) > 0
-
-
 def has_index(table_name, index_name):
     if not has_table(table_name):
         return False
     indexes = [x.get("name") for x in get_inspector().get_indexes(table_name)]
     return index_name in indexes
+
+
+def get_primary_key(table_name):
+    return get_inspector().get_pk_constraint(table_name)
 
 
 _UPGRADING_INSTANCE = None

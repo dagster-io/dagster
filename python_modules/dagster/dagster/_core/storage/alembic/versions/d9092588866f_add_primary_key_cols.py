@@ -7,7 +7,7 @@ Create Date: 2023-03-03 14:20:07.082211
 """
 import sqlalchemy as db
 from alembic import op
-from dagster._core.storage.migration.utils import has_column, has_primary_key, has_table
+from dagster._core.storage.migration.utils import get_primary_key, has_column, has_table
 from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
@@ -17,67 +17,53 @@ branch_labels = None
 depends_on = None
 
 
-def _should_create_primary_key(tablename):
-    dialect = op.get_context().dialect.name
-
-    if dialect == "sqlite":
-        # Sqlite autogenerates primary keys using the rowid column, so we should skip primary key
-        # generation for sqlite
-        return False
-
-    if dialect == "mysql":
-        # Also, some instances of mysql might have invisible primary key generation turned on, which is
-        # hard to detect. in an abundance of caution, we should not attempt to create a primary key
-        # here and allow dbadmins to convert the unique id column to a primary key if they want to.
-        # See https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html
-        return False
-
-    # If the table already has a primary key, we should not create a new one
-    return not has_primary_key(tablename)
+def _create_primary_key(tablename):
+    if op.get_context().dialect.name == "sqlite":
+        # we have to use the batch_alter_table context manager to add a primary key to an existing,
+        # which requires a new table creation with the correct schema and then copying all the data
+        # over to the new table
+        with op.batch_alter_table(tablename, recreate="always") as batch_op:
+            batch_op.add_column(
+                db.Column(
+                    "id",
+                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+                    primary_key=True,
+                    autoincrement=True,
+                )
+            )
+    elif op.get_context().dialect.name == "mysql":
+        primary_key = get_primary_key(tablename)
+        if primary_key and primary_key.get("constrained_columns") == ["my_row_id"]:
+            # Some instances of mysql might have invisible primary key generation turned on, in
+            # which case we should convert the existing column.
+            # See https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html
+            op.execute(f"ALTER TABLE {tablename} ALTER COLUMN my_row_id SET VISIBLE")
+            op.execute(f"ALTER TABLE {tablename} RENAME COLUMN my_row_id TO id")
+        else:
+            # alembic mysql dialect disallows adding primary keys to existing tables, so we need to
+            # run it manually
+            op.execute(f"ALTER TABLE {tablename} ADD COLUMN id BIGINT PRIMARY KEY AUTO_INCREMENT")
+    else:
+        op.add_column(
+            tablename,
+            db.Column(
+                "id",
+                db.BigInteger(),
+                primary_key=True,
+                autoincrement=True,
+            ),
+        )
 
 
 def upgrade():
     if has_table("kvs") and not has_column("kvs", "id"):
-        with op.batch_alter_table("kvs") as batch_op:
-            batch_op.add_column(
-                db.Column(
-                    "id",
-                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                    autoincrement=True,
-                ),
-            )
-            if _should_create_primary_key("kvs"):
-                batch_op.create_primary_key("kvs_pkey", ["id"])
-            else:
-                batch_op.create_unique_constraint("kvs_id_unique", ["id"])
+        _create_primary_key("kvs")
 
-    if has_table("instance_info") and not has_column("kvs", "id"):
-        with op.batch_alter_table("instance_info") as batch_op:
-            batch_op.add_column(
-                db.Column(
-                    "id",
-                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                    autoincrement=True,
-                ),
-            )
-            if _should_create_primary_key("instance_info"):
-                batch_op.create_primary_key("instance_info_pkey", ["id"])
-            else:
-                batch_op.create_unique_constraint("instance_info_id_unique", ["id"])
+    if has_table("instance_info") and not has_column("instance_info", "id"):
+        _create_primary_key("instance_info")
 
     if has_table("daemon_heartbeats") and not has_column("daemon_heartbeats", "id"):
-        with op.batch_alter_table("daemon_heartbeats") as batch_op:
-            batch_op.add_column(
-                db.Column(
-                    "id",
-                    db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
-                    autoincrement=True,
-                ),
-            )
-            if _should_create_primary_key("daemon_heartbeats"):
-                batch_op.create_primary_key("daemon_heartbeats_pkey", ["id"])
-            else:
-                batch_op.create_unique_constraint("daemon_heartbeats_id_unique", ["id"])
+        _create_primary_key("daemon_heartbeats")
 
 
 def downgrade():
