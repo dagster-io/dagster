@@ -66,6 +66,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
           id: 'test.py.repo.["good_asset"]',
           computeKind: 'duckdb',
           opNames: ['good_asset'],
+          hasMaterializePermission: true,
           repository: {
             id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
             __typename: 'Repository',
@@ -154,6 +155,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           id: 'test.py.repo.["late_asset"]',
           computeKind: null,
           opNames: ['late_asset'],
+          hasMaterializePermission: true,
           repository: {
             id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
             __typename: 'Repository',
@@ -243,6 +245,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           id: 'test.py.repo.["run_failing_asset"]',
           computeKind: 'snowflake',
           opNames: ['run_failing_asset'],
+          hasMaterializePermission: true,
           repository: {
             id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
             __typename: 'Repository',
@@ -352,6 +355,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               groupName: 'GROUP2',
               isSource: false,
               partitionDefinition: null,
+              hasMaterializePermission: true,
               description:
                 'This is a super long description that could involve some level of SQL and is just generally very long',
               repository: {
@@ -380,6 +384,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               isSource: false,
               partitionDefinition: null,
               description: null,
+              hasMaterializePermission: true,
               repository: {
                 id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
                 name: 'repo',
@@ -406,6 +411,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               isSource: false,
               partitionDefinition: null,
               description: null,
+              hasMaterializePermission: true,
               repository: {
                 id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
                 name: 'repo',
@@ -432,6 +438,7 @@ export const AssetCatalogTableMock: MockedResponse<AssetCatalogTableQuery> = {
               isSource: false,
               partitionDefinition: null,
               description: null,
+              hasMaterializePermission: true,
               repository: {
                 id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
                 name: 'repo',

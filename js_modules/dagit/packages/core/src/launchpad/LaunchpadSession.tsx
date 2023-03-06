@@ -26,6 +26,7 @@ import {
   PipelineRunTag,
   SessionBase,
 } from '../app/ExecutionSessionStorage';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -174,6 +175,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
 
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditor | null>(null);
@@ -727,6 +730,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         <LaunchRootExecutionButton
           title={launchButtonTitle}
           warning={launchButtonWarning}
+          hasLaunchPermission={canLaunchPipelineExecution.enabled}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}

@@ -84,7 +84,7 @@ describe('LaunchAssetExecutionButton', () => {
     expect(await screen.queryByTestId('ranges-as-tags-checkbox')).toBeNull();
 
     const launchButton = await screen.findByTestId('launch-button');
-    expect(launchButton.textContent).toEqual('Launch Backfill');
+    expect(launchButton.textContent).toEqual('Launch backfill');
     await launchButton.click();
 
     // expect that it triggers the mutation (variables checked by mock matching)

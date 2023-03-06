@@ -32,7 +32,11 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
         content={
           <Menu>
             <Tooltip
-              content="Shift+click to add configuration"
+              content={
+                !canLaunchPipelineExecution.enabled
+                  ? 'You do not have permission to materialize assets'
+                  : 'Shift+click to add configuration'
+              }
               placement="left"
               display="block"
               useDisabledButtonTooltipFix
@@ -40,7 +44,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
               <MenuItem
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
-                disabled={!canLaunchPipelineExecution || loading}
+                disabled={!canLaunchPipelineExecution.enabled || loading}
                 onClick={(e) => onClick([asset.key], e)}
               />
             </Tooltip>

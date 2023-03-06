@@ -512,6 +512,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
+    hasMaterializePermission
     jobNames
     opNames
     opVersion
