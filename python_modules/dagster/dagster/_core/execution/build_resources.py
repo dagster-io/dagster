@@ -45,7 +45,6 @@ def build_resources(
     resource_config: Optional[Mapping[str, Any]] = None,
     dagster_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
-    pipeline_run: Optional[DagsterRun] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -83,7 +82,6 @@ def build_resources(
                 assert resources.from_val == "bar"
 
     """
-    dagster_run = dagster_run or pipeline_run
     resources = check.mapping_param(resources, "resource_defs", key_type=str)
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
