@@ -613,6 +613,7 @@ export type DagitQuery = {
   pipelineSnapshotOrError: PipelineSnapshotOrError;
   repositoriesOrError: RepositoriesOrError;
   repositoryOrError: RepositoryOrError;
+  resourceDetailsOrError: ResourceDetailsOrError;
   runConfigSchemaOrError: RunConfigSchemaOrError;
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
@@ -627,7 +628,6 @@ export type DagitQuery = {
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
   test: Maybe<TestFields>;
-  topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String'];
@@ -750,6 +750,10 @@ export type DagitQueryRepositoryOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
+export type DagitQueryResourceDetailsOrErrorArgs = {
+  resourceSelector: ResourceSelector;
+};
+
 export type DagitQueryRunConfigSchemaOrErrorArgs = {
   mode?: InputMaybe<Scalars['String']>;
   selector: PipelineSelector;
@@ -795,10 +799,6 @@ export type DagitQuerySensorOrErrorArgs = {
 
 export type DagitQuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
-};
-
-export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
-  resourceSelector: ResourceSelector;
 };
 
 export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
@@ -2844,6 +2844,7 @@ export type ResourceDetails = {
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
+  isTopLevel: Scalars['Boolean'];
   name: Scalars['String'];
 };
 

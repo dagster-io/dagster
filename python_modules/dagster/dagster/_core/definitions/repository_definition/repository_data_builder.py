@@ -93,6 +93,8 @@ def build_caching_repository_data_from_list(
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    ui_visible_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -315,6 +317,8 @@ def build_caching_repository_data_from_list(
         assets_defs_by_key=assets_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
+        ui_visible_resources=ui_visible_resources or {},
+        resource_key_mapping=resource_key_mapping or {},
     )
 
 
@@ -384,6 +388,8 @@ def build_caching_repository_data_from_dict(
         assets_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
+        ui_visible_resources={},
+        resource_key_mapping={},
     )
 
 

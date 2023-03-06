@@ -577,6 +577,14 @@ class ExternalResource:
     def config_schema_snap(self) -> ConfigSchemaSnapshot:
         return self._external_resource_data.config_schema_snap
 
+    @property
+    def nested_resources(self) -> Dict[str, str]:
+        return self._external_resource_data.nested_resources
+
+    @property
+    def is_top_level(self) -> bool:
+        return self._external_resource_data.is_top_level
+
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):

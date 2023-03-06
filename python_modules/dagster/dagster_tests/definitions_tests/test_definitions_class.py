@@ -24,6 +24,7 @@ from dagster import (
     with_resources,
 )
 from dagster._check import CheckError
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -158,6 +159,24 @@ def test_with_resource_binding():
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
+
+
+def test_nested_resources() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner)},
+    )
+    repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_ui_resources()) == 2
+    assert "foo" in repo.get_top_level_resources()
+    assert f"_nested_{id(inner)}" in repo.get_top_level_resources()
 
 
 def test_resource_coercion():

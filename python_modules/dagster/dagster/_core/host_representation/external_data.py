@@ -32,6 +32,7 @@ from dagster._config.snap import (
     ConfigSchemaSnapshot,
     snap_from_config_type,
 )
+from dagster._config.structured_config import ConfigurableResource, ResourceWithKeyMapping
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
@@ -909,6 +910,8 @@ class ExternalResourceData(
             ("configured_values", Dict[str, ExternalResourceValue]),
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
+            ("nested_resources", Dict[str, str]),
+            ("is_top_level", bool),
         ],
     )
 ):
@@ -924,6 +927,8 @@ class ExternalResourceData(
         configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
+        nested_resources: Mapping[str, str],
+        is_top_level: bool = True,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -945,6 +950,10 @@ class ExternalResourceData(
             config_schema_snap=check.inst_param(
                 config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot
             ),
+            nested_resources=dict(
+                check.opt_mapping_param(nested_resources, "nested_resources", key_type=str)
+            ),
+            is_top_level=check.bool_param(is_top_level, "is_top_level"),
         )
 
 
@@ -1078,7 +1087,7 @@ def external_repository_data_from_def(
         )
         job_refs = None
 
-    resource_datas = repository_def.get_top_level_resources()
+    resource_datas = repository_def.get_ui_resources()
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1104,7 +1113,12 @@ def external_repository_data_from_def(
         external_job_refs=job_refs,
         external_resource_data=sorted(
             [
-                external_resource_data_from_def(res_name, res_data)
+                external_resource_data_from_def(
+                    res_name,
+                    res_data,
+                    not res_name.startswith("_nested"),
+                    repository_def.get_resource_key_mapping(),
+                )
                 for res_name, res_data in resource_datas.items()
             ],
             key=lambda rd: rd.name,
@@ -1335,8 +1349,27 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
     return json.dumps(v)
 
 
+def _get_nested_resources(
+    resource_def: ResourceDefinition, resource_key_mapping: Mapping[int, str]
+) -> Mapping[str, str]:
+    if isinstance(resource_def, ResourceWithKeyMapping):
+        resource_def = resource_def.wrapped_resource
+
+    return (
+        {
+            k: resource_key_mapping[id(nested_resource)]
+            for k, nested_resource in resource_def.nested_resources.items()
+        }
+        if isinstance(resource_def, ConfigurableResource)
+        else {}
+    )
+
+
 def external_resource_data_from_def(
-    name: str, resource_def: ResourceDefinition
+    name: str,
+    resource_def: ResourceDefinition,
+    is_top_level: bool,
+    resource_key_mapping: Mapping[int, str],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1367,12 +1400,15 @@ def external_resource_data_from_def(
         k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
     }
 
+    nested_resources = _get_nested_resources(resource_def, resource_key_mapping)
     return ExternalResourceData(
         name=name,
         resource_snapshot=build_resource_def_snap(name, resource_def),
         configured_values=configured_values,
         config_field_snaps=unconfigured_config_type_snap.fields or [],
         config_schema_snap=config_type.get_schema_snapshot(),
+        nested_resources=nested_resources,
+        is_top_level=is_top_level,
     )
 
 

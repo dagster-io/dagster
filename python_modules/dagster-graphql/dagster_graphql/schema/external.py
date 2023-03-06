@@ -354,6 +354,7 @@ class GrapheneRepository(graphene.ObjectType):
             for resource in sorted(
                 self._repository.get_external_resources(), key=lambda resource: resource.name
             )
+            if resource.is_top_level
         ]
 
 

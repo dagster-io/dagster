@@ -58,6 +58,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
             " Resource"
         ),
     )
+    isTopLevel = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "ResourceDetails"
@@ -73,6 +74,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._configured_values = external_resource.configured_values
 
         self._config_schema_snap = external_resource.config_schema_snap
+        self.isTopLevel = external_resource.is_top_level
 
     def resolve_configFields(self, _graphene_info):
         return [

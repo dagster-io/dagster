@@ -67,11 +67,11 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     <Page style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader title={<Heading>{resourceName}</Heading>} />
       <Loading queryResult={queryResult} allowStaleData={true}>
-        {({topLevelResourceDetailsOrError}) => {
-          if (topLevelResourceDetailsOrError.__typename !== 'ResourceDetails') {
+        {({resourceDetailsOrError}) => {
+          if (resourceDetailsOrError.__typename !== 'ResourceDetails') {
             let message: string | null = null;
-            if (topLevelResourceDetailsOrError.__typename === 'PythonError') {
-              message = topLevelResourceDetailsOrError.message;
+            if (resourceDetailsOrError.__typename === 'PythonError') {
+              message = resourceDetailsOrError.message;
             }
 
             return (
@@ -101,7 +101,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           }
 
           const configuredValues = Object.fromEntries(
-            topLevelResourceDetailsOrError.configuredValues.map((cv) => [
+            resourceDetailsOrError.configuredValues.map((cv) => [
               cv.key,
               {value: cv.value, type: cv.type},
             ]),
@@ -124,7 +124,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {topLevelResourceDetailsOrError.configFields.map((field) => {
+                        {resourceDetailsOrError.configFields.map((field) => {
                           const defaultValue = field.defaultValueAsJson;
                           const type =
                             field.name in configuredValues
@@ -185,10 +185,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                           </Tag>
                         </Box>
                       </SidebarSection>
-                      {topLevelResourceDetailsOrError.description ? (
+                      {resourceDetailsOrError.description ? (
                         <SidebarSection title="Description">
                           <Box padding={{vertical: 16, horizontal: 24}}>
-                            {topLevelResourceDetailsOrError.description}
+                            {resourceDetailsOrError.description}
                           </Box>
                         </SidebarSection>
                       ) : null}
@@ -222,7 +222,7 @@ export const RightInfoPanelContent = styled.div`
 
 const RESOURCE_ROOT_QUERY = gql`
   query ResourceRootQuery($resourceSelector: ResourceSelector!) {
-    topLevelResourceDetailsOrError(resourceSelector: $resourceSelector) {
+    resourceDetailsOrError(resourceSelector: $resourceSelector) {
       ... on ResourceDetails {
         name
         description

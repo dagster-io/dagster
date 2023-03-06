@@ -71,6 +71,35 @@ def test_repository_snap_definitions_resources_basic():
     assert external_repo_data.external_resource_data[0].configured_values == {}
 
 
+def test_repository_snap_definitions_resources_nested() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner)},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    inner = [
+        data
+        for data in external_repo_data.external_resource_data
+        if data.name == f"_nested_{id(inner)}"
+    ]
+
+    assert foo
+    assert inner
+
+
 def test_repository_snap_definitions_resources_complex():
     class MyStringResource(ConfigurableResource):
         """My description."""

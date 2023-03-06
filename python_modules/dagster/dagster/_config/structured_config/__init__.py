@@ -349,6 +349,10 @@ class ResourceWithKeyMapping(ResourceDefinition):
         )
 
     @property
+    def wrapped_resource(self) -> ResourceDefinition:
+        return self._resource
+
+    @property
     def inner_resource(self):
         return self._resource
 
@@ -429,6 +433,12 @@ class ConfigurableResource(
         )
         self._resolved_config_dict = resolved_config_dict
         self._schema = schema
+
+        self._nested_resources = {k: v for k, v in resource_pointers.items()}
+
+    @property
+    def nested_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._nested_resources
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":

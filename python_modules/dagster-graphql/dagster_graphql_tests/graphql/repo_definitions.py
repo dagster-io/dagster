@@ -24,6 +24,14 @@ class MyResource(ConfigurableResource):
     an_unset_string: str = "defaulted"
 
 
+class MyInnerResource(ConfigurableResource):
+    a_str: str
+
+
+class MyOuterResource(ConfigurableResource):
+    inner: MyInnerResource
+
+
 with environ({"MY_STRING": "bar", "MY_OTHER_STRING": "foo"}):
     defs = Definitions(
         assets=[my_asset],
@@ -35,6 +43,9 @@ with environ({"MY_STRING": "bar", "MY_OTHER_STRING": "foo"}):
             "my_resource_env_vars": MyResource(a_string=EnvVar("MY_STRING")),
             "my_resource_two_env_vars": MyResource(
                 a_string=EnvVar("MY_STRING"), an_unset_string=EnvVar("MY_OTHER_STRING")
+            ),
+            "my_outer_resource": MyOuterResource(
+                inner=MyInnerResource(a_str="wrapped"),
             ),
         },
     )
