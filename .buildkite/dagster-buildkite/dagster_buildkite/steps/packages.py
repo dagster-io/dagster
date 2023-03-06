@@ -335,6 +335,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "daemon_tests",
             "definitions_tests_old_pendulum",
             "general_tests",
+            "general_tests_old_protobuf",
             "scheduler_tests",
             "scheduler_tests_old_pendulum",
             "execution_tests",
