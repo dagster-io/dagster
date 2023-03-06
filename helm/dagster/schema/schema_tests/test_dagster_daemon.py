@@ -227,14 +227,15 @@ def test_run_monitoring_defaults(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert "run_monitoring" not in instance
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_resume_run_attempts"] == 0
 
 
-def test_run_monitoring(
+def test_run_monitoring_disabled(
     instance_template: HelmTemplate,
 ):  # pylint: disable=redefined-outer-name
     helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True})
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": False})
     )
 
     configmaps = instance_template.render(helm_values)
@@ -243,9 +244,7 @@ def test_run_monitoring(
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
-    assert instance["run_monitoring"]["enabled"] is True
-
-    assert "max_resume_run_attempts" not in instance["run_monitoring"]
+    assert "run_monitoring" not in instance
 
 
 def test_run_monitoring_no_max_resume_run_attempts(
