@@ -673,29 +673,14 @@ class DependencyDefinition(
             passed between the two nodes originates.
         output (Optional[str]): The name of the output that is depended on. (default: "result")
         description (Optional[str]): Human-readable description of this dependency.
-        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
-            passed between the two nodes originates.
     """
 
     def __new__(
         cls,
-        node: Optional[str] = None,
+        node: str,
         output: str = DEFAULT_OUTPUT,
         description: Optional[str] = None,
-        solid: Optional[str] = None,
     ):
-        if solid and node:
-            raise DagsterInvalidDefinitionError(
-                "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition."
-                " Please use one or the other."
-            )
-
-        if not solid and not node:
-            raise DagsterInvalidDefinitionError(
-                "Expected node parameter to be str for DependencyDefinition"
-            )
-
-        node = node or solid
         return super(DependencyDefinition, cls).__new__(
             cls,
             check.str_param(node, "node"),
