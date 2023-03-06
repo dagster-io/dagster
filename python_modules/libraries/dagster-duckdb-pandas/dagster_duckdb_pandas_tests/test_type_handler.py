@@ -23,6 +23,10 @@ from dagster._check import CheckError
 from dagster_duckdb import build_configurable_duckdb_io_manager
 from dagster_duckdb_pandas import DuckDBPandasTypeHandler, duckdb_pandas_io_manager
 
+configurable_io_manager = build_configurable_duckdb_io_manager(
+    type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+)
+
 
 @op(out=Out(metadata={"schema": "a_df"}))
 def a_df() -> pd.DataFrame:
@@ -39,9 +43,16 @@ def add_one_to_dataframe():
     add_one(a_df())
 
 
-def test_duckdb_io_manager_with_ops(tmp_path):
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_duckdb_io_manager_with_ops(tmp_path, io_manager):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
+        "io_manager": io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -74,17 +85,15 @@ def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
-def test_duckdb_io_manager_with_assets(tmp_path):
-    io_manager = build_configurable_duckdb_io_manager(
-        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-    )
-
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_duckdb_io_manager_with_assets(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
-    # resource_defs = {
-    #     "io_manager": duckdb_pandas_io_manager.configured(
-    #         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    #     ),
-    # }
 
     # materialize asset twice to ensure that tables get properly deleted
     for _ in range(2):
@@ -107,17 +116,14 @@ def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
-def test_loading_columns(tmp_path):
-    # resource_defs = {
-    #     "io_manager": duckdb_pandas_io_manager.configured(
-    #         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    #     ),
-    # }
-
-    io_manager = build_configurable_duckdb_io_manager(
-        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-    )
-
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_loading_columns(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     # materialize asset twice to ensure that tables get properly deleted
@@ -148,9 +154,16 @@ def not_supported():
     non_supported_type()
 
 
-def test_not_supported_type(tmp_path):
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_not_supported_type(tmp_path, io_manager):
     resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
+        "io_manager": io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
     }
@@ -183,16 +196,14 @@ def daily_partitioned(context) -> pd.DataFrame:
     )
 
 
-def test_time_window_partitioned_asset(tmp_path):
-    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
-    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    # )
-    # resource_defs = {"io_manager": duckdb_io_manager}
-
-    io_manager = build_configurable_duckdb_io_manager(
-        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-    )
-
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_time_window_partitioned_asset(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
@@ -253,16 +264,14 @@ def static_partitioned(context) -> pd.DataFrame:
     )
 
 
-def test_static_partitioned_asset(tmp_path):
-    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
-    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    # )
-    # resource_defs = {"io_manager": duckdb_io_manager}
-
-    io_manager = build_configurable_duckdb_io_manager(
-        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-    )
-
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_static_partitioned_asset(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
@@ -325,16 +334,14 @@ def multi_partitioned(context) -> pd.DataFrame:
     )
 
 
-def test_multi_partitioned_asset(tmp_path):
-    # duckdb_io_manager = duckdb_pandas_io_manager.configured(
-    #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    # )
-    # resource_defs = {"io_manager": duckdb_io_manager}
-
-    io_manager = build_configurable_duckdb_io_manager(
-        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-    )
-
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_multi_partitioned_asset(tmp_path, io_manager):
     resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
 
     materialize(
@@ -406,16 +413,15 @@ def dynamic_partitioned(context) -> pd.DataFrame:
     )
 
 
-def test_dynamic_partition(tmp_path):
+@pytest.mark.parameterize(
+    "io_manager",
+    [
+        duckdb_pandas_io_manager,
+        configurable_io_manager,
+    ],
+)
+def test_dynamic_partition(tmp_path, io_manager):
     with instance_for_test() as instance:
-        # duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        #     {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        # )
-        # resource_defs = {"io_manager": duckdb_io_manager}
-        io_manager = build_configurable_duckdb_io_manager(
-            type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-        )
-
         resource_defs = {
             "io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))
         }
