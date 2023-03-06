@@ -125,9 +125,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPipelineExecution, canLaunchPartitionBackfill} = usePermissionsForLocation(
-    repoAddress.location,
-  );
+  const {
+    permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
@@ -252,7 +253,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       return;
     }
 
-    if (!canLaunchPipelineExecution.enabled) {
+    if (!canLaunchPipelineExecution) {
       // Should never happen, this is essentially an assertion failure
       showCustomAlert({
         title: 'Unable to launch as single run',
@@ -370,9 +371,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   };
 
   const launchButton = () => {
-    if (launchAsBackfill && !canLaunchPartitionBackfill.enabled) {
+    if (launchAsBackfill && !canLaunchPartitionBackfill) {
       return (
-        <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+        <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
           <Button disabled>
             {target.type === 'job'
               ? `Launch ${keysFiltered.length}-run backfill`
@@ -382,9 +383,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       );
     }
 
-    if (!launchAsBackfill && !canLaunchPipelineExecution.enabled) {
+    if (!launchAsBackfill && !canLaunchPipelineExecution) {
       return (
-        <Tooltip content={canLaunchPipelineExecution.disabledReason}>
+        <Tooltip content={disabledReasons.canLaunchPipelineExecution}>
           <Button disabled>Launch 1 run</Button>
         </Tooltip>
       );

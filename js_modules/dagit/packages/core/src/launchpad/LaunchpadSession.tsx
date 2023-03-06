@@ -177,7 +177,9 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditor | null>(null);
@@ -732,7 +734,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         <LaunchRootExecutionButton
           title={launchButtonTitle}
           warning={launchButtonWarning}
-          hasLaunchPermission={canLaunchPipelineExecution.enabled}
+          hasLaunchPermission={canLaunchPipelineExecution}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}

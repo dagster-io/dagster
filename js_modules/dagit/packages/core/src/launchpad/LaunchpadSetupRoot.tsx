@@ -16,10 +16,12 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
 
-  if (!canLaunchPipelineExecution.enabled) {
+  if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return <LaunchpadSetupAllowedRoot pipelinePath={pipelinePath} repoAddress={repoAddress} />;
