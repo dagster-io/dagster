@@ -132,7 +132,8 @@ def asset_groups_repository():
 
 @repository
 def partitioned_assets_repository():
-    from . import partitioned_assets 
+    from . import partitioned_assets
+
     return load_assets_from_modules([partitioned_assets])
 
 
