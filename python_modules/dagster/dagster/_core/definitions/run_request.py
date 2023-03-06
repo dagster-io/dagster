@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -111,6 +111,32 @@ class RunRequest(
         return RunRequest(**fields)
 
 
+class PendingPartitionedRunRequest(
+    NamedTuple(
+        "_PendingPartitionedRunRequest",
+        [("run_request", RunRequest), ("partitions_def_name", str), ("partition_key", str)],
+    )
+):
+    """
+    Represents a run request for a dynamic partition. Sensors can request adding and deleting
+    dynamic partitions, so this run request is pending until the partition is confirmed
+    to exist.
+    """
+
+    def __new__(
+        cls,
+        run_request: RunRequest,
+        partitions_def_name: str,
+        partition_key: str,
+    ):
+        return super(PendingPartitionedRunRequest, cls).__new__(
+            cls,
+            run_request=check.inst_param(run_request, "run_request", RunRequest),
+            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
+            partition_key=check.str_param(partition_key, "partition_key"),
+        )
+
+
 @whitelist_for_serdes
 class PipelineRunReaction(
     NamedTuple(
@@ -144,3 +170,110 @@ class PipelineRunReaction(
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             run_status=check.opt_inst_param(run_status, "run_status", DagsterRunStatus),
         )
+
+
+@whitelist_for_serdes
+class DynamicPartitionsAction(str, Enum):
+    ADD = "ADD"
+    DELETE = "DELETE"
+
+
+@whitelist_for_serdes
+class DynamicPartitionsRequest(
+    NamedTuple(
+        "_DynamicPartitionsRequest",
+        [
+            ("partitions_def_name", str),
+            ("partition_keys", Sequence[str]),
+            ("action", DynamicPartitionsAction),
+        ],
+    )
+):
+    """
+    A request to add or delete partitions from a dynamic partitions definition, to be evaluated by a sensor.
+    """
+
+    def __new__(
+        cls,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+        action: DynamicPartitionsAction,
+    ):
+        return super(DynamicPartitionsRequest, cls).__new__(
+            cls,
+            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
+            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
+            action=check.inst_param(action, "action", DynamicPartitionsAction),
+        )
+
+
+class SensorTickResult(
+    NamedTuple(
+        "_SensorTickResult",
+        [
+            ("run_requests", Optional[Sequence[Union[RunRequest, PendingPartitionedRunRequest]]]),
+            ("skip_reason", Optional[SkipReason]),
+            ("pipeline_run_reaction", Optional[PipelineRunReaction]),
+            ("cursor", Optional[str]),
+            ("dynamic_partitions_requests", Optional[Sequence[DynamicPartitionsRequest]]),
+        ],
+    )
+):
+    """The result of a sensor evaluation.
+
+    Attributes:
+        run_requests (Optional[Sequence[Union[RunRequest, PendingPartitionedRunRequest]]]): A list
+            of run requests to be executed.
+        cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
+            context for the next sensor evaluation.
+        dynamic_partitions_requests (Optional[Sequence[DynamicPartitionsRequests]]): A list of
+            dynamic partition requests to request dynamic partition addition and deletion. Run requests
+            will be evaluated using the state of the partitions with these changes applied.
+    """
+
+    def __new__(
+        cls,
+        run_requests: Optional[Sequence[Union[RunRequest, PendingPartitionedRunRequest]]] = None,
+        skip_reason: Optional[SkipReason] = None,
+        pipeline_run_reaction: Optional[PipelineRunReaction] = None,
+        cursor: Optional[str] = None,
+        dynamic_partitions_requests: Optional[Sequence[DynamicPartitionsRequest]] = None,
+    ):
+        if skip_reason:
+            if len(run_requests if run_requests else []) > 0:
+                check.failed(
+                    "Expected a single SkipReason or one or more RunRequests: received both "
+                    "RunRequest and SkipReason"
+                )
+            elif pipeline_run_reaction:
+                check.failed(
+                    "Expected a single SkipReason or one or more PipelineRunReaction: "
+                    "received both PipelineRunReaction and SkipReason"
+                )
+            else:
+                check.failed("Expected a single SkipReason: received multiple SkipReasons")
+
+        return super(SensorTickResult, cls).__new__(
+            cls,
+            run_requests=check.opt_sequence_param(
+                run_requests, "run_requests", (RunRequest, PendingPartitionedRunRequest)
+            ),
+            skip_reason=check.opt_inst_param(skip_reason, "skip_reason", SkipReason),
+            pipeline_run_reaction=check.opt_inst_param(
+                pipeline_run_reaction, "pipeline_run_reaction", PipelineRunReaction
+            ),
+            cursor=check.opt_str_param(cursor, "cursor"),
+            dynamic_partitions_requests=check.opt_sequence_param(
+                dynamic_partitions_requests,
+                "dynamic_partitions_requests",
+                DynamicPartitionsRequest,
+            ),
+        )
+
+    @property
+    def pending_partitioned_run_requests(self) -> Sequence[PendingPartitionedRunRequest]:
+        return [
+            run_request
+            for run_request in self.run_requests or []
+            if isinstance(run_request, PendingPartitionedRunRequest)
+        ]

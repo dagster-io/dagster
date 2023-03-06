@@ -41,7 +41,7 @@ def image_sensor(context):
     context.instance.add_dynamic_partitions(images_partitions_def.name, new_images)
 
     run_requests = [
-        images_job.run_request_for_partition(img_filename, instance=context.instance)
+        images_job.run_request_for_partition(img_filename)
         for img_filename in new_images
     ]
     return run_requests

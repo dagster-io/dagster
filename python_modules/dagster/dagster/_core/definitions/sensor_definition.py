@@ -34,7 +34,15 @@ from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import PipelineRunReaction, RunRequest, SkipReason
+from .run_request import (
+    DynamicPartitionsAction,
+    DynamicPartitionsRequest,
+    PendingPartitionedRunRequest,
+    PipelineRunReaction,
+    RunRequest,
+    SensorTickResult,
+    SkipReason,
+)
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
@@ -124,6 +132,7 @@ class SensorEvaluationContext:
             else None
         )
         self._logger: Optional[InstigationLogger] = None
+        self._cursor_updated = False
 
     def __enter__(self):
         return self
@@ -180,6 +189,11 @@ class SensorEvaluationContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+        self._cursor_updated = True
+
+    @property
+    def cursor_updated(self) -> bool:
+        return self._cursor_updated
 
     @public
     @property
@@ -225,11 +239,12 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorTickResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
     PipelineRunReaction,
+    SensorTickResult,
 ]
 RawSensorEvaluationFunction = Union[
     Callable[[], RawSensorEvaluationFunctionReturn],
@@ -238,6 +253,58 @@ RawSensorEvaluationFunction = Union[
 SensorEvaluationFunction = Callable[
     [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
 ]
+
+
+def _check_dynamic_partitions_and_pending_dynamic_partitioned_requests(
+    instance: DagsterInstance,
+    dynamic_partitions_requests: Sequence[DynamicPartitionsRequest],
+    pending_dynamic_partitioned_requests: Sequence[PendingPartitionedRunRequest],
+) -> None:
+    for req in dynamic_partitions_requests:
+        if not (
+            req.action is DynamicPartitionsAction.DELETE
+            or req.action is DynamicPartitionsAction.ADD
+        ):
+            raise DagsterInvariantViolationError(
+                f"Dynamic partitions requests must be either add or delete requests, but got {req}."
+            )
+
+    delete_reqs = [
+        req for req in dynamic_partitions_requests if req.action == DynamicPartitionsAction.DELETE
+    ]
+    partitions_to_delete = set()
+    for req in delete_reqs:
+        for partition in req.partition_keys:
+            partitions_to_delete.add(partition)
+
+    add_reqs = [
+        req for req in dynamic_partitions_requests if req.action == DynamicPartitionsAction.ADD
+    ]
+    partitions_to_add = set()
+    for req in add_reqs:
+        for partition in req.partition_keys:
+            partitions_to_add.add(partition)
+
+    if partitions_to_delete.intersection(partitions_to_add):
+        raise DagsterInvariantViolationError(
+            "Dynamic partition requests cannot contain both add and delete requests for the same"
+            " partition keys."
+        )
+
+    for pending_run_request in pending_dynamic_partitioned_requests:
+        has_partition = instance.has_dynamic_partition(
+            partitions_def_name=pending_run_request.partitions_def_name,
+            partition_key=pending_run_request.partition_key,
+        )
+        if (
+            has_partition and pending_run_request.partition_key in partitions_to_delete
+        ) or pending_run_request.partition_key not in partitions_to_add:
+            raise DagsterInvariantViolationError(
+                "Cannot create run request for partition"
+                f" {pending_run_request.partition_key} because it does not exist."
+                " You may need to add a DynamicPartitionsRequest to the returned"
+                " SensorTickResult."
+            )
 
 
 class SensorDefinition:
@@ -428,22 +495,63 @@ class SensorDefinition:
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
+        run_requests: List[RunRequest] = []
+        pipeline_run_reactions: List[PipelineRunReaction] = []
+        dynamic_partitions_requests: Optional[Sequence[DynamicPartitionsRequest]] = None
+        updated_cursor = context.cursor
 
-        run_requests: List[RunRequest]
-        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
-            run_requests = []
-            pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = (
-                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
-            )
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorTickResult))
+
+            if isinstance(item, SensorTickResult):
+                _check_dynamic_partitions_and_pending_dynamic_partitioned_requests(
+                    context.instance,
+                    item.dynamic_partitions_requests or [],
+                    item.pending_partitioned_run_requests,
+                )
+                dynamic_partitions_requests = item.dynamic_partitions_requests
+
+                for unresolved_run_request in item.run_requests or []:
+                    if isinstance(unresolved_run_request, PendingPartitionedRunRequest):
+                        run_requests.append(unresolved_run_request.run_request)
+                    else:
+                        # Is a RunRequest instance
+                        run_requests.append(unresolved_run_request)
+
+                pipeline_run_reactions = (
+                    [item.pipeline_run_reaction] if item.pipeline_run_reaction else []
+                )
+                skip_message = item.skip_reason.skip_message if item.skip_reason else None
+
+                if item.cursor and context._cursor_updated:
+                    raise DagsterInvariantViolationError(
+                        "SensorTickResult.cursor cannot be set if context.update_cursor() was"
+                        " called."
+                    )
+                updated_cursor = item.cursor
+
+            elif isinstance(item, RunRequest):
+                run_requests = [item]
+            elif isinstance(item, SkipReason):
+                skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            elif isinstance(item, PipelineRunReaction):
+                pipeline_run_reactions = (
+                    [cast(PipelineRunReaction, item)]
+                    if isinstance(item, PipelineRunReaction)
+                    else []
+                )
+            else:
+                check.failed(f"Unexpected type {type(item)} in sensor result")
         else:
+            if any(isinstance(item, SensorTickResult) for item in result):
+                check.failed(
+                    "When a SensorTickResult is returned from a sensor, it must be the only object"
+                    " returned."
+                )
+
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
@@ -475,9 +583,10 @@ class SensorDefinition:
         return SensorExecutionData(
             run_requests,
             skip_message,
-            context.cursor,
+            updated_cursor,
             pipeline_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
+            dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -553,6 +662,7 @@ class SensorExecutionData(
             ("cursor", Optional[str]),
             ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
             ("captured_log_key", Optional[Sequence[str]]),
+            ("dynamic_partitions_requests", Optional[Sequence[DynamicPartitionsRequest]]),
         ],
     )
 ):
@@ -563,6 +673,7 @@ class SensorExecutionData(
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
         captured_log_key: Optional[Sequence[str]] = None,
+        dynamic_partitions_requests: Optional[Sequence[DynamicPartitionsRequest]] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -571,6 +682,9 @@ class SensorExecutionData(
             pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
         )
         check.opt_list_param(captured_log_key, "captured_log_key", str)
+        check.opt_sequence_param(
+            dynamic_partitions_requests, "dynamic_partitions_requests", DynamicPartitionsRequest
+        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -581,6 +695,7 @@ class SensorExecutionData(
             cursor=cursor,
             pipeline_run_reactions=pipeline_run_reactions,
             captured_log_key=captured_log_key,
+            dynamic_partitions_requests=dynamic_partitions_requests,
         )
 
 
@@ -597,7 +712,7 @@ def wrap_sensor_evaluation(
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
                 yield item
-        elif isinstance(result, (SkipReason, RunRequest)):
+        elif isinstance(result, (SkipReason, RunRequest, SensorTickResult)):
             yield result
 
         elif result is not None:

@@ -53,6 +53,7 @@ from .sensor_definition import (
     SensorType,
     SkipReason,
     has_at_least_one_parameter,
+    SensorTickResult,
 )
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -490,7 +491,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
         def _wrapped_fn(
             context: SensorEvaluationContext,
-        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction]]:
+        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction, SensorTickResult]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -640,7 +641,8 @@ class RunStatusSensorDefinition(SensorDefinition):
                             )
 
                             if isinstance(
-                                sensor_return, (RunRequest, SkipReason, PipelineRunReaction)
+                                sensor_return,
+                                (RunRequest, SkipReason, PipelineRunReaction, SensorTickResult),
                             ):
                                 yield sensor_return
                             else:

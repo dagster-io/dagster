@@ -1254,7 +1254,7 @@ def test_dynamic_partitions_sensor():
     @sensor(job=my_job)
     def test_sensor(context):
         context.instance.add_dynamic_partitions(dynamic_partitions_def.name, ["apple"])
-        return my_job.run_request_for_partition("apple", instance=context.instance)
+        return my_job.run_request_for_partition("apple")
 
     with instance_for_test() as instance:
         ctx = build_sensor_context(

@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.run_request import RunRequest
-from dagster._core.instance import DagsterInstance
+from dagster._core.definitions.run_request import PendingPartitionedRunRequest, RunRequest
 from dagster._core.selector.subset_selector import parse_clause
 
 from .asset_layer import build_asset_selection_job
@@ -108,9 +107,8 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
-        instance: Optional[DagsterInstance] = None,
         current_time: Optional[datetime] = None,
-    ) -> RunRequest:
+    ) -> Union[RunRequest, PendingPartitionedRunRequest]:
         """
         Creates a RunRequest object for a run that processes the given partition.
 
@@ -139,31 +137,42 @@ class UnresolvedAssetJobDefinition(
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
-            if not instance:
-                check.failed(
-                    "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "dynamic partition set"
-                )
-
-        partition = partition_set.get_partition(
-            partition_key, dynamic_partitions_store=instance, current_time=current_time
-        )
-        run_request_tags = (
+        get_run_request_tags = lambda partition: (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
             else partition_set.tags_for_partition(partition)
         )
 
-        return RunRequest(
-            job_name=self.name,
-            run_key=run_key,
-            run_config=run_config
-            if run_config is not None
-            else partition_set.run_config_for_partition(partition),
-            tags=run_request_tags,
-            asset_selection=asset_selection,
-        )
+        partitions_def = partition_set.partitions_def
+        if isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
+            partition = partitions_def.get_pending_partition(partition_key)
+
+            return PendingPartitionedRunRequest(
+                run_request=RunRequest(
+                    job_name=self.name,
+                    run_key=run_key,
+                    run_config=run_config
+                    if run_config is not None
+                    else partition_set.run_config_for_partition(partition),
+                    tags=get_run_request_tags(partition),
+                    asset_selection=asset_selection,
+                ),
+                partition_key=partition_key,
+                partitions_def_name=partitions_def.name,
+            )
+
+        else:
+            partition = partitions_def.get_partition(partition_key, current_time=current_time)
+
+            return RunRequest(
+                job_name=self.name,
+                run_key=run_key,
+                run_config=run_config
+                if run_config is not None
+                else partition_set.run_config_for_partition(partition),
+                tags=get_run_request_tags(partition),
+                asset_selection=asset_selection,
+            )
 
     def resolve(
         self,
