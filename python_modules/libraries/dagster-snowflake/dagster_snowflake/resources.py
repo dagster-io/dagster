@@ -291,7 +291,7 @@ class SnowflakeConnection:
                     if use_pandas_result:
                         results = results.append(cursor.fetch_pandas_all())  # type: ignore
                     elif fetch_results:
-                        results.append(cursor.fetchall())  # type: ignore
+                        results.append(cursor.fetchall())
 
         return results if len(results) > 0 else None
 
