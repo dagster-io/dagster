@@ -310,7 +310,6 @@ class _Asset:
             )
 
             op_required_resource_keys = decorator_resource_keys - arg_resource_keys
-            print("op_required_resource_keys", op_required_resource_keys)
 
             op = _Op(
                 name=out_asset_key.to_python_identifier(),

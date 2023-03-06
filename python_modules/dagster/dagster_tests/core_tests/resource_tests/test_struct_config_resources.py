@@ -1250,7 +1250,7 @@ def test_resource_defs_on_asset() -> None:
     assert executed["yes"]
 
     # Cannot specify both required_resource_keys and resources as args
-    with pytest.raises(Exception):
+    with pytest.raises(CheckError):
 
         @asset(required_resource_keys={"my_other_resource"})
         def an_other_asset(my_resource: MyResource):
