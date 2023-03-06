@@ -21,6 +21,25 @@ Schedules
 .. autoconfigurable:: DagsterDaemonScheduler
   :annotation: Scheduler
 
+Partitioned Schedules
+=====================
+
+.. currentmodule:: dagster
+
+.. autofunction:: build_schedule_from_partitioned_job
+
+.. autodecorator:: hourly_partitioned_config
+    :noindex:
+
+.. autodecorator:: daily_partitioned_config
+    :noindex:
+
+.. autodecorator:: weekly_partitioned_config
+    :noindex:
+
+.. autodecorator:: monthly_partitioned_config
+    :noindex:
+
 Sensors
 =======
 
