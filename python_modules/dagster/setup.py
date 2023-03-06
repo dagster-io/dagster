@@ -74,12 +74,12 @@ setup(
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
         # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
-        # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-        "grpcio>=1.32.0,<1.48.1",
-        "grpcio-health-checking>=1.32.0,<1.44.0",
+        # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
+        "grpcio>=1.44.0,<1.48.1",
+        "grpcio-health-checking>=1.44.0",
         "packaging>=20.9",
         "pendulum",
-        "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
+        "protobuf>=3.20.0",  # min protobuf version to be compatible with both protobuf 3 and 4
         "python-dateutil",
         "python-dotenv",
         "pytz",
@@ -104,7 +104,7 @@ setup(
         "test": [
             "buildkite-test-collector ; python_version>='3.8'",
             "docker",
-            "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
+            "grpcio-tools>=1.44.0",  # related to above grpcio pins
             "mock==3.0.5",
             "objgraph",
             "pytest-cov==2.10.1",
