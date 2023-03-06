@@ -321,7 +321,7 @@ def _validate_and_get_resource_dict(
 
 def get_or_create_sensor_context(
     fn: Callable, *args: Any, **kwargs: Any
-) -> Optional[SensorEvaluationContext]:
+) -> SensorEvaluationContext:
     context_param_name = context_param_name_if_present(fn)
 
     if len(args) + len(kwargs) > 1:
@@ -330,23 +330,25 @@ def get_or_create_sensor_context(
             "positional context parameter should be provided when invoking."
         )
 
+    context: Optional[SensorEvaluationContext] = None
+
     if len(args) > 0:
-        return check.opt_inst(args[0], SensorEvaluationContext)
+        context = check.opt_inst(args[0], SensorEvaluationContext)
     elif len(kwargs) > 0:
         if context_param_name and context_param_name not in kwargs:
             raise DagsterInvalidInvocationError(
                 f"Sensor invocation expected argument '{context_param_name}'."
             )
         context_param_name = context_param_name or list(kwargs.keys())[0]
-        return check.opt_inst(kwargs.get(context_param_name), SensorEvaluationContext)
-    # If a context param is required by the user function, we error
+        context = check.opt_inst(kwargs.get(context_param_name), SensorEvaluationContext)
     elif context_param_name:
+        # If the context parameter is present but no value was provided, we error
         raise DagsterInvalidInvocationError(
             "Sensor evaluation function expected context argument, but no context argument "
             "was provided when invoking."
         )
-    else:
-        return build_sensor_context()
+
+    return context or build_sensor_context()
 
 
 class SensorDefinition:
