@@ -95,6 +95,9 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             .load()
         )
 
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return spark.createDataFrame([])
+
         return df.toDF(*[c.lower() for c in df.columns])
 
     @property

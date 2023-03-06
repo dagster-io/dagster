@@ -1,4 +1,3 @@
-import duckdb
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
@@ -63,16 +62,9 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        try:
-            return connection.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
-        except duckdb.CatalogException as e:
-            if (
-                "Schema with name" in e.args[0] or "Table with name" in e.args[0]
-            ) and "does not exist" in e.args[0]:
-                # table does not exist, so check if we are in a self dependent asset
-                if table_slice.is_self_dependent:
-                    return pd.DataFrame()
-            raise e
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return pd.DataFrame()
+        return connection.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
 
     @property
     def supported_types(self):

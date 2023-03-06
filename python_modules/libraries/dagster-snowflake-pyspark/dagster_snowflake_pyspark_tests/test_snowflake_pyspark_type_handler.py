@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 from dagster import (
     AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -18,6 +19,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    TimeWindowPartitionMapping,
     asset,
     build_input_context,
     build_output_context,
@@ -571,3 +573,83 @@ def test_dynamic_partitions(spark):
                 f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_self_dependent_asset():
+    schema = "SNOWFLAKE_IO_MANAGER_SCHEMA"
+    with temporary_snowflake_table(
+        schema_name=schema,
+        column_str=(
+            "RAW_START string, RAW_END string, START TIMESTAMP_NTZ(9), END TIMESTAMP_NTZ(9), A"
+            " string"
+        ),
+    ) as table_name:
+        daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+        @asset(
+            partitions_def=daily_partitions,
+            key_prefix=schema,
+            ins={
+                "self_dependent_asset": AssetIn(
+                    key=AssetKey(["my_schema", "self_dependent_asset"]),
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+            },
+            metadata={
+                "partition_expr": "start",
+            },
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
+            start, end = context.output_asset_partitions_time_window()
+            value = context.op_config["value"]
+            spark = SparkSession.builder.config(
+                key="spark.jars.packages",
+                value=SNOWFLAKE_JARS,
+            ).getOrCreate()
+
+            schema = StructType(
+                [
+                    StructField("RAW_START", StringType()),
+                    StructField("RAW_END", StringType()),
+                    StructField("A", StringType()),
+                ]
+            )
+            data = [
+                (start, end, value),
+                (start, end, value),
+                (start, end, value),
+            ]
+            df = spark.createDataFrame(data, schema=schema)
+            df = df.withColumn("START", to_date(col("RAW_START")))
+            df = df.withColumn("END", to_date(col("RAW_END")))
+
+            return df
+
+        asset_full_name = f"{schema}__{table_name}"
+        snowflake_table_path = f"{schema}.{table_name}"
+
+        snowflake_config = {
+            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+        }
+        snowflake_conn = SnowflakeConnection(
+            snowflake_config, logging.getLogger("temporary_snowflake_table")
+        )
+
+        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
+        resource_defs = {"io_manager": snowflake_io_manager}
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-01",
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]

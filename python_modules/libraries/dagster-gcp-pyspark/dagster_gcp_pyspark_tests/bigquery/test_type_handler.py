@@ -8,6 +8,7 @@ import pandas_gbq
 import pytest
 from dagster import (
     AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -18,6 +19,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    TimeWindowPartitionMapping,
     asset,
     build_input_context,
     build_output_context,
@@ -534,3 +536,67 @@ def test_dynamic_partitions(spark):
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_self_dependent_asset(spark):
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+        column_str="START TIMESTAMP, END TIMESTAMP, A string",
+    ) as table_name:
+        daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+        @asset(
+            partitions_def=daily_partitions,
+            key_prefix=schema,
+            ins={
+                "self_dependent_asset": AssetIn(
+                    key=AssetKey(["my_schema", "self_dependent_asset"]),
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+            },
+            metadata={
+                "partition_expr": "start",
+            },
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
+            start, end = context.output_asset_partitions_time_window()
+            value = context.op_config["value"]
+            schema = StructType(
+                [
+                    StructField("RAW_START", StringType()),
+                    StructField("RAW_END", StringType()),
+                    StructField("A", StringType()),
+                ]
+            )
+            data = [
+                (start, end, value),
+                (start, end, value),
+                (start, end, value),
+            ]
+            df = spark.createDataFrame(data, schema=schema)
+            df = df.withColumn("START", to_date(col("RAW_START")))
+            df = df.withColumn("END", to_date(col("RAW_END")))
+
+            return df
+
+        asset_full_name = f"{schema}__{table_name}"
+        bq_table_path = f"{schema}.{table_name}"
+
+        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-01",
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+        )
+
+        out_df = pandas_gbq.read_gbq(
+            f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
