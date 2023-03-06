@@ -254,7 +254,7 @@ def _create_repository_using_definitions_args(
             warnings.warn(
                 f"""You have overridden the default `io_manager` on `Definitions`. One or more jobs utilize the default filesystem I/O manager. In the future, these jobs will use the `Definitions`-level override instead. To silence this warning, explicitly set the `io_manager` on the jobs in question:
 
-@job(resource_defs={{io_manager': fs_io_manager}})
+@job(resource_defs={{'io_manager': fs_io_manager}})
 def my_job():
     ...
     
