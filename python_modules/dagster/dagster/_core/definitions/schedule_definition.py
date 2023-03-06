@@ -83,6 +83,47 @@ class DefaultScheduleStatus(Enum):
     STOPPED = "STOPPED"
 
 
+def get_or_create_schedule_context(
+    fn: Callable, *args: Any, **kwargs: Any
+) -> "ScheduleEvaluationContext":
+    """
+    Based on the passed resource function and the arguments passed to it, returns the
+    user-passed ScheduleEvaluationContext or creates one if it is not passed.
+
+    Raises an exception if the user passes more than one argument or if the user-provided
+    function requires a context parameter but none is passed.
+    """
+    from dagster._core.definitions.sensor_definition import context_param_name_if_present
+
+    context_param_name = context_param_name_if_present(fn)
+
+    if len(args) + len(kwargs) > 1:
+        raise DagsterInvalidInvocationError(
+            "Schedule invocation received multiple arguments. Only a first "
+            "positional context parameter should be provided when invoking."
+        )
+
+    context: Optional[ScheduleEvaluationContext] = None
+
+    if len(args) > 0:
+        context = check.opt_inst(args[0], ScheduleEvaluationContext)
+    elif len(kwargs) > 0:
+        if context_param_name and context_param_name not in kwargs:
+            raise DagsterInvalidInvocationError(
+                f"Schedule invocation expected argument '{context_param_name}'."
+            )
+        context_param_name = context_param_name or list(kwargs.keys())[0]
+        context = check.opt_inst(kwargs.get(context_param_name), ScheduleEvaluationContext)
+    elif context_param_name:
+        # If the context parameter is present but no value was provided, we error
+        raise DagsterInvalidInvocationError(
+            "Schedule evaluation function expected context argument, but no context argument "
+            "was provided when invoking."
+        )
+
+    return context or build_schedule_context()
+
+
 class ScheduleEvaluationContext:
     """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
@@ -110,20 +151,20 @@ class ScheduleEvaluationContext:
 
     """
 
-    # __slots__ = [
-    #     "_instance_ref",
-    #     "_scheduled_execution_time",
-    #     "_exit_stack",
-    #     "_instance",
-    #     "_log_key",
-    #     "_logger",
-    #     "_repository_name",
-    #     "_schedule_name",
-    #     "_resources_cm",
-    #     "_resources",
-    #     "_resources_contain_cm",
-    #     "_cm_scope_entered",
-    # ]
+    __slots__ = [
+        "_instance_ref",
+        "_scheduled_execution_time",
+        "_exit_stack",
+        "_instance",
+        "_log_key",
+        "_logger",
+        "_repository_name",
+        "_schedule_name",
+        "_resources_cm",
+        "_resources",
+        "_resources_contain_cm",
+        "_cm_scope_entered",
+    ]
 
     def __init__(
         self,
@@ -559,7 +600,7 @@ class ScheduleDefinition:
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
-        from dagster._core.definitions.sensor_definition import get_context_param_name
+        from dagster._core.definitions.sensor_definition import context_param_name_if_present
 
         from .decorators.schedule_decorator import DecoratedScheduleFunction
 
@@ -568,51 +609,10 @@ class ScheduleDefinition:
                 "Schedule invocation is only supported for schedules created via the schedule "
                 "decorators."
             )
-        result = None
-        context_param_name = get_context_param_name(self._execution_fn.decorated_fn)
 
-        if len(args) + len(kwargs) > 1:
-            raise DagsterInvalidInvocationError(
-                "Schedule invocation received multiple arguments. Only a first "
-                "positional context parameter should be provided when invoking."
-            )
-
-        context_param: Mapping[str, Any] = {}
-        context: Optional[ScheduleEvaluationContext] = None
-
-        if context_param_name:
-            if len(args) == 0 and len(kwargs) == 0:
-                raise DagsterInvalidInvocationError(
-                    "Schedule decorated function has context argument, but no context argument was "
-                    "provided when invoking."
-                )
-
-            if args:
-                context = check.opt_inst_param(
-                    args[0], context_param_name, ScheduleEvaluationContext
-                )
-            else:
-                if context_param_name not in kwargs:
-                    raise DagsterInvalidInvocationError(
-                        f"Schedule invocation expected argument '{context_param_name}'."
-                    )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, ScheduleEvaluationContext
-                )
-
-            context = context if context else build_schedule_context()
-            context_param = {context_param_name: context}
-
-        else:
-            # We still take a context arg even if the underlying function doesn't require it
-            # this is so that we can pass resources if the sensor needs any
-            if args:
-                context = check.opt_inst_param(args[0], "context", ScheduleEvaluationContext)
-            elif kwargs:
-                context = check.opt_inst_param(
-                    list(kwargs.values())[0], "context", ScheduleEvaluationContext
-                )
-            context = context if context else build_schedule_context()
+        context_param_name = context_param_name_if_present(self._execution_fn.decorated_fn)
+        context = get_or_create_schedule_context(self._execution_fn.decorated_fn, *args, **kwargs)
+        context_param = {context_param_name: context} if context_param_name else {}
 
         resources = validate_and_get_schedule_resource_dict(
             context.resources, self._name, self._required_resource_keys

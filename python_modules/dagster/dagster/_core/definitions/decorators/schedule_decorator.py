@@ -24,7 +24,7 @@ from dagster._core.definitions.partition import (
     ScheduleType,
 )
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._core.definitions.sensor_definition import context_param_name_if_present
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
@@ -139,7 +139,7 @@ def schedule(
         elif tags:
             validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
-        context_param_name = get_context_param_name(fn)
+        context_param_name = context_param_name_if_present(fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
@@ -161,10 +161,8 @@ def schedule(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                if context_param_name:
-                    result = fn(**{context_param_name: context}, **resources)
-                else:
-                    result = fn(**resources)
+                context_param = {context_param_name: context} if context_param_name else {}
+                result = fn(**context_param, **resources)
 
                 if isinstance(result, dict):
                     # this is the run-config based decorated function, wrap the evaluated run config
