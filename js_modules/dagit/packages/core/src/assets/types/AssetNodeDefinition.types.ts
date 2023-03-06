@@ -10,6 +10,7 @@ export type AssetNodeDefinitionFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;

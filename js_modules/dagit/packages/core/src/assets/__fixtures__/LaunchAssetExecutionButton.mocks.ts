@@ -20,6 +20,7 @@ export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_daily"]',
   groupName: 'mapped',
+  hasMaterializePermission: true,
   repository: {
     __typename: 'Repository',
     id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -56,6 +57,7 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_weekly"]',
   groupName: 'mapped',
+  hasMaterializePermission: true,
   repository: {
     __typename: 'Repository',
     id: 'c22d9677b8089be89b1e014b9de34284962f83a7',

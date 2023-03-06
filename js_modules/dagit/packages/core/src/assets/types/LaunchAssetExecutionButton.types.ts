@@ -8,6 +8,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   opNames: Array<string>;
   jobNames: Array<string>;
   graphName: string | null;
+  hasMaterializePermission: boolean;
   isObservable: boolean;
   isSource: boolean;
   partitionDefinition: {
@@ -600,6 +601,7 @@ export type LaunchAssetLoaderQuery = {
     opNames: Array<string>;
     jobNames: Array<string>;
     graphName: string | null;
+    hasMaterializePermission: boolean;
     isObservable: boolean;
     isSource: boolean;
     partitionDefinition: {

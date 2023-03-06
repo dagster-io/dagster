@@ -37,6 +37,7 @@ export const ReleasesWorkspace_RAW = {
           opNames: ['release_files'],
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
+          hasMaterializePermission: true,
           partitionDefinition: {
             type: PartitionDefinitionType.DYNAMIC,
             name: 'Foo',
@@ -93,6 +94,7 @@ export const ReleasesWorkspace_RAW = {
           opNames: ['release_files_metadata'],
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
+          hasMaterializePermission: true,
           partitionDefinition: {
             type: PartitionDefinitionType.DYNAMIC,
             name: 'Foo',
@@ -149,6 +151,7 @@ export const ReleasesWorkspace_RAW = {
           opNames: ['release_zips'],
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
+          hasMaterializePermission: true,
           partitionDefinition: {
             type: PartitionDefinitionType.DYNAMIC,
             name: 'Foo',
@@ -205,6 +208,7 @@ export const ReleasesWorkspace_RAW = {
           opNames: ['releases_metadata'],
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
+          hasMaterializePermission: true,
           partitionDefinition: {
             type: PartitionDefinitionType.DYNAMIC,
             name: 'Foo',
@@ -256,6 +260,7 @@ export const ReleasesWorkspace_RAW = {
           opNames: ['releases_summary'],
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
+          hasMaterializePermission: true,
           partitionDefinition: null,
           isObservable: false,
           isSource: false,
