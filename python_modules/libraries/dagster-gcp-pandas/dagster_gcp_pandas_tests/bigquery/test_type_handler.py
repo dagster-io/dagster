@@ -22,6 +22,7 @@ from dagster import (
     op,
 )
 from dagster_gcp_pandas import bigquery_pandas_io_manager
+from google.api_core.exceptions import Conflict
 from google.cloud import bigquery
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -487,3 +488,38 @@ def test_dynamic_partitioned_asset():
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_timeout():
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+        column_str="A int, B int",
+    ) as table_name:
+
+        @asset(
+            key_prefix=schema,
+            name=table_name,
+        )
+        def my_asset() -> pd.DataFrame:
+            return pd.DataFrame(
+                {
+                    "A": [1, 2, 3],
+                    "B": [4, 5, 6],
+                }
+            )
+
+        bq_io_manager = bigquery_pandas_io_manager.configured(
+            {**SHARED_BUILDKITE_BQ_CONFIG, "timeout": 1}
+        )
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+
+        with pytest.raises(Conflict):
+            # because timeout=1, the request to load the dataframe will retry after 1 second. this
+            # will cause a BigQuery conflict since the first job to load the dataframe already exists
+            # when it tries to re-load the dataframe
+            materialize(
+                [my_asset],
+                resources=resource_defs,
+            )
