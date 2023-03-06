@@ -82,24 +82,44 @@ For more information on using resources, see [the Pythonic resources guide](/gui
 
 To execute a job or materialize an asset that specifies config, you'll need to provide values for its parameters. When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
-```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
-from dagster import job, materialize, op, RunConfig
-
-@job
-def greeting_job():
-    print_greeting()
+```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config_envvar endbefore=end_execute_with_config_envvar dedent=4
+from dagster import job, materialize, op, RunConfig, EnvVar
 
 job_result = greeting_job.execute_in_process(
-    run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})
+    run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})
 )
 
 asset_result = materialize(
     [greeting],
-    run_config=RunConfig({"greeting": MyAssetConfig(person_name="Alice")}),
+    run_config=RunConfig(
+        {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+    ),
 )
 ```
 
-\--
+### Using environment variables with config
+
+Runtime config can be specified environment variables by passing an <PyObject object="EnvVar" /> when constructing your config object.
+
+```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resources_env_vars endbefore=end_new_resources_env_vars dedent=4
+from dagster import EnvVar, Definitions, ConfigurableResource
+
+class CredentialsResource(ConfigurableResource):
+    username: str
+    password: str
+
+defs = Definitions(
+    assets=...,
+    resources={
+        "credentials": CredentialsResource(
+            username=EnvVar("MY_USERNAME"),
+            password=EnvVar("MY_PASSWORD"),
+        )
+    },
+)
+```
+
+---
 
 ## Defining complex config schemas
 

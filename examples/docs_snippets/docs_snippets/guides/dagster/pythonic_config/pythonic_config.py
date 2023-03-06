@@ -70,6 +70,22 @@ def execute_with_config() -> None:
 
     # end_execute_with_config
 
+    # start_execute_with_config_envvar
+    from dagster import job, materialize, op, RunConfig, EnvVar
+
+    job_result = greeting_job.execute_in_process(
+        run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})  # type: ignore
+    )
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig(
+            {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+        ),
+    )
+
+    # end_execute_with_config_envvar
+
 
 def basic_data_structures_config() -> None:
     # start_basic_data_structures_config
