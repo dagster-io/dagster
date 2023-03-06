@@ -3,11 +3,15 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
 )
-from dagster._core.host_representation.external_data import ExternalPartitionNamesData
+from dagster._core.host_representation.external_data import (
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionNamesData,
+)
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
@@ -214,6 +218,9 @@ def get_partition_set_partition_statuses(
     names_result = graphene_info.context.get_external_partition_names(
         external_partition_set, graphene_info.context.instance
     )
+
+    if isinstance(names_result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(names_result.error)
 
     return partition_statuses_from_run_partition_data(
         partition_set_name, run_partition_data, names_result.partition_names
