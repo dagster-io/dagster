@@ -656,7 +656,7 @@ class DynamicPartitionsDefinition(
 
     def __str__(self) -> str:
         if self.name:
-            return f"Dynamic partitions definition {self._validated_name()}"
+            return f'Dynamic partitions: "{self._validated_name()}"'
         else:
             return super().__str__()
 
