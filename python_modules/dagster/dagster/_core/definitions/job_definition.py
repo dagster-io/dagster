@@ -705,9 +705,6 @@ class JobDefinition(PipelineDefinition):
         ):
             merged_resource_defs["io_manager"] = resource_defs["io_manager"]
 
-        print("MERGING")
-        print(merged_resource_defs.keys())
-
         job_def = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
