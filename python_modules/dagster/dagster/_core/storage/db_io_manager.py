@@ -45,6 +45,7 @@ class TableSlice(NamedTuple):
     database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
     partition_dimensions: Optional[Sequence[TablePartitionDimension]] = None
+    is_self_dependent: bool = False
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -223,9 +224,11 @@ class DbIOManager(IOManager):
                                 " column of the database contains data for the"
                                 f" {part.name} partition."
                             )
+
                         partition_dimensions.append(
                             TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str), partitions=partitions
+                                partition_expr=cast(str, partition_expr_str),
+                                partitions=partitions,
                             )
                         )
                 elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
@@ -258,12 +261,17 @@ class DbIOManager(IOManager):
             else:
                 schema = "public"
 
+        is_self_dependent = False
+        if isinstance(context, InputContext) and context.asset_key == output_context.asset_key:
+            is_self_dependent = True
+
         return TableSlice(
             table=table,
             schema=schema,
             database=self._database,
             partition_dimensions=partition_dimensions,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
+            is_self_dependent=is_self_dependent,
         )
 
     def _check_supported_type(self, obj_type):

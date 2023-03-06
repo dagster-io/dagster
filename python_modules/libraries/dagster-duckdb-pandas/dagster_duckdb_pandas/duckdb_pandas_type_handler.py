@@ -70,10 +70,7 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 "Schema with name" in e.args[0] or "Table with name" in e.args[0]
             ) and "does not exist" in e.args[0]:
                 # table does not exist, so check if we are in a self dependent asset
-                if (
-                    context.upstream_output
-                    and context.asset_key == context.upstream_output.asset_key
-                ):
+                if table_slice.is_self_dependent:
                     return pd.DataFrame()
             raise e
 
