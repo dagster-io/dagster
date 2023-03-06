@@ -1,4 +1,5 @@
 from typing import List
+
 import dagster._check as check
 import graphene
 from dagster._core.host_representation.external import ExternalResource
