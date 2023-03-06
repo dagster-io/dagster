@@ -56,7 +56,12 @@ describe('CreatePartitionDialog', () => {
       render(<Test mocks={[]} />);
     });
     const partitionInput = screen.getByTestId('partition-input');
+    expect(screen.queryByTestId('warning-icon')).toBeNull();
     userEvent.type(partitionInput, 'invalidname\n\r\t');
     expect(screen.getByTestId('warning-icon')).toBeVisible();
+    userEvent.clear(partitionInput);
+    expect(screen.queryByTestId('warning-icon')).toBeNull();
+    userEvent.type(partitionInput, 'validname');
+    expect(screen.queryByTestId('warning-icon')).toBeNull();
   });
 });
