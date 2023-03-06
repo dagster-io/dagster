@@ -28,8 +28,6 @@ Partitioned Schedules
 
 .. autofunction:: build_schedule_from_partitioned_job
 
-.. autoclass:: PartitionScheduleDefinition
-
 .. autodecorator:: hourly_partitioned_config
     :noindex:
 
