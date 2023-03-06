@@ -1,7 +1,11 @@
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    build_configurable_duckdb_io_manager,
+    build_duckdb_io_manager,
+)
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -128,3 +132,7 @@ Examples:
             ...
 
 """
+
+configurable_duckdb_pandas_io_manager = build_configurable_duckdb_io_manager(
+    [DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+)

@@ -3,7 +3,9 @@ from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
-from dagster._config.structured_config import ConfigurableIOManagerFactory
+from dagster._config.structured_config import (
+    ConfigurableIOManagerFactory,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -112,7 +114,7 @@ def build_configurable_duckdb_io_manager(
 ):
     class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
         database: str
-        schema_: Optional[str] = None
+        schema_: Optional[str] = None  # schema is a reserved word for pydantic
 
         def create_io_manager(self, context) -> DbIOManager:
             return DbIOManager(
