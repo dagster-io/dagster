@@ -7,7 +7,11 @@ description: This guide talks about Dagster's recommendations on structuring lar
 
 <Note>
   <strong>Got questions about our recommendations or something to add?</strong>{" "}
-  Join our <a href="https://github.com/dagster-io/dagster/discussions/8972">GitHub discussion</a> to share how you organize your Dagster code.
+  Join our{" "}
+  <a href="https://github.com/dagster-io/dagster/discussions/8972">
+    GitHub discussion
+  </a>{" "}
+  to share how you organize your Dagster code.
 </Note>
 
 Dagster aims to enable teams to ship data pipelines with extraordinary velocity. In this guide, we'll talk about how we imagine structuring larger Dagster projects which help achieve that goal.
@@ -139,7 +143,7 @@ This project does not include ops or graphs; if it did, this would be the recomm
 
 We recommend having a `jobs` folder rather than a `jobs.py` file in this situation. Depending on the types of jobs you have, you can create a separate file for each type of job.
 
-We recommend defining ops and graphs a job file along with the job definition within a single file. 
+We recommend defining ops and graphs a job file along with the job definition within a single file.
 
 ```shell
 ├──project_with_ops
