@@ -322,6 +322,13 @@ def _validate_and_get_resource_dict(
 def get_or_create_sensor_context(
     fn: Callable, *args: Any, **kwargs: Any
 ) -> SensorEvaluationContext:
+    """
+    Based on the passed resource function and the arguments passed to it, returns the
+    user-passed SensorEvaluationContext or creates one if it is not passed.
+
+    Raises an exception if the user passes more than one argument or if the user-provided
+    function requires a context parameter but none is passed.
+    """
     context_param_name = context_param_name_if_present(fn)
 
     if len(args) + len(kwargs) > 1:
