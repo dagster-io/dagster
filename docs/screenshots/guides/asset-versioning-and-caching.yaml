@@ -53,16 +53,16 @@
     - hover over stale tag in sidebar
     - (change `code_version` back after screenshot)
 
-- id: manual-logical-versions-1.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_logical_versions_1.py
+- id: manual-data-versions-1.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py
   route: /workspace
   vetted: false
   steps:
     - materialize both assets
     - select `versioned_number` and expand "Materialization system tags" in sidebar
 
-- id: manual-logical-versions-2.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_logical_versions_1.py
+- id: manual-data-versions-2.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py
   route: /workspace
   vetted: false
   steps:

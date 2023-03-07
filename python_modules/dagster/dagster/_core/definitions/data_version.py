@@ -19,6 +19,7 @@ from typing import (
 from typing_extensions import Final
 
 from dagster import _check as check
+from dagster._annotations import deprecated
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -44,39 +45,39 @@ def foo(x):
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 
-class LogicalVersion(
+class DataVersion(
     NamedTuple(
-        "_LogicalVersion",
+        "_DataVersion",
         [("value", str)],
     )
 ):
-    """(Experimental) Represents a logical version for an asset.
+    """(Experimental) Represents a data version for an asset.
 
     Args:
-        value (str): An arbitrary string representing a logical version.
+        value (str): An arbitrary string representing a data version.
     """
 
     def __new__(
         cls,
         value: str,
     ):
-        return super(LogicalVersion, cls).__new__(
+        return super(DataVersion, cls).__new__(
             cls,
             value=check.str_param(value, "value"),
         )
 
 
-DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
-NULL_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("NULL")
-UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
+DEFAULT_DATA_VERSION: Final[DataVersion] = DataVersion("INITIAL")
+NULL_DATA_VERSION: Final[DataVersion] = DataVersion("NULL")
+UNKNOWN_DATA_VERSION: Final[DataVersion] = DataVersion("UNKNOWN")
 
 
-class LogicalVersionProvenance(
+class DataProvenance(
     NamedTuple(
-        "_LogicalVersionProvenance",
+        "_DataProvenance",
         [
             ("code_version", str),
-            ("input_logical_versions", Mapping["AssetKey", LogicalVersion]),
+            ("input_data_versions", Mapping["AssetKey", DataVersion]),
         ],
     )
 ):
@@ -84,60 +85,79 @@ class LogicalVersionProvenance(
 
     Args:
         code_version (str): The code version of the op that generated a materialization.
-        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the
-            inputs used for the materialization.
+        input_data_versions (Mapping[AssetKey, DataVersion]): The data versions of the
+            inputs used to generate a materialization.
     """
 
     def __new__(
         cls,
         code_version: str,
-        input_logical_versions: Mapping["AssetKey", LogicalVersion],
+        input_data_versions: Mapping["AssetKey", DataVersion],
     ):
         from dagster._core.definitions.events import AssetKey
 
-        return super(LogicalVersionProvenance, cls).__new__(
+        return super(DataProvenance, cls).__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
-            input_logical_versions=check.mapping_param(
-                input_logical_versions,
-                "input_logical_versions",
+            input_data_versions=check.mapping_param(
+                input_data_versions,
+                "input_data_versions",
                 key_type=AssetKey,
-                value_type=LogicalVersion,
+                value_type=DataVersion,
             ),
         )
 
     @staticmethod
-    def from_tags(tags: Mapping[str, str]) -> Optional[LogicalVersionProvenance]:
+    def from_tags(tags: Mapping[str, str]) -> Optional[DataProvenance]:
         from dagster._core.definitions.events import AssetKey
 
-        code_version = tags.get(CODE_VERSION_TAG_KEY)
+        code_version = tags.get(CODE_VERSION_TAG)
         if code_version is None:
             return None
-        start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX) + 1
-        input_logical_versions = {
-            AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
+        input_data_versions = {
+            # Everything after the 2nd slash is the asset key
+            AssetKey.from_user_string(k.split("/", maxsplit=2)[-1]): DataVersion(tags[k])
             for k, v in tags.items()
-            if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
+            if k.startswith(INPUT_DATA_VERSION_TAG_PREFIX)
+            or k.startswith(_OLD_INPUT_DATA_VERSION_TAG_PREFIX)
         }
-        return LogicalVersionProvenance(code_version, input_logical_versions)
+        return DataProvenance(code_version, input_data_versions)
+
+    @property
+    @deprecated
+    def input_logical_versions(self) -> Mapping["AssetKey", DataVersion]:
+        return self.input_data_versions
 
 
 # ########################
 # ##### TAG KEYS
 # ########################
 
-LOGICAL_VERSION_TAG_KEY: Final[str] = "dagster/logical_version"
-CODE_VERSION_TAG_KEY: Final[str] = "dagster/code_version"
-INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX: Final[str] = "dagster/input_logical_version"
-INPUT_EVENT_POINTER_TAG_KEY_PREFIX: Final[str] = "dagster/input_event_pointer"
+DATA_VERSION_TAG: Final[str] = "dagster/data_version"
+_OLD_DATA_VERSION_TAG: Final[str] = "dagster/logical_version"
+CODE_VERSION_TAG: Final[str] = "dagster/code_version"
+INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_data_version"
+_OLD_INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_logical_version"
+INPUT_EVENT_POINTER_TAG_PREFIX: Final[str] = "dagster/input_event_pointer"
 
 
-def get_input_logical_version_tag_key(input_key: "AssetKey") -> str:
-    return f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
+def read_input_data_version_from_tags(
+    tags: Mapping[str, str], input_key: "AssetKey"
+) -> Optional[DataVersion]:
+    value = tags.get(
+        get_input_data_version_tag(input_key, prefix=INPUT_DATA_VERSION_TAG_PREFIX)
+    ) or tags.get(get_input_data_version_tag(input_key, prefix=_OLD_INPUT_DATA_VERSION_TAG_PREFIX))
+    return DataVersion(value) if value is not None else None
 
 
-def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
-    return f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/{input_key.to_user_string()}"
+def get_input_data_version_tag(
+    input_key: "AssetKey", prefix: str = INPUT_DATA_VERSION_TAG_PREFIX
+) -> str:
+    return f"{prefix}/{input_key.to_user_string()}"
+
+
+def get_input_event_pointer_tag(input_key: "AssetKey") -> str:
+    return f"{INPUT_EVENT_POINTER_TAG_PREFIX}/{input_key.to_user_string()}"
 
 
 # ########################
@@ -145,57 +165,57 @@ def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
 # ########################
 
 
-def compute_logical_version(
+def compute_logical_data_version(
     code_version: Union[str, UnknownValue],
-    input_logical_versions: Mapping["AssetKey", LogicalVersion],
-) -> LogicalVersion:
-    """Compute a logical version from inputs.
+    input_data_versions: Mapping["AssetKey", DataVersion],
+) -> DataVersion:
+    """Compute a data version for a value as a hash of input data versions and code version.
 
     Args:
-        code_version (LogicalVersion): The code version of the computation.
-        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the inputs.
+        code_version (str): The code version of the computation.
+        input_data_versions (Mapping[AssetKey, DataVersion]): The data versions of the inputs.
 
     Returns:
-        LogicalVersion: The computed logical version.
+        DataVersion: The computed version as a `DataVersion`.
     """
     from dagster._core.definitions.events import AssetKey
 
     check.inst_param(code_version, "code_version", (str, UnknownValue))
     check.mapping_param(
-        input_logical_versions, "input_versions", key_type=AssetKey, value_type=LogicalVersion
+        input_data_versions, "input_versions", key_type=AssetKey, value_type=DataVersion
     )
 
     if (
         isinstance(code_version, UnknownValue)
-        or UNKNOWN_LOGICAL_VERSION in input_logical_versions.values()
+        or UNKNOWN_DATA_VERSION in input_data_versions.values()
     ):
-        return UNKNOWN_LOGICAL_VERSION
+        return UNKNOWN_DATA_VERSION
 
     ordered_input_versions = [
-        input_logical_versions[k] for k in sorted(input_logical_versions.keys(), key=str)
+        input_data_versions[k] for k in sorted(input_data_versions.keys(), key=str)
     ]
     all_inputs = (code_version, *(v.value for v in ordered_input_versions))
 
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
-    return LogicalVersion(hash_sig.hexdigest())
+    return DataVersion(hash_sig.hexdigest())
 
 
-def extract_logical_version_from_entry(
+def extract_data_version_from_entry(
     entry: EventLogEntry,
-) -> Optional[LogicalVersion]:
+) -> Optional[DataVersion]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
-    value = tags.get(LOGICAL_VERSION_TAG_KEY)
-    return None if value is None else LogicalVersion(value)
+    value = tags.get(DATA_VERSION_TAG) or tags.get(_OLD_DATA_VERSION_TAG)
+    return None if value is None else DataVersion(value)
 
 
-def extract_logical_version_provenance_from_entry(
+def extract_data_provenance_from_entry(
     entry: EventLogEntry,
-) -> Optional[LogicalVersionProvenance]:
+) -> Optional[DataProvenance]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
-    return LogicalVersionProvenance.from_tags(tags)
+    return DataProvenance.from_tags(tags)
 
 
 def _extract_event_data_from_entry(
@@ -245,7 +265,7 @@ class StaleStatusRootCause(NamedTuple):
 
 class CachingStaleStatusResolver:
     """
-    Used to resolve logical version information. Avoids redundant database
+    Used to resolve data version information. Avoids redundant database
     calls that would otherwise occur. Intended for use within the scope of a
     single "request" (e.g. GQL request, RunRequest resolution).
     """
@@ -278,13 +298,13 @@ class CachingStaleStatusResolver:
     def get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
         return self._get_stale_root_causes(key=key)
 
-    def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
-        return self._get_current_logical_version(key=key)
+    def get_current_data_version(self, key: AssetKey) -> DataVersion:
+        return self._get_current_data_version(key=key)
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
-        current_version = self._get_current_logical_version(key=key)
-        if current_version == NULL_LOGICAL_VERSION:
+        current_version = self._get_current_data_version(key=key)
+        if current_version == NULL_DATA_VERSION:
             return StaleStatus.MISSING
         elif self.asset_graph.is_source(key) or self._is_partitioned_or_downstream(key=key):
             return StaleStatus.FRESH
@@ -294,9 +314,9 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_stale_causes(self, key: AssetKey) -> Sequence[StaleCause]:
-        current_version = self._get_current_logical_version(key=key)
+        current_version = self._get_current_data_version(key=key)
         if (
-            current_version == NULL_LOGICAL_VERSION
+            current_version == NULL_DATA_VERSION
             or self.asset_graph.is_source(key)
             or self._is_partitioned_or_downstream(key=key)
         ):
@@ -306,7 +326,7 @@ class CachingStaleStatusResolver:
 
     def _get_stale_causes_materialized(self, key: AssetKey) -> Iterator[StaleCause]:
         code_version = self.asset_graph.get_code_version(key)
-        provenance = self._get_current_logical_version_provenance(key=key)
+        provenance = self._get_current_data_provenance(key=key)
         dependency_keys = self.asset_graph.get_parents(key)
 
         # only used if no provenance available
@@ -317,7 +337,7 @@ class CachingStaleStatusResolver:
             if code_version and code_version != provenance.code_version:
                 yield StaleCause(key, "updated code version")
 
-            removed_deps = set(provenance.input_logical_versions.keys()) - set(dependency_keys)
+            removed_deps = set(provenance.input_data_versions.keys()) - set(dependency_keys)
             for dep_key in removed_deps:
                 yield StaleCause(
                     key,
@@ -334,23 +354,23 @@ class CachingStaleStatusResolver:
                     self._get_stale_causes(key=dep_key),
                 )
             elif provenance:
-                if dep_key not in provenance.input_logical_versions:
+                if dep_key not in provenance.input_data_versions:
                     yield StaleCause(
                         key,
                         "new dependency",
                         dep_key,
                     )
-                elif provenance.input_logical_versions[
-                    dep_key
-                ] != self._get_current_logical_version(key=dep_key):
+                elif provenance.input_data_versions[dep_key] != self._get_current_data_version(
+                    key=dep_key
+                ):
                     yield StaleCause(
                         key,
-                        "updated dependency logical version",
+                        "updated dependency data version",
                         dep_key,
                         [
                             StaleCause(
                                 dep_key,
-                                "updated logical version",
+                                "updated data version",
                             )
                         ],
                     )
@@ -401,33 +421,31 @@ class CachingStaleStatusResolver:
         return self._asset_graph
 
     @cached_method
-    def _get_current_logical_version(self, *, key: AssetKey) -> LogicalVersion:
+    def _get_current_data_version(self, *, key: AssetKey) -> DataVersion:
         is_source = self.asset_graph.is_source(key)
-        event = self._instance.get_latest_logical_version_record(
+        event = self._instance.get_latest_data_version_record(
             key,
             is_source,
         )
         if event is None and is_source:
-            return DEFAULT_LOGICAL_VERSION
+            return DEFAULT_DATA_VERSION
         elif event is None:
-            return NULL_LOGICAL_VERSION
+            return NULL_DATA_VERSION
         else:
-            logical_version = extract_logical_version_from_entry(event.event_log_entry)
-            return logical_version or DEFAULT_LOGICAL_VERSION
+            data_version = extract_data_version_from_entry(event.event_log_entry)
+            return data_version or DEFAULT_DATA_VERSION
 
     @cached_method
     def _get_latest_materialization_event(self, *, key: AssetKey) -> Optional[EventLogEntry]:
         return self._instance.get_latest_materialization_event(key)
 
     @cached_method
-    def _get_current_logical_version_provenance(
-        self, *, key: AssetKey
-    ) -> Optional[LogicalVersionProvenance]:
+    def _get_current_data_provenance(self, *, key: AssetKey) -> Optional[DataProvenance]:
         materialization = self._get_latest_materialization_event(key=key)
         if materialization is None:
             return None
         else:
-            return extract_logical_version_provenance_from_entry(materialization)
+            return extract_data_provenance_from_entry(materialization)
 
     @cached_method
     def _is_partitioned_or_downstream(self, *, key: AssetKey) -> bool:

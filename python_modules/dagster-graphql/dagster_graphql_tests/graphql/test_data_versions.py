@@ -8,8 +8,8 @@ from dagster import (
     asset,
     repository,
 )
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
@@ -19,7 +19,7 @@ from dagster_graphql.test.utils import (
     infer_job_or_pipeline_selector,
 )
 
-from dagster_graphql_tests.graphql.test_assets import GET_ASSET_LOGICAL_VERSIONS
+from dagster_graphql_tests.graphql.test_assets import GET_ASSET_DATA_VERSIONS
 
 
 def get_repo_v1():
@@ -59,7 +59,7 @@ def test_dependencies_changed():
             assert _materialize_assets(context_v1, repo_v1)
             wait_for_runs_to_finish(context_v1.instance)
         with define_out_of_process_context(__file__, "get_repo_v2", instance) as context_v2:
-            assert _fetch_logical_versions(context_v2, repo_v2)
+            assert _fetch_data_versions(context_v2, repo_v2)
 
 
 def test_stale_status():
@@ -67,32 +67,32 @@ def test_stale_status():
 
     with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
-            result = _fetch_logical_versions(context, repo)
+            result = _fetch_data_versions(context, repo)
             foo = _get_asset_node("foo", result)
-            assert foo["currentLogicalVersion"] is None
+            assert foo["currentDataVersion"] is None
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
             assert _materialize_assets(context, repo)
             wait_for_runs_to_finish(context.instance)
 
-            result = _fetch_logical_versions(context, repo)
+            result = _fetch_data_versions(context, repo)
             foo = _get_asset_node("foo", result)
-            assert foo["currentLogicalVersion"] is not None
+            assert foo["currentDataVersion"] is not None
             assert foo["staleStatus"] == "FRESH"
             assert foo["staleCauses"] == []
 
 
-def test_logical_version_from_tags():
+def test_data_version_from_tags():
     repo_v1 = get_repo_v1()
     with instance_for_test() as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
             assert _materialize_assets(context_v1, repo_v1)
             wait_for_runs_to_finish(context_v1.instance)
-            result = _fetch_logical_versions(context_v1, repo_v1)
+            result = _fetch_data_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
-            lv_tag = next(tag for tag in tags if tag["key"] == LOGICAL_VERSION_TAG_KEY)
-            assert lv_tag["value"] == result.data["assetNodes"][0]["currentLogicalVersion"]
+            dv_tag = next(tag for tag in tags if tag["key"] == DATA_VERSION_TAG)
+            assert dv_tag["value"] == result.data["assetNodes"][0]["currentDataVersion"]
 
 
 def get_repo_with_partitioned_self_dep_asset():
@@ -125,7 +125,7 @@ def test_partitioned_self_dep():
         with define_out_of_process_context(
             __file__, "get_repo_with_partitioned_self_dep_asset", instance
         ) as context:
-            result = _fetch_logical_versions(context, repo)
+            result = _fetch_data_versions(context, repo)
             assert result
             assert result.data
             assert _get_asset_node("a", result)["staleStatus"] == "MISSING"
@@ -151,11 +151,11 @@ def _materialize_assets(
     )
 
 
-def _fetch_logical_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
+def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
     selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_names()[0])
     return execute_dagster_graphql(
         context,
-        GET_ASSET_LOGICAL_VERSIONS,
+        GET_ASSET_DATA_VERSIONS,
         variables={
             "pipelineSelector": selector,
         },

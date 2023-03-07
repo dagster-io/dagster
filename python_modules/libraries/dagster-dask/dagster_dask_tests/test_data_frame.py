@@ -4,7 +4,7 @@ from dagster import file_relative_path, op
 from dagster._core.definitions.input import In
 from dagster._legacy import execute_solid
 from dagster_dask import DataFrame
-from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
+from dagster_dask.data_frame import DataFrameReadTypes
 from dagster_dask.utils import DataFrameUtilities
 from dask.dataframe.utils import assert_eq
 
@@ -51,15 +51,3 @@ def test_dataframe_loader_config_keys_dont_overlap():
     read_keys = set(DataFrameReadTypes.keys())
 
     assert len(config_keys.intersection(read_keys)) == 0
-
-
-def test_dataframe_materializer_config_keys_dont_overlap():
-    """
-    Test that the to_keys, which are deprecated, do not overlap with
-    the normal materializer config_keys.
-    """
-    config_keys = set(DataFrameUtilities.keys())
-    config_keys.add("to")
-    to_keys = set(DataFrameToTypes.keys())
-
-    assert len(config_keys.intersection(to_keys)) == 0

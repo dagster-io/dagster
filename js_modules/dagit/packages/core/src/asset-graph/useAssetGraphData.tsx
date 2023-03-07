@@ -180,6 +180,7 @@ const ASSET_GRAPH_QUERY = gql`
   fragment AssetNodeForGraphQuery on AssetNode {
     id
     groupName
+    hasMaterializePermission
     repository {
       id
       name

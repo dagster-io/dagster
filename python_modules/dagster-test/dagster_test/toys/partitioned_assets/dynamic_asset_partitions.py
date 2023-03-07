@@ -37,7 +37,7 @@ defs = Definitions(assets=load_assets_from_current_module(), jobs=[dynamic_parti
 def add_partitions(num_partitions):
     with DagsterInstance.get() as instance:
         partition_keys = [f"customer_{i}" for i in range(num_partitions)]
-        customers_partitions_def.add_partitions(partition_keys, instance=instance)
+        instance.add_dynamic_partitions(customers_partitions_def.name, partition_keys)
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ from ..definitions.resource_requirement import (
     TypeResourceRequirement,
 )
 from .builtin_config_schemas import BuiltinSchemas
-from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
+from .config_schema import DagsterTypeLoader
 
 if t.TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
@@ -85,11 +85,6 @@ class DagsterType(RequiresResources):
             config machinery. As a rule, you should use the
             :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
-            that inherits from :py:class:`~dagster.DagsterTypeMaterializer` and can persist values of
-            this type. As a rule, you should use the
-            :py:func:`@dagster_type_materializer <dagster.dagster_type_materializer>`
-            decorator to construct these arguments.
         required_resource_keys (Optional[Set[str]]): Resource keys required by the ``type_check_fn``.
         is_builtin (bool): Defaults to False. This is used by tools to display or
             filter built-in types (such as :py:class:`~dagster.String`, :py:class:`~dagster.Int`) to visually distinguish
@@ -108,7 +103,6 @@ class DagsterType(RequiresResources):
         is_builtin: bool = False,
         description: t.Optional[str] = None,
         loader: t.Optional[DagsterTypeLoader] = None,
-        materializer: t.Optional[DagsterTypeMaterializer] = None,
         required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = t.Any,
@@ -137,9 +131,6 @@ class DagsterType(RequiresResources):
 
         self._description = check.opt_str_param(description, "description")
         self._loader = check.opt_inst_param(loader, "loader", DagsterTypeLoader)
-        self.materializer = check.opt_inst_param(
-            materializer, "materializer", DagsterTypeMaterializer
-        )
 
         self._required_resource_keys = check.opt_set_param(
             required_resource_keys,
@@ -251,10 +242,6 @@ class DagsterType(RequiresResources):
         return self.loader.schema_type.key if self.loader else None
 
     @property
-    def materializer_schema_key(self) -> t.Optional[str]:
-        return self.materializer.schema_type.key if self.materializer else None
-
-    @property
     def type_param_keys(self) -> t.Sequence[str]:
         return []
 
@@ -279,8 +266,6 @@ class DagsterType(RequiresResources):
             yield TypeResourceRequirement(key=resource_key, type_display_name=self.display_name)
         if self.loader:
             yield from self.loader.get_resource_requirements(outer_context=self.display_name)
-        if self.materializer:
-            yield from self.materializer.get_resource_requirements(outer_context=self.display_name)
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
@@ -357,7 +342,6 @@ class _Int(BuiltinScalarDagsterType):
         super(_Int, self).__init__(
             name="Int",
             loader=BuiltinSchemas.INT_INPUT,
-            materializer=BuiltinSchemas.INT_OUTPUT,
             type_check_fn=self.type_check_fn,
             typing_type=int,
         )
@@ -371,7 +355,6 @@ class _String(BuiltinScalarDagsterType):
         super(_String, self).__init__(
             name="String",
             loader=BuiltinSchemas.STRING_INPUT,
-            materializer=BuiltinSchemas.STRING_OUTPUT,
             type_check_fn=self.type_check_fn,
             typing_type=str,
         )
@@ -385,7 +368,6 @@ class _Float(BuiltinScalarDagsterType):
         super(_Float, self).__init__(
             name="Float",
             loader=BuiltinSchemas.FLOAT_INPUT,
-            materializer=BuiltinSchemas.FLOAT_OUTPUT,
             type_check_fn=self.type_check_fn,
             typing_type=float,
         )
@@ -399,7 +381,6 @@ class _Bool(BuiltinScalarDagsterType):
         super(_Bool, self).__init__(
             name="Bool",
             loader=BuiltinSchemas.BOOL_INPUT,
-            materializer=BuiltinSchemas.BOOL_OUTPUT,
             type_check_fn=self.type_check_fn,
             typing_type=bool,
         )
@@ -414,7 +395,6 @@ class Anyish(DagsterType):
         key: t.Optional[str],
         name: t.Optional[str],
         loader: t.Optional[DagsterTypeLoader] = None,
-        materializer: t.Optional[DagsterTypeMaterializer] = None,
         is_builtin: bool = False,
         description: t.Optional[str] = None,
     ):
@@ -423,7 +403,6 @@ class Anyish(DagsterType):
             name=name,
             kind=DagsterTypeKind.ANY,
             loader=loader,
-            materializer=materializer,
             is_builtin=is_builtin,
             type_check_fn=self.type_check_method,
             description=description,
@@ -448,7 +427,6 @@ class _Any(Anyish):
             key="Any",
             name="Any",
             loader=BuiltinSchemas.ANY_INPUT,
-            materializer=BuiltinSchemas.ANY_OUTPUT,
             is_builtin=True,
         )
 
@@ -456,7 +434,6 @@ class _Any(Anyish):
 def create_any_type(
     name: str,
     loader: t.Optional[DagsterTypeLoader] = None,
-    materializer: t.Optional[DagsterTypeMaterializer] = None,
     description: t.Optional[str] = None,
 ) -> Anyish:
     return Anyish(
@@ -464,7 +441,6 @@ def create_any_type(
         name=name,
         description=description,
         loader=loader,
-        materializer=materializer,
     )
 
 
@@ -475,7 +451,6 @@ class _Nothing(DagsterType):
             name="Nothing",
             kind=DagsterTypeKind.NOTHING,
             loader=None,
-            materializer=None,
             type_check_fn=self.type_check_method,
             is_builtin=True,
             typing_type=type(None),
@@ -554,11 +529,6 @@ class PythonObjectDagsterType(DagsterType):
             config machinery. As a rule, you should use the
             :py:func:`@dagster_type_loader <dagster.dagster_type_loader>` decorator to construct
             these arguments.
-        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
-            that inherits from :py:class:`~dagster.DagsterTypeMaterializer` and can persist values of
-            this type. As a rule, you should use the
-            :py:func:`@dagster_type_mate <dagster.dagster_type_mate>`
-            decorator to construct these arguments.
     """
 
     def __init__(
@@ -764,7 +734,6 @@ class Stringish(DagsterType):
             kind=DagsterTypeKind.SCALAR,
             type_check_fn=self.type_check_method,
             loader=BuiltinSchemas.STRING_INPUT,
-            materializer=BuiltinSchemas.STRING_OUTPUT,
             typing_type=str,
             **kwargs,
         )

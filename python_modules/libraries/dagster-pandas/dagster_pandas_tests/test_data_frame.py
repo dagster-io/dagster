@@ -2,7 +2,6 @@ from typing import List
 
 import pytest
 from dagster import (
-    AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
     DynamicOutput,
@@ -14,7 +13,6 @@ from dagster import (
     Selector,
     check_dagster_type,
     dagster_type_loader,
-    dagster_type_materializer,
     graph,
     job,
     op,
@@ -27,7 +25,7 @@ from dagster_pandas.constraints import (
 )
 from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
-from pandas import DataFrame, read_csv
+from pandas import DataFrame
 
 
 def test_create_pandas_dataframe_dagster_type():
@@ -171,7 +169,7 @@ def test_execute_summary_stats_metadata_value_error():
 
 def test_custom_dagster_dataframe_loading_ok():
     input_dataframe = DataFrame({"foo": [1, 2, 3]})
-    with safe_tempfile_path() as input_csv_fp, safe_tempfile_path() as output_csv_fp:
+    with safe_tempfile_path() as input_csv_fp:
         input_dataframe.to_csv(input_csv_fp)
         TestDataFrame = create_dagster_pandas_dataframe_type(
             name="TestDataFrame",
@@ -185,7 +183,7 @@ def test_custom_dagster_dataframe_loading_ok():
             out=Out(TestDataFrame),
         )
         def use_test_dataframe(_, test_df):
-            test_df["bar"] = [2, 4, 6]
+            assert list(test_df["foo"]) == [1, 2, 3]
             return test_df
 
         @graph
@@ -197,16 +195,11 @@ def test_custom_dagster_dataframe_loading_ok():
                 "ops": {
                     "use_test_dataframe": {
                         "inputs": {"test_df": {"csv": {"path": input_csv_fp}}},
-                        "outputs": [
-                            {"result": {"csv": {"path": output_csv_fp}}},
-                        ],
                     }
                 }
             }
         )
         assert result.success
-        output_df = read_csv(output_csv_fp)
-        assert all(output_df["bar"] == [2, 4, 6])
 
 
 def test_custom_dagster_dataframe_parametrizable_input():
@@ -231,17 +224,12 @@ def test_custom_dagster_dataframe_parametrizable_input():
             "You did not pick a door. You chose: {which_door}".format(which_door=which_door)
         )
 
-    @dagster_type_materializer(Selector({"devnull": Field(str), "nothing": Field(str)}))
-    def silly_materializer(_, _config, _value):
-        return AssetMaterialization(asset_key="nothing", description="just one of those days")
-
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
         columns=[
             PandasColumn.exists("foo"),
         ],
         loader=silly_loader,
-        materializer=silly_materializer,
     )
 
     @op(
@@ -260,7 +248,6 @@ def test_custom_dagster_dataframe_parametrizable_input():
             "ops": {
                 "did_i_win": {
                     "inputs": {"df": {"door_a": "bar"}},
-                    "outputs": [{"result": {"devnull": "baz"}}],
                 }
             }
         }
@@ -269,11 +256,6 @@ def test_custom_dagster_dataframe_parametrizable_input():
     output_df = result.output_for_node("did_i_win")
     assert isinstance(output_df, DataFrame)
     assert output_df["foo"].tolist() == ["goat"]
-    materialization_events = [
-        event for event in result.all_node_events if event.is_step_materialization
-    ]
-    assert len(materialization_events) == 1
-    assert materialization_events[0].event_specific_data.materialization.label == "nothing"
 
 
 def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():

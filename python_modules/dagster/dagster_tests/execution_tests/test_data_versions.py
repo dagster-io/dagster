@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast, overload
+from unittest import mock
 
 from dagster import (
     AssetMaterialization,
@@ -16,18 +17,21 @@ from dagster import (
 from dagster._config.field import Field
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.logical_version import (
-    CODE_VERSION_TAG_KEY,
-    INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
-    LOGICAL_VERSION_TAG_KEY,
+from dagster._core.definitions.data_version import (
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    INPUT_DATA_VERSION_TAG_PREFIX,
     CachingStaleStatusResolver,
-    LogicalVersion,
+    DataProvenance,
+    DataVersion,
     StaleCause,
     StaleStatus,
-    compute_logical_version,
+    compute_logical_data_version,
+    extract_data_provenance_from_entry,
+    extract_data_version_from_entry,
 )
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.events import AssetKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -84,57 +88,57 @@ def get_upstream_version_from_mat_provenance(
     mat: AssetMaterialization, upstream_asset_key: AssetKey
 ) -> str:
     assert mat.tags
-    return mat.tags[f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{upstream_asset_key.to_user_string()}"]
+    return mat.tags[f"{INPUT_DATA_VERSION_TAG_PREFIX}/{upstream_asset_key.to_user_string()}"]
 
 
 def get_version_from_mat(mat: AssetMaterialization) -> str:
     assert mat.tags
-    return mat.tags[LOGICAL_VERSION_TAG_KEY]
+    return mat.tags[DATA_VERSION_TAG]
 
 
-def assert_logical_version(mat: AssetMaterialization, version: Union[str, LogicalVersion]) -> None:
-    value = version.value if isinstance(version, LogicalVersion) else version
+def assert_data_version(mat: AssetMaterialization, version: Union[str, DataVersion]) -> None:
+    value = version.value if isinstance(version, DataVersion) else version
     assert mat.tags
-    assert mat.tags[LOGICAL_VERSION_TAG_KEY] == value
+    assert mat.tags[DATA_VERSION_TAG] == value
 
 
 def assert_code_version(mat: AssetMaterialization, version: str) -> None:
     assert mat.tags
-    assert mat.tags[CODE_VERSION_TAG_KEY] == version
+    assert mat.tags[CODE_VERSION_TAG] == version
 
 
 def assert_same_versions(
     mat1: AssetMaterialization, mat2: AssetMaterialization, code_version: str
 ) -> None:
     assert mat1.tags
-    assert mat1.tags[CODE_VERSION_TAG_KEY] == code_version
-    assert mat1.tags[LOGICAL_VERSION_TAG_KEY] is not None
+    assert mat1.tags[CODE_VERSION_TAG] == code_version
+    assert mat1.tags[DATA_VERSION_TAG] is not None
     assert mat2.tags
-    assert mat2.tags[CODE_VERSION_TAG_KEY] == code_version
-    assert mat2.tags[LOGICAL_VERSION_TAG_KEY] == mat1.tags["dagster/logical_version"]
+    assert mat2.tags[CODE_VERSION_TAG] == code_version
+    assert mat2.tags[DATA_VERSION_TAG] == mat1.tags[DATA_VERSION_TAG]
 
 
 def assert_different_versions(mat1: AssetMaterialization, mat2: AssetMaterialization) -> None:
     assert mat1.tags
-    assert mat1.tags[CODE_VERSION_TAG_KEY] is not None
-    assert mat1.tags[LOGICAL_VERSION_TAG_KEY] is not None
+    assert mat1.tags[CODE_VERSION_TAG] is not None
+    assert mat1.tags[DATA_VERSION_TAG] is not None
     assert mat2.tags
-    assert mat2.tags[LOGICAL_VERSION_TAG_KEY] != mat1.tags["dagster/logical_version"]
+    assert mat2.tags[DATA_VERSION_TAG] != mat1.tags[DATA_VERSION_TAG]
 
 
 def assert_provenance_match(mat: AssetMaterialization, upstream_mat: AssetMaterialization) -> None:
-    mat_prov_lv = get_upstream_version_from_mat_provenance(mat, upstream_mat.asset_key)
-    upstream_mat_lv = get_version_from_mat(upstream_mat)
-    assert mat_prov_lv == upstream_mat_lv
+    mat_prov_dv = get_upstream_version_from_mat_provenance(mat, upstream_mat.asset_key)
+    upstream_mat_dv = get_version_from_mat(upstream_mat)
+    assert mat_prov_dv == upstream_mat_dv
 
 
 # Check that mat references upstream mat in its provenance
 def assert_provenance_no_match(
     mat: AssetMaterialization, upstream_mat: AssetMaterialization
 ) -> None:
-    mat_prov_lv = get_upstream_version_from_mat_provenance(mat, upstream_mat.asset_key)
-    upstream_mat_lv = get_version_from_mat(upstream_mat)
-    assert mat_prov_lv != upstream_mat_lv
+    mat_prov_dv = get_upstream_version_from_mat_provenance(mat, upstream_mat.asset_key)
+    upstream_mat_dv = get_version_from_mat(upstream_mat)
+    assert mat_prov_dv != upstream_mat_dv
 
 
 @overload
@@ -412,21 +416,21 @@ def test_multiple_code_versions():
     alpha_mat = mats[AssetKey("alpha")]
     beta_mat = mats[AssetKey("beta")]
 
-    assert_logical_version(alpha_mat, compute_logical_version("a", {}))
+    assert_data_version(alpha_mat, compute_logical_data_version("a", {}))
     assert_code_version(alpha_mat, "a")
-    assert_logical_version(beta_mat, compute_logical_version("b", {}))
+    assert_data_version(beta_mat, compute_logical_data_version("b", {}))
     assert_code_version(beta_mat, "b")
 
 
-def test_set_logical_version_inside_op():
+def test_set_data_version_inside_op():
     instance = DagsterInstance.ephemeral()
 
     @asset
     def asset1():
-        return Output(1, logical_version=LogicalVersion("foo"))
+        return Output(1, data_version=DataVersion("foo"))
 
     mat = materialize_asset([asset1], asset1, instance)
-    assert_logical_version(mat, LogicalVersion("foo"))
+    assert_data_version(mat, DataVersion("foo"))
 
 
 def test_stale_status_general() -> None:
@@ -436,7 +440,7 @@ def test_stale_status_general() -> None:
     def source1(_context):
         nonlocal x
         x = x + 1
-        return LogicalVersion(str(x))
+        return DataVersion(str(x))
 
     @asset(code_version="abc")
     def asset1(source1):
@@ -467,10 +471,10 @@ def test_stale_status_general() -> None:
         assert status_resolver.get_stale_causes(asset1.key) == [
             StaleCause(
                 asset1.key,
-                "updated dependency logical version",
+                "updated dependency data version",
                 source1.key,
                 [
-                    StaleCause(source1.key, "updated logical version"),
+                    StaleCause(source1.key, "updated data version"),
                 ],
             ),
         ]
@@ -483,10 +487,10 @@ def test_stale_status_general() -> None:
                 [
                     StaleCause(
                         asset1.key,
-                        "updated dependency logical version",
+                        "updated dependency data version",
                         source1.key,
                         [
-                            StaleCause(source1.key, "updated logical version"),
+                            StaleCause(source1.key, "updated data version"),
                         ],
                     ),
                 ],
@@ -567,10 +571,10 @@ def test_stale_status_no_code_versions() -> None:
         assert status_resolver.get_stale_causes(asset2.key) == [
             StaleCause(
                 asset2.key,
-                "updated dependency logical version",
+                "updated dependency data version",
                 asset1.key,
                 [
-                    StaleCause(asset1.key, "updated logical version"),
+                    StaleCause(asset1.key, "updated data version"),
                 ],
             ),
         ]
@@ -651,12 +655,12 @@ def test_stale_status_manually_versioned() -> None:
     @asset(config_schema={"value": Field(int)})
     def asset1(context):
         value = context.op_config["value"]
-        return Output(value, logical_version=LogicalVersion(str(value)))
+        return Output(value, data_version=DataVersion(str(value)))
 
     @asset(config_schema={"value": Field(int)})
     def asset2(context, asset1):
         value = context.op_config["value"] + asset1
-        return Output(value, logical_version=LogicalVersion(str(value)))
+        return Output(value, data_version=DataVersion(str(value)))
 
     all_assets = [asset1, asset2]
     with instance_for_test() as instance:
@@ -687,10 +691,10 @@ def test_stale_status_manually_versioned() -> None:
         assert status_resolver.get_stale_causes(asset2.key) == [
             StaleCause(
                 asset2.key,
-                "updated dependency logical version",
+                "updated dependency data version",
                 asset1.key,
                 [
-                    StaleCause(asset1.key, "updated logical version"),
+                    StaleCause(asset1.key, "updated data version"),
                 ],
             ),
         ]
@@ -714,7 +718,7 @@ def test_stale_status_root_causes_general() -> None:
     def source1(_context):
         nonlocal x
         x = x + 1
-        return LogicalVersion(str(x))
+        return DataVersion(str(x))
 
     @asset(code_version="1")
     def asset1(source1):
@@ -761,17 +765,17 @@ def test_stale_status_root_causes_general() -> None:
         assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset1.key) == [
             StaleCause(asset1.key, "updated code version"),
-            StaleCause(source1.key, "updated logical version"),
+            StaleCause(source1.key, "updated data version"),
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset2.key) == [
             StaleCause(asset1.key, "updated code version"),
-            StaleCause(source1.key, "updated logical version"),
+            StaleCause(source1.key, "updated data version"),
         ]
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset3.key) == [
             StaleCause(asset1.key, "updated code version"),
-            StaleCause(source1.key, "updated logical version"),
+            StaleCause(source1.key, "updated data version"),
         ]
 
         # Simulate updating an asset with a new code version
@@ -784,7 +788,7 @@ def test_stale_status_root_causes_general() -> None:
         assert status_resolver.get_stale_root_causes(asset3.key) == [
             StaleCause(asset3.key, "updated code version"),
             StaleCause(asset1.key, "updated code version"),
-            StaleCause(source1.key, "updated logical version"),
+            StaleCause(source1.key, "updated data version"),
         ]
 
 
@@ -795,7 +799,7 @@ def test_stale_status_root_causes_dedup() -> None:
     def asset1():
         nonlocal x
         x += 1
-        return Output(x, logical_version=LogicalVersion(str(x)))
+        return Output(x, data_version=DataVersion(str(x)))
 
     @asset
     def asset2(asset1):
@@ -816,9 +820,8 @@ def test_stale_status_root_causes_dedup() -> None:
         # Test dedup from updated data version
         materialize_assets([asset1], instance=instance)
         status_resolver = get_stale_status_resolver(instance, all_assets)
-        print(status_resolver.get_stale_root_causes(asset4.key))
         assert status_resolver.get_stale_root_causes(asset4.key) == [
-            StaleCause(asset1.key, "updated logical version"),
+            StaleCause(asset1.key, "updated data version"),
         ]
 
         # Test dedup from updated code version
@@ -833,26 +836,64 @@ def test_stale_status_root_causes_dedup() -> None:
         ]
 
 
-def test_get_logical_version_provenance_inside_op():
+def test_get_data_provenance_inside_op():
     instance = DagsterInstance.ephemeral()
 
     @asset
     def asset1():
-        return Output(1, logical_version=LogicalVersion("foo"))
+        return Output(1, data_version=DataVersion("foo"))
 
     @asset(config_schema={"check_provenance": Field(bool, default_value=False)})
     def asset2(context: OpExecutionContext, asset1):
         if context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance
-            assert provenance.input_logical_versions[AssetKey("asset1")] == LogicalVersion("foo")
+            assert provenance.input_data_versions[AssetKey("asset1")] == DataVersion("foo")
         return Output(2)
 
     mats = materialize_assets([asset1, asset2], instance)
-    assert_logical_version(mats["asset1"], LogicalVersion("foo"))
+    assert_data_version(mats["asset1"], DataVersion("foo"))
     materialize_asset(
         [asset1, asset2],
         asset2,
         instance,
         run_config={"ops": {"asset2": {"config": {"check_provenance": True}}}},
     )
+
+
+# use old logical version tags
+def test_legacy_data_version_tags():
+    @asset
+    def foo():
+        return Output(1, data_version=DataVersion("alpha"))
+
+    @asset(code_version="1")
+    def bar(foo):
+        return Output(foo + 1, data_version=DataVersion("beta"))
+
+    with instance_for_test() as instance:
+
+        def mocked_get_input_data_version_tag(
+            input_key: AssetKey, prefix: str = "dagster/input_logical_version"
+        ) -> str:
+            return f"{prefix}/{input_key.to_user_string()}"
+
+        legacy_tags = {
+            "DATA_VERSION_TAG": "dagster/logical_version",
+            "get_input_data_version_tag": mocked_get_input_data_version_tag,
+        }
+
+        # This will create materializations with the legacy tags
+        with mock.patch.dict("dagster._core.execution.plan.execute_step.__dict__", legacy_tags):
+            mats = materialize_assets([foo, bar], instance)
+            assert mats["bar"].tags["dagster/logical_version"]
+            assert mats["bar"].tags["dagster/input_logical_version/foo"]
+            assert mats["bar"].tags["dagster/input_event_pointer/foo"]
+
+        # We're now outside the mock context
+        record = instance.get_latest_data_version_record(bar.key)
+        assert record
+        assert extract_data_version_from_entry(record.event_log_entry) == DataVersion("beta")
+        assert extract_data_provenance_from_entry(record.event_log_entry) == DataProvenance(
+            code_version="1", input_data_versions={AssetKey(["foo"]): DataVersion("alpha")}
+        )

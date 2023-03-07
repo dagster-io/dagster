@@ -8,6 +8,7 @@ setup(
         "dagster-wandb",
         "onnxruntime",
         "skl2onnx",
+        "onnx>=1.13.0",  # Ensure a version is installed that is protobuf 4 compatible
         "joblib",
         "torch",
         "torchvision",

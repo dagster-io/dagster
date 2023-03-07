@@ -189,7 +189,7 @@ export type AssetNode = {
   assetPartitionStatuses: AssetPartitionStatuses;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
-  currentLogicalVersion: Maybe<Scalars['String']>;
+  currentDataVersion: Maybe<Scalars['String']>;
   dependedBy: Array<AssetDependency>;
   dependedByKeys: Array<AssetKey>;
   dependencies: Array<AssetDependency>;

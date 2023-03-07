@@ -311,7 +311,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -323,7 +323,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -335,7 +335,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -398,7 +398,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -410,7 +410,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -422,7 +422,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -491,7 +491,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -503,7 +503,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -515,7 +515,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
@@ -527,7 +527,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -583,7 +583,7 @@ def test_dynamic_partitions():
         resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            dynamic_fruits.add_partitions(["apple"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -594,11 +594,11 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            dynamic_fruits.add_partitions(["orange"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -609,7 +609,7 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -622,6 +622,6 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]

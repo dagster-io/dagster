@@ -54,16 +54,16 @@ def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Se
 def test_dynamic_partitions_def_methods():
     foo = DynamicPartitionsDefinition(name="foo")
     with instance_for_test() as instance:
-        foo.add_partitions(["a", "b"], instance=instance)
+        instance.add_dynamic_partitions("foo", ["a", "b"])
         assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {
             "a",
             "b",
         }
-        assert foo.has_partition("a", instance=instance)
+        assert instance.has_dynamic_partition("foo", "a")
 
-        foo.delete_partition("a", instance=instance)
+        instance.delete_dynamic_partition("foo", "a")
         assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {"b"}
-        assert foo.has_partition("a", instance=instance) is False
+        assert instance.has_dynamic_partition("foo", "a") is False
 
 
 def test_dynamic_partitioned_run():
@@ -77,7 +77,7 @@ def test_dynamic_partitioned_run():
         with pytest.raises(DagsterUnknownPartitionError):
             materialize([my_asset], instance=instance, partition_key="a")
 
-        partitions_def.add_partitions(["a"], instance)
+        instance.add_dynamic_partitions("foo", ["a"])
         assert partitions_def.get_partition_keys(dynamic_partitions_store=instance) == ["a"]
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
@@ -104,7 +104,7 @@ def test_dynamic_partitioned_asset_dep():
         assert context.asset_keys_for_input() == ["apple"]
 
     with instance_for_test() as instance:
-        partitions_def.add_partitions(["apple"], instance=instance)
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
         materialize_to_memory([asset1], instance=instance, partition_key="apple")
 
 
@@ -134,7 +134,7 @@ def test_dynamic_partitioned_asset_io_manager_context():
         return asset1
 
     with instance_for_test() as instance:
-        partitions_def.add_partitions(["apple"], instance=instance)
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
 
         materialize(
             [asset1, asset2],
@@ -171,7 +171,7 @@ def test_dynamic_partitions_mapping():
         return 1
 
     with instance_for_test() as instance:
-        partitions_def.add_partitions(["apple"], instance=instance)
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
 
         materialize([dynamic1, dynamic2, unpartitioned], instance=instance, partition_key="apple")
 
@@ -195,7 +195,7 @@ def test_unpartitioned_downstream_of_dynamic_asset():
         return 1
 
     with instance_for_test() as instance:
-        partitions_def.add_partitions(partitions, instance=instance)
+        instance.add_dynamic_partitions(partitions_def.name, partitions)
 
         for partition in partitions[:-1]:
             materialize([dynamic1], instance=instance, partition_key=partition)

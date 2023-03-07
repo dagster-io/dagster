@@ -435,16 +435,12 @@ def get_required_resource_keys_for_step(
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])
 
-    # add output type, output materializer, and output io manager resource keys
+    # add output type and output io manager resource keys
     for step_output in execution_step.step_outputs:
         # Load the output type
         output_def = solid_def.output_def_named(step_output.name)
 
         resource_keys = resource_keys.union(output_def.dagster_type.required_resource_keys)
-        if step_output.should_materialize and output_def.dagster_type.materializer:
-            resource_keys = resource_keys.union(
-                output_def.dagster_type.materializer.required_resource_keys()
-            )
         if output_def.io_manager_key:
             resource_keys = resource_keys.union([output_def.io_manager_key])
 

@@ -73,6 +73,23 @@ describe('SensorDryRunTest', () => {
     });
   });
 
+  it('allows you to test again', async () => {
+    await act(async () => {
+      render(<Test mocks={[SensorDryRunMutationError]} />);
+    });
+    const cursorInput = screen.getByTestId('cursor-input');
+    userEvent.type(cursorInput, 'testing123');
+    userEvent.click(screen.getByTestId('evaluate'));
+    await waitFor(() => {
+      expect(screen.getByText('Failed')).toBeVisible();
+      expect(screen.queryByText('Skipped')).toBe(null);
+    });
+    userEvent.click(screen.getByTestId('test-again'));
+    expect(screen.queryByText('Failed')).toBe(null);
+    expect(screen.queryByText('Skipped')).toBe(null);
+    expect(screen.getByTestId('cursor-input')).toBeVisible();
+  });
+
   it('renders skip reason', async () => {
     await act(async () => {
       render(<Test mocks={[SensorDryRunMutationSkipped]} />);

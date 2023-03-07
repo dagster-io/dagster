@@ -23,6 +23,7 @@ export type AssetViewDefinitionQuery = {
           opNames: Array<string>;
           opVersion: string | null;
           jobNames: Array<string>;
+          hasMaterializePermission: boolean;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
@@ -15722,6 +15723,7 @@ export type AssetViewDefinitionNodeFragment = {
   opNames: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
+  hasMaterializePermission: boolean;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;

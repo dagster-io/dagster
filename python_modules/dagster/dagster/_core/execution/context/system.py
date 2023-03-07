@@ -61,11 +61,11 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.data_version import (
+        DataVersion,
+    )
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.logical_version import (
-        LogicalVersion,
-    )
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -523,7 +523,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
         self._is_external_input_asset_records_loaded = False
-        self._logical_version_cache: Dict[AssetKey, "LogicalVersion"] = {}
+        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -857,14 +857,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
-    def set_logical_version(self, asset_key: AssetKey, logical_version: "LogicalVersion") -> None:
-        self._logical_version_cache[asset_key] = logical_version
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+        self._data_version_cache[asset_key] = data_version
 
-    def has_logical_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._logical_version_cache
+    def has_data_version(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._data_version_cache
 
-    def get_logical_version(self, asset_key: AssetKey) -> "LogicalVersion":
-        return self._logical_version_cache[asset_key]
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+        return self._data_version_cache[asset_key]
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
@@ -906,16 +906,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._is_external_input_asset_records_loaded = True
 
     def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
-        from dagster._core.definitions.logical_version import (
-            extract_logical_version_from_entry,
+        from dagster._core.definitions.data_version import (
+            extract_data_version_from_entry,
         )
 
-        event = self.instance.get_latest_logical_version_record(key)
-        if key in self._logical_version_cache and retries <= 5:
-            event_logical_version = (
-                None if event is None else extract_logical_version_from_entry(event.event_log_entry)
+        event = self.instance.get_latest_data_version_record(key)
+        if key in self._data_version_cache and retries <= 5:
+            event_data_version = (
+                None if event is None else extract_data_version_from_entry(event.event_log_entry)
             )
-            if event_logical_version == self._logical_version_cache[key]:
+            if event_data_version == self._data_version_cache[key]:
                 self._input_asset_records[key] = event
             else:
                 self._fetch_input_asset_record(key, retries + 1)
@@ -1053,16 +1053,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
-        return DagsterTypeMaterializerContext(
-            plan_data=self.plan_data,
-            execution_data=self._execution_data,
-            log_manager=self._log_manager,
-            step=self.step,
-            output_capture=self._output_capture,
-            known_state=self._known_state,
-        )
-
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
         return DagsterTypeLoaderContext(
             plan_data=self.plan_data,
@@ -1108,32 +1098,6 @@ class TypeCheckContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._log
-
-
-class DagsterTypeMaterializerContext(StepExecutionContext):
-    """The context object provided to a :py:class:`@dagster_type_materializer <dagster_type_materializer>`-decorated function during execution.
-
-    Users should not construct this object directly.
-    """
-
-    @public
-    @property
-    def resources(self) -> "Resources":
-        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
-        """
-        return super(DagsterTypeMaterializerContext, self).resources
-
-    @public
-    @property
-    def job_def(self) -> "JobDefinition":
-        """The underlying job definition being executed."""
-        return super(DagsterTypeMaterializerContext, self).job_def
-
-    @public
-    @property
-    def op_def(self) -> "OpDefinition":
-        """The op for which type materialization is occurring."""
-        return super(DagsterTypeMaterializerContext, self).op_def
 
 
 class DagsterTypeLoaderContext(StepExecutionContext):

@@ -80,12 +80,15 @@ def _create_command_list(
     json_log_format: bool,
     command: str,
     flags_dict: Mapping[str, Any],
+    debug: bool,
 ) -> Sequence[str]:
     prefix = [executable]
     if warn_error:
         prefix += ["--warn-error"]
     if json_log_format:
         prefix += ["--no-use-color", "--log-format", "json"]
+    if debug:
+        prefix += ["--debug"]
 
     full_command = command.split(" ")
     for flag, value in flags_dict.items():
@@ -164,6 +167,7 @@ def execute_cli_stream(
     ignore_handled_error: bool,
     json_log_format: bool = True,
     capture_logs: bool = True,
+    debug: bool = False,
 ) -> Iterator[DbtCliEvent]:
     """Executes a command on the dbt CLI in a subprocess."""
     command_list = _create_command_list(
@@ -172,6 +176,7 @@ def execute_cli_stream(
         json_log_format=json_log_format,
         command=command,
         flags_dict=flags_dict,
+        debug=debug,
     )
     log.info(f"Executing command: {' '.join(command_list)}")
 
@@ -201,6 +206,7 @@ def execute_cli(
     docs_url: Optional[str] = None,
     json_log_format: bool = True,
     capture_logs: bool = True,
+    debug: bool = False,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
     check.str_param(executable, "executable")
@@ -215,6 +221,7 @@ def execute_cli(
         json_log_format=json_log_format,
         command=command,
         flags_dict=flags_dict,
+        debug=debug,
     )
     log.info(f"Executing command: {' '.join(command_list)}")
 

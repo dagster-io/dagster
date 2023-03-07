@@ -748,7 +748,7 @@ def test_partitions_def_to_string():
     assert str(dynamic) == "'a_partition'"
 
     dynamic = DynamicPartitionsDefinition(name="foo")
-    assert str(dynamic) == "Dynamic partitions definition foo"
+    assert str(dynamic) == 'Dynamic partitions: "foo"'
 
 
 def test_static_partition_keys_in_range():
