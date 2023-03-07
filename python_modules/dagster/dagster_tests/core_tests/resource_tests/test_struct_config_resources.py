@@ -1255,3 +1255,28 @@ def test_resource_defs_on_asset() -> None:
         @asset(required_resource_keys={"my_other_resource"})
         def an_other_asset(my_resource: MyResource):
             pass
+
+
+def test_extending_resource() -> None:
+    executed = {}
+
+    class BaseResource(ConfigurableResource):
+        a_str: str = "bar"
+        an_int: int = 1
+
+    class ExtendingResource(BaseResource):
+        a_float: float = 1.0
+
+    @op
+    def hello_world_op(writer: ExtendingResource):
+        assert writer.a_str == "foo"
+        assert writer.an_int == 1
+        assert writer.a_float == 1.0
+        executed["yes"] = True
+
+    @job(resource_defs={"writer": ExtendingResource(a_str="foo")})
+    def no_prefix_job() -> None:
+        hello_world_op()
+
+    assert no_prefix_job.execute_in_process().success
+    assert executed["yes"]
