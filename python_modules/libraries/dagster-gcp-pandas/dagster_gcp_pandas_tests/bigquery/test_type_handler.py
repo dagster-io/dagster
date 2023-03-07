@@ -486,7 +486,7 @@ def test_self_dependent_asset():
             key_prefix=schema,
             ins={
                 "self_dependent_asset": AssetIn(
-                    key=AssetKey(["my_schema", "self_dependent_asset"]),
+                    key=AssetKey([schema, "self_dependent_asset"]),
                     partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                 ),
             },
@@ -519,7 +519,7 @@ def test_self_dependent_asset():
         bq_table_path = f"{schema}.{table_name}"
 
         bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": bq_io_manager}
 
         materialize(
             [self_dependent_asset],

@@ -455,7 +455,7 @@ def test_self_dependent_asset(tmp_path):
     def self_dependent_asset(context, self_dependent_asset: pl.DataFrame) -> pl.DataFrame:
         key = context.asset_partition_key_for_output()
 
-        if not self_dependent_asset.is_empty:
+        if not self_dependent_asset.is_empty():
             assert len(self_dependent_asset["key"]) == 3
             assert (self_dependent_asset["key"] == context.op_config["last_partition_key"]).all()
         else:

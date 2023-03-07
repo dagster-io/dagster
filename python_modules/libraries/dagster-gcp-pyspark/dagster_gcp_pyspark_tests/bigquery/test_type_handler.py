@@ -552,7 +552,7 @@ def test_self_dependent_asset(spark):
             key_prefix=schema,
             ins={
                 "self_dependent_asset": AssetIn(
-                    key=AssetKey(["my_schema", "self_dependent_asset"]),
+                    key=AssetKey([schema, "self_dependent_asset"]),
                     partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                 ),
             },
