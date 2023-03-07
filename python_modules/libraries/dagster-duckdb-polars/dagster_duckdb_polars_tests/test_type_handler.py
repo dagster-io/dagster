@@ -448,20 +448,27 @@ def test_self_dependent_asset(tmp_path):
             ),
         },
         metadata={
-            "partition_expr": "start",
+            "partition_expr": "strptime(key, '%Y-%m-%d')",
         },
-        config_schema={"value": str},
+        config_schema={"value": str, "last_partition_key": str},
     )
     def self_dependent_asset(context, self_dependent_asset: pl.DataFrame) -> pl.DataFrame:
-        start, end = context.output_asset_partitions_time_window()
+        key = context.asset_partition_key_for_output()
+
+        if not self_dependent_asset.is_empty:
+            assert len(self_dependent_asset["key"]) == 3
+            assert (self_dependent_asset["key"] == context.op_config["last_partition_key"]).all()
+        else:
+            assert context.op_config["last_partition_key"] == "NA"
         value = context.op_config["value"]
-        return pl.DataFrame(
+        pd_df = pl.DataFrame(
             {
-                "start": [start, start, start],
-                "end": [end, end, end],
+                "key": [key, key, key],
                 "a": [value, value, value],
             }
         )
+
+        return pd_df
 
     duckdb_io_manager = duckdb_polars_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -472,7 +479,13 @@ def test_self_dependent_asset(tmp_path):
         [self_dependent_asset],
         partition_key="2023-01-01",
         resources=resource_defs,
-        run_config={"ops": {"my_schema__self_dependent_asset": {"config": {"value": "1"}}}},
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "1", "last_partition_key": "NA"}
+                }
+            }
+        },
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
@@ -481,4 +494,25 @@ def test_self_dependent_asset(tmp_path):
     )
 
     assert out_df["a"].to_list() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [self_dependent_asset],
+        partition_key="2023-01-02",
+        resources=resource_defs,
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "2", "last_partition_key": "2023-01-01"}
+                }
+            }
+        },
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = pl.DataFrame(
+        duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").arrow()
+    )
+
+    assert out_df["a"].to_list() == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()

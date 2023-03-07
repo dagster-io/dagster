@@ -7,6 +7,7 @@ from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import StructType
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
@@ -96,7 +97,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         )
 
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
-            return spark.createDataFrame([])
+            return spark.createDataFrame([], StructType([]))
 
         return df.toDF(*[c.lower() for c in df.columns])
 

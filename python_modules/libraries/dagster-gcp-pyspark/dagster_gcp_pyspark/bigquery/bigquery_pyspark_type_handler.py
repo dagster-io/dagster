@@ -6,6 +6,7 @@ from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_gcp import build_bigquery_io_manager
 from dagster_gcp.bigquery.io_manager import BigQueryClient
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import StructType
 
 
 def _get_bigquery_write_options(
@@ -80,7 +81,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
         spark = SparkSession.builder.getOrCreate()
 
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
-            return spark.createDataFrame([])
+            return spark.createDataFrame([], StructType([]))
 
         df = (
             spark.read.format("bigquery")

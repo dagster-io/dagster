@@ -450,6 +450,8 @@ def test_self_dependent_asset(tmp_path):
         if not self_dependent_asset.empty:
             assert len(self_dependent_asset.index) == 3
             assert (self_dependent_asset["key"] == context.op_config["last_partition_key"]).all()
+        else:
+            assert context.op_config["last_partition_key"] == "NA"
         value = context.op_config["value"]
         pd_df = pd.DataFrame(
             {

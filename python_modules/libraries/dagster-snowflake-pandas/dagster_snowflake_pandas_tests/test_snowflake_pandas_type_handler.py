@@ -627,7 +627,7 @@ def test_self_dependent_asset():
     schema = "SNOWFLAKE_IO_MANAGER_SCHEMA"
     with temporary_snowflake_table(
         schema_name=schema,
-        column_str="START TIMESTAMP_NTZ(9), END TIMESTAMP_NTZ(9), A string",
+        column_str="KEY string, A string",
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
@@ -641,21 +641,29 @@ def test_self_dependent_asset():
                 ),
             },
             metadata={
-                "partition_expr": "start",
+                "partition_expr": "TO_TIMESTAMP(key)",
             },
-            config_schema={"value": str},
-            name=table_name,
+            config_schema={"value": str, "last_partition_key": str},
         )
         def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
-            start, end = context.output_asset_partitions_time_window()
+            key = context.asset_partition_key_for_output()
+
+            if not self_dependent_asset.empty:
+                assert len(self_dependent_asset.index) == 3
+                assert (
+                    self_dependent_asset["key"] == context.op_config["last_partition_key"]
+                ).all()
+            else:
+                assert context.op_config["last_partition_key"] == "NA"
             value = context.op_config["value"]
-            return DataFrame(
+            pd_df = DataFrame(
                 {
-                    "start": [start, start, start],
-                    "end": [end, end, end],
+                    "key": [key, key, key],
                     "a": [value, value, value],
                 }
             )
+
+            return pd_df
 
         asset_full_name = f"{schema}__{table_name}"
         snowflake_table_path = f"{schema}.{table_name}"
@@ -675,10 +683,28 @@ def test_self_dependent_asset():
             [self_dependent_asset],
             partition_key="2023-01-01",
             resources=resource_defs,
-            run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+            run_config={
+                "ops": {asset_full_name: {"config": {"value": "1", "last_partition_key": "NA"}}}
+            },
         )
 
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-02",
+            resources=resource_defs,
+            run_config={
+                "ops": {
+                    asset_full_name: {"config": {"value": "2", "last_partition_key": "2023-01-01"}}
+                }
+            },
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
