@@ -705,8 +705,8 @@ def materialization_pipeline():
                     "table",
                     value=MetadataValue.table(
                         records=[
-                            TableRecord(foo=1, bar=2),
-                            TableRecord(foo=3, bar=4),
+                            TableRecord(dict(foo=1, bar=2)),
+                            TableRecord(dict(foo=3, bar=4)),
                         ],
                     ),
                 ),
