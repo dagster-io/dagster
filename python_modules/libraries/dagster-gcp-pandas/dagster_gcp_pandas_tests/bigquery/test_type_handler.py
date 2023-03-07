@@ -486,7 +486,7 @@ def test_self_dependent_asset():
             key_prefix=schema,
             ins={
                 "self_dependent_asset": AssetIn(
-                    key=AssetKey([schema, "self_dependent_asset"]),
+                    key=AssetKey([schema, table_name]),
                     partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                 ),
             },
