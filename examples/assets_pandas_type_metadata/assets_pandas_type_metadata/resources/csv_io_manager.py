@@ -5,7 +5,6 @@ import pandas as pd
 from dagster import (
     AssetKey,
     MemoizableIOManager,
-    MetadataEntry,
     TableSchemaMetadataValue,
     io_manager,
 )
@@ -30,13 +29,14 @@ class LocalCsvIOManager(MemoizableIOManager):
         with open(fpath + ".version", "w", encoding="utf8") as f:
             f.write(context.version if context.version else "None")
 
-        yield MetadataEntry("Rows", value=MetadataValue.int(obj.shape[0]))
-        yield MetadataEntry("Path", value=MetadataValue.path(fpath))
-        yield MetadataEntry("Sample", value=MetadataValue.md(obj.head(5).to_markdown()))
-        yield MetadataEntry("Resolved version", value=MetadataValue.text(context.version))  # type: ignore
-        yield MetadataEntry(
-            "Schema",
-            value=MetadataValue.table_schema(self.get_schema(context.dagster_type)),
+        context.add_output_metadata(
+            {
+                "Rows": MetadataValue.int(obj.shape[0]),
+                "Path": MetadataValue.path(fpath),
+                "Sample": MetadataValue.md(obj.head(5).to_markdown()),
+                "Resolved version": MetadataValue.text(context.version),  # type: ignore
+                "Schema": MetadataValue.table_schema(self.get_schema(context.dagster_type)),
+            }
         )
 
     def get_schema(self, dagster_type):
