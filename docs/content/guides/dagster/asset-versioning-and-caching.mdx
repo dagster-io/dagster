@@ -169,13 +169,13 @@ For example, when a materialization function contains an element of randomness, 
 Dagster accommodates these and similar scenarios by allowing user code to supply its own logical versions. We simply include the logical version alongside the returned asset value in an <PyObject object="Output" /> object. Let's update `versioned_number` to do this. For simplicity, we'll use the stringified return value as the logical version:
 
 ```python file=/guides/dagster/asset_versioning_and_caching/manual_logical_versions_1.py
-from dagster import LogicalVersion, Output, asset
+from dagster import DataVersion, Output, asset
 
 
 @asset(code_version="v4")
 def versioned_number():
     value = 20
-    return Output(value, logical_version=LogicalVersion(str(value)))
+    return Output(value, logical_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")
@@ -195,13 +195,13 @@ height={1748}
 Let's simulate a cosmetic refactor by updating `versioned_number` again, but without changing the returned value. We bump the code version to `v5` and change `20` to `10 + 10`:
 
 ```python file=/guides/dagster/asset_versioning_and_caching/manual_logical_versions_2.py
-from dagster import LogicalVersion, Output, asset
+from dagster import DataVersion, Output, asset
 
 
 @asset(code_version="v5")
 def versioned_number():
     value = 10 + 10
-    return Output(value, logical_version=LogicalVersion(str(value)))
+    return Output(value, logical_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")
@@ -242,7 +242,7 @@ The body of the `input_number` function computes a hash of the file contents and
 from hashlib import sha256
 
 from dagster import (
-    LogicalVersion,
+    DataVersion,
     Output,
     asset,
     file_relative_path,
@@ -262,14 +262,14 @@ FILE_PATH = file_relative_path(__file__, "input_number.txt")
 @observable_source_asset
 def input_number():
     with open(FILE_PATH) as ff:
-        return LogicalVersion(sha256_digest_from_str(ff.read()))
+        return DataVersion(sha256_digest_from_str(ff.read()))
 
 
 @asset(code_version="v6", non_argument_deps={"input_number"})
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())
-        return Output(value, logical_version=LogicalVersion(str(value)))
+        return Output(value, logical_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")

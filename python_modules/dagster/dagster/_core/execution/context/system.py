@@ -61,11 +61,11 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.data_version import (
+        DataVersion,
+    )
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.logical_version import (
-        LogicalVersion,
-    )
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -523,7 +523,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
         self._is_external_input_asset_records_loaded = False
-        self._logical_version_cache: Dict[AssetKey, "LogicalVersion"] = {}
+        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -857,14 +857,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
-    def set_logical_version(self, asset_key: AssetKey, logical_version: "LogicalVersion") -> None:
-        self._logical_version_cache[asset_key] = logical_version
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+        self._data_version_cache[asset_key] = data_version
 
-    def has_logical_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._logical_version_cache
+    def has_data_version(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._data_version_cache
 
-    def get_logical_version(self, asset_key: AssetKey) -> "LogicalVersion":
-        return self._logical_version_cache[asset_key]
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+        return self._data_version_cache[asset_key]
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
@@ -906,16 +906,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._is_external_input_asset_records_loaded = True
 
     def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
-        from dagster._core.definitions.logical_version import (
-            extract_logical_version_from_entry,
+        from dagster._core.definitions.data_version import (
+            extract_data_version_from_entry,
         )
 
-        event = self.instance.get_latest_logical_version_record(key)
-        if key in self._logical_version_cache and retries <= 5:
-            event_logical_version = (
-                None if event is None else extract_logical_version_from_entry(event.event_log_entry)
+        event = self.instance.get_latest_data_version_record(key)
+        if key in self._data_version_cache and retries <= 5:
+            event_data_version = (
+                None if event is None else extract_data_version_from_entry(event.event_log_entry)
             )
-            if event_logical_version == self._logical_version_cache[key]:
+            if event_data_version == self._data_version_cache[key]:
                 self._input_asset_records[key] = event
             else:
                 self._fetch_input_asset_record(key, retries + 1)

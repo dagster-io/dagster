@@ -2421,7 +2421,7 @@ class DagsterInstance(DynamicPartitionsStore):
         for k, v in new_env.items():
             os.environ[k] = v
 
-    def get_latest_logical_version_record(
+    def get_latest_data_version_record(
         self,
         key: AssetKey,
         is_source: Optional[bool] = None,
