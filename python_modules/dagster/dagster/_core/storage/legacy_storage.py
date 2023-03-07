@@ -490,7 +490,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: "AssetKey"
-    ) -> Mapping[str, str]:
+    ) -> Mapping[str, Tuple[str, int]]:
         return self._storage.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key
         )
