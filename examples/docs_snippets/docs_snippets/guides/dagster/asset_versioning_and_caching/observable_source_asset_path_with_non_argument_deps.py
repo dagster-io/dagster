@@ -28,7 +28,7 @@ def input_number():
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())
-        return Output(value, logical_version=DataVersion(str(value)))
+        return Output(value, data_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")

@@ -87,12 +87,12 @@ def versioned_number(input_number):
 
 
 @asset(code_version="v1")
-def multipled_number(versioned_number):
+def multiplied_number(versioned_number):
     return versioned_number * 2
 
 
 defs = Definitions(
-    assets=[input_number, versioned_number, multipled_number],
+    assets=[input_number, versioned_number, multiplied_number],
     resources={
         "io_manager": NumberTextFileIOManager.with_directory(
             os.path.join(get_system_temp_directory(), "versioning_example")
