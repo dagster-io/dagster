@@ -47,12 +47,10 @@ export const DimensionRangeWizard: React.FC<{
 
   const didSetInitialPartition = React.useRef(false);
   React.useEffect(() => {
-    if (didSetInitialPartition.current) {
+    if (didSetInitialPartition.current || !partitionKeys.length) {
       return;
     }
-    if (partitionKeys.length) {
-      didSetInitialPartition.current = true;
-    }
+    didSetInitialPartition.current = true;
     const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
     const partition = query.partition as string;
     if (partition && partitionKeys.includes(partition)) {
