@@ -544,7 +544,16 @@ height={383}
 
 #### Branch deployment permissions
 
-<TODO></TODO>
+Granting access to Branch Deployments gives users access to all Branch Deployments for all the code locations they have access to. Consider the following example:
+
+<Image
+alt="User roles for prod, staging, and all Branch Deployments"
+src="/images/dagster-cloud/user-token-management/branch-deployment-example.png"
+width={898}
+height={400}
+/>
+
+In this case, the user would have **Editor** access to Branch Deployments for all code locations in the `prod` deployment, but not in `staging`. This is because they're a **Viewer** for the code locations in the `prod` deployment, but they don't have access to the `staging` deployment or any of its code locations.
 
 ---
 
