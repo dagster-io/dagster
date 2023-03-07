@@ -228,12 +228,48 @@ height={1618}
 
 When a partitioned asset depends on another partitioned asset, each partition in the downstream asset depends on a partition or multiple partitions in the upstream asset.
 
-A few rules govern partition-to-partition dependencies:
+A few rules govern default partition-to-partition dependencies:
 
 - When the upstream asset and downstream asset have the same <PyObject object="PartitionsDefinition" />, each partition in the downstream asset depends on the same partition in the upstream asset.
 - When the upstream asset and downstream asset are both time window-partitioned, each partition in the downstream asset depends on all partitions in the upstream asset that intersect its time window.
 
   For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
+
+#### PartitionMappings
+
+You can override the default partition dependency rules by providing a <PyObject object="PartitionMapping" /> when specifying a dependency on an asset. For example, here's how to specify that each partition of a daily-partitioned asset depends on the prior day's partition in an upstream asset:
+
+```python file=/concepts/partitions_schedules_sensors/partition_mapping.py
+from dagster import (
+    AssetIn,
+    DailyPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    asset,
+)
+
+partitions_def = DailyPartitionsDefinition(start_date="2023-01-21")
+
+
+@asset(partitions_def=partitions_def)
+def events():
+    ...
+
+
+@asset(
+    partitions_def=partitions_def,
+    ins={
+        "events": AssetIn(
+            partition_mapping=TimeWindowPartitionMapping(
+                start_offset=-1, end_offset=-1
+            ),
+        )
+    },
+)
+def yesterday_event_stats(events):
+    ...
+```
+
+Refer to the [API docs](https://docs.dagster.io/\_apidocs/partitions#partition-mapping) for a list of available `PartitionMappings`.
 
 ---
 
