@@ -1,10 +1,10 @@
-from dagster import LogicalVersion, Output, asset
+from dagster import DataVersion, Output, asset
 
 
 @asset(code_version="v5")
 def versioned_number():
     value = 10 + 10
-    return Output(value, logical_version=LogicalVersion(str(value)))
+    return Output(value, logical_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")

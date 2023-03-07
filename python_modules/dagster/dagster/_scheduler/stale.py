@@ -1,12 +1,12 @@
 from typing import List, Sequence, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import (
+from dagster._core.definitions.data_version import (
     CachingStaleStatusResolver,
     StaleStatus,
 )
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.host_representation.external import (
     ExternalSchedule,

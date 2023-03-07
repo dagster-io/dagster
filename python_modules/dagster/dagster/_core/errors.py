@@ -582,7 +582,7 @@ class DagsterUnknownPartitionError(DagsterError):
     """
 
 
-class DagsterUndefinedLogicalVersionError(DagsterError):
+class DagsterUndefinedDataVersionError(DagsterError):
     """
     The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
     """

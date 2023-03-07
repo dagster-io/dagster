@@ -16,8 +16,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.data_version import get_input_event_pointer_tag
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -586,7 +586,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if parent_key in asset_graph.source_asset_keys:
                 continue
 
-            input_event_pointer_tag = get_input_event_pointer_tag_key(parent_key)
+            input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
             if input_event_pointer_tag in record_tags:
                 # get the upstream materialization event which was consumed when producing this
                 # materialization event
