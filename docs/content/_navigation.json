@@ -673,7 +673,7 @@
             "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
           },
           {
-            "title": "Enriching with Software-defined assets",
+            "title": "Moving to Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
           {
