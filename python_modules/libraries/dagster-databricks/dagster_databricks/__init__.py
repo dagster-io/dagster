@@ -17,7 +17,6 @@ from .databricks_pyspark_step_launcher import (
     databricks_pyspark_step_launcher,
 )
 from .ops import (
-    create_databricks_job_op,
     create_databricks_run_now_op,
     create_databricks_submit_run_op,
 )
@@ -27,7 +26,6 @@ from .version import __version__
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
 
 __all__ = [
-    "create_databricks_job_op",
     "create_databricks_run_now_op",
     "create_databricks_submit_run_op",
     "databricks_client",
