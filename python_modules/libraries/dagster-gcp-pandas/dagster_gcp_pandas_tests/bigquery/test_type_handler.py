@@ -494,6 +494,7 @@ def test_self_dependent_asset():
                 "partition_expr": "TIMESTAMP(key)",
             },
             config_schema={"value": str, "last_partition_key": str},
+            name=table_name,
         )
         def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
             key = context.asset_partition_key_for_output()

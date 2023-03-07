@@ -560,6 +560,7 @@ def test_self_dependent_asset(spark):
                 "partition_expr": "strptime(key, '%Y-%m-%d')",
             },
             config_schema={"value": str, "last_partition_key": str},
+            name=table_name,
         )
         def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
             key = context.asset_partition_key_for_output()
