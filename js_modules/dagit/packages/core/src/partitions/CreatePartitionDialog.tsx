@@ -204,6 +204,11 @@ export const CreatePartitionDialog = ({
                 }
               }}
               strokeColor={isValidPartitionName ? undefined : Colors.Red500}
+              ref={React.useCallback((inputElement: HTMLInputElement) => {
+                if (inputElement) {
+                  inputElement.focus();
+                }
+              }, [])}
             />
           </PartitionBox>
         </Box>
