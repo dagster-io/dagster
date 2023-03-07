@@ -653,7 +653,7 @@ def test_self_dependent_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
@@ -669,6 +669,6 @@ def test_self_dependent_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

@@ -557,7 +557,7 @@ def test_self_dependent_asset(spark):
                 ),
             },
             metadata={
-                "partition_expr": "strptime(key, '%Y-%m-%d')",
+                "partition_expr": "TIMESTAMP(key)",
             },
             config_schema={"value": str, "last_partition_key": str},
             name=table_name,
