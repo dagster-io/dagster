@@ -383,7 +383,7 @@ def test_dynamic_partition(tmp_path):
         )
         resource_defs = {"io_manager": duckdb_io_manager}
 
-        dynamic_fruits.add_partitions(["apple"], instance)
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
 
         materialize(
             [dynamic_partitioned],
@@ -400,7 +400,7 @@ def test_dynamic_partition(tmp_path):
         assert out_df["a"].to_list() == ["1", "1", "1"]
         duckdb_conn.close()
 
-        dynamic_fruits.add_partitions(["orange"], instance)
+        instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
 
         materialize(
             [dynamic_partitioned],

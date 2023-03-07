@@ -34,7 +34,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -585,7 +585,8 @@ class DynamicPartitionsDefinition(
     This is useful for cases where the set of partitions is not known at definition time,
     but is instead determined at runtime.
 
-    Partitions can be added and removed using the `add_partitions` and `remove_partitions` methods.
+    Partitions can be added and removed using `instance.add_dynamic_partitions` and
+    `instance.delete_dynamic_partition` methods.
 
     Args:
         name (Optional[str]): (Experimental) The name of the partitions definition.
@@ -596,11 +597,11 @@ class DynamicPartitionsDefinition(
     Examples:
         .. code-block:: python
 
-            foo = DynamicPartitionsDefinition(name="foo")
+            fruits = DynamicPartitionsDefinition(name="fruits")
 
             @sensor(job=my_job)
             def my_sensor(context):
-                foo.add_partitions([partition_key], instance=context.instance)
+                context.instance.add_dynamic_partitions(fruits.name, [partition_key])
                 return my_job.run_request_for_partition(partition_key, instance=context.instance)
 
     """
@@ -696,33 +697,6 @@ class DynamicPartitionsDefinition(
                 partitions_def_name=self._validated_name()
             )
             return [Partition(key) for key in partitions]
-
-    def add_partitions(self, partition_keys: Sequence[str], instance: DagsterInstance) -> None:
-        """
-        Add partitions to the specified partition definition.
-        Does not add any partitions that already exist.
-        """
-        check.sequence_param(partition_keys, "partition_keys", of_type=str)
-        check.inst_param(instance, "instance", DagsterInstance)
-
-        instance.add_dynamic_partitions(self._validated_name(), partition_keys)
-
-    def has_partition(self, partition_key: str, instance: DagsterInstance) -> bool:
-        """
-        Checks if a partition key exists for the partitions definition.
-        """
-        check.str_param(partition_key, "partition_key")
-        check.inst_param(instance, "instance", DagsterInstance)
-        return instance.has_dynamic_partition(self._validated_name(), partition_key)
-
-    def delete_partition(self, partition_key: str, instance: DagsterInstance) -> None:
-        """
-        Delete a partition for the specified partition definition.
-        If the partition does not exist, exits silently.
-        """
-        check.str_param(partition_key, "partition_key")
-        check.inst_param(instance, "instance", DagsterInstance)
-        instance.delete_dynamic_partition(self._validated_name(), partition_key)
 
 
 class PartitionSetDefinition(Generic[T_cov]):
