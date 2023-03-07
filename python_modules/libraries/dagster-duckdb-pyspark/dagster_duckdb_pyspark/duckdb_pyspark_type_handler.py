@@ -4,6 +4,7 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
 from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType
 
 
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
@@ -71,7 +72,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         """Loads the return of the query as the correct type."""
         spark = SparkSession.builder.getOrCreate()
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
-            return spark.createDataFrame([])
+            return spark.createDataFrame([], StructType([]))
 
         pd_df = connection.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
         return spark.createDataFrame(pd_df)

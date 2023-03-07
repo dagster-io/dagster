@@ -427,17 +427,21 @@ def test_self_dependent_asset(tmp_path):
             ),
         },
         metadata={
-            "partition_expr": "start",
+            "partition_expr": "strptime(key, '%Y-%m-%d')",
         },
-        config_schema={"value": str},
+        config_schema={"value": str, "last_partition_key": str},
     )
-    def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
-        start, end = context.output_asset_partitions_time_window()
+    def self_dependent_asset(context, self_dependent_asset: SparkDF) -> SparkDF:
+        key = context.asset_partition_key_for_output()
+
+        if not self_dependent_asset.isEmpty():
+            pd_df = self_dependent_asset.toPandas()
+            assert len(pd_df.index) == 3
+            assert (pd_df["key"] == context.op_config["last_partition_key"]).all()
         value = context.op_config["value"]
         pd_df = pd.DataFrame(
             {
-                "start": [start, start, start],
-                "end": [end, end, end],
+                "key": [key, key, key],
                 "a": [value, value, value],
             }
         )
@@ -454,11 +458,36 @@ def test_self_dependent_asset(tmp_path):
         [self_dependent_asset],
         partition_key="2023-01-01",
         resources=resource_defs,
-        run_config={"ops": {"my_schema__self_dependent_asset": {"config": {"value": "1"}}}},
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "1", "last_partition_key": "NA"}
+                }
+            }
+        },
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
 
     assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [self_dependent_asset],
+        partition_key="2023-01-02",
+        resources=resource_defs,
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "2", "last_partition_key": "2023-01-01"}
+                }
+            }
+        },
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+
+    assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
