@@ -71,7 +71,10 @@ module.exports = {
 
           // This part is kind of hacky. I should use the parser service to find the identifier
           // but this is faster then tokenizing the whole file
-          if (!graphqlTypeFile.includes('export type ' + variablesName)) {
+          if (
+            !graphqlTypeFile.includes('export type ' + variablesName) &&
+            !graphqlTypeFile.includes('export interface ' + variablesName)
+          ) {
             return;
           }
           // This is a Query type with a generated QueryVariables type. Make sure we're using it

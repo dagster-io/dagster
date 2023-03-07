@@ -20,12 +20,12 @@ fs.readFileSync = (path) => {
     : 'Subscription';
   if (path.includes('WithVariables')) {
     return `
-      export interface Some${api} {}
-      export interface Some${api}Variables {}
+      export type Some${api} {}
+      export type Some${api}Variables {}
     `;
   } else {
     return `
-      export interface Some${api} {}
+      export type Some${api} {}
     `;
   }
 };
