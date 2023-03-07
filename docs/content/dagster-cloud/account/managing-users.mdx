@@ -19,7 +19,7 @@ In this guide, we'll walk you through adding, removing, and assigning user roles
 
 ### User roles
 
-Dagster Cloud supports six user roles for several levels of role-based access control:
+Dagster Cloud supports five user roles for several levels of role-based access control:
 
 <table>
   <thead>
@@ -32,18 +32,13 @@ Dagster Cloud supports six user roles for several levels of role-based access co
   <tbody>
     <tr>
       <td>
-        <strong>No access</strong>
-      </td>
-      <td>All plans</td>
-      <td>No access to the specified deployment/code location.</td>
-    </tr>
-    <tr>
-      <td>
         <strong>Viewer</strong>
       </td>
       <td>Enterprise</td>
       <td>
-        The least permissive role. Grants access to view definitions and runs.
+        The least permissive role. Grants view access to most things in a
+        deployment, with some exceptions. Refer to the{" "}
+        <strong>User role permissions</strong> tab for more info.
       </td>
     </tr>
     <tr>
@@ -68,7 +63,7 @@ Dagster Cloud supports six user roles for several levels of role-based access co
           <li>Manage environent variables</li>
           <li>Manage code locations</li>
           <li>Manage agents and alerts</li>
-          <li>View and create users</li>
+          <li>Add and view users</li>
         </ul>
       </td>
     </tr>
@@ -405,17 +400,17 @@ Click the **User role permissions** tab to view all granular permissions for eac
       <td>
         <a href="/dagster-cloud/account/managing-users">View users</a>
       </td>
-      <td className="bg-red-50">❌</td>
-      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
       <td className="bg-green-50">✅</td>
       <td className="bg-green-50">✅</td>
       <td className="bg-green-50">✅</td>
     </tr>
     <tr>
-      <td>Create users</td>
+      <td>Add users</td>
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
+      <td className="bg-red-50">❌</td>
       <td className="bg-green-50">✅</td>
       <td className="bg-green-50">✅</td>
     </tr>
@@ -424,7 +419,7 @@ Click the **User role permissions** tab to view all granular permissions for eac
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
+      <td className="bg-red-50">❌</td>
       <td className="bg-green-50">✅</td>
     </tr>
     <tr>
@@ -432,7 +427,7 @@ Click the **User role permissions** tab to view all granular permissions for eac
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
       <td className="bg-red-50">❌</td>
-      <td className="bg-green-50">✅</td>
+      <td className="bg-red-50">❌</td>
       <td className="bg-green-50">✅</td>
     </tr>
     <tr>
@@ -492,11 +487,11 @@ Click the **User role permissions** tab to view all granular permissions for eac
 
 ### Assigning user roles
 
-With the exception of the **Organization Admin** role, user roles are set on a per-deployment, per-code location basis and enforced both in Dagster Cloud and the GraphQL API. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/developing-testing/managing-deployments), [code locations](/dagster-cloud/developing-testing/code-locations), and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments).
+With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis and enforced both in Dagster Cloud and the GraphQL API. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/developing-testing/managing-deployments), [code locations](/dagster-cloud/developing-testing/code-locations), and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments).
 
 #### Deployment permissions
 
-All Dagster Cloud accounts have the ability to set permissions at the deployment level. When defined, the selected user role will be used as the default for all code locations contained in the deployment.
+All Dagster Cloud accounts - Enterprise plan or not - can set permissions at the deployment level. When defined, the selected user role will be used as the default for all code locations contained in the deployment.
 
 For example, if a user is assigned the **Editor** user role for a deployment, they'll also be an **Editor** for all code locations in the deployment:
 
@@ -509,10 +504,7 @@ height={178}
 
 For Dagster Cloud Enterprise users, default user roles can be overriden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
 
-When defining user roles at the deployment level, keep the following in mind:
-
-- **Changing the user role for the deployment also removes any overrides that have been set at the code location level**. For example, if a user was a deployment **Editor** and is then changed to a **Viewer**, they'll become a **Viewer** for all code locations in the deployment.
-- **Having access to a deployment doesn't automatically grant access to Branch Deployments**. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
+**Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments\*\*. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
 
 #### Code location permissions
 
@@ -521,9 +513,9 @@ When defining user roles at the deployment level, keep the following in mind:
 Dagster Cloud Enterprise users can override the deployment-level user role by setting permissions at the code location level. Overrides can only be performed if:
 
 - The user is not **Organization Admin**, and
-- The current user role is a **Viewer** or **Launcher** deployment level
+- The current user role for the deployment is **Viewer** or **Launcher**
 
-Generally, overrides only apply if the override is more permissive than the deployment-level user role. For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
+For example, if a user is assigned the **Viewer** user role for a deployment, only a more permissive role can be assigned for a code location in the deployment. Specifically, an **Editor** or **Launcher** user role:
 
 <Image
 alt="Overriding the Viewer user role for a code location"
@@ -541,17 +533,14 @@ width={1035}
 height={466}
 />
 
-To remove overrides:
+To remove an override, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
 
-- **For all code locations in a deployment**, change the user's role at the deployment level. When saved, the new user role will be applied to all code locations in the deployment.
-- **For a single code location**, click **Edit user role** next to the code location to open the user role selection dialog. Then, click the **Remove override** button:
-
-  <Image
-  alt="Removing the override for a code location"
-  src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
-  width={536}
-  height={383}
-  />
+<Image
+alt="Removing the override for a code location"
+src="/images/dagster-cloud/user-token-management/remove-code-location-override.png"
+width={536}
+height={383}
+/>
 
 #### Branch deployment permissions
 
@@ -598,8 +587,8 @@ Before you start, note that:
 ## Removing users
 
 <Note>
-  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
-  required to remove users in Dagster Cloud.
+  <strong>Organization Admin</strong> permissions are required to remove users
+  in Dagster Cloud.
 </Note>
 
 Removing a user removes them from the organization. **Note**: If using a SAML-based SSO solution like Okta, you'll also need to remove the user from the Identity Provider (IdP). Removing the user in Dagster Cloud doesn't remove them from the IdP.
