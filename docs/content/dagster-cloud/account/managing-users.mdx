@@ -502,7 +502,7 @@ width={897}
 height={178}
 />
 
-For Dagster Cloud Enterprise users, default user roles can be overriden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
+For Dagster Cloud Enterprise users, default user roles can be overridden at the [code location level](#code-location-permissions). For non-Enterprise users, the user will have the same level of access for all code locations in the deployment.
 
 **Note**: Having access to a deployment doesn't automatically grant access to Branch Deployments. [Branch deployment permissions](#branch-deployment-permissions) must be granted separately.
 
@@ -567,12 +567,13 @@ Before you start, note that:
 4. In the **Enter an email...** field, enter the user's email address.
 5. Click **Add user**. The user will be added to the list of users.
 6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment:
+6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
    1. Next to a deployment, click **Edit user role**.
    2. Select the user role for the deployment. This [user role](#understanding-user-roles) will be used as the default for all code locations in the deployment.
    3. Click **Save**.
-   4. **Enterprise only**: To set permissions for individual code locations in a deployment:
-      1. Click the toggle next to the deployment.
-      2. Click **Edit user role**.
+   4. **Enterprise only**: To set permissions for individual [code locations](#code-location-permissions) in a deployment:
+      1. Click the toggle to the left of the deployment to open a list of code locations.
+      2. Next to a code location, click **Edit user role**.
       3. Select the user role for the code location.
       4. Click **Save**.
 7. Repeat step 6 for each deployment.
