@@ -1,14 +1,16 @@
 from typing import Any, Iterable, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
+from dagster._annotations import quiet_experimental
 from pydantic import Field
 
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import _get_attempt, generate_materializations
 
-from .resources import DEFAULT_POLL_INTERVAL_SECONDS, AirbyteResource
+from .resources import DEFAULT_POLL_INTERVAL_SECONDS, BaseAirbyteResource
 
 
+@quiet_experimental
 class AirbyteSyncConfig(Config):
     connection_id: str = Field(
         ...,
@@ -62,8 +64,11 @@ class AirbyteSyncConfig(Config):
     ),
     tags={"kind": "airbyte"},
 )
-def airbyte_sync_op(context, config: AirbyteSyncConfig, airbyte: AirbyteResource) -> Iterable[Any]:
-    """Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
+def airbyte_sync_op(
+    context, config: AirbyteSyncConfig, airbyte: BaseAirbyteResource
+) -> Iterable[Any]:
+    """
+    Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
     the job details for a given ``connection_id``.
 
