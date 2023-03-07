@@ -27,7 +27,7 @@ import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {ResourceRootQuery} from './types/ResourceRoot.types';
+import {ResourceRootQuery, ResourceRootQueryVariables} from './types/ResourceRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -57,7 +57,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     ...repoAddressToSelector(repoAddress),
     resourceName,
   };
-  const queryResult = useQuery<ResourceRootQuery>(RESOURCE_ROOT_QUERY, {
+  const queryResult = useQuery<ResourceRootQuery, ResourceRootQueryVariables>(RESOURCE_ROOT_QUERY, {
     variables: {
       resourceSelector,
     },
