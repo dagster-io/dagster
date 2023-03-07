@@ -7,9 +7,13 @@ import {DagsterTag} from '../runs/RunTag';
 
 import {AssetEventGroup} from './groupByPartition';
 
-// There can be other keys in the event tags, but we want to show these two
+// There can be other keys in the event tags, but we want to show data and code version
 // at the top consistently regardless of their alphabetical / backend ordering.
-const ORDER = ['dagster/logical_version', 'dagster/code_version'];
+const ORDER = [
+  DagsterTag.AssetEventDataVersion.valueOf(),
+  DagsterTag.AssetEventDataVersionDeprecated.valueOf(),
+  DagsterTag.AssetEventCodeVersion.valueOf(),
+];
 
 export const AssetEventSystemTags: React.FC<{
   event: AssetEventGroup['latest'] | null;
