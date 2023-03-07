@@ -124,6 +124,9 @@ export const CreatePartitionDialog = ({
         partitionsDefName: partitionDefinitionName || '',
         partitionKey: partitionName,
       },
+
+      // Add any queries that reference asset partitions here so that they update if they're currently rendered.
+      refetchQueries: ['PartitionHealthQuery', 'AssetEventsQuery'],
     });
     setIsSaving(false);
 
