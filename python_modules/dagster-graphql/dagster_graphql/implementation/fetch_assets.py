@@ -394,7 +394,7 @@ def get_materialized_and_failed_partition_subsets(
                 dynamic_partitions_loader,
                 partitions_def,
                 filter_incomplete_materialized_runs_to_failed(
-                    instance, incomplete_materialization_runs
+                    instance, list(incomplete_materialization_runs.items())
                 ),
             )
 

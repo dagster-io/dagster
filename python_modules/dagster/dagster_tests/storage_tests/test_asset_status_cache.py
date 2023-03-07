@@ -25,6 +25,7 @@ from dagster._core.storage.partition_status_cache import (
     AssetStatusCacheValue,
     get_and_update_asset_status_cache_value,
 )
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._utils import Counter, traced_counter
 
@@ -454,6 +455,59 @@ def test_failure_cache_added():
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
         # failed partition
+        assert partitions_def.deserialize_subset(
+            cached_status.serialized_failed_partition_subset
+        ).get_partition_keys() == {"fail1"}
+
+
+def test_failure_cache_in_progress_runs():
+    partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
+
+    @asset(partitions_def=partitions_def)
+    def asset1(context):
+        if context.partition_key.startswith("fail"):
+            raise Exception()
+
+    asset_key = AssetKey("asset1")
+    asset_graph = AssetGraph.from_assets([asset1])
+    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+
+    with instance_for_test() as created_instance:
+        run_1 = create_run_for_test(created_instance, status=DagsterRunStatus.STARTED)
+
+        created_instance.event_log_storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_1.run_id,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                    "nonce",
+                    event_specific_data=AssetMaterializationPlannedData(
+                        asset_key=asset_key, partition="fail1"
+                    ),
+                ),
+            )
+        )
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
+        assert (
+            partitions_def.deserialize_subset(
+                cached_status.serialized_failed_partition_subset
+            ).get_partition_keys()
+            == set()
+        )
+        assert cached_status.in_progress_materializations == {"fail1": [run_1.run_id]}
+
+        created_instance.report_run_failed(run_1)
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1"}

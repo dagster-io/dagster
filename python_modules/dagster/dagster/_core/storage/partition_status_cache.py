@@ -1,4 +1,5 @@
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from collections import defaultdict
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
 
 from dagster import (
     AssetKey,
@@ -21,7 +22,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,
@@ -44,6 +45,7 @@ class AssetStatusCacheValue(
             ("partitions_def_id", Optional[str]),
             ("serialized_materialized_partition_subset", Optional[str]),
             ("serialized_failed_partition_subset", Optional[str]),
+            ("in_progress_materializations", Optional[Dict[str, List[str]]]),
         ],
     )
 ):
@@ -61,6 +63,7 @@ class AssetStatusCacheValue(
             unpartitioned.
         serialized_failed_partition_subset (Optional(str)): The serialized representation of the failed
             partition subsets, up to the latest storage id. None if the asset is unpartitioned.
+        in_progress_materializations (Optional[Dict[str, List[str]]]): A mapping from partition key to run ids
     """
 
     def __new__(
@@ -69,6 +72,7 @@ class AssetStatusCacheValue(
         partitions_def_id: Optional[str] = None,
         serialized_materialized_partition_subset: Optional[str] = None,
         serialized_failed_partition_subset: Optional[str] = None,
+        in_progress_materializations: Optional[Dict[str, List[str]]] = None,
     ):
         check.int_param(latest_storage_id, "latest_storage_id")
         check.opt_str_param(partitions_def_id, "partitions_def_id")
@@ -86,6 +90,7 @@ class AssetStatusCacheValue(
             partitions_def_id,
             serialized_materialized_partition_subset,
             serialized_failed_partition_subset,
+            in_progress_materializations,
         )
 
     @staticmethod
@@ -214,65 +219,90 @@ def _build_status_cache(
         )
     )
 
-    return AssetStatusCacheValue(
-        latest_storage_id=latest_storage_id,
-        partitions_def_id=partitions_def.serializable_unique_identifier,
-        serialized_materialized_partition_subset=serialized_materialized_partition_subset.serialize(),
-        serialized_failed_partition_subset=_build_failed_partition_subset(
-            instance, asset_key, partitions_def
-        ).serialize(),
-    )
-
-
-def filter_incomplete_materialized_runs_to_failed(
-    instance: DagsterInstance, incomplete_materialization_runs: Mapping[str, str]
-) -> Set[str]:
-    if not incomplete_materialization_runs:
-        return set()
-
-    failed_run_ids = {
-        r.run_id
-        for r in instance.get_runs(
-            filters=RunsFilter(
-                run_ids=list(incomplete_materialization_runs.values()),
-                statuses=[DagsterRunStatus.FAILURE],
-            )
-        )
-    }
-    return {p for p, run_id in incomplete_materialization_runs.items() if run_id in failed_run_ids}
-
-
-def _build_failed_partition_subset(
-    instance: DagsterInstance, asset_key: AssetKey, partitions_def: PartitionsDefinition
-) -> PartitionsSubset:
     incomplete_materialization_runs = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
         asset_key
     )
 
-    if not incomplete_materialization_runs:
-        return partitions_def.empty_subset()
+    failed_partition_keys, in_progress_partitions = filter_incomplete_materialized_runs(
+        instance, list(incomplete_materialization_runs.items())
+    )
 
-    return partitions_def.empty_subset().with_partition_keys(
-        get_validated_partition_keys(
-            instance,
-            partitions_def,
-            filter_incomplete_materialized_runs_to_failed(
-                instance, incomplete_materialization_runs
-            ),
+    failed_partition_subset = (
+        partitions_def.empty_subset().with_partition_keys(
+            get_validated_partition_keys(instance, partitions_def, failed_partition_keys)
         )
+        if failed_partition_keys
+        else partitions_def.empty_subset()
+    )
+
+    return AssetStatusCacheValue(
+        latest_storage_id=latest_storage_id,
+        partitions_def_id=partitions_def.serializable_unique_identifier,
+        serialized_materialized_partition_subset=serialized_materialized_partition_subset.serialize(),
+        serialized_failed_partition_subset=failed_partition_subset.serialize(),
+        in_progress_materializations=in_progress_partitions,
     )
 
 
-def _get_updated_failed_partition_subset(
+def filter_incomplete_materialized_runs(
+    instance: DagsterInstance, incomplete_materialization_runs: Sequence[Tuple[str, str]]
+) -> Tuple[Set[str], Dict[str, List[str]]]:
+    """
+    Given a list of [partition key, run id], return a tuple of (failed partitions, incomplete partitions)
+    """
+    if not incomplete_materialization_runs:
+        return set(), {}
+
+    run_statuses = {
+        r.run_id: r.status
+        for r in instance.get_runs(
+            filters=RunsFilter(
+                run_ids=[run_id for _, run_id in incomplete_materialization_runs],
+                statuses=[DagsterRunStatus.FAILURE] + IN_PROGRESS_RUN_STATUSES,
+            )
+        )
+    }
+
+    failed_partitions = set()
+    incomplete_partitions = {}
+
+    for partition, run_id in incomplete_materialization_runs:
+        status = run_statuses.get(run_id)
+        if status in IN_PROGRESS_RUN_STATUSES:
+            if partition not in incomplete_partitions:
+                incomplete_partitions[partition] = [run_id]
+            else:
+                incomplete_partitions[partition].append(run_id)
+        elif status == DagsterRunStatus.FAILURE:
+            failed_partitions.add(partition)
+
+    return failed_partitions, incomplete_partitions
+
+
+def _get_updated_failed_and_in_progress_partitions(
     instance: DagsterInstance,
     asset_key: AssetKey,
     partitions_def: PartitionsDefinition,
-    current_cached_subset: PartitionsSubset,
+    current_status_cache_value: AssetStatusCacheValue,
     unevaluated_event_records: Sequence[EventLogRecord],
-) -> PartitionsSubset:
-    current_failed_partitions = set(current_cached_subset.get_partition_keys())
+) -> Tuple[PartitionsSubset, Dict[str, List[str]]]:
+    failed_subset: PartitionsSubset = (
+        partitions_def.deserialize_subset(
+            current_status_cache_value.serialized_failed_partition_subset
+        )
+        if current_status_cache_value
+        and current_status_cache_value.serialized_failed_partition_subset
+        else partitions_def.empty_subset()
+    )
 
-    incomplete_materialization_runs: Dict[str, str] = {}
+    current_failed_partitions = set(failed_subset.get_partition_keys())
+
+    incomplete_materialization_runs: Dict[str, List[str]] = (
+        current_status_cache_value.in_progress_materializations
+        if current_status_cache_value and current_status_cache_value.in_progress_materializations
+        else {}
+    )
+
     for record in sorted(unevaluated_event_records, key=lambda r: r.storage_id):
         event = check.not_none(record.event_log_entry.dagster_event)
         if event.is_asset_materialization_planned:
@@ -280,21 +310,32 @@ def _get_updated_failed_partition_subset(
                 # If we have a planned materilization for a partition, keep track of it to see if we
                 # also find a materialization. If not, we'll check if the run failed and add it to
                 # the failed partitions.
-                incomplete_materialization_runs[event.partition] = record.run_id
+                if event.partition not in incomplete_materialization_runs:
+                    incomplete_materialization_runs[event.partition] = [record.run_id]
+                else:
+                    incomplete_materialization_runs[event.partition].append(record.run_id)
         if event.is_step_materialization:
             if event.partition:
-                incomplete_materialization_runs.pop(event.partition, None)
+                if record.run_id in incomplete_materialization_runs.get(event.partition, []):
+                    incomplete_materialization_runs[event.partition].remove(record.run_id)
                 # if we have a new materialization for a partition, that negates the old failure
                 current_failed_partitions.discard(event.partition)
 
-    new_failed_partitions = filter_incomplete_materialized_runs_to_failed(
-        instance, incomplete_materialization_runs
+    incomplete_materialization_runs_list = []
+    for partition, run_ids in incomplete_materialization_runs.items():
+        incomplete_materialization_runs_list.extend([(partition, run_id) for run_id in run_ids])
+
+    new_failed_partitions, materializing_partitions = filter_incomplete_materialized_runs(
+        instance, incomplete_materialization_runs_list
     )
 
-    return partitions_def.empty_subset().with_partition_keys(
-        get_validated_partition_keys(
-            instance, partitions_def, new_failed_partitions | current_failed_partitions
-        )
+    return (
+        partitions_def.empty_subset().with_partition_keys(
+            get_validated_partition_keys(
+                instance, partitions_def, new_failed_partitions | current_failed_partitions
+            )
+        ),
+        materializing_partitions,
     )
 
 
@@ -324,7 +365,22 @@ def _get_updated_status_cache(
     )
 
     if not (unevaluated_materialization_event_records or unevaluated_planned_event_records):
-        return current_status_cache_value
+        if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+            return current_status_cache_value
+        new_failed_subset, in_progress_partitions = _get_updated_failed_and_in_progress_partitions(
+            instance,
+            asset_key,
+            partitions_def,
+            current_status_cache_value,
+            [],
+        )
+        return AssetStatusCacheValue(
+            partitions_def_id=current_status_cache_value.partitions_def_id,
+            latest_storage_id=current_status_cache_value.latest_storage_id,
+            serialized_materialized_partition_subset=current_status_cache_value.serialized_materialized_partition_subset,
+            serialized_failed_partition_subset=new_failed_subset.serialize(),
+            in_progress_materializations=in_progress_partitions,
+        )
 
     unevaluated_event_records = list(unevaluated_planned_event_records)
     unevaluated_event_records.extend(list(unevaluated_materialization_event_records))
@@ -361,26 +417,20 @@ def _get_updated_status_cache(
         get_validated_partition_keys(instance, partitions_def, newly_materialized_partitions)
     )
 
-    failed_subset: PartitionsSubset = (
-        partitions_def.deserialize_subset(
-            current_status_cache_value.serialized_failed_partition_subset
-        )
-        if current_status_cache_value
-        and current_status_cache_value.serialized_failed_partition_subset
-        else partitions_def.empty_subset()
+    new_failed_subset, in_progress_partitions = _get_updated_failed_and_in_progress_partitions(
+        instance,
+        asset_key,
+        partitions_def,
+        current_status_cache_value,
+        unevaluated_event_records,
     )
 
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,
         partitions_def_id=current_status_cache_value.partitions_def_id,
         serialized_materialized_partition_subset=materialized_subset.serialize(),
-        serialized_failed_partition_subset=_get_updated_failed_partition_subset(
-            instance,
-            asset_key,
-            partitions_def,
-            failed_subset,
-            unevaluated_event_records,
-        ).serialize(),
+        serialized_failed_partition_subset=new_failed_subset.serialize(),
+        in_progress_materializations=in_progress_partitions,
     )
 
 
