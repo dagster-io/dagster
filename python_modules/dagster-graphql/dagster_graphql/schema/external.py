@@ -209,7 +209,7 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
         return self._location_entry.update_timestamp
 
     def resolve_permissions(self, graphene_info):
-        permissions = graphene_info.context.permissions_for_location(self.name)
+        permissions = graphene_info.context.permissions_for_location(location_name=self.name)
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
 
