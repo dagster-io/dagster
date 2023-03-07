@@ -48,7 +48,7 @@ def temporary_bigquery_table(schema_name: Optional[str]) -> Iterator[str]:
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_io_manager_with_bigquery_pandas():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
@@ -94,7 +94,7 @@ def test_io_manager_with_bigquery_pandas():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_io_manager_with_timestamp_conversion():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         time_df = pd.DataFrame(
             {
                 "foo": ["bar", "baz"],
@@ -137,7 +137,7 @@ def test_io_manager_with_timestamp_conversion():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_time_window_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
         @asset(
@@ -216,7 +216,7 @@ def test_time_window_partitioned_asset():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_static_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
         @asset(
@@ -293,7 +293,7 @@ def test_static_partitioned_asset():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_multi_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         partitions_def = MultiPartitionsDefinition(
             {
                 "time": DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -390,7 +390,7 @@ def test_multi_partitioned_asset():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_dynamic_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
-    with temporary_bigquery_table(schema=schema) as table_name:
+    with temporary_bigquery_table(schema_name=schema) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
         @asset(
