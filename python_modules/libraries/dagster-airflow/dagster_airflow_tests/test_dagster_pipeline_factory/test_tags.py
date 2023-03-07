@@ -12,6 +12,8 @@ from dagster._core.test_utils import instance_for_test
 from dagster._seven import get_current_datetime_in_utc
 from dagster_airflow import make_dagster_job_from_airflow_dag
 
+from dagster_airflow_tests.marks import requires_no_db
+
 default_args = {
     "owner": "dagster",
     "start_date": days_ago(10),
@@ -83,6 +85,7 @@ def get_dag():
     return dag
 
 
+@requires_no_db
 def test_pipeline_tags():
     dag = get_dag()
 
@@ -103,6 +106,7 @@ def test_pipeline_tags():
         check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
 
+@requires_no_db
 def test_pipeline_auto_tag():
     dag = get_dag()
 

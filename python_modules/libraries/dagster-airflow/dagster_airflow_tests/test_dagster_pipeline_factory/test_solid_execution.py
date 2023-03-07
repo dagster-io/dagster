@@ -27,6 +27,8 @@ from dagster._core.test_utils import instance_for_test
 from dagster._seven import get_current_datetime_in_utc
 from dagster_airflow import make_dagster_job_from_airflow_dag
 
+from dagster_airflow_tests.marks import requires_no_db
+
 default_args = {
     "owner": "dagster",
     "start_date": days_ago(1),
@@ -36,6 +38,7 @@ default_args = {
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
+@requires_no_db
 def test_normalize_name():
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -67,6 +70,7 @@ def test_normalize_name():
 
 
 # Test names with 250 characters, Airflow's max allowed length
+@requires_no_db
 def test_long_name():
     dag_name = "dag-with.dot-dash-lo00ong" * 10
     if airflow_version >= "2.0.0":
@@ -106,6 +110,7 @@ def test_long_name():
     )
 
 
+@requires_no_db
 def test_one_task_dag():
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -136,6 +141,7 @@ def normalize_file_content(s):
     return "\n".join([line for line in s.replace(os.linesep, "\n").split("\n") if line])
 
 
+@requires_no_db
 def test_template_task_dag():
     if airflow_version >= "2.0.0":
         dag = DAG(
@@ -261,6 +267,7 @@ def intercept_spark_submit(*_args, **_kwargs):
     return m
 
 
+@requires_no_db
 @mock.patch("subprocess.Popen", side_effect=intercept_spark_submit)
 def test_spark_dag(mock_subproc_popen):
     # Hack to get around having a Connection
