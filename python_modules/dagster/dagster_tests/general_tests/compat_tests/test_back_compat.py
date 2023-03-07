@@ -1017,7 +1017,6 @@ def test_add_kvs_table():
 
             assert "kvs" in get_sqlite3_tables(db_path)
             assert get_sqlite3_indexes(db_path, "kvs") == ["idx_kvs_keys_unique"]
-
             instance._run_storage._alembic_downgrade(rev="6860f830e40c")
 
             assert "kvs" not in get_sqlite3_tables(db_path)
@@ -1103,3 +1102,64 @@ def test_add_dynamic_partitions_table():
             instance.upgrade()
             assert "dynamic_partitions" in get_sqlite3_tables(db_path)
             assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    query = db.select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys():
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    src_dir = file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key/sqlite")
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "e62c379ac8f4"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "id" not in set(get_sqlite3_columns(db_path, "kvs"))
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in set(get_sqlite3_columns(db_path, "instance_info"))
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in set(get_sqlite3_columns(db_path, "kvs"))
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in set(get_sqlite3_columns(db_path, "instance_info"))
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count

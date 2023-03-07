@@ -34,6 +34,10 @@ def has_index(table_name, index_name):
     return index_name in indexes
 
 
+def get_primary_key(table_name):
+    return get_inspector().get_pk_constraint(table_name)
+
+
 _UPGRADING_INSTANCE = None
 
 
