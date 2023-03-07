@@ -131,7 +131,7 @@ def _jobs_which_will_have_io_manager_replaced(
     ]
 
 
-def _attach_resources_to_jobs_and_instigators(
+def _attach_resources_to_jobs_and_instigator_jobs(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -240,11 +240,12 @@ def _create_repository_using_definitions_args(
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
     if isinstance(jobs, BindResourcesToJobs):
+        # Binds top-level resources to jobs and any jobs attached to schedules or sensors
         (
             jobs_with_resources,
             schedules_with_resources,
             sensors_with_resources,
-        ) = _attach_resources_to_jobs_and_instigators(jobs, schedules, sensors, resource_defs)
+        ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
     else:
         jobs_to_warn = _jobs_which_will_have_io_manager_replaced(jobs, resource_defs)
         if jobs_to_warn:
