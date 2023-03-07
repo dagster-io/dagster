@@ -1,14 +1,14 @@
 import inspect
-from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, Union, cast, Any
 import warnings
+from functools import wraps
+from typing import Any, Callable, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Annotated, Final, TypeAlias
 
 import dagster._check as check
 from dagster._utils.backcompat import (
-    experimental_class_warning,
     ExperimentalWarning,
+    experimental_class_warning,
     experimental_decorator_warning,
     experimental_fn_warning,
 )
@@ -137,21 +137,22 @@ def _get_target(obj: Annotatable, attr: Optional[str] = None):
     return lookup_obj.fget if isinstance(lookup_obj, property) else lookup_obj
 
 
-def quiet_experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatable:
+def quiet_experimental(obj: T_Annotatable) -> T_Annotatable:
     """
     Mark a class/method/function as ignoring experimental warnings. This quiets any "experimental" warnings
-    emitted inside the passed callable is called.
+    emitted inside the passed callable is called. Useful when we want to use experimental features internally
+    in a way that we don't want to warn users about.
 
     Usage:
 
         .. code-block:: python
 
             @quiet_experimental
-            def my_experimental_function(my_arg):
-                do_stuff()
+            def invokes_some_experimental_stuff(my_arg):
+                my_experimental_function(my_arg)
 
             @quiet_experimental
-            class MyExperimentalClass:
+            class InvokesExperimentalClass(MyExperimentalBase):
                 pass
     """
     target = _get_target(obj)

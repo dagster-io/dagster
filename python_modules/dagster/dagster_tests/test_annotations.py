@@ -1,4 +1,5 @@
 import sys
+import warnings
 from abc import abstractmethod
 from typing import NamedTuple, get_type_hints
 
@@ -12,6 +13,7 @@ from dagster._annotations import (
     is_experimental,
     is_public,
     public,
+    quiet_experimental,
 )
 from typing_extensions import Annotated
 
@@ -76,3 +78,31 @@ def test_public_attr():
         else get_type_hints(Foo)
     )
     assert hints["bar"] == Annotated[int, PUBLIC]
+
+
+def test_experimental_quiet_experimental() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        assert len(w) == 0
+        my_experimental_function("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        def my_experimental_function(my_arg) -> None:
+            pass
+
+        @quiet_experimental
+        def my_quiet_wrapper(my_arg) -> None:
+            my_experimental_function(my_arg)
+
+        assert len(w) == 0
+        my_quiet_wrapper("foo")
+        assert len(w) == 0
