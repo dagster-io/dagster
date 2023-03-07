@@ -25,9 +25,13 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
+from dagster._utils.schedules import (
+    cron_string_iterator,
+    is_valid_cron_schedule,
+    reverse_cron_string_iterator,
+)
 
-from ..errors import DagsterInvalidDeserializationVersionError
+from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -118,6 +122,11 @@ class TimeWindowPartitionsDefinition(
                     "hour_offset, and day_offset can't also be provided"
                 ),
             )
+            if not is_valid_cron_schedule(cron_schedule):
+                raise DagsterInvalidDefinitionError(
+                    f"Found invalid cron schedule '{cron_schedule}' for a"
+                    " TimeWindowPartitionsDefinition."
+                )
         else:
             if schedule_type is None:
                 check.failed("One of schedule_type and cron_schedule must be provided")
@@ -607,7 +616,6 @@ class TimeWindowPartitionsDefinition(
             cron_string=self.cron_schedule,
             execution_timezone=self.timezone,
         )
-
         prev_time = next(iterator)
         while prev_time.timestamp() < start_timestamp:
             prev_time = next(iterator)
