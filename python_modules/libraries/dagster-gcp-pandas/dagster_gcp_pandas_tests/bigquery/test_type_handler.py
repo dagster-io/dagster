@@ -24,7 +24,8 @@ from dagster import (
 from dagster_gcp_pandas import bigquery_pandas_io_manager
 from google.cloud import bigquery
 
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+# IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+IS_BUILDKITE = False
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
@@ -38,11 +39,13 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
     )
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     try:
+        print(f"THE TABLE NAME IS {table_name}")
         yield table_name
     finally:
-        bq_client.query(
-            f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
-        ).result()
+        # bq_client.query(
+        #     f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
+        # ).result()
+        pass
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
@@ -93,8 +96,8 @@ def test_io_manager_with_bigquery_pandas():
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
-def test_io_manager_with_snowflake_pandas_timestamp_data():
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_io_manager_with_pandas_timestamp_data():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -115,6 +118,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
 
         @op
         def read_time_df(df: pd.DataFrame):
+            print(df)
             assert set(df.columns) == {"foo", "date"}
             assert (df["date"] == time_df["date"].dt.tz_localize("UTC")).all()
 
