@@ -1,12 +1,14 @@
 import inspect
 from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, Union, cast
+from typing import Callable, Optional, Type, TypeVar, Union, cast, Any
+import warnings
 
 from typing_extensions import Annotated, Final, TypeAlias
 
 import dagster._check as check
 from dagster._utils.backcompat import (
     experimental_class_warning,
+    ExperimentalWarning,
     experimental_decorator_warning,
     experimental_fn_warning,
 )
@@ -133,3 +135,58 @@ def is_experimental(obj: Annotatable, attr: Optional[str] = None) -> bool:
 def _get_target(obj: Annotatable, attr: Optional[str] = None):
     lookup_obj = obj.__dict__[attr] if attr else obj
     return lookup_obj.fget if isinstance(lookup_obj, property) else lookup_obj
+
+
+def quiet_experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatable:
+    """
+    Mark a class/method/function as ignoring experimental warnings. This quiets any "experimental" warnings
+    emitted inside the passed callable is called.
+
+    Usage:
+
+        .. code-block:: python
+
+            @quiet_experimental
+            def my_experimental_function(my_arg):
+                do_stuff()
+
+            @quiet_experimental
+            class MyExperimentalClass:
+                pass
+    """
+    target = _get_target(obj)
+
+    if isinstance(obj, (property, staticmethod, classmethod)):
+        # warning not currently supported for these cases
+        return obj
+
+    elif inspect.isfunction(target):
+
+        @wraps(target)
+        def inner(*args, **kwargs) -> Any:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
+                return target(*args, **kwargs)
+
+        return cast(T_Annotatable, inner)
+
+    elif inspect.isclass(target):
+        undecorated_init = target.__init__
+
+        def __init__(self, *args, **kwargs) -> None:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)
+                # Tuples must be handled differently, because the undecorated_init does not take any
+                # arguments-- they're assigned in __new__.
+                if issubclass(cast(Type, target), tuple):
+                    undecorated_init(self)
+                else:
+                    undecorated_init(self, *args, **kwargs)
+
+        target.__init__ = __init__
+
+        return cast(T_Annotatable, obj)
+
+    else:
+        check.failed("obj must be a function or a class")
