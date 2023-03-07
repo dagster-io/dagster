@@ -9,6 +9,7 @@ from dagster import (
     TableSchemaMetadataValue,
     io_manager,
 )
+from dagster._core.definitions.metadata import MetadataValue
 
 
 class LocalCsvIOManager(MemoizableIOManager):
@@ -29,13 +30,13 @@ class LocalCsvIOManager(MemoizableIOManager):
         with open(fpath + ".version", "w", encoding="utf8") as f:
             f.write(context.version if context.version else "None")
 
-        yield MetadataEntry.int(obj.shape[0], "Rows")
-        yield MetadataEntry.path(fpath, "Path")
-        yield MetadataEntry.md(obj.head(5).to_markdown(), "Sample")
-        yield MetadataEntry.text(context.version, "Resolved version")
-        yield MetadataEntry.table_schema(
-            self.get_schema(context.dagster_type),
+        yield MetadataEntry("Rows", value=MetadataValue.int(obj.shape[0]))
+        yield MetadataEntry("Path", value=MetadataValue.path(fpath))
+        yield MetadataEntry("Sample", value=MetadataValue.md(obj.head(5).to_markdown()))
+        yield MetadataEntry("Resolved version", value=MetadataValue.text(context.version))  # type: ignore
+        yield MetadataEntry(
             "Schema",
+            value=MetadataValue.table_schema(self.get_schema(context.dagster_type)),
         )
 
     def get_schema(self, dagster_type):
@@ -43,12 +44,12 @@ class LocalCsvIOManager(MemoizableIOManager):
             (
                 x
                 for x in dagster_type.metadata_entries
-                if isinstance(x.entry_data, TableSchemaMetadataValue)
+                if isinstance(x.value, TableSchemaMetadataValue)
             ),
             None,
         )
         assert schema_entry
-        return schema_entry.entry_data.schema
+        return schema_entry.value.schema
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""

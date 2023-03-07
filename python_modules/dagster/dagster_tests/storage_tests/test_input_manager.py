@@ -648,7 +648,7 @@ def test_input_manager_with_failure():
 
         assert failure_data.user_failure_data.description == "Foolure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+        assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
 
 
 def test_input_manager_with_retries():
