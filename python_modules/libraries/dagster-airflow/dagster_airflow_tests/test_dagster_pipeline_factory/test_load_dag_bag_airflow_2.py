@@ -8,7 +8,7 @@ from dagster_airflow import (
     make_dagster_definitions_from_airflow_example_dags,
 )
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs_airflow_2
 
@@ -89,7 +89,7 @@ def get_examples_airflow_repo_params():
     "job_name, exclude_from_execution_tests",
     get_examples_airflow_repo_params(),
 )
-@requires_airflow_db
+@requires_local_db
 def test_airflow_example_dags(
     airflow_examples_repo,
     job_name,
