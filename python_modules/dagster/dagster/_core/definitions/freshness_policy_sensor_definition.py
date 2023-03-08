@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 
 import pendulum
 
@@ -230,6 +231,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             instance_queryer = CachingInstanceQueryer(context.instance)
+            data_time_resolver = CachingDataTimeResolver(instance_queryer)
             asset_graph = context.repository_def.asset_graph
             monitored_keys = asset_selection.resolve(asset_graph)
 
@@ -245,7 +247,9 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_late value for this asset
-                minutes_late_by_key[asset_key] = instance_queryer.get_current_minutes_late_for_key(
+                minutes_late_by_key[
+                    asset_key
+                ] = data_time_resolver.get_current_minutes_late_for_key(
                     evaluation_time=evaluation_time,
                     asset_graph=asset_graph,
                     asset_key=asset_key,
