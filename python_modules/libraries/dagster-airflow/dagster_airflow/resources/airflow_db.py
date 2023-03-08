@@ -1,7 +1,6 @@
 import datetime
 from typing import Mapping, Optional
 
-import pytz
 from airflow.models.dag import DAG
 from airflow.models.dagrun import DagRun
 from dagster import (
