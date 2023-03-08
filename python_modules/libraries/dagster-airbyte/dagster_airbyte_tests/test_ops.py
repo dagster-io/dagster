@@ -1,10 +1,10 @@
 from base64 import b64encode
-from dagster_airbyte.resources import AirbyteCloudResource
 
 import pytest
 import responses
 from dagster import job, op
 from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
+from dagster_airbyte.resources import AirbyteCloudResource
 
 DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
 
@@ -150,4 +150,4 @@ def test_airbyte_sync_op_cloud() -> None:
         )
 
         for call in rsps.calls:
-            assert call.request.headers["Authorization"] == f"Bearer some_key"
+            assert call.request.headers["Authorization"] == "Bearer some_key"
