@@ -46,7 +46,7 @@ from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
-from dagster_airbyte.resources import AirbyteResource
+from dagster_airbyte.resources import AirbyteResource, BaseAirbyteResource
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     generate_materializations,
@@ -260,26 +260,42 @@ def build_airbyte_assets(
         internal_asset_deps=internal_deps,
         compute_kind="airbyte",
     )
-    def _assets(context, airbyte: AirbyteResource):
+    def _assets(context, airbyte: BaseAirbyteResource):
         ab_output = airbyte.sync_and_poll(connection_id=connection_id)
-        for materialization in generate_materializations(ab_output, asset_key_prefix):
-            table_name = materialization.asset_key.path[-1]
-            if table_name in destination_tables:
+
+        # No connection details (e.g. using Airbyte Cloud) means we just assume
+        # that the outputs were produced
+        if len(ab_output.connection_details) == 0:
+            for table_name in destination_tables:
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata=materialization.metadata,
                 )
-                # Also materialize any normalization tables affiliated with this destination
-                # e.g. nested objects, lists etc
                 if normalization_tables:
                     for dependent_table in normalization_tables.get(table_name, set()):
                         yield Output(
                             value=None,
                             output_name=dependent_table,
                         )
-            else:
-                yield materialization
+        else:
+            for materialization in generate_materializations(ab_output, asset_key_prefix):
+                table_name = materialization.asset_key.path[-1]
+                if table_name in destination_tables:
+                    yield Output(
+                        value=None,
+                        output_name=table_name,
+                        metadata=materialization.metadata,
+                    )
+                    # Also materialize any normalization tables affiliated with this destination
+                    # e.g. nested objects, lists etc
+                    if normalization_tables:
+                        for dependent_table in normalization_tables.get(table_name, set()):
+                            yield Output(
+                                value=None,
+                                output_name=dependent_table,
+                            )
+                else:
+                    yield materialization
 
     return [_assets]
 
