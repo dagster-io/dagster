@@ -169,7 +169,7 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
   };
 };
 
-const ASSET_GRAPH_QUERY = gql`
+export const ASSET_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
     assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
       id

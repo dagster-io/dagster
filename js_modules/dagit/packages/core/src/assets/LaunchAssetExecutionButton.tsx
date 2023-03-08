@@ -82,7 +82,7 @@ type Asset =
       isSource: boolean;
     };
 
-type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
 
 type LaunchOption = {assetKeys: AssetKey[]; label: string; hasMaterializePermission: boolean};
 

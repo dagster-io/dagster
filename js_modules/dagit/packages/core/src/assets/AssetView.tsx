@@ -47,6 +47,7 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {AssetKey} from './types';
 import {
   AssetViewDefinitionNodeFragment,
@@ -201,9 +202,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         }
         right={
           <Box style={{margin: '-4px 0'}}>
-            {definition && definition.jobNames.length > 0 && upstream && (
+            {definition && definition.isObservable ? (
+              <LaunchAssetObservationButton
+                intent="primary"
+                scope={{all: [definition], skipAllTerm: true}}
+              />
+            ) : definition && definition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton scope={{all: [definition]}} />
-            )}
+            ) : undefined}
           </Box>
         }
       />
@@ -346,7 +352,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   };
 };
 
-const ASSET_VIEW_DEFINITION_QUERY = gql`
+export const ASSET_VIEW_DEFINITION_QUERY = gql`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
