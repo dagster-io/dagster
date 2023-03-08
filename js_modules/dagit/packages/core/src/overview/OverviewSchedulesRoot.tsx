@@ -166,12 +166,11 @@ export const OverviewSchedulesRoot = () => {
               count={data.unloadableInstigationStatesOrError.results.length}
             />
           ) : null}
-          <Box
+          <SchedulerInfo
+            daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-          >
-            <SchedulerInfo daemonHealth={data?.instance.daemonHealth} />
-          </Box>
+          />
           {content()}
         </>
       )}
