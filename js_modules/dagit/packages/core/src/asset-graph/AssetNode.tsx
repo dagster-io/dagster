@@ -87,13 +87,13 @@ const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
       padding={{bottom: 8, horizontal: 8}}
     >
       <AssetNodePartitionCountBox
-        state={PartitionState.MISSING}
-        value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
+        state={PartitionState.SUCCESS}
+        value={data?.numMaterialized}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
-        state={PartitionState.SUCCESS}
-        value={data?.numMaterialized}
+        state={PartitionState.MISSING}
+        value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
@@ -322,10 +322,6 @@ function buildAssetNodeStatusRow({
           >
             {late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-              : numFailed
-              ? partitionStateToString(numFailed, 'failed')
-              : numMissing
-              ? partitionStateToString(numMissing, 'missing')
               : partitionStateToString(numPartitions)}
           </Link>
         </Caption>
