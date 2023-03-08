@@ -1915,6 +1915,7 @@ type ResourceDetails {
   configuredValues: [ConfiguredValue!]!
   isTopLevel: Boolean!
   nestedResources: [NestedResourceEntry!]!
+  resourceType: String!
 }
 
 type ConfiguredValue {
@@ -1930,7 +1931,7 @@ enum ConfiguredValueType {
 
 type NestedResourceEntry {
   name: String!
-  resourceKey: String!
+  resource: ResourceDetails!
 }
 
 type RepositoryConnection {

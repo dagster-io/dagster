@@ -6,6 +6,7 @@ import {
   Colors,
   Group,
   Heading,
+  Mono,
   Page,
   PageHeader,
   SplitPanelContainer,
@@ -46,6 +47,21 @@ const remapName = (inName: string): string => {
   return inName;
 };
 
+const succinctType = (resourceType: string | undefined): string | null => {
+  return resourceType?.split('.').pop() || null;
+};
+
+const resourceDisplayName = (
+  resource: undefined | {name: string; resourceType: string},
+): string | null => {
+  if (!resource) {
+    return null;
+  }
+  return resource.name.startsWith('_nested_')
+    ? succinctType(resource?.resourceType)
+    : resource.name;
+};
+
 export const ResourceRoot: React.FC<Props> = (props) => {
   useTrackPageView();
 
@@ -65,9 +81,13 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const displayName =
+    (queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails' &&
+      resourceDisplayName(queryResult.data?.topLevelResourceDetailsOrError)) ||
+    resourceName;
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Heading>{resourceName}</Heading>} />
+      <PageHeader title={<Heading>{displayName}</Heading>} />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({topLevelResourceDetailsOrError}) => {
           if (topLevelResourceDetailsOrError.__typename !== 'ResourceDetails') {
@@ -109,9 +129,9 @@ export const ResourceRoot: React.FC<Props> = (props) => {
             ]),
           );
           const nestedResources = Object.fromEntries(
-            topLevelResourceDetailsOrError.nestedResources.map((nr) => [nr.name, nr.resourceKey]),
+            topLevelResourceDetailsOrError.nestedResources.map((nr) => [nr.name, nr.resource]),
           );
-
+          const resourceTypeSuccinct = succinctType(topLevelResourceDetailsOrError.resourceType);
           return (
             <div style={{height: '100%', display: 'flex'}}>
               <SplitPanelContainer
@@ -123,7 +143,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                     {Object.keys(nestedResources).length > 0 && (
                       <Box>
                         <SectionHeader>
-                          <Subheading>Resource Dependencies</Subheading>
+                          <Subheading>Resource dependencies</Subheading>
                         </SectionHeader>
                         <Table>
                           <thead>
@@ -149,10 +169,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                                       <Link
                                         to={workspacePathFromAddress(
                                           repoAddress,
-                                          `/resources/${nestedResources[key]}`,
+                                          `/resources/${nestedResources[key].name}`,
                                         )}
                                       >
-                                        {nestedResources[key]}
+                                        {resourceDisplayName(nestedResources[key])}
                                       </Link>
                                     </Tag>
                                   </td>
@@ -228,7 +248,11 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                         flex={{gap: 4, direction: 'column'}}
                         margin={{left: 24, right: 12, vertical: 16}}
                       >
-                        <Heading>{resourceName}</Heading>
+                        <Heading>{displayName}</Heading>
+
+                        <Tooltip content={topLevelResourceDetailsOrError.resourceType || ''}>
+                          <Mono>{resourceTypeSuccinct}</Mono>
+                        </Tooltip>
                       </Box>
 
                       <SidebarSection title="Definition">
@@ -294,8 +318,12 @@ const RESOURCE_ROOT_QUERY = gql`
         }
         nestedResources {
           name
-          resourceKey
+          resource {
+            name
+            resourceType
+          }
         }
+        resourceType
       }
       ...PythonErrorFragment
     }

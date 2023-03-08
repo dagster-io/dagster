@@ -348,9 +348,13 @@ class GrapheneRepository(graphene.ObjectType):
             for group_name, external_nodes in groups.items()
         ]
 
-    def resolve_allTopLevelResourceDetails(self, _graphene_info):
+    def resolve_allTopLevelResourceDetails(self, _graphene_info) -> List[GrapheneResourceDetails]:
         return [
-            GrapheneResourceDetails(resource)
+            GrapheneResourceDetails(
+                location_name=self._repository_location.name,
+                repository_name=self._repository.name,
+                external_resource=resource,
+            )
             for resource in sorted(
                 self._repository.get_external_resources(), key=lambda resource: resource.name
             )
