@@ -42,7 +42,7 @@ const SingleDimensionAssetPartitions: React.FC<{assetKey: AssetKeyInput}> = ({as
           setParams={setParams}
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['default']}
-          assetLastMaterializedAt={undefined}
+          dataRefreshHint={undefined}
         />
       </MockedProvider>
       <Route
