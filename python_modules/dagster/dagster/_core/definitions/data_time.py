@@ -258,7 +258,7 @@ class CachingDataTimeResolver:
     def get_used_data_times_for_record(
         self,
         asset_graph: AssetGraph,
-        record: EventLogRecord,
+        record: "EventLogRecord",
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         """Method to enable calculating the timestamps of materializations of upstream assets
         which were relevant to a given AssetMaterialization. These timestamps can be calculated relative

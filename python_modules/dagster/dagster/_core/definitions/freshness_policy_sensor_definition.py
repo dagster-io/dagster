@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 
 import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import (
