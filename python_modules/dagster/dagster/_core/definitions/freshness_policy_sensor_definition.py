@@ -5,6 +5,7 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import (
@@ -230,6 +231,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             instance_queryer = CachingInstanceQueryer(context.instance)
+            data_time_resolver = CachingDataTimeResolver(instance_queryer)
             asset_graph = context.repository_def.asset_graph
             monitored_keys = asset_selection.resolve(asset_graph)
 
@@ -245,7 +247,9 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_late value for this asset
-                minutes_late_by_key[asset_key] = instance_queryer.get_current_minutes_late_for_key(
+                minutes_late_by_key[
+                    asset_key
+                ] = data_time_resolver.get_current_minutes_late_for_key(
                     evaluation_time=evaluation_time,
                     asset_graph=asset_graph,
                     asset_key=asset_key,

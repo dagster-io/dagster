@@ -25,6 +25,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -52,7 +53,6 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
     CachingDynamicPartitionsLoader,
@@ -603,14 +603,14 @@ def get_2d_run_length_encoded_partitions(
 def get_freshness_info(
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
-    data_time_queryer: CachingInstanceQueryer,
+    data_time_resolver: CachingDataTimeResolver,
     asset_graph: AssetGraph,
 ) -> "GrapheneAssetFreshnessInfo":
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    latest_record = data_time_queryer.get_latest_materialization_record(asset_key)
+    latest_record = data_time_resolver.instance_queryer.get_latest_materialization_record(asset_key)
     if latest_record is None:
         return GrapheneAssetFreshnessInfo(
             currentMinutesLate=None,
@@ -621,7 +621,7 @@ def get_freshness_info(
         tz=datetime.timezone.utc,
     )
 
-    used_data_times = data_time_queryer.get_used_data_times_for_record(
+    used_data_times = data_time_resolver.get_used_data_times_for_record(
         asset_graph=asset_graph, record=latest_record
     )
 
