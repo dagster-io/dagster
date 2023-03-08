@@ -65,6 +65,7 @@ import {
 } from './types/LaunchpadRoot.types';
 import {
   PipelineExecutionConfigSchemaQuery,
+  PipelineExecutionConfigSchemaQueryVariables,
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
 } from './types/LaunchpadSession.types';
@@ -193,13 +194,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
-  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
-    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
-    {
-      variables: {selector: pipelineSelector, mode: currentSession?.mode},
-      partialRefetch: true,
-    },
-  );
+  const configResult = useQuery<
+    PipelineExecutionConfigSchemaQuery,
+    PipelineExecutionConfigSchemaQueryVariables
+  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+    variables: {selector: pipelineSelector, mode: currentSession?.mode},
+    partialRefetch: true,
+  });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 

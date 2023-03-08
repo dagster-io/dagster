@@ -1,7 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
+import {
+  PermissionFragment,
+  PermissionsQuery,
+  PermissionsQueryVariables,
+} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -109,7 +113,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
+  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
