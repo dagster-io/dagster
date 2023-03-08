@@ -542,7 +542,7 @@ def test_self_dependent_asset():
             resources=resource_defs,
             run_config={
                 "ops": {
-                    asset_full_name: {"config": {"value": "1", "last_partition_key": "2023-01-01"}}
+                    asset_full_name: {"config": {"value": "2", "last_partition_key": "2023-01-01"}}
                 }
             },
         )
