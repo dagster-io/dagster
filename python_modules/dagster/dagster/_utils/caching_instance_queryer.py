@@ -156,27 +156,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         else:
             asset_partition = asset
 
-        # ensure we know the latest overall materialization record for this asset partition
-        if asset_partition not in self._latest_materialization_record_cache:
-            self._latest_materialization_record_cache[
-                asset_partition
-            ] = self._get_latest_materialization_record(
-                asset_partition=asset_partition,
-            )
-
-        # check all of our caches to see if we can confirm that the record does not exist
+        # the count of this (asset key, partition key) pair is 0
         if (
-            asset_partition in self._latest_materialization_record_cache
-            and (
-                # there is no latest record for this asset partition
-                self._latest_materialization_record_cache[asset_partition] is None
-                or
-                # the storage id of the latest record is less than the cursor
-                self._latest_materialization_record_cache[asset_partition].storage_id  # type: ignore
-                <= (after_cursor or 0)
-            )
-        ) or (
-            # the count of this (asset key, partition key) pair is 0
             asset_partition.partition_key is not None
             and after_cursor in self._asset_partition_count_cache
             and asset_partition.asset_key in self._asset_partition_count_cache[after_cursor]
@@ -187,8 +168,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ):
             return None
 
+        # ensure we know the latest overall materialization record for this asset partition
+        if asset_partition not in self._latest_materialization_record_cache:
+            self._latest_materialization_record_cache[
+                asset_partition
+            ] = self._get_latest_materialization_record(
+                asset_partition=asset_partition,
+            )
+
         # the latest overall record
         latest_record = self._latest_materialization_record_cache[asset_partition]
+
+        # there are no records for this asset partition after after_cursor
+        if latest_record is None or latest_record.storage_id <= (after_cursor or 0):
+            return None
 
         if before_cursor is None:
             return latest_record
