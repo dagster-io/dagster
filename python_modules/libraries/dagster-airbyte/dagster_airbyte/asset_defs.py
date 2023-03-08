@@ -178,7 +178,7 @@ def _build_airbyte_assets_from_metadata(
                     value=None,
                     output_name=table_name,
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        entry.label: entry.value for entry in materialization.metadata_entries
                     },
                 )
                 # Also materialize any normalization tables affiliated with this destination
@@ -270,7 +270,7 @@ def build_airbyte_assets(
                     value=None,
                     output_name=table_name,
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        entry.label: entry.value for entry in materialization.metadata_entries
                     },
                 )
                 # Also materialize any normalization tables affiliated with this destination

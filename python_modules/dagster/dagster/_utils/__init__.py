@@ -738,3 +738,7 @@ def iter_to_list(iterable: Iterable[T]) -> List[T]:
     if isinstance(iterable, List):
         return iterable
     return list(iterable)
+
+
+def last_file_comp(path: str) -> str:
+    return os.path.basename(os.path.normpath(path))

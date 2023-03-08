@@ -145,7 +145,7 @@ def test_execute_summary_stats_null_function():
     )
     assert len(metadata_entries) == 1
     assert metadata_entries[0].label == "qux"
-    assert metadata_entries[0].entry_data.text == "baz"
+    assert metadata_entries[0].value.text == "baz"
 
 
 def test_execute_summary_stats_error():

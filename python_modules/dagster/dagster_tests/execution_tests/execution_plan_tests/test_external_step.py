@@ -33,6 +33,7 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.events import DagsterEventType
@@ -484,7 +485,7 @@ def test_explicit_failure():
             fd = run.result_for_node("retry_op").failure_data
             assert fd.user_failure_data.description == "some failure description"
             assert fd.user_failure_data.metadata_entries == [
-                MetadataEntry.float(label="foo", value=1.23)
+                MetadataEntry(label="foo", value=MetadataValue.float(1.23))
             ]
 
 

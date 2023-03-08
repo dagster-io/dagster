@@ -23,6 +23,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._utils import last_file_comp
 from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
@@ -31,7 +32,6 @@ from .metadata import (
     MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
-    last_file_comp,
     normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
@@ -554,7 +554,7 @@ class AssetMaterialization(
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}  # type: ignore
 
 
 class MaterializationSerializer(DefaultNamedTupleSerializer):

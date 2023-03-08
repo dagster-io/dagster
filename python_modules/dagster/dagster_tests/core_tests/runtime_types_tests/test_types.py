@@ -505,7 +505,7 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     with pytest.raises(DagsterTypeCheckDidNotPass) as e:
         foo_job.execute_in_process()
     assert e.value.metadata_entries[0].label == "bar"
-    assert e.value.metadata_entries[0].entry_data.text == "foo"
+    assert e.value.metadata_entries[0].value.text == "foo"
     assert isinstance(e.value.dagster_type, DagsterType)
 
     pipeline_result = foo_job.execute_in_process(raise_on_error=False)
@@ -596,10 +596,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
         if event.event_type_value == DagsterEventType.STEP_OUTPUT.value:
             assert event.event_specific_data.type_check_data
             assert event.event_specific_data.type_check_data.metadata_entries[0].label == "bar"
-            assert (
-                event.event_specific_data.type_check_data.metadata_entries[0].entry_data.text
-                == "foo"
-            )
+            assert event.event_specific_data.type_check_data.metadata_entries[0].value.text == "foo"
             assert event.event_specific_data.type_check_data.metadata_entries[0]
 
     pipeline_result = foo_job.execute_in_process(raise_on_error=False)
