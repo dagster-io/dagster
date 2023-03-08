@@ -5,6 +5,7 @@ from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
     StaleStatus,
@@ -447,9 +448,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         # in the future, we can share this same CachingInstanceQueryer across all
         # GrapheneMaterializationEvent which share an external repository for improved performance
-        data_time_queryer = CachingInstanceQueryer(
-            instance=graphene_info.context.instance, cache_known_used_data=True
-        )
+        instance_queryer = CachingInstanceQueryer(instance=graphene_info.context.instance)
+        data_time_resolver = CachingDataTimeResolver(instance_queryer)
         event_records = instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -466,7 +466,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_non_source_parents(asset_key):
             return []
 
-        used_data_times = data_time_queryer.get_used_data_times_for_record(
+        used_data_times = data_time_resolver.get_used_data_times_for_record(
             asset_graph=asset_graph,
             record=next(iter(event_records)),
         )
@@ -676,7 +676,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_graph=asset_graph,
                 # in the future, we can share this same CachingInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_queryer=CachingInstanceQueryer(instance=graphene_info.context.instance),
+                data_time_resolver=CachingDataTimeResolver(
+                    CachingInstanceQueryer(instance=graphene_info.context.instance),
+                ),
             )
         return None
 
