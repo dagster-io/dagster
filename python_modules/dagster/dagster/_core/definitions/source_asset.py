@@ -151,7 +151,7 @@ class SourceAsset(ResourceAddable):
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}  # type: ignore
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY

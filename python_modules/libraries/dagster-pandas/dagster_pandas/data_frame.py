@@ -251,7 +251,7 @@ def create_structured_dataframe_type(
             if result_val:
                 continue
             typechecks_succeeded = typechecks_succeeded and result_val
-            result_dict = result.metadata_entries[0].entry_data.data
+            result_dict = result.metadata_entries[0].value.data
             metadata.append(
                 MetadataEntry(
                     "{}-constraint-metadata".format(key),

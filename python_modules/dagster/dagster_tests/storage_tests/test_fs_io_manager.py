@@ -607,8 +607,8 @@ def test_backcompat_multipartitions_fs_io_manager():
         get_path_metadata_entry = lambda materialization: next(
             iter([me for me in materialization.metadata_entries if me.label == "path"])
         )
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path
 
         materializations = result.asset_materializations_for_node("downstream_of_multipartitioned")
         assert len(materializations) == 1
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path

@@ -1,6 +1,4 @@
-import functools
 import os
-import re
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -16,6 +14,8 @@ from typing import (
     cast,
     overload,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -49,12 +49,8 @@ RawMetadataValue = Union[
     None,
 ]
 
-MetadataMapping = Mapping[str, "MetadataValue"]
-MetadataUserInput = Mapping[str, RawMetadataValue]
-
-
-def last_file_comp(path: str) -> str:
-    return os.path.basename(os.path.normpath(path))
+MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
+MetadataUserInput: TypeAlias = Mapping[str, RawMetadataValue]
 
 
 # ########################
@@ -126,7 +122,7 @@ def normalize_metadata(
                 )
                 metadata_entries.append(
                     MetadataEntry(
-                        entry_data=TextMetadataValue(f"[{v.__class__.__name__}] (unserializable)"),
+                        value=TextMetadataValue(f"[{v.__class__.__name__}] (unserializable)"),
                         label=k,
                     )
                 )
@@ -950,28 +946,6 @@ class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue):
 # ########################
 
 
-def deprecated_metadata_entry_constructor(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        deprecation_warning(
-            f"Function `MetadataEntry.{fn.__name__}`",
-            "1.0.0",
-            additional_warn_txt=re.sub(
-                r"\n\s*",
-                " ",
-                """
-            The recommended way to supply metadata is to pass a `Dict[str,
-            MetadataValue]` to the `metadata` keyword argument. To construct `MetadataEntry`
-            directly, call constructor and pass a `MetadataValue`: `MetadataEntry(label="foo",
-            value=MetadataValue.text("bar")",
-            """,
-            ),
-        )
-        return fn(*args, **kwargs)
-
-    return wrapper
-
-
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 #
@@ -997,9 +971,6 @@ class MetadataEntry(
     Should be yielded from within an IO manager to append metadata for a given input/output event.
     For other event types, passing a dict with `MetadataValue` values to the `metadata` argument
     is preferred.
-
-    **NOTE**: MetadataEntry static constructors are deprecated. Instead you should use:
-    MetadataEntry(<label>, value=MetadataValue.<type>(<value>)).
 
     Args:
         label (str): Short display label for this metadata entry.
@@ -1043,339 +1014,6 @@ class MetadataEntry(
     def value(self):
         """Alias of `entry_data`."""
         return self.entry_data
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def text(text: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing text as
-        :py:class:`TextMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata_entries=[
-                        MetadataEntry.text("Text-based metadata for this event", "text_metadata")
-                    ],
-                )
-
-        Args:
-            text (Optional[str]): The text of this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, TextMetadataValue(text))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def url(url: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing a URL as
-        :py:class:`UrlMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dashboard",
-                    metadata_entries=[
-                        MetadataEntry.url(
-                            "http://mycoolsite.com/my_dashboard", label="dashboard_url"
-                        ),
-                    ],
-                )
-
-        Args:
-            url (Optional[str]): The URL contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, UrlMetadataValue(url))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def path(path: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing a path as
-        :py:class:`PathMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata_entries=[MetadataEntry.path("path/to/file", label="filepath")],
-                )
-
-        Args:
-            path (Optional[str]): The path contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, PathMetadataValue(path))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def fspath(
-        path: Optional[str], label: Optional[str] = None, description: Optional[str] = None
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing a filesystem path as
-        :py:class:`PathMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata_entries=[MetadataEntry.fspath("path/to/file")],
-                )
-
-        Args:
-            path (Optional[str]): The path contained by this metadata entry.
-            label (Optional[str]): Short display label for this metadata entry. Defaults to the
-              base name of the path.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        if not label:
-            path = cast(str, check.str_param(path, "path"))
-            label = last_file_comp(path)
-
-        return MetadataEntry.path(path, label, description)
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def json(
-        data: Optional[Mapping[str, Any]],
-        label: str,
-        description: Optional[str] = None,
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing JSON data as
-        :py:class:`JsonMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context):
-                yield ExpectationResult(
-                    success=not missing_things,
-                    label="is_present",
-                    metadata_entries=[
-                        MetadataEntry.json(
-                            label="metadata", data={"missing_columns": missing_things},
-                        )
-                    ],
-                )
-
-        Args:
-            data (Optional[Union[Sequence[Any], Mapping[str, Any]]]): The JSON data contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, JsonMetadataValue(data))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def md(md_str: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing markdown data as
-        :py:class:`MarkdownMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context, md_str):
-                yield AssetMaterialization(
-                    asset_key="info",
-                    metadata_entries=[MetadataEntry.md(md_str=md_str)],
-                )
-
-        Args:
-            md_str (Optional[str]): The markdown contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, MarkdownMetadataValue(md_str))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def python_artifact(
-        python_artifact: Callable[..., Any], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
-        check.callable_param(python_artifact, "python_artifact")
-        return MetadataEntry(
-            label,
-            description,
-            PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__),
-        )
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def float(
-        value: Optional[float], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing float as
-        :py:class:`FloatMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata_entries=[MetadataEntry.float(calculate_bytes(df), "size (bytes)")],
-                )
-
-        Args:
-            value (Optional[float]): The float value contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, FloatMetadataValue(value))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def int(value: Optional[int], label: str, description: Optional[str] = None) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing int as
-        :py:class:`IntMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata_entries=[MetadataEntry.int(len(df), "number of rows")],
-                )
-
-        Args:
-            value (Optional[int]): The int value contained by this metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(label, description, IntMetadataValue(value))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def pipeline_run(run_id: str, label: str, description: Optional[str] = None) -> "MetadataEntry":
-        check.str_param(run_id, "run_id")
-        return MetadataEntry(label, description, DagsterRunMetadataValue(run_id))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def asset(
-        asset_key: "AssetKey", label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry referencing a Dagster asset, by key.
-        For example:
-
-        .. code-block:: python
-
-            @op
-            def validate_table(context, df):
-                yield AssetMaterialization(
-                    asset_key=AssetKey("my_table"),
-                    metadata_entries=[
-                         MetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
-                    ],
-                )
-
-        Args:
-            asset_key (AssetKey): The asset key referencing the asset.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        from dagster._core.definitions.events import AssetKey
-
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        return MetadataEntry(label, description, DagsterAssetMetadataValue(asset_key))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    @experimental
-    def table(
-        records: Sequence[TableRecord],
-        label: str,
-        description: Optional[str] = None,
-        schema: Optional[TableSchema] = None,
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing tabluar data as
-        :py:class:`TableMetadataValue`. For example:
-
-        .. code-block:: python
-
-            @op
-            def emit_metadata(context):
-                yield ExpectationResult(
-                    success=not has_errors,
-                    label="is_valid",
-                    metadata_entries=[
-                        MetadataEntry.table(
-                            label="errors",
-                            records=[
-                                TableRecord(code="invalid-data-type", row=2, col="name"),
-                            ],
-                            schema=TableSchema(
-                                columns=[
-                                    TableColumn(name="code", type="string"),
-                                    TableColumn(name="row", type="int"),
-                                    TableColumn(name="col", type="string"),
-                                ]
-                            )
-                        ),
-                    ],
-                )
-
-        Args:
-            records (List[TableRecord]): The data as a list of records (i.e. rows).
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-            schema (Optional[TableSchema]): A schema for the table. If none is provided, one will be
-              automatically generated by examining the first record. The schema will include as columns all
-              field names present in the first record, with a type of `"string"`, `"int"`,
-              `"bool"` or `"float"` inferred from the first record's values. If a value does
-              not directly match one of the above types, it will be treated as a string.
-        """
-        return MetadataEntry(label, description, TableMetadataValue(records, schema))
-
-    @staticmethod
-    @deprecated_metadata_entry_constructor
-    def table_schema(
-        schema: TableSchema, label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
-        """Static constructor for a metadata entry containing a table schema as
-        :py:class:`TableSchemaMetadataValue`. For example:
-
-        .. code-block:: python
-
-            schema = TableSchema(
-                columns = [
-                    TableColumn(name="id", type="int"),
-                    TableColumn(name="status", type="bool"),
-                ]
-            )
-            DagsterType(
-                type_check_fn=some_validation_fn,
-                name='MyTable',
-                metadata_entries=[
-                    MetadataEntry.table_schema(
-                        schema,
-                        label='schema',
-                    )
-                ]
-            )
-
-        Args:
-            schema (TableSchema): The table schema for a metadata entry.
-            label (str): Short display label for this metadata entry.
-            description (Optional[str]): A human-readable description of this metadata entry.
-        """
-        return MetadataEntry(
-            label,
-            description,
-            TableSchemaMetadataValue(schema),
-        )
 
 
 class PartitionMetadataEntry(

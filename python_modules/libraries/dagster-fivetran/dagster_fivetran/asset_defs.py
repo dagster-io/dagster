@@ -94,7 +94,7 @@ def _build_fivetran_assets(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
                     metadata={
-                        cast(MetadataEntry, entry).label: cast(MetadataEntry, entry).entry_data
+                        cast(MetadataEntry, entry).label: cast(MetadataEntry, entry).value
                         for entry in materialization.metadata_entries
                     },
                 )

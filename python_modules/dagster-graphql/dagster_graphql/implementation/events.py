@@ -60,51 +60,44 @@ def iterate_metadata_entries(
     check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
         metadata_entry = cast(MetadataEntry, metadata_entry)
-        if isinstance(metadata_entry.entry_data, PathMetadataValue):
+        if isinstance(metadata_entry.value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                path=metadata_entry.entry_data.path,
+                path=metadata_entry.value.path,
             )
-        elif isinstance(metadata_entry.entry_data, NotebookMetadataValue):
+        elif isinstance(metadata_entry.value, NotebookMetadataValue):
             yield GrapheneNotebookMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                path=metadata_entry.entry_data.path,
+                path=metadata_entry.value.path,
             )
-        elif isinstance(metadata_entry.entry_data, JsonMetadataValue):
+        elif isinstance(metadata_entry.value, JsonMetadataValue):
             yield GrapheneJsonMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                jsonString=seven.json.dumps(metadata_entry.entry_data.data),
+                jsonString=seven.json.dumps(metadata_entry.value.data),
             )
-        elif isinstance(metadata_entry.entry_data, TextMetadataValue):
+        elif isinstance(metadata_entry.value, TextMetadataValue):
             yield GrapheneTextMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                text=metadata_entry.entry_data.text,
+                text=metadata_entry.value.text,
             )
-        elif isinstance(metadata_entry.entry_data, UrlMetadataValue):
+        elif isinstance(metadata_entry.value, UrlMetadataValue):
             yield GrapheneUrlMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                url=metadata_entry.entry_data.url,
+                url=metadata_entry.value.url,
             )
-        elif isinstance(metadata_entry.entry_data, MarkdownMetadataValue):
+        elif isinstance(metadata_entry.value, MarkdownMetadataValue):
             yield GrapheneMarkdownMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                md_str=metadata_entry.entry_data.md_str,
+                md_str=metadata_entry.value.md_str,
             )
-        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataValue):
+        elif isinstance(metadata_entry.value, PythonArtifactMetadataValue):
             yield GraphenePythonArtifactMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                module=metadata_entry.entry_data.module,
-                name=metadata_entry.entry_data.name,
+                module=metadata_entry.value.module,
+                name=metadata_entry.value.name,
             )
-        elif isinstance(metadata_entry.entry_data, FloatMetadataValue):
-            float_val = metadata_entry.entry_data.value
+        elif isinstance(metadata_entry.value, FloatMetadataValue):
+            float_val = metadata_entry.value.value
 
             # coerce NaN to null
             if float_val is not None and isnan(float_val):
@@ -112,73 +105,64 @@ def iterate_metadata_entries(
 
             yield GrapheneFloatMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
                 floatValue=float_val,
             )
-        elif isinstance(metadata_entry.entry_data, IntMetadataValue):
+        elif isinstance(metadata_entry.value, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
             if (
-                isinstance(metadata_entry.entry_data.value, int)
-                and MIN_INT <= metadata_entry.entry_data.value <= MAX_INT
+                isinstance(metadata_entry.value.value, int)
+                and MIN_INT <= metadata_entry.value.value <= MAX_INT
             ):
-                int_val = metadata_entry.entry_data.value
+                int_val = metadata_entry.value.value
 
             yield GrapheneIntMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
                 intValue=int_val,
                 # make string representation available to allow for > 32bit int
-                intRepr=str(metadata_entry.entry_data.value),
+                intRepr=str(metadata_entry.value.value),
             )
-        elif isinstance(metadata_entry.entry_data, BoolMetadataValue):
+        elif isinstance(metadata_entry.value, BoolMetadataValue):
             yield GrapheneBoolMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                boolValue=metadata_entry.entry_data.value,
+                boolValue=metadata_entry.value.value,
             )
-        elif isinstance(metadata_entry.entry_data, NullMetadataValue):
+        elif isinstance(metadata_entry.value, NullMetadataValue):
             yield GrapheneNullMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterRunMetadataValue):
+        elif isinstance(metadata_entry.value, DagsterRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                runId=metadata_entry.entry_data.run_id,
+                runId=metadata_entry.value.run_id,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataValue):
+        elif isinstance(metadata_entry.value, DagsterAssetMetadataValue):
             yield GrapheneAssetMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
-                assetKey=metadata_entry.entry_data.asset_key,
+                assetKey=metadata_entry.value.asset_key,
             )
-        elif isinstance(metadata_entry.entry_data, TableMetadataValue):
+        elif isinstance(metadata_entry.value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
                 table=GrapheneTable(
-                    schema=metadata_entry.entry_data.schema,
+                    schema=metadata_entry.value.schema,
                     records=[
-                        seven.json.dumps(record.data)
-                        for record in metadata_entry.entry_data.records
+                        seven.json.dumps(record.data) for record in metadata_entry.value.records
                     ],
                 ),
             )
-        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataValue):
+        elif isinstance(metadata_entry.value, TableSchemaMetadataValue):
             yield GrapheneTableSchemaMetadataEntry(
                 label=metadata_entry.label,
-                description=metadata_entry.description,
                 schema=GrapheneTableSchema(
-                    constraints=metadata_entry.entry_data.schema.constraints,
-                    columns=metadata_entry.entry_data.schema.columns,
+                    constraints=metadata_entry.value.schema.constraints,
+                    columns=metadata_entry.value.schema.columns,
                 ),
             )
         else:
             # skip rest for now
             check.not_implemented(
-                "{} unsupported metadata entry for now".format(type(metadata_entry.entry_data))
+                "{} unsupported metadata entry for now".format(type(metadata_entry.value))
             )
 
 

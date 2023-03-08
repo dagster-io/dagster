@@ -565,7 +565,7 @@ def test_metadata_logging():
     assert len(events[1].event_specific_data.metadata_entries) == 1
     metadata_entry = events[1].event_specific_data.metadata_entries[0]
     assert metadata_entry.label == "foo"
-    assert metadata_entry.entry_data.text == "bar"
+    assert metadata_entry.value.text == "bar"
 
 
 def test_metadata_logging_multiple_entries():
