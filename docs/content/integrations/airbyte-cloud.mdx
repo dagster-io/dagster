@@ -1,0 +1,234 @@
+---
+title: "Using Dagster with Airbyte Cloud"
+description: Integrate your Airbyte Cloud connections into Dagster.
+---
+
+# Using Airbyte Cloud with Dagster
+
+<Note>
+  Using self-hosted Airbyte? Check out the{" "}
+  <a href="/integrations/airbyte">
+    guide on using self-hosted Airbyte with Dagster
+  </a>
+</Note>
+
+Dagster can orchestrate your Airbyte Cloud connections, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
+
+This guide focuses on how to work with Airbyte connections using Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) framework.
+
+<center>
+  <Image
+    alt="Screenshot of the Airbyte UI and Dagster UI in a browser."
+    src="/images/integrations/airbyte/airbyte_cloud_assets.png"
+    width={2200}
+    height={1300}
+  />
+</center>
+
+---
+
+## Airbyte connections and Dagster software-defined assets
+
+An [Airbyte connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
+
+- Visualize the streams involved in an Airbyte connection and execute a sync from Dagster
+- Define downstream computations which depend on replicas produced by Airbyte
+- Track data lineage through Airbyte and other tools
+
+---
+
+## Prerequisites
+
+To get started, you will need to install the `dagster` and `dagster-airbyte` Python packages:
+
+```bash
+pip install dagster dagster-airbyte
+```
+
+You'll also need to have an Airbyte Cloud account, and have created an Airbyte API Key. For more information, see the [Airbyte API docs](https://reference.airbyte.com/reference/start).
+
+---
+
+## Step 1: Connecting to Airbyte Cloud
+
+The first step in using Airbyte Cloud with Dagster is to tell Dagster how to connect to your Airbyte Cloud account using an Airbyte Cloud [resource](/concepts/resources). This resource handles your Airbyte Cloud credentials and any optional configuration.
+
+```python startafter=start_define_cloud_instance endbefore=end_define_cloud_instance file=/integrations/airbyte/airbyte.py dedent=4
+from dagster import EnvVar
+from dagster_airbyte import AirbyteCloudResource
+
+airbyte_instance = AirbyteCloudResource(
+    api_key=EnvVar("AIRBYTE_API_KEY"),
+)
+```
+
+Here, the API key is provided using an <PyObject object="EnvVar" />. For more information on setting environment variables in a production setting, see [Using environment variables and secrets](/guides/dagster/using-environment-variables-and-secrets).
+
+---
+
+## Step 2: Launching Airbyte Cloud syncs using Dagster
+
+In order to create software-defined assets for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI.
+
+<center>
+  <Image
+    alt="Screenshot of the Airbyte UI in a browser, showing the connection ID in the URL."
+    src="/images/integrations/airbyte/airbyte_connection_ui.png"
+    width={3102}
+    height={1746}
+  />
+</center>
+
+Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`:
+
+```python startafter=start_manually_define_airbyte_assets endbefore=end_manually_define_airbyte_assets file=/integrations/airbyte/airbyte.py dedent=4
+from dagster_airbyte import build_airbyte_assets
+
+airbyte_assets = build_airbyte_assets(
+    connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+    destination_tables=["releases", "tags", "teams"],
+)
+```
+
+#### Adding a resource
+
+Manually built Airbyte assets require an `airbyte_resource`, which defines how to connect and interact with your Airbyte Cloud instance.
+
+We can add the Airbyte resource we configured above to our Airbyte assets by doing the following:
+
+```python startafter=start_airbyte_manual_config endbefore=end_airbyte_manual_config file=/integrations/airbyte/airbyte.py dedent=4
+from dagster_airbyte import build_airbyte_assets
+
+from dagster import with_resources
+
+airbyte_assets = with_resources(
+    build_airbyte_assets(
+        connection_id="87b7fe85-a22c-420e-8d74-b30e7ede77df",
+        destination_tables=["releases", "tags", "teams"],
+    ),
+    # Use the airbyte_instance resource we defined in Step 1
+    {"airbyte": airbyte_instance},
+)
+```
+
+---
+
+## Step 3: Adding downstream assets
+
+<Note>
+  Looking to orchestrate Airbyte with dbt? Check out our{" "}
+  <a href="https://github.com/dagster-io/dagster/tree/master/examples/assets_modern_data_stack">
+    Modern Data Stack example
+  </a>{" "}
+  and our <a href="/integrations/dbt">dbt integration docs</a>.
+</Note>
+
+Once you have loaded your Airbyte Cloud assets into Dagster, you can create assets which depend on them. These can be other assets pulled in from external sources such as [dbt](/integrations/dbt) or assets defined in Python code.
+
+In this case, we have an Airbyte connection which is storing data in the `stargazers` table in our Snowflake warehouse. We specify the output [IO manager](/concepts/io-management/io-managers) to tell downstream assets how to retreive the data.
+
+```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/airbyte/airbyte.py dedent=4
+import json
+from dagster import asset, Definitions
+from dagster_airbyte import load_assets_from_airbyte_instance
+
+airbyte_assets = load_assets_from_airbyte_instance(
+    airbyte_instance,
+    io_manager_key="snowflake_io_manager",
+)
+
+@asset
+def stargazers_file(stargazers):
+    with open("stargazers.json", "w", encoding="utf8") as f:
+        f.write(json.dumps(stargazers, indent=2))
+
+defs = Definitions(
+    assets=[airbyte_assets, stargazers_file],
+    resources={"snowflake_io_manager": snowflake_io_manager},
+)
+```
+
+---
+
+## Step 4: Scheduling Airbyte Cloud syncs
+
+Once you have Airbyte Cloud assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Airbyte sync.
+
+```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/airbyte/airbyte.py dedent=4
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    AssetSelection,
+    Definitions,
+)
+
+# materialize all assets
+run_everything_job = define_asset_job("run_everything", selection="*")
+
+# only run my_airbyte_connection and downstream assets
+my_etl_job = define_asset_job(
+    "my_etl_job", AssetSelection.groups("my_airbyte_connection").downstream()
+)
+
+defs = Definitions(
+    assets=[airbyte_assets],
+    schedules=[
+        ScheduleDefinition(
+            job=my_etl_job,
+            cron_schedule="@daily",
+        ),
+        ScheduleDefinition(
+            job=run_everything_job,
+            cron_schedule="@weekly",
+        ),
+    ],
+)
+```
+
+Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
+
+---
+
+## Conclusion
+
+If you find a bug or want to add a feature to the `dagster-airbyte` library, we invite you to [contribute](/community/contributing).
+
+If you have questions on using Airbyte with Dagster, we'd love to hear from you:
+
+<p align="center">
+  <a href="https://dagster.io/slack" target="_blank">
+    <Image
+      alt="join-us-on-slack"
+      src="/assets/join-us-on-slack.png"
+      width="160"
+      height="40"
+    />
+  </a>
+</p>
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/\_apidocs/libraries/dagster-airbyte"
+    title="dagster-airbyte API reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/integrations/airbyte"
+    title="Using Dagster with self-hosted Airbyte guide"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/assets/software-defined-assets"
+    title="Software-defined assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/resources"
+    title="Resources"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/partitions-schedules-sensors/schedules#running-the-scheduler"
+    title="Scheduling Dagster jobs"
+  ></ArticleListItem>
+</ArticleList>

@@ -16,6 +16,17 @@ def scope_define_instance():
     # end_define_instance
 
 
+def scope_define_cloud_instance() -> None:
+    # start_define_cloud_instance
+    from dagster import EnvVar
+    from dagster_airbyte import AirbyteCloudResource
+
+    airbyte_instance = AirbyteCloudResource(
+        api_key=EnvVar("AIRBYTE_API_KEY"),
+    )
+    # end_define_cloud_instance
+
+
 def scope_load_assets_from_airbyte_project():
     # start_load_assets_from_airbyte_project
     from dagster_airbyte import load_assets_from_airbyte_project
