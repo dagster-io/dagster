@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
 )
 
@@ -371,7 +372,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
-    ) -> Mapping[str, str]:
+    ) -> Mapping[str, Tuple[str, int]]:
         pass
 
     @abstractmethod
