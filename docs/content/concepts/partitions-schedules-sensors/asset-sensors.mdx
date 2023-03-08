@@ -254,7 +254,7 @@ Dagster provides an out-of-box sensor that will monitor a provided set of assets
 - The sensor has never tried to materialize it and it has never been materialized.
 - Any of its parents have been materialized more recently than it has.
 - Any of its parents are unreconciled.
-- It is not up to date with respect to its `FreshnessPolicy` (see [Freshness-based scheduling](#with-freshness-based-scheduling)).
+- It is not up to date with respect to its <PyObject object="FreshnessPolicy"/> (see [Freshness-based scheduling](#with-freshness-based-scheduling)).
 
 The sensor materializes unreconciled assets and avoids materializing assets before their parents are reconciled.
 
@@ -297,7 +297,7 @@ If we materialize partition `"a"` of `asset2`, each upstream dependency of parti
   This feature is currently <strong>experimental</strong>.
 </Note>
 
-Setting a `FreshnessPolicy` on an asset specifies how up-to-date the data in that asset is expected to be. The asset reconciliation sensor created using `build_asset_reconciliation_sensor` will kick off runs to keep that data in line with the defined policy.
+Setting a <PyObject object="FreshnessPolicy"/> on an asset specifies how up-to-date the data in that asset is expected to be. The asset reconciliation sensor created using `build_asset_reconciliation_sensor` will kick off runs to keep that data in line with the defined policy.
 
 To minimize unnecessary computation, the sensor will take into account a few bits of information when determining if it needs to kick off a run for a given asset:
 
