@@ -38,7 +38,6 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataValue,
     TableSchemaMetadataValue,
 )
