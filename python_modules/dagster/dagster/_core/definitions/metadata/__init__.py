@@ -5,23 +5,28 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    TypeVar,
     Union,
     cast,
     overload,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    PackableValue,
+)
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
@@ -51,7 +56,9 @@ RawMetadataValue = Union[
 
 MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
 MetadataUserInput: TypeAlias = Mapping[str, RawMetadataValue]
+MetadataEntryUnion: TypeAlias = Union["MetadataEntry", "PartitionMetadataEntry"]
 
+T_Packable = TypeVar("T_Packable", bound=PackableValue)
 
 # ########################
 # ##### NORMALIZATION
@@ -70,17 +77,17 @@ def normalize_metadata(
 @overload
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
+    metadata_entries: Sequence["MetadataEntryUnion"],
     allow_invalid: bool = False,
-) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> Sequence["MetadataEntryUnion"]:
     ...
 
 
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
+    metadata_entries: Sequence["MetadataEntryUnion"],
     allow_invalid: bool = False,
-) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> Sequence["MetadataEntryUnion"]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -186,7 +193,7 @@ def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "Metadata
 # ########################
 
 
-class MetadataValue(ABC):
+class MetadataValue(ABC, Generic[T_Packable]):
     """Utility class to wrap metadata values passed into Dagster events so that they can be
     displayed in Dagit and other tooling.
 
@@ -207,7 +214,7 @@ class MetadataValue(ABC):
     @public
     @property
     @abstractmethod
-    def value(self) -> object:
+    def value(self) -> T_Packable:
         raise NotImplementedError()
 
     @public
@@ -574,7 +581,7 @@ class TextMetadataValue(
             ("text", PublicAttr[Optional[str]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[str],
 ):
     """Container class for text metadata entry data.
 
@@ -601,7 +608,7 @@ class UrlMetadataValue(
             ("url", PublicAttr[Optional[str]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[str],
 ):
     """Container class for URL metadata entry data.
 
@@ -622,7 +629,7 @@ class UrlMetadataValue(
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(
-    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
+    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
 ):
     """Container class for path metadata entry data.
 
@@ -643,7 +650,7 @@ class PathMetadataValue(
 
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
 class NotebookMetadataValue(
-    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
+    NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue[str]
 ):
     """Container class for notebook metadata entry data.
 
@@ -670,12 +677,12 @@ class JsonMetadataValue(
             ("data", PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[Union[Sequence[Any], Mapping[str, Any]]],
 ):
     """Container class for JSON metadata entry data.
 
     Args:
-        data (Dict[str, Any]): The JSON data.
+        data (Union[Sequence[Any], Dict[str, Any]]): The JSON data.
     """
 
     def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
@@ -684,7 +691,7 @@ class JsonMetadataValue(
             # check that the value is JSON serializable
             seven.dumps(data)
         except TypeError:
-            raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
+            raise DagsterInvalidMetadata("Value is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
     @public
@@ -701,7 +708,7 @@ class MarkdownMetadataValue(
             ("md_str", PublicAttr[Optional[str]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[str],
 ):
     """Container class for markdown metadata entry data.
 
@@ -719,6 +726,7 @@ class MarkdownMetadataValue(
         return self.md_str
 
 
+# This should be deprecated or fixed so that `value` does not return itself.
 @whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
 class PythonArtifactMetadataValue(
     NamedTuple(
@@ -728,7 +736,7 @@ class PythonArtifactMetadataValue(
             ("name", PublicAttr[str]),
         ],
     ),
-    MetadataValue,
+    MetadataValue["PythonArtifactMetadataValue"],
 ):
     """Container class for python artifact metadata entry data.
 
@@ -744,7 +752,7 @@ class PythonArtifactMetadataValue(
 
     @public
     @property
-    def value(self) -> object:
+    def value(self) -> Self:
         return self
 
 
@@ -756,7 +764,7 @@ class FloatMetadataValue(
             ("value", PublicAttr[Optional[float]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[float],
 ):
     """Container class for float metadata entry data.
 
@@ -776,7 +784,7 @@ class IntMetadataValue(
             ("value", PublicAttr[Optional[int]]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[int],
 ):
     """Container class for int metadata entry data.
 
@@ -791,7 +799,7 @@ class IntMetadataValue(
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
 class BoolMetadataValue(
     NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
-    MetadataValue,
+    MetadataValue[bool],
 ):
     """Container class for bool metadata entry data.
 
@@ -811,7 +819,7 @@ class DagsterRunMetadataValue(
             ("run_id", PublicAttr[str]),
         ],
     ),
-    MetadataValue,
+    MetadataValue[str],
 ):
     """Representation of a dagster run.
 
@@ -829,7 +837,8 @@ class DagsterRunMetadataValue(
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
-    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr["AssetKey"])]), MetadataValue
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr["AssetKey"])]),
+    MetadataValue["AssetKey"],
 ):
     """Representation of a dagster asset.
 
@@ -850,6 +859,7 @@ class DagsterAssetMetadataValue(
         return self.value
 
 
+# This should be deprecated or fixed so that `value` does not return itself.
 @experimental
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
 class TableMetadataValue(
@@ -860,7 +870,7 @@ class TableMetadataValue(
             ("schema", PublicAttr[TableSchema]),
         ],
     ),
-    MetadataValue,
+    MetadataValue["TableMetadataValue"],
 ):
     """Container class for table metadata entry data.
 
@@ -871,7 +881,7 @@ class TableMetadataValue(
 
     @public
     @staticmethod
-    def infer_column_type(value):
+    def infer_column_type(value: object) -> str:
         if isinstance(value, bool):
             return "bool"
         elif isinstance(value, int):
@@ -908,13 +918,14 @@ class TableMetadataValue(
 
     @public
     @property
-    def value(self):
+    def value(self) -> Self:
         return self
 
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
-    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]), MetadataValue
+    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]),
+    MetadataValue[TableSchema],
 ):
     """Representation of a schema for arbitrary tabular data.
 
@@ -933,7 +944,7 @@ class TableSchemaMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="NullMetadataEntryData")
-class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue):
+class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue[None]):
     """Representation of null."""
 
     @property
@@ -945,10 +956,9 @@ class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue):
 # ##### METADATA ENTRY
 # ########################
 
+T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)
 
-# NOTE: This would better be implemented as a generic with `MetadataValue` set as a
-# typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
-#
+
 # NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
 # we will change the name of the NamedTuple property to `value`, and need to implement custom
 # serialization so that it continues to be saved as `entry_data` for backcompat purposes.
@@ -962,6 +972,7 @@ class MetadataEntry(
             ("entry_data", PublicAttr[MetadataValue]),
         ],
     ),
+    Generic[T_MetadataValue],
 ):
     """The standard structure for describing metadata for Dagster events.
 

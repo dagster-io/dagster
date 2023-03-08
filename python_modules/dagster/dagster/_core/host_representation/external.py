@@ -19,7 +19,9 @@ from typing import (
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    MetadataEntryUnion,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
@@ -420,7 +422,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def metadata(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def metadata(self) -> Sequence[MetadataEntryUnion]:
         return self._pipeline_index.pipeline_snapshot.metadata
 
     @property

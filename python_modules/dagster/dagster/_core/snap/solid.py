@@ -11,7 +11,10 @@ from dagster._core.definitions import (
     OutputMapping,
     PipelineDefinition,
 )
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    MetadataEntry,
+    MetadataEntryUnion,
+)
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import DefaultNamedTupleSerializer
 
@@ -35,7 +38,7 @@ class InputDefSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("description", Optional[str]),
-            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata_entries", Sequence[MetadataEntryUnion]),
         ],
     )
 ):
@@ -44,7 +47,7 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
@@ -72,7 +75,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
-            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata_entries", Sequence[MetadataEntryUnion]),
             ("is_dynamic", bool),
         ],
     )
