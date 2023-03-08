@@ -576,12 +576,11 @@ def test_dynamic_partitions(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_self_dependent_asset():
+def test_self_dependent_asset(spark):
     schema = "SNOWFLAKE_IO_MANAGER_SCHEMA"
     with temporary_snowflake_table(
         schema_name=schema,
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="KEY string, A string",
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
@@ -621,10 +620,6 @@ def test_self_dependent_asset():
                 (key, value),
                 (key, value),
             ]
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
 
             df = spark.createDataFrame(data, schema=schema)
             return df

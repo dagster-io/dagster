@@ -477,7 +477,6 @@ def test_self_dependent_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="KEY string, A string",
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 

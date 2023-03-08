@@ -628,7 +628,6 @@ def test_self_dependent_asset():
     with temporary_snowflake_table(
         schema_name=schema,
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="KEY string, A string",
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
