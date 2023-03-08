@@ -43,29 +43,23 @@ describe('AssetView', () => {
 
   describe('Launch button', () => {
     it('shows the "Materialize" button for a software-defined asset', async () => {
-      await act(async () => {
-        render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />);
-      });
+      render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />);
       await waitFor(async () => {
         expect(screen.queryByText('Materialize')).toBeVisible();
       });
     });
 
     it('shows the "Observe" button for a software-defined source asset', async () => {
-      await act(async () => {
-        render(
-          <Test path="/observable_source_asset" assetKey={{path: ['observable_source_asset']}} />,
-        );
-      });
+      render(
+        <Test path="/observable_source_asset" assetKey={{path: ['observable_source_asset']}} />,
+      );
       await waitFor(async () => {
         expect(screen.queryByText('Observe')).toBeVisible();
       });
     });
 
     it('shows no button for a non-software defined asset', async () => {
-      await act(async () => {
-        render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
-      });
+      render(<Test path="/non_sda_asset" assetKey={{path: ['non_sda_asset']}} />);
       expect(screen.queryByText('Observe')).toBeNull();
       expect(screen.queryByText('Materialize')).toBeNull();
     });
