@@ -86,7 +86,7 @@ class LocalExternalStepLauncher(StepLauncher):
             # write each pickled event from the external instance to the local instance
             step_context.instance.handle_new_event(event)
             if event.is_dagster_event:
-                yield event.dagster_event  # type: ignore  # (possible none)
+                yield event.get_dagster_event()
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:

@@ -21,7 +21,6 @@ from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
-    TableMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -359,13 +358,16 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_table_serialization():
-    entry = MetadataValue.table(
-        records=[
-            TableRecord(dict(foo=1, bar=2)),
-        ],
+    entry = MetadataEntry(
+        "foo",
+        value=MetadataValue.table(
+            records=[
+                TableRecord(dict(foo=1, bar=2)),
+            ],
+        ),
     )
     serialized = serialize_dagster_namedtuple(entry)
-    assert deserialize_as(serialized, TableMetadataValue) == entry
+    assert deserialize_as(serialized, MetadataEntry) == entry
 
 
 def test_bool_metadata_value():
