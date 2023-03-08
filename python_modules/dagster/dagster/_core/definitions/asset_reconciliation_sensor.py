@@ -264,8 +264,6 @@ def find_parent_materialized_asset_partitions(
                 ):
                     result_asset_partitions.add(child)
 
-    print("*" * 100)
-    print("RESULT", result_latest_storage_id)
     return (result_asset_partitions, result_latest_storage_id)
 
 
