@@ -1,46 +1,19 @@
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-import datetime
-import json
 from collections import defaultdict
 from typing import (
-    AbstractSet,
     Dict,
-    Iterable,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     Union,
-    cast,
 )
 
-import dagster._check as check
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.data_version import get_input_event_pointer_tag
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
+from dagster._core.storage.event_log import EventLogRecord
 from dagster._core.storage.event_log.base import AssetRecord
-from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
-from dagster._core.storage.pipeline_run import (
-    FINISHED_STATUSES,
-    DagsterRun,
-    DagsterRunStatus,
-    RunRecord,
-    RunsFilter,
-)
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.utils import frozendict
 from dagster._utils.cached_method import cached_method
-from dagster._utils.merger import merge_dicts
 
 
 class CachingInstanceQueryer(DynamicPartitionsStore):
