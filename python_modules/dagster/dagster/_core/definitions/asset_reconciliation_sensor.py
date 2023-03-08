@@ -754,7 +754,6 @@ def reconcile(
     instance_queryer.prefetch_asset_partition_counts(
         relevant_asset_keys, after_cursor=cursor.latest_storage_id
     )
-    print(cursor)
 
     (
         asset_partitions_to_reconcile_for_freshness,
