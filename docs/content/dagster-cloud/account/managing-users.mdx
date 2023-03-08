@@ -38,7 +38,10 @@ Dagster Cloud supports five user roles for several levels of role-based access c
       <td>
         The least permissive role. Grants view access to most things in a
         deployment, with some exceptions. Refer to the{" "}
-        <strong>User role permissions</strong> tab for more info.
+        <a href="#user-role-permissions">
+          <strong>User role permissions</strong>
+        </a>{" "}
+        tab for more info.
       </td>
     </tr>
     <tr>
@@ -59,10 +62,39 @@ Dagster Cloud supports five user roles for several levels of role-based access c
       <td>
         Includes all Launcher permissions and the ability to:
         <ul>
-          <li>Manage sensors and schedules</li>
-          <li>Manage environent variables</li>
-          <li>Manage code locations</li>
-          <li>Manage agents and alerts</li>
+          <li>
+            Manage{" "}
+            <a href="/concepts/partitions-schedules-sensors/sensors">sensors</a>{" "}
+            and{" "}
+            <a href="/concepts/partitions-schedules-sensors/schedules">
+              schedules
+            </a>
+          </li>
+          <li>
+            Launch and cancel{" "}
+            <a href="/concepts/partitions-schedules-sensors/backfills">
+              backfills
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+              environment variables
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/developing-testing/code-locations">
+              code locations
+            </a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-agent-tokens">
+              agents
+            </a>{" "}
+            and <a href="/dagster-cloud/account/setting-up-alerts">alerts</a>
+          </li>
         </ul>
       </td>
     </tr>
@@ -74,8 +106,16 @@ Dagster Cloud supports five user roles for several levels of role-based access c
       <td>
         Includes all Editor permissions and the ability to:
         <ul>
-          <li>Add and edit users</li>
-          <li>Manage user tokens</li>
+          <li>
+            Add and edit{" "}
+            <a href="/dagster-cloud/account/managing-users">users</a>
+          </li>
+          <li>
+            Manage{" "}
+            <a href="/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens">
+              user tokens
+            </a>
+          </li>
         </ul>
       </td>
     </tr>
@@ -88,9 +128,18 @@ Dagster Cloud supports five user roles for several levels of role-based access c
         The most permissive role. Includes all Admin permissions and the ability
         to:
         <ul>
-          <li>Create and delete deployments</li>
-          <li>Administer SAML</li>
-          <li>Remove users</li>
+          <li>
+            Create and delete{" "}
+            <a href="/dagster-cloud/developing-testing/managing-deployments">
+              deployments
+            </a>
+          </li>
+          <li>
+            <a href="/dagster-cloud/account/authentication">Administer SAML</a>
+          </li>
+          <li>
+            Remove <a href="/dagster-cloud/account/managing-users">users</a>
+          </li>
           <li>View account usage</li>
           <li>Manage billing</li>
         </ul>
@@ -105,6 +154,8 @@ Click the **User role permissions** tab to view all granular permissions for eac
   <TabItem name="User role permissions">
 
 ### User role permissions
+
+View <a href="#user-roles">user role summaries</a>.
 
 <table>
   <thead>
@@ -487,7 +538,7 @@ Click the **User role permissions** tab to view all granular permissions for eac
 
 ### Assigning user roles
 
-With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis and enforced both in Dagster Cloud and the GraphQL API. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/developing-testing/managing-deployments), [code locations](/dagster-cloud/developing-testing/code-locations), and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments).
+All user roles are enforced both in Dagster Cloud and the GraphQL API. With the exception of the **Organization Admin** role, user roles are set on a per-deployment basis. Organization Admins have access to the entire organization, including all [full deployments](/dagster-cloud/developing-testing/managing-deployments), [code locations](/dagster-cloud/developing-testing/code-locations), and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments).
 
 #### Deployment permissions
 
@@ -575,8 +626,7 @@ Before you start, note that:
 3. Click the **Users** tab.
 4. In the **Enter an email...** field, enter the user's email address.
 5. Click **Add user**. The user will be added to the list of users.
-6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment:
-7. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
+6. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment. **Note**: For Admins, you can only set permissions for deployments where you're an Admin:
    1. Next to a deployment, click **Edit user role**.
    2. Select the user role for the deployment. This [user role](#understanding-user-roles) will be used as the default for all code locations in the deployment.
    3. Click **Save**.
@@ -585,12 +635,12 @@ Before you start, note that:
       2. Next to a code location, click **Edit user role**.
       3. Select the user role for the code location.
       4. Click **Save**.
-8. Repeat step 6 for each deployment.
-9. **Optional**: To change the user's permissions for branch deployments:
+7. Repeat step 6 for each deployment.
+8. **Optional**: To change the user's permissions for branch deployments:
    1. Next to **All branch deployments**, click **Edit user role**.
    2. Select the user role to use for all branch deployments.
    3. Click **Save**.
-10. Click **Done**.
+9. Click **Done**.
 
 ---
 
