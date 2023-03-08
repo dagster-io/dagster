@@ -158,13 +158,6 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
     ? graphQueryItems.map((a) => a.node)
     : Object.values(assetGraphData.nodes).map((a) => a.definition);
 
-  const hasLaunchPermission = React.useMemo(() => {
-    if (selectedDefinitions.length) {
-      return selectedDefinitions.every((definition) => definition.hasMaterializePermission);
-    }
-    return allDefinitionsForMaterialize.every((definition) => definition.hasMaterializePermission);
-  }, [allDefinitionsForMaterialize, selectedDefinitions]);
-
   const onSelectNode = React.useCallback(
     async (
       e: React.MouseEvent<any> | React.KeyboardEvent<any>,
@@ -415,13 +408,11 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               />
               <LaunchAssetObservationButton
                 preferredJobName={explorerPath.pipelineName}
-                hasLaunchPermission={hasLaunchPermission}
-                assetKeys={(selectedDefinitions.length
-                  ? selectedDefinitions
-                  : allDefinitionsForMaterialize
-                )
-                  .filter((a) => a.isObservable)
-                  .map((n) => n.assetKey)}
+                scope={
+                  selectedDefinitions.length
+                    ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                    : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
+                }
               />
               <LaunchAssetExecutionButton
                 preferredJobName={explorerPath.pipelineName}
