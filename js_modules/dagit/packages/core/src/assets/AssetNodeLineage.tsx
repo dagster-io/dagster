@@ -4,16 +4,16 @@ import styled from 'styled-components/macro';
 
 import {GraphData, LiveData} from '../asset-graph/Utils';
 import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAssetGraphData';
+import {AssetKeyInput} from '../graphql/types';
 
 import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetViewParams} from './AssetView';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeLineage: React.FC<{
   params: AssetViewParams;
   setParams: (params: AssetViewParams) => void;
-  assetNode: AssetNodeDefinitionFragment;
+  assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   liveDataByNode: LiveData;
   requestedDepth: number;
@@ -21,16 +21,16 @@ export const AssetNodeLineage: React.FC<{
 }> = ({
   params,
   setParams,
-  assetNode,
+  assetKey,
   liveDataByNode,
   assetGraphData,
   graphQueryItems,
   requestedDepth,
 }) => {
-  const maxDistances = React.useMemo(
-    () => calculateGraphDistances(graphQueryItems, assetNode.assetKey),
-    [graphQueryItems, assetNode],
-  );
+  const maxDistances = React.useMemo(() => calculateGraphDistances(graphQueryItems, assetKey), [
+    graphQueryItems,
+    assetKey,
+  ]);
   const maxDepth =
     params.lineageScope === 'upstream'
       ? maxDistances.upstream
@@ -83,7 +83,7 @@ export const AssetNodeLineage: React.FC<{
         </DepthHidesAssetsNotice>
       )}
       <AssetNodeLineageGraph
-        assetNode={assetNode}
+        assetKey={assetKey}
         liveDataByNode={liveDataByNode}
         assetGraphData={assetGraphData}
         params={params}
