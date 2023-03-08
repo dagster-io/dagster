@@ -1,4 +1,5 @@
 from base64 import b64encode
+from dagster_airbyte.resources import AirbyteCloudResource
 
 import pytest
 import responses
@@ -97,3 +98,56 @@ def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
         else:
             for call in rsps.calls:
                 assert "Authorization" not in call.request.headers
+
+
+def test_airbyte_sync_op_cloud() -> None:
+    ab_resource = AirbyteCloudResource(api_key="some_key")
+    ab_url = ab_resource.api_base_url
+
+    @op
+    def foo_op() -> None:
+        pass
+
+    @job(
+        resource_defs={"airbyte": ab_resource},
+        config={
+            "ops": {
+                "airbyte_sync_op": {
+                    "config": {
+                        "connection_id": DEFAULT_CONNECTION_ID,
+                        "poll_interval": 0.1,
+                        "poll_timeout": 10,
+                    }
+                }
+            }
+        },
+    )
+    def airbyte_sync_job() -> None:
+        airbyte_sync_op(start_after=foo_op())
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.POST,
+            f"{ab_url}/jobs",
+            json={"jobId": 1, "status": "pending", "jobType": "sync"},
+        )
+
+        rsps.add(
+            rsps.GET,
+            f"{ab_url}/jobs/1",
+            json={"jobId": 1, "status": "running", "jobType": "sync"},
+        )
+        rsps.add(
+            rsps.GET,
+            f"{ab_url}/jobs/1",
+            json={"jobId": 1, "status": "succeeded", "jobType": "sync"},
+        )
+
+        result = airbyte_sync_job.execute_in_process()
+        assert result.output_for_node("airbyte_sync_op") == AirbyteOutput(
+            job_details={"job": {"id": 1, "status": "succeeded"}},
+            connection_details={},
+        )
+
+        for call in rsps.calls:
+            assert call.request.headers["Authorization"] == f"Bearer some_key"
