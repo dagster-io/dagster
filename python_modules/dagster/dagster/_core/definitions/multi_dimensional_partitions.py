@@ -29,11 +29,11 @@ from dagster._core.storage.tags import (
 
 from .partition import (
     DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
     Partition,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
-    DynamicPartitionsDefinition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 

@@ -684,8 +684,9 @@ class TimeWindowPartitionsDefinition(
         except ValueError:
             return False
 
-    @property
-    def serializable_unique_identifier(self) -> str:
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
@@ -1463,7 +1464,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         if serialized_partitions_def_unique_id:
             return (
-                partitions_def.serializable_unique_identifier == serialized_partitions_def_unique_id
+                partitions_def.get_serializable_unique_identifier()
+                == serialized_partitions_def_unique_id
             )
 
         data = json.loads(serialized)

@@ -237,7 +237,9 @@ class PartitionBackfill(
         )
 
     def with_asset_backfill_data(
-        self, asset_backfill_data: AssetBackfillData
+        self,
+        asset_backfill_data: AssetBackfillData,
+        dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "PartitionBackfill":
         return PartitionBackfill(
             status=self.status,
@@ -251,7 +253,9 @@ class PartitionBackfill(
             last_submitted_partition_name=self.last_submitted_partition_name,
             error=self.error,
             asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=asset_backfill_data.serialize(),
+            serialized_asset_backfill_data=asset_backfill_data.serialize(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
         )
 
     @classmethod
@@ -286,5 +290,5 @@ class PartitionBackfill(
                 partition_names=partition_names,
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
-            ).serialize(),
+            ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

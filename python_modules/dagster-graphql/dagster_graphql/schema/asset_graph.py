@@ -11,6 +11,7 @@ from dagster._core.definitions.data_version import (
     StaleStatus,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -52,7 +53,6 @@ from ..implementation.fetch_assets import (
 )
 from ..implementation.loader import (
     BatchMaterializationLoader,
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )

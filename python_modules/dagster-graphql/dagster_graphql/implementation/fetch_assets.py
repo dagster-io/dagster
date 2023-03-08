@@ -32,6 +32,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsSubset,
 )
 from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
@@ -55,7 +56,6 @@ from dagster._core.storage.partition_status_cache import (
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from dagster_graphql.implementation.loader import (
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -547,7 +547,15 @@ def get_2d_run_length_encoded_partitions(
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
-    if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+    if (
+        len(dim1_keys) == 0
+        or len(
+            secondary_dim.partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+        == 0
+    ):
         return GrapheneMultiPartitions(ranges=[], primaryDimensionName=primary_dim.name)
 
     while unevaluated_idx <= len(dim1_keys):

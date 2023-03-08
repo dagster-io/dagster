@@ -7,6 +7,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -29,7 +30,6 @@ from dagster._core.workspace.workspace import (
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
-    CachingDynamicPartitionsLoader,
     RepositoryScopedBatchLoader,
     StaleStatusLoader,
 )

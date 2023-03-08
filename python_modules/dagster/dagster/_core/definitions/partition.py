@@ -34,12 +34,13 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import frozenlist
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -349,9 +350,14 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
             serialized_partitions_def_class_name,
         )
 
-    @property
-    def serializable_unique_identifier(self) -> str:
-        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
+        return hashlib.sha1(
+            json.dumps(
+                self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+            ).encode("utf-8")
+        ).hexdigest()
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -562,6 +568,20 @@ class ScheduleTimeBasedPartitionsDefinition(
             check.assert_never(self.schedule_type)
 
 
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
+    """
+    A batch loader that caches the partition keys for a given dynamic partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
+    """
+
+    def __init__(self, instance: DagsterInstance):
+        self._instance = instance
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
+
+
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
@@ -662,13 +682,6 @@ class DynamicPartitionsDefinition(
             return f'Dynamic partitions: "{self._validated_name()}"'
         else:
             return super().__str__()
-
-    @property
-    def serializable_unique_identifier(self) -> str:
-        if not self.name:
-            return super().serializable_unique_identifier
-
-        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
     def get_partitions(
         self,

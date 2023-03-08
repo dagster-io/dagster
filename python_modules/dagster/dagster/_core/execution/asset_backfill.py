@@ -187,14 +187,22 @@ class AssetBackfillData(NamedTuple):
 
         return cls.empty(target_subset)
 
-    def serialize(self) -> str:
+    def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         storage_dict = {
             "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
-            "serialized_target_subset": self.target_subset.to_storage_dict(),
+            "serialized_target_subset": self.target_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
             "latest_storage_id": self.latest_storage_id,
-            "serialized_requested_subset": self.requested_subset.to_storage_dict(),
-            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(),
-            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(),
+            "serialized_requested_subset": self.requested_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
         }
         return json.dumps(storage_dict)
 
@@ -234,7 +242,9 @@ def execute_asset_backfill_iteration(
             " AssetBackfillIterationResult"
         )
 
-    updated_backfill = backfill.with_asset_backfill_data(result.backfill_data)
+    updated_backfill = backfill.with_asset_backfill_data(
+        result.backfill_data, dynamic_partitions_store=instance
+    )
     if result.backfill_data.is_complete():
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 

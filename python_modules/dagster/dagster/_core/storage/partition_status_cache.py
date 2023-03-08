@@ -14,6 +14,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
 )
 from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
     DynamicPartitionsDefinition,
     PartitionsDefinition,
     PartitionsSubset,
@@ -33,6 +34,16 @@ CACHEABLE_PARTITION_TYPES = (
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
 )
+
+
+def _is_cacheable_partition_type(partitions_def: PartitionsDefinition) -> bool:
+    if not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+        return False
+    return (
+        partitions_def.name is not None
+        if isinstance(partitions_def, DynamicPartitionsDefinition)
+        else True
+    )
 
 
 @whitelist_for_serdes
@@ -192,12 +203,13 @@ def _build_status_cache(
     asset_key: AssetKey,
     latest_storage_id: int,
     partitions_def: Optional[PartitionsDefinition],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> AssetStatusCacheValue:
     """
     This method refreshes the asset status cache for a given asset key. It recalculates
     the materialized partition subset for the asset key and updates the cache value.
     """
-    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+    if not partitions_def or not _is_cacheable_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     materialized_keys: Sequence[str]
@@ -224,7 +236,9 @@ def _build_status_cache(
 
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,
-        partitions_def_id=partitions_def.serializable_unique_identifier,
+        partitions_def_id=partitions_def.get_serializable_unique_identifier(
+            dynamic_partitions_store=dynamic_partitions_store
+        ),
         serialized_materialized_partition_subset=serialized_materialized_partition_subset.serialize(),
         serialized_failed_partition_subset=failed_subset.serialize(),
         earliest_in_progress_materialization_event_id=cursor,
@@ -336,6 +350,7 @@ def _get_updated_status_cache(
     asset_key: AssetKey,
     current_status_cache_value: AssetStatusCacheValue,
     partitions_def: Optional[PartitionsDefinition],
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> AssetStatusCacheValue:
     """
     This method accepts the current asset status cache value, and fetches unevaluated
@@ -371,12 +386,14 @@ def _get_updated_status_cache(
     unevaluated_event_records.extend(list(unevaluated_materialization_event_records))
 
     latest_storage_id = max([record.storage_id for record in unevaluated_event_records])
-    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+    if not partitions_def or not _is_cacheable_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     check.invariant(
         current_status_cache_value.partitions_def_id
-        == partitions_def.serializable_unique_identifier
+        == partitions_def.get_serializable_unique_identifier(
+            dynamic_partitions_store=dynamic_partitions_store
+        )
     )
     materialized_subset: PartitionsSubset = (
         partitions_def.deserialize_subset(
@@ -445,13 +462,18 @@ def _fetch_stored_asset_status_cache_value(
 def _get_fresh_asset_status_cache_value(
     instance: DagsterInstance,
     asset_key: AssetKey,
+    dynamic_partitions_store: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[AssetStatusCacheValue]:
     cached_status_data = _fetch_stored_asset_status_cache_value(instance, asset_key)
 
     updated_cache_value = None
     if cached_status_data is None or cached_status_data.partitions_def_id != (
-        partitions_def.serializable_unique_identifier if partitions_def else None
+        partitions_def.get_serializable_unique_identifier(
+            dynamic_partitions_store=dynamic_partitions_store
+        )
+        if partitions_def
+        else None
     ):
         planned_event_records = instance.get_event_records(
             event_records_filter=EventRecordsFilter(
@@ -480,6 +502,7 @@ def _get_fresh_asset_status_cache_value(
                 asset_key=asset_key,
                 partitions_def=partitions_def,
                 latest_storage_id=latest_storage_id,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
     else:
         updated_cache_value = _get_updated_status_cache(
@@ -487,6 +510,7 @@ def _get_fresh_asset_status_cache_value(
             asset_key=asset_key,
             partitions_def=partitions_def,
             current_status_cache_value=cached_status_data,
+            dynamic_partitions_store=dynamic_partitions_store,
         )
 
     return updated_cache_value
@@ -497,7 +521,12 @@ def get_and_update_asset_status_cache_value(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[AssetStatusCacheValue]:
-    updated_cache_value = _get_fresh_asset_status_cache_value(instance, asset_key, partitions_def)
+    updated_cache_value = _get_fresh_asset_status_cache_value(
+        instance=instance,
+        asset_key=asset_key,
+        partitions_def=partitions_def,
+        dynamic_partitions_store=CachingDynamicPartitionsLoader(instance),
+    )
     if updated_cache_value:
         instance.update_asset_cached_status_data(asset_key, updated_cache_value)
 
