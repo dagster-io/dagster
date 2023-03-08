@@ -23,6 +23,7 @@ import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
+import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
@@ -156,9 +157,17 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
-          Open in Launchpad
-        </AnchorButton>
+        {run.hasReExecutePermission ? (
+          <AnchorButton icon={<Icon name="edit" />} to={jobPath}>
+            Open in Launchpad
+          </AnchorButton>
+        ) : (
+          <Tooltip content={NO_LAUNCH_PERMISSION_MESSAGE} useDisabledButtonTooltipFix>
+            <Button icon={<Icon name="edit" />} disabled>
+              Open in Launchpad
+            </Button>
+          </Tooltip>
+        )}
         <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
           View tags and config
         </Button>
