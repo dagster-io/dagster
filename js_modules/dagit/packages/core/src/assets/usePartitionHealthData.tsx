@@ -8,6 +8,7 @@ import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 
 import {assembleRangesFromTransitions, Transition} from './MultipartitioningSupport';
+import {usePartitionDataSubscriber} from './PartitionSubscribers';
 import {AssetKey} from './types';
 import {
   PartitionHealthQuery,
@@ -468,9 +469,16 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
 //
 export function usePartitionHealthData(
   assetKeys: AssetKey[],
-  cacheKey = '',
+  assetsCacheKey = '',
   cacheClearStrategy: 'immediate' | 'background' = 'background',
 ) {
+  const [partitionsLastUpdated, setPartitionsLastUpdatedAt] = React.useState<string>('');
+  usePartitionDataSubscriber(() => {
+    setPartitionsLastUpdatedAt(Date.now().toString());
+  });
+
+  const cacheKey = `${assetsCacheKey}-${partitionsLastUpdated}`;
+
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
 

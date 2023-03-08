@@ -17,6 +17,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -157,6 +158,7 @@ export const CreatePartitionDialog = ({
         refetch?.();
         setSelected([...selected, partitionName]);
         close();
+        invalidatePartitions();
         break;
       }
       default: {
