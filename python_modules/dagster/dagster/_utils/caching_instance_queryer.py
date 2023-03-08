@@ -119,10 +119,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @cached_method
     def _get_latest_materialization_record(
-        self,
-        *,
-        asset_partition: AssetKeyPartitionKey,
-        before_cursor: Optional[int] = None,
+        self, *, asset_partition: AssetKeyPartitionKey, before_cursor: Optional[int] = None
     ) -> Optional[EventLogRecord]:
         records = self.instance.get_event_records(
             EventRecordsFilter(
@@ -167,11 +164,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 asset_partition=asset_partition,
             )
 
-        print("-----------")
-        print("--AP--", asset_partition)
-        print("CACHE", self._latest_materialization_record_cache[asset_partition])
-        print("CACHE2", self._asset_partition_count_cache)
-
         # check all of our caches to see if we can confirm that the record does not exist
         if (
             asset_partition in self._latest_materialization_record_cache
@@ -193,7 +185,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
             == 0
         ):
-            print("WASN'T FOUND")
             return None
 
         # the latest overall record
@@ -217,6 +208,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     @cached_method
     def get_materialization_records(
         self,
+        *,
         asset_key: AssetKey,
         after_cursor: Optional[int] = None,
         tags: Optional[Mapping[str, str]] = None,
@@ -235,7 +227,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
 
     @cached_method
-    def _get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+    def _get_run_record_by_id(self, *, run_id: str) -> Optional[RunRecord]:
         return self.instance.get_run_record_by_id(run_id)
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
@@ -249,7 +241,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(
-        self, run_id: str
+        self, *, run_id: str
     ) -> AbstractSet[AssetKey]:
         """Provides a fallback for fetching the planned materializations for a run from
         the ASSET_MATERIALIZATION_PLANNED events in the event log, in cases where this information
@@ -297,7 +289,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return asset_key in self.get_planned_materializations_for_run(run_id=run_id)
 
     @cached_method
-    def get_current_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
+    def get_current_materializations_for_run(self, *, run_id: str) -> AbstractSet[AssetKey]:
         """Returns the set of asset keys that have been materialized by a given run.
 
         Args:
@@ -386,9 +378,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @cached_method
     def is_reconciled(
-        self,
-        asset_partition: AssetKeyPartitionKey,
-        asset_graph: AssetGraph,
+        self, *, asset_partition: AssetKeyPartitionKey, asset_graph: AssetGraph
     ) -> bool:
         """Returns a boolean representing if the given `asset_partition` is currently reconciled.
         An asset (partition) is considered unreconciled if any of:
@@ -399,7 +389,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_materialization_record = self.get_latest_materialization_record(
             asset_partition, None
         )
-        print("AP", asset_partition, latest_materialization_record)
 
         if latest_materialization_record is None:
             return False
