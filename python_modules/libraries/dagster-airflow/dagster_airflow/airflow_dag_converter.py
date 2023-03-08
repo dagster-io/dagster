@@ -3,7 +3,7 @@ import importlib
 import airflow
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
-from airflow.utils.state import DagRunState
+
 from dagster import (
     DependencyDefinition,
     In,
@@ -23,6 +23,15 @@ from dagster_airflow.utils import (
     normalized_name,
     replace_airflow_logger_handlers,
 )
+
+# pylint: disable=no-name-in-module,import-error
+if is_airflow_2_loaded_in_environment():
+    from airflow.utils.state import DagRunState
+else:
+    from airflow.utils.state import State
+
+    # pylint: enable=no-name-in-module,import-error
+
 
 
 def get_graph_definition_args(
@@ -121,11 +130,20 @@ def make_dagster_op_from_airflow_task(
             ti = dagrun.get_task_instance(task_id=task.task_id)
             ti.task = dag.get_task(task_id=task.task_id)
             ti.run(ignore_ti_state=True)
-            if ti.state != DagRunState.SUCCESS:
-                raise Exception(
-                    "Airflow task failed: {task_id}, view compute logs for more details".format(
-                        task_id=task.task_id
+            if is_airflow_2_loaded_in_environment():
+                if ti.state != DagRunState.SUCCESS:
+                    raise Exception(
+                        "Airflow task failed: {task_id}, view compute logs for more details".format(
+                            task_id=task.task_id
+                        )
                     )
-                )
+            else:
+                if ti.state != State.SUCCESS:
+                    raise Exception(
+                        "Airflow task failed: {task_id}, view compute logs for more details".format(
+                            task_id=task.task_id
+                        )
+                    )
+
 
     return _op
