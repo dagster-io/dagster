@@ -50,16 +50,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     Args:
         instance (DagsterInstance): The instance to query.
-        cache_known_used_data (bool): If True, will attempt to read a cached value for the used
-            data for a given record, rather than calculating it from scratch. If cached information
-            is not available, then the used data will be calculated and then cached. If this queryer
-            will be used to query for used data for a large number of records, it is recommended to
-            keep this set to False, as it will result in a large number of queries to the instance.
     """
 
-    def __init__(self, instance: "DagsterInstance", cache_known_used_data: bool = False):
+    def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
-        self._cache_known_used_data = cache_known_used_data
 
         self._latest_materialization_record_cache: Dict[AssetKeyPartitionKey, EventLogRecord] = {}
         # if we try to fetch the latest materialization record after a given cursor and don't find
