@@ -9,11 +9,11 @@ class InMemoryIOManager(IOManager):
     def __init__(self):
         self.values: Dict[Tuple[object, ...], object] = {}
 
-    def handle_output(self, context: InputContext, obj: object):
+    def handle_output(self, context: OutputContext, obj: object):
         keys = tuple(context.get_identifier())
         self.values[keys] = obj
 
-    def load_input(self, context: OutputContext) -> object:
+    def load_input(self, context: InputContext) -> object:
         keys = tuple(context.get_identifier())
         return self.values[keys]
 
