@@ -22,7 +22,6 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
-    MetadataEntryUnion,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -38,7 +37,7 @@ MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
-def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntryUnion]) -> Iterator[Any]:
+def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
