@@ -126,7 +126,7 @@ class PartitionBackfill(
         else:
             return True
 
-    def get_num_partitions(self, workspace: IWorkspace) -> int:
+    def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
         if not self.is_valid_serialization(workspace):
             return 0
 
@@ -146,7 +146,7 @@ class PartitionBackfill(
 
             return len(self.partition_names)
 
-    def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
+    def get_partition_names(self, workspace: IWorkspace) -> Optional[Sequence[str]]:
         if not self.is_valid_serialization(workspace):
             return []
 
@@ -157,7 +157,7 @@ class PartitionBackfill(
                     ExternalAssetGraph.from_workspace(workspace),
                 )
             except DagsterDefinitionChangedDeserializationError:
-                return []
+                return None
 
             return asset_backfill_data.get_partition_names()
         else:

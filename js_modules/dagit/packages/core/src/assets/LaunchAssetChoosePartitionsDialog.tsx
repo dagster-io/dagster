@@ -24,7 +24,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams} from '../graphql/types';
+import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -83,14 +83,16 @@ interface Props {
     partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
+  refetch?: () => Promise<void>;
 }
 
 export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
-  const title = `Launch runs to materialize ${
+  const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0].assetKey)
-  }`;
+      : displayNameForAssetKey(props.assets[0].assetKey);
+
+  const title = `Launch runs to materialize ${displayName}`;
 
   return (
     <Dialog
@@ -119,10 +121,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   repoAddress,
   target,
   upstreamAssetKeys,
+  refetch: _refetch,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
+  const {canLaunchPipelineExecution, canLaunchPartitionBackfill} = usePermissionsForLocation(
+    repoAddress.location,
+  );
   const [launching, setLaunching] = React.useState(false);
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
@@ -130,7 +135,19 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
 
-  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+
+  const refetch = async () => {
+    await _refetch?.();
+    setLastRefresh(Date.now());
+  };
+
+  const assetHealth = usePartitionHealthData(
+    partitionedAssets.map((a) => a.assetKey),
+    lastRefresh.toString(),
+    'immediate',
+  );
+
   const assetHealthLoading = assetHealth.length === 0;
 
   const displayedHealth = React.useMemo(() => {
@@ -146,11 +163,14 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
-  const [missingOnly, setMissingOnly] = React.useState(true);
+  const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
+
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: displayedHealth,
+    skipPartitionKeyValidation:
+      displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
   });
 
   const keysInSelection = React.useMemo(
@@ -176,10 +196,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const keysFiltered = React.useMemo(
     () =>
-      missingOnly
-        ? keysInSelection.filter((key) => key.state === PartitionState.MISSING)
+      missingFailedOnly
+        ? keysInSelection.filter((key) =>
+            [PartitionState.MISSING, PartitionState.FAILURE].includes(key.state),
+          )
         : keysInSelection,
-    [keysInSelection, missingOnly],
+    [keysInSelection, missingFailedOnly],
   );
 
   const client = useApolloClient();
@@ -200,11 +222,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   }, [canLaunchWithRangesAsTags]);
 
   React.useEffect(() => {
-    launchWithRangesAsTags && setMissingOnly(false);
+    launchWithRangesAsTags && setMissingFailedOnly(false);
   }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
-    target.type === 'pureAssetBackfill' && setMissingOnly(false);
+    target.type === 'pureAssetBackfill' && setMissingFailedOnly(false);
   }, [target]);
 
   const onLaunch = async () => {
@@ -228,6 +250,14 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           'Please report this error to the Dagster team.',
       });
       return;
+    }
+
+    if (!canLaunchPipelineExecution.enabled) {
+      // Should never happen, this is essentially an assertion failure
+      showCustomAlert({
+        title: 'Unable to launch as single run',
+        body: 'You do not have permission to launch this job.',
+      });
     }
 
     const {data: tagAndConfigData} = await client.query<
@@ -339,6 +369,46 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     }
   };
 
+  const launchButton = () => {
+    if (launchAsBackfill && !canLaunchPartitionBackfill.enabled) {
+      return (
+        <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+          <Button disabled>
+            {target.type === 'job'
+              ? `Launch ${keysFiltered.length}-run backfill`
+              : 'Launch backfill'}
+          </Button>
+        </Tooltip>
+      );
+    }
+
+    if (!launchAsBackfill && !canLaunchPipelineExecution.enabled) {
+      return (
+        <Tooltip content={canLaunchPipelineExecution.disabledReason}>
+          <Button disabled>Launch 1 run</Button>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Button
+        data-testid={testId('launch-button')}
+        intent="primary"
+        onClick={onLaunch}
+        disabled={keysFiltered.length === 0}
+        loading={launching}
+      >
+        {launching
+          ? 'Launching...'
+          : launchAsBackfill
+          ? target.type === 'job'
+            ? `Launch ${keysFiltered.length}-run backfill`
+            : 'Launch backfill'
+          : `Launch 1 run`}
+      </Button>
+    );
+  };
+
   return (
     <>
       <DialogBody data-testid={testId('choose-partitions-dialog')}>
@@ -351,7 +421,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           )}
 
           <Box>
-            Select partitions to materialize. Click and drag to select a range on the timeline.
+            Select partitions to materialize.{' '}
+            {displayedPartitionDefinition?.type === PartitionDefinitionType.TIME_WINDOW
+              ? 'Click and drag to select a range on the timeline.'
+              : null}
           </Box>
 
           {selections.map((range, idx) => (
@@ -364,6 +437,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
                 ),
               }}
+              isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
                 setSelections(
@@ -372,6 +446,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   ),
                 )
               }
+              partitionDefinitionName={displayedPartitionDefinition?.name}
+              repoAddress={repoAddress}
+              refetch={refetch}
             />
           ))}
 
@@ -384,10 +461,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             <Box flex={{justifyContent: 'space-between'}}>
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
-                label="Missing partitions only"
-                checked={missingOnly}
+                label="Missing and failed partitions only"
+                checked={missingFailedOnly}
                 disabled={launchWithRangesAsTags}
-                onChange={() => setMissingOnly(!missingOnly)}
+                onChange={() => setMissingFailedOnly(!missingFailedOnly)}
               />
 
               <Checkbox
@@ -508,31 +585,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {launchAsBackfill && !canLaunchPartitionBackfill.enabled ? (
-          <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>
-              {target.type === 'job'
-                ? `Launch ${keysFiltered.length}-Run Backfill`
-                : 'Launch Backfill'}
-            </Button>
-          </Tooltip>
-        ) : (
-          <Button
-            data-testid={testId('launch-button')}
-            intent="primary"
-            onClick={onLaunch}
-            disabled={keysFiltered.length === 0}
-            loading={launching}
-          >
-            {launching
-              ? 'Launching...'
-              : launchAsBackfill
-              ? target.type === 'job'
-                ? `Launch ${keysFiltered.length}-Run Backfill`
-                : 'Launch Backfill'
-              : `Launch 1 Run`}
-          </Button>
-        )}
+        {launchButton()}
       </DialogFooter>
     </>
   );

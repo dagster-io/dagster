@@ -38,6 +38,7 @@ export * from './components/Suggest';
 export * from './components/Table';
 export * from './components/Tabs';
 export * from './components/Tag';
+export * from './components/TagSelector';
 export * from './components/Text';
 export * from './components/TextInput';
 export * from './components/Toaster';
@@ -48,6 +49,7 @@ export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';
 export * from './components/ErrorBoundary';
+export * from './components/useViewport';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />

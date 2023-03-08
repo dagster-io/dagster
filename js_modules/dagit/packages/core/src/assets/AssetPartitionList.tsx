@@ -96,6 +96,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                     state === PartitionState.MISSING) && (
                     <StateDot state={PartitionState.MISSING} />
                   )}
+                  {state === PartitionState.FAILURE && <StateDot state={PartitionState.FAILURE} />}
                 </Box>
               </Box>
             </AssetListRow>
@@ -106,7 +107,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   );
 };
 
-const StateDot = ({state}: {state: PartitionState}) => (
+export const StateDot = ({state}: {state: PartitionState}) => (
   <div
     key={state}
     style={{

@@ -6,11 +6,10 @@ from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 def test_source_asset_metadata():
     sa = SourceAsset(key=AssetKey("foo"), metadata={"foo": "bar", "baz": object()})
     assert sa.metadata_entries == [
-        MetadataEntry(label="foo", description=None, entry_data=MetadataValue.text("bar")),
+        MetadataEntry(label="foo", value=MetadataValue.text("bar")),
         MetadataEntry(
             label="baz",
-            description=None,
-            entry_data=MetadataValue.text("[object] (unserializable)"),
+            value=MetadataValue.text("[object] (unserializable)"),
         ),
     ]
     assert sa.metadata == {

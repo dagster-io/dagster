@@ -159,23 +159,22 @@ class DatabricksClient:
 
         if run_state.has_terminated():
             if run_state.is_successful():
-                logger.info(f"Run `{databricks_run_id}` completed successfully")
+                logger.info(f"Run `{databricks_run_id}` completed successfully.")
                 return True
             else:
                 error_message = (
                     f"Run `{databricks_run_id}` failed with result state:"
-                    f" `{run_state.result_state}`. Message: {run_state.state_message}"
+                    f" `{run_state.result_state}`. Message: {run_state.state_message}."
                 )
                 logger.error(error_message)
                 raise DatabricksError(error_message)
         else:
             if verbose_logs:
-                logger.debug(f"Run `{databricks_run_id}` in state {run_state}")
+                logger.debug(f"Run `{databricks_run_id}` in state {run_state}.")
         if time.time() - start_poll_time > max_wait_time_sec:
             raise DatabricksError(
-                "Job run {} took more than {}s to complete; failing".format(
-                    databricks_run_id, max_wait_time_sec
-                )
+                f"Run `{databricks_run_id}` took more than {max_wait_time_sec}s to complete."
+                " Failing the run."
             )
         return False
 

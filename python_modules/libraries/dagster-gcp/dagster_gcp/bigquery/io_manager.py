@@ -91,10 +91,10 @@ def build_bigquery_io_manager(
                 # my_table will just contain the data from column "a"
                 ...
 
-        If you cannot upload a file to your Dagster deployment, or otherwise cannot authenticate with
-        GCP via a standard method, (see https://cloud.google.com/docs/authentication/provide-credentials-adc),
-        you can provide a service account key as the "gcp_credentials" configuration. Dagster will
-        store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+        If you cannot upload a file to your Dagster deployment, or otherwise cannot
+        `authenticate with GCP <https://cloud.google.com/docs/authentication/provide-credentials-adc>`_
+        via a standard method, you can provide a service account key as the "gcp_credentials" configuration.
+        Dagster willstore this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
         After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
         the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
@@ -115,7 +115,11 @@ def build_bigquery_io_manager(
                 Noneable(StringSource),
                 is_required=False,
                 default_value=None,
-                description="The GCP location.",
+                description=(
+                    "The GCP location. **Note:** When using PySpark DataFrames, the default"
+                    " location of the project will be used. A custom location can be specified in"
+                    " your SparkSession configuration."
+                ),
             ),
             "gcp_credentials": Field(
                 Noneable(StringSource),
@@ -125,8 +129,26 @@ def build_bigquery_io_manager(
                     "GCP authentication credentials. If provided, a temporary file will be created"
                     " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
                     " temporary file. To avoid issues with newlines in the keys, you must base64"
-                    " encode the key. You can retrieve the base64 encoded with this shell command:"
-                    " cat $GOOGLE_AUTH_CREDENTIALS | base64"
+                    " encode the key. You can retrieve the base64 encoded key with this shell"
+                    " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
+                ),
+            ),
+            "temporary_gcs_bucket": Field(
+                Noneable(StringSource),
+                is_required=False,
+                default_value=None,
+                description=(
+                    "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
+                    " store data. If not provided, data will be directly written to BigQuery."
+                ),
+            ),
+            "timeout": Field(
+                Noneable(float),
+                is_required=False,
+                default_value=None,
+                description=(
+                    "When using Pandas DataFrames, optionally specify a timeout for the BigQuery"
+                    " queries (loading and reading from tables)."
                 ),
             ),
         }
@@ -195,17 +217,11 @@ class BigQueryClient(DbClient):
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
             query = (
                 f"SELECT {col_str} FROM"
-                f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
+                f" `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
             )
-            partition_where = " AND\n".join(
-                _static_where_clause(partition_dimension)
-                if isinstance(partition_dimension.partition, str)
-                else _time_window_where_clause(partition_dimension)
-                for partition_dimension in table_slice.partition_dimensions
-            )
-            return query + partition_where
+            return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
-            return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
+            return f"""SELECT {col_str} FROM `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"""
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
@@ -229,22 +245,24 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """
     if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
         query = (
-            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
+            f"DELETE FROM `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
         )
-
-        partition_where = " AND\n".join(
-            _static_where_clause(partition_dimension)
-            if isinstance(partition_dimension.partition, str)
-            else _time_window_where_clause(partition_dimension)
-            for partition_dimension in table_slice.partition_dimensions
-        )
-        return query + partition_where
+        return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
-        return f"TRUNCATE TABLE {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        return f"TRUNCATE TABLE `{table_slice.database}.{table_slice.schema}.{table_slice.table}`"
+
+
+def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+    return " AND\n".join(
+        _time_window_where_clause(partition_dimension)
+        if isinstance(partition_dimension.partitions, TimeWindow)
+        else _static_where_clause(partition_dimension)
+        for partition_dimension in partition_dimensions
+    )
 
 
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partition)
+    partition = cast(TimeWindow, table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(BIGQUERY_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(BIGQUERY_DATETIME_FORMAT)
@@ -252,4 +270,5 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
 
 
 def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""
+    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
+    return f"""{table_partition.partition_expr} in ({partitions})"""

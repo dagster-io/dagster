@@ -24,6 +24,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("requires_compatibilities", Sequence[str]),
             ("cpu", str),
             ("memory", str),
+            ("runtime_platform", Mapping[str, Any]),
         ],
     )
 ):
@@ -46,6 +47,7 @@ class DagsterEcsTaskDefinitionConfig(
         requires_compatibilities: Optional[Sequence[str]],
         cpu: Optional[str] = None,
         memory: Optional[str] = None,
+        runtime_platform: Optional[Mapping[str, Any]] = None,
     ):
         return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
             cls,
@@ -62,6 +64,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_sequence_param(requires_compatibilities, "requires_compatibilities"),
             check.opt_str_param(cpu, "cpu", default="256"),
             check.opt_str_param(memory, "memory", default="512"),
+            check.opt_mapping_param(runtime_platform, "runtime_platform"),
         )
 
     def task_definition_dict(self):
@@ -95,6 +98,9 @@ class DagsterEcsTaskDefinitionConfig(
 
         if self.task_role_arn:
             kwargs.update(dict(taskRoleArn=self.task_role_arn))
+
+        if self.runtime_platform:
+            kwargs.update(dict(runtimePlatform=self.runtime_platform))
 
         return kwargs
 
@@ -131,6 +137,7 @@ class DagsterEcsTaskDefinitionConfig(
             requires_compatibilities=task_definition_dict.get("requiresCompatibilities"),
             cpu=task_definition_dict.get("cpu"),
             memory=task_definition_dict.get("memory"),
+            runtime_platform=task_definition_dict.get("runtimePlatform"),
         )
 
 
@@ -161,6 +168,9 @@ def get_task_definition_dict_from_current_task(
     include_sidecars=False,
     task_role_arn=None,
     execution_role_arn=None,
+    runtime_platform=None,
+    cpu=None,
+    memory=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -227,6 +237,9 @@ def get_task_definition_dict_from_current_task(
         "containerDefinitions": container_definitions,
         **({"taskRoleArn": task_role_arn} if task_role_arn else {}),
         **({"executionRoleArn": execution_role_arn} if execution_role_arn else {}),
+        **({"runtimePlatform": runtime_platform} if runtime_platform else {}),
+        **({"cpu": cpu} if cpu else {}),
+        **({"memory": memory} if memory else {}),
     }
 
     return task_definition

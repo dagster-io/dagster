@@ -31,8 +31,7 @@ During execution, the specified config is accessed within the body of the op or 
 Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_asset_config endbefore=end_basic_asset_config dedent=4
-from dagster import asset
-from dagster._config.structured_config import Config
+from dagster import asset, Config
 
 class MyAssetConfig(Config):
     person_name: str
@@ -50,8 +49,7 @@ def greeting(config: MyAssetConfig) -> str:
 Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the op body.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_op_config endbefore=end_basic_op_config dedent=4
-from dagster import op
-from dagster._config.structured_config import Config
+from dagster import op, Config
 
 class MyOpConfig(Config):
     person_name: str
@@ -69,8 +67,7 @@ def print_greeting(config: MyOpConfig):
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_resource_config endbefore=end_basic_resource_config dedent=4
-from dagster import op
-from dagster._config.structured_config import ConfigurableResource
+from dagster import op, ConfigurableResource
 
 class MyDatabaseResource(ConfigurableResource):
     connection_url: str
@@ -86,9 +83,7 @@ For more information on using resources, see [the Pythonic resources guide](/gui
 To execute a job or materialize an asset that specifies config, you'll need to provide values for its parameters. When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
-from dagster import job, materialize, op
-
-from dagster._core.definitions.run_config import RunConfig
+from dagster import job, materialize, op, RunConfig
 
 @job
 def greeting_job():
@@ -117,7 +112,7 @@ Config fields can be annotated with metadata, which can be used to provide addit
 For example, we can annotate a config field with a description, which will be displayed in the documentation for the config field. We can add a value range to a field, which will be validated when config is specified.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_metadata_config endbefore=end_metadata_config dedent=4
-from dagster._config.structured_config import Config
+from dagster import Config
 from pydantic import Field
 
 class MyMetadataConfig(Config):
@@ -138,11 +133,8 @@ Many basic Python data structures can be used in your config schemas, including 
 For example, we can define a config schema that takes in a list of user names and a mapping of user names to user scores.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_data_structures_config endbefore=end_basic_data_structures_config dedent=4
-from dagster._config.structured_config import Config
+from dagster import Config, materialize, asset, RunConfig
 from typing import List, Dict
-from dagster import materialize, asset
-
-from dagster._core.definitions.run_config import RunConfig
 
 class MyDataStructuresConfig(Config):
     user_names: List[str]
@@ -172,9 +164,7 @@ Schemas can be nested in one another, or in basic Python data structures.
 Here, we define a schema which contains a mapping of user names to complex user data objects.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_nested_schema_config endbefore=end_nested_schema_config dedent=4
-from dagster import asset, materialize
-from dagster._config.structured_config import Config
-from dagster._core.definitions.run_config import RunConfig
+from dagster import asset, materialize, Config, RunConfig
 from typing import Dict
 
 class UserData(Config):
@@ -211,9 +201,7 @@ Union types are supported using Pydantic [discriminated unions](https://docs.pyd
 Here, we define a config schema which takes in a `pet` field, which can be either a `Cat` or a `Dog`, as indicated by the `pet_type` field.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_union_schema_config endbefore=end_union_schema_config dedent=4
-from dagster import asset, materialize
-from dagster._config.structured_config import Config
-from dagster._core.definitions.run_config import RunConfig
+from dagster import asset, materialize, Config, RunConfig
 from pydantic import Field
 from typing import Union
 from typing_extensions import Literal

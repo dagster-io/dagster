@@ -55,7 +55,6 @@ from dagster import (
     asset,
     asset_sensor,
     dagster_type_loader,
-    dagster_type_materializer,
     daily_partitioned_config,
     define_asset_job,
     freshness_policy_sensor,
@@ -121,21 +120,10 @@ def df_input_schema(_context, path):
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@dagster_type_materializer(String)
-def df_output_schema(_context, path, value):
-    with open(path, "w", encoding="utf8") as fd:
-        writer = csv.DictWriter(fd, fieldnames=value[0].keys())
-        writer.writeheader()
-        writer.writerows(rowdicts=value)
-
-    return AssetMaterialization.file(path)
-
-
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name="PoorMansDataFrame",
     loader=df_input_schema,
-    materializer=df_output_schema,
 )
 
 
@@ -717,8 +705,8 @@ def materialization_pipeline():
                     "table",
                     value=MetadataValue.table(
                         records=[
-                            TableRecord(foo=1, bar=2),
-                            TableRecord(foo=3, bar=4),
+                            TableRecord(dict(foo=1, bar=2)),
+                            TableRecord(dict(foo=3, bar=4)),
                         ],
                     ),
                 ),
@@ -1085,7 +1073,7 @@ def define_schedules():
     )
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
     )
@@ -1093,7 +1081,7 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         default_status=DefaultScheduleStatus.RUNNING,
@@ -1102,7 +1090,7 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="multi_mode_with_loggers",
+        job_name="multi_mode_with_loggers",
         start_date=today_at_midnight().subtract(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         mode="foo_mode",
@@ -1111,7 +1099,7 @@ def define_schedules():
         return {}
 
     @hourly_schedule(
-        pipeline_name="no_config_chain_pipeline",
+        job_name="no_config_chain_pipeline",
         start_date=today_at_midnight().subtract(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         solid_selection=["return_foo"],
@@ -1120,7 +1108,7 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_chain_pipeline",
+        job_name="no_config_chain_pipeline",
         start_date=today_at_midnight().subtract(days=2),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
         solid_selection=["return_foo"],
@@ -1129,7 +1117,7 @@ def define_schedules():
         return {}
 
     @monthly_schedule(
-        pipeline_name="no_config_chain_pipeline",
+        job_name="no_config_chain_pipeline",
         start_date=(today_at_midnight().subtract(days=100)).replace(day=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
         solid_selection=["return_foo"],
@@ -1138,7 +1126,7 @@ def define_schedules():
         return {}
 
     @weekly_schedule(
-        pipeline_name="no_config_chain_pipeline",
+        job_name="no_config_chain_pipeline",
         start_date=today_at_midnight().subtract(days=50),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
         solid_selection=["return_foo"],
@@ -1148,7 +1136,7 @@ def define_schedules():
 
     # Schedules for testing the user error boundary
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
         should_execute=lambda _: asdf,  # noqa: F821
     )
@@ -1156,7 +1144,7 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
         tags_fn_for_date=lambda _: asdf,  # noqa: F821
     )
@@ -1164,14 +1152,14 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
         return asdf  # noqa: F821
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         start_date=today_at_midnight("US/Central") - datetime.timedelta(days=1),
         execution_timezone="US/Central",
     )
@@ -1651,6 +1639,20 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+def fail_partition_materialization(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("fail_partition_materialization")
+    yield Output(5)
+
+
+fail_partition_materialization_job = build_assets_job(
+    "fail_partition_materialization_job",
+    assets=[fail_partition_materialization],
+    executor_def=in_process_executor,
+)
+
+
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
@@ -1840,6 +1842,13 @@ def multipartitions_2(multipartitions_1):
     return multipartitions_1
 
 
+@asset(partitions_def=multipartitions_def)
+def multipartitions_fail(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("multipartitions_fail")
+    return 1
+
+
 no_partitions_multipartitions_def = MultiPartitionsDefinition(
     {
         "a": StaticPartitionsDefinition([]),
@@ -1926,6 +1935,7 @@ def define_pipelines():
         dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        fail_partition_materialization_job,
         observation_job,
         failure_assets_job,
         asset_group_job,
@@ -1957,6 +1967,12 @@ def define_asset_jobs():
             "no_multipartitions_job",
             AssetSelection.assets(no_multipartitions_1),
             partitions_def=no_partitions_multipartitions_def,
+        ),
+        multipartitions_fail,
+        define_asset_job(
+            "multipartitions_fail_job",
+            AssetSelection.assets(multipartitions_fail),
+            partitions_def=multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,

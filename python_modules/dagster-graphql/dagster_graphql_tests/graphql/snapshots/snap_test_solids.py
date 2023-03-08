@@ -645,6 +645,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'fail_partition_materialization'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'fail_partition_materialization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fail_partition_materialization'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'fail_subset'
                 },
                 'invocations': [
@@ -1086,6 +1102,30 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'multipartitions_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'multipartitions_fail'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_fail'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'multipartitions_fail_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_fail'
                         }
                     }
                 ]

@@ -62,7 +62,7 @@ def test_incorrect_cron_schedule_invocation():
 
 def partition_schedule_factory():
     @daily_schedule(
-        pipeline_name="test_pipeline",
+        job_name="test_pipeline",
         start_date=datetime.datetime(2020, 1, 1),
     )
     def my_partition_schedule(date):

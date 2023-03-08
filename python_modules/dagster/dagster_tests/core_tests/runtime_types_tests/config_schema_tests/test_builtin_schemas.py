@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 from dagster import (
     Any,
@@ -154,15 +156,10 @@ def single_output_env(solid_name, output_spec):
     return {"ops": {solid_name: {"outputs": [{"result": output_spec}]}}}
 
 
-def test_int_json_schema_roundtrip():
+def test_int_input_schema_json():
     with get_temp_file_name() as tmp_file:
-        mat_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_int", {"json": {"path": tmp_file}}),
-            op_selection=["produce_int"],
-        )
-
-        assert mat_result.success
+        with open(tmp_file, "w") as ff:
+            ff.write('{"value": 2}')
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
@@ -173,15 +170,10 @@ def test_int_json_schema_roundtrip():
         assert source_result.output_for_node("take_int") == 2
 
 
-def test_int_pickle_schema_roundtrip():
+def test_int_input_schema_pickle():
     with get_temp_file_name() as tmp_file:
-        mat_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_int", {"pickle": {"path": tmp_file}}),
-            op_selection=["produce_int"],
-        )
-
-        assert mat_result.success
+        with open(tmp_file, "wb") as ff:
+            pickle.dump(2, ff)
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
@@ -310,15 +302,10 @@ def test_value_none_string_input_schema_failure():
     )
 
 
-def test_string_json_schema_roundtrip():
+def test_string_input_schema_json():
     with get_temp_file_name() as tmp_file:
-        mat_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_string", {"json": {"path": tmp_file}}),
-            op_selection=["produce_string"],
-        )
-
-        assert mat_result.success
+        with open(tmp_file, "w") as ff:
+            ff.write('{"value": "foo"}')
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
@@ -329,15 +316,10 @@ def test_string_json_schema_roundtrip():
         assert source_result.output_for_node("take_string") == "foo"
 
 
-def test_string_pickle_schema_roundtrip():
+def test_string_input_schema_pickle():
     with get_temp_file_name() as tmp_file:
-        mat_result = _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_string", {"pickle": {"path": tmp_file}}),
-            op_selection=["produce_string"],
-        )
-
-        assert mat_result.success
+        with open(tmp_file, "wb") as ff:
+            pickle.dump("foo", ff)
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),

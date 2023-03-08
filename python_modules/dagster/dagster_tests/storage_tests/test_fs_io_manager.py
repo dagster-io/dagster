@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 import tempfile
 from typing import Optional, Tuple
 
@@ -36,7 +37,6 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
-from dagster._utils.test import copy_directory
 
 
 def define_pipeline(io_manager):
@@ -547,9 +547,15 @@ def test_multipartitions_fs_io_manager():
 
 
 def test_backcompat_multipartitions_fs_io_manager():
-    src_dir = file_relative_path(__file__, "backcompat_multipartitions_fs_io_manager/storage")
-    with copy_directory(src_dir) as test_dir:
+    src_dir = file_relative_path(
+        __file__, "backcompat_multipartitions_fs_io_manager/backcompat_materialization"
+    )
+    with tempfile.TemporaryDirectory() as test_dir:
+        os.mkdir(os.path.join(test_dir, "multipartitioned"))
+
         io_manager_def = fs_io_manager.configured({"base_dir": test_dir})
+        dest_file_path = os.path.join(test_dir, "multipartitioned", "c|2020-04-22")
+        shutil.copyfile(src_dir, dest_file_path)
 
         composite = MultiPartitionsDefinition(
             {
@@ -601,8 +607,8 @@ def test_backcompat_multipartitions_fs_io_manager():
         get_path_metadata_entry = lambda materialization: next(
             iter([me for me in materialization.metadata_entries if me.label == "path"])
         )
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path
 
         materializations = result.asset_materializations_for_node("downstream_of_multipartitioned")
         assert len(materializations) == 1
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path

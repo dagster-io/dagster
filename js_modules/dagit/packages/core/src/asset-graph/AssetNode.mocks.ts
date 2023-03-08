@@ -1,7 +1,22 @@
-import {RunStatus} from '../graphql/types';
+import {RunStatus, StaleStatus, StaleCause} from '../graphql/types';
 
 import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNode.types';
+
+export const MockStaleReason: StaleCause = {
+  __typename: 'StaleCause',
+  key: {
+    path: ['asset1'],
+    __typename: 'AssetKey',
+  },
+  reason: 'stale input',
+  dependency: {
+    path: ['asset0'],
+    __typename: 'AssetKey',
+  },
+};
+
+const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
 
 export const AssetNodeFragmentBasic: AssetNodeFragment = {
   __typename: 'AssetNode',
@@ -9,6 +24,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = {
   computeKind: null,
   description: 'This is a test asset description',
   graphName: null,
+  hasMaterializePermission: true,
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,
@@ -45,8 +61,8 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
+  staleStatus: null,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -60,8 +76,8 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
+  staleStatus: null,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -80,8 +96,8 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
     status: RunStatus.FAILURE,
     endTime: 1673301346,
   },
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
+  staleStatus: null,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -95,8 +111,8 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: 'V_A',
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -109,13 +125,13 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: 'V_A',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -128,13 +144,13 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -147,13 +163,13 @@ export const LiveDataForNodeMaterializedAndStaleAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -174,13 +190,13 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -201,13 +217,13 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_B',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -228,13 +244,13 @@ export const LiveDataForNodeMaterializedAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_A',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -256,8 +272,8 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: null,
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -271,8 +287,8 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: null,
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -287,11 +303,11 @@ export const LiveDataForNodeSourceObservedStale: LiveDataForNode = {
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: 'DIFFERENT',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -306,11 +322,11 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'DIFFERENT',
-  projectedLogicalVersion: 'DIFFERENT',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -323,18 +339,42 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'DIFFERENT',
-  projectedLogicalVersion: 'DIFFERENT',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
-    numMaterialized: 5,
+    numMaterialized: 6,
     numPartitions: 1500,
+    numFailed: 0,
+  },
+};
+
+export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
+  stepKey: 'partitioned_asset',
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  lastMaterialization: {
+    __typename: 'MaterializationEvent',
+    runId: 'ABCDEF',
+    timestamp: TIMESTAMP,
+  },
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  runWhichFailedToMaterialize: null,
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  partitionStats: {
+    numMaterialized: 6,
+    numPartitions: 1500,
+    numFailed: 849,
   },
 };
 
@@ -345,18 +385,19 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'DIFFERENT',
-  projectedLogicalVersion: 'DIFFERENT',
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -368,13 +409,33 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'INITIAL',
-  projectedLogicalVersion: 'V_A',
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 0,
     numPartitions: 1500,
+    numFailed: 0,
+  },
+};
+
+export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
+  stepKey: 'asset1',
+  unstartedRunIds: ['LMAANO'],
+  inProgressRunIds: ['ABCDEF', 'CDEFG', 'HIHKA'],
+  lastMaterialization: null,
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  runWhichFailedToMaterialize: null,
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  partitionStats: {
+    numMaterialized: 0,
+    numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -385,18 +446,19 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -407,13 +469,13 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -427,6 +489,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -437,13 +500,13 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
   runWhichFailedToMaterialize: null,
-  currentLogicalVersion: 'V_A',
-  projectedLogicalVersion: 'V_B',
+  staleStatus: StaleStatus.STALE,
+  staleCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -457,6 +520,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -473,13 +537,14 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
     status: RunStatus.FAILURE,
     endTime: 1673301346,
   },
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
+  staleStatus: null,
+  staleCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
-    numMaterialized: 1500,
+    numMaterialized: 1495,
     numPartitions: 1500,
+    numFailed: 1,
   },
 };
 
@@ -617,48 +682,68 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Partitioned Asset - Some Missing',
     liveData: LiveDataForNodePartitionedSomeMissing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '1,495 missing'],
+    expectedText: ['999+', '6', '1,494 missing partitions'],
+  },
+
+  {
+    title: 'Partitioned Asset - Some Failed',
+    liveData: LiveDataForNodePartitionedSomeFailed,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['645', '849 failed partitions'],
   },
 
   {
     title: 'Partitioned Asset - None Missing',
     liveData: LiveDataForNodePartitionedNoneMissing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Never Materialized',
     liveData: LiveDataForNodePartitionedNeverMaterialized,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '1,500 missing'],
+    expectedText: ['1,500 missing partitions'],
+  },
+
+  {
+    title: 'Materializing...',
+    liveData: LiveDataForNodePartitionedMaterializing,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['Materializing', 'ABCDEF'],
   },
 
   {
     title: 'Partitioned Asset - Stale',
     liveData: LiveDataForNodePartitionedStale,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Partitioned Asset - Stale and Late',
     liveData: LiveDataForNodePartitionedStaleAndLate,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '12 minutes late'],
+    expectedText: ['All', '12 minutes late'],
   },
 
   {
     title: 'Partitioned Asset - Stale and Fresh',
     liveData: LiveDataForNodePartitionedStaleAndFresh,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Partitioned Asset - Last Run Failed',
     liveData: LiveDataForNodePartitionedLatestRunFailed,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['4', '999+', '1 failed partition'],
+  },
+  {
+    title: 'Partitioned Asset - Live Data Loading',
+    liveData: undefined,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['Loading'],
   },
 ];

@@ -29,6 +29,7 @@ from .external_data import (
     ExternalPipelineSubsetResult as ExternalPipelineSubsetResult,
     ExternalPresetData as ExternalPresetData,
     ExternalRepositoryData as ExternalRepositoryData,
+    ExternalRepositoryErrorData as ExternalRepositoryErrorData,
     ExternalScheduleData as ExternalScheduleData,
     ExternalScheduleExecutionErrorData as ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData as ExternalSensorExecutionErrorData,

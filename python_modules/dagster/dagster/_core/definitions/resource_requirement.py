@@ -177,17 +177,6 @@ class TypeLoaderResourceRequirement(
         )
 
 
-class TypeMaterializerResourceRequirement(
-    NamedTuple("_TypeMaterializerResourceRequirement", [("key", str), ("type_display_name", str)]),
-    ResourceRequirement,
-):
-    def describe_requirement(self) -> str:
-        return (
-            f"resource with key '{self.key}' required by the materializer on type"
-            f" '{self.type_display_name}'"
-        )
-
-
 class ResourceDependencyRequirement(
     NamedTuple("_ResourceDependencyRequirement", [("key", str), ("source_key", Optional[str])]),
     ResourceRequirement,

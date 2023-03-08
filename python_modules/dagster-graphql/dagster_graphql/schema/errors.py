@@ -495,6 +495,24 @@ class GrapheneUnauthorizedError(graphene.ObjectType):
         self.message = message if message else "Authorization failed"
 
 
+class GrapheneDuplicateDynamicPartitionError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "DuplicateDynamicPartitionError"
+
+    partitions_def_name = graphene.NonNull(graphene.String)
+    partition_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, partitions_def_name, partition_name):
+        super().__init__()
+        self.partitions_def_name = check.str_param(partitions_def_name, "partitions_def_name")
+        self.partition_name = check.str_param(partition_name, "partition_name")
+        self.message = (
+            f"Partition {self.partition_name} already exists in dynamic partitions definition"
+            f" {self.partitions_def_name}."
+        )
+
+
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -525,4 +543,5 @@ types = [
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,
+    GrapheneDuplicateDynamicPartitionError,
 ]

@@ -39,12 +39,21 @@ class FreshnessPolicy(
 
     Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
     that you expect to be incorporated into the current state of that asset at certain points in time.
-    More specifically, imagine you have two assets, where A depends on B.
+    How this is calculated differs depending on if the asset is unpartitioned or time-partitioned
+    (other partitioning schemes are not supported).
 
-    If `B` has a FreshnessPolicy defined, this means that at time T, the most recent materialization
-    of `B` should have come after a materialization of `A` which was no more than `maximum_lag_minutes`
-    ago. This calculation is recursive: any given asset is expected to incorporate up-to-date
-    data from all of its upstream assets.
+    For time-partitioned assets, the current data time for the asset is simple to calculate. The
+    upstream data that is incorporated into the asset is exactly the set of materialized partitions
+    for that asset. Thus, the current data time for the asset is simply the time up to which all
+    partitions have been materialized.
+
+    For unpartitioned assets, the current data time is based on the upstream materialization records
+    that were read to generate the current state of the asset. More specifically,
+    imagine you have two assets, where A depends on B. If `B` has a FreshnessPolicy defined, this
+    means that at time T, the most recent materialization of `B` should have come after a
+    materialization of `A` which was no more than `maximum_lag_minutes` ago. This calculation is
+    recursive: any given asset is expected to incorporate up-to-date data from all of its upstream
+    assets.
 
     It is assumed that all asset definitions with no upstream asset definitions consume from some
     always-updating source. That is, if you materialize that asset at time T, it will incorporate

@@ -1,8 +1,8 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union, cast
+from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
-from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import frozenlist
 
 # ########################
@@ -10,27 +10,16 @@ from dagster._utils import frozenlist
 # ########################
 
 
-class _TableRecordSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_unpacked(
-        cls,
-        unpacked_dict: Mapping[str, Any],
-        klass: Type,
-    ):
-        return klass(**unpacked_dict["data"])
-
-
 @experimental
-@whitelist_for_serdes(serializer=_TableRecordSerializer)
+@whitelist_for_serdes
 class TableRecord(
     NamedTuple("TableRecord", [("data", PublicAttr[Mapping[str, Union[str, int, float, bool]]])])
 ):
-    """Represents one record in a table. All passed keyword arguments are treated as field key/value
-    pairs in the record. Field keys are arbitrary strings-- field values must be strings, integers,
-    floats, or bools.
+    """Represents one record in a table. Field keys are arbitrary strings-- field values must be
+    strings, integers, floats, or bools.
     """
 
-    def __new__(cls, **data):
+    def __new__(cls, data):
         check.dict_param(
             data,
             "data",

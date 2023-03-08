@@ -1,6 +1,12 @@
 from hashlib import sha256
 
-from dagster import LogicalVersion, asset, file_relative_path, observable_source_asset
+from dagster import (
+    DataVersion,
+    Output,
+    asset,
+    file_relative_path,
+    observable_source_asset,
+)
 
 
 def sha256_digest_from_str(string: str) -> str:
@@ -15,15 +21,16 @@ FILE_PATH = file_relative_path(__file__, "input_number.txt")
 @observable_source_asset
 def input_number():
     with open(FILE_PATH) as ff:
-        return LogicalVersion(sha256_digest_from_str(ff.read()))
+        return DataVersion(sha256_digest_from_str(ff.read()))
 
 
-@asset(code_version="v3", non_argument_deps={"input_number"})
+@asset(code_version="v6", non_argument_deps={"input_number"})
 def versioned_number():
     with open(FILE_PATH) as ff:
-        return int(ff.read())
+        value = int(ff.read())
+        return Output(value, data_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")
-def multipled_number(versioned_number):
+def multiplied_number(versioned_number):
     return versioned_number * 2

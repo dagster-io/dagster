@@ -1,5 +1,65 @@
 # Changelog
 
+# 1.1.21 OSS Changelog
+
+### New
+
+- Further performance improvements for `build_asset_reconciliation_sensor`.
+- Dagster now allows you to backfill asset selections that include mapped partition definitions, such as a daily asset which rolls up into a weekly asset, as long as the root assets in your selection share a partition definition.
+- Dagit now includes information about the cause of an asset’s staleness.
+- Improved the error message for non-matching cron schedules in `TimeWindowPartitionMapping`s with offsets. (Thanks Sean Han!)
+- [dagster-aws] The EcsRunLauncher now allows you to configure the `runtimePlatform` field for the task definitions of the runs that it launches, allowing it to launch runs using Windows Docker images.
+- [dagster-azure] Add support for DefaultAzureCredential for adls2_resource (Thanks Martin Picard!)
+- [dagster-databricks] Added op factories to create ops for running existing Databricks jobs (`create_databricks_run_now_op`), as well as submitting one-off Databricks jobs (`create_databricks_submit_run_op`). See the [new Databricks guide](https://docs.dagster.io/master/integrations/databricks) for more details.
+- [dagster-duckdb-polars] Added a dagster-duckdb-polars library that includes a `DuckDBPolarsTypeHandler` for use with `build_duckdb_io_manager`, which allows loading / storing Polars DataFrames from/to DuckDB. (Thanks Pezhman Zarabadi-Poor!)
+- [dagster-gcp-pyspark] New PySpark TypeHandler for the BigQuery I/O manager. Store and load your PySpark DataFrames in BigQuery using `bigquery_pyspark_io_manager`.
+- [dagster-snowflake] [dagster-duckdb] The Snowflake and DuckDB IO managers can now load multiple partitions in a single step - e.g. when a non-partitioned asset depends on a partitioned asset or a single partition of an asset depends on multiple partitions of an upstream asset. Loading occurs using a single SQL query and returns a single `DataFrame`.
+- [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for user code deployments. Example:
+
+  ```yaml
+  dagster-user-deployments:
+    deployments:
+      - name: my-code
+        env:
+          - name: FOO
+            valueFrom:
+              fieldFre:
+                fieldPath: metadata.uid
+  ```
+
+  If `includeConfigInLaunchedRuns` is enabled, these env vars will also be applied to the containers for launched runs.
+
+### Bugfixes
+
+- Previously, if an `AssetSelection` which matched no assets was passed into `define_asset_job`, the resulting job would target all assets in the repository. This has been fixed.
+- Fixed a bug that caused the UI to show an error if you tried to preview a future schedule tick for a schedule built using `build_schedule_from_partitioned_job`.
+- When a non-partitioned non-asset job has an input that comes from a partitioned SourceAsset, we now load all partitions of that asset.
+- Updated the `fs_io_manager` to store multipartitioned materializations in directory levels by dimension. This resolves a bug on windows where multipartitioned materializations could not be stored with the `fs_io_manager`.
+- Schedules and sensors previously timed out when attempting to yield many multipartitioned run requests. This has been fixed.
+- Fixed a bug where `context.partition_key` would raise an error when executing on a partition range within a single run via Dagit.
+- Fixed a bug that caused the default IO manager to incorrectly raise type errors in some situations with partitioned inputs.
+- [ui] Fixed a bug where partition health would fail to display for certain time window partitions definitions with positive offsets.
+- [ui] Always show the “Reload all” button on the code locations list page, to avoid an issue where the button was not available when adding a second location.
+- [ui] Fixed a bug where users running multiple replicas of dagit would see repeated `Definitions reloaded` messages on fresh page loads.
+- [ui] The asset graph now shows only the last path component of linked assets for better readability.
+- [ui] The op metadata panel now longer capitalizes metadata keys
+- [ui] The asset partitions page, asset sidebar and materialization dialog are significantly smoother when viewing assets with a large number of partitions (100k+)
+- [dagster-gcp-pandas] The Pandas TypeHandler for BigQuery now respects user provided `location` information.
+- [dagster-snowflake] `ProgrammingError` was imported from the wrong library, this has been fixed. Thanks @herbert-allium!
+
+### Experimental
+
+- You can now set an explicit logical version on `Output` objects rather than using Dagster’s auto-generated versions.
+- New `get_asset_provenance` method on `OpExecutionContext` allows fetching logical version provenance for an arbitrary asset key.
+- [ui] - you can now create dynamic partitions from the partition selection UI when materializing a dynamically partitioned asset
+
+### Documentation
+
+- Added an example of how to use dynamic asset partitions - in the `examples/assets_dynamic_partitions` folder
+- New [tutorial](https://docs.dagster.io/master/integrations/bigquery/using-bigquery-with-dagster) for using the BigQuery I/O manager.
+- New [reference page](https://docs.dagster.io/master/integrations/bigquery/reference) for BigQuery I/O manager features.
+- New [automating data pipelines guide](https://docs.dagster.io/1.1.21/guides/dagster/automated_pipelines)
+
 # 1.1.20 (core) / 0.17.20 (libraries)
 
 ### New
@@ -17,10 +77,10 @@
   ```yaml
   dagit:
     env:
-    - name: “FOO”
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.uid
+      - name: “FOO”
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.uid
   ```
 
 ### Bugfixes

@@ -61,11 +61,11 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.data_version import (
+        DataVersion,
+    )
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.logical_version import (
-        LogicalVersion,
-    )
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -343,58 +343,94 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            get_multipartition_key_from_tags,
-        )
-
-        tags = self._plan_data.dagster_run.tags
-
-        is_multipartitioned = any(
-            [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
-        )
-        check.invariant(
-            PARTITION_NAME_TAG in tags or is_multipartitioned,
-            "Tried to access partition_key for a non-partitioned run",
-        )
-
-        if is_multipartitioned:
-            return get_multipartition_key_from_tags(tags)
-
-        return tags[PARTITION_NAME_TAG]
-
-    @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            get_multipartition_key_from_tags,
-        )
-
-        tags = self._plan_data.dagster_run.tags
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            multipartition_key = get_multipartition_key_from_tags(tags)
-            return PartitionKeyRange(multipartition_key, multipartition_key)
-
-        partition_key = tags.get(PARTITION_NAME_TAG)
-        if partition_key is not None:
-            return PartitionKeyRange(partition_key, partition_key)
-
-        partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
-        if partition_key_range_start is not None:
-            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
-
-        check.failed("Tried to access partition_key_range for a non-partitioned run")
-
-    @property
-    def partition_time_window(self) -> str:
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
         from dagster._core.definitions.job_definition import JobDefinition
 
         pipeline_def = self._execution_data.pipeline_def
         if not isinstance(pipeline_def, JobDefinition):
             check.failed(
-                # isinstance(pipeline_def, JobDefinition),
-                "Can only call 'partition_time_window', when using jobs, not legacy pipelines",
+                "Can only call 'partitions_def', when using jobs, not legacy pipelines",
             )
         partitions_def = pipeline_def.partitions_def
+        return partitions_def
+
+    @property
+    def has_partitions(self) -> bool:
+        tags = self._plan_data.dagster_run.tags
+        return bool(
+            PARTITION_NAME_TAG in tags
+            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()])
+            or (
+                tags.get(ASSET_PARTITION_RANGE_START_TAG)
+                and tags.get(ASSET_PARTITION_RANGE_END_TAG)
+            )
+        )
+
+    @property
+    def partition_key(self) -> str:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            return get_multipartition_key_from_tags(tags)
+        elif PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+        else:
+            range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            range_end = tags[ASSET_PARTITION_RANGE_END_TAG]
+
+            if range_start != range_end:
+                raise DagsterInvariantViolationError(
+                    "Cannot access partition_key for a partitioned run with a range of partitions."
+                    " Call asset_partition_key_range instead."
+                )
+            else:
+                if isinstance(self.partitions_def, MultiPartitionsDefinition):
+                    return self.partitions_def.get_partition_key_from_str(cast(str, range_start))
+                return cast(str, range_start)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+        elif PARTITION_NAME_TAG in tags:
+            partition_key = tags[PARTITION_NAME_TAG]
+            return PartitionKeyRange(partition_key, partition_key)
+        else:
+            partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            if partition_key_range_start is not None:
+                if isinstance(self.partitions_def, MultiPartitionsDefinition):
+                    return PartitionKeyRange(
+                        self.partitions_def.get_partition_key_from_str(partition_key_range_start),
+                        self.partitions_def.get_partition_key_from_str(
+                            tags[ASSET_PARTITION_RANGE_END_TAG]
+                        ),
+                    )
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
+    @property
+    def partition_time_window(self) -> str:
+        partitions_def = self.partitions_def
 
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed(
@@ -487,7 +523,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
         self._is_external_input_asset_records_loaded = False
-        self._logical_version_cache: Dict[AssetKey, "LogicalVersion"] = {}
+        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -821,14 +857,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
-    def set_logical_version(self, asset_key: AssetKey, logical_version: "LogicalVersion") -> None:
-        self._logical_version_cache[asset_key] = logical_version
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+        self._data_version_cache[asset_key] = data_version
 
-    def has_logical_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._logical_version_cache
+    def has_data_version(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._data_version_cache
 
-    def get_logical_version(self, asset_key: AssetKey) -> "LogicalVersion":
-        return self._logical_version_cache[asset_key]
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+        return self._data_version_cache[asset_key]
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
@@ -870,16 +906,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._is_external_input_asset_records_loaded = True
 
     def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
-        from dagster._core.definitions.logical_version import (
-            extract_logical_version_from_entry,
+        from dagster._core.definitions.data_version import (
+            extract_data_version_from_entry,
         )
 
-        event = self.instance.get_latest_logical_version_record(key)
-        if key in self._logical_version_cache and retries <= 5:
-            event_logical_version = (
-                None if event is None else extract_logical_version_from_entry(event.event_log_entry)
+        event = self.instance.get_latest_data_version_record(key)
+        if key in self._data_version_cache and retries <= 5:
+            event_data_version = (
+                None if event is None else extract_data_version_from_entry(event.event_log_entry)
             )
-            if event_logical_version == self._logical_version_cache[key]:
+            if event_data_version == self._data_version_cache[key]:
                 self._input_asset_records[key] = event
             else:
                 self._fetch_input_asset_record(key, retries + 1)
@@ -896,12 +932,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         return (
             upstream_asset_key is not None
-            and assets_def is not None
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
@@ -929,8 +963,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
-            if assets_def is not None and upstream_asset_partitions_def is not None:
-                partitions_def = assets_def.partitions_def
+            if upstream_asset_partitions_def is not None:
+                partitions_def = assets_def.partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
                         self.asset_partition_key_range, dynamic_partitions_store=self.instance
@@ -1019,16 +1053,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
-        return DagsterTypeMaterializerContext(
-            plan_data=self.plan_data,
-            execution_data=self._execution_data,
-            log_manager=self._log_manager,
-            step=self.step,
-            output_capture=self._output_capture,
-            known_state=self._known_state,
-        )
-
     def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
         return DagsterTypeLoaderContext(
             plan_data=self.plan_data,
@@ -1074,32 +1098,6 @@ class TypeCheckContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._log
-
-
-class DagsterTypeMaterializerContext(StepExecutionContext):
-    """The context object provided to a :py:class:`@dagster_type_materializer <dagster_type_materializer>`-decorated function during execution.
-
-    Users should not construct this object directly.
-    """
-
-    @public
-    @property
-    def resources(self) -> "Resources":
-        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
-        """
-        return super(DagsterTypeMaterializerContext, self).resources
-
-    @public
-    @property
-    def job_def(self) -> "JobDefinition":
-        """The underlying job definition being executed."""
-        return super(DagsterTypeMaterializerContext, self).job_def
-
-    @public
-    @property
-    def op_def(self) -> "OpDefinition":
-        """The op for which type materialization is occurring."""
-        return super(DagsterTypeMaterializerContext, self).op_def
 
 
 class DagsterTypeLoaderContext(StepExecutionContext):

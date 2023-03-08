@@ -24,7 +24,7 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
     // No truncation is necessary
     return text;
   }
-  if (options.maxLength <= 6) {
+  if (options.maxLength <= 10) {
     // Middle truncation to this few characters (eg: abc…ef) is kind of silly
     // and just using abcde… looks better.
     return text.substring(0, options.maxLength - 1) + '…';

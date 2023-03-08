@@ -241,6 +241,9 @@ export const getAssetNodeDimensions = (def: {
   } else {
     let height = 70; // name + description
 
+    if (def.isPartitioned) {
+      height += 40;
+    }
     if (def.isSource) {
       height += 30; // observed
     } else {

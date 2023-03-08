@@ -715,6 +715,37 @@ def test_sanitize_labels():
     assert job["metadata"]["labels"]["my_label"] == "WhatsUP"
 
 
+def test_construct_dagster_k8s_job_with_raw_env():
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+    with environ({"ENV_VAR_1": "one"}):
+        job = construct_dagster_k8s_job(
+            cfg,
+            ["foo", "bar"],
+            "job",
+            env_vars=[
+                {"name": "FOO", "value": "BAR"},
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+            ],
+        ).to_dict()
+
+        env = job["spec"]["template"]["spec"]["containers"][0]["env"]
+        env_mapping = {env_var["name"]: env_var for env_var in env}
+
+        # Has DAGSTER_HOME and two additional env vars
+        assert len(env_mapping) == 3
+        assert env_mapping["FOO"]["value"] == "BAR"
+        assert (
+            env_mapping["DD_AGENT_HOST"]["value_from"]["field_ref"]["field_path"] == "status.hostIP"
+        )
+
+
 # Taken from the k8s error message when a label is invalid
 K8s_LABEL_REGEX = r"(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?"
 

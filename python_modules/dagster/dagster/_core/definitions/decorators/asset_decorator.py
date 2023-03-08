@@ -19,7 +19,8 @@ from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -275,11 +276,13 @@ class _Asset:
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
             arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
-            decorator_resource_keys = set(self.required_resource_keys).union(
-                set(self.resource_defs.keys())
-            )
+
+            bare_required_resource_keys = set(self.required_resource_keys)
+            resource_defs_keys = set(self.resource_defs.keys())
+            decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
+
             check.param_invariant(
-                len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+                len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
                 (
                     "Cannot specify resource requirements in both @asset decorator and as arguments"
                     " to the decorated function"
@@ -306,6 +309,8 @@ class _Asset:
                 code_version=self.code_version,
             )
 
+            op_required_resource_keys = decorator_resource_keys - arg_resource_keys
+
             op = _Op(
                 name=out_asset_key.to_python_identifier(),
                 description=self.description,
@@ -313,7 +318,7 @@ class _Asset:
                 out=out,
                 # Any resource requirements specified as arguments will be identified as
                 # part of the Op definition instantiation
-                required_resource_keys=decorator_resource_keys,
+                required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -425,7 +430,9 @@ def multi_asset(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
-    required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
+    bare_required_resource_keys = set(required_resource_keys)
+    resource_defs_keys = set(resource_defs.keys())
+    required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
@@ -444,7 +451,7 @@ def multi_asset(
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
-            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+            len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
             (
                 "Cannot specify resource requirements in both @multi_asset decorator and as"
                 " arguments to the decorated function"
@@ -476,12 +483,14 @@ def multi_asset(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            op_required_resource_keys = required_resource_keys - arg_resource_keys
+
             op = _Op(
                 name=op_name,
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=dict(asset_outs.values()),
-                required_resource_keys=required_resource_keys,
+                required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
@@ -632,6 +641,8 @@ def graph_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
+    metadata: Optional[MetadataUserInput] = ...,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -645,6 +656,8 @@ def graph_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
+    metadata: Optional[MetadataUserInput] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """
     Creates a software-defined asset that's computed using a graph of ops.
@@ -666,6 +679,10 @@ def graph_asset(
             compose the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
+        metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with
+            the asset.
+        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is
+            intended to be updated with respect to its root data.
 
     Examples:
         .. code-block:: python
@@ -693,6 +710,8 @@ def graph_asset(
             description=description,
             partitions_def=partitions_def,
             group_name=group_name,
+            metadata=metadata,
+            freshness_policy=freshness_policy,
         )(fn)
 
     return inner
@@ -707,6 +726,8 @@ class _GraphBackedAsset:
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        metadata: Optional[MetadataUserInput] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         self.name = name
 
@@ -717,6 +738,8 @@ class _GraphBackedAsset:
         self.description = description
         self.partitions_def = partitions_def
         self.group_name = group_name
+        self.metadata = metadata
+        self.freshness_policy = freshness_policy
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -732,9 +755,9 @@ class _GraphBackedAsset:
             if asset_in.partition_mapping
         }
 
-        op_graph = graph(
-            name="__".join(out_asset_key.path).replace("-", "_"), description=self.description
-        )(fn)
+        op_graph = graph(name=out_asset_key.to_python_identifier(), description=self.description)(
+            fn
+        )
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -742,6 +765,11 @@ class _GraphBackedAsset:
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=self.group_name,
+            metadata_by_output_name={"result": self.metadata} if self.metadata else None,
+            freshness_policies_by_output_name={"result": self.freshness_policy}
+            if self.freshness_policy
+            else None,
+            descriptions_by_output_name={"result": self.description} if self.description else None,
         )
 
 
@@ -789,6 +817,28 @@ def graph_multi_asset(
             name=name or fn.__name__,
             out={out_name: GraphOut() for out_name, _ in asset_outs.values()},
         )(fn)
+
+        # source metadata from the AssetOuts (if any)
+        metadata_by_output_name = {
+            output_name: out.metadata
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.metadata is not None
+        }
+
+        # source freshness policies from the AssetOuts (if any)
+        freshness_policies_by_output_name = {
+            output_name: out.freshness_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.freshness_policy is not None
+        }
+
+        # source descriptions from the AssetOuts (if any)
+        descriptions_by_output_name = {
+            output_name: out.description
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.description is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -799,6 +849,9 @@ def graph_multi_asset(
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=group_name,
             can_subset=can_subset,
+            metadata_by_output_name=metadata_by_output_name,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
+            descriptions_by_output_name=descriptions_by_output_name,
         )
 
     return inner

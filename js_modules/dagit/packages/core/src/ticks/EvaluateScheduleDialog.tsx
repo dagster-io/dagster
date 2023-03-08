@@ -15,6 +15,7 @@ import {
   Spinner,
   Subheading,
   Tag,
+  useViewport,
 } from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -23,7 +24,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {timestampToString} from '../app/time/timestampToString';
-import {useViewport} from '../gantt/useViewport';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';

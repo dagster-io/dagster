@@ -25,6 +25,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     FreshnessPolicy,
+    Nothing,
     Output,
     ResourceDefinition,
     _check as check,
@@ -154,6 +155,7 @@ def _build_airbyte_assets_from_metadata(
                 freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k)
                 if assets_defn_meta.freshness_policies_by_output_name
                 else None,
+                dagster_type=Nothing,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },
@@ -176,7 +178,7 @@ def _build_airbyte_assets_from_metadata(
                     value=None,
                     output_name=table_name,
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        entry.label: entry.value for entry in materialization.metadata_entries
                     },
                 )
                 # Also materialize any normalization tables affiliated with this destination
@@ -268,7 +270,7 @@ def build_airbyte_assets(
                     value=None,
                     output_name=table_name,
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        entry.label: entry.value for entry in materialization.metadata_entries
                     },
                 )
                 # Also materialize any normalization tables affiliated with this destination

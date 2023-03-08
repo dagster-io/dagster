@@ -18,8 +18,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
-    PartitionMetadataEntry,
+    MetadataEntryUnion,
     RawMetadataValue,
     normalize_metadata,
 )
@@ -103,7 +102,7 @@ class InputDefinition:
     _input_manager_key: Optional[str]
     _root_manager_key: Optional[str]
     _metadata: Mapping[str, RawMetadataValue]
-    _metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    _metadata_entries: Sequence[MetadataEntryUnion]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
     _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
 
@@ -210,7 +209,7 @@ class InputDefinition:
         return self._asset_key is not None
 
     @property
-    def metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def metadata_entries(self) -> Sequence[MetadataEntryUnion]:
         return self._metadata_entries
 
     @property

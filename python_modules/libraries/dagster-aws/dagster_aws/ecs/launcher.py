@@ -13,6 +13,7 @@ from dagster import (
     Noneable,
     Permissive,
     ScalarUnion,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -51,6 +52,10 @@ RUNNING_STATUSES = [
     "DEPROVISIONING",
 ]
 STOPPED_STATUSES = ["STOPPED"]
+
+DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
+
+DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
@@ -182,6 +187,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             return None
         return self.task_definition_dict.get("execution_role_arn")
 
+    @property
+    def runtime_platform(self) -> Optional[Mapping[str, Any]]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("runtime_platform")
+
     @classmethod
     def config_type(cls):
         return {
@@ -201,6 +212,20 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                                 "Backwards-compatibility for when task_definition was a"
                                 " StringSource.Can be used to source the task_definition scalar"
                                 " from an environment variable."
+                            ),
+                        ),
+                        "runtime_platform": Field(
+                            Shape(
+                                {
+                                    "cpuArchitecture": Field(StringSource, is_required=False),
+                                    "operatingSystemFamily": Field(StringSource, is_required=False),
+                                }
+                            ),
+                            is_required=False,
+                            description=(
+                                "The operating system that the task definition is running on. See"
+                                " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
+                                " for the available options."
                             ),
                         ),
                     },
@@ -484,6 +509,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             family = self._get_run_task_definition_family(run)
 
             if self.task_definition_dict:
+                runtime_platform = container_context.runtime_platform
+                is_windows = container_context.runtime_platform.get(
+                    "operatingSystemFamily"
+                ) not in {None, "LINUX"}
+
+                default_resources = (
+                    DEFAULT_WINDOWS_RESOURCES if is_windows else DEFAULT_LINUX_RESOURCES
+                )
                 task_definition_config = DagsterEcsTaskDefinitionConfig(
                     family,
                     image,
@@ -509,6 +542,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     requires_compatibilities=self.task_definition_dict.get(
                         "requires_compatibilities", []
                     ),
+                    cpu=container_context.run_resources.get("cpu", default_resources["cpu"]),
+                    memory=container_context.run_resources.get(
+                        "memory", default_resources["memory"]
+                    ),
+                    runtime_platform=runtime_platform,
                 )
                 task_definition_dict = task_definition_config.task_definition_dict()
             else:
@@ -523,6 +561,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     include_sidecars=self.include_sidecars,
                     task_role_arn=container_context.task_role_arn,
                     execution_role_arn=container_context.execution_role_arn,
+                    cpu=container_context.run_resources.get("cpu"),
+                    memory=container_context.run_resources.get("memory"),
+                    runtime_platform=container_context.runtime_platform,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

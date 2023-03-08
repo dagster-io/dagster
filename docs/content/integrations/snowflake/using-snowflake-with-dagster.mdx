@@ -102,7 +102,7 @@ The Snowflake I/O manager can create and update tables for your Dagster defined 
 
 ### Store a Dagster asset as a table in Snowflake
 
-To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O Manager, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
+To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O manager, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
 
 ```python file=/integrations/snowflake/basic_example.py
 import pandas as pd
@@ -153,7 +153,7 @@ Since we supply the database and the schema in the I/O manager configuration in 
 
 ## Step 3: Load Snowflake tables in downstream assets
 
-Once you have created an asset or source asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets
+Once you have created an asset or source asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
 
 ```python file=/integrations/snowflake/load_downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
@@ -230,6 +230,6 @@ defs = Definitions(
 
 For more Snowflake features, refer to the [Snowflake reference](/integrations/snowflake/reference).
 
-For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
+For more information on software-defined assets, refer to the [tutorial](/tutorial) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
 
 For more information on I/O managers, refer to the [I/O manager concept documentation](/concepts/io-management/io-managers).

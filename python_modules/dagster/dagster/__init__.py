@@ -87,6 +87,7 @@ from dagster._config.config_type import (
 )
 from dagster._config.field import Field as Field
 from dagster._config.field_utils import (
+    EnvVar as EnvVar,
     Map as Map,
     Permissive as Permissive,
     Selector as Selector,
@@ -96,6 +97,16 @@ from dagster._config.source import (
     BoolSource as BoolSource,
     IntSource as IntSource,
     StringSource as StringSource,
+)
+from dagster._config.structured_config import (
+    Config as Config,
+    ConfigurableIOManager as ConfigurableIOManager,
+    ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
+    ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
+    ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
+    ConfigurableResource as ConfigurableResource,
+    PermissiveConfig as PermissiveConfig,
+    ResourceDependency as ResourceDependency,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut
@@ -110,6 +121,10 @@ from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinitio
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
 from dagster._core.definitions.configurable import configured as configured
+from dagster._core.definitions.data_version import (
+    DataProvenance as DataProvenance,
+    DataVersion as DataVersion,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     graph_asset as graph_asset,
@@ -191,7 +206,6 @@ from dagster._core.definitions.logger_definition import (
     build_init_logger_context as build_init_logger_context,
     logger as logger,
 )
-from dagster._core.definitions.logical_version import LogicalVersion as LogicalVersion
 from dagster._core.definitions.materialize import (
     materialize as materialize,
     materialize_to_memory as materialize_to_memory,
@@ -242,7 +256,6 @@ from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
     PartitionedConfig as PartitionedConfig,
-    PartitionScheduleDefinition as PartitionScheduleDefinition,
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
@@ -273,11 +286,15 @@ from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
 )
+from dagster._core.definitions.resource_annotation import (
+    Resource as Resource,
+)
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
     make_values_resource as make_values_resource,
     resource as resource,
 )
+from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
     RunRequest as RunRequest,
     SkipReason as SkipReason,
@@ -519,37 +536,26 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.system import (
-        DagsterTypeMaterializerContext as DagsterTypeMaterializerContext,
-    )
-    from dagster._core.types.config_schema import (
-        DagsterTypeMaterializer as DagsterTypeMaterializer,
-        dagster_type_materializer as dagster_type_materializer,
-    )
+    ##### EXAMPLE
+    # from dagster.some.module import (
+    #     Foo as Foo,
+    # )
+    pass
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
-    "dagster_type_materializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializerContext": (
-        "dagster._core.execution.context.system",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
+    ##### EXAMPLE
+    # "Foo": (
+    #     "dagster.some.module",
+    #     "1.1.0",  # breaking version
+    #     "Use Bar instead.",
+    # ),
 }
 
-# Example Deprecated Renamed Entry:
-#
-# "EventMetadataEntry": (MetadataEntry, "1.0.0"),
-_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {}
+_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
+    ##### EXAMPLE
+    # "Foo": (Bar, "1.1.0"),
+}
 
 
 def __getattr__(name: str) -> TypingAny:

@@ -8,13 +8,12 @@ from typing_extensions import Protocol, TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    MetadataEntryUnion,
     MetadataMapping,
     MetadataUserInput,
-    PartitionMetadataEntry,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
@@ -48,7 +47,7 @@ class SourceAssetObserveFunctionWithContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self, context: "SourceAssetObserveContext") -> LogicalVersion:
+    def __call__(self, context: "SourceAssetObserveContext") -> DataVersion:
         ...
 
 
@@ -57,7 +56,7 @@ class SourceAssetObserveFunctionNoContext(Protocol):
     def __name__(self) -> str:
         ...
 
-    def __call__(self) -> LogicalVersion:
+    def __call__(self) -> DataVersion:
         ...
 
 
@@ -84,7 +83,7 @@ class SourceAsset(ResourceAddable):
     """
 
     key: PublicAttr[AssetKey]
-    metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    metadata_entries: Sequence[MetadataEntryUnion]
     io_manager_key: PublicAttr[Optional[str]]
     _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
     description: PublicAttr[Optional[str]]
@@ -102,7 +101,7 @@ class SourceAsset(ResourceAddable):
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
@@ -151,7 +150,7 @@ class SourceAsset(ResourceAddable):
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}  # type: ignore
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
@@ -184,14 +183,14 @@ class SourceAsset(ResourceAddable):
         observe_fn_has_context = has_at_least_one_parameter(observe_fn)
 
         def fn(context: OpExecutionContext):
-            logical_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+            data_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
 
             check.inst(
-                logical_version,
-                LogicalVersion,
-                "Source asset observation function must return a LogicalVersion",
+                data_version,
+                DataVersion,
+                "Source asset observation function must return a DataVersion",
             )
-            tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
+            tags = {DATA_VERSION_TAG: data_version.value}
             context.log_event(
                 AssetObservation(
                     asset_key=self.key,
@@ -210,7 +209,7 @@ class SourceAsset(ResourceAddable):
         if self._node_def is None:
             self._node_def = OpDefinition(
                 compute_fn=self._get_op_def_compute_fn(self.observe_fn),
-                name="__".join(self.key.path).replace("-", "_"),
+                name=self.key.to_python_identifier(),
                 description=self.description,
             )
         return self._node_def

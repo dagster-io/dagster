@@ -2,6 +2,7 @@ from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
@@ -83,7 +84,11 @@ def parse_timestamp(timestamp: Optional[str] = None) -> Optional[float]:
         return None
 
 
+GraphenePartitionRangeStatus = graphene.Enum.from_enum(PartitionRangeStatus)
+
+
 class GrapheneTimePartitionRange(graphene.ObjectType):
+    status = graphene.NonNull(GraphenePartitionRangeStatus)
     startTime = graphene.NonNull(graphene.Float)
     endTime = graphene.NonNull(graphene.Float)
     startKey = graphene.NonNull(graphene.String)
@@ -102,6 +107,7 @@ class GrapheneTimePartitions(graphene.ObjectType):
 
 class GrapheneDefaultPartitions(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
+    failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
 
     class Meta:
@@ -139,15 +145,16 @@ class GrapheneMultiPartitions(graphene.ObjectType):
         name = "MultiPartitions"
 
 
-class GrapheneMaterializedPartitions(graphene.Union):
+class GrapheneAssetPartitionStatuses(graphene.Union):
     class Meta:
         types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
-        name = "MaterializedPartitions"
+        name = "AssetPartitionStatuses"
 
 
 class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
+    numFailed = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"

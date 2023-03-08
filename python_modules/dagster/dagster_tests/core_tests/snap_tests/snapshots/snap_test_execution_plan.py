@@ -23,7 +23,7 @@ snapshots[
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "f75661b82259b1378e2c059f0fe9993b93829558",
+  "pipeline_snapshot_id": "51195d3aa0d176dab02c5a02baec4ad6150b0168",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "op_one",
@@ -47,6 +47,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -117,6 +118,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -159,7 +161,7 @@ snapshots[
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "86087d07c532ad431cd2fda8a2506157d0680933",
+  "pipeline_snapshot_id": "3dc50e708ae1722762640e81bc754957d981d996",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -182,6 +184,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -224,7 +227,7 @@ snapshots[
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "b857057c66aa4c23d8f49ea630be742c1283b5f7",
+  "pipeline_snapshot_id": "a02868fc2a5bdcc984279d68367d5025eea32905",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_op"
@@ -258,6 +261,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -303,7 +307,7 @@ snapshots[
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "9fbbf986b4eac313bbfdb3b47416b203791730a8",
+  "pipeline_snapshot_id": "f0ff563d45d38e9bead6edd739faed0ca55123a9",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",
@@ -389,6 +393,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -459,6 +464,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -507,6 +513,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -585,6 +592,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -633,6 +641,7 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
+            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false

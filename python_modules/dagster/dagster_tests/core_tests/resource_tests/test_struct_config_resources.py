@@ -22,8 +22,8 @@ from dagster._config.structured_config import (
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import Resource
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -1229,3 +1229,104 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_resource_defs_on_asset() -> None:
+    executed = {}
+
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset(resource_defs={"my_resource": MyResource(a_str="foo")})
+    def an_asset(my_resource: MyResource):
+        assert my_resource.a_str == "foo"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+
+    # Cannot specify both required_resource_keys and resources as args
+    with pytest.raises(CheckError):
+
+        @asset(required_resource_keys={"my_other_resource"})
+        def an_other_asset(my_resource: MyResource):
+            pass
+
+
+def test_extending_resource() -> None:
+    executed = {}
+
+    class BaseResource(ConfigurableResource):
+        a_str: str = "bar"
+        an_int: int = 1
+
+    class ExtendingResource(BaseResource):
+        a_float: float = 1.0
+
+    @op
+    def hello_world_op(writer: ExtendingResource):
+        assert writer.a_str == "foo"
+        assert writer.an_int == 1
+        assert writer.a_float == 1.0
+        executed["yes"] = True
+
+    @job(resource_defs={"writer": ExtendingResource(a_str="foo")})
+    def no_prefix_job() -> None:
+        hello_world_op()
+
+    assert no_prefix_job.execute_in_process().success
+    assert executed["yes"]
+
+
+def test_extending_resource_nesting() -> None:
+    executed = {}
+
+    class NestedResource(ConfigurableResource):
+        a_str: str
+
+    class BaseResource(ConfigurableResource):
+        nested: NestedResource
+        a_str: str = "bar"
+        an_int: int = 1
+
+    class ExtendingResource(BaseResource):
+        a_float: float = 1.0
+
+    @asset
+    def an_asset(writer: ExtendingResource):
+        assert writer.a_str == "foo"
+        assert writer.nested.a_str == "baz"
+        assert writer.an_int == 1
+        assert writer.a_float == 1.0
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={"writer": ExtendingResource(a_str="foo", nested=NestedResource(a_str="baz"))},
+    )
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+
+    assert executed["yes"]
+    executed.clear()
+
+    nested_defer = NestedResource.configure_at_launch()
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "nested_deferred": nested_defer,
+            "writer": ExtendingResource(a_str="foo", nested=nested_defer),
+        },
+    )
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            run_config={"resources": {"nested_deferred": {"config": {"a_str": "baz"}}}}
+        )
+        .success
+    )
+
+    assert executed["yes"]

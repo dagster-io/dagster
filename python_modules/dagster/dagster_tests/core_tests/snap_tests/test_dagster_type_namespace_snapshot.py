@@ -24,7 +24,6 @@ def test_simple_pipeline_input_dagster_type_namespace():
     assert type_snap.is_builtin is False
     assert type_snap.type_param_keys == []
     assert type_snap.loader_schema_key == SomethingType.loader_schema_key
-    assert type_snap.materializer_schema_key == SomethingType.materializer_schema_key
 
 
 def test_simple_pipeline_output_dagster_type_namespace():

@@ -71,13 +71,6 @@ class OutputsConfig(NamedTuple):
         else:
             return set()
 
-    @property
-    def type_materializer_specs(self) -> Sequence[object]:
-        if isinstance(self.config, list):
-            return self.config
-        else:
-            return []
-
     def get_output_manager_config(self, output_name) -> object:
         if isinstance(self.config, dict):
             return self.config.get(output_name)

@@ -215,7 +215,13 @@ const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   };
 
   return (
-    <Tooltip position="left" openOnTargetFocus={false} targetTagName="div" content={tooltip || ''}>
+    <Tooltip
+      position="left"
+      openOnTargetFocus={false}
+      targetTagName="div"
+      canShow={!!tooltip}
+      content={tooltip || ''}
+    >
       <ButtonContainer
         role="button"
         intent="primary"

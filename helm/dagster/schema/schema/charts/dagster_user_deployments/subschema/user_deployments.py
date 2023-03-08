@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -15,7 +15,7 @@ class UserDeployment(BaseModel):
     dagsterApiGrpcArgs: List[str]
     includeConfigInLaunchedRuns: Optional[UserDeploymentIncludeConfigInLaunchedRuns]
     port: int
-    env: Optional[Dict[str, str]]
+    env: Optional[Union[Dict[str, str], List[kubernetes.EnvVar]]]
     envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]
     envSecrets: Optional[List[kubernetes.SecretEnvSource]]
     annotations: Optional[kubernetes.Annotations]

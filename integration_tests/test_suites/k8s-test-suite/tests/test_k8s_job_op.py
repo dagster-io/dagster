@@ -288,3 +288,53 @@ def test_k8s_job_op_retries(namespace, cluster_provider):
 
     assert "HERE IS RETRY NUMBER 0" in _get_pod_logs(cluster_provider, job_name, namespace)
     assert "HERE IS RETRY NUMBER 1" in _get_pod_logs(cluster_provider, job_name + "-1", namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_ignore_job_tags(namespace, cluster_provider):
+    @op
+    def the_op(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=["echo DID I GET CONFIG? $THE_ENV_VAR_FROM_JOB $THE_ENV_VAR_FROM_OP"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+            container_config={
+                "env": [
+                    {
+                        "name": "THE_ENV_VAR_FROM_OP",
+                        "value": "FROM_OP_TAGS",
+                    }
+                ]
+            },
+        )
+
+    @job(
+        tags={
+            "dagster-k8s/config": {
+                "container_config": {
+                    "env": [
+                        {
+                            "name": "THE_ENV_VAR_FROM_JOB",
+                            "value": "FROM_JOB_TAGS",
+                        }
+                    ]
+                }
+            }
+        }
+    )
+    def tagged_job():
+        the_op()
+
+    execute_result = tagged_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+
+    job_name = get_k8s_job_name(run_id, the_op.name)
+
+    # Env var is not incorporated into the launched pod
+    pod_logs = _get_pod_logs(cluster_provider, job_name, namespace)
+    assert "FROM_JOB_TAGS" not in pod_logs
+    assert "FROM_OP_TAGS" in pod_logs

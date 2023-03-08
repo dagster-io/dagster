@@ -1,3 +1,5 @@
+from typing import Optional, Sequence
+
 import dagster._check as check
 import graphene
 from dagster._core.execution.backfill import PartitionBackfill
@@ -95,9 +97,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     backfillId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneBulkActionStatus)
-    partitionNames = non_null_list(graphene.String)
+    partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
-    numPartitions = graphene.NonNull(graphene.Int)
+    numPartitions = graphene.Field(graphene.Int)
     numCancelable = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
@@ -122,6 +124,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
+    hasResumePermission = graphene.NonNull(graphene.Boolean)
 
     def __init__(self, backfill_job):
         self._backfill_job = check.opt_inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -200,10 +203,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo):
         return self._backfill_job.is_valid_serialization(_graphene_info.context)
 
-    def resolve_partitionNames(self, _graphene_info: ResolveInfo):
+    def resolve_partitionNames(self, _graphene_info: ResolveInfo) -> Optional[Sequence[str]]:
         return self._backfill_job.get_partition_names(_graphene_info.context)
 
-    def resolve_numPartitions(self, _graphene_info: ResolveInfo):
+    def resolve_numPartitions(self, _graphene_info: ResolveInfo) -> Optional[int]:
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
     def resolve_numCancelable(self, _graphene_info: ResolveInfo):
@@ -252,6 +255,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         location_name = self._backfill_job.partition_set_origin.selector.location_name
         return graphene_info.context.has_permission_for_location(
             Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        )
+
+    def resolve_hasResumePermission(self, graphene_info):
+        if self._backfill_job.partition_set_origin is None:
+            return graphene_info.context.has_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
+        location_name = self._backfill_job.partition_set_origin.selector.location_name
+        return graphene_info.context.has_permission_for_location(
+            Permissions.LAUNCH_PARTITION_BACKFILL, location_name
         )
 
 

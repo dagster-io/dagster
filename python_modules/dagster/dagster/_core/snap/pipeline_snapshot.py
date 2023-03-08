@@ -23,7 +23,9 @@ from dagster._config import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    MetadataEntryUnion,
+)
 from dagster._core.definitions.pipeline_definition import (
     PipelineDefinition,
     PipelineSubsetDefinition,
@@ -91,7 +93,7 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: Sequence[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
-    metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    metadata: Optional[Sequence[MetadataEntryUnion]] = None,
     **kwargs,  # pylint: disable=unused-argument
 ) -> "PipelineSnapshot":
     """
@@ -143,7 +145,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
-            ("metadata", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata", Sequence[MetadataEntryUnion]),
         ],
     )
 ):
@@ -159,7 +161,7 @@ class PipelineSnapshot(
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
-        metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]],
+        metadata: Optional[Sequence[MetadataEntryUnion]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,

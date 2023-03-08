@@ -251,6 +251,23 @@ def _check_valid_run_launcher_yaml(dagster_config):
                 assert process_result.success, str(process_result.errors)
 
 
+def _check_valid_run_coordinator_yaml(dagster_config):
+    with environ(
+        {
+            "DAGSTER_PG_PASSWORD": "hunter12",
+        }
+    ):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
+                yaml.dump(dagster_config, fd, default_flow_style=False)
+                run_coordinator_data = InstanceRef.from_dir(temp_dir).run_coordinator_data
+                process_result = process_config(
+                    resolve_to_config_type(QueuedRunCoordinator.config_type()),
+                    run_coordinator_data.config_dict,
+                )
+                assert process_result.success, str(process_result.errors)
+
+
 def test_k8s_run_launcher_scheduler_name(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
@@ -481,6 +498,27 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
+def test_queued_run_coordinator_config_default(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runCoordinator=RunCoordinator.construct())
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+
+    yaml.full_load(configmaps[0].data["dagster.yaml"])
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_coordinator_yaml(instance)
+
+    assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+    assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
+
+    assert instance["run_coordinator"]["config"]["max_concurrent_runs"] == -1
+    assert instance["run_coordinator"]["config"]["dequeue_use_threads"]
+    assert instance["run_coordinator"]["config"]["dequeue_num_workers"] == 4
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 @pytest.mark.parametrize("max_concurrent_runs", [0, 50])
 def test_queued_run_coordinator_config(
@@ -510,6 +548,8 @@ def test_queued_run_coordinator_config(
     assert len(configmaps) == 1
 
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    _check_valid_run_coordinator_yaml(instance)
 
     assert ("run_coordinator" in instance) == enabled
     if enabled:

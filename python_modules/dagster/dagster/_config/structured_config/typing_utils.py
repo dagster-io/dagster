@@ -71,12 +71,9 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
     accepts either a PartialResource or a Resource as a value for the resource dependency.
     """
 
-    def __new__(cls, name, bases, namespaces, **kwargs):
+    def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
         # Gather all type annotations from the class and its base classes
         annotations = namespaces.get("__annotations__", {})
-        for base in bases:
-            if hasattr(base, "__annotations__"):
-                annotations.update(base.__annotations__)
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency

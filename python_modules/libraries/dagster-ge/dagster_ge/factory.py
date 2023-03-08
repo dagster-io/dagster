@@ -52,7 +52,7 @@ def ge_validation_op_factory(
         validation_operator_name (Optional[str]): what validation operator to run  -- defaults to
             None, which generates an ephemeral validator.  If you want to save data docs, use
             'action_list_operator'.
-            See https://docs.greatexpectations.io/en/latest/reference/core_concepts/validation_operators_and_actions.html
+            See https://legacy.docs.greatexpectations.io/en/0.12.1/reference/core_concepts/validation_operators_and_actions.html#
         input_dagster_type (DagsterType): the Dagster type used to type check the input to the op.
             Defaults to `dagster_pandas.DataFrame`.
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the

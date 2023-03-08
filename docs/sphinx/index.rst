@@ -45,6 +45,7 @@
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp
    sections/api/apidocs/libraries/dagster-gcp-pandas
+   sections/api/apidocs/libraries/dagster-gcp-pyspark
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s

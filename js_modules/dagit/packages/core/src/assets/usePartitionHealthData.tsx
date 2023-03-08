@@ -3,9 +3,11 @@ import isEqual from 'lodash/isEqual';
 import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
+import {PartitionRangeStatus} from '../graphql/types';
 import {PartitionState} from '../partitions/PartitionStatus';
+import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 
-import {assembleRangesFromTransitions} from './MultipartitioningSupport';
+import {assembleRangesFromTransitions, Transition} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {
   PartitionHealthQuery,
@@ -15,7 +17,7 @@ import {
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
   {__typename: 'AssetNode'}
->['materializedPartitions'];
+>['assetPartitionStatuses'];
 
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
@@ -33,6 +35,7 @@ export interface PartitionHealthData {
   stateForKey: (dimensionKeys: string[]) => PartitionState;
 
   ranges: Range[];
+  isRangeDataInverted: boolean;
   rangesForSingleDimension: (
     dimensionIdx: number,
     otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
@@ -61,11 +64,12 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       ? data.assetNodeOrError.partitionKeysByDimension
       : [];
 
-  const materializedPartitions = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.materializedPartitions) || {
+  const assetPartitionStatuses = (data.assetNodeOrError.__typename === 'AssetNode' &&
+    data.assetNodeOrError.assetPartitionStatuses) || {
     __typename: 'DefaultPartitions',
     unmaterializedPartitions: [],
     materializedPartitions: [],
+    failedPartitions: [],
   };
 
   // The backend re-orders the dimensions only for the materializedPartitions ranges so that
@@ -75,11 +79,11 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   // everything in this function to match the range data.
   const isRangeDataInverted =
     __dims.length === 2 &&
-    materializedPartitions.__typename === 'MultiPartitions' &&
-    materializedPartitions.primaryDimensionName !== __dims[0].name;
+    assetPartitionStatuses.__typename === 'MultiPartitions' &&
+    assetPartitionStatuses.primaryDimensionName !== __dims[0].name;
 
   const dimensions = isRangeDataInverted ? [__dims[1], __dims[0]] : __dims;
-  const ranges = addKeyIndexesToMaterializedRanges(dimensions, materializedPartitions);
+  const ranges = addKeyIndexesToMaterializedRanges(dimensions, assetPartitionStatuses);
   const stateForKey = (dimensionKeys: string[]): PartitionState => {
     return stateForKeyWithRangeOrdering(
       isRangeDataInverted ? dimensionKeys.reverse() : dimensionKeys,
@@ -103,12 +107,12 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return PartitionState.MISSING;
     }
     if (!d0Range.subranges || dIndexes.length === 1) {
-      return PartitionState.SUCCESS; // 1D case
+      return d0Range.value; // 1D case
     }
     const d1Range = d0Range.subranges.find(
       (r) => r.start.idx <= dIndexes[1] && r.end.idx >= dIndexes[1],
     );
-    return d1Range ? PartitionState.SUCCESS : PartitionState.MISSING;
+    return d1Range ? d1Range.value : PartitionState.MISSING;
   };
 
   const rangesForSingleDimension = (
@@ -157,15 +161,15 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       if (d0KeyCount === 0) {
         return [];
       }
-      const transitions: {idx: number; delta: number}[] = [];
+      const transitions: Transition[] = [];
       const rangesClipped = otherDimensionSelectedRanges
         ? rangesClippedToSelection(ranges, otherDimensionSelectedRanges)
         : ranges;
       for (const range of rangesClipped) {
         const length = range.end.idx - range.start.idx + 1;
         for (const subrange of range.subranges || []) {
-          transitions.push({idx: subrange.start.idx, delta: length});
-          transitions.push({idx: subrange.end.idx + 1, delta: -length});
+          transitions.push({idx: subrange.start.idx, delta: length, state: subrange.value});
+          transitions.push({idx: subrange.end.idx + 1, delta: -length, state: subrange.value});
         }
       }
 
@@ -181,6 +185,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 
     ranges,
     rangesForSingleDimension,
+    isRangeDataInverted,
   };
 
   return result;
@@ -192,7 +197,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 export type Range = {
   start: {key: string; idx: number};
   end: {key: string; idx: number};
-  value: PartitionState.SUCCESS | PartitionState.SUCCESS_MISSING;
+  value: PartitionState.SUCCESS | PartitionState.SUCCESS_MISSING | PartitionState.FAILURE;
   subranges?: Range[];
 };
 
@@ -202,12 +207,16 @@ export type Range = {
  * of the first dimension based on second dimension materialized ranges.
  */
 export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: number) {
-  const keyCount = keyCountInRanges(ranges);
-  return keyCount === totalKeyCount
+  const successCount = keyCountInRanges(ranges.filter((r) => r.value === PartitionState.SUCCESS));
+  const failedCount = keyCountInRanges(ranges.filter((r) => r.value === PartitionState.FAILURE));
+
+  return successCount === totalKeyCount
     ? PartitionState.SUCCESS
-    : keyCount === 0
-    ? PartitionState.MISSING
-    : PartitionState.SUCCESS_MISSING;
+    : failedCount > 0
+    ? PartitionState.FAILURE
+    : successCount > 0
+    ? PartitionState.SUCCESS_MISSING
+    : PartitionState.MISSING;
 }
 
 /**
@@ -286,15 +295,20 @@ export function keyCountInSelection(selections: PartitionDimensionSelectionRange
 //
 export function keyCountByStateInSelection(
   assetHealth: PartitionHealthData,
-  selections: PartitionDimensionSelection[],
+  _selections: PartitionDimensionSelection[],
 ) {
-  if (selections.length === 0) {
+  if (_selections.length === 0) {
     warnUnlessTest('[keyCountByStateInSelection] A selection must be provided for dimension 0.');
     return {
       [PartitionState.MISSING]: 0,
       [PartitionState.SUCCESS]: 0,
+      [PartitionState.FAILURE]: 0,
     };
   }
+
+  // Make sure that the provided selections are in the same order as the /underlying/
+  // range data, which may be reversed if the time series is the second axis.
+  const selections = assetHealth?.isRangeDataInverted ? [..._selections].reverse() : _selections;
 
   const total = selections
     .map((s) => keyCountInSelection(s.selectedRanges))
@@ -304,22 +318,35 @@ export function keyCountByStateInSelection(
     assetHealth?.ranges || [],
     selections[0].selectedRanges,
   );
+
   const secondDimensionKeyCount =
     selections.length > 1 ? keyCountInSelection(selections[1].selectedRanges) : 1;
 
-  const success = rangesInSelection.reduce(
-    (a, b) =>
-      a +
-      (b.end.idx - b.start.idx + 1) *
-        (b.subranges
-          ? keyCountInRanges(rangesClippedToSelection(b.subranges, selections[1].selectedRanges))
-          : secondDimensionKeyCount),
-    0,
-  );
+  const sumWithStatus = (status: PartitionState) => {
+    return rangesInSelection.reduce(
+      (a, b) =>
+        a +
+        (b.end.idx - b.start.idx + 1) *
+          (b.subranges
+            ? keyCountInRanges(
+                rangesClippedToSelection(b.subranges, selections[1].selectedRanges).filter(
+                  (b) => b.value === status,
+                ),
+              )
+            : b.value === status
+            ? secondDimensionKeyCount
+            : 0),
+      0,
+    );
+  };
+
+  const failed = sumWithStatus(PartitionState.FAILURE);
+  const success = sumWithStatus(PartitionState.SUCCESS);
 
   return {
-    [PartitionState.MISSING]: total - success,
+    [PartitionState.MISSING]: total - success - failed,
     [PartitionState.SUCCESS]: success,
+    [PartitionState.FAILURE]: failed,
   };
 }
 
@@ -342,15 +369,29 @@ function addKeyIndexesToMaterializedRanges(
   }
   if (materializedPartitions.__typename === 'DefaultPartitions') {
     const dim = dimensions[0];
-    return rangesForKeys(materializedPartitions.materializedPartitions, dim.partitionKeys);
+    const spans = assembleIntoSpans(dim.partitionKeys, (key) =>
+      materializedPartitions.materializedPartitions.includes(key)
+        ? PartitionState.SUCCESS
+        : materializedPartitions.failedPartitions.includes(key)
+        ? PartitionState.FAILURE
+        : PartitionState.MISSING,
+    );
+    return spans.map(
+      (s) =>
+        ({
+          start: {key: dim.partitionKeys[s.startIdx], idx: s.startIdx},
+          end: {key: dim.partitionKeys[s.endIdx], idx: s.endIdx},
+          value: s.status,
+        } as Range),
+    );
   }
 
   for (const range of materializedPartitions.ranges) {
     if (range.__typename === 'TimePartitionRange') {
       result.push({
-        value: PartitionState.SUCCESS,
         start: {key: range.startKey, idx: dimensions[0].partitionKeys.indexOf(range.startKey)},
         end: {key: range.endKey, idx: dimensions[0].partitionKeys.indexOf(range.endKey)},
+        value: rangeStatusToState(range.status),
       });
     } else if (range.__typename === 'MaterializedPartitionRange2D') {
       if (dimensions.length !== 2) {
@@ -359,10 +400,12 @@ function addKeyIndexesToMaterializedRanges(
       }
       const [dim0, dim1] = dimensions;
       const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1], range.secondaryDim);
-      const subrangeIsAll = rangesCoverAll(subranges, dim1.partitionKeys.length);
-
+      const value = partitionStatusGivenRanges(subranges, dim1.partitionKeys.length);
+      if (value === PartitionState.MISSING) {
+        continue; // should not happen, just for Typescript correctness
+      }
       result.push({
-        value: subrangeIsAll ? PartitionState.SUCCESS : PartitionState.SUCCESS_MISSING,
+        value,
         subranges,
         start: {
           key: range.primaryDimStartKey,
@@ -419,34 +462,22 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
   return ranges;
 }
 
-// Returns true if the provided ranges span keyCount keys, indicating that they cover the entire key space.
-//
-function rangesCoverAll(ranges: Range[], keyCount: number) {
-  let last = 0;
-  for (const range of ranges) {
-    if (range.start.idx !== last) {
-      return false;
-    }
-    last = range.end.idx + 1;
-  }
-  return last === keyCount;
-}
-
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
 //
-export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
+export function usePartitionHealthData(
+  assetKeys: AssetKey[],
+  cacheKey = '',
+  cacheClearStrategy: 'immediate' | 'background' = 'background',
+) {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
   const assetKeyJSON = JSON.stringify(assetKeyJSONs);
   const missingKeyJSON = assetKeyJSONs.find(
-    (k) =>
-      !result.some(
-        (r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === assetLastMaterializedAt,
-      ),
+    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === cacheKey),
   );
 
   React.useMemo(() => {
@@ -465,17 +496,26 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
       const loaded = buildPartitionHealthData(data, loadKey);
       setResult((result) => [
         ...result.filter((r) => !isEqual(r.assetKey, loadKey)),
-        {...loaded, fetchedAt: assetLastMaterializedAt},
+        {...loaded, fetchedAt: cacheKey},
       ]);
     };
     run();
-  }, [client, missingKeyJSON, assetLastMaterializedAt]);
+  }, [client, missingKeyJSON, cacheKey]);
 
   return React.useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
-    return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
-  }, [assetKeyJSON, result]);
+    return result.filter(
+      (r) =>
+        assetKeyJSONs.includes(JSON.stringify(r.assetKey)) &&
+        (r.fetchedAt === cacheKey || cacheClearStrategy === 'background'),
+    );
+  }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
 }
+
+const rangeStatusToState = (rangeStatus: PartitionRangeStatus) =>
+  rangeStatus === PartitionRangeStatus.MATERIALIZED
+    ? PartitionState.SUCCESS
+    : PartitionState.FAILURE;
 
 export const PARTITION_HEALTH_QUERY = gql`
   query PartitionHealthQuery($assetKey: AssetKeyInput!) {
@@ -486,9 +526,10 @@ export const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        materializedPartitions {
+        assetPartitionStatuses {
           ... on TimePartitions {
             ranges {
+              status
               startTime
               endTime
               startKey
@@ -497,6 +538,7 @@ export const PARTITION_HEALTH_QUERY = gql`
           }
           ... on DefaultPartitions {
             materializedPartitions
+            failedPartitions
           }
           ... on MultiPartitions {
             primaryDimensionName
@@ -508,6 +550,7 @@ export const PARTITION_HEALTH_QUERY = gql`
               secondaryDim {
                 ... on TimePartitions {
                   ranges {
+                    status
                     startTime
                     endTime
                     startKey
@@ -516,6 +559,7 @@ export const PARTITION_HEALTH_QUERY = gql`
                 }
                 ... on DefaultPartitions {
                   materializedPartitions
+                  failedPartitions
                 }
               }
             }

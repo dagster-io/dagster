@@ -2,7 +2,6 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -17,7 +16,6 @@ import {
 import {showLaunchError} from './showLaunchError';
 
 export function useLaunchWithTelemetry() {
-  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const [launchPipelineExecution] = useMutation<
     LaunchPipelineExecutionMutation,
     LaunchPipelineExecutionMutationVariables
@@ -31,9 +29,10 @@ export function useLaunchWithTelemetry() {
         variables.executionParams.selector.jobName ||
         variables.executionParams.selector.pipelineName;
 
-      if (!canLaunchPipelineExecution.enabled || !jobName) {
+      if (!jobName) {
         return;
       }
+
       const metadata: {[key: string]: string | null | undefined} = {
         jobName,
         opSelection: variables.executionParams.selector.solidSelection ? 'provided' : undefined,
@@ -49,6 +48,6 @@ export function useLaunchWithTelemetry() {
 
       return result.data?.launchPipelineExecution;
     },
-    [canLaunchPipelineExecution, history, launchPipelineExecution, logTelemetry],
+    [history, launchPipelineExecution, logTelemetry],
   );
 }

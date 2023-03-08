@@ -14,7 +14,7 @@ def daily_schedule_definition_from_pipeline_preset(pipeline, preset_name, start_
 
     @daily_schedule(
         start_date=start_date,
-        pipeline_name=pipeline.name,
+        job_name=pipeline.name,
         solid_selection=preset.solid_selection,
         mode=preset.mode,
         tags_fn_for_date=lambda _: preset.tags,

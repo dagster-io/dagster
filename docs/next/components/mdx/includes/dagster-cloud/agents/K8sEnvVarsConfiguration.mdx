@@ -3,13 +3,18 @@ Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secret
 ```yaml
 # dagster_cloud.yaml
 
-container_context:
-  k8s:
-    env_vars:
-      - database_name        # value pulled from agent's environment
-      - database_username=hooli_testing
-    env_secrets:
-      - database_password
+locations:
+  - location_name: cloud-examples
+    image: dagster/dagster-cloud-examples:latest
+    code_source:
+      package_name: dagster_cloud_examples
+    container_context:
+      k8s:
+        env_vars:
+          - database_name        # value pulled from agent's environment
+          - database_username=hooli_testing
+        env_secrets:
+          - database_password
 ```
 
 <ReferenceTable>
