@@ -22,15 +22,25 @@ To complete the steps in this guide, you'll need:
 
 - A Dagster Cloud account using [Hybrid deployment](/dagster-cloud/deployment/hybrid)
 - An existing [Hybrid agent](/dagster-cloud/deployment/agents)
-- Editor, Admin, or Organization Admin permissions in Dagster Cloud
+- **Editor**, **Admin**, or **Organization Admin** permissions in Dagster Cloud
 
 ---
 
 ## Setting environment variables for a code location
 
 <Note>
-  <strong>Editor, Admin, or Organization Admin</strong> permissions are required
-  to modify and redeploy code locations in Dagster Cloud.
+  To set environment variables, you need{" "}
+  <a href="/dagster-cloud/account/managing-users">
+    one of the following user roles
+  </a>{" "}
+  in Dagster Cloud:
+  <ul>
+    <li>Organization Admin, or</li>
+    <li>
+      Editor or Admin. <strong>Note:</strong> Editors and Admins can only set
+      environment variables in full deployments where you're an Editor or Admin.
+    </li>
+  </ul>
 </Note>
 
 Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's `dagster_cloud.yaml` file. The `container_context` property in this file sets the variables in the agent's environment.
@@ -93,6 +103,16 @@ height={284}
 ---
 
 ## Setting environment variables for full deployments
+
+<Note>
+  If you're a Dagster Cloud{" "}
+  <a href="/dagster-cloud/account/managing-users">
+    <strong>Editor</strong> or <strong>Admin</strong>
+  </a>
+  , you can only set environment variables for full deployments where you're an <strong>
+    Editor
+  </strong> or <strong>Admin</strong>.
+</Note>
 
 Setting environment variables for a full deployment will make the variables available for all code locations in the full deployment. Using this approach will pull variable values from your user cluster, bypassing Dagster Cloud entirely.
 

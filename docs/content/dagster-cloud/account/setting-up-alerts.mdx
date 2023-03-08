@@ -6,7 +6,7 @@ title: "Setting up alerts in Dagster Cloud | Dagster Docs"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through configuring alerts in Dagster Cloud.
+In this guide, we'll walk you through configuring job and run alerts in Dagster Cloud.
 
 ---
 
@@ -19,9 +19,9 @@ Currently, alerts can be triggered by job run failure/success, schedule/sensor t
 - **Job run based alert policies** include a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
 - **Alert policies created for schedule/sensor tick failure will apply to all schedules/sensors**. However, you will only receive alerts when the schedule/sensor changes from a state of succeeding to failing, so subsequent failures will not trigger new alerts.
 - **Code location error alert policies** will trigger when a code location fails to load due to an error.
-- **Agent downtime alert policies** will trigger when a Hybrid agent stops heartbeating.
+- **Agent downtime alert policies** will trigger when a Hybrid agent stops heart beating.
 
-Alert policies are configured on a per deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
+Alert policies are configured on a per-deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
 
 Currently, Slack and email notifications are supported.
 
@@ -30,8 +30,15 @@ Currently, Slack and email notifications are supported.
 ## Managing alert policies in Dagster Cloud
 
 <Note>
-  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
-  required to manage alerts in Dagster Cloud.
+  <strong>Organization Admin</strong>, <strong>Admin</strong>, or{" "}
+  <strong>Editor</strong> permissions are required to manage alerts in Dagster
+  Cloud.
+  <br />
+  <br />
+  If you're a Dagster Cloud <a href="/dagster-cloud/account/managing-users">
+    <strong>Admin</strong>
+  </a> or <strong>Editor</strong>, you can only manage alerts in deployments where
+  you're an <strong>Admin</strong>.
 </Note>
 
 - [Creating alert policies](#creating-alert-policies)
@@ -56,33 +63,33 @@ Currently, Slack and email notifications are supported.
    - **Alert policy name** - Enter a name for the alert policy. For example, `slack_urgent_failure`
    - **Description** - Enter a description for the alert policy
 
-For run-based alerts, fill out these additional options:
+   For run-based alerts, fill out these additional options:
 
-- **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
-- **Events** - Select whether the alert should trigger on job success, failure, or both
-- **Notification service** - Select the service for the alert policy:
+   - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
+   - **Events** - Select whether the alert should trigger on job success, failure, or both
+   - **Notification service** - Select the service for the alert policy:
 
-  - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
+     - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
 
-    You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
+       You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
 
-    <Image
-    alt="Slack alert configured to alert the sales-notifications channel"
-    src="/images/dagster-cloud/alerts/cloud-slack-alert-creation.png"
-    width={1580}
-    height={511}
-    />
+       <Image
+       alt="Slack alert configured to alert the sales-notifications channel"
+       src="/images/dagster-cloud/alerts/cloud-slack-alert-creation.png"
+       width={1580}
+       height={511}
+       />
 
-  - **Email** - Email alerts can be sent to one or more recipients. For example:
+     - **Email** - Email alerts can be sent to one or more recipients. For example:
 
-    <Image
-    alt="Email alert configured to alert two recipients"
-    src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
-    width={1571}
-    height={514}
-    />
+       <Image
+       alt="Email alert configured to alert two recipients"
+       src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
+       width={1571}
+       height={514}
+       />
 
-6. When finished, click **Save policy**.
+7. When finished, click **Save policy**.
 
 ### Editing alert policies
 
