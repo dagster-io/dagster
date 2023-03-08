@@ -36,7 +36,7 @@ import {
 } from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
-const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 180px 80px';
+const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 210px 92px';
 
 interface ScheduleRowProps {
   name: string;
@@ -216,7 +216,9 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
             >
               <Button icon={<Icon name="expand_more" />} />
             </Popover>
-          ) : null}
+          ) : (
+            <span style={{color: Colors.Gray400}}>{'\u2013'}</span>
+          )}
         </RowCell>
       </RowGrid>
     </Row>
@@ -240,7 +242,7 @@ export const VirtualizedScheduleHeader = () => {
       <HeaderCell>Schedule</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>
-      <HeaderCell />
+      <HeaderCell>Actions</HeaderCell>
     </Box>
   );
 };
