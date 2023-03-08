@@ -29,13 +29,18 @@ To complete the steps in this guide, you'll need:
 ## Setting environment variables for a code location
 
 <Note>
-  If you're a Dagster Cloud{" "}
+  To set environment variables, you need{" "}
   <a href="/dagster-cloud/account/managing-users">
-    <strong>Editor</strong> or <strong>Admin</strong>
-  </a>
-  , you can only set environment variables for full deployments where you're an <strong>
-    Editor
-  </strong> or <strong>Admin</strong>.
+    one of the following user roles
+  </a>{" "}
+  in Dagster Cloud:
+  <ul>
+    <li>Organization Admin, or</li>
+    <li>
+      Editor or Admin. <strong>Note:</strong> Editors and Admins can only set
+      environment variables in full deployments where you're an Editor or Admin.
+    </li>
+  </ul>
 </Note>
 
 Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's `dagster_cloud.yaml` file. The `container_context` property in this file sets the variables in the agent's environment.
