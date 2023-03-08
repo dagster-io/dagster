@@ -11,7 +11,7 @@ from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntryUnion,
+    MetadataEntry,
     MetadataMapping,
     MetadataUserInput,
     normalize_metadata,
@@ -83,7 +83,7 @@ class SourceAsset(ResourceAddable):
     """
 
     key: PublicAttr[AssetKey]
-    metadata_entries: Sequence[MetadataEntryUnion]
+    metadata_entries: Sequence[MetadataEntry]
     io_manager_key: PublicAttr[Optional[str]]
     _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
     description: PublicAttr[Optional[str]]
@@ -101,7 +101,7 @@ class SourceAsset(ResourceAddable):
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntryUnion]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
@@ -149,8 +149,7 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def metadata(self) -> MetadataMapping:
-        # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.value for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY

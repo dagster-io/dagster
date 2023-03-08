@@ -30,7 +30,6 @@ from dagster._serdes.serdes import (
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
-    experimental_class_warning,
 )
 
 from .table import (  # re-exported
@@ -56,7 +55,6 @@ RawMetadataValue = Union[
 
 MetadataMapping: TypeAlias = Mapping[str, "MetadataValue"]
 MetadataUserInput: TypeAlias = Mapping[str, RawMetadataValue]
-MetadataEntryUnion: TypeAlias = Union["MetadataEntry", "PartitionMetadataEntry"]
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue)
 
@@ -77,17 +75,17 @@ def normalize_metadata(
 @overload
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence["MetadataEntryUnion"],
+    metadata_entries: Sequence["MetadataEntry"],
     allow_invalid: bool = False,
-) -> Sequence["MetadataEntryUnion"]:
+) -> Sequence["MetadataEntry"]:
     ...
 
 
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
-    metadata_entries: Sequence["MetadataEntryUnion"],
+    metadata_entries: Sequence["MetadataEntry"],
     allow_invalid: bool = False,
-) -> Sequence["MetadataEntryUnion"]:
+) -> Sequence["MetadataEntry"]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -104,9 +102,7 @@ def normalize_metadata(
             ),
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
-        return check.sequence_param(
-            metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
-        )
+        return check.sequence_param(metadata_entries, "metadata_entries", MetadataEntry)
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
@@ -174,7 +170,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue":
 def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "MetadataEntry":
     check.str_param(label, "label")
 
-    if isinstance(raw_value, (MetadataEntry, PartitionMetadataEntry)):
+    if isinstance(raw_value, MetadataEntry):
         raise DagsterInvalidMetadata(
             f"Expected a metadata value, found an instance of {raw_value.__class__.__name__}."
             " Consider instead using a MetadataValue wrapper for the value."
@@ -1025,28 +1021,3 @@ class MetadataEntry(
     def value(self):
         """Alias of `entry_data`."""
         return self.entry_data
-
-
-class PartitionMetadataEntry(
-    NamedTuple(
-        "_PartitionMetadataEntry",
-        [
-            ("partition", PublicAttr[str]),
-            ("entry", PublicAttr["MetadataEntry"]),
-        ],
-    )
-):
-    """Event containing an :py:class:`MetadataEntry` and the name of a partition that the entry
-    applies to.
-
-    This can be yielded or returned in place of MetadataEntries for cases where you are trying
-    to associate metadata more precisely.
-    """
-
-    def __new__(cls, partition: str, entry: MetadataEntry):
-        experimental_class_warning("PartitionMetadataEntry")
-        return super(PartitionMetadataEntry, cls).__new__(
-            cls,
-            check.str_param(partition, "partition"),
-            check.inst_param(entry, "entry", MetadataEntry),
-        )
