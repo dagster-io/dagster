@@ -41,6 +41,7 @@ from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunctio
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
     MetadataEntry,
+    MetadataEntryUnion,
     PartitionMetadataEntry,
     normalize_metadata,
 )
@@ -460,7 +461,7 @@ def _get_output_asset_materializations(
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
+    io_manager_metadata_entries: Sequence[MetadataEntryUnion],
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
@@ -499,7 +500,7 @@ def _get_output_asset_materializations(
     if asset_partitions:
         metadata_mapping: Dict[
             str,
-            List[Union[MetadataEntry, PartitionMetadataEntry]],
+            List[MetadataEntryUnion],
         ] = {partition: [] for partition in asset_partitions}
 
         for entry in all_metadata:
@@ -613,7 +614,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata_entries: List[Union[PartitionMetadataEntry, MetadataEntry]] = []
+    manager_metadata_entries: List[MetadataEntryUnion] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
