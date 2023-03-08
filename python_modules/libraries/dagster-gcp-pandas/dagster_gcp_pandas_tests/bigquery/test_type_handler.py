@@ -111,7 +111,6 @@ def test_io_manager_with_timestamp_conversion():
 
         @op
         def read_time_df(df: pd.DataFrame):
-            print(df)
             assert set(df.columns) == {"foo", "date"}
             assert (df["date"] == time_df["date"]).all()
 
