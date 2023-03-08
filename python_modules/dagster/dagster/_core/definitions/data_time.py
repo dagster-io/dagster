@@ -378,7 +378,7 @@ class CachingDataTimeResolver:
         in_progress_times: Dict[AssetKey, datetime.datetime] = {}
 
         for run_id in self._get_in_progress_run_ids(current_time=current_time):
-            if not self._instance_queryer.is_asset_in_run(run_id=run_id, asset=asset_key):
+            if not self._instance_queryer.is_asset_planned_for_run(run_id=run_id, asset=asset_key):
                 continue
 
             for key, time in self._get_in_progress_data_times_for_key_in_run(
