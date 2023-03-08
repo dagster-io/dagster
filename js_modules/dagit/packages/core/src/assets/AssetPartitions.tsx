@@ -38,7 +38,7 @@ interface Props {
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
-  assetLastMaterializedAt: string | undefined;
+  dataRefreshHint: string | undefined;
 
   repository?: RepositorySelector;
   opName?: string | null;
@@ -49,12 +49,12 @@ const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS, Partit
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionDimensions,
-  assetLastMaterializedAt,
   params,
   setParams,
   liveData,
+  dataRefreshHint,
 }) => {
-  const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
+  const [assetHealth] = usePartitionHealthData([assetKey], dataRefreshHint);
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,

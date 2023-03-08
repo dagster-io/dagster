@@ -97,11 +97,15 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // The "live" data is preferable and more current, but only available for SDAs. Fallback
   // to the materialization timestamp we loaded from assetOrError if live data is not available.
-  const lastMaterializedAt = (
-    liveDataByNode[toGraphId(assetKey)]?.lastMaterialization || lastMaterialization
-  )?.timestamp;
+  const liveDataForAsset: LiveDataForNode | undefined = liveDataByNode[toGraphId(assetKey)];
+  const lastMaterializedAt = (liveDataForAsset?.lastMaterialization || lastMaterialization)
+    ?.timestamp;
 
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
+
+  // Some tabs make expensive queries that should be refreshed after materializations or failures.
+  // We build a hint string from the live summary info and refresh the views when the hint changes.
+  const dataRefreshHint = `${lastMaterializedAt},${liveDataForAsset?.runWhichFailedToMaterialize?.id}`;
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
@@ -155,7 +159,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tags={
           <AssetViewPageHeaderTags
             definition={definition}
-            liveData={liveDataByNode[toGraphId(assetKey)]}
+            liveData={liveDataForAsset}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
           />
         }
@@ -232,21 +236,21 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             <AssetPartitions
               assetKey={assetKey}
               assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
-              assetLastMaterializedAt={lastMaterializedAt}
+              dataRefreshHint={dataRefreshHint}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
               setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+              liveData={liveDataForAsset}
             />
           ) : selectedTab === 'events' ? (
             <AssetEvents
               assetKey={assetKey}
               assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              assetLastMaterializedAt={lastMaterializedAt}
+              dataRefreshHint={dataRefreshHint}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
               setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+              liveData={liveDataForAsset}
             />
           ) : selectedTab === 'plots' ? (
             <AssetPlots
