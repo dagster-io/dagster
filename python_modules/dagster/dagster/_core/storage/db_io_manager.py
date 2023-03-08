@@ -223,11 +223,9 @@ class DbIOManager(IOManager):
                                 " column of the database contains data for the"
                                 f" {part.name} partition."
                             )
-
                         partition_dimensions.append(
                             TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str),
-                                partitions=partitions,
+                                partition_expr=cast(str, partition_expr_str), partitions=partitions
                             )
                         )
                 elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
