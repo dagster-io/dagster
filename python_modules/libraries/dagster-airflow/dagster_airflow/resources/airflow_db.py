@@ -46,7 +46,6 @@ class AirflowDatabase:
         check.str_param(execution_date_str, "execution_date_str")
         try:
             execution_date = parse(execution_date_str)
-            execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
         except ValueError:
             raise DagsterInvariantViolationError(
                 'Could not parse execution_date "{execution_date_str}". Please use datetime'
@@ -70,7 +69,6 @@ class AirflowDatabase:
         if not execution_date_str:
             raise DagsterInvariantViolationError("dagster/partition is not set")
         execution_date = parse(execution_date_str)
-        execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
         return execution_date
 
     def get_dagrun(self, dag: DAG) -> DagRun:

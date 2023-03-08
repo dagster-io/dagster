@@ -3,6 +3,7 @@ import importlib
 import airflow
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
+from airflow.utils.state import DagRunState
 from dagster import (
     DependencyDefinition,
     In,
@@ -120,5 +121,11 @@ def make_dagster_op_from_airflow_task(
             ti = dagrun.get_task_instance(task_id=task.task_id)
             ti.task = dag.get_task(task_id=task.task_id)
             ti.run(ignore_ti_state=True)
+            if ti.state != DagRunState.SUCCESS:
+                raise Exception(
+                    "Airflow task failed: {task_id}, view compute logs for more details".format(
+                        task_id=task.task_id
+                    )
+                )
 
     return _op
