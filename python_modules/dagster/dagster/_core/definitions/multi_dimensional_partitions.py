@@ -33,6 +33,7 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -127,7 +128,41 @@ class PartitionDimensionDefinition(
         )
 
 
-ALLOWED_PARTITION_DIMENSION_TYPES = (StaticPartitionsDefinition, TimeWindowPartitionsDefinition)
+ALLOWED_PARTITION_DIMENSION_TYPES = (
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    DynamicPartitionsDefinition,
+)
+
+
+def _check_valid_partitions_dimensions(
+    partitions_dimensions: Mapping[str, PartitionsDefinition]
+) -> None:
+    for dim_name, partitions_def in partitions_dimensions.items():
+        if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):
+            raise DagsterInvalidDefinitionError(
+                f"Invalid partitions definition type {type(partitions_def)}. "
+                "Only the following partitions definition types are supported: "
+                f"{ALLOWED_PARTITION_DIMENSION_TYPES}."
+            )
+        if isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name is None:
+            raise DagsterInvalidDefinitionError(
+                "DynamicPartitionsDefinition must have a name to be used in a"
+                " MultiPartitionsDefinition."
+            )
+
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            if any(
+                [
+                    INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
+                    for key in partitions_def.get_partition_keys()
+                ]
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid character in partition key for dimension {dim_name}. "
+                    "A multi-partitions definition cannot contain partition keys with "
+                    "the following characters: |, [, ], ,"
+                )
 
 
 @experimental
@@ -170,26 +205,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
         )
 
-        for dim_name, partitions_def in partitions_defs.items():
-            if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):
-                raise DagsterInvalidDefinitionError(
-                    f"Invalid partitions definition for dimension {dim_name}. "
-                    "A multi-partitions definition can only contain partitions definitions of types"
-                    f" {ALLOWED_PARTITION_DIMENSION_TYPES}."
-                )
-
-            if isinstance(partitions_def, StaticPartitionsDefinition):
-                if any(
-                    [
-                        INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
-                        for key in partitions_def.get_partition_keys()
-                    ]
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid character in partition key for dimension {dim_name}. "
-                        "A multi-partitions definition cannot contain partition keys with "
-                        "the following characters: |, [, ], ,"
-                    )
+        _check_valid_partitions_dimensions(partitions_defs)
 
         self._partitions_defs: List[PartitionDimensionDefinition] = sorted(
             [
