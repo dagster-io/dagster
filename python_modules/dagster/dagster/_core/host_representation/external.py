@@ -582,6 +582,10 @@ class ExternalResource:
         return self._external_resource_data.nested_resources
 
     @property
+    def resource_type(self) -> str:
+        return self._external_resource_data.resource_type
+
+    @property
     def is_top_level(self) -> bool:
         return self._external_resource_data.is_top_level
 
