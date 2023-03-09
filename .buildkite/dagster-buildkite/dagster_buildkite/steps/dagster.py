@@ -86,7 +86,6 @@ def build_check_changelog_steps() -> List[CommandStep]:
         CommandStepBuilder(":memo: changelog")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(f"python scripts/check_changelog.py {release_number}")
-        .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
         .build()
     ]
 
