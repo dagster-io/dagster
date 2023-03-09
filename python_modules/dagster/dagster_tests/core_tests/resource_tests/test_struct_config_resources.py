@@ -1330,3 +1330,21 @@ def test_extending_resource_nesting() -> None:
     )
 
     assert executed["yes"]
+
+
+def test_description() -> None:
+    class MyResource(ConfigurableResource):
+        """Hello world"""
+
+        a_str: str
+
+    assert MyResource(a_str="foo").description == "Hello world"
+
+
+def test_with_description() -> None:
+    class MyResource(ConfigurableResource):
+        """Hello world"""
+
+        a_str: str
+
+    assert MyResource(a_str="foo").with_description("Goodbye").description == "Goodbye"

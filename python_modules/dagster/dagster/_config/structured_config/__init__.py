@@ -400,7 +400,7 @@ class ConfigurableResource(
 
     """
 
-    def __init__(self, **data: Any):
+    def __init__(self, _description: Optional[str] = None, **data: Any):
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         schema = infer_schema_from_config_class(
@@ -423,7 +423,7 @@ class ConfigurableResource(
             self,
             resource_fn=self.initialize_and_run,
             config_schema=curried_schema,
-            description=self.__doc__,
+            description=_description or self.__doc__,
         )
         self._resolved_config_dict = resolved_config_dict
         self._schema = schema
@@ -445,6 +445,12 @@ class ConfigurableResource(
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
         return self.__class__(**{**self._as_config_dict(), **values})
+
+    def with_description(self, description: str) -> "ConfigurableResource[TResValue]":
+        """
+        Returns a new copy of this resource definition with the given description.
+        """
+        return self.__class__(**{**self._as_config_dict()}, _description=description)
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
         """
