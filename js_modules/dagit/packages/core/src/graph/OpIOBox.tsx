@@ -72,7 +72,9 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
         <>
           <div className="circle" />
           {name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
-          {type.displayName && <div className="type">{type.displayName}</div>}
+          {type.displayName && type.displayName !== 'Nothing' && (
+            <div className="type">{type.displayName}</div>
+          )}
         </>
       )}
       {layoutInfo.collapsed.length > 0 && (
@@ -204,6 +206,7 @@ export function metadataForIO(
       jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
+    console.log({title});
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_OUT});
   }
 

@@ -131,6 +131,13 @@ def asset_groups_repository():
 
 
 @repository
+def nothing_repository():
+    from .nothing_assets import nothing_job
+
+    return [nothing_job]
+
+
+@repository
 def partitioned_assets_repository():
     from . import partitioned_assets
 
