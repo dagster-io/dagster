@@ -10,6 +10,7 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
 )
 
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -84,6 +85,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         description="List of parent resources for the given resource",
     )
     resourceType = graphene.NonNull(graphene.String)
+    assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
 
     class Meta:
         name = "ResourceDetails"
@@ -109,6 +111,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._nested_resources = external_resource.nested_resources
         self._parent_resources = external_resource.parent_resources
         self.resourceType = external_resource.resource_type
+        self._asset_keys_using = external_resource.asset_keys_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -164,6 +167,9 @@ class GrapheneResourceDetails(graphene.ObjectType):
             )
             for name, attribute in self._parent_resources.items()
         ]
+
+    def resolve_assetKeysUsing(self, _graphene_info):
+        return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):
