@@ -14,17 +14,18 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.event_log import EventLogRecord
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.pipeline_run import (
     DagsterRun,
     RunRecord,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.cached_method import cached_method
+
+if TYPE_CHECKING:
+    from dagster._core.storage.event_log import EventLogRecord
+    from dagster._core.storage.event_log.base import AssetRecord
 
 
 class CachingInstanceQueryer(DynamicPartitionsStore):
@@ -121,7 +122,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     @cached_method
     def _get_latest_materialization_record(
         self, *, asset_partition: AssetKeyPartitionKey, before_cursor: Optional[int] = None
-    ) -> Optional[EventLogRecord]:
+    ) -> Optional["EventLogRecord"]:
+        from dagster._core.event_api import EventRecordsFilter
+
         records = self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -141,7 +144,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset: Union[AssetKey, AssetKeyPartitionKey],
         after_cursor: Optional[int] = None,
         before_cursor: Optional[int] = None,
-    ) -> Optional[EventLogRecord]:
+    ) -> Optional["EventLogRecord"]:
         """Returns the latest materialization record for the given asset partition between the
         specified cursors.
 
@@ -207,6 +210,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         after_cursor: Optional[int] = None,
         tags: Optional[Mapping[str, str]] = None,
     ) -> Iterable["EventLogRecord"]:
+        from dagster._core.event_api import EventRecordsFilter
+
         return self.instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -360,6 +365,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         Args:
             event_type (DagsterEventType): The event type to search for.
         """
+        from dagster._core.event_api import EventRecordsFilter
+
         records = list(
             self.instance.get_event_records(
                 event_records_filter=EventRecordsFilter(event_type=event_type), limit=1
