@@ -52,9 +52,11 @@ export const DimensionRangeWizard: React.FC<{
     }
     didSetInitialPartition.current = true;
     const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
-    const partition = query.partition as string;
-    if (partition && partitionKeys.includes(partition)) {
-      setSelected([partition]);
+    const partitions = ((query.partition as string) || '').split('|') as string[];
+    for (const partition of partitions) {
+      if (partition && partitionKeys.includes(partition)) {
+        setSelected([partition]);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partitionKeys]);

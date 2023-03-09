@@ -25,6 +25,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {useStateWithUpdateCallback} from '../hooks/useStateUpdateCallback';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -165,13 +166,15 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
 
-  const [selections, setSelections] = usePartitionDimensionSelections({
+  const [selections, _setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: displayedHealth,
     skipPartitionKeyValidation:
       displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
   });
+
+  const [_, setSelections] = useStateWithUpdateCallback(selections, _setSelections);
 
   const keysInSelection = React.useMemo(
     () =>
@@ -440,7 +443,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
-                setSelections(
+                setSelections((selections) =>
                   selections.map((r) =>
                     r.dimension === range.dimension ? {...r, selectedKeys} : r,
                   ),
