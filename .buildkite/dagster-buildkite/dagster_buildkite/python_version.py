@@ -18,7 +18,7 @@ class AvailablePythonVersion(str, Enum):
 
     @classmethod
     def get_default(cls) -> "AvailablePythonVersion":
-        return cls["V3_9"]
+        return cls["V3_10"]
 
     @classmethod
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
