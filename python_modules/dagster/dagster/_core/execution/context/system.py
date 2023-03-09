@@ -429,7 +429,7 @@ class PlanExecutionContext(IPlanContext):
             return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
 
     @property
-    def partition_time_window(self) -> str:
+    def partition_time_window(self) -> TimeWindow:
         partitions_def = self.partitions_def
 
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -440,8 +440,7 @@ class PlanExecutionContext(IPlanContext):
                 ),
             )
 
-        # mypy thinks partitions_def is <nothing> here because ????
-        return partitions_def.time_window_for_partition_key(self.partition_key)  # type: ignore
+        return partitions_def.time_window_for_partition_key(self.partition_key)
 
     @property
     def has_partition_key(self) -> bool:
