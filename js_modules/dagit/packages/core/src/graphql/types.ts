@@ -207,6 +207,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
+  latestRunForPartition: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -241,6 +242,10 @@ export type AssetNodeAssetObservationsArgs = {
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type AssetNodeLatestRunForPartitionArgs = {
+  partition: Scalars['String'];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
