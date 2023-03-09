@@ -1,8 +1,16 @@
 import React from 'react';
 
 /**
- * Have a custom setter while supporting updating state based on previous state for your callers.
- * Without the boilerplate!
+ * Allows you to easily support updating state based on previous state.
+ *
+ * usage:
+ * function useMyCustomStateHook() {
+ *   const [state, setState] = useState(initialState);
+ *   const update = (nextState: T) => {
+ *     setState(doSomeFancyCalculation(nextState));
+ *   };
+ *   return [state, useSetStateUpdateCallback(state, update)];
+ * }
  */
 export function useSetStateUpdateCallback<T>(
   initialCurrentState: T,
