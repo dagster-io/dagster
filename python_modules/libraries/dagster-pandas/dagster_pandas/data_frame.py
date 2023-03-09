@@ -1,3 +1,4 @@
+from typing import Union
 import pandas as pd
 from dagster import (
     DagsterInvariantViolationError,
@@ -9,6 +10,7 @@ from dagster import (
     _check as check,
     dagster_type_loader,
 )
+
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector
@@ -118,6 +120,31 @@ def create_dagster_pandas_dataframe_description(description, columns):
             _construct_constraint_list(column.constraints),
         )
     return buildme
+
+
+def create_dagster_pandas_dataframe_metadata(
+    pandas_df: pd.DataFrame,
+) -> Union[TypeCheck, MetadataValue]:
+    """
+    This function takes a pandas DataFrame and returns its metadata as a Dagster TableSchema.
+
+    Args:
+        pandas_df (pandas.DataFrame): A pandas DataFrame for which to create metadata.
+
+    Returns:
+        Union[TypeCheck, MetadataValue]: If the input is not a pandas DataFrame, it returns a TypeCheck object
+        with success=False. Otherwise, it returns a MetadataValue object with the TableSchema for the DataFrame.
+    """
+    if not isinstance(pandas_df, pd.DataFrame):
+        return TypeCheck(success=False)
+    return MetadataValue.table_schema(
+        TableSchema(
+            columns=[
+                TableColumn(name=str(name), type=str(dtype))
+                for name, dtype in pandas_df.dtypes.items()
+            ]
+        )
+    )
 
 
 def create_dagster_pandas_dataframe_type(
