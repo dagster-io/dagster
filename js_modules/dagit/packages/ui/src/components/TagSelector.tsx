@@ -9,7 +9,7 @@ import {Icon} from './Icon';
 import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
-import {TextInputStyles} from './TextInput';
+import {TextInput, TextInputStyles} from './TextInput';
 import {useViewport} from './useViewport';
 
 type TagProps = {
@@ -21,6 +21,7 @@ type DropdownItemProps = {
 };
 type DropdownProps = {
   width: string;
+  allTags: string[];
 };
 type Props = {
   placeholder?: React.ReactNode;
@@ -81,6 +82,7 @@ export const TagSelector = ({
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
+
   const dropdown = React.useMemo(() => {
     const dropdownContent = (
       <Box
@@ -113,7 +115,7 @@ export const TagSelector = ({
       </Box>
     );
     if (renderDropdown) {
-      return renderDropdown(dropdownContent, {width: viewport.width + 'px'});
+      return renderDropdown(dropdownContent, {width: viewport.width + 'px', allTags});
     }
     return <Menu style={{width: viewport.width + 'px'}}>{dropdownContent}</Menu>;
   }, [
@@ -199,3 +201,56 @@ const TagsContainer = styled(Box)`
   scrollbar-width: none;
   -ms-overflow-style: none;
 `;
+
+export const TagSelectorWithSearch = (
+  props: Props & {
+    searchPlaceholder?: string;
+  },
+) => {
+  const [search, setSearch] = React.useState('');
+  const {
+    allTags,
+    selectedTags,
+    setSelectedTags,
+    rowHeight,
+    renderDropdown,
+    searchPlaceholder,
+    ...rest
+  } = props;
+  const filteredTags = React.useMemo(() => {
+    if (search.trim() === '') {
+      return allTags;
+    }
+    return allTags.filter((tag) => tag.toLowerCase().includes(search.toLowerCase()));
+  }, [allTags, search]);
+  return (
+    <TagSelector
+      {...rest}
+      allTags={filteredTags}
+      selectedTags={selectedTags}
+      setSelectedTags={setSelectedTags}
+      dropdownStyles={{width: 'auto'}}
+      renderDropdown={(dropdownContent, dropdownProps) => {
+        return (
+          <Menu style={{width: 'auto'}}>
+            <Box flex={{direction: 'column'}}>
+              <Box flex={{direction: 'column', grow: 1}} padding={{horizontal: 8}}>
+                <TextInput
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={searchPlaceholder || 'Search'}
+                  ref={(input) => {
+                    if (input) {
+                      input.focus();
+                    }
+                  }}
+                />
+              </Box>
+              {renderDropdown ? renderDropdown(dropdownContent, dropdownProps) : dropdownContent}
+            </Box>
+          </Menu>
+        );
+      }}
+    />
+  );
+};
