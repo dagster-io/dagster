@@ -96,6 +96,18 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
     [history],
   );
 
+  const shortcutFilter = React.useCallback((e: KeyboardEvent) => {
+    if (e.altKey || e.shiftKey) {
+      return false;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      return e.code === 'KeyK';
+    }
+
+    return e.code === 'Slash';
+  }, []);
+
   const highlightedResult = renderedResults[highlight] || null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -137,17 +149,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
 
   return (
     <>
-      <ShortcutHandler
-        onShortcut={openSearch}
-        shortcutLabel="/"
-        shortcutFilter={(e) =>
-          (e.key === '/' || (e.code === 'KeyK' && e.metaKey)) &&
-          !(e.key === '/' && e.metaKey) &&
-          !e.altKey &&
-          !e.shiftKey &&
-          !e.ctrlKey
-        }
-      >
+      <ShortcutHandler onShortcut={openSearch} shortcutLabel="/" shortcutFilter={shortcutFilter}>
         <SearchTrigger onClick={openSearch}>
           <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
             <Box flex={{alignItems: 'center', gap: 8}}>

@@ -580,6 +580,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 onSelectPreset={onSelectPreset}
                 onSelectPartition={onSelectPartition}
                 repoAddress={repoAddress}
+                assetSelection={currentSession.assetSelection}
               />
               <SessionSettingsSpacer />
               {launchpadType === 'asset' ? (

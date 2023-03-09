@@ -71,16 +71,14 @@ export const CreatePartitionDialog = ({
   close,
   repoAddress,
   refetch,
-  selected,
-  setSelected,
+  onCreated,
 }: {
   isOpen: boolean;
   partitionDefinitionName?: string | null;
   close: () => void;
   repoAddress: RepoAddress;
   refetch?: () => Promise<void>;
-  selected: string[];
-  setSelected: (selected: string[]) => void;
+  onCreated: (partitionName: string) => void;
 }) => {
   const [partitionName, setPartitionName] = React.useState('');
 
@@ -156,7 +154,7 @@ export const CreatePartitionDialog = ({
       }
       case 'AddDynamicPartitionSuccess': {
         refetch?.();
-        setSelected([...selected, partitionName]);
+        onCreated(partitionName);
         close();
         invalidatePartitions();
         break;

@@ -43,5 +43,13 @@ setup(
         "scipy",
         "scikit-learn",
     ],
-    extras_require={"dev": ["dagit", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
+    extras_require={
+        "dev": ["dagit", "pytest"],
+        "tests": [
+            "mypy",
+            "pylint",
+            "pytest",
+            "snowflake-connector-python[secure-local-storage]==2.8.1",  # magic pin to force deps to resolve well
+        ],
+    },
 )
