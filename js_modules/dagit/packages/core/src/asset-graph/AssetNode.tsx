@@ -417,7 +417,6 @@ export const AssetNodeMinimal: React.FC<{
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusRow({definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
-  withMiddleTruncation(displayName, {maxLength: 14});
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
