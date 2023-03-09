@@ -2,7 +2,7 @@
 
 This checklist outlines some of the most common issues that come up during documentation pull request reviews.
 
-Before submitting a PR for review, please check that your changes follow the guidelines listed here. Please ping @erinkcochran87 with questions.
+Before submitting a PR for review, please check that your changes follow the guidelines listed here. Please ping Erin (@erinkcochran87) with questions.
 
 ---
 
@@ -11,8 +11,14 @@ Before submitting a PR for review, please check that your changes follow the gui
 - Pages should only have one H1 heading, ex: `# Some heading`
 - Use sentence case
 - Shouldn’t include any extra formatting, including backticks, bold, components/tags, and emojis:
-    - **Could-be-better:** ``dagster-dbt` tutorial`
-    - **Better!:** `dagster-dbt tutorial`
+    - **Could-be-better:**
+      ```markdown
+      # `dagster-dbt` tutorial
+      ```
+    - **Better!:**
+      ```markdown
+      # dagster-dbt tutorial
+      ```
 - Level two headings (`## Some heading`) should be preceded by a horizontal rule:
 
    ```markdown
@@ -36,7 +42,7 @@ Before submitting a PR for review, please check that your changes follow the gui
     - **Names of libraries and packages**, ex: “The `dagster-dbt` library”
 - Code examples should:
     - Live in `.py` files and not inline
-    - Be enclosed in fenced backticks **and**include a language. This ensures syntax highlighting/CSS is correctly applied.
+    - Be enclosed in fenced backticks **and** include a language. This ensures syntax highlighting/CSS is correctly applied.
         - **Could-be-better:**
             
             ````markdown
@@ -63,9 +69,12 @@ Before submitting a PR for review, please check that your changes follow the gui
 
 ## Miscellaneous
 
-- The first time a service/app/etc is mentioned, the platform/provider must be included.
+- The first time a service/app/etc is mentioned, the company/platform/etc. must be included.
     - **Could-be-better:** “The BigQuery dataset”
     - **Better!:** “The Google BigQuery dataset”
+- Names of companies, software, apps, etc. should be formatted exactly as the company/software/app/etc. uses them. The exception is if the name is being used as a literal value.
+    - **Could-be-better:** "Your airflow instance..."
+    - **Better!:** "Your Airflow instance..."
 
 ---
 
