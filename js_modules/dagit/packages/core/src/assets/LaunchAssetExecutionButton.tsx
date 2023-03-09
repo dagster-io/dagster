@@ -775,33 +775,3 @@ const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
     }
   }
 `;
-
-const MaterialzeButtonOptions = ({
-  openWithLaunchpad,
-  intent,
-}: {
-  openWithLaunchpad: (e: React.MouseEvent<any>) => void;
-  intent?: 'primary' | 'none';
-}) => {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <Popover
-      isOpen={open}
-      onClose={() => {
-        setOpen(false);
-      }}
-      position="bottom-right"
-      content={
-        <Menu>
-          <MenuItem text="Open in launchpad" onClick={openWithLaunchpad} />
-        </Menu>
-      }
-    >
-      <Button
-        icon={<Icon name="arrow_drop_down" />}
-        onClick={() => setOpen(!open)}
-        intent={intent || 'primary'}
-      />
-    </Popover>
-  );
-};
