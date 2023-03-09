@@ -1,4 +1,5 @@
 import React from 'react';
+import {List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
@@ -31,6 +32,8 @@ type Props = {
   renderDropdown?: (dropdown: React.ReactNode, dropdownProps: DropdownProps) => React.ReactNode;
   renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactNode;
   dropdownStyles?: React.CSSProperties;
+  rowWidth?: number;
+  rowHeight?: number;
 };
 
 const defaultRenderTag = (tag: string, tagProps: TagProps) => {
@@ -62,6 +65,8 @@ const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemP
   );
 };
 
+const MENU_ITEM_HEIGHT = 32;
+
 export const TagSelector = ({
   allTags,
   placeholder,
@@ -72,6 +77,7 @@ export const TagSelector = ({
   renderDropdown,
   dropdownStyles,
   renderTagList,
+  rowHeight = MENU_ITEM_HEIGHT,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
@@ -84,18 +90,26 @@ export const TagSelector = ({
           ...dropdownStyles,
         }}
       >
-        {allTags.map((tag) => {
-          const selected = selectedTags.includes(tag);
-          const toggle = () => {
-            setSelectedTags(
-              selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
-            );
-          };
-          if (renderDropdownItem) {
-            return <div key={tag}>{renderDropdownItem(tag, {toggle, selected})}</div>;
-          }
-          return defaultRenderDropdownItem(tag, {toggle, selected});
-        })}
+        <List
+          style={{outline: 'none', marginRight: -5, paddingRight: 5}}
+          rowCount={allTags.length}
+          rowHeight={rowHeight}
+          rowRenderer={(a) => {
+            const tag = allTags[a.index]!;
+            const selected = selectedTags.includes(tag);
+            const toggle = () => {
+              setSelectedTags(
+                selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
+              );
+            };
+            if (renderDropdownItem) {
+              return <div key={tag}>{renderDropdownItem(tag, {toggle, selected})}</div>;
+            }
+            return defaultRenderDropdownItem(tag, {toggle, selected});
+          }}
+          width={viewport.width}
+          height={Math.min(allTags.length * rowHeight, rowHeight * 7.5)}
+        />
       </Box>
     );
     if (renderDropdown) {
@@ -107,6 +121,7 @@ export const TagSelector = ({
     dropdownStyles,
     renderDropdown,
     renderDropdownItem,
+    rowHeight,
     selectedTags,
     setSelectedTags,
     viewport.width,
