@@ -79,6 +79,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
         non_null_list(GrapheneNestedResourceEntry),
         description="List of nested resources for the given resource",
     )
+    parentResources = graphene.Field(
+        non_null_list(GrapheneNestedResourceEntry),
+        description="List of parent resources for the given resource",
+    )
     resourceType = graphene.NonNull(graphene.String)
 
     class Meta:
@@ -103,6 +107,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._config_schema_snap = external_resource.config_schema_snap
         self.isTopLevel = external_resource.is_top_level
         self._nested_resources = external_resource.nested_resources
+        self._parent_resources = external_resource.parent_resources
         self.resourceType = external_resource.resource_type
 
     def resolve_configFields(self, _graphene_info):
@@ -139,6 +144,24 @@ class GrapheneResourceDetails(graphene.ObjectType):
                 else None,
             )
             for k, v in self._nested_resources.items()
+        ]
+
+    def resolve_parentResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+        from dagster_graphql.implementation.fetch_resources import get_resource_or_error
+
+        return [
+            GrapheneNestedResourceEntry(
+                name=attribute,
+                resource=get_resource_or_error(
+                    graphene_info,
+                    ResourceSelector(
+                        location_name=self._location_name,
+                        repository_name=self._repository_name,
+                        resource_name=name,
+                    ),
+                ),
+            )
+            for name, attribute in self._parent_resources.items()
         ]
 
 
