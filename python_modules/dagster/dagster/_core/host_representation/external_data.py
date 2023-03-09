@@ -32,7 +32,11 @@ from dagster._config.snap import (
     ConfigSchemaSnapshot,
     snap_from_config_type,
 )
-from dagster._config.structured_config import ConfigurableResource, ResourceWithKeyMapping
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    PartialResource,
+    ResourceWithKeyMapping,
+)
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
@@ -1363,8 +1367,8 @@ def _get_nested_resources(
             k: resource_key_mapping[id(nested_resource)]
             for k, nested_resource in resource_def.nested_resources.items()
         }
-        if isinstance(resource_def, ConfigurableResource)
-        else {}
+        if isinstance(resource_def, (ConfigurableResource, PartialResource))
+        else {k: k for k in resource_def.required_resource_keys}
     )
 
 

@@ -571,6 +571,12 @@ class PartialResource(
             description=resource_cls.__doc__,
         )
 
+        self._nested_resources = {k: v for k, v in resource_pointers.items()}
+
+    @property
+    def nested_resources(self) -> Mapping[str, ResourceDefinition]:
+        return self._nested_resources
+
 
 ResourceOrPartial: TypeAlias = Union[ConfigurableResource[TResValue], PartialResource[TResValue]]
 ResourceOrPartialOrValue: TypeAlias = Union[
