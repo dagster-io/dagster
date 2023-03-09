@@ -23,8 +23,9 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {RepositorySelector} from '../graphql/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -57,6 +58,7 @@ interface ConfigEditorConfigPickerProps {
     partitionName: string,
   ) => Promise<void>;
   repoAddress: RepoAddress;
+  assetSelection?: IExecutionSession['assetSelection'];
 }
 
 export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> = (props) => {
@@ -68,6 +70,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
     onSelectPartition,
     partitionSets,
     repoAddress,
+    assetSelection,
   } = props;
 
   const {isJob, presets} = pipeline;
@@ -126,6 +129,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
           value={base.partitionName}
           onSelect={onSelectPartition}
           repoAddress={repoAddress}
+          assetSelection={assetSelection}
         />
       ) : null}
     </PickerContainer>
@@ -142,6 +146,7 @@ interface ConfigEditorPartitionPickerProps {
     partitionName: string,
   ) => void;
   repoAddress: RepoAddress;
+  assetSelection?: IExecutionSession['assetSelection'];
 }
 
 const SORT_ORDER_KEY_BASE = 'dagit.partition-sort-order';
@@ -149,16 +154,21 @@ type SortOrder = 'asc' | 'desc';
 
 const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
   (props) => {
-    const {partitionSetName, value, onSelect, repoAddress} = props;
+    const {partitionSetName, value, onSelect, repoAddress, assetSelection} = props;
     const {basePath} = React.useContext(AppContext);
     const repositorySelector = repoAddressToSelector(repoAddress);
-    const {data, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
-      CONFIG_PARTITIONS_QUERY,
-      {
-        variables: {repositorySelector, partitionSetName},
-        fetchPolicy: 'network-only',
+
+    const {data, refetch, loading} = useQuery<
+      ConfigPartitionsQuery,
+      ConfigPartitionsQueryVariables
+    >(CONFIG_PARTITIONS_QUERY, {
+      variables: {
+        repositorySelector,
+        partitionSetName,
+        assetKeys: assetSelection?.map((selection) => ({path: selection.assetKey.path})),
       },
-    );
+      fetchPolicy: 'network-only',
+    });
 
     const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
       repoAddress,
@@ -206,6 +216,26 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       rightElement,
     };
 
+    const {isDynamicPartition, partitionDefinitionName} = React.useMemo(() => {
+      const assetNodes = data?.assetNodes;
+      const definition = assetNodes?.find((a) => !!a.partitionDefinition)?.partitionDefinition;
+      if (
+        !definition ||
+        assetNodes?.some(
+          (node) =>
+            node?.partitionDefinition?.name && node?.partitionDefinition?.name !== definition?.name,
+        )
+      ) {
+        return {isDynamicPartition: false, partitionDefinitionName: undefined};
+      }
+      return {
+        isDynamicPartition: definition.type === PartitionDefinitionType.DYNAMIC,
+        partitionDefinitionName: definition.name,
+      };
+    }, [data?.assetNodes]);
+
+    const [showCreatePartition, setShowCreatePartition] = React.useState(false);
+
     // If we are loading the partitions and do NOT have any cached data to display,
     // show the component in a loading state with a spinner and fill it with the
     // current partition's name so it doesn't flicker (if one is set already.)
@@ -246,26 +276,52 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     // selection change. However, we need to set an initial value (defaultSelectedItem)
     // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
-      <Suggest<Partition>
-        key={selected ? selected.name : 'none'}
-        defaultSelectedItem={selected}
-        items={partitions}
-        inputProps={inputProps}
-        inputValueRenderer={(partition) => partition.name}
-        itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
-        itemRenderer={(partition, props) => (
-          <MenuItem
-            active={props.modifiers.active}
-            onClick={props.handleClick}
-            key={partition.name}
-            text={partition.name}
-          />
-        )}
-        noResults={<MenuItem disabled={true} text="No presets." />}
-        onItemSelect={(item) => {
-          onSelect(repositorySelector, partitionSetName, item.name);
-        }}
-      />
+      <>
+        <Suggest<Partition>
+          key={selected ? selected.name : 'none'}
+          defaultSelectedItem={selected}
+          items={partitions}
+          inputProps={inputProps}
+          inputValueRenderer={(partition) => partition.name}
+          itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
+          itemRenderer={(partition, props) => (
+            <MenuItem
+              active={props.modifiers.active}
+              onClick={props.handleClick}
+              key={partition.name}
+              text={partition.name}
+            />
+          )}
+          noResults={<MenuItem disabled={true} text="No presets." />}
+          onItemSelect={(item) => {
+            onSelect(repositorySelector, partitionSetName, item.name);
+          }}
+        />
+        {isDynamicPartition ? (
+          <Button
+            onClick={() => {
+              setShowCreatePartition(true);
+            }}
+          >
+            Add new partition
+          </Button>
+        ) : null}
+        <CreatePartitionDialog
+          key={showCreatePartition ? '1' : '0'}
+          isOpen={showCreatePartition}
+          partitionDefinitionName={partitionDefinitionName}
+          repoAddress={repoAddress}
+          close={() => {
+            setShowCreatePartition(false);
+          }}
+          refetch={async () => {
+            await refetch();
+          }}
+          onCreated={(partitionName) => {
+            onSelect(repositorySelector, partitionSetName, partitionName);
+          }}
+        />
+      </>
     );
   },
 );
@@ -387,6 +443,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
+    $assetKeys: [AssetKeyInput!]
   ) {
     partitionSetOrError(
       repositorySelector: $repositorySelector
@@ -403,6 +460,13 @@ const CONFIG_PARTITIONS_QUERY = gql`
           }
           ...PythonErrorFragment
         }
+      }
+    }
+    assetNodes(assetKeys: $assetKeys) {
+      id
+      partitionDefinition {
+        name
+        type
       }
     }
   }

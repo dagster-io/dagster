@@ -7,7 +7,7 @@ import {CreatePartitionDialog} from '../CreatePartitionDialog';
 import {buildCreatePartitionFixture} from '../__fixtures__/CreatePartitionDialog.fixture';
 
 let onCloseMock = jest.fn();
-let onSelectedMock = jest.fn();
+let onCreatedMock = jest.fn();
 
 function Test({mocks}: {mocks?: MockedResponse[]}) {
   return (
@@ -20,8 +20,7 @@ function Test({mocks}: {mocks?: MockedResponse[]}) {
           location: 'testing',
         }}
         partitionDefinitionName="testPartitionDef"
-        selected={['test1']}
-        setSelected={onSelectedMock}
+        onCreated={onCreatedMock}
       />
     </MockedProvider>
   );
@@ -30,7 +29,7 @@ function Test({mocks}: {mocks?: MockedResponse[]}) {
 describe('CreatePartitionDialog', () => {
   beforeEach(() => {
     onCloseMock = jest.fn();
-    onSelectedMock = jest.fn();
+    onCreatedMock = jest.fn();
   });
 
   it('Submits mutation with correct variables and calls setSelected and onClose', async () => {
@@ -46,7 +45,7 @@ describe('CreatePartitionDialog', () => {
     userEvent.click(screen.getByTestId('save-partition-button'));
     await waitFor(() => {
       expect(onCloseMock).toHaveBeenCalled();
-      expect(onSelectedMock).toHaveBeenCalledWith(['test1', 'testPartitionName']);
+      expect(onCreatedMock).toHaveBeenCalledWith('testPartitionName');
       expect(createFixture.result).toHaveBeenCalled();
     });
   });

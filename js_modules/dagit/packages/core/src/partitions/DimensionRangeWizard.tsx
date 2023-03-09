@@ -120,8 +120,9 @@ export const DimensionRangeWizard: React.FC<{
             setShowCreatePartition(false);
           }}
           refetch={refetch}
-          selected={selected}
-          setSelected={setSelected}
+          onCreated={(partitionName) => {
+            setSelected([...selected, partitionName]);
+          }}
         />
       )}
     </>
