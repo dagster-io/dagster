@@ -27,9 +27,9 @@
   </a>
 </div>
 
-__Dagster is a cloud-native orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
+__Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
 
-Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
+It is designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
 
 With Dagster, you declare—as Python functions—the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
 
