@@ -1,14 +1,16 @@
 import React from 'react';
 
 /**
- * Easily support updating state based on previous state without the boilerplate
+ * Have a custom setter while supporting updating state based on previous state for your callers.
+ * Without the boilerplate!
  */
 export function useStateWithUpdateCallback<T>(
   initialCurrentState: T,
   updateCallback: (next: T) => void,
 ): [T, (next: React.SetStateAction<T>) => void] {
   const stateRef = React.useRef<T>(initialCurrentState);
-  if (stateRef.current !== initialCurrentState) {
+  const previousInitialCurrentState = React.useRef(initialCurrentState);
+  if (previousInitialCurrentState.current !== initialCurrentState) {
     stateRef.current = initialCurrentState;
   }
 

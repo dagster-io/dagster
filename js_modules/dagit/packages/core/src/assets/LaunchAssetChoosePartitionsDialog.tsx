@@ -25,7 +25,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
-import {useStateWithUpdateCallback} from '../hooks/useStateUpdateCallback';
+import {useStateWithUpdateCallback} from '../hooks/useStateWithUpdateCallback';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
