@@ -621,7 +621,7 @@ def get_freshness_info(
         tz=datetime.timezone.utc,
     )
 
-    used_data_times = data_time_resolver.get_used_data_times_for_record(
+    used_data_times = data_time_resolver.get_data_times_by_key(
         asset_graph=asset_graph, record=latest_record
     )
 

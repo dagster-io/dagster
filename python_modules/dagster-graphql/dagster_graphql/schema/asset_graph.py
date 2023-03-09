@@ -467,7 +467,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_non_source_parents(asset_key):
             return []
 
-        used_data_times = data_time_resolver.get_used_data_times_for_record(
+        used_data_times = data_time_resolver.get_data_times_by_key(
             asset_graph=asset_graph,
             record=next(iter(event_records)),
         )

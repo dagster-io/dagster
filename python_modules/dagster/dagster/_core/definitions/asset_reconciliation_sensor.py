@@ -504,24 +504,6 @@ def get_freshness_constraints_by_key(
     return constraints_by_key
 
 
-def get_current_data_times_for_key(
-    data_time_resolver: "CachingDataTimeResolver",
-    asset_graph: AssetGraph,
-    relevant_upstream_keys: AbstractSet[AssetKey],
-    asset_key: AssetKey,
-) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-    # calculate the data time for this record in relation to the upstream keys which are
-    # set to be updated this tick and are involved in some constraint
-    latest_record = data_time_resolver.instance_queryer.get_latest_materialization_record(asset_key)
-    if latest_record is None:
-        return {upstream_key: None for upstream_key in relevant_upstream_keys}
-    else:
-        return data_time_resolver.get_used_data_times_for_record(
-            asset_graph=asset_graph,
-            record=latest_record,
-        )
-
-
 def get_expected_data_times_for_key(
     asset_graph: AssetGraph,
     current_time: datetime.datetime,
