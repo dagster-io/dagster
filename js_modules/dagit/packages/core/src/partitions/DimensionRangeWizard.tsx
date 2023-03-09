@@ -141,9 +141,6 @@ const DynamicPartitionSelector: React.FC<{
   setShowCreatePartition,
   health,
 }) => {
-  const isAllSelected =
-    allPartitions.length === selectedPartitions.length && allPartitions.length > 0;
-
   const statusForPartitionKey = (partitionKey: string) => {
     const index = allPartitions.indexOf(partitionKey);
     if ('ranges' in health) {
