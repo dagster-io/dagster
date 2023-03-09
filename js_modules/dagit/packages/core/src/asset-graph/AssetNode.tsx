@@ -421,7 +421,12 @@ export const AssetNodeMinimal: React.FC<{
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
-        <TooltipStyled content={displayName} canShow={displayName.length > 14}>
+        <TooltipStyled
+          content={displayName}
+          canShow={displayName.length > 14}
+          targetTagName="div"
+          position="top"
+        >
           <MinimalAssetNodeBox
             $selected={selected}
             $isSource={isSource}
@@ -629,6 +634,5 @@ const Description = styled.div<{$color: string}>`
 `;
 
 const TooltipStyled = styled(Tooltip)`
-  display: block;
   height: 100%;
 `;
