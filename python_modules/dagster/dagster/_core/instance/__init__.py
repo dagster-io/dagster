@@ -1717,10 +1717,6 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
 
-    @traced
-    def run_ids_for_asset_key(self, asset_key):
-        check.inst_param(asset_key, "asset_key", AssetKey)
-        return self._event_storage.get_asset_run_ids(asset_key)
 
     @public
     @traced
