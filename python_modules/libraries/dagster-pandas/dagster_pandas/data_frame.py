@@ -9,6 +9,9 @@ from dagster import (
     TypeCheck,
     _check as check,
     dagster_type_loader,
+    MetadataValue,
+    TableSchema,
+    TableColumn
 )
 
 from dagster._annotations import experimental
