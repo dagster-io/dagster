@@ -38,7 +38,6 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # Make sure docs sphinx build runs.
         CommandStepBuilder("docs apidoc build")
         .run(
-            "pip install -U virtualenv",
             "cd docs",
             "make apidoc-build",
             # "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
