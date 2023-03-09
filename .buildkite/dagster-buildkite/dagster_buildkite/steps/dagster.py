@@ -11,6 +11,7 @@ from ..utils import (
     BuildkiteStep,
     CommandStep,
     is_feature_branch,
+    is_release_branch,
     safe_getenv,
     skip_if_no_python_changes,
 )
@@ -26,6 +27,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
     # the target. `black`, `check-manifest`, and `ruff` are run for the whole repo at once.
     return [
+        *build_check_changelog_steps(),
         *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
         *build_repo_wide_pyright_steps(),
@@ -71,6 +73,21 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_python_changes())
         .build(),
+    ]
+
+
+def build_check_changelog_steps() -> List[CommandStep]:
+    branch_name = safe_getenv("BUILDKITE_BRANCH")
+    if not is_release_branch(branch_name):
+        return []
+
+    release_number = branch_name.split("-", 1)[-1].replace("-", ".")
+    return [
+        CommandStepBuilder(":memo: changelog")
+        .on_test_image(AvailablePythonVersion.get_default())
+        .run(f"python scripts/check_changelog.py {release_number}")
+        .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
+        .build()
     ]
 
 
