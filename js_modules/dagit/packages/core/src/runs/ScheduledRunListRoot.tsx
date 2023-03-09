@@ -16,16 +16,22 @@ import {
 import {Loading} from '../ui/Loading';
 
 import {RunsPageHeader} from './RunsPageHeader';
-import {ScheduledRunsListQuery} from './types/ScheduledRunListRoot.types';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
   useTrackPageView();
   useDocumentTitle('Runs | Scheduled');
 
-  const queryResult = useQuery<ScheduledRunsListQuery>(SCHEDULED_RUNS_LIST_QUERY, {
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
+    SCHEDULED_RUNS_LIST_QUERY,
+    {
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 

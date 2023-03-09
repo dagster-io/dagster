@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -110,7 +111,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     # MATERIALIZATION / ASSET RECORDS
     ####################
 
-    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
         if asset_key not in self._asset_record_cache:
             self._asset_record_cache[asset_key] = next(
                 iter(self.instance.get_asset_records([asset_key])), None

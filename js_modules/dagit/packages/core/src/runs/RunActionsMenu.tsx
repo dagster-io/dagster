@@ -20,6 +20,7 @@ import {SharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
+import {NO_LAUNCH_PERMISSION_MESSAGE} from '../launchpad/LaunchRootExecutionButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -105,14 +106,16 @@ export const RunActionsMenu: React.FC<{
             <MenuDivider />
             <>
               <Tooltip
-                content={OPEN_LAUNCHPAD_UNKNOWN}
-                position="bottom"
-                disabled={infoReady}
+                content={
+                  run.hasReExecutePermission ? OPEN_LAUNCHPAD_UNKNOWN : NO_LAUNCH_PERMISSION_MESSAGE
+                }
+                position="left"
+                disabled={infoReady && run.hasReExecutePermission}
                 targetTagName="div"
               >
                 <MenuLink
                   text="Open in Launchpad..."
-                  disabled={!infoReady}
+                  disabled={!infoReady || !run.hasReExecutePermission}
                   icon="edit"
                   to={workspacePathFromRunDetails({
                     id: run.id,

@@ -60,6 +60,22 @@ def make_persistent_airflow_db_resource(
     """
     Creates a Dagster resource that provides an persistent Airflow database.
 
+
+    Usage:
+        .. code-block:: python
+
+            from dagster_airflow import (
+                make_dagster_definitions_from_airflow_dags_path,
+                make_persistent_airflow_db_resource,
+            )
+            postgres_airflow_db = "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"
+            airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
+            definitions = make_dagster_definitions_from_airflow_example_dags(
+                '/path/to/dags/',
+                resource_defs={"airflow_db": airflow_db}
+            )
+
+
     Args:
         uri: SQLAlchemy URI of the Airflow DB to be used
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB

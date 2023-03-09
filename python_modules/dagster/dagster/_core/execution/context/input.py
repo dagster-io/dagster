@@ -14,7 +14,9 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetObservation
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    MetadataEntry,
+)
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
@@ -132,7 +134,7 @@ class InputContext:
 
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
-        self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
+        self._metadata_entries: List[MetadataEntry] = []
         self._instance = instance
 
     def __enter__(self):
@@ -526,7 +528,7 @@ class InputContext:
         """
         return self._observations
 
-    def consume_metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def consume_metadata_entries(self) -> Sequence[MetadataEntry]:
         result = self._metadata_entries
         self._metadata_entries = []
         return result

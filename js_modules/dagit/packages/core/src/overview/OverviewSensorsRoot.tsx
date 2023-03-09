@@ -36,6 +36,7 @@ import {
   OverviewSensorsQuery,
   OverviewSensorsQueryVariables,
   UnloadableSensorsQuery,
+  UnloadableSensorsQueryVariables,
 } from './types/OverviewSensorsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
@@ -230,7 +231,9 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
+    UNLOADABLE_SENSORS_QUERY,
+  );
   if (!data) {
     return <Spinner purpose="section" />;
   }

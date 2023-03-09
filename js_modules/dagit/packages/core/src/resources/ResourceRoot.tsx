@@ -27,7 +27,7 @@ import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {ResourceRootQuery} from './types/ResourceRoot.types';
+import {ResourceRootQuery, ResourceRootQueryVariables} from './types/ResourceRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -57,7 +57,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     ...repoAddressToSelector(repoAddress),
     resourceName,
   };
-  const queryResult = useQuery<ResourceRootQuery>(RESOURCE_ROOT_QUERY, {
+  const queryResult = useQuery<ResourceRootQuery, ResourceRootQueryVariables>(RESOURCE_ROOT_QUERY, {
     variables: {
       resourceSelector,
     },
@@ -101,7 +101,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           }
 
           const configuredValues = Object.fromEntries(
-            topLevelResourceDetailsOrError.configuredValues.map((cv) => [cv.key, cv.value]),
+            topLevelResourceDetailsOrError.configuredValues.map((cv) => [
+              cv.key,
+              {value: cv.value, type: cv.type},
+            ]),
           );
 
           return (
@@ -111,51 +114,58 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                 firstInitialPercent={70}
                 firstMinSize={400}
                 first={
-                  <Table $monospaceFont={false}>
-                    <thead>
-                      <tr>
-                        <th style={{width: 120}}>Key</th>
-                        <th style={{width: 90}}>Type</th>
-                        <th style={{width: 90}}>Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topLevelResourceDetailsOrError.configFields.map((field) => {
-                        const defaultValue = field.defaultValueAsJson;
-                        const actualValue =
-                          field.name in configuredValues
-                            ? configuredValues[field.name]
-                            : defaultValue;
+                  <div style={{overflowY: 'scroll'}}>
+                    <Table $monospaceFont={false}>
+                      <thead>
+                        <tr>
+                          <th style={{width: 120}}>Key</th>
+                          <th style={{width: 90}}>Type</th>
+                          <th style={{width: 90}}>Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topLevelResourceDetailsOrError.configFields.map((field) => {
+                          const defaultValue = field.defaultValueAsJson;
+                          const type =
+                            field.name in configuredValues
+                              ? configuredValues[field.name].type
+                              : null;
+                          const actualValue =
+                            field.name in configuredValues
+                              ? configuredValues[field.name].value
+                              : defaultValue;
 
-                        const isDefault = defaultValue === actualValue;
+                          const isDefault = type === 'VALUE' && defaultValue === actualValue;
 
-                        return (
-                          <tr key={field.name}>
-                            <td>
-                              <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                                <strong>{field.name}</strong>
-                                <div style={{fontSize: 12, color: Colors.Gray700}}>
-                                  {field.description}
-                                </div>
-                              </Box>
-                            </td>
-                            <td>{remapName(field.configTypeKey)}</td>
-                            <td>
-                              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                                <Tooltip
-                                  content={<>Default: {defaultValue}</>}
-                                  canShow={!isDefault}
-                                >
-                                  {actualValue}
-                                </Tooltip>
-                                {isDefault && <Tag>Default</Tag>}
-                              </Box>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
+                          return (
+                            <tr key={field.name}>
+                              <td>
+                                <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+                                  <strong>{field.name}</strong>
+                                  <div style={{fontSize: 12, color: Colors.Gray700}}>
+                                    {field.description}
+                                  </div>
+                                </Box>
+                              </td>
+                              <td>{remapName(field.configTypeKey)}</td>
+                              <td>
+                                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                  <Tooltip
+                                    content={<>Default: {defaultValue}</>}
+                                    canShow={!isDefault}
+                                  >
+                                    {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
+                                  </Tooltip>
+                                  {isDefault && <Tag>Default</Tag>}
+                                  {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
+                                </Box>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
                 }
                 second={
                   <RightInfoPanel>
@@ -226,6 +236,7 @@ const RESOURCE_ROOT_QUERY = gql`
         configuredValues {
           key
           value
+          type
         }
       }
       ...PythonErrorFragment

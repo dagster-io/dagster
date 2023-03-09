@@ -682,14 +682,14 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Partitioned Asset - Some Missing',
     liveData: LiveDataForNodePartitionedSomeMissing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['999+', '6', '1,494 missing partitions'],
+    expectedText: ['999+', '6', '1,500 partitions'],
   },
 
   {
     title: 'Partitioned Asset - Some Failed',
     liveData: LiveDataForNodePartitionedSomeFailed,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['645', '849 failed partitions'],
+    expectedText: ['645', '849', '1,500 partitions'],
   },
 
   {
@@ -703,7 +703,7 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Never Materialized',
     liveData: LiveDataForNodePartitionedNeverMaterialized,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 missing partitions'],
+    expectedText: ['1,500 partitions'],
   },
 
   {
@@ -738,7 +738,7 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Partitioned Asset - Last Run Failed',
     liveData: LiveDataForNodePartitionedLatestRunFailed,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['4', '999+', '1 failed partition'],
+    expectedText: ['4', '999+', '1,500 partitions'],
   },
   {
     title: 'Partitioned Asset - Live Data Loading',

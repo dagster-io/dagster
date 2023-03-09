@@ -395,7 +395,7 @@ def test_step_subset_with_custom_paths():
         assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
             step_materialization_events[0]
             .event_specific_data.materialization.metadata_entries[0]
-            .entry_data.path
+            .value.path
         )
 
         # test reexecution via backfills (not via re-execution apis)

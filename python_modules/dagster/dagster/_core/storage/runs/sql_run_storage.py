@@ -1065,7 +1065,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         with self.connect() as conn:
-            rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
+            rows = conn.execute(db.select([DaemonHeartbeatsTable.c.body]))
             heartbeats = []
             for row in rows:
                 heartbeats.append(deserialize_as(row.body, DaemonHeartbeat))
@@ -1156,7 +1156,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             rows = conn.execute(
-                db.select(KeyValueStoreTable.columns).where(KeyValueStoreTable.c.key.in_(keys)),
+                db.select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
+                    KeyValueStoreTable.c.key.in_(keys)
+                ),
             )
             return {row.key: row.value for row in rows}
 

@@ -7,7 +7,7 @@ import {Checkbox} from './Checkbox';
 import {Colors} from './Colors';
 import {Icon} from './Icon';
 import {Menu, MenuDivider, MenuItem} from './Menu';
-import {TagSelector} from './TagSelector';
+import {TagSelector, TagSelectorWithSearch} from './TagSelector';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -30,6 +30,17 @@ export const Basic = () => {
   const [selectedTags, setSelectedTags] = React.useState<string[]>(['NY', 'NJ']);
   return (
     <TagSelector allTags={allTags} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
+  );
+};
+
+export const WithSearch = () => {
+  const [selectedTags, setSelectedTags] = React.useState<string[]>(['NY', 'NJ']);
+  return (
+    <TagSelectorWithSearch
+      allTags={allTags}
+      selectedTags={selectedTags}
+      setSelectedTags={setSelectedTags}
+    />
   );
 };
 

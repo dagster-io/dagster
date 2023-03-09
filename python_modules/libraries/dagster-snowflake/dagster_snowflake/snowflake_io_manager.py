@@ -165,7 +165,11 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        connection.execute(f"create schema if not exists {table_slice.schema};")
+        schemas = connection.execute(
+            f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+        ).fetchall()
+        if len(schemas) == 0:
+            connection.execute(f"create schema {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:

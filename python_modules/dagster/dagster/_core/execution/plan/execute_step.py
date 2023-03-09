@@ -41,7 +41,6 @@ from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunctio
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
     MetadataEntry,
-    PartitionMetadataEntry,
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -460,7 +459,7 @@ def _get_output_asset_materializations(
     asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]],
+    io_manager_metadata_entries: Sequence[MetadataEntry],
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
@@ -497,28 +496,6 @@ def _get_output_asset_materializations(
         tags[BACKFILL_ID_TAG] = backfill_id
 
     if asset_partitions:
-        metadata_mapping: Dict[
-            str,
-            List[Union[MetadataEntry, PartitionMetadataEntry]],
-        ] = {partition: [] for partition in asset_partitions}
-
-        for entry in all_metadata:
-            # TODO: Allow users to specify a multi-dimensional partition key in a PartitionMetadataEntry
-
-            # if you target a given entry at a partition, only apply it to the requested partition
-            # otherwise, apply it to all partitions
-            if isinstance(entry, PartitionMetadataEntry):
-                if entry.partition not in asset_partitions:
-                    raise DagsterInvariantViolationError(
-                        f"Output {output_def.name} associated a metadata entry ({entry}) with the"
-                        f" partition `{entry.partition}`, which is not one of the declared"
-                        f" partition mappings ({asset_partitions})."
-                    )
-                metadata_mapping[entry.partition].append(entry.entry)
-            else:
-                for partition in metadata_mapping.keys():
-                    metadata_mapping[partition].append(entry)
-
         for partition in asset_partitions:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
@@ -532,16 +509,10 @@ def _get_output_asset_materializations(
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata_entries=metadata_mapping[partition],
+                    metadata_entries=all_metadata,
                     tags=tags,
                 )
     else:
-        for entry in all_metadata:
-            if isinstance(entry, PartitionMetadataEntry):
-                raise DagsterInvariantViolationError(
-                    f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
-                    "is not associated with any specific partitions."
-                )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=DeprecationWarning)
 
@@ -613,7 +584,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata_entries: List[Union[PartitionMetadataEntry, MetadataEntry]] = []
+    manager_metadata_entries: List[MetadataEntry] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
@@ -651,7 +622,7 @@ def _store_output(
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, (MetadataEntry, PartitionMetadataEntry)):
+        elif isinstance(elt, MetadataEntry):
             experimental_functionality_warning(
                 "Yielding metadata from an IOManager's handle_output() function"
             )
@@ -660,7 +631,7 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
                 f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                "one of AssetMaterialization, MetadataEntry, PartitionMetadataEntry."
+                "one of AssetMaterialization, MetadataEntry."
             )
 
     for event in output_context.consume_events():

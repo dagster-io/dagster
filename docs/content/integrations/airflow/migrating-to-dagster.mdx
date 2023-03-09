@@ -55,22 +55,6 @@ Even in the case that requires some infrastructure investment, `dagster-airflow`
 
 ---
 
-## Limitations
-
-Before kicking off a migration, note that there are some limitations to converting Airflow DAGs into Dagster jobs, assets, and schedules. The following features are currently unsupported:
-
-- `retry-from-failure` in Dagster
-- Using `prev_execution_date` in Airflow-templated DAGs
-- `SubDAGOperators`
-- Airflow Datasets
-- Airflow Pools
-
-Most of the current limitations are [due to a locally-scoped, ephemeral Airflow database being created for each run](https://github.com/dagster-io/dagster/issues/12209). If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
-
-Note that we are working on extending support for these features. If interested in them, let us know in the `#dagster-airflow` channel of the Dagster Slack.
-
----
-
 ## Step 1: Prepare your project for a new Dagster Python module
 
 While there are many ways to structure an Airflow git repository, this guide assumes you're using a repository structure that contains a single `./dags` DagBag directory that contains all your DAGs.
@@ -175,7 +159,35 @@ Iterate as needed until all configuration is correctly ported to your local envi
 
 ---
 
-## Step 6: Move to production
+## Step 6: Deciding on persistent vs ephemeral Airflow database
+
+The Dagster Airflow migration tooling supports two methods for persisting Airflow metadatabase state. By default, it will use an ephemeral database that is scoped to every job run and thrown away as soon as a job run terminates. You can also configure a persistent database that will be shared by all job runs. This tutorial uses the ephemeral database, but the persistent database option is recommended if you need the following features:
+
+- retry-from-failure support in Dagster
+- Passing Airflow state between DAG runs (i.e., xcoms)
+- `SubDAGOperators`
+- Airflow Pools
+
+If you have complex Airflow DAGs (cross-DAG state sharing, pools) or the ability to retry-from-failure you will need to have a persistent database when making your migration.
+
+You can configure your persistent Airflow database by providing an `airflow_db` to the `resource_defs` parameter of the `dagster-airflow` APIs:
+
+```python
+from dagster_airflow import (
+    make_dagster_definitions_from_airflow_dags_path,
+    make_persistent_airflow_db_resource,
+)
+postgres_airflow_db = "postgresql+psycopg2://airflow:airflow@localhost:5432/airflow"
+airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
+definitions = make_dagster_definitions_from_airflow_example_dags(
+    '/path/to/dags/',
+    resource_defs={"airflow_db": airflow_db}
+)
+```
+
+---
+
+## Step 7: Move to production
 
 <Note>
   This step is applicable to Dagster Cloud. If deploying to your infrastructure,
@@ -201,11 +213,11 @@ In this step, you'll set up your project for use with Dagster Cloud.
          python_file: dagster_migration.py
    ```
 
-3. Push your code and let Dagster Cloud's CI/CD run out a deployment of your migrated dags to cloud.
+3. Push your code and let Dagster Cloud's CI/CD run out a deployment of your migrated DAGs to cloud.
 
 ---
 
-## Step 7: Migrate permissions to Dagster
+## Step 8: Migrate permissions to Dagster
 
 Your Airflow instance likely had specific IAM or Kubernetes permissions that allowed it to successfully run your Airflow DAGs. To run the migrated Dagster jobs, you'll need to duplicate these permissions for Dagster.
 

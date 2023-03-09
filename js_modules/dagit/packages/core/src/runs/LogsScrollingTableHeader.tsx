@@ -122,6 +122,12 @@ export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>
+      <Header
+        width={widths.timestamp}
+        onResize={(width) => widths.onChange({...widths, timestamp: width})}
+      >
+        Timestamp
+      </Header>
       <Header width={widths.solid} onResize={(width) => widths.onChange({...widths, solid: width})}>
         Op
       </Header>
@@ -132,13 +138,6 @@ export const Headers = () => {
         Event Type
       </Header>
       <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-      <Header
-        handleSide="left"
-        width={widths.timestamp}
-        onResize={(width) => widths.onChange({...widths, timestamp: width})}
-      >
-        Timestamp
-      </Header>
     </HeadersContainer>
   );
 };

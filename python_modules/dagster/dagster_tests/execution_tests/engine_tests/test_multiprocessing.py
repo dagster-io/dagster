@@ -426,7 +426,7 @@ def test_failure_multiprocessing():
         # from Failure
         assert failure_data.user_failure_data.description == "it Failure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+        assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
 
 
 @op

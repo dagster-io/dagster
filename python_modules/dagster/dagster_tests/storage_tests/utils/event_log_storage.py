@@ -2001,6 +2001,11 @@ class TestEventLogStorage:
     def test_get_latest_asset_partition_materialization_attempts_without_materializations(
         self, storage, instance
     ):
+        def _assert_matches_not_including_event_id(result, expected):
+            assert {
+                partition: run_id for partition, (run_id, _event_id) in result.items()
+            } == expected
+
         a = AssetKey(["a"])
         run_id_1 = make_new_run_id()
         run_id_2 = make_new_run_id()
@@ -2008,11 +2013,11 @@ class TestEventLogStorage:
         run_id_4 = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3, run_id_4]):
             # no events
-            assert (
+            _assert_matches_not_including_event_id(
                 storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                     a
-                )
-                == {}
+                ),
+                {},
             )
 
             storage.store_event(
@@ -2045,12 +2050,15 @@ class TestEventLogStorage:
             )
 
             # no materializations yet
-            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
-            ) == {
-                "foo": run_id_1,
-                "bar": run_id_2,
-            }
+            _assert_matches_not_including_event_id(
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ),
+                {
+                    "foo": run_id_1,
+                    "bar": run_id_2,
+                },
+            )
 
             storage.store_event(
                 EventLogEntry(
@@ -2070,11 +2078,12 @@ class TestEventLogStorage:
             )
 
             # foo got materialized later in the same run
-            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
-            ) == {
-                "bar": run_id_2
-            }
+            _assert_matches_not_including_event_id(
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ),
+                {"bar": run_id_2},
+            )
 
             storage.store_event(
                 EventLogEntry(
@@ -2092,12 +2101,15 @@ class TestEventLogStorage:
             )
 
             # a new run has been started for foo
-            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
-            ) == {
-                "foo": run_id_3,
-                "bar": run_id_2,
-            }
+            _assert_matches_not_including_event_id(
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ),
+                {
+                    "foo": run_id_3,
+                    "bar": run_id_2,
+                },
+            )
 
             storage.store_event(
                 EventLogEntry(
@@ -2117,29 +2129,35 @@ class TestEventLogStorage:
             )
 
             # other assets don't get included
-            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
-            ) == {
-                "foo": run_id_3,
-                "bar": run_id_2,
-            }
+            _assert_matches_not_including_event_id(
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ),
+                {
+                    "foo": run_id_3,
+                    "bar": run_id_2,
+                },
+            )
 
             # other assets don't get included
-            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                a
-            ) == {
-                "foo": run_id_3,
-                "bar": run_id_2,
-            }
+            _assert_matches_not_including_event_id(
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ),
+                {
+                    "foo": run_id_3,
+                    "bar": run_id_2,
+                },
+            )
 
             # wipe asset, make sure we respect that
             if self.can_wipe():
                 storage.wipe_asset(a)
-                assert (
+                _assert_matches_not_including_event_id(
                     storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                         a
-                    )
-                    == {}
+                    ),
+                    {},
                 )
 
                 storage.store_event(
@@ -2158,11 +2176,14 @@ class TestEventLogStorage:
                 )
 
                 # new materialization planned appears
-                assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
-                    a
-                ) == {
-                    "bar": run_id_4,
-                }
+                _assert_matches_not_including_event_id(
+                    storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                        a
+                    ),
+                    {
+                        "bar": run_id_4,
+                    },
+                )
 
                 storage.store_event(
                     EventLogEntry(
@@ -2182,12 +2203,86 @@ class TestEventLogStorage:
                 )
 
                 # and goes away
-                assert (
+                _assert_matches_not_including_event_id(
                     storage.get_latest_asset_partition_materialization_attempts_without_materializations(
                         a
-                    )
-                    == {}
+                    ),
+                    {},
                 )
+
+    def test_get_latest_asset_partition_materialization_attempts_without_materializations_event_ids(
+        self, storage, instance
+    ):
+        a = AssetKey(["a"])
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        run_id_3 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "foo"),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_2,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "bar"),
+                    ),
+                )
+            )
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=a,
+                )
+            )
+            assert len(records) == 2
+            assert records[0].event_log_entry.dagster_event.event_specific_data.partition == "bar"
+            assert records[1].event_log_entry.dagster_event.event_specific_data.partition == "foo"
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": (run_id_1, records[1].storage_id),
+                "bar": (run_id_2, records[0].storage_id),
+            }
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_3,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "bar"),
+                    ),
+                )
+            )
+
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": (run_id_1, records[1].storage_id),
+                "bar": (run_id_3, records[0].storage_id + 1),
+            }
 
     def test_get_observation(self, storage, test_run_id):
         a = AssetKey(["key_a"])
@@ -3061,6 +3156,8 @@ class TestEventLogStorage:
                 latest_storage_id=1,
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
+                serialized_failed_partition_subset="baz",
+                earliest_in_progress_materialization_event_id=42,
             )
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 

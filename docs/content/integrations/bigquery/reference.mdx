@@ -517,6 +517,16 @@ defs = Definitions(
 </TabItem>
 </TabGroup>
 
+<Note>
+  <strong>Note:</strong> In order to load data from BigQuery as a PySpark
+  DataFrame, the BigQuery PySpark connector will create a view containing the
+  data. This will result in the creation of a temporary table in your BigQuery
+  dataset. See the BigQuery PySpark connector
+  <a href="https://github.com/GoogleCloudDataproc/spark-bigquery-connector#reading-data-from-a-bigquery-query">
+    documentation
+  </a> for more details.
+</Note>
+
 ---
 
 ## Using Pandas and PySpark DataFrames with BigQuery

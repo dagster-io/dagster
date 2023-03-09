@@ -14,7 +14,6 @@ from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
     MetadataUserInput,
-    PartitionMetadataEntry,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
@@ -84,7 +83,7 @@ class SourceAsset(ResourceAddable):
     """
 
     key: PublicAttr[AssetKey]
-    metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    metadata_entries: Sequence[MetadataEntry]
     io_manager_key: PublicAttr[Optional[str]]
     _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
     description: PublicAttr[Optional[str]]
@@ -102,7 +101,7 @@ class SourceAsset(ResourceAddable):
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
@@ -150,8 +149,7 @@ class SourceAsset(ResourceAddable):
     @public
     @property
     def metadata(self) -> MetadataMapping:
-        # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
+        return {entry.label: entry.value for entry in self.metadata_entries}
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY

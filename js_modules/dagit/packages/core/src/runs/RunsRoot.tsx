@@ -34,6 +34,7 @@ import {
 import {RunsPageHeader} from './RunsPageHeader';
 import {
   QueueDaemonStatusQuery,
+  QueueDaemonStatusQueryVariables,
   RunsRootQuery,
   RunsRootQueryVariables,
 } from './types/RunsRoot.types';
@@ -250,7 +251,9 @@ const RUNS_ROOT_QUERY = gql`
 `;
 
 const QueueDaemonAlert = () => {
-  const {data} = useQuery<QueueDaemonStatusQuery>(QUEUE_DAEMON_STATUS_QUERY);
+  const {data} = useQuery<QueueDaemonStatusQuery, QueueDaemonStatusQueryVariables>(
+    QUEUE_DAEMON_STATUS_QUERY,
+  );
   const {pageTitle} = React.useContext(InstancePageContext);
   const status = data?.instance.daemonHealth.daemonStatus;
   if (status?.required && !status?.healthy) {

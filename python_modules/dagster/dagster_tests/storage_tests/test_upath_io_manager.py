@@ -417,6 +417,6 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
 
     assert handled_output_events[0].event_specific_data.metadata_entries[  # type: ignore[index,union-attr]
         1
-    ].entry_data.value == get_length(
+    ].value.value == get_length(
         json_data
     )

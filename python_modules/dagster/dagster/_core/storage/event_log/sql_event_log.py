@@ -1683,14 +1683,14 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
-    ) -> Mapping[str, str]:
+    ) -> Mapping[str, Tuple[str, int]]:
         """
         Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
         These materializations could be in progress, or they could have failed. A separate query checking the run status
         is required to know.
 
-        Returns a mapping of partition to run_id.
+        Returns a mapping of partition to [run id, event id].
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -1724,6 +1724,7 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.dagster_event_type,
                     SqlEventLogStorageTable.c.partition,
                     SqlEventLogStorageTable.c.run_id,
+                    SqlEventLogStorageTable.c.id,
                 ]
             )
             .select_from(
@@ -1741,6 +1742,7 @@ class SqlEventLogStorage(EventLogStorage):
                     latest_events_subquery.c.dagster_event_type,
                     latest_events_subquery.c.partition,
                     latest_events_subquery.c.run_id,
+                    latest_events_subquery.c.id,
                 ]
             )
             .where(
@@ -1770,6 +1772,7 @@ class SqlEventLogStorage(EventLogStorage):
                 [
                     materialization_planned_events.c.partition,
                     materialization_planned_events.c.run_id,
+                    materialization_planned_events.c.id,
                 ]
             )
             .select_from(
@@ -1788,7 +1791,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
-            return {row["partition"]: row["run_id"] for row in rows}
+            return {row["partition"]: (row["run_id"], row["id"]) for row in rows}
 
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for
