@@ -171,9 +171,7 @@ def daily_partitioned(context) -> pd.DataFrame:
 
 def test_time_window_partitioned_asset(tmp_path, io_managers):
     for io_manager in io_managers:
-        resource_defs = {
-            "io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        }
+        resource_defs = {"io_manager": io_manager}
 
         materialize(
             [daily_partitioned],
@@ -212,6 +210,9 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
 
         assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.daily_partitioned")
         duckdb_conn.close()
 
 
@@ -235,9 +236,7 @@ def static_partitioned(context) -> pd.DataFrame:
 
 def test_static_partitioned_asset(tmp_path, io_managers):
     for io_manager in io_managers:
-        resource_defs = {
-            "io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        }
+        resource_defs = {"io_manager": io_manager}
 
         materialize(
             [static_partitioned],
@@ -273,6 +272,9 @@ def test_static_partitioned_asset(tmp_path, io_managers):
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
         assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.static_partitioned")
         duckdb_conn.close()
 
 
@@ -349,6 +351,9 @@ def test_multi_partitioned_asset(tmp_path, io_managers):
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
         assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+
+        # drop table so we start with an empty db for the next io manager
+        duckdb_conn.execute("DELETE FROM my_schema.multi_partitioned")
         duckdb_conn.close()
 
 
@@ -418,6 +423,9 @@ def test_dynamic_partition(tmp_path, io_managers):
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
             out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
             assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+            # drop table so we start with an empty db for the next io manager
+            duckdb_conn.execute("DELETE FROM my_schema.dynamic_partitioned")
             duckdb_conn.close()
 
 
