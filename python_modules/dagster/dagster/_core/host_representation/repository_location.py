@@ -199,7 +199,7 @@ class RepositoryLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,
     ) -> "ScheduleExecutionData":
         pass
 
@@ -485,12 +485,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
-            scheduled_execution_timestamp=scheduled_execution_time.timestamp()
-            if scheduled_execution_time
-            else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
-            if scheduled_execution_time
-            else None,
+            scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
