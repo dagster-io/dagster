@@ -26,6 +26,7 @@ import styled from 'styled-components/macro';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {AssetLink} from '../assets/AssetLink';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -106,9 +107,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
       resourceDisplayName(queryResult.data?.topLevelResourceDetailsOrError)) ||
     resourceName;
 
-  const numParentResources =
+  const numUses =
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
-      ? queryResult.data?.topLevelResourceDetailsOrError.parentResources.length
+      ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
+        queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -119,11 +121,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
       <PageHeader
         title={<Heading>{displayName}</Heading>}
         tabs={
-          <ResourceTabs
-            repoAddress={repoAddress}
-            resourceName={resourceName}
-            numParentResources={numParentResources}
-          />
+          <ResourceTabs repoAddress={repoAddress} resourceName={resourceName} numUses={numUses} />
         }
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
@@ -174,6 +172,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                       <ResourceUses
                         resourceDetails={topLevelResourceDetailsOrError}
                         repoAddress={repoAddress}
+                        numUses={numUses}
                       />
                     ) : (
                       <ResourceConfig
@@ -343,40 +342,90 @@ const ResourceConfig: React.FC<{
 const ResourceUses: React.FC<{
   resourceDetails: ResourceDetailsFragment;
   repoAddress: RepoAddress;
+  numUses: number;
 }> = (props) => {
-  const {resourceDetails, repoAddress} = props;
+  const {resourceDetails, repoAddress, numUses} = props;
+
+  if (numUses === 0) {
+    return (
+      <Table>
+        <tbody>
+          <tr>
+            <td>
+              <Box padding={{vertical: 8}}>
+                <NonIdealState
+                  icon="search"
+                  title="No uses"
+                  description="This resource is not used by any assets or resources."
+                />
+              </Box>
+            </td>
+          </tr>
+        </tbody>
+      </Table>
+    );
+  }
 
   const parentResources = resourceDetails.parentResources;
   return (
-    <Box>
-      <SectionHeader>
-        <Subheading>Parent resources</Subheading>
-      </SectionHeader>
-      <Table>
-        <thead>
-          <tr>
-            <th>Resource</th>
-          </tr>
-        </thead>
-        <tbody>
-          {parentResources.map((resource) => {
-            return (
-              resource.resource && (
-                <tr key={resource.name}>
-                  <td colSpan={2}>
-                    <ResourceEntry
-                      url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
-                      name={resourceDisplayName(resource.resource) || ''}
-                      description={resource.resource.description || undefined}
-                    />
-                  </td>
-                </tr>
-              )
-            );
-          })}
-        </tbody>
-      </Table>
-    </Box>
+    <>
+      {parentResources.length > 0 && (
+        <Box>
+          <SectionHeader>
+            <Subheading>Parent resources</Subheading>
+          </SectionHeader>
+          <Table>
+            <thead>
+              <tr>
+                <th>Resource</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parentResources.map((resource) => {
+                return (
+                  resource.resource && (
+                    <tr key={resource.name}>
+                      <td>
+                        <ResourceEntry
+                          url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
+                          name={resourceDisplayName(resource.resource) || ''}
+                          description={resource.resource.description || undefined}
+                        />
+                      </td>
+                    </tr>
+                  )
+                );
+              })}
+            </tbody>
+          </Table>
+        </Box>
+      )}
+      {resourceDetails.assetKeysUsing.length > 0 && (
+        <Box>
+          <SectionHeader>
+            <Subheading>Assets</Subheading>
+          </SectionHeader>
+          <Table>
+            <thead>
+              <tr>
+                <th>Asset key</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resourceDetails.assetKeysUsing.map((assetKey) => {
+                return (
+                  <tr key={assetKey.path.join('/')}>
+                    <td>
+                      <AssetLink key={assetKey.path.join('/')} path={assetKey.path} icon="asset" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </Box>
+      )}
+    </>
   );
 };
 
@@ -453,6 +502,9 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
         resourceType
         description
       }
+    }
+    assetKeysUsing {
+      path
     }
     resourceType
   }

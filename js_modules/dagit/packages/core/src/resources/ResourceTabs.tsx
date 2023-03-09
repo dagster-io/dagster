@@ -14,9 +14,9 @@ const titles: {[key: string]: string} = {
 export const ResourceTabs: React.FC<{
   repoAddress: RepoAddress;
   resourceName: string;
-  numParentResources: number;
+  numUses: number;
 }> = (props) => {
-  const {repoAddress, resourceName, numParentResources} = props;
+  const {repoAddress, resourceName, numUses} = props;
 
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/locations/:repoPath/resources/:name/:tab?',
@@ -40,7 +40,7 @@ export const ResourceTabs: React.FC<{
             <Box flex={{gap: 4, alignItems: 'center'}}>
               Uses
               <Tag intent="none" minimal={true}>
-                {numParentResources}
+                {numUses}
               </Tag>
             </Box>
           }
