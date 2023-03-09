@@ -111,51 +111,53 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                 firstInitialPercent={70}
                 firstMinSize={400}
                 first={
-                  <Table $monospaceFont={false}>
-                    <thead>
-                      <tr>
-                        <th style={{width: 120}}>Key</th>
-                        <th style={{width: 90}}>Type</th>
-                        <th style={{width: 90}}>Value</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topLevelResourceDetailsOrError.configFields.map((field) => {
-                        const defaultValue = field.defaultValueAsJson;
-                        const actualValue =
-                          field.name in configuredValues
-                            ? configuredValues[field.name]
-                            : defaultValue;
+                  <div style={{overflowY: 'scroll'}}>
+                    <Table $monospaceFont={false}>
+                      <thead>
+                        <tr>
+                          <th style={{width: 120}}>Key</th>
+                          <th style={{width: 90}}>Type</th>
+                          <th style={{width: 90}}>Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topLevelResourceDetailsOrError.configFields.map((field) => {
+                          const defaultValue = field.defaultValueAsJson;
+                          const actualValue =
+                            field.name in configuredValues
+                              ? configuredValues[field.name]
+                              : defaultValue;
 
-                        const isDefault = defaultValue === actualValue;
+                          const isDefault = defaultValue === actualValue;
 
-                        return (
-                          <tr key={field.name}>
-                            <td>
-                              <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                                <strong>{field.name}</strong>
-                                <div style={{fontSize: 12, color: Colors.Gray700}}>
-                                  {field.description}
-                                </div>
-                              </Box>
-                            </td>
-                            <td>{remapName(field.configTypeKey)}</td>
-                            <td>
-                              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                                <Tooltip
-                                  content={<>Default: {defaultValue}</>}
-                                  canShow={!isDefault}
-                                >
-                                  {actualValue}
-                                </Tooltip>
-                                {isDefault && <Tag>Default</Tag>}
-                              </Box>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
+                          return (
+                            <tr key={field.name}>
+                              <td>
+                                <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+                                  <strong>{field.name}</strong>
+                                  <div style={{fontSize: 12, color: Colors.Gray700}}>
+                                    {field.description}
+                                  </div>
+                                </Box>
+                              </td>
+                              <td>{remapName(field.configTypeKey)}</td>
+                              <td>
+                                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                  <Tooltip
+                                    content={<>Default: {defaultValue}</>}
+                                    canShow={!isDefault}
+                                  >
+                                    {actualValue}
+                                  </Tooltip>
+                                  {isDefault && <Tag>Default</Tag>}
+                                </Box>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
                 }
                 second={
                   <RightInfoPanel>
