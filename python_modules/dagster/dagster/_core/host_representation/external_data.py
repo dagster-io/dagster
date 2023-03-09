@@ -878,13 +878,21 @@ class ExternalAssetDependedBy(
 
 
 @whitelist_for_serdes
+class ExternalResourceConfigEnvVar(NamedTuple):
+    name: str
+
+
+ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
+
+
+@whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
         "_ExternalResourceData",
         [
             ("name", str),
             ("resource_snapshot", ResourceDefSnap),
-            ("configured_values", Dict[str, str]),
+            ("configured_values", Dict[str, ExternalResourceValue]),
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
         ],
@@ -900,7 +908,7 @@ class ExternalResourceData(
         cls,
         name: str,
         resource_snapshot: ResourceDefSnap,
-        configured_values: Mapping[str, str],
+        configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
     ):
@@ -912,7 +920,10 @@ class ExternalResourceData(
             ),
             configured_values=dict(
                 check.mapping_param(
-                    configured_values, "configured_values", key_type=str, value_type=str
+                    configured_values,
+                    "configured_values",
+                    key_type=str,
+                    value_type=(str, ExternalResourceConfigEnvVar),
                 )
             ),
             config_field_snaps=check.list_param(
@@ -1298,6 +1309,12 @@ def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRe
     )
 
 
+def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
+    if isinstance(v, dict) and set(v.keys()) == {"env"}:
+        return ExternalResourceConfigEnvVar(name=v["env"])
+    return json.dumps(v)
+
+
 def external_resource_data_from_def(
     name: str, resource_def: ResourceDefinition
 ) -> ExternalResourceData:
@@ -1316,16 +1333,19 @@ def external_resource_data_from_def(
     config_type = check.not_none(unconfigured_config_schema.config_type)
     unconfigured_config_type_snap = snap_from_config_type(config_type)
 
-    # Right now, .configured sets the default value of the top-level Field
-    # we parse the JSON and break it out into defaults for each individual nested Field
-    # for display in the UI
-    configured_values_expanded = cast(
+    config_schema_default = cast(
         Mapping[str, Any],
         json.loads(resource_def.config_schema.default_value_as_json_str)
         if resource_def.config_schema.default_provided
         else {},
     )
-    configured_values = {k: json.dumps(v) for k, v in configured_values_expanded.items()}
+
+    # Right now, .configured sets the default value of the top-level Field
+    # we parse the JSON and break it out into defaults for each individual nested Field
+    # for display in the UI
+    configured_values = {
+        k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
+    }
 
     return ExternalResourceData(
         name=name,

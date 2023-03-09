@@ -101,7 +101,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           }
 
           const configuredValues = Object.fromEntries(
-            topLevelResourceDetailsOrError.configuredValues.map((cv) => [cv.key, cv.value]),
+            topLevelResourceDetailsOrError.configuredValues.map((cv) => [
+              cv.key,
+              {value: cv.value, type: cv.type},
+            ]),
           );
 
           return (
@@ -123,12 +126,16 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                       <tbody>
                         {topLevelResourceDetailsOrError.configFields.map((field) => {
                           const defaultValue = field.defaultValueAsJson;
+                          const type =
+                            field.name in configuredValues
+                              ? configuredValues[field.name].type
+                              : null;
                           const actualValue =
                             field.name in configuredValues
-                              ? configuredValues[field.name]
+                              ? configuredValues[field.name].value
                               : defaultValue;
 
-                          const isDefault = defaultValue === actualValue;
+                          const isDefault = type === 'VALUE' && defaultValue === actualValue;
 
                           return (
                             <tr key={field.name}>
@@ -147,9 +154,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                                     content={<>Default: {defaultValue}</>}
                                     canShow={!isDefault}
                                   >
-                                    {actualValue}
+                                    {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
                                   </Tooltip>
                                   {isDefault && <Tag>Default</Tag>}
+                                  {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
                                 </Box>
                               </td>
                             </tr>
@@ -228,6 +236,7 @@ const RESOURCE_ROOT_QUERY = gql`
         configuredValues {
           key
           value
+          type
         }
       }
       ...PythonErrorFragment

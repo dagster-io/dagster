@@ -409,8 +409,14 @@ export type ConfigTypeOrError =
 export type ConfiguredValue = {
   __typename: 'ConfiguredValue';
   key: Scalars['String'];
+  type: ConfiguredValueType;
   value: Scalars['String'];
 };
+
+export enum ConfiguredValueType {
+  ENV_VAR = 'ENV_VAR',
+  VALUE = 'VALUE',
+}
 
 export type ConflictingExecutionParamsError = Error & {
   __typename: 'ConflictingExecutionParamsError';
