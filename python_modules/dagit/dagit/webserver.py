@@ -7,6 +7,7 @@ from typing import Generic, List, TypeVar
 import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.cloud_storage_compute_log_manager import CloudStorageComputeLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
@@ -175,15 +176,26 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
     async def download_captured_logs_endpoint(self, request: Request):
         [*log_key, file_extension] = request.path_params["path"].split("/")
         context = self.make_request_context(request)
+        compute_log_manager = context.instance.compute_log_manager
 
-        if not isinstance(context.instance.compute_log_manager, LocalComputeLogManager):
+        if not isinstance(
+            compute_log_manager, (LocalComputeLogManager, CloudStorageComputeLogManager)
+        ):
             raise HTTPException(
                 404, detail="Compute log manager is not compatible for local downloads"
             )
 
-        location = context.instance.compute_log_manager.get_captured_local_path(
-            log_key, file_extension
-        )
+        if isinstance(compute_log_manager, CloudStorageComputeLogManager):
+            io_type = ComputeIOType.STDOUT if file_extension == "out" else ComputeIOType.STDERR
+            if compute_log_manager.cloud_storage_has_logs(
+                log_key, io_type
+            ) and not compute_log_manager.has_local_file(log_key, io_type):
+                compute_log_manager.download_from_cloud_storage(log_key, io_type)
+            location = compute_log_manager.local_manager.get_captured_local_path(
+                log_key, file_extension
+            )
+        else:
+            location = compute_log_manager.get_captured_local_path(log_key, file_extension)
 
         if not location or not path.exists(location):
             raise HTTPException(404, detail="No log files available for download")
