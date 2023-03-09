@@ -275,11 +275,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             external_partition_set.repository_handle.location_name
-        ).get_external_partition_names(external_partition_set)
+        ).get_external_partition_names(external_partition_set, instance=instance)
 
     def get_external_partition_set_execution_param_data(
         self,

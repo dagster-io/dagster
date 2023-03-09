@@ -1504,6 +1504,12 @@ def external_partition_set_data_from_def(
         partitions_def_data = external_time_window_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, StaticPartitionsDefinition):
         partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+    elif (
+        isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name is not None
+    ):
+        partitions_def_data = external_dynamic_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
+        partitions_def_data = external_multi_partitions_definition_from_def(partitions_def)
     else:
         partitions_def_data = None
 
