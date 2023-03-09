@@ -130,8 +130,8 @@ def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot)
 
     assert not result.errors
     assert result.data
-    assert result.data["topLevelResourceDetailsOrError"]
-    my_resource = result.data["topLevelResourceDetailsOrError"]
+    assert result.data["resourceDetailsOrError"]
+    my_resource = result.data["resourceDetailsOrError"]
 
     assert my_resource["description"] == "My description."
     assert len(my_resource["configFields"]) == 2
