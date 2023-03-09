@@ -176,7 +176,8 @@ def test_nested_resources() -> None:
 
     assert len(repo.get_ui_resources()) == 2
     assert "foo" in repo.get_top_level_resources()
-    assert f"_nested_{id(inner)}" in repo.get_top_level_resources()
+    assert "_nested_0" not in repo.get_top_level_resources()
+    assert "_nested_0" in repo.get_ui_resources()
 
 
 def test_resource_coercion():

@@ -52,6 +52,9 @@ class TestDynamicRepositoryData(RepositoryData):
     def get_ui_resources(self):
         return {}
 
+    def get_resource_key_mapping(self):
+        return {}
+
 
 @repository
 def bar_repo():

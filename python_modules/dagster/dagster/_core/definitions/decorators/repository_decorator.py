@@ -77,7 +77,7 @@ class _Repository:
             key_type=str,
             value_type=ResourceDefinition,
         )
-        self.resource_key_mapping = check.opt_dict_param(
+        self.resource_key_mapping = check.opt_mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
 
