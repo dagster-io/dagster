@@ -629,6 +629,7 @@ export type DagitQuery = {
   test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
+  utilizedEnvVarsOrError: EnvVarWithConsumersOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
 };
@@ -802,6 +803,10 @@ export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
 
 export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
   instigationType?: InputMaybe<InstigationType>;
+};
+
+export type DagitQueryUtilizedEnvVarsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitSubscription = {
@@ -1048,6 +1053,23 @@ export type EnumConfigValue = {
   description: Maybe<Scalars['String']>;
   value: Scalars['String'];
 };
+
+export type EnvVarConsumer = {
+  __typename: 'EnvVarConsumer';
+  name: Scalars['String'];
+  type: EnvVarConsumerType;
+};
+
+export enum EnvVarConsumerType {
+  RESOURCE = 'RESOURCE',
+}
+
+export type EnvVarWithConsumersList = {
+  __typename: 'EnvVarWithConsumersList';
+  results: Array<GrapheneEnvVarWithConsumers>;
+};
+
+export type EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError;
 
 export type Error = {
   message: Scalars['String'];
@@ -1372,6 +1394,12 @@ export type GraphSelector = {
   graphName: Scalars['String'];
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
+};
+
+export type GrapheneEnvVarWithConsumers = {
+  __typename: 'GrapheneEnvVarWithConsumers';
+  envVarConsumers: Array<EnvVarConsumer>;
+  envVarName: Scalars['String'];
 };
 
 export type HandledOutputEvent = DisplayableEvent &
