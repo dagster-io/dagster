@@ -196,61 +196,54 @@ export const LaunchAssetExecutionButton: React.FC<{
           position="bottom-right"
           useDisabledButtonTooltipFix
         >
-          <JoinedButtons>
-            <MaterializeButton
-              intent={intent}
-              data-testid={testId('materialize-button')}
-              onClick={(e) => onClick(firstOption.assetKeys, e)}
-              style={
-                options.length > 1
-                  ? {
-                      borderTopRightRadius: 0,
-                      borderBottomRightRadius: 0,
-                      borderRight: `1px solid rgba(255,255,255,0.2)`,
-                    }
-                  : {}
-              }
-              disabled={!firstOption.assetKeys.length}
-              icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-            >
-              {firstOption.label}
-            </MaterializeButton>
-            <MaterialzeButtonOptions
-              openWithLaunchpad={(e: React.MouseEvent<any>) => {
-                e.shiftKey = true;
-                onClick(firstOption.assetKeys, e);
-              }}
-              intent={intent}
-            />
-          </JoinedButtons>
-        </Tooltip>
-        {options.length > 1 && (
-          <Popover
-            isOpen={isOpen}
-            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-            position="bottom-right"
-            content={
-              <Menu>
-                {options.slice(1).map((option) => (
-                  <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon="materialization"
-                    disabled={option.assetKeys.length === 0}
-                    onClick={(e) => onClick(option.assetKeys, e)}
-                  />
-                ))}
-              </Menu>
-            }
+          <MaterializeButton
+            intent={intent}
+            data-testid={testId('materialize-button')}
+            onClick={(e) => onClick(firstOption.assetKeys, e)}
+            style={{
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              borderRight: `1px solid rgba(255,255,255,0.2)`,
+            }}
+            disabled={!firstOption.assetKeys.length}
+            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
           >
-            <Button
-              role="button"
-              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
-              icon={<Icon name="arrow_drop_down" />}
-              intent={intent}
-            />
-          </Popover>
-        )}
+            {firstOption.label}
+          </MaterializeButton>
+        </Tooltip>
+
+        <Popover
+          isOpen={isOpen}
+          onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+          position="bottom-right"
+          content={
+            <Menu>
+              <MenuItem
+                onClick={(e: React.MouseEvent<any>) => {
+                  e.shiftKey = true;
+                  onClick(firstOption.assetKeys, e);
+                }}
+                text="Open in lanchpad"
+              />
+              {options.slice(1).map((option) => (
+                <MenuItem
+                  key={option.label}
+                  text={option.label}
+                  icon="materialization"
+                  disabled={option.assetKeys.length === 0}
+                  onClick={(e) => onClick(option.assetKeys, e)}
+                />
+              ))}
+            </Menu>
+          }
+        >
+          <Button
+            role="button"
+            style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+            icon={<Icon name="arrow_drop_down" />}
+            intent={intent}
+          />
+        </Popover>
       </Box>
       {launchpadElement}
     </>
