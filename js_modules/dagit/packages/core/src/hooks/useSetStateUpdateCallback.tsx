@@ -13,14 +13,11 @@ import React from 'react';
  * }
  */
 export function useSetStateUpdateCallback<T>(
-  initialCurrentState: T,
+  currentState: T,
   updateCallback: (next: T) => void,
 ): (next: React.SetStateAction<T>) => void {
-  const stateRef = React.useRef<T>(initialCurrentState);
-  const previousInitialCurrentState = React.useRef(initialCurrentState);
-  if (previousInitialCurrentState.current !== initialCurrentState) {
-    stateRef.current = initialCurrentState;
-  }
+  const stateRef = React.useRef<T>(currentState);
+  stateRef.current = currentState;
 
   const updateCallbackRef = React.useRef(updateCallback);
   updateCallbackRef.current = updateCallback;
