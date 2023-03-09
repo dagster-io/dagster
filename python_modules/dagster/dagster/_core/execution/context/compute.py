@@ -294,7 +294,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_time_window(self) -> TimeWindow:
+    def partition_time_window(self) -> str:
         """The partition time window for the current run.
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
