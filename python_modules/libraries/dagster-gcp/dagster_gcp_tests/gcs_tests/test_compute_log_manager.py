@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from unittest import mock
 
 import pendulum
 import pytest
@@ -247,6 +248,33 @@ def test_prefix_filter(gcs_bucket):
             .decode("utf-8")
         )
         assert logs == "hello hello"
+
+
+def test_storage_download_url_fallback(gcs_bucket):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = GCSComputeLogManager(bucket=gcs_bucket, local_dir=temp_dir)
+        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        log_key = ["arbitrary", "log", "key", time_str]
+
+        orig_blob_fn = manager._bucket.blob
+        with mock.patch.object(manager._bucket, "blob") as blob_fn:
+
+            def _return_mocked_blob(*args, **kwargs):
+                blob = orig_blob_fn(*args, **kwargs)
+                blob.generate_signed_url = mock.Mock().side_effect = Exception("unauthorized")
+                return blob
+
+            blob_fn.side_effect = _return_mocked_blob
+
+            with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+                write_stream.write("hello hello")
+
+            # can read bytes
+            log_data, _ = manager.log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
+            assert log_data.decode("utf-8") == "hello hello"
+
+            url = manager.download_url_for_type(log_key, ComputeIOType.STDERR)
+            assert url.startswith("/logs")  # falls back to local storage url
 
 
 class TestGCSComputeLogManager(TestCapturedLogManager):
