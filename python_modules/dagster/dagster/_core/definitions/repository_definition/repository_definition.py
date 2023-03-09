@@ -170,6 +170,9 @@ class RepositoryDefinition:
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
 
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        return self._repository_data.get_env_vars_by_top_level_resource()
+
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
