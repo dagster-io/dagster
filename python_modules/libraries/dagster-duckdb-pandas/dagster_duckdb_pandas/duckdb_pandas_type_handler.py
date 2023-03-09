@@ -1,9 +1,11 @@
+from typing import Optional, Sequence, Type
+
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import (
+    ConfigurableDuckDBIOManager,
     DuckDbClient,
-    build_configurable_duckdb_io_manager,
     build_duckdb_io_manager,
 )
 
@@ -133,6 +135,12 @@ Examples:
 
 """
 
-configurable_duckdb_pandas_io_manager = build_configurable_duckdb_io_manager(
-    [DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
-)
+
+class ConfigurableDuckDBPandasIOManager(ConfigurableDuckDBIOManager):
+    @staticmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        return [DuckDBPandasTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return pd.DataFrame

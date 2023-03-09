@@ -1,10 +1,12 @@
+from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
 
 import duckdb
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.structured_config import (
     ConfigurableIOManagerFactory,
+    infer_schema_from_config_class,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -15,6 +17,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._utils.backoff import backoff
+from pydantic import Field
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -81,14 +84,7 @@ def build_duckdb_io_manager(
 
     """
 
-    @io_manager(
-        config_schema={
-            "database": Field(StringSource, description="Path to the DuckDB database."),
-            "schema": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
-            ),
-        }
-    )
+    @io_manager(config_schema=infer_schema_from_config_class(ConfigurableDuckDBIOManager))
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database.
 
@@ -109,24 +105,29 @@ def build_duckdb_io_manager(
     return duckdb_io_manager
 
 
-def build_configurable_duckdb_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
-):
-    class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
-        database: str
-        schema_: Optional[str] = None  # schema is a reserved word for pydantic
+class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
+    database: str
+    schema_: Optional[str] = Field(None, alias="schema")  # schema is a reserved word for pydantic
 
-        def create_io_manager(self, context) -> DbIOManager:
-            return DbIOManager(
-                db_client=DuckDbClient(),
-                database=self.database,
-                schema=self.schema_,
-                type_handlers=type_handlers,
-                default_load_type=default_load_type,
-                io_manager_name="DuckDBIOManager",
-            )
+    @staticmethod
+    @abstractmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        ...
 
-    return ConfigurableDuckDBIOManager
+    @staticmethod
+    @abstractmethod
+    def default_load_type() -> Optional[Type]:
+        ...
+
+    def create_io_manager(self, context) -> DbIOManager:
+        return DbIOManager(
+            db_client=DuckDbClient(),
+            database=self.database,
+            schema=self.schema_,
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+            io_manager_name="DuckDBIOManager",
+        )
 
 
 class DuckDbClient(DbClient):
