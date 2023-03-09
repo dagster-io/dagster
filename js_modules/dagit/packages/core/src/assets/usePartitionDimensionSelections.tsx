@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {
   allPartitionsSpan,
   partitionsToText,
@@ -99,5 +100,5 @@ export const usePartitionDimensionSelections = (opts: {
     [modifyQueryString, skipPartitionKeyValidation, setQuery],
   );
 
-  return [inflated, setInflated] as const;
+  return [inflated, useSetStateUpdateCallback(inflated, setInflated)] as const;
 };
