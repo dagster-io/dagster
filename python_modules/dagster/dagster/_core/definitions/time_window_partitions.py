@@ -1531,8 +1531,16 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
 
 class PartitionRangeStatus(Enum):
+    MATERIALIZING = "MATERIALIZING"
     MATERIALIZED = "MATERIALIZED"
     FAILED = "FAILED"
+
+
+PARTITION_RANGE_STATUS_PRIORITY = [
+    PartitionRangeStatus.MATERIALIZING,
+    PartitionRangeStatus.FAILED,
+    PartitionRangeStatus.MATERIALIZED,
+]
 
 
 class PartitionTimeWindowStatus:
@@ -1551,93 +1559,105 @@ class PartitionTimeWindowStatus:
         )
 
 
-def fetch_flattened_time_window_ranges(
-    materialized_subset: TimeWindowPartitionsSubset, failed_subset: TimeWindowPartitionsSubset
-) -> Sequence[PartitionTimeWindowStatus]:
-    """
-    Given a materialized subset and a failed subset, flatten to a list of timewindows where the
-    failed subsets are as they were, and the materialized subset is filtered to not overlap with
-    failed.
-    """
-    materialized_time_windows = sorted(
-        materialized_subset.included_time_windows, key=lambda t: t.start
-    )
-    failed_time_windows = sorted(failed_subset.included_time_windows, key=lambda t: t.start)
+def _flatten(
+    high_pri_time_windows: List[PartitionTimeWindowStatus],
+    low_pri_time_windows: List[PartitionTimeWindowStatus],
+) -> List[PartitionTimeWindowStatus]:
+    high_pri_time_windows = sorted(high_pri_time_windows, key=lambda t: t.time_window.start)
+    low_pri_time_windows = sorted(low_pri_time_windows, key=lambda t: t.time_window.start)
 
-    materilized_idx = 0
-    failed_idx = 0
+    high_pri_idx = 0
+    low_pri_idx = 0
 
-    filtered_materialized_time_windows = []
+    filtered_low_pri: List[PartitionTimeWindowStatus] = []
 
-    # slice and dice the materialized time windows so there's no overlap with failed
+    # slice and dice the low pri time windows so there's no overlap with high pri
     while True:
-        if materilized_idx >= len(materialized_time_windows):
+        if low_pri_idx >= len(low_pri_time_windows):
             # reached end of materialized
             break
-        if failed_idx >= len(failed_time_windows):
+        if high_pri_idx >= len(high_pri_time_windows):
             # reached end of failed, add all remaining materialized bc there's no overlap
-            filtered_materialized_time_windows.extend(
-                [
-                    PartitionTimeWindowStatus(w, PartitionRangeStatus.MATERIALIZED)
-                    for w in materialized_time_windows[materilized_idx:]
-                ]
-            )
+            filtered_low_pri.extend(low_pri_time_windows[low_pri_idx:])
             break
 
-        materialized_tw = materialized_time_windows[materilized_idx]
-        failed_tw = failed_time_windows[failed_idx]
+        low_pri_tw = low_pri_time_windows[low_pri_idx]
+        high_pri_tw = high_pri_time_windows[high_pri_idx]
 
-        if materialized_tw.start < failed_tw.start:
-            if materialized_tw.end <= failed_tw.start:
-                # materialized is entirely before failed
-                filtered_materialized_time_windows.append(
-                    PartitionTimeWindowStatus(materialized_tw, PartitionRangeStatus.MATERIALIZED)
-                )
-                materilized_idx += 1
+        if low_pri_tw.time_window.start < high_pri_tw.time_window.start:
+            if low_pri_tw.time_window.end <= high_pri_tw.time_window.start:
+                # low_pri_tw is entirely before high pri
+                filtered_low_pri.append(low_pri_tw)
+                low_pri_idx += 1
             else:
-                # failed cuts the materialized short
-                filtered_materialized_time_windows.append(
+                # high pri cuts the low pri short
+                filtered_low_pri.append(
                     PartitionTimeWindowStatus(
                         TimeWindow(
-                            materialized_tw.start,
-                            failed_tw.start,
+                            low_pri_tw.time_window.start,
+                            high_pri_tw.time_window.start,
                         ),
-                        PartitionRangeStatus.MATERIALIZED,
+                        low_pri_tw.status,
                     )
                 )
 
-                if materialized_tw.end > failed_tw.end:
-                    # the materialized time window will continue on the other end of the failed
-                    # and get split in two. Modify materialized_time_windows[materilized_idx] to be
-                    # the second half of the materialized time window. It will be added in the next iteration.
-                    # (don't add it now, because we need to check if it overlaps with the next failed)
-                    materialized_time_windows[materilized_idx] = TimeWindow(
-                        failed_tw.end, materialized_tw.end
+                if low_pri_tw.time_window.end > high_pri_tw.time_window.end:
+                    # the low pri time window will continue on the other end of the high pri
+                    # and get split in two. Modify low_pri[low_pri_idx] to be
+                    # the second half of the low pri time window. It will be added in the next iteration.
+                    # (don't add it now, because we need to check if it overlaps with the next high pri)
+                    low_pri_time_windows[low_pri_idx] = PartitionTimeWindowStatus(
+                        TimeWindow(high_pri_tw.time_window.end, low_pri_tw.time_window.end),
+                        low_pri_tw.status,
                     )
-                    failed_idx += 1
+                    high_pri_idx += 1
                 else:
-                    # the rest of the materialized time window is inside the failed time window
-                    materilized_idx += 1
+                    # the rest of the low pri time window is inside the high pri time window
+                    low_pri_idx += 1
         else:
-            if materialized_tw.start >= failed_tw.end:
-                # failed is entirely before materialized. The next failed may overlap
-                failed_idx += 1
-            elif materialized_tw.end <= failed_tw.end:
-                # materialized is entirely within failed, skip it
-                materilized_idx += 1
+            if low_pri_tw.time_window.start >= high_pri_tw.time_window.end:
+                # high pri is entirely before low pri. The next high pri may overlap
+                high_pri_idx += 1
+            elif low_pri_tw.time_window.end <= high_pri_tw.time_window.end:
+                # low pri is entirely within high pri, skip it
+                low_pri_idx += 1
             else:
-                # failed cuts out the start of the materialized. It will continue on the other end.
-                # Modify materialized_time_windows[materilized_idx] to shorten the start. It will be added
-                # in the next iteration. (don't add it now, because we need to check if it overlaps with the next failed)
-                materialized_time_windows[materilized_idx] = TimeWindow(
-                    failed_tw.end, materialized_tw.end
+                # high pri cuts out the start of the low pri. It will continue on the other end.
+                # Modify low_pri[low_pri_idx] to shorten the start. It will be added
+                # in the next iteration. (don't add it now, because we need to check if it overlaps with the next high pri)
+                low_pri_time_windows[low_pri_idx] = PartitionTimeWindowStatus(
+                    TimeWindow(high_pri_tw.time_window.end, low_pri_tw.time_window.end),
+                    low_pri_tw.status,
                 )
-                failed_idx += 1
+                high_pri_idx += 1
 
-    # combine the failed windwos with the filtered materialized windows
-    flattened_time_windows = [
-        PartitionTimeWindowStatus(w, PartitionRangeStatus.FAILED) for w in failed_time_windows
-    ]
-    flattened_time_windows.extend(filtered_materialized_time_windows)
+    # combine the high pri windwos with the filtered low pri windows
+    flattened_time_windows = high_pri_time_windows
+    flattened_time_windows.extend(filtered_low_pri)
     flattened_time_windows.sort(key=lambda t: t.time_window.start)
     return flattened_time_windows
+
+
+def fetch_flattened_time_window_ranges(
+    subsets: Mapping[PartitionRangeStatus, TimeWindowPartitionsSubset]
+) -> Sequence[PartitionTimeWindowStatus]:
+    """
+    Given potentially overlapping subsets, return a flattened list of timewindows where the highest priority status wins
+    on overlaps.
+    """
+    prioritized_subsets = sorted(
+        [(status, subset) for status, subset in subsets.items()],
+        key=lambda t: PARTITION_RANGE_STATUS_PRIORITY.index(t[0]),
+    )
+
+    # progressively add lower priority time windows to the list of higher priority time windows
+    flattened_time_window_statuses = []
+    for status, subset in prioritized_subsets:
+        subset_time_window_statuses = [
+            PartitionTimeWindowStatus(tw, status) for tw in subset.included_time_windows
+        ]
+        flattened_time_window_statuses = _flatten(
+            flattened_time_window_statuses, subset_time_window_statuses
+        )
+
+    return flattened_time_window_statuses

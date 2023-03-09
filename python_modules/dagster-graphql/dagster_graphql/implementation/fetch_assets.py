@@ -37,6 +37,7 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
+    PartitionRangeStatus,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
@@ -458,8 +459,12 @@ def build_partition_statuses(
 
     if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         ranges = fetch_flattened_time_window_ranges(
-            materialized_partitions_subset,
-            cast(TimeWindowPartitionsSubset, failed_partitions_subset),
+            {
+                PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
+                PartitionRangeStatus.FAILED: cast(
+                    TimeWindowPartitionsSubset, failed_partitions_subset
+                ),
+            },
         )
         graphene_ranges = []
         for r in ranges:

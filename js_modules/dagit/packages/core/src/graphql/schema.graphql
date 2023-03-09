@@ -746,6 +746,7 @@ type TimePartitionRange {
 }
 
 enum PartitionRangeStatus {
+  MATERIALIZING
   MATERIALIZED
   FAILED
 }
