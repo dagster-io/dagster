@@ -11,7 +11,7 @@ from dagster import (
     dagster_type_loader,
     MetadataValue,
     TableSchema,
-    TableColumn
+    TableColumn,
 )
 
 from dagster._annotations import experimental
