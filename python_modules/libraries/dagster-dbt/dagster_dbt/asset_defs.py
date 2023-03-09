@@ -43,7 +43,7 @@ from dagster._core.definitions.events import (
     Output,
 )
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
@@ -563,7 +563,7 @@ def _dbt_nodes_to_assets(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, Any]
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = _get_node_metadata,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
@@ -651,7 +651,7 @@ def load_assets_from_dbt_project(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, Any]
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -703,10 +703,10 @@ def load_assets_from_dbt_project(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, Any]]): A function
-            that takes a dictionary of dbt node info and optionally returns a dictionary of metadata
-            to be attached to the corresponding definition. This is added to the default metadata
-            assigned to the node, which consists of the node's schema (if present).
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -766,7 +766,7 @@ def load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, Any]
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
     ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -816,10 +816,10 @@ def load_assets_from_dbt_manifest(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, Any]]): A function
-            that takes a dictionary of dbt node info and optionally returns a dictionary of metadata
-            to be attached to the corresponding definition. This is added to the default metadata
-            assigned to the node, which consists of the node's schema (if present).
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
