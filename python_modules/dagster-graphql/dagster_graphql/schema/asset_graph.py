@@ -213,6 +213,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
+    latestRunForPartition = graphene.Field(GrapheneRun, partition=graphene.NonNull(graphene.String))
     assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
@@ -744,6 +745,26 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationEvent(event=event) if event else None
             for event in ordered_materializations
         ]
+
+    def resolve_latestRunForPartition(
+        self,
+        graphene_info: ResolveInfo,
+        partition: str,
+    ):
+        event_records = list(
+            graphene_info.context.instance.event_log_storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=self._external_asset_node.asset_key,
+                    asset_partitions=[partition],
+                ),
+                limit=1,
+            )
+        )
+        if not event_records:
+            return None
+        run_record = graphene_info.context.instance.get_run_record_by_id(event_records[0].run_id)
+        return GrapheneRun(run_record) if run_record else None
 
     def resolve_assetPartitionStatuses(self, graphene_info: ResolveInfo):
         asset_key = self._external_asset_node.asset_key
