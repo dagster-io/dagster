@@ -25,7 +25,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
-import {useStateWithUpdateCallback} from '../hooks/useStateWithUpdateCallback';
+import {useSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -174,7 +174,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
   });
 
-  const [_, setSelections] = useStateWithUpdateCallback(selections, _setSelections);
+  const setSelections = useSetStateUpdateCallback(selections, _setSelections);
 
   const keysInSelection = React.useMemo(
     () =>
