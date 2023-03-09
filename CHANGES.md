@@ -1,5 +1,7 @@
 # Changelog
 
+# 1.2.0 (core) / 0.18.0 (libraries)
+
 ## **Major Changes since 1.1.0 (core) / 0.17.0 (libraries)**
 
 ### Core
