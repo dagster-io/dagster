@@ -1,5 +1,15 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
+import {
+  Box,
+  Button,
+  Icon,
+  JoinedButtons,
+  Menu,
+  MenuItem,
+  Popover,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
 import React from 'react';
@@ -186,24 +196,33 @@ export const LaunchAssetExecutionButton: React.FC<{
           position="bottom-right"
           useDisabledButtonTooltipFix
         >
-          <MaterializeButton
-            intent={intent}
-            data-testid={testId('materialize-button')}
-            onClick={(e) => onClick(firstOption.assetKeys, e)}
-            style={
-              options.length > 1
-                ? {
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                    borderRight: `1px solid rgba(255,255,255,0.2)`,
-                  }
-                : {}
-            }
-            disabled={!firstOption.assetKeys.length}
-            icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
-          >
-            {firstOption.label}
-          </MaterializeButton>
+          <JoinedButtons>
+            <MaterializeButton
+              intent={intent}
+              data-testid={testId('materialize-button')}
+              onClick={(e) => onClick(firstOption.assetKeys, e)}
+              style={
+                options.length > 1
+                  ? {
+                      borderTopRightRadius: 0,
+                      borderBottomRightRadius: 0,
+                      borderRight: `1px solid rgba(255,255,255,0.2)`,
+                    }
+                  : {}
+              }
+              disabled={!firstOption.assetKeys.length}
+              icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
+            >
+              {firstOption.label}
+            </MaterializeButton>
+            <MaterialzeButtonOptions
+              openWithLaunchpad={(e: React.MouseEvent<any>) => {
+                e.shiftKey = true;
+                onClick(firstOption.assetKeys, e);
+              }}
+              intent={intent}
+            />
+          </JoinedButtons>
         </Tooltip>
         {options.length > 1 && (
           <Popover
@@ -763,3 +782,33 @@ const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
     }
   }
 `;
+
+const MaterialzeButtonOptions = ({
+  openWithLaunchpad,
+  intent,
+}: {
+  openWithLaunchpad: (e: React.MouseEvent<any>) => void;
+  intent?: 'primary' | 'none';
+}) => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Popover
+      isOpen={open}
+      onClose={() => {
+        setOpen(false);
+      }}
+      position="bottom-right"
+      content={
+        <Menu>
+          <MenuItem text="Open in launchpad" onClick={openWithLaunchpad} />
+        </Menu>
+      }
+    >
+      <Button
+        icon={<Icon name="arrow_drop_down" />}
+        onClick={() => setOpen(!open)}
+        intent={intent || 'primary'}
+      />
+    </Popover>
+  );
+};
