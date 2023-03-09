@@ -10,6 +10,7 @@ import {
   Icon,
   MiddleTruncate,
   Mono,
+  NonIdealState,
   Page,
   PageHeader,
   SplitPanelContainer,
@@ -290,37 +291,51 @@ const ResourceConfig: React.FC<{
             </tr>
           </thead>
           <tbody>
-            {resourceDetails.configFields.map((field) => {
-              const defaultValue = field.defaultValueAsJson;
-              const type = configuredValues.hasOwnProperty(field.name)
-                ? configuredValues[field.name].type
-                : null;
-              const actualValue = configuredValues.hasOwnProperty(field.name)
-                ? configuredValues[field.name].value
-                : defaultValue;
+            {resourceDetails.configFields.length === 0 ? (
+              <tr>
+                <td colSpan={3}>
+                  <Box padding={{vertical: 8}}>
+                    <NonIdealState
+                      icon="search"
+                      title="No configuration"
+                      description="This resource has no configuration fields."
+                    />
+                  </Box>
+                </td>
+              </tr>
+            ) : (
+              resourceDetails.configFields.map((field) => {
+                const defaultValue = field.defaultValueAsJson;
+                const type = configuredValues.hasOwnProperty(field.name)
+                  ? configuredValues[field.name].type
+                  : null;
+                const actualValue = configuredValues.hasOwnProperty(field.name)
+                  ? configuredValues[field.name].value
+                  : defaultValue;
 
-              const isDefault = type === 'VALUE' && defaultValue === actualValue;
-              return (
-                <tr key={field.name}>
-                  <td>
-                    <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                      <strong>{field.name}</strong>
-                      <div style={{fontSize: 12, color: Colors.Gray700}}>{field.description}</div>
-                    </Box>
-                  </td>
-                  <td>{remapName(field.configTypeKey)}</td>
-                  <td>
-                    <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                      <Tooltip content={<>Default: {defaultValue}</>} canShow={!isDefault}>
-                        {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
-                      </Tooltip>
-                      {isDefault && <Tag>Default</Tag>}
-                      {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
-                    </Box>
-                  </td>
-                </tr>
-              );
-            })}
+                const isDefault = type === 'VALUE' && defaultValue === actualValue;
+                return (
+                  <tr key={field.name}>
+                    <td>
+                      <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+                        <strong>{field.name}</strong>
+                        <div style={{fontSize: 12, color: Colors.Gray700}}>{field.description}</div>
+                      </Box>
+                    </td>
+                    <td>{remapName(field.configTypeKey)}</td>
+                    <td>
+                      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                        <Tooltip content={<>Default: {defaultValue}</>} canShow={!isDefault}>
+                          {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
+                        </Tooltip>
+                        {isDefault && <Tag>Default</Tag>}
+                        {type === 'ENV_VAR' && <Tag intent="success">Env var</Tag>}
+                      </Box>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </Table>
       </Box>
