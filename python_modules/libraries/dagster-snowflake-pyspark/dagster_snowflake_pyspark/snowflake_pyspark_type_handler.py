@@ -89,16 +89,15 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return spark.createDataFrame([], StructType([]))
+
         df = (
             spark.read.format(SNOWFLAKE_CONNECTOR)
             .options(**options)
             .option("query", SnowflakeDbClient.get_select_statement(table_slice))
             .load()
         )
-
-        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
-            return spark.createDataFrame([], StructType([]))
-
         return df.toDF(*[c.lower() for c in df.columns])
 
     @property
