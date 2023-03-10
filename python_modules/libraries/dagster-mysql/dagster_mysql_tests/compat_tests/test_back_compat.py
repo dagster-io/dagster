@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+import datetime
 import os
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ from dagster import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import file_relative_path
 from sqlalchemy import create_engine, inspect
 
@@ -405,6 +407,10 @@ def test_add_primary_keys(backcompat_conn_string):
 
         with DagsterInstance.from_config(tempdir) as instance:
             assert "id" not in get_columns(instance, "kvs")
+            # trigger insert, and update
+            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.kvs_set({"a": "A"})
+
             kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
             assert kvs_row_count > 0
 
@@ -413,6 +419,11 @@ def test_add_primary_keys(backcompat_conn_string):
             assert instance_info_row_count > 0
 
             assert "id" not in get_columns(instance, "daemon_heartbeats")
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
             daemon_heartbeats_row_count = _get_table_row_count(
                 instance.run_storage, DaemonHeartbeatsTable
             )
