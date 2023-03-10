@@ -99,18 +99,20 @@ T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @overload
-def telemetry_wrapper(metadata: T_Callable) -> T_Callable:
+def telemetry_wrapper(target_fn: T_Callable) -> T_Callable:
     ...
 
 
 @overload
-def telemetry_wrapper(metadata: Optional[Mapping[str, str]]) -> Callable[[T_Callable], T_Callable]:
+def telemetry_wrapper(
+    *, metadata: Optional[Mapping[str, str]]
+) -> Callable[[Callable[P, T]], Callable[P, T]]:
     ...
 
 
 def telemetry_wrapper(
-    metadata: Optional[Union[Callable[P, T], Mapping[str, str]]]
-) -> Union[Callable[P, T], Callable[[Callable[P, T]], Callable[P, T]]]:
+    target_fn: Optional[T_Callable] = None, *, metadata: Optional[Mapping[str, str]] = None
+) -> Union[T_Callable, Callable[[Callable[P, T]], Callable[P, T]]]:
     """
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
@@ -118,8 +120,8 @@ def telemetry_wrapper(
     Wrapped function must be in the list of whitelisted function, and must have a DagsterInstance
     parameter named 'instance' in the signature.
     """
-    if callable(metadata):
-        return _telemetry_wrapper(metadata)
+    if target_fn is not None:
+        return _telemetry_wrapper(target_fn)
 
     def _wraps(f: Callable[P, T]) -> Callable[P, T]:
         return _telemetry_wrapper(f, metadata)
