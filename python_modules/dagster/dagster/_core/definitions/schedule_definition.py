@@ -96,7 +96,6 @@ class ScheduleEvaluationContext:
             DagsterDaemonScheduler.
 
     Example:
-
     .. code-block:: python
 
         from dagster import schedule, ScheduleEvaluationContext

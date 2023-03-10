@@ -81,7 +81,6 @@ class SensorEvaluationContext:
             directly (primarily useful in testing contexts).
 
     Example:
-
     .. code-block:: python
 
         from dagster import sensor, SensorEvaluationContext

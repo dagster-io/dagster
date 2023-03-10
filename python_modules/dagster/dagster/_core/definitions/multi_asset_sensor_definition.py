@@ -196,7 +196,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             directly (primarily useful in testing contexts).
 
     Example:
-
     .. code-block:: python
 
         from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext

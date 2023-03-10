@@ -33,7 +33,6 @@ class InitResourceContext:
             outside of execution context, this will be None.
 
     Example:
-
     .. code-block:: python
 
         from dagster import resource, InitResourceContext
