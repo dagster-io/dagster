@@ -166,6 +166,10 @@ class ScheduleEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @property
+    def instance_ref(self) -> Optional[InstanceRef]:
+        return self._instance_ref
+
     @public
     @property
     def scheduled_execution_time(self) -> datetime:
