@@ -83,6 +83,34 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     )
 
 
+@asset_cli.command(name="list", help="List assets")
+@python_origin_target_argument
+@click.option("--select", help="Asset selection to target", required=False)
+def asset_list_command(**kwargs):
+    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_def = recon_repo.get_definition()
+
+    select = kwargs.get("select")
+    if select is not None:
+        asset_keys = parse_asset_selection(
+            assets_defs=list(repo_def._assets_defs_by_key.values()),
+            source_assets=list(repo_def.source_assets_by_key.values()),
+            asset_selection=select.split(","),
+            raise_on_clause_has_no_matches=False,
+        )
+    else:
+        asset_keys = [
+            asset_key
+            for assets_def in repo_def._assets_defs_by_key.values()
+            for asset_key in assets_def.keys
+        ]
+
+    for asset_key in sorted(asset_keys):
+        print(asset_key.to_user_string())
+
+
 @asset_cli.command(name="wipe")
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
