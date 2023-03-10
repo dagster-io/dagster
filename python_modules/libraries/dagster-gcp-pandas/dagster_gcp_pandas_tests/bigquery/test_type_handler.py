@@ -8,12 +8,14 @@ import pandas_gbq
 import pytest
 from dagster import (
     AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     fs_io_manager,
     instance_for_test,
@@ -468,3 +470,83 @@ def test_dynamic_partitioned_asset():
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_self_dependent_asset():
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+    ) as table_name:
+        daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+        @asset(
+            partitions_def=daily_partitions,
+            key_prefix=schema,
+            ins={
+                "self_dependent_asset": AssetIn(
+                    key=AssetKey([schema, table_name]),
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+            },
+            metadata={
+                "partition_expr": "TIMESTAMP(key)",
+            },
+            config_schema={"value": str, "last_partition_key": str},
+            name=table_name,
+        )
+        def self_dependent_asset(context, self_dependent_asset: pd.DataFrame) -> pd.DataFrame:
+            key = context.asset_partition_key_for_output()
+
+            if not self_dependent_asset.empty:
+                assert len(self_dependent_asset.index) == 3
+                assert (
+                    self_dependent_asset["key"] == context.op_config["last_partition_key"]
+                ).all()
+            else:
+                assert context.op_config["last_partition_key"] == "NA"
+            value = context.op_config["value"]
+            pd_df = pd.DataFrame(
+                {
+                    "key": [key, key, key],
+                    "a": [value, value, value],
+                }
+            )
+
+            return pd_df
+
+        asset_full_name = f"{schema}__{table_name}"
+        bq_table_path = f"{schema}.{table_name}"
+
+        bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
+        resource_defs = {"io_manager": bq_io_manager}
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-01",
+            resources=resource_defs,
+            run_config={
+                "ops": {asset_full_name: {"config": {"value": "1", "last_partition_key": "NA"}}}
+            },
+        )
+
+        out_df = pandas_gbq.read_gbq(
+            f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-02",
+            resources=resource_defs,
+            run_config={
+                "ops": {
+                    asset_full_name: {"config": {"value": "2", "last_partition_key": "2023-01-01"}}
+                }
+            },
+        )
+
+        out_df = pandas_gbq.read_gbq(
+            f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
