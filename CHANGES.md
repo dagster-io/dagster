@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.2.1 (core) / 0.18.1 (libraries)
+
+### Bugfixes
+
+- Fixed a bug with postgres storage where daemon heartbeats were failing on instances that had not been migrated with `dagster instance migrate` after upgrading to `1.2.0`.
+
 # 1.2.0 (core) / 0.18.0 (libraries)
 
 ## **Major Changes since 1.1.0 (core) / 0.17.0 (libraries)**
@@ -42,7 +48,7 @@
 
 Stay tuned, as this is only the first part of the overhaul. We’ll be adding more chapters - including automating materializations, using resources, using I/O managers, and more - in the next few weeks.
 
-# Since 1.1.21 (core) / 0.17.21 (libraries)
+## Since 1.1.21 (core) / 0.17.21 (libraries)
 
 ### New
 
