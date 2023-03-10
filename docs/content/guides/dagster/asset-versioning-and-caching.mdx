@@ -48,7 +48,15 @@ def a_number():
     return 1
 ```
 
-We materialize it and look at the entry in the Asset Catalog:
+Next, start Dagit, the Dagster UI:
+
+```shell
+dagster dev
+```
+
+Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
+
+Next, look at the entry for the materialization. Take note of the two hashes in the **System tags** section of the materialization details - `code_version` and `data_version`:
 
 <Image
 alt="Simple asset data version"
