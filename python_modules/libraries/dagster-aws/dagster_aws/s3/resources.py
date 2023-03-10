@@ -40,10 +40,13 @@ S3_SESSION_CONFIG = {
         default_value=True,
     ),
     "verify": Field(
-        bool,
-        description="Whether or not to verify SSL certificates. By default SSL certificates are verified.",
+        str,
+        description=(
+            "Whether or not to verify SSL certificates. By default SSL certificates are verified. You can also "
+            "specify this argument if you want to use a different CA cert bundle than the one used by botocore."
+        ),
         is_required=False,
-        default_value=True,
+        default_value=None,
     ),
 }
 

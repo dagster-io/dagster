@@ -28,9 +28,13 @@ class S3Callback:
 
 
 def construct_s3_client(
-        max_attempts, region_name=None, endpoint_url=None, use_unsigned_session=False, profile_name=None,
-        use_ssl=True,
-        verify=True,
+    max_attempts,
+    region_name=None,
+    endpoint_url=None,
+    use_unsigned_session=False,
+    profile_name=None,
+    use_ssl=True,
+    verify=None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
