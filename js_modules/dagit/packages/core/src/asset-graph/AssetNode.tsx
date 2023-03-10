@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner, Tooltip, IconName} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -10,6 +10,7 @@ import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag'
 import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {PartitionState} from '../partitions/PartitionStatus';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -48,6 +49,9 @@ export const AssetNode: React.FC<{
           ) : (
             <Description $color={Colors.Gray400}>No description</Description>
           )}
+          {definition.isPartitioned && (
+            <AssetNodePartitionsRow definition={definition} liveData={liveData} />
+          )}
           {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
@@ -58,7 +62,7 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
   <Box
     padding={{horizontal: 8}}
     style={{
@@ -75,12 +79,114 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
   </Box>
 );
 
+const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
+  const data = props.liveData?.partitionStats;
+  return (
+    <Box
+      style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2}}
+      padding={{bottom: 8, horizontal: 8}}
+    >
+      <AssetNodePartitionCountBox
+        state={PartitionState.SUCCESS}
+        value={data?.numMaterialized}
+        total={data?.numPartitions}
+      />
+      <AssetNodePartitionCountBox
+        state={PartitionState.MISSING}
+        value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
+        total={data?.numPartitions}
+      />
+      <AssetNodePartitionCountBox
+        state={PartitionState.FAILURE}
+        value={data?.numFailed}
+        total={data?.numPartitions}
+      />
+    </Box>
+  );
+};
+
+const StyleForPartitionState: {
+  [state: string]: {
+    background: string;
+    foreground: string;
+    border: string;
+    icon: IconName;
+    adjective: string;
+  };
+} = {
+  [PartitionState.FAILURE]: {
+    background: Colors.Red50,
+    foreground: Colors.Red700,
+    border: Colors.Red500,
+    icon: 'partition_failure',
+    adjective: 'failed',
+  },
+  [PartitionState.SUCCESS]: {
+    background: Colors.Green50,
+    foreground: Colors.Green700,
+    border: Colors.Green500,
+    icon: 'partition_success',
+    adjective: 'materialized',
+  },
+  [PartitionState.MISSING]: {
+    background: Colors.Gray100,
+    foreground: Colors.Gray900,
+    border: Colors.Gray500,
+    icon: 'partition_missing',
+    adjective: 'missing',
+  },
+};
+
+const partitionStateToString = (count: number | undefined, adjective = '') =>
+  `${count === undefined ? '-' : count.toLocaleString()} ${adjective}${adjective ? ' ' : ''}${
+    count === 1 ? 'partition' : 'partitions'
+  }`;
+
+const AssetNodePartitionCountBox: React.FC<{
+  state: PartitionState;
+  value: number | undefined;
+  total: number | undefined;
+}> = ({state, value, total}) => {
+  const style = StyleForPartitionState[state];
+  const foreground = value ? style.foreground : Colors.Gray500;
+  const background = value ? style.background : Colors.Gray50;
+
+  return (
+    <Tooltip
+      display="block"
+      position="top"
+      canShow={value !== undefined}
+      content={partitionStateToString(value, style.adjective)}
+    >
+      <AssetNodePartitionCountContainer style={{color: foreground, background}}>
+        <Icon name={style.icon} color={foreground} size={16} />
+        {value === undefined ? '—' : value === total ? 'All' : value > 1000 ? '999+' : value}
+      </AssetNodePartitionCountContainer>
+    </Tooltip>
+  );
+};
+
+// Necessary to remove the outline we get with the tooltip applying a tabIndex
+const AssetNodePartitionCountContainer = styled.div`
+  width: 100%;
+  border-radius: 6px;
+  font-size: 12px;
+  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  &:focus {
+    outline: 0;
+  }
+`;
+
 interface StatusRowProps {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
 }
 
-export const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
+const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
   const info = buildAssetNodeStatusRow(props);
   return <AssetNodeStatusBox background={info.background}>{info.content}</AssetNodeStatusBox>;
 };
@@ -92,7 +198,7 @@ function getStepKey(definition: AssetNodeFragment) {
   return firstOp || '';
 }
 
-export function buildAssetNodeStatusRow({
+function buildAssetNodeStatusRow({
   definition,
   liveData,
 }: {
@@ -194,28 +300,31 @@ export function buildAssetNodeStatusRow({
   }
 
   if (liveData.partitionStats) {
-    const {numPartitions, numMaterialized} = liveData.partitionStats;
-    const numMissing = numPartitions - numMaterialized;
+    const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
+    const numMissing = numPartitions - numFailed - numMaterialized;
+    const {background, foreground, border} = StyleForPartitionState[
+      late || numFailed
+        ? PartitionState.FAILURE
+        : numMissing
+        ? PartitionState.MISSING
+        : PartitionState.SUCCESS
+    ];
+
     return {
-      background: late ? Colors.Red50 : numMissing ? Colors.Yellow50 : Colors.Green50,
-      border: late ? Colors.Red500 : numMissing ? Colors.Yellow500 : Colors.Green500,
+      background,
+      border,
       content: (
-        <>
-          <Caption color={late ? Colors.Red700 : numMissing ? Colors.Yellow700 : Colors.Green700}>
-            {`${numPartitions.toLocaleString()} partitions`}
-          </Caption>
-          <Caption>
-            <Link
-              to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {late
-                ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-                : `${numMissing.toLocaleString()} missing`}
-            </Link>
-          </Caption>
-        </>
+        <Caption color={foreground}>
+          <Link
+            to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {late
+              ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
+              : partitionStateToString(numPartitions)}
+          </Link>
+        </Caption>
       ),
     };
   }
@@ -281,7 +390,7 @@ export function buildAssetNodeStatusRow({
         <>
           <Box flex={{gap: 4, alignItems: 'center'}}>
             <Caption color={Colors.Yellow700}>Stale</Caption>
-            <StaleCausesInfoDot causes={liveData.staleStatusCauses} />
+            <StaleCausesInfoDot causes={liveData.staleCauses} />
           </Box>
           {lastMaterializationLink}
         </>
@@ -308,24 +417,29 @@ export const AssetNodeMinimal: React.FC<{
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusRow({definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
-
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isSource={isSource}
-          $background={background}
-          $border={border}
+        <TooltipStyled
+          content={displayName}
+          canShow={displayName.length > 14}
+          targetTagName="div"
+          position="top"
         >
-          <div style={{position: 'absolute', bottom: 6, left: 6}}>
-            <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-          </div>
-
-          <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 14})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
+          <MinimalAssetNodeBox
+            $selected={selected}
+            $isSource={isSource}
+            $background={background}
+            $border={border}
+          >
+            <div style={{position: 'absolute', bottom: 6, left: 6}}>
+              <AssetLatestRunSpinner liveData={liveData} purpose="section" />
+            </div>
+            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 14})}
+            </MinimalName>
+          </MinimalAssetNodeBox>
+        </TooltipStyled>
       </MinimalAssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
@@ -354,7 +468,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       ...AssetNodeLiveObservation
     }
     staleStatus
-    staleStatusCauses {
+    staleCauses {
       key {
         path
       }
@@ -366,6 +480,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     partitionStats {
       numMaterialized
       numPartitions
+      numFailed
     }
   }
 
@@ -398,6 +513,7 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
+    hasMaterializePermission
     jobNames
     opNames
     opVersion
@@ -514,4 +630,8 @@ const Description = styled.div<{$color: string}>`
   border-top: 1px solid ${Colors.Blue50};
   background: ${Colors.White};
   font-size: 12px;
+`;
+
+const TooltipStyled = styled(Tooltip)`
+  height: 100%;
 `;

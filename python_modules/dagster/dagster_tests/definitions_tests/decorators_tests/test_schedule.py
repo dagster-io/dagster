@@ -15,6 +15,7 @@ from dagster import (
     schedule,
     validate_run_config,
 )
+from dagster._core.errors import ScheduleExecutionError
 from dagster._utils.merger import merge_dicts
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -58,10 +59,8 @@ def test_scheduler():
 
     context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
 
-    execution_data = echo_time_schedule.evaluate_tick(context_without_time)
-    assert execution_data.run_requests
-    assert len(execution_data.run_requests) == 1
-    assert execution_data.run_requests[0].run_config == {"echo_time": ""}
+    with pytest.raises(ScheduleExecutionError):
+        echo_time_schedule.evaluate_tick(context_without_time)
 
     execution_data = echo_time_schedule.evaluate_tick(context_with_time)
     assert execution_data.run_requests

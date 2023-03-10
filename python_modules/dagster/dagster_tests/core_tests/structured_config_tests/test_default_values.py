@@ -123,3 +123,39 @@ def test_default_values_nested():
     )
 
     assert executed["yes"]
+
+
+def test_default_values_extension() -> None:
+    class BaseConfig(Config):
+        a_string: str = "bar"
+        an_int: int = 2
+
+    class ExtendingConfig(BaseConfig):
+        a_float: float = 1.0
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: ExtendingConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        assert config.a_float == 1.0
+        executed["yes"] = True
+
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+
+    assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    assert a_job
+
+    with pytest.raises(AssertionError):
+        # ensure that assertion-raising default value is passed
+        a_job.execute_in_process()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_string": "foo"}}}})
+
+    assert executed["yes"]

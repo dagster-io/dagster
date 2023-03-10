@@ -189,7 +189,7 @@ export type AssetNode = {
   assetPartitionStatuses: AssetPartitionStatuses;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
-  currentLogicalVersion: Maybe<Scalars['String']>;
+  currentDataVersion: Maybe<Scalars['String']>;
   dependedBy: Array<AssetDependency>;
   dependedByKeys: Array<AssetKey>;
   dependencies: Array<AssetDependency>;
@@ -207,6 +207,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
+  latestRunForPartition: Maybe<Run>;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -218,8 +219,8 @@ export type AssetNode = {
   partitionStats: Maybe<PartitionStats>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
+  staleCauses: Array<StaleCause>;
   staleStatus: Maybe<StaleStatus>;
-  staleStatusCauses: Array<StaleStatusCause>;
   type: Maybe<DagsterType>;
 };
 
@@ -241,6 +242,10 @@ export type AssetNodeAssetObservationsArgs = {
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type AssetNodeLatestRunForPartitionArgs = {
+  partition: Scalars['String'];
 };
 
 export type AssetNodePartitionKeysByDimensionArgs = {
@@ -409,8 +414,14 @@ export type ConfigTypeOrError =
 export type ConfiguredValue = {
   __typename: 'ConfiguredValue';
   key: Scalars['String'];
+  type: ConfiguredValueType;
   value: Scalars['String'];
 };
+
+export enum ConfiguredValueType {
+  ENV_VAR = 'ENV_VAR',
+  VALUE = 'VALUE',
+}
 
 export type ConflictingExecutionParamsError = Error & {
   __typename: 'ConflictingExecutionParamsError';
@@ -3490,18 +3501,18 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String'];
 };
 
+export type StaleCause = {
+  __typename: 'StaleCause';
+  dependency: Maybe<AssetKey>;
+  key: AssetKey;
+  reason: Scalars['String'];
+};
+
 export enum StaleStatus {
   FRESH = 'FRESH',
   MISSING = 'MISSING',
   STALE = 'STALE',
 }
-
-export type StaleStatusCause = {
-  __typename: 'StaleStatusCause';
-  dependency: Maybe<AssetKey>;
-  key: AssetKey;
-  reason: Scalars['String'];
-};
 
 export type StartScheduleMutation = {
   __typename: 'StartScheduleMutation';

@@ -22,6 +22,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
 from dagster._core.definitions.time_window_partitions import (
@@ -241,8 +242,9 @@ def find_parent_materialized_asset_partitions(
             asset_key,
             latest_record.partition_key,
         ):
-            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
-                latest_record.run_id, child
+            if (
+                child.asset_key in target_asset_keys
+                and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
             ):
                 result_asset_partitions.add(child)
 
@@ -458,7 +460,7 @@ def determine_asset_partitions_to_reconcile(
 
 
 def get_freshness_constraints_by_key(
-    instance_queryer: "CachingInstanceQueryer",
+    data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
     plan_window_start: datetime.datetime,
     plan_window_end: datetime.datetime,
@@ -503,18 +505,18 @@ def get_freshness_constraints_by_key(
 
 
 def get_current_data_times_for_key(
-    instance_queryer: "CachingInstanceQueryer",
+    data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
     # calculate the data time for this record in relation to the upstream keys which are
     # set to be updated this tick and are involved in some constraint
-    latest_record = instance_queryer.get_latest_materialization_record(asset_key)
+    latest_record = data_time_resolver.instance_queryer.get_latest_materialization_record(asset_key)
     if latest_record is None:
         return {upstream_key: None for upstream_key in relevant_upstream_keys}
     else:
-        return instance_queryer.get_used_data_times_for_record(
+        return data_time_resolver.get_used_data_times_for_record(
             asset_graph=asset_graph,
             record=latest_record,
         )
@@ -608,7 +610,7 @@ def get_execution_time_window_for_constraints(
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
-    instance_queryer: "CachingInstanceQueryer",
+    data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
     target_asset_selection: AssetSelection,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
@@ -625,7 +627,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     # get a set of constraints that must be satisfied for each key
     constraints_by_key = get_freshness_constraints_by_key(
-        instance_queryer, asset_graph, plan_window_start, plan_window_end
+        data_time_resolver, asset_graph, plan_window_start, plan_window_end
     )
 
     # no constraints, so exit early
@@ -666,7 +668,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_times = get_current_data_times_for_key(
-                instance_queryer, asset_graph, relevant_upstream_keys, key
+                data_time_resolver, asset_graph, relevant_upstream_keys, key
             )
             expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
 
@@ -679,13 +681,13 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
-                in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
+                in_progress_data_times = data_time_resolver.get_in_progress_data_times_for_key(
                     asset_graph, key, current_time
                 )
 
                 # if the latest run for this asset failed, then calculate the data times you would
                 # have expected after that failed run completed
-                failed_data_times = instance_queryer.get_failed_data_times_for_key(
+                failed_data_times = data_time_resolver.get_failed_data_times_for_key(
                     asset_graph, key, relevant_upstream_keys
                 )
                 # calculate the data times you'd expect for this key if you were to run it
@@ -747,16 +749,17 @@ def reconcile(
     asset_graph = repository_def.asset_graph
 
     # fetch some data in advance to batch together some queries
-    instance_queryer.prefetch_for_keys(
-        list(asset_selection.upstream(depth=1).resolve(asset_graph)),
-        after_cursor=cursor.latest_storage_id,
+    relevant_asset_keys = list(asset_selection.upstream(depth=1).resolve(asset_graph))
+    instance_queryer.prefetch_asset_records(relevant_asset_keys)
+    instance_queryer.prefetch_asset_partition_counts(
+        relevant_asset_keys, after_cursor=cursor.latest_storage_id
     )
 
     (
         asset_partitions_to_reconcile_for_freshness,
         eventual_asset_partitions_to_reconcile_for_freshness,
     ) = determine_asset_partitions_to_reconcile_for_freshness(
-        instance_queryer=instance_queryer,
+        data_time_resolver=CachingDataTimeResolver(instance_queryer=instance_queryer),
         asset_graph=asset_graph,
         target_asset_selection=asset_selection,
     )

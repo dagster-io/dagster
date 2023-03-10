@@ -52,12 +52,11 @@ SHARED_BUILDKITE_BQ_CONFIG = {
 
 
 @contextmanager
-def temporary_bigquery_table(schema_name: str, column_str: str) -> Iterator[str]:
+def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
     bq_client = bigquery.Client(
         project=SHARED_BUILDKITE_BQ_CONFIG["project"],
     )
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
-    bq_client.query(f"create table {schema_name}.{table_name} ({column_str})").result()
     try:
         print(table_name)
         yield table_name
@@ -135,7 +134,6 @@ def test_io_manager_with_bigquery_pyspark(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="FOO string, QUUX int",
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -171,7 +169,6 @@ def test_time_window_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="RAW_TIME string, A string, B int, TIME DATE",
     ) as table_name:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
@@ -261,7 +258,6 @@ def test_static_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="COLOR string, A string, B int",
     ) as table_name:
         partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
@@ -345,7 +341,6 @@ def test_multi_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="COLOR string, RAW_TIME string, A string, TIME DATE",
     ) as table_name:
         partitions_def = MultiPartitionsDefinition(
             {
@@ -452,7 +447,6 @@ def test_dynamic_partitions(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="FRUIT string, A string",
     ) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
@@ -498,7 +492,7 @@ def test_dynamic_partitions(spark):
         resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            dynamic_fruits.add_partitions(["apple"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -513,7 +507,7 @@ def test_dynamic_partitions(spark):
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            dynamic_fruits.add_partitions(["orange"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],

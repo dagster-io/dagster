@@ -54,10 +54,6 @@ def to_dagster_type(
             pipeline_snapshot,
             dagster_type_meta.loader_schema_key,
         ),
-        output_schema_type=config_type_for_schema(
-            pipeline_snapshot,
-            dagster_type_meta.materializer_schema_key,
-        ),
         inner_types=list(
             map(
                 lambda key: to_dagster_type(pipeline_snapshot, key),

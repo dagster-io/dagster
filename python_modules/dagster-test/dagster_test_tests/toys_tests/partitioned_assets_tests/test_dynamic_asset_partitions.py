@@ -10,13 +10,13 @@ def test_assets():
     assets = load_assets_from_modules([dynamic_asset_partitions])
 
     with DagsterInstance.ephemeral() as instance:
-        customers_partitions_def.add_partitions(["pepsi", "coca_cola"], instance=instance)
+        instance.add_dynamic_partitions(customers_partitions_def.name, ["pepsi", "coca_cola"])
         assert materialize_to_memory(assets, partition_key="pepsi", instance=instance).success
 
 
 def test_job():
     with DagsterInstance.ephemeral() as instance:
-        customers_partitions_def.add_partitions(["pepsi", "coca_cola"], instance=instance)
+        instance.add_dynamic_partitions(customers_partitions_def.name, ["pepsi", "coca_cola"])
         assert (
             defs.get_job_def("dynamic_partitions_job")
             .execute_in_process(partition_key="pepsi", instance=instance)

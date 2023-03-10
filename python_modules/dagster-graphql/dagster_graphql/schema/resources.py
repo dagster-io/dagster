@@ -1,6 +1,10 @@
 import dagster._check as check
 import graphene
 from dagster._core.host_representation.external import ExternalResource
+from dagster._core.host_representation.external_data import (
+    ExternalResourceConfigEnvVar,
+    ExternalResourceValue,
+)
 
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
@@ -12,12 +16,32 @@ from dagster_graphql.schema.util import non_null_list
 from .config_types import GrapheneConfigTypeField
 
 
+class GrapheneConfiguredValueType(graphene.Enum):
+    VALUE = "VALUE"
+    ENV_VAR = "ENV_VAR"
+
+    class Meta:
+        name = "ConfiguredValueType"
+
+
 class GrapheneConfiguredValue(graphene.ObjectType):
     key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
+    type = graphene.NonNull(GrapheneConfiguredValueType)
 
     class Meta:
         name = "ConfiguredValue"
+
+    def __init__(self, key: str, external_resource_value: ExternalResourceValue):
+        super().__init__()
+
+        self.key = key
+        if isinstance(external_resource_value, ExternalResourceConfigEnvVar):
+            self.type = GrapheneConfiguredValueType.ENV_VAR
+            self.value = external_resource_value.name
+        else:
+            self.type = GrapheneConfiguredValueType.VALUE
+            self.value = external_resource_value
 
 
 class GrapheneResourceDetails(graphene.ObjectType):
@@ -61,7 +85,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
 
     def resolve_configuredValues(self, _graphene_info):
         return [
-            GrapheneConfiguredValue(key=key, value=value)
+            GrapheneConfiguredValue(key=key, external_resource_value=value)
             for key, value in self._configured_values.items()
         ]
 

@@ -36,6 +36,9 @@ install_pyright:
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
+rebuild_pyright_pins:
+	python scripts/run-pyright.py --update-pins
+
 quick_pyright:
 	python scripts/run-pyright.py --diff
 

@@ -23,6 +23,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -46,7 +47,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
+from .metadata import RawMetadataValue
 from .node_container import create_execution_structure, validate_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
@@ -546,7 +547,7 @@ class GraphDefinition(NodeDefinition):
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.

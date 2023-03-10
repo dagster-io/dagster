@@ -110,4 +110,9 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
         description="When True, logs emitted from dbt will be logged to the Dagster event log.",
         default_value=True,
     ),
+    "debug": Field(
+        config=bool,
+        description="When True, dbt will be invoked with the `--debug` flag.",
+        default_value=False,
+    ),
 }

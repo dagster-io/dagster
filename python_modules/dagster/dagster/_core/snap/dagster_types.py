@@ -27,7 +27,6 @@ def build_dagster_type_snap(dagster_type: DagsterType) -> "DagsterTypeSnap":
         is_builtin=dagster_type.is_builtin,
         type_param_keys=dagster_type.type_param_keys,
         loader_schema_key=dagster_type.loader_schema_key,
-        materializer_schema_key=dagster_type.materializer_schema_key,
         metadata_entries=dagster_type.metadata_entries,
     )
 

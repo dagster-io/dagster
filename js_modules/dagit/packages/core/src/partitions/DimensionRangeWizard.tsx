@@ -1,38 +1,26 @@
-import {gql, useMutation} from '@apollo/client';
 import {
   Box,
   Button,
   Checkbox,
   Colors,
-  Dialog,
-  DialogBody,
-  DialogFooter,
   Icon,
   Menu,
   MenuDivider,
   MenuItem,
-  Mono,
-  Spinner,
-  TagSelector,
-  TextInput,
+  TagSelectorWithSearch,
 } from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {StateDot} from '../assets/AssetPartitionList';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {partitionStateAtIndex, Range} from '../assets/usePartitionHealthData';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
+import {CreatePartitionDialog} from './CreatePartitionDialog';
 import {DimensionRangeInput} from './DimensionRangeInput';
 import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
-import {
-  AddDynamicPartitionMutation,
-  AddDynamicPartitionMutationVariables,
-} from './types/DimensionRangeWizard.types';
 
 export const DimensionRangeWizard: React.FC<{
   selected: string[];
@@ -42,7 +30,7 @@ export const DimensionRangeWizard: React.FC<{
   isDynamic?: boolean;
   partitionDefinitionName?: string | null;
   repoAddress?: RepoAddress;
-  refetch?: () => void;
+  refetch?: () => Promise<void>;
 }> = ({
   selected,
   setSelected,
@@ -56,6 +44,20 @@ export const DimensionRangeWizard: React.FC<{
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
+
+  const didSetInitialPartition = React.useRef(false);
+  React.useEffect(() => {
+    if (didSetInitialPartition.current || !partitionKeys.length) {
+      return;
+    }
+    didSetInitialPartition.current = true;
+    const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
+    const partition = query.partition as string;
+    if (partition && partitionKeys.includes(partition)) {
+      setSelected([partition]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partitionKeys]);
 
   return (
     <>
@@ -118,8 +120,9 @@ export const DimensionRangeWizard: React.FC<{
             setShowCreatePartition(false);
           }}
           refetch={refetch}
-          selected={selected}
-          setSelected={setSelected}
+          onCreated={(partitionName) => {
+            setSelected([...selected, partitionName]);
+          }}
         />
       )}
     </>
@@ -139,9 +142,6 @@ const DynamicPartitionSelector: React.FC<{
   setShowCreatePartition,
   health,
 }) => {
-  const isAllSelected =
-    allPartitions.length === selectedPartitions.length && allPartitions.length > 0;
-
   const statusForPartitionKey = (partitionKey: string) => {
     const index = allPartitions.indexOf(partitionKey);
     if ('ranges' in health) {
@@ -153,7 +153,7 @@ const DynamicPartitionSelector: React.FC<{
 
   return (
     <>
-      <TagSelector
+      <TagSelectorWithSearch
         allTags={allPartitions}
         selectedTags={selectedPartitions}
         setSelectedTags={setSelectedPartitions}
@@ -177,14 +177,8 @@ const DynamicPartitionSelector: React.FC<{
             </label>
           );
         }}
-        renderDropdown={(dropdown, {width}) => {
-          const toggleAll = () => {
-            if (isAllSelected) {
-              setSelectedPartitions([]);
-            } else {
-              setSelectedPartitions(allPartitions);
-            }
-          };
+        renderDropdown={(dropdown, {width, allTags}) => {
+          const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
           return (
             <Menu style={{width}}>
               <Box padding={4}>
@@ -203,15 +197,24 @@ const DynamicPartitionSelector: React.FC<{
                   />
                 </Box>
                 <MenuDivider />
-                {allPartitions.length ? (
+                {allTags.length ? (
                   <>
                     <label>
                       <MenuItem
                         tagName="div"
                         text={
                           <Box flex={{alignItems: 'center', gap: 12}}>
-                            <Checkbox checked={isAllSelected} onChange={toggleAll} />
-                            <span>Select all ({allPartitions.length})</span>
+                            <Checkbox
+                              checked={isAllSelected}
+                              onChange={() => {
+                                if (isAllSelected) {
+                                  setSelectedPartitions([]);
+                                } else {
+                                  setSelectedPartitions(allTags);
+                                }
+                              }}
+                            />
+                            <span>Select all ({allTags.length})</span>
                           </Box>
                         }
                       />
@@ -233,6 +236,7 @@ const DynamicPartitionSelector: React.FC<{
           }
           return tags;
         }}
+        searchPlaceholder="Filter partitions"
       />
     </>
   );
@@ -252,155 +256,5 @@ const LinkText = styled(Box)`
     height: 24px;
     align-content: center;
     line-height: 24px;
-  }
-`;
-const CreatePartitionDialog = ({
-  isOpen,
-  partitionDefinitionName,
-  close,
-  repoAddress,
-  refetch,
-  selected,
-  setSelected,
-}: {
-  isOpen: boolean;
-  partitionDefinitionName?: string | null;
-  close: () => void;
-  repoAddress: RepoAddress;
-  refetch?: () => void;
-  selected: string[];
-  setSelected: (selected: string[]) => void;
-}) => {
-  const [partitionName, setPartitionName] = React.useState('');
-
-  const [createPartition] = useMutation<
-    AddDynamicPartitionMutation,
-    AddDynamicPartitionMutationVariables
-  >(CREATE_PARTITION_MUTATION);
-
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    const result = await createPartition({
-      variables: {
-        repositorySelector: repoAddressToSelector(repoAddress),
-        partitionsDefName: partitionDefinitionName || '',
-        partitionKey: partitionName,
-      },
-    });
-    setIsSaving(false);
-
-    const data = result.data?.addDynamicPartition;
-    switch (data?.__typename) {
-      case 'PythonError': {
-        showCustomAlert({
-          title: 'Could not create environment variable',
-          body: <PythonErrorInfo error={data} />,
-        });
-        break;
-      }
-      case 'DuplicateDynamicPartitionError': {
-        showCustomAlert({
-          title: 'Could not add partition',
-          body: 'A partition this name already exists.',
-        });
-        break;
-      }
-      case 'UnauthorizedError': {
-        showCustomAlert({
-          title: 'Could not add partition',
-          body: 'You do not have permission to do this.',
-        });
-        break;
-      }
-      case 'AddDynamicPartitionSuccess': {
-        refetch?.();
-        setSelected([...selected, partitionName]);
-        close();
-        break;
-      }
-      default: {
-        showCustomAlert({
-          title: 'Could not add partition',
-          body: 'An unknown error occurred.',
-        });
-        break;
-      }
-    }
-  };
-  return (
-    <Dialog
-      isOpen={isOpen}
-      canEscapeKeyClose
-      canOutsideClickClose
-      title={
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <Icon name="add_circle" size={24} />
-          <div>
-            Add a partition
-            {partitionDefinitionName ? (
-              <>
-                {' '}
-                for <Mono>{partitionDefinitionName}</Mono>
-              </>
-            ) : (
-              ''
-            )}
-          </div>
-        </Box>
-      }
-    >
-      <DialogBody>
-        <Box flex={{direction: 'column', gap: 6}}>
-          <div>Partition name</div>
-          <TextInput
-            rightElement={isSaving ? <Spinner purpose="body-text" /> : undefined}
-            disabled={isSaving}
-            placeholder="name"
-            value={partitionName}
-            onChange={(e) => setPartitionName(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.code === 'Enter') {
-                handleSave();
-              }
-            }}
-          />
-        </Box>
-      </DialogBody>
-      <DialogFooter>
-        <Button onClick={close}>Cancel</Button>
-        <Button intent="primary" onClick={handleSave}>
-          Save
-        </Button>
-      </DialogFooter>
-    </Dialog>
-  );
-};
-
-export const CREATE_PARTITION_MUTATION = gql`
-  mutation AddDynamicPartitionMutation(
-    $partitionsDefName: String!
-    $partitionKey: String!
-    $repositorySelector: RepositorySelector!
-  ) {
-    addDynamicPartition(
-      partitionsDefName: $partitionsDefName
-      partitionKey: $partitionKey
-      repositorySelector: $repositorySelector
-    ) {
-      __typename
-      ... on AddDynamicPartitionSuccess {
-        partitionsDefName
-        partitionKey
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-      ... on UnauthorizedError {
-        message
-      }
-    }
   }
 `;

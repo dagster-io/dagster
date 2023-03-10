@@ -15,8 +15,8 @@ def get_path(materialization_event):
     for (
         metadata_entry
     ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, (NotebookMetadataValue, PathMetadataValue)):
-            return metadata_entry.entry_data.path
+        if isinstance(metadata_entry.value, (NotebookMetadataValue, PathMetadataValue)):
+            return metadata_entry.value.path
 
 
 def cleanup_result_notebook(result):

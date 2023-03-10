@@ -6,7 +6,7 @@ from dagster._core.host_representation.external_data import (
     ExternalRepositoryData,
     ExternalRepositoryErrorData,
 )
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._core.host_representation import RepositoryLocation
@@ -31,7 +31,7 @@ def sync_get_streaming_external_repositories_data_grpc(
             )
         )
 
-        result = deserialize_as(
+        result = deserialize_value(
             "".join(
                 [
                     chunk["serialized_external_repository_chunk"]

@@ -29,28 +29,24 @@
     "path": "/tutorial",
     "children": [
       {
+        "title": "Intro to Dagster and assets",
+        "path": "/tutorial/introduction"
+      },
+      {
         "title": "Setup",
         "path": "/tutorial/setup"
       },
       {
-        "title": "Defining an asset",
-        "path": "/tutorial/assets/defining-an-asset"
+        "title": "Your first asset",
+        "path": "/tutorial/writing-your-first-asset"
       },
       {
-        "title": "Building graphs of assets",
-        "path": "/tutorial/assets/asset-graph"
-      },
-      {
-        "title": "Assets without arguments and return values",
-        "path": "/tutorial/assets/non-argument-deps"
-      },
-      {
-        "title": "Testing assets",
-        "path": "/tutorial/assets/testing-assets"
+        "title": "Building an asset graph",
+        "path": "/tutorial/building-an-asset-graph"
       },
       {
         "title": "Next steps",
-        "path": "/tutorial/assets/next-steps"
+        "path": "/tutorial/next-steps"
       }
     ]
   },
@@ -677,8 +673,16 @@
             "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
           },
           {
-            "title": "Enriching with Software-defined assets",
+            "title": "Moving to Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
+          },
+          {
+            "title": "Testing assets",
+            "path": "/guides/dagster/testing-assets"
+          },
+          {
+            "title": "Assets without I/O",
+            "path": "/guides/dagster/non-argument-deps"
           },
           {
             "title": "Software-defined assets with Pandas & PySpark",
@@ -728,6 +732,10 @@
           {
             "title": "Automating your data pipelines",
             "path": "/guides/dagster/automating-pipelines"
+          },
+          {
+            "title": "Structuring your Dagster project",
+            "path": "/guides/dagster/recommended-project-structure"
           },
           {
             "title": "Using environment variables and secrets",

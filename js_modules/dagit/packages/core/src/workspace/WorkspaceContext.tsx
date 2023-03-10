@@ -14,6 +14,7 @@ import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
   RootWorkspaceQuery,
+  RootWorkspaceQueryVariables,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
@@ -171,7 +172,9 @@ const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY);
+  const {data, loading, refetch} = useQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>(
+    ROOT_WORKSPACE_QUERY,
+  );
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(

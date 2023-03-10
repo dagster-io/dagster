@@ -7,7 +7,8 @@ from dagster._core.test_utils import (
     poll_for_finished_run,
 )
 from dagster._grpc.server import ExecuteExternalPipelineArgs
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._grpc.types import StartRunResult
+from dagster._serdes.serdes import deserialize_value
 
 from .utils import get_bar_repo_repository_location
 
@@ -35,7 +36,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             original_origin = job_handle.get_external_origin()
 
             # point the api to a pipeline that cannot be loaded
-            res = deserialize_json_to_dagster_namedtuple(
+            res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalPipelineArgs(
                         pipeline_origin=original_origin._replace(
@@ -44,7 +45,8 @@ def test_launch_run_with_unloadable_pipeline_grpc():
                         pipeline_run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
-                )
+                ),
+                StartRunResult,
             )
 
             assert res.success
@@ -81,14 +83,15 @@ def test_launch_run_grpc():
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
 
-            res = deserialize_json_to_dagster_namedtuple(
+            res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalPipelineArgs(
                         pipeline_origin=job_handle.get_external_origin(),
                         pipeline_run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
-                )
+                ),
+                StartRunResult,
             )
 
             assert res.success
@@ -126,14 +129,15 @@ def test_launch_unloadable_run_grpc():
             run_id = run.run_id
 
             with instance_for_test() as other_instance:
-                res = deserialize_json_to_dagster_namedtuple(
+                res = deserialize_value(
                     api_client.start_run(
                         ExecuteExternalPipelineArgs(
                             pipeline_origin=job_handle.get_external_origin(),
                             pipeline_run_id=run_id,
                             instance_ref=other_instance.get_ref(),
                         )
-                    )
+                    ),
+                    StartRunResult,
                 )
 
                 assert not res.success

@@ -13,6 +13,7 @@ export type AssetGraphQuery = {
     __typename: 'AssetNode';
     id: string;
     groupName: string | null;
+    hasMaterializePermission: boolean;
     graphName: string | null;
     jobNames: Array<string>;
     opNames: Array<string>;
@@ -38,6 +39,7 @@ export type AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode';
   id: string;
   groupName: string | null;
+  hasMaterializePermission: boolean;
   graphName: string | null;
   jobNames: Array<string>;
   opNames: Array<string>;

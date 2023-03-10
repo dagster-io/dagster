@@ -5,11 +5,12 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import (
-    NULL_LOGICAL_VERSION,
+from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import (
+    NULL_DATA_VERSION,
     StaleStatus,
 )
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -81,13 +82,13 @@ if TYPE_CHECKING:
 GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
 
 
-class GrapheneAssetStaleStatusCause(graphene.ObjectType):
+class GrapheneAssetStaleCause(graphene.ObjectType):
     key = graphene.NonNull(GrapheneAssetKey)
     reason = graphene.NonNull(graphene.String)
     dependency = graphene.Field(GrapheneAssetKey)
 
     class Meta:
-        name = "StaleStatusCause"
+        name = "StaleCause"
 
 
 class GrapheneAssetDependency(graphene.ObjectType):
@@ -192,7 +193,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     )
     computeKind = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
-    currentLogicalVersion = graphene.String()
+    currentDataVersion = graphene.String()
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
@@ -212,6 +213,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
+    latestRunForPartition = graphene.Field(GrapheneRun, partition=graphene.NonNull(graphene.String))
     assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
@@ -229,7 +231,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     staleStatus = graphene.Field(GrapheneAssetStaleStatus)
-    staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
+    staleCauses = non_null_list(GrapheneAssetStaleCause)
     type = graphene.Field(GrapheneDagsterType)
     hasMaterializePermission = graphene.NonNull(graphene.Boolean)
 
@@ -303,7 +305,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def stale_status_loader(self) -> StaleStatusLoader:
         loader = check.not_none(
             self._stale_status_loader,
-            "stale_status_loader must exist in order to logical versioning information",
+            "stale_status_loader must exist in order to access data versioning information",
         )
         return loader
 
@@ -447,9 +449,8 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         # in the future, we can share this same CachingInstanceQueryer across all
         # GrapheneMaterializationEvent which share an external repository for improved performance
-        data_time_queryer = CachingInstanceQueryer(
-            instance=graphene_info.context.instance, cache_known_used_data=True
-        )
+        instance_queryer = CachingInstanceQueryer(instance=graphene_info.context.instance)
+        data_time_resolver = CachingDataTimeResolver(instance_queryer)
         event_records = instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -466,7 +467,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_non_source_parents(asset_key):
             return []
 
-        used_data_times = data_time_queryer.get_used_data_times_for_record(
+        used_data_times = data_time_resolver.get_used_data_times_for_record(
             asset_graph=asset_graph,
             record=next(iter(event_records)),
         )
@@ -567,14 +568,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_staleStatus(self, graphene_info: ResolveInfo) -> Any:  # (GrapheneAssetStaleStatus)
         return self.stale_status_loader.get_status(self._external_asset_node.asset_key)
 
-    def resolve_staleStatusCauses(
-        self, graphene_info: ResolveInfo
-    ) -> Sequence[GrapheneAssetStaleStatusCause]:
-        causes = self.stale_status_loader.get_status_root_causes(
-            self._external_asset_node.asset_key
-        )
+    def resolve_staleCauses(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetStaleCause]:
+        causes = self.stale_status_loader.get_stale_root_causes(self._external_asset_node.asset_key)
         return [
-            GrapheneAssetStaleStatusCause(
+            GrapheneAssetStaleCause(
                 GrapheneAssetKey(path=cause.key.path),
                 cause.reason,
                 GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
@@ -582,11 +579,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             for cause in causes
         ]
 
-    def resolve_currentLogicalVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
-        version = self.stale_status_loader.get_current_logical_version(
+    def resolve_currentDataVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
+        version = self.stale_status_loader.get_current_data_version(
             self._external_asset_node.asset_key
         )
-        return None if version == NULL_LOGICAL_VERSION else version.value
+        return None if version == NULL_DATA_VERSION else version.value
 
     def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.
@@ -680,7 +677,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_graph=asset_graph,
                 # in the future, we can share this same CachingInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_queryer=CachingInstanceQueryer(instance=graphene_info.context.instance),
+                data_time_resolver=CachingDataTimeResolver(
+                    CachingInstanceQueryer(instance=graphene_info.context.instance),
+                ),
             )
         return None
 
@@ -746,6 +745,26 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationEvent(event=event) if event else None
             for event in ordered_materializations
         ]
+
+    def resolve_latestRunForPartition(
+        self,
+        graphene_info: ResolveInfo,
+        partition: str,
+    ):
+        event_records = list(
+            graphene_info.context.instance.event_log_storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                    asset_key=self._external_asset_node.asset_key,
+                    asset_partitions=[partition],
+                ),
+                limit=1,
+            )
+        )
+        if not event_records:
+            return None
+        run_record = graphene_info.context.instance.get_run_record_by_id(event_records[0].run_id)
+        return GrapheneRun(run_record) if run_record else None
 
     def resolve_assetPartitionStatuses(self, graphene_info: ResolveInfo):
         asset_key = self._external_asset_node.asset_key

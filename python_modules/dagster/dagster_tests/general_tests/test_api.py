@@ -14,13 +14,12 @@ def test_no_experimental_warnings():
     assert not re.search(r"ExperimentalWarning", process.stderr.decode("utf-8"))
 
 
+# Fill this with tests for deprecated symbols
 def test_deprecated_imports():
-    with pytest.warns(
-        DeprecationWarning, match=re.escape("dagster_type_materializer is deprecated")
-    ):
-        from dagster import dagster_type_materializer  # noqa: F401
-    with pytest.warns(DeprecationWarning, match=re.escape("DagsterTypeMaterializer is deprecated")):
-        from dagster import DagsterTypeMaterializer  # noqa: F401
+    ##### EXAMPLE:
+    # with pytest.warns(DeprecationWarning, match=re.escape("Foo is deprecated")):
+    #     from dagster import Foo
+    pass
 
 
 @pytest.fixture

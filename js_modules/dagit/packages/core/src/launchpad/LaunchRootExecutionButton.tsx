@@ -1,7 +1,6 @@
 import * as React from 'react';
 
 import {IconName} from '../../../ui/src';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {LaunchBehavior} from '../runs/RunUtils';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 
@@ -10,6 +9,7 @@ import {useLaunchPadHooks} from './LaunchpadHooksContext';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
+  hasLaunchPermission: boolean;
   warning?: React.ReactNode;
   getVariables: () => undefined | LaunchPipelineExecutionMutationVariables;
   behavior: LaunchBehavior;
@@ -18,10 +18,12 @@ interface LaunchRootExecutionButtonProps {
   icon?: IconName;
 }
 
+export const NO_LAUNCH_PERMISSION_MESSAGE = 'You do not have permission to launch this job';
+
 export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
+  const {hasLaunchPermission} = props;
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
-  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
 
   const onLaunch = async () => {
     const variables = props.getVariables();
@@ -39,10 +41,8 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
         icon: props.icon || 'open_in_new',
         title: props.title || 'Launch Run',
         warning: props.warning || undefined,
-        disabled: props.disabled || !canLaunchPipelineExecution.enabled,
-        tooltip: !canLaunchPipelineExecution.enabled
-          ? canLaunchPipelineExecution.disabledReason
-          : undefined,
+        disabled: props.disabled || !hasLaunchPermission,
+        tooltip: !hasLaunchPermission ? NO_LAUNCH_PERMISSION_MESSAGE : undefined,
       }}
     />
   );

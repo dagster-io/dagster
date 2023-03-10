@@ -26,13 +26,12 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    TypeVar,
     Union,
     cast,
 )
 
 import yaml
-from typing_extensions import Protocol, runtime_checkable
+from typing_extensions import Protocol, TypeVar, runtime_checkable
 
 import dagster._check as check
 from dagster._annotations import public
@@ -210,7 +209,7 @@ class InstanceType(Enum):
     EPHEMERAL = "EPHEMERAL"
 
 
-T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance")
+T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance", default="DagsterInstance")
 
 
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
@@ -222,6 +221,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         self._instance_weakref = None
 
     @property
+    def has_instance(self) -> bool:
+        return hasattr(self, "_instance_weakref") and (self._instance_weakref is not None)
+
+    @property
     def _instance(self) -> T_DagsterInstance:
         instance = (
             self._instance_weakref()
@@ -230,7 +233,12 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
             if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
             else None
         )
-        return cast(T_DagsterInstance, instance)
+        if instance is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to resolve undefined DagsterInstance weakref."
+            )
+        else:
+            return instance
 
     def register_instance(self, instance: T_DagsterInstance):
         check.invariant(
@@ -1735,15 +1743,21 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
+    @public
     @traced
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         check.str_param(partitions_def_name, "partitions_def_name")
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
 
+    @public
     @traced
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
+        """
+        Add partitions to the specified dynamic partitions definition idempotently.
+        Does not add any partitions that already exist.
+        """
         from dagster._core.definitions.partition import (
             raise_error_on_invalid_partition_key_substring,
         )
@@ -1756,14 +1770,23 @@ class DagsterInstance(DynamicPartitionsStore):
         raise_error_on_invalid_partition_key_substring(partition_keys)
         return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
 
+    @public
     @traced
     def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        """
+        Delete a partition for the specified dynamic partitions definition.
+        If the partition does not exist, exits silently.
+        """
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_key, "partition_key", of_type=str)
         self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
 
+    @public
     @traced
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        """
+        Checks if a partition key exists for the dynamic partitions definition.
+        """
         check.str_param(partitions_def_name, "partitions_def_name")
         check.str_param(partition_key, "partition_key")
         return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
@@ -2421,7 +2444,7 @@ class DagsterInstance(DynamicPartitionsStore):
         for k, v in new_env.items():
             os.environ[k] = v
 
-    def get_latest_logical_version_record(
+    def get_latest_data_version_record(
         self,
         key: AssetKey,
         is_source: Optional[bool] = None,

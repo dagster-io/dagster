@@ -71,7 +71,9 @@ def create_and_launch_partition_backfill(
         external_partition_set = next(iter(matches))
 
         if backfill_params.get("allPartitions"):
-            result = graphene_info.context.get_external_partition_names(external_partition_set)
+            result = graphene_info.context.get_external_partition_names(
+                external_partition_set, instance=graphene_info.context.instance
+            )
             partition_names = result.partition_names
         elif backfill_params.get("partitionNames"):
             partition_names = backfill_params["partitionNames"]

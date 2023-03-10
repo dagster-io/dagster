@@ -20,11 +20,11 @@ interface Props {
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
   setParams: (params: AssetViewParams) => void;
+  assetHasDefinedPartitions: boolean;
 
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
-  assetLastMaterializedAt: string | undefined;
-  assetHasDefinedPartitions: boolean;
+  dataRefreshHint: string | undefined;
 
   repository?: RepositorySelector;
   opName?: string | null;
@@ -32,11 +32,11 @@ interface Props {
 
 export const AssetEvents: React.FC<Props> = ({
   assetKey,
-  assetLastMaterializedAt,
   assetHasDefinedPartitions,
   params,
   setParams,
   liveData,
+  dataRefreshHint,
 }) => {
   const {
     xAxis,
@@ -52,7 +52,7 @@ export const AssetEvents: React.FC<Props> = ({
       return;
     }
     refetch();
-  }, [params.asOf, assetLastMaterializedAt, refetch]);
+  }, [params.asOf, dataRefreshHint, refetch]);
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
 

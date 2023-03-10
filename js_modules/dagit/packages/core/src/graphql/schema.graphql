@@ -652,7 +652,7 @@ type AssetNode {
   ): [ObservationEvent!]!
   computeKind: String
   configField: ConfigTypeField
-  currentLogicalVersion: String
+  currentDataVersion: String
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
@@ -669,6 +669,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
+  latestRunForPartition(partition: String!): Run
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
@@ -682,7 +683,7 @@ type AssetNode {
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus: StaleStatus
-  staleStatusCauses: [StaleStatusCause!]!
+  staleCauses: [StaleCause!]!
   type: DagsterType
   hasMaterializePermission: Boolean!
 }
@@ -795,7 +796,7 @@ enum StaleStatus {
   FRESH
 }
 
-type StaleStatusCause {
+type StaleCause {
   key: AssetKey!
   reason: String!
   dependency: AssetKey
@@ -1912,6 +1913,12 @@ type ResourceDetails {
 type ConfiguredValue {
   key: String!
   value: String!
+  type: ConfiguredValueType!
+}
+
+enum ConfiguredValueType {
+  VALUE
+  ENV_VAR
 }
 
 type RepositoryConnection {

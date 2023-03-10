@@ -42,7 +42,7 @@ def release_sensor(context):
 
     partitions_to_add = sorted(new_releases, key=semver_tuple)
     context.log.info(f"Adding partitions: {partitions_to_add}")
-    assets.releases_partitions_def.add_partitions(partitions_to_add, context.instance)
+    context.instance.add_dynamic_partitions(assets.releases_partitions_def.name, partitions_to_add)
 
     # We only launch a run for the latest release, to avoid unexpected large numbers of runs the
     # first time the sensor turns on. This means that you might need to manually backfill earlier

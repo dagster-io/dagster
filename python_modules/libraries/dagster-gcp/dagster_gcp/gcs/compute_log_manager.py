@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 from typing import Optional, Sequence
@@ -154,9 +155,14 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             return None
 
         gcs_key = self._gcs_key(log_key, io_type)
-        return self._bucket.blob(gcs_key).generate_signed_url(
-            expiration=3600  # match S3 default expiration
-        )
+        try:
+            return self._bucket.blob(gcs_key).generate_signed_url(
+                expiration=datetime.timedelta(minutes=60)
+            )
+        except:
+            # fallback to the local download url if the current credentials are insufficient to create
+            # signed urls
+            return self.local_manager.get_captured_log_download_url(log_key, io_type)
 
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):

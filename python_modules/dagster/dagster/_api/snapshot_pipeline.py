@@ -6,7 +6,7 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._grpc.types import PipelineSubsetSnapshotArgs
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
@@ -25,7 +25,7 @@ def sync_get_external_pipeline_subset_grpc(
     solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
-    result = deserialize_as(
+    result = deserialize_value(
         api_client.external_pipeline_subset(
             pipeline_subset_snapshot_args=PipelineSubsetSnapshotArgs(
                 pipeline_origin=pipeline_origin,

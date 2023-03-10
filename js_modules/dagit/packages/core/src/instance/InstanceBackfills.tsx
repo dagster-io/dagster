@@ -25,6 +25,7 @@ import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
   InstanceHealthForBackfillsQuery,
+  InstanceHealthForBackfillsQueryVariables,
 } from './types/InstanceBackfills.types';
 
 const PAGE_SIZE = 10;
@@ -33,7 +34,10 @@ export const InstanceBackfills = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Backfills');
 
-  const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+  const queryData = useQuery<
+    InstanceHealthForBackfillsQuery,
+    InstanceHealthForBackfillsQueryVariables
+  >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     InstanceBackfillsQuery,

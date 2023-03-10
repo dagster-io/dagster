@@ -33,7 +33,7 @@ from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
-from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.interrupts import capture_interrupts
@@ -58,7 +58,7 @@ def api_cli():
 @click.argument("input_json", type=click.STRING)
 def execute_run_command(input_json):
     with capture_interrupts():
-        args = deserialize_as(input_json, ExecuteRunArgs)
+        args = deserialize_value(input_json, ExecuteRunArgs)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -68,7 +68,7 @@ def execute_run_command(input_json):
             buffer = []
 
             def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+                buffer.append(serialize_value(event))
 
             return_code = _execute_run_command_body(
                 args.pipeline_run_id,
@@ -165,7 +165,7 @@ def _execute_run_command_body(
 @click.argument("input_json", type=click.STRING)
 def resume_run_command(input_json):
     with capture_interrupts():
-        args = deserialize_as(input_json, ResumeRunArgs)
+        args = deserialize_value(input_json, ResumeRunArgs)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -175,7 +175,7 @@ def resume_run_command(input_json):
             buffer = []
 
             def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+                buffer.append(serialize_value(event))
 
             return_code = _resume_run_command_body(
                 args.pipeline_run_id,
@@ -343,7 +343,7 @@ def execute_step_command(input_json, compressed_input_json):
         if compressed_input_json:
             input_json = zlib.decompress(base64.b64decode(compressed_input_json.encode())).decode()
 
-        args = deserialize_as(input_json, ExecuteStepArgs)
+        args = deserialize_value(input_json, ExecuteStepArgs)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -359,7 +359,7 @@ def execute_step_command(input_json, compressed_input_json):
                 instance,
                 pipeline_run,
             ):
-                buff.append(serialize_dagster_namedtuple(event))
+                buff.append(serialize_value(event))
 
             for line in buff:
                 click.echo(line)
@@ -721,7 +721,7 @@ def grpc_command(
             if container_context is not None
             else None,
             inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+            instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
             location_name=location_name,
         )
 

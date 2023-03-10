@@ -44,6 +44,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             destination=f"{table_slice.schema}.{table_slice.table}",
             project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
+            timeout=context.resource_config["timeout"] if context.resource_config else None,
         )
         job.result()
 
@@ -69,6 +70,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             query=BigQueryClient.get_select_statement(table_slice),
             project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
+            timeout=context.resource_config["timeout"] if context.resource_config else None,
         ).to_dataframe()
 
         result.columns = map(str.lower, result.columns)

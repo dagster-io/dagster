@@ -5,6 +5,7 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import (
@@ -15,11 +16,11 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+    serialize_value,
     whitelist_for_serdes,
 )
 from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 
 from ..decorator_utils import get_function_params
@@ -54,8 +55,8 @@ class FreshnessPolicySensorCursor(
     @staticmethod
     def is_valid(json_str: str) -> bool:
         try:
-            obj = deserialize_json_to_dagster_namedtuple(json_str)
-            return isinstance(obj, FreshnessPolicySensorCursor)
+            deserialize_value(json_str, FreshnessPolicySensorCursor)
+            return True
         except (JSONDecodeError, DeserializationError):
             return False
 
@@ -72,11 +73,11 @@ class FreshnessPolicySensorCursor(
         return {AssetKey.from_user_string(k): v for k, v in self.minutes_late_by_key_str.items()}
 
     def to_json(self) -> str:
-        return serialize_dagster_namedtuple(cast(NamedTuple, self))
+        return serialize_value(cast(NamedTuple, self))
 
     @staticmethod
     def from_json(json_str: str) -> "FreshnessPolicySensorCursor":
-        return cast(FreshnessPolicySensorCursor, deserialize_json_to_dagster_namedtuple(json_str))
+        return deserialize_value(json_str, FreshnessPolicySensorCursor)
 
 
 class FreshnessPolicySensorContext(
@@ -230,6 +231,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
             evaluation_time = pendulum.now("UTC")
             instance_queryer = CachingInstanceQueryer(context.instance)
+            data_time_resolver = CachingDataTimeResolver(instance_queryer)
             asset_graph = context.repository_def.asset_graph
             monitored_keys = asset_selection.resolve(asset_graph)
 
@@ -245,7 +247,9 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_late value for this asset
-                minutes_late_by_key[asset_key] = instance_queryer.get_current_minutes_late_for_key(
+                minutes_late_by_key[
+                    asset_key
+                ] = data_time_resolver.get_current_minutes_late_for_key(
                     evaluation_time=evaluation_time,
                     asset_graph=asset_graph,
                     asset_key=asset_key,

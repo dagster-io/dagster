@@ -22,8 +22,8 @@ export type AssetNodeLiveFragment = {
   } | null;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
-  staleStatusCauses: Array<{
-    __typename: 'StaleStatusCause';
+  staleCauses: Array<{
+    __typename: 'StaleCause';
     reason: string;
     key: {__typename: 'AssetKey'; path: Array<string>};
     dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -32,6 +32,7 @@ export type AssetNodeLiveFragment = {
     __typename: 'PartitionStats';
     numMaterialized: number;
     numPartitions: number;
+    numFailed: number;
   } | null;
 };
 
@@ -63,6 +64,7 @@ export type AssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   graphName: string | null;
+  hasMaterializePermission: boolean;
   jobNames: Array<string>;
   opNames: Array<string>;
   opVersion: string | null;

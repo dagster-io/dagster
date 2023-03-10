@@ -5,6 +5,10 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.data_version import (
+    DataProvenance,
+    extract_data_provenance_from_entry,
+)
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -15,10 +19,6 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logical_version import (
-    LogicalVersionProvenance,
-    extract_logical_version_provenance_from_entry,
-)
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -294,7 +294,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_time_window(self) -> str:
+    def partition_time_window(self) -> TimeWindow:
         """The partition time window for the current run.
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
@@ -601,7 +601,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @experimental
-    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[LogicalVersionProvenance]:
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         """
         Return the provenance information for the most recent materialization of an asset.
 
@@ -609,16 +609,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             asset_key (AssetKey): Key of the asset for which to retrieve provenance.
 
         Returns:
-            Optional[LogicalVersionProvenance]: Provenance information for the most recent
+            Optional[DataProvenance]: Provenance information for the most recent
                 materialization of the asset. Returns `None` if the asset was never materialized or
                 the materialization record is too old to contain provenance information.
         """
-        record = self.instance.get_latest_logical_version_record(asset_key)
+        record = self.instance.get_latest_data_version_record(asset_key)
 
         return (
-            None
-            if record is None
-            else extract_logical_version_provenance_from_entry(record.event_log_entry)
+            None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
 
 

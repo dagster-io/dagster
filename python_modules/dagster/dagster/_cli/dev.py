@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 
 import dagster._check as check
-from dagster._serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
 
@@ -91,7 +91,7 @@ def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
 
         args = [
             "--instance-ref",
-            serialize_dagster_namedtuple(instance.get_ref()),
+            serialize_value(instance.get_ref()),
             "--code-server-log-level",
             code_server_log_level,
         ]

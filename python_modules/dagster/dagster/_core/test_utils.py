@@ -548,8 +548,7 @@ def test_counter():
         await call_bar(10)
 
     traced_counter.set(Counter())
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run())
+    asyncio.run(run())
     counter = traced_counter.get()
     assert isinstance(counter, Counter)
     counts = counter.counts()

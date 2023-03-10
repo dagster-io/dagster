@@ -3,6 +3,7 @@ from typing import List, Mapping, Optional
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
 from dagster import (
+    ResourceDefinition,
     ScheduleDefinition,
     _check as check,
 )
@@ -23,6 +24,7 @@ def make_dagster_schedule_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> ScheduleDefinition:
     """Construct a Dagster schedule corresponding to an Airflow DAG.
 
@@ -41,7 +43,9 @@ def make_dagster_schedule_from_airflow_dag(
     cron_schedule = dag.normalized_schedule_interval
     schedule_description = dag.description
 
-    job_def = make_dagster_job_from_airflow_dag(dag=dag, tags=tags, connections=connections)
+    job_def = make_dagster_job_from_airflow_dag(
+        dag=dag, tags=tags, connections=connections, resource_defs=resource_defs
+    )
 
     return ScheduleDefinition(
         job=job_def,

@@ -168,7 +168,13 @@ class ScheduleEvaluationContext:
 
     @public
     @property
-    def scheduled_execution_time(self) -> Optional[datetime]:
+    def scheduled_execution_time(self) -> datetime:
+        if self._scheduled_execution_time is None:
+            check.failed(
+                "Attempting to access scheduled_execution_time, but no scheduled_execution_time was"
+                " set on this context"
+            )
+
         return self._scheduled_execution_time
 
     @property

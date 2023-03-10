@@ -48,8 +48,8 @@ export type AssetGraphLiveQuery = {
     } | null;
     freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
     assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
-    staleStatusCauses: Array<{
-      __typename: 'StaleStatusCause';
+    staleCauses: Array<{
+      __typename: 'StaleCause';
       reason: string;
       key: {__typename: 'AssetKey'; path: Array<string>};
       dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
@@ -58,6 +58,7 @@ export type AssetGraphLiveQuery = {
       __typename: 'PartitionStats';
       numMaterialized: number;
       numPartitions: number;
+      numFailed: number;
     } | null;
   }>;
   assetsLatestInfo: Array<{

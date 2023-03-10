@@ -12,8 +12,7 @@ from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import (
     ConfigurableClass,
-    deserialize_as,
-    deserialize_json_to_dagster_namedtuple,
+    deserialize_value,
 )
 from dagster._utils.merger import merge_dicts
 
@@ -75,7 +74,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             },
         )
 
-        res = deserialize_as(
+        res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalPipelineArgs(
                     pipeline_origin=run.external_pipeline_origin,
@@ -131,7 +130,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         # defer for perf
         from dagster._grpc.client import DagsterGrpcClient
 
-        if not self._instance:
+        if not self.has_instance:
             return None
 
         run = self._instance.get_run_by_id(run_id)
@@ -154,10 +153,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         # defer for perf
-        from dagster._grpc.types import CancelExecutionRequest
+        from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult
 
         check.str_param(run_id, "run_id")
-        if not self._instance:
+        if not self.has_instance:
             return False
 
         run = self._instance.get_run_by_id(run_id)
@@ -175,14 +174,14 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             return False
 
         self._instance.report_run_canceling(run)
-        res = deserialize_json_to_dagster_namedtuple(
-            client.cancel_execution(CancelExecutionRequest(run_id=run_id))
+        res = deserialize_value(
+            client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )
         return res.success
 
     def join(self, timeout=30):
         # If this hasn't been initialized at all, we can just do a noop
-        if not self._instance:
+        if not self.has_instance:
             return
 
         total_time = 0

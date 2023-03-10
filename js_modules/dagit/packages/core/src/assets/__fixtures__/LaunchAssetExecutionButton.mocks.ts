@@ -1,7 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
-import {PartitionDefinitionType} from '../../graphql/types';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
 import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
 import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
 import {LaunchAssetChoosePartitionsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
@@ -20,6 +20,7 @@ export const ASSET_DAILY: AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_daily"]',
   groupName: 'mapped',
+  hasMaterializePermission: true,
   repository: {
     __typename: 'Repository',
     id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -56,6 +57,7 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   __typename: 'AssetNode',
   id: 'test.py.repo.["asset_weekly"]',
   groupName: 'mapped',
+  hasMaterializePermission: true,
   repository: {
     __typename: 'Repository',
     id: 'c22d9677b8089be89b1e014b9de34284962f83a7',
@@ -144,6 +146,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
         assetPartitionStatuses: {
           ranges: [
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1662940800.0,
               endTime: 1663027200.0,
               startKey: '2022-09-12',
@@ -151,6 +154,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1663027200.0,
               endTime: 1667088000.0,
               startKey: '2022-09-13',
@@ -158,6 +162,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1668816000.0,
               endTime: 1670803200.0,
               startKey: '2022-11-19',
@@ -165,6 +170,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671494400.0,
               endTime: 1674086400.0,
               startKey: '2022-12-20',
@@ -172,6 +178,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1676851200.0,
               endTime: 1676937600.0,
               startKey: '2023-02-20',

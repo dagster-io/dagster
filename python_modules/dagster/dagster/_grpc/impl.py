@@ -43,7 +43,7 @@ from dagster._core.snap.execution_plan_snapshot import (
 )
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage
 from dagster._seven import nullcontext
 from dagster._utils import start_termination_thread
@@ -159,7 +159,9 @@ def _run_in_subprocess(
 ):
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_as(serialized_execute_run_args, ExecuteExternalPipelineArgs)
+        execute_run_args = deserialize_value(
+            serialized_execute_run_args, ExecuteExternalPipelineArgs
+        )
 
         with (
             DagsterInstance.from_ref(execute_run_args.instance_ref)

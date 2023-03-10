@@ -464,7 +464,7 @@ def define_resources_limit_pipeline():
 def define_schedules():
     @daily_schedule(
         name="daily_optional_outputs",
-        pipeline_name=optional_outputs.name,
+        job_name=optional_outputs.name,
         start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_optional_outputs(_date):

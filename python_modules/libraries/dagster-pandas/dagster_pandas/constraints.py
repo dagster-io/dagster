@@ -563,7 +563,7 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
                     result_val = result.success
                     if result_val:
                         continue
-                    result_dict = result.metadata_entries[0].entry_data.data
+                    result_dict = result.metadata_entries[0].value.data
                     truthparam = truthparam and result_val
                     for key in result_dict.keys():
                         if "constraint" not in key:

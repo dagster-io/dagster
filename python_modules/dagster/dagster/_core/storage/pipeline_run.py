@@ -31,7 +31,7 @@ from dagster._serdes.serdes import (
     register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
     replace_storage_keys,
-    unpack_inner_value,
+    unpack_value,
     whitelist_for_serdes,
 )
 
@@ -182,7 +182,9 @@ class DagsterRunSerializer(DefaultNamedTupleSerializer):
     ):
         # unpack all stored fields
         unpacked_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: unpack_value(
+                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
+            )
             for key, value in storage_dict.items()
         }
         # called by the serdes layer, delegates to helper method with expanded kwargs
@@ -720,10 +722,6 @@ class RunRecord(
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
         )
-
-    @property
-    def pipeline_run(self) -> DagsterRun:
-        return self.dagster_run
 
 
 @whitelist_for_serdes

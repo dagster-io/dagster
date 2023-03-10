@@ -123,9 +123,20 @@ const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClos
   const buttons = React.useMemo(() => {
     if (sensorExecutionData || error) {
       return (
-        <Button intent="primary" onClick={onClose}>
-          Close
-        </Button>
+        <Box flex={{direction: 'row', gap: 8}}>
+          <Button
+            data-testid={testId('test-again')}
+            onClick={() => {
+              setSensorExecutionData(null);
+              setError(null);
+            }}
+          >
+            Test again
+          </Button>
+          <Button intent="primary" onClick={onClose}>
+            Close
+          </Button>
+        </Box>
       );
     }
     if (submitting) {
