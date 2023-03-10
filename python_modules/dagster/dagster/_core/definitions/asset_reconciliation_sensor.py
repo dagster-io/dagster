@@ -504,37 +504,6 @@ def get_freshness_constraints_by_key(
     return constraints_by_key
 
 
-def get_expected_data_times_for_key(
-    asset_graph: AssetGraph,
-    current_time: datetime.datetime,
-    expected_data_times_by_key: Mapping[AssetKey, Mapping[AssetKey, Optional[datetime.datetime]]],
-    asset_key: AssetKey,
-) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-    """Returns the data times for the given asset key if this asset were to be executed in this
-    tick.
-    """
-    expected_data_times: Dict[AssetKey, Optional[datetime.datetime]] = {asset_key: current_time}
-
-    def _min_or_none(a, b):
-        if a is None or b is None:
-            return None
-        return min(a, b)
-
-    # get the expected data time for each upstream asset key if you were to run this asset on
-    # this tick
-    for upstream_key in asset_graph.get_parents(asset_key):
-        for upstream_upstream_key, expected_data_time in expected_data_times_by_key[
-            upstream_key
-        ].items():
-            # take the minimum data time from each of your parents that uses this key
-            expected_data_times[upstream_upstream_key] = _min_or_none(
-                expected_data_times.get(upstream_upstream_key, expected_data_time),
-                expected_data_time,
-            )
-
-    return expected_data_times
-
-
 def get_execution_time_window_for_constraints(
     constraints: AbstractSet[FreshnessConstraint],
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
@@ -622,9 +591,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
-    expected_data_times_by_key: Dict[
-        AssetKey, Mapping[AssetKey, Optional[datetime.datetime]]
-    ] = defaultdict(dict)
+    expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
     for level in asset_graph.toposort_asset_keys():
         for key in level:
             if asset_graph.is_source(key):
@@ -636,46 +603,34 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             constraint_keys = set().union(*(constraint.asset_keys for constraint in constraints))
 
-            # the set of asset keys which are involved in some constraint and are actually upstream
-            # of this asset
-            relevant_upstream_keys = set(
-                set().union(
-                    *(
-                        expected_data_times_by_key[parent_key].keys()
-                        for parent_key in asset_graph.get_parents(key)
-                    )
-                )
-                & constraint_keys
-            ) | {key}
-
             # figure out the current contents of this asset with respect to its constraints
-            current_data_times = get_current_data_times_for_key(
-                data_time_resolver, asset_graph, relevant_upstream_keys, key
+            current_data_time = data_time_resolver.get_current_data_time(key)
+
+            upstream_expected_data_times = {
+                expected_data_time_by_key.get(parent_key)
+                for parent_key in asset_graph.get_parents(key)
+                if not asset_graph.is_source(parent_key)
+            }
+            expected_data_time: Optional[datetime.datetime] = (
+                None
+                if None in upstream_expected_data_times
+                else min(cast(AbstractSet[datetime.datetime], upstream_expected_data_times))
             )
-            expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
 
             # should not execute if key is not targeted or previous run failed
             if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times = {}
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
-                in_progress_data_times = data_time_resolver.get_in_progress_data_times_for_key(
-                    asset_graph, key, current_time
+                in_progress_data_time = data_time_resolver.get_in_progress_data_time(
+                    key, current_time
                 )
 
-                # if the latest run for this asset failed, then calculate the data times you would
-                # have expected after that failed run completed
-                failed_data_times = data_time_resolver.get_failed_data_times_for_key(
-                    asset_graph, key, relevant_upstream_keys
-                )
-                # calculate the data times you'd expect for this key if you were to run it
-                expected_data_times = get_expected_data_times_for_key(
-                    asset_graph, current_time, expected_data_times_by_key, key
-                )
+                # calculate the data times you would have expected if the most recent run succeeded
+                failed_data_time = data_time_resolver.get_ignored_failure_data_time(key)
 
                 # figure out a time window that you can execute this asset within to solve a maximum
                 # number of constraints
@@ -684,11 +639,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     execution_window_end,
                 ) = get_execution_time_window_for_constraints(
                     constraints=constraints,
-                    current_data_times=current_data_times,
-                    in_progress_data_times=in_progress_data_times,
-                    failed_data_times=failed_data_times,
-                    expected_data_times=expected_data_times,
-                    relevant_upstream_keys=relevant_upstream_keys,
+                    current_data_time=current_data_time,
+                    in_progress_data_time=in_progress_data_time,
+                    failed_data_time=failed_data_time,
+                    expected_data_time=expected_data_time,
                 )
 
                 # this key will be updated within the plan window
