@@ -196,14 +196,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             directly (primarily useful in testing contexts).
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
+            from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
 
-        @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
-        def the_sensor(context: MultiAssetSensorEvaluationContext):
-            ...
-
+            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
+            def the_sensor(context: MultiAssetSensorEvaluationContext):
+                ...
     """
 
     def __init__(

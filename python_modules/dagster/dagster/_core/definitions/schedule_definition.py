@@ -96,13 +96,13 @@ class ScheduleEvaluationContext:
             DagsterDaemonScheduler.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import schedule, ScheduleEvaluationContext
+            from dagster import schedule, ScheduleEvaluationContext
 
-        @schedule
-        def the_schedule(context: ScheduleEvaluationContext):
-            ...
+            @schedule
+            def the_schedule(context: ScheduleEvaluationContext):
+                ...
 
     """
 

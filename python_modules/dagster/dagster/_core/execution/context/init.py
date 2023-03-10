@@ -33,14 +33,13 @@ class InitResourceContext:
             outside of execution context, this will be None.
 
     Example:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import resource, InitResourceContext
+            from dagster import resource, InitResourceContext
 
-        @resource
-        def the_resource(init_context: InitResourceContext):
-            init_context.log.info("Hello, world!")
-
+            @resource
+            def the_resource(init_context: InitResourceContext):
+                init_context.log.info("Hello, world!")
     """
 
     def __init__(
