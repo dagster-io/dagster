@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import NamedTuple, Optional
 
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
 
@@ -27,7 +27,7 @@ class SubmitRunContext(NamedTuple):
         return None
 
 
-class RunCoordinator(ABC, MayHaveInstanceWeakref):
+class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         """

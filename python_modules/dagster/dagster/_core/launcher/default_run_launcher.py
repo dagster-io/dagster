@@ -130,7 +130,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         # defer for perf
         from dagster._grpc.client import DagsterGrpcClient
 
-        if not self._instance:
+        if not self.has_instance:
             return None
 
         run = self._instance.get_run_by_id(run_id)
@@ -156,7 +156,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult
 
         check.str_param(run_id, "run_id")
-        if not self._instance:
+        if not self.has_instance:
             return False
 
         run = self._instance.get_run_by_id(run_id)
@@ -181,7 +181,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def join(self, timeout=30):
         # If this hasn't been initialized at all, we can just do a noop
-        if not self._instance:
+        if not self.has_instance:
             return
 
         total_time = 0

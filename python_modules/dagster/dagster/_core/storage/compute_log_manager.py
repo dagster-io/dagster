@@ -6,7 +6,7 @@ from typing import Callable, Iterator, NamedTuple, Optional
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
@@ -45,7 +45,7 @@ class ComputeLogFileData(
         )
 
 
-class ComputeLogManager(ABC, MayHaveInstanceWeakref):
+class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
     steps of pipeline solids.
     """

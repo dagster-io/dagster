@@ -166,7 +166,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._storage._instance
 
     def register_instance(self, instance: "DagsterInstance") -> None:
-        if not self._storage._instance:
+        if not self._storage.has_instance:
             self._storage.register_instance(instance)
 
     @classmethod
@@ -382,10 +382,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     @property
     def _instance(self) -> Optional["DagsterInstance"]:
-        return self._storage._instance  # pylint: disable=protected-access
+        return self._storage._instance
 
     def register_instance(self, instance: "DagsterInstance") -> None:
-        if not self._storage._instance:  # pylint: disable=protected-access
+        if not self._storage.has_instance:
             self._storage.register_instance(instance)
 
     def get_logs_for_run(
@@ -579,10 +579,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     @property
     def _instance(self) -> Optional["DagsterInstance"]:
-        return self._storage._instance  # pyright: disable=reportPrivateUsage
+        return self._storage._instance
 
     def register_instance(self, instance: "DagsterInstance") -> None:
-        if not self._storage._instance:  # pyright: disable=reportPrivateUsage
+        if not self._storage.has_instance:
             self._storage.register_instance(instance)
 
     def wipe(self) -> None:
