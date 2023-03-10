@@ -190,6 +190,27 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     ) -> PartitionKeyRange:
         return upstream_partition_key_range
 
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        """For performance, override the default implementation to avoid unnecessary computation."""
+        if downstream_partitions_subset is None:
+            check.failed("downstream asset is not partitioned")
+
+        return downstream_partitions_subset
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        """For performance, override the default implementation to avoid unnecessary computation."""
+        return upstream_partitions_subset
+
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):

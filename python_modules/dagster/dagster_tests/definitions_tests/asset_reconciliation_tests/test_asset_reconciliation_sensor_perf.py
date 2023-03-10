@@ -22,7 +22,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.materialize import materialize_to_memory
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import build_sensor_context
@@ -305,7 +305,27 @@ medium_all_partitioned_assets_100_partition_keys = InstanceSnapshot(
     ),
 )
 
+# 1000 assets, roots are static partitioned with 1000 partitions
+static_1000_partitions_def = StaticPartitionsDefinition([f"p{i}" for i in range(100)])
+large_root_static_partitioned_assets_2_partition_keys = InstanceSnapshot(
+    assets=RandomAssets(
+        name="large_root_static_1000_partitioned_assets",
+        n_assets=1000,
+        n_roots=10,
+        root_partitions_def=static_1000_partitions_def,
+    ),
+    partition_keys_to_backfill=["p50", "p75"],
+)
 
+large_root_static_partitioned_assets_99_partition_keys = InstanceSnapshot(
+    assets=RandomAssets(
+        name="large_root_static_1000_partitioned_assets",
+        n_assets=1000,
+        n_roots=100,
+        root_partitions_def=static_1000_partitions_def,
+    ),
+    partition_keys_to_backfill=[f"p{i}" for i in range(99)],
+)
 # ==============================================
 # Scenarios
 # ==============================================
@@ -354,6 +374,11 @@ perf_scenarios = [
         snapshot=medium_all_partitioned_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
+    ),
+    PerfScenario(
+        snapshot=large_root_static_partitioned_assets_99_partition_keys,
+        n_freshness_policies=0,
+        max_execution_time_seconds=10,
     ),
 ]
 
