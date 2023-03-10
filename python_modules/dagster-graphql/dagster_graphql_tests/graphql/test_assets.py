@@ -1886,11 +1886,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "dynamic_in_multipartitions_success_job",
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
+        traced_counter.set(Counter())
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
             variables={"pipelineSelector": selector},
         )
+        counts = traced_counter.get().counts()
+        assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         assert result.data
         assert result.data["assetNodes"]

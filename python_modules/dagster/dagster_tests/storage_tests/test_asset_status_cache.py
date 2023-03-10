@@ -443,7 +443,8 @@ def test_failure_cache_added():
         created_instance.update_asset_cached_status_data(
             asset_key,
             AssetStatusCacheValue(
-                latest_storage_id=0, partitions_def_id=partitions_def.serializable_unique_identifier
+                latest_storage_id=0,
+                partitions_def_id=partitions_def.get_serializable_unique_identifier(),
             ),
         )
 

@@ -105,7 +105,9 @@ class AssetReconciliationScenario(NamedTuple):
                     from_failure=False,
                     tags={},
                     backfill_timestamp=test_time.timestamp(),
-                    serialized_asset_backfill_data=asset_backfill_data.serialize(),
+                    serialized_asset_backfill_data=asset_backfill_data.serialize(
+                        dynamic_partitions_store=instance
+                    ),
                 )
                 instance.add_backfill(backfill)
 
