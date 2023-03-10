@@ -724,7 +724,7 @@ def test_pure_asset_backfill(
                 workspace_context.create_request_context()
             ),
             backfill_id="backfill_with_asset_selection",
-            tags={},
+            tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_name_list,
@@ -746,6 +746,7 @@ def test_pure_asset_backfill(
     runs = reversed(list(instance.get_runs()))
     for run in runs:
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
