@@ -24,8 +24,7 @@ class WorkspaceLocationEntry(NamedTuple):
 
 
 class WorkspaceLocationStatusEntry(NamedTuple):
-    """
-    Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
+    """Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
     to know whether the workspace needs reloading.
     """
 
@@ -35,9 +34,7 @@ class WorkspaceLocationStatusEntry(NamedTuple):
 
 
 class IWorkspace(ABC):
-    """
-    Manages a set of RepositoryLocations.
-    """
+    """Manages a set of RepositoryLocations."""
 
     @abstractmethod
     def get_repository_location(self, location_name: str) -> "RepositoryLocation":

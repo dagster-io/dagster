@@ -1,5 +1,4 @@
-"""
-This module contains data objects meant to be serialized between
+"""This module contains data objects meant to be serialized between
 host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
@@ -914,8 +913,7 @@ class ExternalResourceData(
         ],
     )
 ):
-    """
-    Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
+    """Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
 
     Includes information about the resource definition and config schema, user-passed values, etc.
     """

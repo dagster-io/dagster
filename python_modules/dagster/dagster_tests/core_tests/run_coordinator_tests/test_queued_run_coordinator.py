@@ -11,8 +11,7 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 class TestQueuedRunCoordinator:
-    """
-    You can extend this class to easily run these set of tests on any custom run coordinator
+    """You can extend this class to easily run these set of tests on any custom run coordinator
     that subclasses the QueuedRunCoordinator. When extending, you simply need to override the
     `coordinator` fixture and return your implementation of `QueuedRunCoordinator`.
 

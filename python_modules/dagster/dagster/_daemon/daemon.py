@@ -66,9 +66,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     @classmethod
     @abstractmethod
     def daemon_type(cls) -> str:
-        """
-        returns: str.
-        """
+        """returns: str."""
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         pass
@@ -199,9 +197,9 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         workspace_process_context: TContext,
         shutdown_event: Event,
     ) -> DaemonIterator:
-        """
-        Execute the daemon loop, which should be a generator function that never finishes.
-        Should periodically yield so that the controller can check for heartbeats. Yields can be either NoneType or a SerializableErrorInfo.
+        """Execute the daemon loop, which should be a generator function that never finishes.
+        Should periodically yield so that the controller can check for heartbeats. Yields can be
+        either NoneType or a SerializableErrorInfo.
 
         returns: generator (SerializableErrorInfo).
         """

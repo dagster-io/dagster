@@ -54,8 +54,7 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 class OpDefinition(NodeDefinition):
-    """
-    Defines an op, the functional unit of user-defined computation.
+    """Defines an op, the functional unit of user-defined computation.
 
     For more details on what a op is, refer to the
     `Ops Overview <../../concepts/ops-jobs-graphs/ops>`_ .

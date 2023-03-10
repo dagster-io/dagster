@@ -59,8 +59,7 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     requirements=multiple_process_executor_requirements(),
 )
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
-    """
-    Executor which launches steps as Kubernetes Jobs.
+    """Executor which launches steps as Kubernetes Jobs.
 
     To use the `k8s_job_executor`, set it as the `executor_def` when defining a job:
 

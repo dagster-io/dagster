@@ -35,9 +35,7 @@ class AirbyteState:
 
 
 class AirbyteResource:
-    """
-    This class exposes methods on top of the Airbyte REST API.
-    """
+    """This class exposes methods on top of the Airbyte REST API."""
 
     def __init__(
         self,
@@ -84,8 +82,7 @@ class AirbyteResource:
 
     @contextmanager
     def cache_requests(self):
-        """
-        Context manager that enables caching certain requests to the Airbyte API,
+        """Context manager that enables caching certain requests to the Airbyte API,
         cleared when the context is exited.
         """
         self.clear_request_cache()
@@ -115,8 +112,7 @@ class AirbyteResource:
     def make_request(
         self, endpoint: str, data: Optional[Mapping[str, object]]
     ) -> Optional[Mapping[str, object]]:
-        """
-        Creates and sends a request to the desired Airbyte REST API endpoint.
+        """Creates and sends a request to the desired Airbyte REST API endpoint.
 
         Args:
             endpoint (str): The Airbyte API endpoint to send this request to.
@@ -271,8 +267,7 @@ class AirbyteResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
         poll_timeout: Optional[float] = None,
     ) -> AirbyteOutput:
-        """
-        Initializes a sync operation for the given connector, and polls until it completes.
+        """Initializes a sync operation for the given connector, and polls until it completes.
 
         Args:
             connection_id (str): The Airbyte Connector ID. You can retrieve this value from the
@@ -423,8 +418,7 @@ class AirbyteResource:
     description="This resource helps manage Airbyte connectors",
 )
 def airbyte_resource(context) -> AirbyteResource:
-    """
-    This resource allows users to programatically interface with the Airbyte REST API to launch
+    """This resource allows users to programatically interface with the Airbyte REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

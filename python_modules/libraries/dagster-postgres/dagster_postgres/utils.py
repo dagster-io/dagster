@@ -104,8 +104,7 @@ def retry_pg_creation_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait: 
 
 
 def retry_pg_connection_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait: float = 0.2) -> T:
-    """
-    Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
+    """Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
     Intended to be used anywhere we connect to PG, to gracefully handle transient connection issues.
     """
     check.callable_param(fn, "fn")

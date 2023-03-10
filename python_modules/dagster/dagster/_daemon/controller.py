@@ -349,9 +349,7 @@ def all_daemons_healthy(
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
-    """
-    True if all required daemons have had a recent heartbeat with no errors.
-    """
+    """True if all required daemons have had a recent heartbeat with no errors."""
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),
@@ -369,8 +367,7 @@ def all_daemons_live(
     heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> bool:
-    """
-    True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
+    """True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
     statuses_by_type = get_daemon_statuses(
         instance,

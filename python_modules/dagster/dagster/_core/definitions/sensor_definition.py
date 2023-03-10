@@ -294,9 +294,7 @@ SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, R
 
 
 def get_context_param_name(fn: Callable) -> Optional[str]:
-    """
-    Determines the sensor's context parameter name by excluding all resource parameters.
-    """
+    """Determines the sensor's context parameter name by excluding all resource parameters."""
     resource_params = {param.name for param in get_resource_args(fn)}
 
     return next(
@@ -307,8 +305,7 @@ def get_context_param_name(fn: Callable) -> Optional[str]:
 def _validate_and_get_resource_dict(
     context: SensorEvaluationContext, sensor_name: str, required_resource_keys: Set[str]
 ) -> Dict[str, Any]:
-    """
-    Validates that the context has all the required resources and returns a dictionary of
+    """Validates that the context has all the required resources and returns a dictionary of
     resource key to resource object.
     """
     for k in required_resource_keys:
@@ -323,8 +320,7 @@ def _validate_and_get_resource_dict(
 def get_or_create_sensor_context(
     fn: Callable, *args: Any, **kwargs: Any
 ) -> SensorEvaluationContext:
-    """
-    Based on the passed resource function and the arguments passed to it, returns the
+    """Based on the passed resource function and the arguments passed to it, returns the
     user-passed SensorEvaluationContext or creates one if it is not passed.
 
     Raises an exception if the user passes more than one argument or if the user-provided
@@ -817,8 +813,7 @@ def _run_requests_with_base_asset_jobs(
     context: SensorEvaluationContext,
     outer_asset_selection: AssetSelection,
 ) -> Sequence[RunRequest]:
-    """
-    For sensors that target asset selections instead of jobs, finds the corresponding base asset
+    """For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.
     """
     asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)

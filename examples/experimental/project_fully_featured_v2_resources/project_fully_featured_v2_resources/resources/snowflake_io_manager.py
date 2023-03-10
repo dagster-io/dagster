@@ -38,8 +38,7 @@ def connect_snowflake(config, schema="public"):
 
 
 class SnowflakeIOManager(ConfigurableIOManager):
-    """
-    This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
+    """This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
@@ -146,8 +145,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _get_cleanup_statement(
         self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
     ) -> str:
-        """
-        Returns a SQL statement that deletes data in the given table to make way for the output data
+        """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
         """
         if time_window:

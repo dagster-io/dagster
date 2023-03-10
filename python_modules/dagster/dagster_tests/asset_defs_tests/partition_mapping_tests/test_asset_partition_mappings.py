@@ -120,8 +120,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
     downstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 
@@ -192,8 +191,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 
@@ -254,8 +252,7 @@ def test_multi_asset_non_identity_partition_mapping():
     downstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 

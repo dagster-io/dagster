@@ -16,9 +16,7 @@ DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 def filter_runs_to_should_retry(
     runs: Sequence[DagsterRun], instance: DagsterInstance, default_max_retries: int
 ) -> Iterator[Tuple[DagsterRun, int]]:
-    """
-    Return only runs that should retry along with their retry number (1st retry, 2nd, etc.).
-    """
+    """Return only runs that should retry along with their retry number (1st retry, 2nd, etc.)."""
 
     def get_retry_number(run: DagsterRun) -> Optional[int]:
         if run.status != DagsterRunStatus.FAILURE:
@@ -84,9 +82,7 @@ def retry_run(
     retry_number: int,
     workspace_context: IWorkspaceProcessContext,
 ) -> None:
-    """
-    Submit a retry as a re-execute from failure.
-    """
+    """Submit a retry as a re-execute from failure."""
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
     workspace = workspace_context.create_request_context()
@@ -160,8 +156,7 @@ def consume_new_runs_for_automatic_reexecution(
     workspace_process_context: IWorkspaceProcessContext,
     run_records: Sequence[RunRecord],
 ) -> Iterator[None]:
-    """
-    Check which runs should be retried, and retry them.
+    """Check which runs should be retried, and retry them.
 
     It's safe to call this method on the same run multiple times because once a retry run is created,
     it won't create another. The only exception is if the new run gets deleted, in which case we'd

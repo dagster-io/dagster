@@ -265,8 +265,7 @@ class PartitionBackfill(
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "PartitionBackfill":
-        """
-        If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
 
         Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other

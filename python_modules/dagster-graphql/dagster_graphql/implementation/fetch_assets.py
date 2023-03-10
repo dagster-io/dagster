@@ -171,8 +171,7 @@ def get_asset_node_definition_collisions(
 def get_asset_nodes_by_asset_key(
     graphene_info: "ResolveInfo",
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
-    """
-    If multiple repositories have asset nodes for the same asset key, chooses the asset node that
+    """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
     from ..schema.asset_graph import GrapheneAssetNode
@@ -354,8 +353,7 @@ def get_materialized_and_failed_partition_subsets(
     dynamic_partitions_loader: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset]]:
-    """
-    Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
+    """Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
     the second is the failed partitions.
     """
     if not partitions_def:

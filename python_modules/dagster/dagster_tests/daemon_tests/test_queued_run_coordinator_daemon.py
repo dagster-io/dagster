@@ -582,9 +582,7 @@ def test_limits_per_unique_value_overlapping_limits(
 
 
 def test_locations_not_created(instance, monkeypatch, workspace_context, daemon, pipeline_handle):
-    """
-    Verifies that no repository location is created when runs are dequeued.
-    """
+    """Verifies that no repository location is created when runs are dequeued."""
     create_queued_run(
         instance,
         pipeline_handle,

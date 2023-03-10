@@ -58,8 +58,7 @@ class DescentStack(
 
 
 def composite_descent(pipeline_def, solids_config, resource_defs):
-    """
-    This function is responsible for constructing the dictionary
+    """This function is responsible for constructing the dictionary
     of SolidConfig (indexed by handle) that will be passed into the
     ResolvedRunConfig. Critically this is the codepath that manages config mapping,
     where the runtime calls into user-defined config mapping functions to
@@ -103,8 +102,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
 def _composite_descent(
     parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis, asset_layer
 ):
-    """
-    The core implementation of composite_descent. This yields a stream of
+    """The core implementation of composite_descent. This yields a stream of
     SolidConfigEntry. This is used by composite_descent to construct a
     dictionary.
 

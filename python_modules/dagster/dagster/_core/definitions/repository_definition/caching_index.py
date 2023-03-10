@@ -28,12 +28,11 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         validation_fn: Callable[[RepositoryLevelDefinition], RepositoryLevelDefinition],
         lazy_definitions_fn: Optional[Callable[[], Sequence[RepositoryLevelDefinition]]] = None,
     ):
-        """
-        Args:
-            definitions: A dictionary of definition names to definitions or functions that load
-                definitions.
-            lazy_definitions_fn: A function for loading a list of definitions whose names are not
-                even known until loaded.
+        """Args:
+        definitions: A dictionary of definition names to definitions or functions that load
+            definitions.
+        lazy_definitions_fn: A function for loading a list of definitions whose names are not
+            even known until loaded.
 
         """
         for key, definition in definitions.items():

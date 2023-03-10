@@ -25,9 +25,7 @@ from .utils import get_instance_for_service
 
 @click.group(name="asset")
 def asset_cli():
-    """
-    Commands for working with Dagster assets.
-    """
+    """Commands for working with Dagster assets."""
 
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
@@ -116,8 +114,7 @@ def asset_list_command(**kwargs):
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
 @click.option("--noprompt", is_flag=True)
 def asset_wipe_command(key, **cli_args):
-    r"""
-    Eliminate asset key indexes from event logs.
+    r"""Eliminate asset key indexes from event logs.
 
     Warning: Cannot be undone.
 

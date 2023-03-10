@@ -6,14 +6,13 @@ from dagster._serdes.serdes import deserialize_value
 
 
 def filter_dagster_events_from_cli_logs(log_lines):
-    """
-    Filters the raw log lines from a dagster-cli invocation to return only the lines containing json.
+    """Filters the raw log lines from a dagster-cli invocation to return only the lines containing json.
 
-     - Log lines don't necessarily come back in order
-     - Something else might log JSON
-     - Docker appears to silently split very long log lines -- this is undocumented behavior
+    - Log lines don't necessarily come back in order
+    - Something else might log JSON
+    - Docker appears to silently split very long log lines -- this is undocumented behavior
 
-     TODO: replace with reading event logs from the DB
+    TODO: replace with reading event logs from the DB
 
     """
     check.list_param(log_lines, "log_lines", str)

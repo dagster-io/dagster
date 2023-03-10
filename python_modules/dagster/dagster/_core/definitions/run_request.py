@@ -18,8 +18,7 @@ class InstigatorType(Enum):
 
 @whitelist_for_serdes
 class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional[str]])])):
-    """
-    Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
+    """Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
     why no runs were requested.
 
     Attributes:
@@ -48,8 +47,7 @@ class RunRequest(
         ],
     )
 ):
-    """
-    Represents all the information required to launch a single run.  Must be returned by a
+    """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
     To build a run request for a particular partitition, use
@@ -117,8 +115,7 @@ class PipelineRunReaction(
         ],
     )
 ):
-    """
-    Represents a request that reacts to an existing pipeline run. If success, it will report logs
+    """Represents a request that reacts to an existing pipeline run. If success, it will report logs
     back to the run.
 
     Attributes:

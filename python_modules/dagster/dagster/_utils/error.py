@@ -59,8 +59,7 @@ class SerializableErrorInfo(
         )
 
     def to_exception_message_only(self) -> "SerializableErrorInfo":
-        """
-        Return a new SerializableErrorInfo with only the message and cause set.
+        """Return a new SerializableErrorInfo with only the message and cause set.
 
         This is done in cases when the context about the error should not be exposed to the user.
         """

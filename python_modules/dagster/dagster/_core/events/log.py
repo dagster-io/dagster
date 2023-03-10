@@ -131,8 +131,7 @@ class EventLogEntry(
     @public
     @property
     def message(self) -> str:
-        """
-        Return the message from the structured DagsterEvent if present, fallback to user_message.
+        """Return the message from the structured DagsterEvent if present, fallback to user_message.
         """
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
@@ -194,9 +193,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
 
 
 def construct_event_logger(event_record_callback):
-    """
-    Callback receives a stream of event_records. Piggybacks on the logging machinery.
-    """
+    """Callback receives a stream of event_records. Piggybacks on the logging machinery."""
     check.callable_param(event_record_callback, "event_record_callback")
 
     return construct_single_handler_logger(

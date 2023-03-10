@@ -234,8 +234,7 @@ def fetch_connected(
 def fetch_sinks(
     graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A sink is an asset that has no downstream dependencies within the provided selection.
+    """A sink is an asset that has no downstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
@@ -250,8 +249,7 @@ def fetch_sinks(
 def fetch_sources(
     graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A source is a node that has no upstream dependencies within the provided selection.
+    """A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     dp: Dict[T_Hashable, bool] = {}

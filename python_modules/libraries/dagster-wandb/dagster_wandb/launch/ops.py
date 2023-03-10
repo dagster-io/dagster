@@ -26,8 +26,7 @@ def raise_on_invalid_config(context: OpExecutionContext):
     config_schema=launch_agent_config(),
 )
 def run_launch_agent(context: OpExecutionContext):
-    """
-    It starts a Launch Agent and runs it as a long running process until stopped manually.
+    """It starts a Launch Agent and runs it as a long running process until stopped manually.
 
     Agents are processes that poll launch queues and execute the jobs (or dispatch them to external
     services to be executed) in order.
@@ -92,8 +91,7 @@ def run_launch_agent(context: OpExecutionContext):
     config_schema=launch_config(),
 )
 def run_launch_job(context: OpExecutionContext):
-    """
-    Executes a Launch job.
+    """Executes a Launch job.
 
     A Launch job is assigned to a queue in order to be executed. You can create a queue or use the
     default one. Make sure you have an active agent listening to that queue. You can run an agent

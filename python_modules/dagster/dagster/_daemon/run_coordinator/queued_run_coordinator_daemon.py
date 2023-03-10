@@ -34,8 +34,7 @@ from dagster._utils.tags import TagConcurrencyLimitsCounter
 
 
 class QueuedRunCoordinatorDaemon(IntervalDaemon):
-    """
-    Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
+    """Used with the QueuedRunCoordinator on the instance. This process finds queued runs from the run
     store and launches them.
     """
 

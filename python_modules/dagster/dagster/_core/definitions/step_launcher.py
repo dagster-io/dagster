@@ -24,8 +24,7 @@ class StepRunRef(
         ],
     )
 ):
-    """
-    A serializable object that specifies what's needed to hydrate a step so
+    """A serializable object that specifies what's needed to hydrate a step so
     that it can be executed in a process outside the plan process.
 
     Users should not instantiate this class directly.
@@ -56,14 +55,12 @@ class StepRunRef(
 
 
 class StepLauncher(ABC):
-    """
-    A StepLauncher is responsible for executing steps, either in-process or in an external process.
+    """A StepLauncher is responsible for executing steps, either in-process or in an external process.
     """
 
     @abstractmethod
     def launch_step(self, step_context):
-        """
-        Args:
+        """Args:
             step_context (StepExecutionContext): The context that we're executing the step in.
 
         Returns:

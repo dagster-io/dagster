@@ -658,8 +658,7 @@ def load_assets_from_dbt_project(
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models from a dbt project into Dagster assets.
+    """Loads a set of dbt models from a dbt project into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` or `dbt build` command.
@@ -773,8 +772,7 @@ def load_assets_from_dbt_manifest(
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models, described in a manifest.json, into Dagster assets.
+    """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` command.

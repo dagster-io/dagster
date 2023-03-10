@@ -7,9 +7,7 @@ from dagster_aws.s3 import s3_pickle_io_manager
 
 
 class CommonBucketS3PickleIOManager(ConfigurableIOManagerFactory):
-    """
-    A version of the s3_pickle_io_manager that gets its bucket from another resource.
-    """
+    """A version of the s3_pickle_io_manager that gets its bucket from another resource."""
 
     s3_bucket: str
     s3: ResourceDependency[Any]

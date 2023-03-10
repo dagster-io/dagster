@@ -25,18 +25,17 @@ class RepositoryPythonOrigin(
         ],
     ),
 ):
-    """
-    Args:
-      executable_path (str): The Python executable of the user process.
-      code_pointer (CodePoitner): Once the process has started, an object that can be used to
-          find and load the repository in code.
-      container_image (Optinonal[str]): The image to use when creating a new container that
-          loads the repository. Only used in execution environments that start containers.
-      entry_point (Optional[List[str]]): The entry point to use when starting a new process
-          to load the repository. Defaults to ["dagster"] (and may differ from the executable_path).
-      container_context (Optional[Dict[str, Any]]): Additional context to use when creating a new
-          container that loads the repository. Keys can be specific to a given compute substrate
-          (for example, "docker", "k8s", etc.).
+    """Args:
+    executable_path (str): The Python executable of the user process.
+    code_pointer (CodePoitner): Once the process has started, an object that can be used to
+        find and load the repository in code.
+    container_image (Optinonal[str]): The image to use when creating a new container that
+        loads the repository. Only used in execution environments that start containers.
+    entry_point (Optional[List[str]]): The entry point to use when starting a new process
+        to load the repository. Defaults to ["dagster"] (and may differ from the executable_path).
+    container_context (Optional[Dict[str, Any]]): Additional context to use when creating a new
+        container that loads the repository. Keys can be specific to a given compute substrate
+        (for example, "docker", "k8s", etc.).
     """
 
     def __new__(

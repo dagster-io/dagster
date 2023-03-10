@@ -235,8 +235,7 @@ def execute_sensor_iteration_loop(
     shutdown_event: threading.Event,
     until: Optional[float] = None,
 ) -> TDaemonGenerator:
-    """
-    Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
+    """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.

@@ -97,8 +97,7 @@ class BaseDaemonWorkspace(IWorkspace):
 
 
 class DaemonIterationWorkspace(BaseDaemonWorkspace):
-    """
-    A copy of the main workspace's locations that can be called from a background thread
+    """A copy of the main workspace's locations that can be called from a background thread
     in a daemon without worrying that the main thread will clean up the locations underneath us.
     Analagous to WorkspaceRequestContext in Dagit.
 

@@ -18,8 +18,7 @@ clusters:
 
 @pytest.fixture
 def kubeconfig_file(tmp_path):
-    """
-    Returns a str file path for a minimal kubeconfig file in the default location (~/.kube/config).
+    """Returns a str file path for a minimal kubeconfig file in the default location (~/.kube/config).
     """
     dir_path = tmp_path / ".kube"
     dir_path.mkdir()

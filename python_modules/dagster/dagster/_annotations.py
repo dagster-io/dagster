@@ -19,8 +19,7 @@ T_Annotatable = TypeVar("T_Annotatable", bound=Annotatable)
 
 
 def public(obj: T_Annotatable) -> T_Annotatable:
-    """
-    Mark a method on a public class as public. This distinguishes the method from "internal"
+    """Mark a method on a public class as public. This distinguishes the method from "internal"
     methods, which are methods that are public in the Python sense of being non-underscored, but
     not intended for user access. Only `public` methods of a class are rendered in the docs.
     """
@@ -52,8 +51,7 @@ PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 
 
 def deprecated(obj: T_Annotatable) -> T_Annotatable:
-    """
-    Mark a class/method/function as deprecated. This appends some metadata to the function that
+    """Mark a class/method/function as deprecated. This appends some metadata to the function that
     causes it to be rendered with a "deprecated" tag in the docs.
 
     Note that this decorator does not add any warnings-- they should be added separately.
@@ -72,8 +70,7 @@ def is_deprecated(obj: Annotatable, attr: Optional[str] = None) -> bool:
 
 
 def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatable:
-    """
-    Mark a class/method/function as experimental. This appends some metadata to the function that
+    """Mark a class/method/function as experimental. This appends some metadata to the function that
     causes it to be rendered with an "experimental" tag in the docs.
 
     Also triggers an "experimental" warning whenever the passed callable is called. If the argument

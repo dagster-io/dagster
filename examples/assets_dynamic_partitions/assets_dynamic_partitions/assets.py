@@ -77,8 +77,7 @@ def release_files(context) -> None:
     metadata={"partition_expr": "release_tag"},
 )
 def release_files_metadata(context) -> DataFrame:
-    """
-    Table with a row for every release file.
+    """Table with a row for every release file.
 
     Partitioned by release, because all the files for a release are added/updated atomically
     """

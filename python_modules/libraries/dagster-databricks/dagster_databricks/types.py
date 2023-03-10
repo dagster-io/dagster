@@ -3,9 +3,7 @@ from typing import NamedTuple, Optional
 
 
 class DatabricksRunResultState(str, Enum):
-    """
-    See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#runresultstate.
-    """
+    """See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#runresultstate."""
 
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
@@ -17,9 +15,7 @@ class DatabricksRunResultState(str, Enum):
 
 
 class DatabricksRunLifeCycleState(str, Enum):
-    """
-    See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#jobsrunlifecyclestate.
-    """
+    """See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#jobsrunlifecyclestate."""
 
     PENDING = "PENDING"
     RUNNING = "RUNNING"

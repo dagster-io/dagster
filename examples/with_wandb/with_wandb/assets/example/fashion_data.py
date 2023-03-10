@@ -60,8 +60,7 @@ class fashion(data.Dataset):
             )
 
     def __getitem__(self, index):
-        """
-        Args:
+        """Args:
             index (int): Index
         Returns:
             tuple: (image, target) where target is index of the target class.

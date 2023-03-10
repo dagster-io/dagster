@@ -1,5 +1,4 @@
-"""
-This module contains the execution context objects that are internal to the system.
+"""This module contains the execution context objects that are internal to the system.
 Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module.

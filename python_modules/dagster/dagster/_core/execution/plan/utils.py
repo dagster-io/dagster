@@ -36,8 +36,7 @@ def op_execution_error_boundary(
     step_context: "StepExecutionContext",
     **kwargs: Any,
 ) -> Iterator[None]:
-    """
-    A specialization of user_code_error_boundary for the steps involved in executing a solid.
+    """A specialization of user_code_error_boundary for the steps involved in executing a solid.
     This variant supports the control flow exceptions RetryRequested and Failure as well
     as respecting the RetryPolicy if present.
     """

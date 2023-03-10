@@ -245,8 +245,7 @@ class ExecuteStepArgs(
         return base64.b64encode(zlib.compress(serialize_value(self).encode())).decode()
 
     def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
-        """
-        Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
+        """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
         return (
@@ -260,8 +259,7 @@ class ExecuteStepArgs(
         )
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
-        """
-        Get the env vars for overriding the Click args of this step. Used in conjuction with
+        """Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).
         """
         return [

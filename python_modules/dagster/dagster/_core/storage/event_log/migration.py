@@ -18,8 +18,7 @@ ASSET_DATA_MIGRATIONS = {ASSET_KEY_INDEX_COLS: lambda: migrate_asset_keys_index_
 
 
 def migrate_event_log_data(instance=None):
-    """
-    Utility method to migrate the data in the existing event log records.  Reads every event log row
+    """Utility method to migrate the data in the existing event log records.  Reads every event log row
     reachable from the instance and reserializes it to event log storage.  Deserializing and then
     reserializing the event from storage allows for things like SQL column extraction, filling
     explicit default values, etc.
@@ -37,8 +36,7 @@ def migrate_event_log_data(instance=None):
 
 
 def migrate_asset_key_data(event_log_storage, print_fn=None):
-    """
-    Utility method to build an asset key index from the data in existing event log records.
+    """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     from dagster._core.definitions.events import AssetKey

@@ -18,9 +18,7 @@ DEFAULT_POLL_INTERVAL = 10
 
 
 class CensusResource:
-    """
-    This class exposes methods on top of the Census REST API.
-    """
+    """This class exposes methods on top of the Census REST API."""
 
     def __init__(
         self,
@@ -49,8 +47,7 @@ class CensusResource:
     def make_request(
         self, method: str, endpoint: str, data: Optional[str] = None
     ) -> Mapping[str, Any]:
-        """
-        Creates and sends a request to the desired Census API endpoint.
+        """Creates and sends a request to the desired Census API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -88,8 +85,7 @@ class CensusResource:
         raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_sync(self, sync_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a given sync from the Census API.
+        """Gets details about a given sync from the Census API.
 
         Args:
             sync_id (int): The Census Sync ID.
@@ -100,8 +96,7 @@ class CensusResource:
         return self.make_request(method="GET", endpoint=f"syncs/{sync_id}")
 
     def get_source(self, source_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a given source from the Census API.
+        """Gets details about a given source from the Census API.
 
         Args:
             source_id (int): The Census Source ID.
@@ -112,8 +107,7 @@ class CensusResource:
         return self.make_request(method="GET", endpoint=f"sources/{source_id}")
 
     def get_destination(self, destination_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a given destination from the Census API.
+        """Gets details about a given destination from the Census API.
 
         Args:
             destination_id (int): The Census Destination ID.
@@ -124,8 +118,7 @@ class CensusResource:
         return self.make_request(method="GET", endpoint=f"destinations/{destination_id}")
 
     def get_sync_run(self, sync_run_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a specific sync run from the Census API.
+        """Gets details about a specific sync run from the Census API.
 
         Args:
             sync_run_id (int): The Census Sync Run ID.
@@ -141,8 +134,7 @@ class CensusResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
-        """
-        Given a Census sync run, poll until the run is complete.
+        """Given a Census sync run, poll until the run is complete.
 
         Args:
             sync_id (int): The Census Sync Run ID.
@@ -191,8 +183,7 @@ class CensusResource:
         return response_dict
 
     def trigger_sync(self, sync_id: int, force_full_sync: bool = False) -> Mapping[str, Any]:
-        """
-        Trigger an asynchronous run for a specific sync.
+        """Trigger an asynchronous run for a specific sync.
 
         Args:
             sync_id (int): The Census Sync Run ID.
@@ -213,8 +204,7 @@ class CensusResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> CensusOutput:
-        """
-        Trigger a run for a specific sync and poll until it has completed.
+        """Trigger a run for a specific sync and poll until it has completed.
 
         Args:
             sync_id (int): The Census Sync Run ID.
@@ -272,8 +262,7 @@ class CensusResource:
     description="This resource helps manage Census connectors",
 )
 def census_resource(context) -> CensusResource:
-    """
-    This resource allows users to programatically interface with the Census REST API to launch
+    """This resource allows users to programatically interface with the Census REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

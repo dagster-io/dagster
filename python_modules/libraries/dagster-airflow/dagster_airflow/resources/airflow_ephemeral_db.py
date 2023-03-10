@@ -25,10 +25,7 @@ from dagster_airflow.utils import (
 
 
 class AirflowEphemeralDatabase(AirflowDatabase):
-    """
-    A ephemeral Airflow database Dagster resource.
-
-    """
+    """A ephemeral Airflow database Dagster resource."""
 
     def __init__(self, airflow_home_path: str, dagster_run: DagsterRun):
         self.airflow_home_path = airflow_home_path
@@ -69,8 +66,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
 
 
 def make_ephemeral_airflow_db_resource(connections: List[Connection] = []) -> ResourceDefinition:
-    """
-    Creates a Dagster resource that provides an ephemeral Airflow database.
+    """Creates a Dagster resource that provides an ephemeral Airflow database.
 
     Args:
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB

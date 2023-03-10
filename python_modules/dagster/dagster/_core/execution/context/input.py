@@ -36,8 +36,7 @@ if TYPE_CHECKING:
 
 
 class InputContext:
-    """
-    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    """The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
 
     Users should not instantiate this object directly. In order to construct
     an `InputContext` for testing an IO Manager's `load_input` method, use

@@ -111,7 +111,7 @@ def test_out():
         """
         Returns:
             int: some int
-        """  # noqa: D415
+        """  # noqa: D212, D415
         return 1
 
     assert my_op.outs == {

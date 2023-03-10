@@ -55,8 +55,7 @@ class OpConfig(
 
 
 class OutputsConfig(NamedTuple):
-    """
-    Outputs are configured as a dict if any of the outputs have an output manager with an
+    """Outputs are configured as a dict if any of the outputs have an output manager with an
     output_config_schema, and a list otherwise.
     """
 

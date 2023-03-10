@@ -49,8 +49,7 @@ class LateBoundTypesForResourceTypeChecking:
 
 @dataclass_transform()
 class BaseResourceMeta(pydantic.main.ModelMetaclass):
-    """
-    Custom metaclass for Resource and PartialResource. This metaclass is responsible for
+    """Custom metaclass for Resource and PartialResource. This metaclass is responsible for
     transforming the type annotations on the class so that Pydantic constructor-time validation
     does not error when users provide partially configured resources to resource params.
 
@@ -104,8 +103,7 @@ Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
 class TypecheckAllowPartialResourceInitParams:
-    """
-    Implementation of the Python descriptor protocol (https://docs.python.org/3/howto/descriptor.html)
+    """Implementation of the Python descriptor protocol (https://docs.python.org/3/howto/descriptor.html)
     to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
     as PartialResources or Resources, but will always be returned as Resources.
 

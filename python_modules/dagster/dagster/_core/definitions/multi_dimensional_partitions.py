@@ -44,9 +44,7 @@ MULTIPARTITION_KEY_DELIMITER = "|"
 class PartitionDimensionKey(
     NamedTuple("_PartitionDimensionKey", [("dimension_name", str), ("partition_key", str)])
 ):
-    """
-    Representation of a single dimension of a multi-dimensional partition key.
-    """
+    """Representation of a single dimension of a multi-dimensional partition key."""
 
     def __new__(cls, dimension_name: str, partition_key: str):
         return super(PartitionDimensionKey, cls).__new__(
@@ -57,8 +55,7 @@ class PartitionDimensionKey(
 
 
 class MultiPartitionKey(str):
-    """
-    A multi-dimensional partition key stores the partition key for each dimension.
+    """A multi-dimensional partition key stores the partition key for each dimension.
     Subclasses the string class to keep partition key type as a string.
 
     Contains additional methods to access the partition key for each dimension.
@@ -132,8 +129,7 @@ ALLOWED_PARTITION_DIMENSION_TYPES = (StaticPartitionsDefinition, TimeWindowParti
 
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
-    """
-    Takes the cross-product of partitions from two partitions definitions.
+    """Takes the cross-product of partitions from two partitions definitions.
 
     For example, with a static partitions definition where the partitions are ["a", "b", "c"]
     and a daily partitions definition, this partitions definition will have the following
@@ -308,9 +304,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
 
     def get_partition_key_from_str(self, partition_key_str: str) -> str:
-        """
-        Given a string representation of a partition key, returns a MultiPartitionKey object.
-        """
+        """Given a string representation of a partition key, returns a MultiPartitionKey object."""
         check.str_param(partition_key_str, "partition_key_str")
 
         partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)

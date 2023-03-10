@@ -261,8 +261,7 @@ def get_current_ecs_task_metadata() -> CurrentEcsTaskMetadata:
 
 
 def _container_metadata_uri():
-    """
-    Get the metadata uri for the current ECS task.
+    """Get the metadata uri for the current ECS task.
 
     ECS injects an environment variable into each Fargate task. The value
     of this environment variable is a url that can be queried to introspect

@@ -321,8 +321,7 @@ def policy_job():
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_retry_policy():
-    """
-    Start a thread which will interrupt the subprocess after it writes the file.
+    """Start a thread which will interrupt the subprocess after it writes the file.
     On the retry the run will succeed since the op returns if the file already exists.
     """
 

@@ -89,10 +89,11 @@ class GraphQLServer(ABC):
         return results
 
     async def graphql_http_endpoint(self, request: Request):
-        """
-        fork of starlette GraphQLApp to allow for
-            * our context type (crucial)
-            * our GraphiQL playground (could change).
+        """Fork of starlette GraphQLApp.
+
+        Allows for:
+        * our context type (crucial)
+        * our GraphiQL playground (could change).
         """
         if request.method == "GET":
             # render graphiql
@@ -164,8 +165,7 @@ class GraphQLServer(ABC):
         )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
-        """
-        Implementation of websocket ASGI endpoint for GraphQL.
+        """Implementation of websocket ASGI endpoint for GraphQL.
         Once we are free of conflicting deps, we should be able to use an impl from
         strawberry-graphql or the like.
         """

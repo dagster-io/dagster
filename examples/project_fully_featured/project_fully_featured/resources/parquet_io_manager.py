@@ -16,8 +16,7 @@ from dagster._seven.temp_dir import get_system_temp_directory
 
 
 class PartitionedParquetIOManager(IOManager):
-    """
-    This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
+    """This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
 
     It stores outputs for different partitions in different filepaths.

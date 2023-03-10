@@ -107,9 +107,7 @@ class NodeInvocation(
 
 
 class Node(ABC):
-    """
-    Node invocation within a graph. Identified by its name inside the graph.
-    """
+    """Node invocation within a graph. Identified by its name inside the graph."""
 
     name: str
     definition: "NodeDefinition"
@@ -334,9 +332,7 @@ class OpNode(Node):
 
 @whitelist_for_serdes(storage_name="SolidHandle")
 class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])):
-    """
-    A structured object to identify nodes in the potentially recursive graph structure.
-    """
+    """A structured object to identify nodes in the potentially recursive graph structure."""
 
     def __new__(cls, name: str, parent: Optional["NodeHandle"]):
         return super(NodeHandle, cls).__new__(
@@ -495,16 +491,14 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 class NodeInputHandle(
     NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
 ):
-    """
-    A structured object to uniquely identify inputs in the potentially recursive graph structure.
+    """A structured object to uniquely identify inputs in the potentially recursive graph structure.
     """
 
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
-    """
-    A structured object to uniquely identify outputs in the potentially recursive graph structure.
+    """A structured object to uniquely identify outputs in the potentially recursive graph structure.
     """
 
 
@@ -979,8 +973,7 @@ class DependencyStructure:
     def input_to_upstream_outputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
-        """
-        Returns a Dict[NodeInput, List[NodeOutput]] that encodes
+        """Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
@@ -991,8 +984,7 @@ class DependencyStructure:
     def output_to_downstream_inputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeOutput, Sequence[NodeInput]]:
-        """
-        Returns a Dict[NodeOutput, List[NodeInput]] that
+        """Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
         dictionary.
         """

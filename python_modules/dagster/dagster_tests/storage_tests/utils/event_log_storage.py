@@ -353,8 +353,7 @@ def _get_cached_status_for_asset(storage, asset_key):
 
 
 class TestEventLogStorage:
-    """
-    You can extend this class to easily run these set of tests on any event log storage. When extending,
+    """You can extend this class to easily run these set of tests on any event log storage. When extending,
     you simply need to override the `event_log_storage` fixture and return your implementation of
     `EventLogStorage`.
 

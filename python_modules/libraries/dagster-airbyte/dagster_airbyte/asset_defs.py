@@ -205,8 +205,7 @@ def build_airbyte_assets(
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[AssetsDefinition]:
-    """
-    Builds a set of assets representing the tables created by an Airbyte sync operation.
+    """Builds a set of assets representing the tables created by an Airbyte sync operation.
 
     Args:
         connection_id (str): The Airbyte Connection ID that this op will sync. You can retrieve this
@@ -288,9 +287,7 @@ def build_airbyte_assets(
 
 
 def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
-    """
-    Given a schema definition, return a list of data types that are valid for this schema.
-    """
+    """Given a schema definition, return a list of data types that are valid for this schema."""
     types = schema.get("types") or schema.get("type")
     if not types:
         return []
@@ -300,8 +297,7 @@ def _get_schema_types(schema: Mapping[str, Any]) -> Sequence[str]:
 
 
 def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
-    """
-    Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
+    """Returns a list of sub-schema definitions for a given schema. This is used to handle union types.
     """
     return schema.get("anyOf") or schema.get("oneOf") or [schema]
 
@@ -309,8 +305,7 @@ def _get_sub_schemas(schema: Mapping[str, Any]) -> Sequence[Mapping[str, Any]]:
 def _get_normalization_tables_for_schema(
     key: str, schema: Mapping[str, Any], prefix: str = ""
 ) -> Mapping[str, AirbyteTableMetadata]:
-    """
-    Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
+    """Recursively traverses a schema, returning metadata for the tables that will be created by the Airbyte
     normalization process.
 
     For example, a table `cars` with a nested object field `limited_editions` will produce the tables
@@ -352,9 +347,7 @@ def _get_normalization_tables_for_schema(
 
 
 def _clean_name(name: str) -> str:
-    """
-    Cleans an input to be a valid Dagster asset name.
-    """
+    """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
@@ -369,8 +362,7 @@ class AirbyteConnectionMetadata(
         ],
     )
 ):
-    """
-    Contains information about an Airbyte connection.
+    """Contains information about an Airbyte connection.
 
     Attributes:
         name (str): The name of the connection.
@@ -413,8 +405,7 @@ class AirbyteConnectionMetadata(
     def parse_stream_tables(
         self, return_normalization_tables: bool = False
     ) -> Mapping[str, AirbyteTableMetadata]:
-        """
-        Parses the stream data and returns a mapping, with keys representing destination
+        """Parses the stream data and returns a mapping, with keys representing destination
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
@@ -731,8 +722,7 @@ def load_assets_from_airbyte_instance(
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
+    """Loads Airbyte connection assets from a configured AirbyteResource instance. This fetches information
     about defined connections at initialization time, and will error on workspace load if the Airbyte
     instance is not reachable.
 
@@ -837,8 +827,7 @@ def load_assets_from_airbyte_project(
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads an Airbyte project into a set of Dagster assets.
+    """Loads an Airbyte project into a set of Dagster assets.
 
     Point to the root folder of an Airbyte project synced using the Octavia CLI. For
     more information, see https://github.com/airbytehq/airbyte/tree/master/octavia-cli#octavia-import-all.

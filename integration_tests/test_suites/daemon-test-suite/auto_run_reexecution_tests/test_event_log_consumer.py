@@ -13,9 +13,7 @@ TEST_EVENT_LOG_FETCH_LIMIT = 10
 
 
 class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
-    """
-    Override the actual handlers so that we can just test which run records they receive.
-    """
+    """Override the actual handlers so that we can just test which run records they receive."""
 
     def __init__(self):
         super(TestEventLogConsumerDaemon, self).__init__(

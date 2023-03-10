@@ -474,8 +474,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def build(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtRpcOutput:
-        """
-        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the models/resources to include in the run.
@@ -487,8 +486,7 @@ class DbtRpcResource(DbtResource):
         raise NotImplementedError()
 
     def get_run_results_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the run_results.json file for the relevant dbt project.
+        """Get a parsed version of the run_results.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
@@ -498,8 +496,7 @@ class DbtRpcResource(DbtResource):
         raise NotImplementedError()
 
     def get_manifest_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the manifest.json file for the relevant dbt project.
+        """Get a parsed version of the manifest.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file

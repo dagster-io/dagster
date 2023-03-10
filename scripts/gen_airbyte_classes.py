@@ -53,8 +53,7 @@ CHECK_MAPPING = {
 
 
 class SchemaType(ABC):
-    """
-    Corresponds to the Python type of a field in a schema, has methods to generate
+    """Corresponds to the Python type of a field in a schema, has methods to generate
     the Python code to annotate that type or check it at runtime.
     """
 
@@ -62,23 +61,17 @@ class SchemaType(ABC):
 
     @abstractmethod
     def get_check(self, name: str, scope: Optional[str] = None):
-        """
-        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name').
-        """
+        """Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')."""
 
     @abstractmethod
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
-        """
-        Returns the Python type annotation for this type, e.g. str or Union[str, int].
-        """
+        """Returns the Python type annotation for this type, e.g. str or Union[str, int]."""
 
     @property
     def const_value(self):
-        """
-        If this is a constant field, returns the constant value, otherwise returns None.
-        """
+        """If this is a constant field, returns the constant value, otherwise returns None."""
         return None
 
     def add_description(self, description: str):
@@ -202,8 +195,7 @@ def _union_or_singular(inner: List[SchemaType]) -> SchemaType:
 
 
 def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, SchemaType]]:
-    """
-    Parses an Airbyte source or destination schema, turning it into a representation of the
+    """Parses an Airbyte source or destination schema, turning it into a representation of the
     corresponding Python class structure - a dictionary mapping class names with the fields
     that the new classes should have.
 
@@ -420,9 +412,7 @@ def load_from_spec_file(
     is_source: bool,
     injected_props: Dict[str, Any],
 ):
-    """
-    Loads a connector spec file and generates a python class definition for it.
-    """
+    """Loads a connector spec file and generates a python class definition for it."""
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):
             schema = json.loads(f.read())

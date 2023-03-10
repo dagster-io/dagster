@@ -14,8 +14,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 
 class UPathIOManager(MemoizableIOManager):
-    """
-    Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
+    """Abstract IOManager base class compatible with local and cloud storage via `universal-pathlib` and `fsspec`.
 
     Features:
      - handles partitioned assets
@@ -75,8 +74,7 @@ class UPathIOManager(MemoizableIOManager):
         return self._base_path.joinpath(*context_path)
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> UPath:
-        """
-        Returns the I/O path for a given context.
+        """Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
         path = self._get_path_without_extension(context)
@@ -85,9 +83,7 @@ class UPathIOManager(MemoizableIOManager):
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
     ) -> Dict[str, UPath]:
-        """
-        Returns a dict of partition_keys into I/O paths for a given context.
-        """
+        """Returns a dict of partition_keys into I/O paths for a given context."""
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "

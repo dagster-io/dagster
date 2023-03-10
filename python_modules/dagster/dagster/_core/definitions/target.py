@@ -17,8 +17,7 @@ ExecutableDefinition: TypeAlias = Union[
 
 
 class RepoRelativeTarget(NamedTuple):
-    """
-    The thing to be executed by a schedule or sensor, selecting by name a pipeline in the same repository.
+    """The thing to be executed by a schedule or sensor, selecting by name a pipeline in the same repository.
     """
 
     pipeline_name: str
@@ -32,8 +31,7 @@ class DirectTarget(
         [("target", ExecutableDefinition)],
     )
 ):
-    """
-    The thing to be executed by a schedule or sensor, referenced directly and loaded
+    """The thing to be executed by a schedule or sensor, referenced directly and loaded
     in to any repository the container is included in.
     """
 

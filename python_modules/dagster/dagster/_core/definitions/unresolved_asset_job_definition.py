@@ -111,8 +111,7 @@ class UnresolvedAssetJobDefinition(
         instance: Optional[DagsterInstance] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
-        """
-        Creates a RunRequest object for a run that processes the given partition.
+        """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
             partition_key: The key of the partition to request a run for.
@@ -172,8 +171,7 @@ class UnresolvedAssetJobDefinition(
         default_executor_def: Optional["ExecutorDefinition"] = None,
         asset_graph: Optional["InternalAssetGraph"] = None,
     ) -> "JobDefinition":
-        """
-        Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
+        """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
 
         The assets and source_assets arguments are deprecated. Although they were never technically
         public, a lot of users use them, so going to wait until a minor release to get rid of them.

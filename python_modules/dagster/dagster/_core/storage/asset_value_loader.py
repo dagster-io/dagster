@@ -77,8 +77,7 @@ class AssetValueLoader:
         partition_key: Optional[str] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
-        """
-        Loads the contents of an asset as a Python object.
+        """Loads the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 

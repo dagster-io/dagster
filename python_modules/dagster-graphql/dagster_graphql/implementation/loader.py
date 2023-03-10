@@ -35,8 +35,7 @@ class RepositoryDataType(Enum):
 
 
 class RepositoryScopedBatchLoader:
-    """
-    A batch loader that fetches an assortment of data for a given repository.  This loader is
+    """A batch loader that fetches an assortment of data for a given repository.  This loader is
     expected to be instantiated once per repository, and then passed to various child graphene
     objects to batch calls to the DB.
 
@@ -272,8 +271,7 @@ class RepositoryScopedBatchLoader:
 
 
 class BatchRunLoader:
-    """
-    A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
+    """A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
     once with a set of run_ids. For example, for a particular asset, we can fetch a list of asset
     materializations, all of which may have been materialized from a different run.
     """
@@ -299,8 +297,7 @@ class BatchRunLoader:
 
 
 class BatchMaterializationLoader:
-    """
-    A batch loader that fetches materializations for asset keys.  This loader is expected to be
+    """A batch loader that fetches materializations for asset keys.  This loader is expected to be
     instantiated with a set of asset keys.
     """
 
@@ -332,8 +329,7 @@ class BatchMaterializationLoader:
 
 
 class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
-    """
-    A batch loader that caches the partition keys for a given dynamic partitions definition,
+    """A batch loader that caches the partition keys for a given dynamic partitions definition,
     to avoid repeated calls to the database for the same partitions definition.
     """
 
@@ -346,8 +342,7 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
 
 
 class CrossRepoAssetDependedByLoader:
-    """
-    A batch loader that computes cross-repository asset dependencies. Locates source assets
+    """A batch loader that computes cross-repository asset dependencies. Locates source assets
     within all workspace repositories, and determines if they are derived (defined) assets in
     other repositories.
 
@@ -373,8 +368,7 @@ class CrossRepoAssetDependedByLoader:
         Dict[AssetKey, ExternalAssetNode],
         Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
     ]:
-        """
-        This method constructs a sink asset as an ExternalAssetNode for every asset immediately
+        """This method constructs a sink asset as an ExternalAssetNode for every asset immediately
         downstream of a source asset that is defined in another repository as a derived asset.
 
         In Dagit, sink assets will display as ForeignAssets, which are external from the repository.

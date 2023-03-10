@@ -479,8 +479,7 @@ def _config_dictionary_from_values_inner(obj: Any):
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
-    """
-    Converts a set of config values into a dictionary representation,
+    """Converts a set of config values into a dictionary representation,
     in particular converting EnvVar objects into Dagster config inputs
     and processing data structures such as dicts, lists, and structured Config classes.
     """

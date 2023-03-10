@@ -42,8 +42,7 @@ from dagster_airbyte.utils import is_basic_normalization_operation
 def gen_configured_stream_json(
     source_stream: Mapping[str, Any], user_stream_config: Mapping[str, AirbyteSyncMode]
 ) -> Mapping[str, Any]:
-    """
-    Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
+    """Generates an Airbyte API stream defintiion based on the succinct user-provided config and the
     full stream definition from the source.
     """
     config = user_stream_config[source_stream["stream"]["name"]]
@@ -74,9 +73,7 @@ def diff_sources(
     curr_src: Optional[AirbyteSource],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteSource objects.
-    """
+    """Utility to diff two AirbyteSource objects."""
     diff = _diff_configs(
         config_src.source_configuration if config_src else {},
         curr_src.source_configuration if curr_src else {},
@@ -94,9 +91,7 @@ def diff_destinations(
     curr_dst: Optional[AirbyteDestination],
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteDestination objects.
-    """
+    """Utility to diff two AirbyteDestination objects."""
     diff = _diff_configs(
         config_dst.destination_configuration if config_dst else {},
         curr_dst.destination_configuration if curr_dst else {},
@@ -128,8 +123,7 @@ OPTIONAL_STREAM_SETTINGS = ("cursorField", "primaryKey")
 
 
 def _compare_stream_values(k: str, cv: str, _dv: str):
-    """
-    Don't register a diff for optional stream settings if the value is not set
+    """Don't register a diff for optional stream settings if the value is not set
     in the user-provided config, this means it will default to the value in the
     source.
     """
@@ -139,9 +133,7 @@ def _compare_stream_values(k: str, cv: str, _dv: str):
 def diff_connections(
     config_conn: Optional[AirbyteConnection], curr_conn: Optional[AirbyteConnection]
 ) -> ManagedElementCheckResult:
-    """
-    Utility to diff two AirbyteConnection objects.
-    """
+    """Utility to diff two AirbyteConnection objects."""
     diff = diff_dicts(
         conn_dict(config_conn),
         conn_dict(curr_conn),
@@ -163,8 +155,7 @@ def reconcile_sources(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteSource], ManagedElementCheckResult]:
-    """
-    Generates a diff of the configured and existing sources and reconciles them to match the
+    """Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
@@ -251,8 +242,7 @@ def reconcile_destinations(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> Tuple[Mapping[str, InitializedAirbyteDestination], ManagedElementCheckResult]:
-    """
-    Generates a diff of the configured and existing destinations and reconciles them to match the
+    """Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
     diff = ManagedElementDiff()
@@ -340,8 +330,7 @@ def reconcile_config(
     should_delete: bool = False,
     ignore_secrets: bool = True,
 ) -> ManagedElementCheckResult:
-    """
-    Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
+    """Main entry point for the reconciliation process. Takes a list of AirbyteConnection objects
     and a pointer to an Airbyte instance and returns a diff, along with applying the diff
     if dry_run is False.
     """
@@ -421,8 +410,7 @@ def reconcile_normalization(
     normalization_config: Optional[bool],
     workspace_id: str,
 ) -> Optional[str]:
-    """
-    Reconciles the normalization configuration for a connection.
+    """Reconciles the normalization configuration for a connection.
 
     If normalization_config is None, then defaults to True on destinations that support normalization
     and False on destinations that do not.
@@ -490,8 +478,7 @@ def reconcile_connections_pre(
     dry_run: bool,
     should_delete: bool,
 ) -> ManagedElementCheckResult:
-    """
-    Generates the diff for connections, and deletes any connections that are not in the config if
+    """Generates the diff for connections, and deletes any connections that are not in the config if
     dry_run is False.
 
     It's necessary to do this in two steps because we need to remove connections that depend on
@@ -544,9 +531,7 @@ def reconcile_connections_post(
     workspace_id: str,
     dry_run: bool,
 ) -> None:
-    """
-    Creates new and modifies existing connections based on the config if dry_run is False.
-    """
+    """Creates new and modifies existing connections based on the config if dry_run is False."""
     existing_connections_raw = cast(
         Dict[str, List[Dict[str, Any]]],
         check.not_none(
@@ -637,8 +622,7 @@ def reconcile_connections_post(
 
 @experimental
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
-    """
-    Reconciles Python-specified Airbyte connections with an Airbyte instance.
+    """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
     Passing the module containing an AirbyteManagedElementReconciler to the dagster-airbyte
     CLI will allow you to check the state of your Python-code-specified Airbyte connections
@@ -654,8 +638,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
         connections: Iterable[AirbyteConnection],
         delete_unmentioned_resources: bool = False,
     ):
-        """
-        Reconciles Python-specified Airbyte connections with an Airbyte instance.
+        """Reconciles Python-specified Airbyte connections with an Airbyte instance.
 
         Args:
             airbyte (ResourceDefinition): The Airbyte resource definition to reconcile against.
@@ -753,8 +736,7 @@ def load_assets_from_connections(
         Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
     ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
+    """Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
     This method will raise an error on repo load if the passed AirbyteConnection objects are not in sync with the Airbyte instance.
 
     Args:

@@ -25,8 +25,7 @@ def observe(
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
 ) -> "ExecuteInProcessResult":
-    """
-    Executes a single-threaded, in-process run which observes provided source assets.
+    """Executes a single-threaded, in-process run which observes provided source assets.
 
     By default, will materialize assets to the local filesystem.
 

@@ -98,8 +98,7 @@ def chunked_run_records_iterator(
 
 
 def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """
-    Utility method to build an asset key index from the data in existing event log records.
+    """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     if print_fn:
@@ -115,8 +114,7 @@ def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = Non
 
 
 def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """
-    Utility method that updates the start and end times of historical runs using the completed event log.
+    """Utility method that updates the start and end times of historical runs using the completed event log.
     """
     if print_fn:
         print_fn("Querying run and event log storage.")

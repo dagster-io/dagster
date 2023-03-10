@@ -7,8 +7,7 @@ def test_description_inference():
 
         @decorator  # pylint: disable=cell-var-from-loop
         def my_thing():
-            """
-            Here is some
+            """Here is some
             multiline description.
             """
 

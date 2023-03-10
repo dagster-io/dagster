@@ -40,8 +40,7 @@ def _preprocess_config(cfg):
 
 
 def bq_op_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
+    """Executes BigQuery SQL queries.
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """

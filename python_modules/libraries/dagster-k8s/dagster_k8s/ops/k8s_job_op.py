@@ -131,8 +131,7 @@ def execute_k8s_job(
     job_metadata: Optional[Dict[str, Any]] = None,
     job_spec_config: Optional[Dict[str, Any]] = None,
 ):
-    """
-    This function is a utility for executing a Kubernetes job from within a Dagster op.
+    """This function is a utility for executing a Kubernetes job from within a Dagster op.
 
     Args:
         image (str): The image in which to launch the k8s job.
@@ -352,8 +351,7 @@ def execute_k8s_job(
 @op(ins={"start_after": In(Nothing)}, config_schema=K8S_JOB_OP_CONFIG)
 @experimental
 def k8s_job_op(context):
-    """
-    An op that runs a Kubernetes job using the k8s API.
+    """An op that runs a Kubernetes job using the k8s API.
 
     Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its
     own k8s job.

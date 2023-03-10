@@ -40,8 +40,7 @@ def postgres_airflow_db(
     docker_compose_cm,
     docker_compose_file,
 ) -> Generator[str, None, None]:
-    """
-    Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
+    """Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
     """
     with docker_compose_cm(
         docker_compose_yml=docker_compose_file,

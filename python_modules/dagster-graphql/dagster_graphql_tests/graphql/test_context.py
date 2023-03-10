@@ -12,9 +12,7 @@ from dagster_graphql.test.utils import define_out_of_process_workspace, main_rep
 
 
 def get_repo():
-    """
-    This is a repo that changes name very time it's loaded.
-    """
+    """This is a repo that changes name very time it's loaded."""
 
     @op
     def solid_A():

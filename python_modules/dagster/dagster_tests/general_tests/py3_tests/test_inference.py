@@ -263,7 +263,7 @@ def test_infer_input_description_from_docstring_failure():
         """
         Args:
             _arg1 - description of arg.
-        """
+        """  # noqa: D212
 
     assert my_solid
 
@@ -274,7 +274,7 @@ def test_infer_input_description_from_docstring_rest():
         """
         :param str hello: hello world param
         :param int optional: optional param, defaults to 5.
-        """
+        """  # noqa: D212
         return hello + str(optional)
 
     defs = infer_input_props(rest.compute_fn.decorated_fn, context_arg_provided=True)
@@ -302,7 +302,7 @@ def test_infer_descriptions_from_docstring_numpy():
             hello world param
         optional:
             optional param, default 5
-        """
+        """  # noqa: D212
         return hello + str(optional)
 
     defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)
@@ -323,8 +323,7 @@ def test_infer_descriptions_from_docstring_numpy():
 def test_infer_descriptions_from_docstring_google():
     @op
     def good_google(_context, hello: str, optional: int = 5):
-        """
-        Test.
+        """Test.
 
         Args:
             hello       (str): hello world param
@@ -354,8 +353,8 @@ def test_infer_output_description_from_docstring_failure():
     def google() -> int:
         """
         Returns:
-            int - a number.
-        """
+            int - a number
+        """  # noqa: D212, D415
         return 1
 
     assert google
@@ -365,12 +364,11 @@ def test_infer_output_description_from_docstring_numpy():
     @op
     def numpy(_context) -> int:
         """
-
         Returns
         -------
         int
             a number.
-        """
+        """  # noqa: D212
         return 1
 
     props = infer_output_props(numpy.compute_fn.decorated_fn)
@@ -383,7 +381,7 @@ def test_infer_output_description_from_docstring_rest():
     def rest(_context) -> int:
         """
         :return int: a number.
-        """
+        """  # noqa: D212
         return 1
 
     props = infer_output_props(rest.compute_fn.decorated_fn)
@@ -397,7 +395,7 @@ def test_infer_output_description_from_docstring_google():
         """
         Returns:
             int: a number.
-        """
+        """  # noqa: D212
         return 1
 
     props = infer_output_props(google.compute_fn.decorated_fn)

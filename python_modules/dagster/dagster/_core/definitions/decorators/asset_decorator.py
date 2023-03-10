@@ -558,9 +558,7 @@ def build_asset_ins(
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
-    """
-    Creates a mapping from AssetKey to (name of input, In object).
-    """
+    """Creates a mapping from AssetKey to (name of input, In object)."""
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
     params = get_function_params(fn)
@@ -659,8 +657,7 @@ def graph_asset(
     metadata: Optional[MetadataUserInput] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
-    """
-    Creates a software-defined asset that's computed using a graph of ops.
+    """Creates a software-defined asset that's computed using a graph of ops.
 
     This decorator is meant to decorate a function that composes a set of ops or graphs to define
     the dependencies between them.
@@ -858,9 +855,7 @@ def graph_multi_asset(
 
 
 def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tuple[str, Out]]:
-    """
-    Creates a mapping from AssetKey to (name of output, Out object).
-    """
+    """Creates a mapping from AssetKey to (name of output, Out object)."""
     outs_by_asset_key: Dict[AssetKey, Tuple[str, Out]] = {}
     for output_name, asset_out in asset_outs.items():
         out = asset_out.to_out()

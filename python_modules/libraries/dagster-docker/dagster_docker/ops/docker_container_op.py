@@ -83,8 +83,7 @@ def execute_docker_container(
     env_vars: Optional[Sequence[str]] = None,
     container_kwargs: Optional[Mapping[str, Any]] = None,
 ):
-    """
-    This function is a utility for executing a Docker container from within a Dagster op.
+    """This function is a utility for executing a Docker container from within a Dagster op.
 
     Args:
         image (str): The image to use for the launched Docker container.
@@ -150,8 +149,7 @@ def execute_docker_container(
 @op(ins={"start_after": In(Nothing)}, config_schema=DOCKER_CONTAINER_OP_CONFIG)
 @experimental
 def docker_container_op(context):
-    """
-    An op that runs a Docker container using the docker Python API.
+    """An op that runs a Docker container using the docker Python API.
 
     Contrast with the `docker_executor`, which runs each Dagster op in a Dagster job in its
     own Docker container.

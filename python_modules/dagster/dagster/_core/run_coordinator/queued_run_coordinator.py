@@ -45,8 +45,7 @@ class RunQueueConfig(
 
 
 class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass):
-    """
-    Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
+    """Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
     the Dagster Daemon process to be alive in order for runs to be launched.
     """
 

@@ -24,8 +24,7 @@ class TimeWindowPartitionMapping(
         [("start_offset", PublicAttr[int]), ("end_offset", PublicAttr[int])],
     ),
 ):
-    """
-    The default mapping between two TimeWindowPartitionsDefinitions.
+    """The default mapping between two TimeWindowPartitionsDefinitions.
 
     A partition in the downstream partitions definition is mapped to all partitions in the upstream
     asset whose time windows overlap it.

@@ -204,9 +204,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
         return FileResponse(location, filename=f"{filebase}.{file_extension}")
 
     def index_html_endpoint(self, request: Request):
-        """
-        Serves root html.
-        """
+        """Serves root html."""
         index_path = self.relative_path("webapp/build/index.html")
 
         context = self.make_request_context(request)

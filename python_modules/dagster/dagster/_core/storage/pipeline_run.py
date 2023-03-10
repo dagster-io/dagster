@@ -654,9 +654,7 @@ class RunPartitionData(
 class ExecutionSelector(
     NamedTuple("_ExecutionSelector", [("name", str), ("solid_subset", Optional[Sequence[str]])])
 ):
-    """
-    Kept here to maintain loading of PipelineRuns from when it was still alive.
-    """
+    """Kept here to maintain loading of PipelineRuns from when it was still alive."""
 
     def __new__(cls, name: str, solid_subset: Optional[Sequence[str]] = None):
         return super(ExecutionSelector, cls).__new__(

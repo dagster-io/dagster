@@ -66,8 +66,7 @@ DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
 
 
 class BaseWorkspaceRequestContext(IWorkspace):
-    """
-    This class is a request-scoped object that stores (1) a reference to all repository locations
+    """This class is a request-scoped object that stores (1) a reference to all repository locations
     that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     workspace at the start of the request.
 
@@ -376,24 +375,21 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
 
     @property
     def source(self) -> Optional[object]:
-        """
-        The source of the request this WorkspaceRequestContext originated from.
+        """The source of the request this WorkspaceRequestContext originated from.
         For example in Dagit this object represents the web request.
         """
         return self._source
 
 
 class IWorkspaceProcessContext(ABC):
-    """
-    Class that stores process-scoped information about a dagit session.
+    """Class that stores process-scoped information about a dagit session.
     In most cases, you will want to create a `BaseWorkspaceRequestContext` to create a request-scoped
     object.
     """
 
     @abstractmethod
     def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
-        """
-        Create a usable fixed context for the scope of a request.
+        """Create a usable fixed context for the scope of a request.
 
         Args:
             source (Optional[Any]):
@@ -430,8 +426,7 @@ class IWorkspaceProcessContext(ABC):
 
 
 class WorkspaceProcessContext(IWorkspaceProcessContext):
-    """
-    Process-scoped object that tracks the state of a workspace.
+    """Process-scoped object that tracks the state of a workspace.
 
     1. Maintains an update-to-date dictionary of repository locations
     2. Creates a `WorkspaceRequestContext` to be the workspace for each request
