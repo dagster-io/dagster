@@ -205,6 +205,7 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
+
     .. code-block:: python
 
         config_from_pkg_resources(
