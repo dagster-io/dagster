@@ -42,8 +42,9 @@ S3_SESSION_CONFIG = {
     "verify": Field(
         str,
         description=(
-            "Whether or not to verify SSL certificates. By default SSL certificates are verified. You can also "
-            "specify this argument if you want to use a different CA cert bundle than the one used by botocore."
+            "Whether or not to verify SSL certificates. By default SSL certificates are verified."
+            " You can also specify this argument if you want to use a different CA cert bundle than"
+            " the one used by botocore."
         ),
         is_required=False,
         default_value=None,
@@ -111,8 +112,9 @@ def s3_resource(context):
               # profile as specified in ~/.aws/credentials file
               use_ssl: true
               # Optional[bool]: Whether or not to use SSL. By default, SSL is used.
-              verify: true
-              # Optional[bool]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
+              verify: None
+              # Optional[str]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
+              You can also specify this argument if you want to use a different CA cert bundle than the one used by botocore."
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
