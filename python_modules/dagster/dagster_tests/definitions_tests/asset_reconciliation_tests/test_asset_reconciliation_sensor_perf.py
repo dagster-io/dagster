@@ -45,7 +45,7 @@ class RandomAssets(NamedTuple):
     def get_definitions(
         self, freshness_ids: AbstractSet[int] = frozenset()
     ) -> Tuple[Sequence[SourceAsset], Sequence[AssetsDefinition], AssetsDefinition]:
-        """Builds a random set of assets based on the given parameters"""
+        """Builds a random set of assets based on the given parameters."""
         random.seed(11235711)
 
         deps = {

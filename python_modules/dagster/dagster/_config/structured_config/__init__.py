@@ -215,7 +215,7 @@ def _process_config_values(
 
 
 def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
-    """Return a new config schema configured with the passed in data"""
+    """Return a new config schema configured with the passed in data."""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
@@ -669,7 +669,7 @@ class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOMana
 
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
-        """Implement as one would implement a @io_manager decorator function"""
+        """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
     @classmethod

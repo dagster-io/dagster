@@ -56,17 +56,19 @@ class TimerResult:
 
 @contextmanager
 def time_execution_scope():
-    """Usage:
+    """Context manager that times the execution of a block of code.
 
-    from solid_util.timing import time_execution_scope
-    with time_execution_scope() as timer_result:
-        do_some_operation()
+    Example:
+    ..code-block::
+        from solid_util.timing import time_execution_scope
+        with time_execution_scope() as timer_result:
+            do_some_operation()
 
-    print(
-        'do_some_operation took {timer_result.millis} milliseconds'.format(
-            timer_result=timer_result
+        print(
+            'do_some_operation took {timer_result.millis} milliseconds'.format(
+                timer_result=timer_result
+            )
         )
-    )
     """
     timer_result = TimerResult()
     yield timer_result

@@ -17,7 +17,7 @@ from dagster._core.events import DagsterEventType
 
 class DefinitionsRunner:
     """Helper class for running asset-oriented tests. Handles threading
-    through the instance for you (this is easy to forget to do)
+    through the instance for you (this is easy to forget to do).
     """
 
     def __init__(self, defs: Definitions, instance: DagsterInstance):

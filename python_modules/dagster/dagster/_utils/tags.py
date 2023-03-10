@@ -6,7 +6,7 @@ from dagster import _check as check
 
 class TagConcurrencyLimitsCounter:
     """
-    Helper object that keeps track of when the tag concurrency limits are met
+    Helper object that keeps track of when the tag concurrency limits are met.
     """
 
     _key_limits: Dict[str, int]
@@ -46,7 +46,7 @@ class TagConcurrencyLimitsCounter:
 
     def is_blocked(self, item):
         """
-        True if there are in progress item which are blocking this item based on tag limits
+        True if there are in progress item which are blocking this item based on tag limits.
         """
         for key, value in item.tags.items():
             if key in self._key_limits and self._key_counts[key] >= self._key_limits[key]:
@@ -69,7 +69,7 @@ class TagConcurrencyLimitsCounter:
 
     def update_counters_with_launched_item(self, item):
         """
-        Add a new in progress item to the counters
+        Add a new in progress item to the counters.
         """
         for key, value in item.tags.items():
             if key in self._key_limits:

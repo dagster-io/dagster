@@ -431,7 +431,7 @@ class IWorkspaceProcessContext(ABC):
 
 class WorkspaceProcessContext(IWorkspaceProcessContext):
     """
-    This class is a process-scoped object that:
+    Process-scoped object that tracks the state of a workspace.
 
     1. Maintains an update-to-date dictionary of repository locations
     2. Creates a `WorkspaceRequestContext` to be the workspace for each request

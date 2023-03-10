@@ -637,7 +637,7 @@ def build_input_context(
 
 
 class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
-    """For build_input_context when no PartitionsDefinition has been provided"""
+    """For build_input_context when no PartitionsDefinition has been provided."""
 
     def __init__(self, key_range: PartitionKeyRange):
         self._key_range = key_range

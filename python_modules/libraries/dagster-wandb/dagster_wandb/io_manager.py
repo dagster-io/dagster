@@ -77,7 +77,7 @@ class Config(TypedDict):
 
 
 class WandbArtifactsIOManagerError(Exception):
-    """Represents an execution error of the W&B Artifacts IO Manager"""
+    """Represents an execution error of the W&B Artifacts IO Manager."""
 
     def __init__(self, message="A W&B Artifacts IO Manager error occurred."):
         self.message = message

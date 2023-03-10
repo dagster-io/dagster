@@ -273,7 +273,9 @@ class FakeRedshiftResource(_BaseRedshiftResource):
 
 
 def define_redshift_config():
-    """Redshift configuration. See the Redshift documentation for reference:
+    """Redshift configuration.
+
+    See the Redshift documentation for reference:
 
     https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-to-cluster.html
     """

@@ -19,8 +19,10 @@ from .utils import (
 
 class DbtCliResource(DbtResource):
     """
-    A resource that allows you to execute dbt cli commands. For the most up-to-date documentation on
-    the specific parameters available to you for each command, check out the dbt docs:
+    A resource that allows you to execute dbt cli commands.
+
+    For the most up-to-date documentation on the specific parameters available to you for each
+    command, check out the dbt docs:
 
     https://docs.getdbt.com/reference/commands/run
 

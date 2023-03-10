@@ -17,7 +17,7 @@ releases_partitions_def = DynamicPartitionsDefinition(name="releases")
     metadata={"partition_expr": "release_tag"},
 )
 def releases_metadata(context) -> DataFrame:
-    """Table with a single row per release"""
+    """Table with a single row per release."""
     release_tag = context.partition_key
 
     response = requests.get(
@@ -49,7 +49,7 @@ def _get_release_zip_path(release_tag: str) -> str:
 
 @asset(partitions_def=releases_partitions_def)
 def release_zips(context, releases_metadata: DataFrame) -> None:
-    """Directory containing a zip file for each release"""
+    """Directory containing a zip file for each release."""
     zipball_url = releases_metadata.iloc[0]["zipball_url"]
 
     target_zip_path = _get_release_zip_path(context.partition_key)
@@ -63,7 +63,7 @@ def _get_release_files_dir(release_tag: str) -> str:
 
 @asset(partitions_def=releases_partitions_def, non_argument_deps={"release_zips"})
 def release_files(context) -> None:
-    """Directory with a subdirectory for each release"""
+    """Directory with a subdirectory for each release."""
     release_files_dir = _get_release_files_dir(context.partition_key)
     os.mkdir(release_files_dir)
     with zipfile.ZipFile(_get_release_zip_path(context.partition_key), "r") as zip_ref:
@@ -78,7 +78,7 @@ def release_files(context) -> None:
 )
 def release_files_metadata(context) -> DataFrame:
     """
-    Table with a row for every release file
+    Table with a row for every release file.
 
     Partitioned by release, because all the files for a release are added/updated atomically
     """

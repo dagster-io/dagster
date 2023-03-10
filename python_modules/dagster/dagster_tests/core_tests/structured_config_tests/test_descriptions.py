@@ -11,7 +11,7 @@ def test_new_config_descriptions_and_defaults():
 
     class AnOpConfig(Config):
         """
-        Config for my new op
+        Config for my new op.
         """
 
         a_string: str = Field(description="A string")
@@ -24,7 +24,7 @@ def test_new_config_descriptions_and_defaults():
     # test fields are inferred correctly
     assert a_new_config_op.config_schema.config_type.kind == ConfigTypeKind.STRICT_SHAPE
     assert list(a_new_config_op.config_schema.config_type.fields.keys()) == ["a_string", "nested"]
-    assert a_new_config_op.config_schema.description == "Config for my new op"
+    assert a_new_config_op.config_schema.description == "Config for my new op."
     assert a_new_config_op.config_schema.config_type.fields["a_string"].description == "A string"
     assert (
         a_new_config_op.config_schema.config_type.fields["nested"].description == "A nested config"

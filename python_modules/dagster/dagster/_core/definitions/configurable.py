@@ -202,6 +202,7 @@ def configured(
 ) -> Callable[[object], T_Configurable]:
     """
     A decorator that makes it easy to create a function-configured version of an object.
+
     The following definition types can be configured using this function:
 
     * :py:class:`GraphDefinition`

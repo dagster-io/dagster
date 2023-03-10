@@ -393,7 +393,7 @@ def _process_and_validate_target(
     target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
 ):
     """
-    This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs
+    This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
     """
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"

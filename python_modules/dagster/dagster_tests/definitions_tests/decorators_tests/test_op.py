@@ -111,7 +111,7 @@ def test_out():
         """
         Returns:
             int: some int
-        """
+        """  # noqa: D415
         return 1
 
     assert my_op.outs == {
@@ -144,10 +144,6 @@ def test_multi_out():
         }
     )
     def my_op() -> Tuple[int, str]:
-        """
-        Returns:
-            Tuple[int, str]: A tuple of values
-        """
         return 1, "q"
 
     assert len(my_op.output_defs) == 2

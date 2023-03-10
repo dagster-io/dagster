@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 class StubHNClient:
     """
-    Hacker News Client that returns fake data
+    Hacker News Client that returns fake data.
     """
 
     def __init__(self):

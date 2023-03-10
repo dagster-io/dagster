@@ -26,7 +26,7 @@ def _build_asset_dependencies(
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]],
 ) -> Tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
-    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph
+    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph.
     """
     output_mappings = set()
     keys_by_output_name = {}
@@ -36,8 +36,8 @@ def _build_asset_dependencies(
     upstream_deps = set()
 
     def find_upstream_dependency(node_name: str) -> None:
-        """find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies
-        as described in task_ids_by_asset_key
+        """Uses Depth-Firs-Search to find all upstream asset dependencies
+        as described in task_ids_by_asset_key.
         """
         # node has been visited
         if visited_nodes[node_name]:

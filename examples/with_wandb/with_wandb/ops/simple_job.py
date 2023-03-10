@@ -75,5 +75,5 @@ def create_my_final_list(downloaded_artifact: List[int]) -> List[int]:
     }
 )
 def simple_job_example():
-    """Example of a simple job using the Artifact integration"""
+    """Example of a simple job using the Artifact integration."""
     create_my_final_list(create_my_first_list())

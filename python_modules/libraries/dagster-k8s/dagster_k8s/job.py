@@ -632,7 +632,7 @@ def construct_dagster_k8s_job(
     labels: Optional[Mapping[str, str]] = None,
     env_vars: Optional[Sequence[Mapping[str, Any]]] = None,
 ) -> kubernetes.client.V1Job:
-    """Constructs a Kubernetes Job object
+    """Constructs a Kubernetes Job object.
 
     Args:
         job_config: Job configuration to use for constructing the Kubernetes

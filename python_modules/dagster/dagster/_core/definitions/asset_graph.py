@@ -321,7 +321,7 @@ class AssetGraph:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys
 
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
-        """Determines if an asset has any parents which are not source assets"""
+        """Determines if an asset has any parents which are not source assets."""
         if self.is_source(asset_key):
             return False
         return any(
@@ -385,10 +385,11 @@ class AssetGraph:
         initial_subset: "AssetGraphSubset",
     ) -> "AssetGraphSubset":
         """
-        Returns asset partitions within the graph that
+        Returns asset partitions within the graph that satisfy supplied criteria.
+
         - Are >= initial_asset_partitions
         - Asset matches the condition_fn
-        - Any of their ancestors >= initial_asset_partitions match the condition_fn
+        - Any of their ancestors >= initial_asset_partitions match the condition_fn.
 
         Visits parents before children.
         """
@@ -463,7 +464,8 @@ class AssetGraph:
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """
-        Returns asset partitions within the graph that
+        Returns asset partitions within the graph that satisfy supplied criteria.
+
         - Are >= initial_asset_partitions
         - Match the condition_fn
         - Any of their ancestors >= initial_asset_partitions match the condition_fn
@@ -542,7 +544,7 @@ class InternalAssetGraph(AssetGraph):
 
 
 class ToposortedPriorityQueue:
-    """Queue that returns parents before their children"""
+    """Queue that returns parents before their children."""
 
     @functools.total_ordering
     class QueueItem(NamedTuple):
