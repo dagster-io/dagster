@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Iterable,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -225,6 +226,7 @@ def execute_asset_backfill_iteration(
         asset_backfill_data=asset_backfill_data,
         instance=instance,
         asset_graph=asset_graph,
+        run_tags=backfill.tags,
     ):
         yield None
 
@@ -335,6 +337,7 @@ def execute_asset_backfill_iteration_inner(
     asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
+    run_tags: Mapping[str, str],
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """
     Core logic of a backfill iteration. Has no side effects.
@@ -425,7 +428,7 @@ def execute_asset_backfill_iteration_inner(
     )
 
     run_requests = build_run_requests(
-        asset_partitions_to_request, asset_graph, {BACKFILL_ID_TAG: backfill_id}
+        asset_partitions_to_request, asset_graph, {**run_tags, BACKFILL_ID_TAG: backfill_id}
     )
 
     if request_roots:
