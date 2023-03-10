@@ -28,7 +28,7 @@ In computationally expensive data pipelining, this approach can yield tremendous
 
 ---
 
-## Step One: Understanding Staleness
+## Step one: Understanding staleness
 
 By default, Dagster automatically computes a data version for each materialization of a software-defined asset. It does this by hashing a code version together with the data versions of any input assets.
 
@@ -102,7 +102,7 @@ The asset is now marked as stale. That is because it has not been materialized s
 
 ---
 
-## Step Two: Staleness with Dependencies
+## Step two: Staleness with dependencies
 
 Staleness computation becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset.
 
@@ -160,7 +160,7 @@ Click "Materialize stale and missing" to get both assets up-to-date again.
 
 ---
 
-## Step Three: Computing your own data versions
+## Step three: Computing your own data versions
 
 A data version is like a fingerprint for the value that an asset represents, i.e. the output of its materialization function. We therefore want our data versions to correspond 1-1 to the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
 
@@ -224,7 +224,7 @@ Note that if `versioned_number` had used a Dagster-generated data versions, `mul
 
 ---
 
-## Step Four: Staleness with Source Assets
+## Step four: Staleness with source assets
 
 In the real world, data pipelines depend on external upstream data. So far in this tutorial, we haven't used any external data-- we've been substituting hardcoded data in the asset at the root of our graph, and using a code version as a stand-in for the version of that data. We can do better than this.
 
