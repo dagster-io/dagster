@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 from typing import Any, Dict, Mapping, Optional, Type, cast
 
+import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -9,6 +10,7 @@ from dagster._core.definitions.job_definition import (
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
@@ -32,9 +34,11 @@ class AssetValueLoader:
     def __init__(
         self,
         assets_defs_by_key: Mapping[AssetKey, AssetsDefinition],
+        source_assets_by_key: Mapping[AssetKey, SourceAsset],
         instance: Optional[DagsterInstance] = None,
     ):
         self._assets_defs_by_key = assets_defs_by_key
+        self._source_assets_by_key = source_assets_by_key
         self._resource_instance_cache: Dict[str, object] = {}
         self._exit_stack: ExitStack = ExitStack().__enter__()
         if not instance and is_dagster_home_set():
@@ -91,13 +95,35 @@ class AssetValueLoader:
         asset_key = AssetKey.from_coerceable(asset_key)
         resource_config = resource_config or {}
 
-        assets_def = self._assets_defs_by_key[asset_key]
-        resource_defs = merge_dicts(
-            {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
-            assets_def.resource_defs,
-        )
-        io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
-        io_manager_def = resource_defs[io_manager_key]
+        if asset_key in self._assets_defs_by_key:
+            assets_def = self._assets_defs_by_key[asset_key]
+
+            resource_defs = merge_dicts(
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+                assets_def.resource_defs,
+            )
+            io_manager_key = assets_def.get_io_manager_key_for_asset_key(asset_key)
+            io_manager_def = resource_defs[io_manager_key]
+            name = assets_def.get_output_name_for_asset_key(asset_key)
+            metadata = assets_def.metadata_by_key[asset_key]
+            op_def = assets_def.get_op_def_for_asset_key(asset_key)
+            asset_partitions_def = assets_def.partitions_def
+        elif asset_key in self._source_assets_by_key:
+            source_asset = self._source_assets_by_key[asset_key]
+
+            resource_defs = merge_dicts(
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema},
+                source_asset.resource_defs,
+            )
+            io_manager_key = source_asset.get_io_manager_key()
+            io_manager_def = resource_defs[io_manager_key]
+            name = asset_key.path[-1]
+            metadata = source_asset.raw_metadata
+            op_def = None
+            asset_partitions_def = source_asset.partitions_def
+        else:
+            check.failed(f"Asset key {asset_key} not found")
+
         required_resource_keys = io_manager_def.required_resource_keys | {io_manager_key}
 
         self._ensure_resource_instances_in_cache(
@@ -118,10 +144,10 @@ class AssetValueLoader:
             asset_key=asset_key,
             dagster_type=resolve_dagster_type(python_type),
             upstream_output=build_output_context(
-                name=assets_def.get_output_name_for_asset_key(asset_key),
-                metadata=assets_def.metadata_by_key[asset_key],
+                name=name,
+                metadata=metadata,
                 asset_key=asset_key,
-                op_def=assets_def.get_op_def_for_asset_key(asset_key),
+                op_def=op_def,
                 resource_config=resource_config,
             ),
             resources=self._resource_instance_cache,
@@ -130,7 +156,7 @@ class AssetValueLoader:
             asset_partition_key_range=PartitionKeyRange(partition_key, partition_key)
             if partition_key is not None
             else None,
-            asset_partitions_def=assets_def.partitions_def,
+            asset_partitions_def=asset_partitions_def,
             instance=self._instance,
         )
 
