@@ -33,6 +33,18 @@ S3_SESSION_CONFIG = {
         description="Specifies a profile to connect that session",
         is_required=False,
     ),
+    "use_ssl": Field(
+        bool,
+        description="Whether or not to use SSL. By default, SSL is used.",
+        is_required=False,
+        default_value=True,
+    ),
+    "verify": Field(
+        bool,
+        description="Whether or not to verify SSL certificates. By default SSL certificates are verified.",
+        is_required=False,
+        default_value=True,
+    ),
 }
 
 
@@ -94,7 +106,10 @@ def s3_resource(context):
               profile_name: "dev"
               # Optional[str]: Specifies a custom profile for S3 session. Default is default
               # profile as specified in ~/.aws/credentials file
-
+              use_ssl: true
+              # Optional[bool]: Whether or not to use SSL. By default, SSL is used.
+              verify: true
+              # Optional[bool]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
@@ -102,6 +117,8 @@ def s3_resource(context):
         endpoint_url=context.resource_config.get("endpoint_url"),
         use_unsigned_session=context.resource_config["use_unsigned_session"],
         profile_name=context.resource_config.get("profile_name"),
+        use_ssl=context.resource_config.get("use_ssl"),
+        verify=context.resource_config.get("verify"),
     )
 
 
@@ -126,6 +143,8 @@ def s3_file_manager(context):
             endpoint_url=context.resource_config.get("endpoint_url"),
             use_unsigned_session=context.resource_config["use_unsigned_session"],
             profile_name=context.resource_config.get("profile_name"),
+            use_ssl=context.resource_config.get("use_ssl"),
+            verify=context.resource_config.get("verify"),
         ),
         s3_bucket=context.resource_config["s3_bucket"],
         s3_base_key=context.resource_config["s3_prefix"],
