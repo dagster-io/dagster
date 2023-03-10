@@ -19,6 +19,7 @@ from dagster import (
     Output,
     PartitionsDefinition,
     SourceAsset,
+    SpecificPartitionsPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -453,6 +454,46 @@ def test_non_partitioned_depends_on_last_partition():
     assert_namedtuple_lists_equal(
         result.asset_materializations_for_node("downstream"),
         [AssetMaterialization(AssetKey(["downstream"]))],
+        exclude_fields=["tags"],
+    )
+
+
+def test_non_partitioned_depends_on_specific_partitions():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
+
+    @asset(
+        ins={"upstream": AssetIn(partition_mapping=SpecificPartitionsPartitionMapping(["a", "b"]))}
+    )
+    def downstream_a_b(upstream):
+        assert upstream is None
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_key == "b"
+            else:
+                assert not context.has_asset_partitions
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert set(context.asset_partition_keys) == {"a", "b"}
+
+    result = materialize(
+        [upstream, downstream_a_b],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream"),
+        [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [AssetMaterialization(AssetKey(["downstream_a_b"]))],
         exclude_fields=["tags"],
     )
 

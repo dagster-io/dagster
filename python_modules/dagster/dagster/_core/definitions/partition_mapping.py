@@ -280,6 +280,59 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
         raise NotImplementedError()
 
 
+@whitelist_for_serdes
+class SpecificPartitionsPartitionMapping(
+    PartitionMapping,
+    NamedTuple(
+        "_SpecificPartitionsPartitionMapping", [("partition_keys", PublicAttr[Sequence[str]])]
+    ),
+):
+    """
+    Maps to a specific subset of partitions in the upstream asset.
+
+    Example:
+    .. code-block:: python
+
+        from dagster import SpecificPartitionsPartitionMapping, StaticPartitionsDefinition, asset
+
+        @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+        def upstream():
+            ...
+
+        @asset(
+            ins={
+                "upstream": AssetIn(partition_mapping=SpecificPartitionsPartitionMapping(["a"]))
+            }
+        )
+        def a_downstream(upstream):
+            ...
+    """
+
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        return upstream_partitions_def.subset_with_partition_keys(self.partition_keys)
+
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+
 @experimental
 @whitelist_for_serdes
 class MultiToSingleDimensionPartitionMapping(
@@ -707,6 +760,7 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         AllPartitionMapping,
         IdentityPartitionMapping,
         LastPartitionMapping,
+        SpecificPartitionsPartitionMapping,
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
         MultiToSingleDimensionPartitionMapping,
