@@ -533,6 +533,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'dynamic_in_multipartitions_fail'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'dynamic_in_multipartitions_fail'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_in_multipartitions_success_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'dynamic_in_multipartitions_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'dynamic_in_multipartitions_success'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'dynamic_in_multipartitions_success'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'dynamic_in_multipartitions_success_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'dynamic_in_multipartitions_success'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'emit'
                 },
                 'invocations': [
@@ -746,6 +794,14 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_bottom'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -771,6 +827,14 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_left'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_left'
@@ -810,6 +874,14 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_right'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'fresh_diamond_assets'
                         },
                         'solidHandle': {
@@ -835,6 +907,14 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fresh_diamond_top'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
                         },
                         'solidHandle': {
                             'handleID': 'fresh_diamond_top'
@@ -2042,6 +2122,14 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': '__ASSET_JOB_2'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'typed_assets'
                         },
                         'solidHandle': {
@@ -2067,6 +2155,14 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'typed_multi_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
                         },
                         'solidHandle': {
                             'handleID': 'typed_multi_asset'
@@ -2147,6 +2243,14 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'untyped_asset'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_2'
                         },
                         'solidHandle': {
                             'handleID': 'untyped_asset'

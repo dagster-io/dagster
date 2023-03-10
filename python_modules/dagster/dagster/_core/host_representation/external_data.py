@@ -1444,7 +1444,11 @@ def external_multi_partitions_definition_from_def(
         [
             not isinstance(
                 dimension.partitions_def,
-                (TimeWindowPartitionsDefinition, StaticPartitionsDefinition),
+                (
+                    TimeWindowPartitionsDefinition,
+                    StaticPartitionsDefinition,
+                    DynamicPartitionsDefinition,
+                ),
             )
             for dimension in partitions_def.partitions_defs
         ]
