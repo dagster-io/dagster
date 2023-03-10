@@ -179,7 +179,7 @@ Click **Materialize stale and missing** to get both assets up-to-date again.
 
 ## Step three: Computing your own data versions
 
-A data version is like a fingerprint for the value that an asset represents, i.e. the output of its materialization function. Therefore, we want our data versions to correspond o the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
+A data version is like a fingerprint for the value that an asset represents, i.e. the output of its materialization function. Therefore, we want our data versions to correspond on a one-to-one basis to the possible return values of a materialization function. Dagster auto-generates data versions by hashing the code version together with input data versions. This satisfies the above criterion in many cases, but sometimes a different approach is necessary.
 
 For example, when a materialization function contains an element of randomness, then multiple materializations of the asset with the same code over the same inputs will produce the same data version for different outputs. On the flip side, if we are generating code versions with an automated approach like source-hashing, then materializing an asset after a cosmetic refactor will produce a different data version (which is derived from the code version) but the same output.
 
@@ -239,13 +239,13 @@ height={1748}
 
 Notice that `multiplied_number` is no longer stale, even though we didn't materialize it! Here's what happened: `versioned_number` is no longer stale, so `multiplied_number` is no longer automatically stale. Dagster then compared the data version of `versioned_number` last used to materialize `multiplied_number` to the current data version of `versioned_number`. Since this comparison shows that the data version of `versioned_number` hasn't changed, Dagster knows that `multiplied_number` isn't stale.
 
-**Note**: If `versioned_number` had used a Dagster-generated data version, `multiplied_number` would be stale. The data version of `versioned_number` would have changed due to its updated code version, despite the fact that the returned value did not change. `multiplied_number` would then register as stale based on the updated data version of `versioned_number`.
+If `versioned_number` had used a Dagster-generated data version, `multiplied_number` would be stale. The data version of `versioned_number` would have changed due to its updated code version, despite the fact that the returned value did not change. `multiplied_number` would then register as stale based on the updated data version of `versioned_number`.
 
 ---
 
 ## Step four: Staleness with source assets
 
-In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data: we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
+In the real world, data pipelines depend on external upstream data. So far in this guide, we haven't used any external data; we've been substituting hardcoded data in the asset at the root of our graph and using a code version as a stand-in for the version of that data. We can do better than this.
 
 External data sources in Dagster are modeled by <PyObject object="SourceAsset" displayText="SourceAssets" />. We can add versioning to a `SourceAsset` by making it observable. An observable source asset has a user-defined function that computes and returns a data version.
 
