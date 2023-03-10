@@ -79783,28 +79783,24 @@
     {
       "children": [
         {
-          "path": "/tutorial/setup",
-          "title": "Setup"
+          "title": "Intro to Dagster and assets",
+          "path": "/tutorial/introduction"
         },
         {
-          "path": "/tutorial/assets/defining-an-asset",
-          "title": "Defining an asset"
+          "title": "Setup",
+          "path": "/tutorial/setup"
         },
         {
-          "path": "/tutorial/assets/asset-graph",
-          "title": "Building graphs of assets"
+          "title": "Your first asset",
+          "path": "/tutorial/writing-your-first-asset"
         },
         {
-          "path": "/tutorial/assets/non-argument-deps",
-          "title": "Assets without arguments and return values"
+          "title": "Building an asset graph",
+          "path": "/tutorial/building-an-asset-graph"
         },
         {
-          "path": "/tutorial/assets/testing-assets",
-          "title": "Testing assets"
-        },
-        {
-          "path": "/tutorial/assets/next-steps",
-          "title": "Next steps"
+          "title": "Next steps",
+          "path": "/tutorial/next-steps"
         }
       ],
       "icon": "Tutorials",
