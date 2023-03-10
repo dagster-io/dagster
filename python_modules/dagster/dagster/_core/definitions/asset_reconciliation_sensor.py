@@ -291,11 +291,17 @@ def find_never_materialized_or_requested_root_asset_partitions(
 
     for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
         if asset_graph.is_partitioned(asset_key):
+            newly_materialized_partitions = set(
+                instance_queryer.get_materialized_partitions(
+                    asset_key=asset_key,
+                    after_cursor=cursor.latest_storage_id,
+                )
+            )
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
                 asset_key, asset_graph, instance_queryer
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
-                if instance_queryer.get_latest_materialization_record(asset_partition, None):
+                if partition_key in newly_materialized_partitions:
                     newly_materialized_root_partitions_by_asset_key[asset_key].add(partition_key)
                 else:
                     never_materialized_or_requested.add(asset_partition)

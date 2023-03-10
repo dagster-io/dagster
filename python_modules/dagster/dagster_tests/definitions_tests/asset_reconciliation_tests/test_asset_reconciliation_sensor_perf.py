@@ -305,18 +305,8 @@ medium_all_partitioned_assets_100_partition_keys = InstanceSnapshot(
     ),
 )
 
-# 1000 assets, roots are static partitioned with 1000 partitions
+# 1000 assets, roots are static partitioned with 100 partitions
 static_1000_partitions_def = StaticPartitionsDefinition([f"p{i}" for i in range(100)])
-large_root_static_partitioned_assets_2_partition_keys = InstanceSnapshot(
-    assets=RandomAssets(
-        name="large_root_static_1000_partitioned_assets",
-        n_assets=1000,
-        n_roots=10,
-        root_partitions_def=static_1000_partitions_def,
-    ),
-    partition_keys_to_backfill=["p50", "p75"],
-)
-
 large_root_static_partitioned_assets_99_partition_keys = InstanceSnapshot(
     assets=RandomAssets(
         name="large_root_static_1000_partitioned_assets",
@@ -326,6 +316,7 @@ large_root_static_partitioned_assets_99_partition_keys = InstanceSnapshot(
     ),
     partition_keys_to_backfill=[f"p{i}" for i in range(99)],
 )
+
 # ==============================================
 # Scenarios
 # ==============================================
@@ -378,7 +369,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=large_root_static_partitioned_assets_99_partition_keys,
         n_freshness_policies=0,
-        max_execution_time_seconds=10,
+        max_execution_time_seconds=1,
     ),
 ]
 
