@@ -31,7 +31,7 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     with open(filepath, "r", encoding="utf8") as file:
         for block in iter(lambda: file.read(1024), None):
             if block:
-                print(block, end="", file=stream)  # pylint: disable=print-call
+                print(block, end="", file=stream)
             else:
                 if pop_captured_interrupt() or (
                     parent_pid and current_process_is_orphaned(parent_pid)

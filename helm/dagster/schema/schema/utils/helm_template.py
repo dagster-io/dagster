@@ -45,7 +45,7 @@ class HelmTemplate:
             values_json = (
                 json.loads(values.json(exclude_none=True, by_alias=True)) if values else values_dict
             )
-            pprint(values_json)
+            pprint(values_json)  # noqa: T203
             content = yaml.dump(values_json)
             tmp_file.write(content.encode())
             tmp_file.flush()
@@ -71,8 +71,8 @@ class HelmTemplate:
                     command += ["--show-only", self.output]
                     templates = subprocess.check_output(command)
 
-            print("\n--- Helm Templates ---")  # pylint: disable=print-call
-            print(templates.decode())  # pylint: disable=print-call
+            print("\n--- Helm Templates ---")  # noqa: T201
+            print(templates.decode())  # noqa: T201
 
             k8s_objects = [k8s_object for k8s_object in yaml.full_load_all(templates) if k8s_object]
             if self.model:

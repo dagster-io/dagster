@@ -22,7 +22,7 @@ def cli():
 @cli.command()
 def list():  # pylint: disable=redefined-builtin
     for image in list_images():
-        print(image.image)  # pylint: disable=print-call
+        print(image.image)  # noqa: T201
 
 
 # Shared options between `build` and `build_all`

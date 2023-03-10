@@ -32,7 +32,7 @@ def test_compute_log_manager(mock_s3_bucket):
     @op
     def easy(context):
         context.log.info("easy")
-        print(HELLO_WORLD)  # pylint: disable=print-call
+        print(HELLO_WORLD)  # noqa: T201
         return "easy"
 
     @job

@@ -438,6 +438,6 @@ def debug_daemon_heartbeats(instance: DagsterInstance) -> None:
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp
-    print(  # pylint: disable=print-call
+    print(  # noqa: T201
         f"Written timestamp: {timestamp}\nRead timestamp: {returned_timestamp}"
     )

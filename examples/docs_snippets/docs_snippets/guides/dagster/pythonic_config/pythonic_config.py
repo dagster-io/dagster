@@ -35,7 +35,7 @@ def execute_with_config() -> None:
 
     @op
     def print_greeting(config: MyOpConfig):
-        print(f"hello {config.person_name}")
+        print(f"hello {config.person_name}")  # noqa: T201
 
     # end_basic_op_config
 
@@ -197,9 +197,7 @@ def metadata_config() -> None:
     class MyMetadataConfig(Config):
         # Here, the ellipses `...` indicates that the field is required and has no default value.
         person_name: str = Field(..., description="The name of the person to greet")
-        age: int = Field(
-            ..., gt=0, lt=100, description="The age of the person to greet"
-        )
+        age: int = Field(..., gt=0, lt=100, description="The age of the person to greet")
 
     # errors!
     MyMetadataConfig(person_name="Alice", age=200)

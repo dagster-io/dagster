@@ -50,7 +50,7 @@ def log_run_events(instance, run_id):
         yield
     finally:
         for log in instance.all_logs(run_id):
-            print(str(log) + "\n")  # pylint: disable=print-call
+            print(str(log) + "\n")  # noqa: T201
 
 
 def test_monitoring():

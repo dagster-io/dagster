@@ -1,4 +1,5 @@
-# pylint: disable=unused-argument,print-call
+# ruff: noqa: T201
+# pylint: disable=unused-argument
 
 import os
 import time

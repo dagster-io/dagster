@@ -139,7 +139,7 @@ def execute_docker_container(
     container.start()
 
     for line in container.logs(stdout=True, stderr=True, stream=True, follow=True):
-        print(line)
+        print(line)  # noqa: T201
 
     exit_status = container.wait()["StatusCode"]
 

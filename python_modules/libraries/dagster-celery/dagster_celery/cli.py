@@ -249,7 +249,7 @@ def status_command(
 def worker_list_command(config_yaml=None):
     app = get_app(config_yaml)
 
-    print(app.control.inspect(timeout=1).active())  # pylint: disable=print-call
+    print(app.control.inspect(timeout=1).active())  # noqa: T201
 
 
 @click.command(

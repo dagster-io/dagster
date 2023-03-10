@@ -150,7 +150,7 @@ def git_commit_updates(repo_dir: str, message: str) -> None:
         'git commit -m "{}"'.format(message),
     ]
 
-    print(  # pylint: disable=print-call
+    print(  # noqa: T201
         "Committing to {} with message {}".format(repo_dir, message)
     )
     for cmd in cmds:

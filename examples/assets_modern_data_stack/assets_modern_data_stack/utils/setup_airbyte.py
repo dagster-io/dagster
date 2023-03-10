@@ -1,9 +1,9 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 """
 A basic script that will create tables in the source postgres database, then automatically
 create an Airbyte Connection between the source database and destination database.
 """
-# pylint: disable=print-call
+
 import random
 from typing import Any, Dict, Mapping
 

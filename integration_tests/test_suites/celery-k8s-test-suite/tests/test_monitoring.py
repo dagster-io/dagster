@@ -19,7 +19,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 def log_run_events(instance, run_id):
     for log in instance.all_logs(run_id):
-        print(str(log) + "\n")  # pylint: disable=print-call
+        print(str(log) + "\n")  # noqa: T201
 
 
 def get_celery_job_engine_config(dagster_docker_image, job_namespace):

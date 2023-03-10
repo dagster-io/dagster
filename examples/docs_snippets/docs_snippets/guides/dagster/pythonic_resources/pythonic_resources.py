@@ -1,4 +1,5 @@
 # isort: skip_file
+# ruff: noqa: T201
 # pylint: disable=unused-argument,reimported,unnecessary-ellipsis
 
 
@@ -172,9 +173,7 @@ def new_resource_runtime() -> None:
     # start_new_resource_runtime_launch
     from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
-    update_data_job = define_asset_job(
-        name="update_data_job", selection=[data_from_database]
-    )
+    update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
 
     @sensor(job=update_data_job)
     def table_update_sensor():
@@ -382,9 +381,7 @@ def resource_adapter() -> None:
     def my_asset(writer: Writer):
         writer.output("hello, world!")
 
-    defs = Definitions(
-        assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
-    )
+    defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
 
     # end_resource_adapter
 
@@ -409,9 +406,7 @@ def io_adapter() -> None:
             self.base_path = base_path
 
         def handle_output(self, context: OutputContext, obj):
-            with open(
-                os.path.join(self.base_path, context.step_key, context.name), "w"
-            ) as fd:
+            with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
                 fd.write(obj)
 
         def load_input(self, context: InputContext):

@@ -210,14 +210,14 @@ def _has_teardown_exception(execute_result):
 @op
 def yay(context):
     context.log.info("yay")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     return "yay"
 
 
 @op
 def boo(context):
     context.log.info("boo")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     raise Exception("booo")
 
 

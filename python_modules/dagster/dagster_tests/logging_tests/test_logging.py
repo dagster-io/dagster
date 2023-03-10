@@ -214,7 +214,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)  # pylint: disable=print-call
+            print(self.output + record.msg)  # noqa: T201
         self.captured.append(record)
 
 

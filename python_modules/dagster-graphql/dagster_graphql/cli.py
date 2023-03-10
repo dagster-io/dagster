@@ -89,7 +89,7 @@ def execute_query_from_cli(workspace_process_context, query, variables=None, out
         with open(output, "w", encoding="utf8") as f:
             f.write(str_res + "\n")
     else:
-        print(str_res)  # pylint: disable=print-call
+        print(str_res)  # noqa: T201
 
     return str_res
 
@@ -196,7 +196,7 @@ def ui(text, file, predefined, variables, remote, output, ephemeral_instance, **
 
     if remote:
         res = execute_query_against_remote(remote, query, variables)
-        print(res)  # pylint: disable=print-call
+        print(res)  # noqa: T201
     else:
         instance = DagsterInstance.ephemeral() if ephemeral_instance else DagsterInstance.get()
         with get_workspace_process_context_from_kwargs(

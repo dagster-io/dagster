@@ -115,7 +115,7 @@ def test_no_memory_leaks():
                         and "dagster" in inspect.getmodule(obj).__name__,
                     )
                     if not growth:
-                        print(  # pylint: disable=print-call
+                        print(  # noqa: T201
                             f"Memory stopped growing after {int(time.time() - start_time)} seconds"
                         )
                         break
@@ -126,4 +126,4 @@ def test_no_memory_leaks():
                             + str(growth)
                         )
 
-                    print("Growth: " + str(growth))  # pylint: disable=print-call
+                    print("Growth: " + str(growth))  # noqa: T201

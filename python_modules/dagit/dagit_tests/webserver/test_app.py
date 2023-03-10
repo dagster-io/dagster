@@ -42,7 +42,7 @@ query RunQuery($runId: ID!) {
 def _add_run(instance):
     @op
     def my_op():
-        print("STDOUT RULEZ")  # pylint: disable=print-call
+        print("STDOUT RULEZ")  # noqa: T201
 
     @job
     def _simple_job():
@@ -119,8 +119,6 @@ def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: dis
         content='{"query": "foo}',
         headers={"Content-Type": "application/json"},
     )
-
-    print(str(response.text))
 
     assert response.status_code == 400, response.text
     assert 'GraphQL request is invalid JSON:\n{"query": "foo}' in response.text
