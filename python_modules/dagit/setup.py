@@ -44,8 +44,8 @@ setup(
     install_requires=[
         # cli
         "click>=7.0,<9.0",
-        "dagster==1.2.0",
-        "dagster-graphql==1.2.0",
+        "dagster==1.2.1",
+        "dagster-graphql==1.2.1",
         "starlette",
         "uvicorn[standard]",
     ],
