@@ -29,7 +29,7 @@ from dagster._serdes import (
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
+from dagster._serdes.serdes import WhitelistMap, unpack_value
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.repository_location import (
@@ -435,7 +435,9 @@ class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
         descent_path: str,
     ) -> NamedTuple:
         raw_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: unpack_value(
+                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
+            )
             for key, value in storage_dict.items()
         }
         # the stored key for the instigator name should always be `job_name`, for backcompat

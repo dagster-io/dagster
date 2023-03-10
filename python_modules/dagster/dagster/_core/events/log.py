@@ -9,9 +9,9 @@ from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
-    deserialize_json_to_dagster_namedtuple,
+    deserialize_value,
     register_serdes_tuple_fallbacks,
-    serialize_dagster_namedtuple,
+    serialize_value,
     whitelist_for_serdes,
 )
 from dagster._utils.error import SerializableErrorInfo
@@ -127,11 +127,11 @@ class EventLogEntry(
         return self.dagster_event
 
     def to_json(self):
-        return serialize_dagster_namedtuple(self)
+        return serialize_value(self)
 
     @staticmethod
-    def from_json(json_str):
-        return deserialize_json_to_dagster_namedtuple(json_str)
+    def from_json(json_str: str):
+        return deserialize_value(json_str, EventLogEntry)
 
     @public
     @property

@@ -7,7 +7,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 
 def mode_def(event_callback):
@@ -162,7 +162,9 @@ SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA = (
 
 
 def test_event_forward_compat_with_event_specific_data():
-    result = deserialize_as(SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, DagsterEvent)
+    result = deserialize_value(
+        SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, DagsterEvent
+    )
 
     assert (
         result.message
@@ -179,7 +181,7 @@ def test_event_forward_compat_with_event_specific_data():
 
 
 def test_event_forward_compat_without_event_specific_data():
-    result = deserialize_as(
+    result = deserialize_value(
         SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA, DagsterEvent
     )
 

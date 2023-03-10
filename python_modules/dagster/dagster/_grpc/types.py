@@ -14,7 +14,7 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
-from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils import frozenlist
 from dagster._utils.error import SerializableErrorInfo
 
@@ -119,7 +119,7 @@ class ExecuteRunArgs(
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "execute_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
@@ -164,7 +164,7 @@ class ResumeRunArgs(
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "resume_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
@@ -242,7 +242,7 @@ class ExecuteStepArgs(
 
     def _get_compressed_args(self) -> str:
         # Compress, then base64 encode so we can pass it around as a str
-        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+        return base64.b64encode(zlib.compress(serialize_value(self).encode())).decode()
 
     def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
         """

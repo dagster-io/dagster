@@ -3,11 +3,10 @@ from gzip import GzipFile
 import click
 from dagster import (
     DagsterInstance,
-    _check as check,
 )
 from dagster._core.debug import DebugRunPayload
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value
 
 from .cli import (
     DEFAULT_DAGIT_HOST,
@@ -35,9 +34,7 @@ def dagit_debug_command(input_files, port):
         click.echo("Loading {} ...".format(input_file))
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
-
-            check.invariant(isinstance(debug_payload, DebugRunPayload))
+            debug_payload = deserialize_value(blob, DebugRunPayload)
 
             click.echo(
                 "\trun_id: {} \n\tdagster version: {}".format(

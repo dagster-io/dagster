@@ -32,7 +32,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import execute_pipeline, pipeline
-from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils import frozendict
 
 
@@ -366,8 +366,8 @@ def test_table_serialization():
             ],
         ),
     )
-    serialized = serialize_dagster_namedtuple(entry)
-    assert deserialize_as(serialized, MetadataEntry) == entry
+    serialized = serialize_value(entry)
+    assert deserialize_value(serialized, MetadataEntry) == entry
 
 
 def test_bool_metadata_value():
