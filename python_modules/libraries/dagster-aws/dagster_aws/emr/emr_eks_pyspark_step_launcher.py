@@ -19,6 +19,7 @@ from dagster import (
     MetadataValue,
     Permissive,
     StringSource,
+    Array,
     check,
     resource,
 )
@@ -43,12 +44,13 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster_pyspark.resources import PySparkResource
 
+from dagster._core.execution.plan.external_step import (
+    PICKLED_STEP_RUN_REF_FILE_NAME,
+)
+from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME, PICKLED_STEP_RUN_REF_FILE_NAME
 
 from . import job_main
 from .monitor import EmrEksJobError, EmrEksJobRunMonitor
-
-CODE_ZIP_NAME = "code.zip"
-PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
 
 # TODO: improve types and documentation
@@ -59,10 +61,6 @@ PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
             description="Name of the virtual cluster on which to execute.",
         ),
         "emr_release_label": Field(StringSource, description="EMR release label"),
-        # TODO: decide how to define this
-        "cloud_env_key": Field(
-            StringSource, description="Cloud environment key", default_value="env"
-        ),
         "container_image": Field(StringSource, description="Container image to use"),
         "stage_code": Field(
             BoolSource,
@@ -78,25 +76,37 @@ PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
             StringSource,
             description="S3 prefix to use for staging jobs assets",
         ),
+        "additional_relative_paths": Field(
+            Array(StringSource),
+            description=(
+                "List of relative relative paths which are not correctly reachable from the"
+                " repository base"
+            ),
+            default_value=["dagstersdk/", "dagster-sdk/dagstersdk/"],
+        ),
         "spark_conf": Field(Permissive(), default_value={}, is_required=False),
         "log4j_conf": Field(Permissive(), default_value={}, is_required=False),
     }
 )
 def emr_eks_pyspark_resource(context):
+    spark_conf = context.resource_config.get("spark_conf")
+    spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_PROJECT"] = "dagster-sdk"
+    spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_REF"] = "branch"
+
     return EmrEksPySparkResource(
         cluster_id=context.resource_config.get("cluster_id"),
         container_image=context.resource_config.get("container_image"),
         stage_code=context.resource_config.get("stage_code"),
         emr_release_label=context.resource_config.get("emr_release_label"),
-        cloud_env_key=context.resource_config.get("cloud_env_key"),
         job_role_arn=context.resource_config.get("job_role_arn"),
         log_group_name=context.resource_config.get("log_group_name"),
         log4j_conf=context.resource_config.get("log4j_conf"),
         region_name=context.resource_config.get("region_name"),
         s3_staging_bucket=context.resource_config.get("s3_staging_bucket"),
         s3_staging_prefix=context.resource_config.get("s3_staging_prefix"),
-        spark_conf=context.resource_config.get("spark_conf"),
+        spark_conf=spark_conf,
         ephemeral_instance=context.instance.is_ephemeral,
+        additional_relative_paths=context.resource_config.get("additional_relative_paths"),
     )
 
 
@@ -213,7 +223,6 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         container_image,
         stage_code,
         emr_release_label,
-        cloud_env_key,
         job_role_arn,
         log_group_name,
         log4j_conf,
@@ -222,17 +231,18 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         s3_staging_prefix,
         spark_conf,
         ephemeral_instance,
+        additional_relative_paths,
     ):
         self.cluster_id = check.str_param(cluster_id, "cluster_id")
         self.container_image = check.str_param(container_image, "container_image")
         self.deploy_local_job_package = check.bool_param(stage_code, "stage_code")
         self.emr_release_label = check.str_param(emr_release_label, "emr_release_label")
-        self.cloud_env_key = cloud_env_key
         self.job_role_arn = check.str_param(job_role_arn, "job_role_arn")
         self.log_group_name = check.str_param(log_group_name, "log_group_name")
         self.region_name = check.str_param(region_name, "region_name")
         self.staging_bucket = check.str_param(s3_staging_bucket, "region_name")
         self.staging_prefix = check.str_param(s3_staging_prefix, "region_name")
+        self.additional_relative_paths = additional_relative_paths
         self.spark_conf = spark_conf
         self.log4j_conf = log4j_conf
 
@@ -369,7 +379,9 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
                     log,
                     job_id,
                     self.log_group_name,
-                    self._driver_log_stream_name(job_id),
+                    self._driver_log_stream_name(
+                        job_id, self._sanitize_step_key(step_context.step.key)
+                    ),
                     ts_start_ms,
                 ):
                     if event.event_type_value == DagsterEventType.LOGS_CAPTURED:
@@ -413,10 +425,9 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         if upload_key not in spark_conf:
             spark_conf[upload_key] = f"s3://{self.staging_bucket}/{self.staging_prefix}"
 
-        # TO BE REMOVED
-        spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_PROJECT"] = "dagster-sdk"
-        spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_REF"] = "branch"
-        spark_conf[f"spark.kubernetes.driverEnv.ENV_PATHS"] = "dagstersdk/,dagster-sdk/dagstersdk/"
+        spark_conf[f"spark.kubernetes.driverEnv.ENV_PATHS"] = ",".join(
+            self.additional_relative_paths
+        )
 
         # Prepare and start the job
         configs = [
@@ -454,7 +465,7 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
                 "monitoringConfiguration": {
                     "cloudWatchMonitoringConfiguration": {
                         "logGroupName": self.log_group_name,
-                        "logStreamNamePrefix": self.cloud_env_key,
+                        "logStreamNamePrefix": self._sanitize_step_key(step_key),
                     }
                 },
             },
@@ -491,20 +502,20 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         # Use 32 chars for the clear text name, and 32 chars for the unique identifier.
         return name[:32] + name_hashed[:32]
 
-    def _job_log_streams_prefix(self, job_id: str) -> str:
+    def _job_log_streams_prefix(self, job_id: str, log_prefix: str) -> str:
         """Common prefix for CloudWatch Logs streams of the job."""
-        return f"{self.cloud_env_key}/{self.cluster_id}/jobs/{job_id}/"
+        return f"{log_prefix}/{self.cluster_id}/jobs/{job_id}/"
 
-    def _driver_log_stream_name(self, job_id: str) -> str:
+    def _driver_log_stream_name(self, job_id: str, log_prefix: str) -> str:
         """CloudWatch Logs stream name for the Spark driver."""
         return (
-            self._job_log_streams_prefix(job_id)
+            self._job_log_streams_prefix(job_id, log_prefix)
             + f"containers/spark-{job_id}/spark-{job_id}-driver/"
         )
 
-    def _job_log_streams_url(self, job_id: str) -> str:
+    def _job_log_streams_url(self, job_id: str, log_prefix: str) -> str:
         """CloudWatch Logs URL."""
-        log_stream_name = self._job_log_streams_prefix(job_id).replace("/", "$252F")
+        log_stream_name = self._job_log_streams_prefix(job_id, log_prefix).replace("/", "$252F")
 
         return (
             f"https://{self.region_name}.console.aws.amazon.com/cloudwatch/home?"
@@ -525,11 +536,11 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         for key in required_keys:
             assert key in self.spark_conf, f"Key {key} must be provided in the Spark configuration"
 
-    def _job_event_metadata(self, job_id: str) -> Dict[str, MetadataValue]:
+    def _job_event_metadata(self, job_id: str, log_prefix: str) -> Dict[str, MetadataValue]:
         return {
             "EMR on EKS Cluster": MetadataValue.url(self._cluster_url()),
             "\u1217 Job log streams": MetadataValue.url(
-                self._job_log_streams_url(job_id),
+                self._job_log_streams_url(job_id, log_prefix),
             ),
             "Job ID": MetadataValue.text(job_id),
         }
@@ -543,7 +554,9 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
             event_specific_data=EngineEventData(
                 metadata_entries=[
                     MetadataEntry(label=k, value=v)
-                    for k, v in self._job_event_metadata(job_id).items()
+                    for k, v in self._job_event_metadata(
+                        job_id, self._sanitize_step_key(step_context.step.key)
+                    ).items()
                 ]
             ),
         )

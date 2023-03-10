@@ -9,11 +9,13 @@ import boto3
 from dagster.core.execution.plan.external_step import run_step_from_ref
 from dagster.core.instance import DagsterInstance
 from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
+from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME
 
 # Any event whose JSON representation is larger than this
 # will be dropped. Otherwise, it can cause EMR to stop
 # reporting all logs to Cloudwatch Logs.
 _MAX_EVENT_SIZE_BYTES = 64 * 1024
+from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME
 
 
 def main(s3_bucket_step_run_ref: str, s3_key_step_run_ref: str) -> None:
@@ -56,7 +58,9 @@ def _adjust_pythonpath_for_staged_assets(code_subpaths=None):
     """
     code_subpaths = code_subpaths or []
 
-    code_entries = [filename for filename in sys.path if os.path.basename(filename) == "code.zip"]
+    code_entries = [
+        filename for filename in sys.path if os.path.basename(filename) == CODE_ZIP_NAME
+    ]
 
     if not code_entries:
         print("`code.zip` is not in the Python path, code was not staged")
