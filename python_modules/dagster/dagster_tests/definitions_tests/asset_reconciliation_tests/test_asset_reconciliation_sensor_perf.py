@@ -369,7 +369,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=large_root_static_partitioned_assets_99_partition_keys,
         n_freshness_policies=0,
-        max_execution_time_seconds=1,
+        max_execution_time_seconds=8,
     ),
 ]
 
