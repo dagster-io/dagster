@@ -273,6 +273,7 @@ class _IOManagerDecoratorCallable:
             input_config_schema=self.input_config_schema,
         )
 
-        update_wrapper(io_manager_def, wrapped=fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(io_manager_def, wrapped=fn)  # type: ignore
 
         return io_manager_def

@@ -223,6 +223,7 @@ class _InputManagerDecoratorCallable:
             required_resource_keys=self.required_resource_keys,
         )
 
-        update_wrapper(root_input_manager_def, wrapped=load_fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(root_input_manager_def, wrapped=load_fn)  # type: ignore
 
         return root_input_manager_def
