@@ -7,7 +7,7 @@ from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive
 from dagster._annotations import experimental
 from dagster._utils.merger import merge_dicts
 
-from ..client import DagsterKubernetesClient, DEFAULT_JOB_POD_COUNT
+from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
 from ..container_context import K8sContainerContext
 from ..job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
 from ..launcher import K8sRunLauncher
