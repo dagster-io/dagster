@@ -450,7 +450,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         # in the future, we can share this same CachingInstanceQueryer across all
         # GrapheneMaterializationEvent which share an external repository for improved performance
         instance_queryer = CachingInstanceQueryer(instance=graphene_info.context.instance)
-        data_time_resolver = CachingDataTimeResolver(instance_queryer)
+        data_time_resolver = CachingDataTimeResolver(
+            instance_queryer=instance_queryer, asset_graph=asset_graph
+        )
         event_records = instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -467,8 +469,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_non_source_parents(asset_key):
             return []
 
-        used_data_times = data_time_resolver.get_data_times_by_key(
-            asset_graph=asset_graph,
+        used_data_times = data_time_resolver.get_data_time_by_key_for_record(
             record=next(iter(event_records)),
         )
 
@@ -673,12 +674,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
             return get_freshness_info(
                 asset_key=self._external_asset_node.asset_key,
-                freshness_policy=self._external_asset_node.freshness_policy,
-                asset_graph=asset_graph,
                 # in the future, we can share this same CachingInstanceQueryer across all
                 # GrapheneAssetNodes which share an external repository for improved performance
                 data_time_resolver=CachingDataTimeResolver(
-                    CachingInstanceQueryer(instance=graphene_info.context.instance),
+                    instance_queryer=CachingInstanceQueryer(
+                        instance=graphene_info.context.instance
+                    ),
+                    asset_graph=asset_graph,
                 ),
             )
         return None

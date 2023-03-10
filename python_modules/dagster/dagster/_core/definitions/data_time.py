@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, Dict, Iterator, Mapping, Optional, Sequence, Tuple, cast
+from typing import AbstractSet, Dict, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -12,7 +12,6 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
-from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._utils import frozendict
 from dagster._utils.cached_method import cached_method

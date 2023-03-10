@@ -506,11 +506,10 @@ def get_freshness_constraints_by_key(
 
 def get_execution_time_window_for_constraints(
     constraints: AbstractSet[FreshnessConstraint],
-    current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    failed_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    relevant_upstream_keys: AbstractSet[AssetKey],
+    current_data_time: Optional[datetime.datetime],
+    in_progress_data_time: Optional[datetime.datetime],
+    failed_data_time: Optional[datetime.datetime],
+    expected_data_time: Optional[datetime.datetime],
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
@@ -521,24 +520,17 @@ def get_execution_time_window_for_constraints(
     min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
     for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-        # the set of keys in this constraint that are actually upstream of this asset
-        relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
-
-        if not all(
+        if not (
             # ensure that this constraint is not satisfied by the current state of the data and
             # will not be satisfied once all in progress runs complete, and was not intended to
             # be satisfied by a run that failed
-            (current_data_times.get(key) or min_dt) >= constraint.required_data_time
-            or (in_progress_data_times.get(key) or min_dt) >= constraint.required_data_time
-            or (failed_data_times.get(key) or min_dt) >= constraint.required_data_time
-            for key in relevant_constraint_keys
+            (current_data_time or min_dt) >= constraint.required_data_time
+            or (in_progress_data_time or min_dt) >= constraint.required_data_time
+            or (failed_data_time or min_dt) >= constraint.required_data_time
         ):
             # for this constraint, if all required data times will be satisfied by an execution
             # on this tick, it is valid to execute this asset
-            if all(
-                (expected_data_times.get(key) or min_dt) >= constraint.required_data_time
-                for key in relevant_constraint_keys
-            ):
+            if (expected_data_time or min_dt) >= constraint.required_data_time:
                 currently_executable = True
 
             # you can solve this constraint within the existing execution window
@@ -601,8 +593,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             if not constraints:
                 continue
 
-            constraint_keys = set().union(*(constraint.asset_keys for constraint in constraints))
-
             # figure out the current contents of this asset with respect to its constraints
             current_data_time = data_time_resolver.get_current_data_time(key)
 
@@ -612,9 +602,13 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 if not asset_graph.is_source(parent_key)
             }
             expected_data_time: Optional[datetime.datetime] = (
-                None
-                if None in upstream_expected_data_times
-                else min(cast(AbstractSet[datetime.datetime], upstream_expected_data_times))
+                (
+                    None
+                    if None in upstream_expected_data_times
+                    else min(cast(AbstractSet[datetime.datetime], upstream_expected_data_times))
+                )
+                if asset_graph.has_non_source_parents(key)
+                else current_time
             )
 
             # should not execute if key is not targeted or previous run failed
@@ -653,21 +647,21 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             # neighbor was selected to be updated
             asset_key_partition_key = AssetKeyPartitionKey(key, None)
             if asset_key_partition_key in to_materialize:
-                expected_data_times_by_key[key] = expected_data_times
+                expected_data_time_by_key[key] = expected_data_time
             elif (
                 # this key should be updated on this tick, as we are within the allowable window
                 execution_window_start is not None
                 and execution_window_start <= current_time
             ):
                 to_materialize.add(asset_key_partition_key)
-                expected_data_times_by_key[key] = expected_data_times
+                expected_data_time_by_key[key] = expected_data_time
                 # all required neighbors will be updated on the same tick
                 for required_key in asset_graph.get_required_multi_asset_keys(key):
                     to_materialize.add(AssetKeyPartitionKey(required_key, None))
             else:
-                # if downstream assets consume this, they should expect data times equal to the
-                # current times for this asset, as it's not going to be updated
-                expected_data_times_by_key[key] = current_data_times
+                # if downstream assets consume this, they should expect data time equal to the
+                # current time for this asset, as it's not going to be updated
+                expected_data_time_by_key[key] = current_data_time
 
     return to_materialize, eventually_materialize
 
@@ -695,7 +689,9 @@ def reconcile(
         asset_partitions_to_reconcile_for_freshness,
         eventual_asset_partitions_to_reconcile_for_freshness,
     ) = determine_asset_partitions_to_reconcile_for_freshness(
-        data_time_resolver=CachingDataTimeResolver(instance_queryer=instance_queryer),
+        data_time_resolver=CachingDataTimeResolver(
+            instance_queryer=instance_queryer, asset_graph=asset_graph
+        ),
         asset_graph=asset_graph,
         target_asset_selection=asset_selection,
     )
