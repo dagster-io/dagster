@@ -6,6 +6,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -23,8 +24,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Schedules: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
     WORKSPACE_SCHEDULES_QUERY,

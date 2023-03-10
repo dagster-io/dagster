@@ -19,6 +19,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -44,9 +45,12 @@ export const OverviewSchedulesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Schedules');
 
-  const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
     OVERVIEW_SCHEDULES_QUERY,
