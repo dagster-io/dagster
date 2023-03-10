@@ -27,7 +27,6 @@ from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
-from dagster._legacy import pipeline
 from dagster._utils.cached_method import cached_method
 from pydantic import BaseModel
 
@@ -345,7 +344,7 @@ def test_validate_run_config():
     def requires_config(config: MyBasicOpConfig):
         pass
 
-    @pipeline
+    @job
     def pipeline_requires_config():
         requires_config()
 
@@ -355,7 +354,11 @@ def test_validate_run_config():
 
     assert result == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
@@ -370,14 +373,18 @@ def test_validate_run_config():
     )
     assert result_with_structured_in == result
 
-    result_with_storage = validate_run_config(
+    result_with_dict_config = validate_run_config(
         pipeline_requires_config,
         {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
-    assert result_with_storage == {
+    assert result_with_dict_config == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
