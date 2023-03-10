@@ -1,4 +1,6 @@
 # pylint: disable=protected-access
+
+import datetime
 import os
 import re
 import sqlite3
@@ -33,6 +35,7 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._legacy import execute_pipeline, pipeline
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
@@ -1122,6 +1125,9 @@ def test_add_primary_keys():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "id" not in set(get_sqlite3_columns(db_path, "kvs"))
+            # trigger insert, and update
+            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.kvs_set({"a": "A"})
             kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
             assert kvs_row_count > 0
 
@@ -1130,6 +1136,11 @@ def test_add_primary_keys():
             assert instance_info_row_count > 0
 
             assert "id" not in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
             daemon_heartbeats_row_count = _get_table_row_count(
                 instance.run_storage, DaemonHeartbeatsTable
             )
