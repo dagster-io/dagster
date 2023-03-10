@@ -268,6 +268,7 @@ from dagster._core.definitions.partition_mapping import (
     LastPartitionMapping as LastPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
+    SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,
     StaticPartitionMapping as StaticPartitionMapping,
 )
 from dagster._core.definitions.partitioned_schedule import (
