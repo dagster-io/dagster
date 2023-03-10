@@ -114,7 +114,7 @@ def s3_resource(context):
               # Optional[bool]: Whether or not to use SSL. By default, SSL is used.
               verify: None
               # Optional[str]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
-              You can also specify this argument if you want to use a different CA cert bundle than the one used by botocore."
+              # You can also specify this argument if you want to use a different CA cert bundle than the one used by botocore."
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
