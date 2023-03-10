@@ -189,6 +189,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                         "body": serialize_value(daemon_heartbeat),
                     },
                 )
+                .returning(
+                    # required because sqlalchemy might by default return the declared primary key,
+                    # which might not exist
+                    DaemonHeartbeatsTable.c.daemon_type,
+                )
             )
 
     def kvs_set(self, pairs: Mapping[str, str]) -> None:
@@ -203,6 +208,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 KeyValueStoreTable.c.key,
             ],
             set_={"value": insert_stmt.excluded.value},
+        ).returning(
+            # required because sqlalchemy might by default return the declared primary key,
+            # which might not exist
+            KeyValueStoreTable.c.key
         )
 
         with self.connect() as conn:
