@@ -463,7 +463,7 @@ class MultiToSingleDimensionPartitionMapping(
         for key in multipartitions_def.get_partition_keys(
             current_time=None, dynamic_partitions_store=dynamic_partitions_store
         ):
-            key = cast(MultiPartitionKey, key)
+            key = cast(MultiPartitionKey, key)  # noqa: PLW2901
             if (
                 key.keys_by_dimension[partition_dimension_name]
                 in partitions_subset.get_partition_keys()

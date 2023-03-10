@@ -639,8 +639,8 @@ def _store_output(
 
     manager_metadata_entries.extend(output_context.consume_logged_metadata_entries())
     # do not alter explicitly created AssetMaterializations
-    for materialization in manager_materializations:
-        if materialization.metadata_entries and manager_metadata_entries:
+    for mgr_materialization in manager_materializations:
+        if mgr_materialization.metadata_entries and manager_metadata_entries:
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of"
                 f" {output_context.op_def.node_type_str} '{output_context.op_def.name}', received a"
@@ -654,12 +654,15 @@ def _store_output(
                 warnings.simplefilter("ignore", category=ExperimentalWarning)
 
                 materialization = AssetMaterialization(
-                    asset_key=materialization.asset_key,
-                    description=materialization.description,
+                    asset_key=mgr_materialization.asset_key,
+                    description=mgr_materialization.description,
                     metadata_entries=manager_metadata_entries,
-                    partition=materialization.partition,
+                    partition=mgr_materialization.partition,
                     metadata=None,
                 )
+        else:
+            materialization = mgr_materialization
+
         yield DagsterEvent.asset_materialization(step_context, materialization)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)

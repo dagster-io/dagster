@@ -214,11 +214,11 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
     fields = {}
 
     required_fields = set(schema.get("required", []))
-    for field_name, field in schema["properties"].items():
-        if field_name == "option_title":
+    for raw_field_name, field in schema["properties"].items():
+        if raw_field_name == "option_title":
             continue
 
-        field_name = _remove_invalid_chars(field_name)
+        field_name = _remove_invalid_chars(raw_field_name)
 
         if "oneOf" in field:
             # Union type, parse all subfields

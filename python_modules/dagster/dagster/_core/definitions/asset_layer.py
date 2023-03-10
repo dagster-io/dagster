@@ -297,9 +297,6 @@ def asset_key_to_dep_node_handles(
             {}
         )  # memoized map of node output handles to all node output handle dependencies that are from ops
         for output_name, asset_key in assets_defs.keys_by_output_name.items():
-            output_def = assets_defs.node_def.output_def_named(output_name)
-            output_name = output_def.name
-
             dep_nodes_by_asset_key[
                 asset_key
             ] = []  # first element in list is node that outputs asset

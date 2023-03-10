@@ -425,9 +425,9 @@ class StubbedEcs:
                 }
 
                 if vpc_configuration:
-                    for subnet in vpc_configuration["subnets"]:
+                    for subnet_name in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
-                        subnet = ec2.Subnet(subnet)
+                        subnet = ec2.Subnet(subnet_name)
                         # The provided subnet doesn't exist
                         subnet.load()
 

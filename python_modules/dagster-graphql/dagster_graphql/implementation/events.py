@@ -59,7 +59,6 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
 
     check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
-        metadata_entry = cast(MetadataEntry, metadata_entry)
         if isinstance(metadata_entry.value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
                 label=metadata_entry.label,

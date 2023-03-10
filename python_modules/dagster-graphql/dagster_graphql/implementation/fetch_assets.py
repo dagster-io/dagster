@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -521,8 +522,9 @@ def get_2d_run_length_encoded_partitions(
     dim2_materialized_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
     )
-    for partition_key in materialized_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], materialized_partitions_subset.get_partition_keys()
+    ):
         dim2_materialized_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_materialized_partition_subset_by_dim1[
@@ -534,8 +536,9 @@ def get_2d_run_length_encoded_partitions(
     dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
     )
-    for partition_key in failed_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], failed_partitions_subset.get_partition_keys()
+    ):
         dim2_failed_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_failed_partition_subset_by_dim1[

@@ -616,16 +616,18 @@ def _schedule_runs_at_time(
         )
         return
 
-    for run_request in schedule_execution_data.run_requests:
-        if run_request.stale_assets_only:
-            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+    for raw_run_request in schedule_execution_data.run_requests:
+        if raw_run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_missing_assets(workspace_process_context, raw_run_request, external_schedule)  # type: ignore
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue
             else:
-                run_request = run_request.with_replaced_attrs(
+                run_request = raw_run_request.with_replaced_attrs(
                     asset_selection=stale_assets, stale_assets_only=False
                 )
+        else:
+            run_request = raw_run_request
 
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,

@@ -49,12 +49,12 @@ def test_destination_constructors():
     Sanity check that we can instantiate all of the generated AirbyteDestination classes
     and that they produce a reasonable-looking configuration JSON.
     """
-    for source, obj in inspect.getmembers(destinations):
+    for source, possible_class in inspect.getmembers(destinations):
         if source == "GeneratedAirbyteDestination":
             continue
 
-        if inspect.isclass(obj):
-            obj: AirbyteDestination = instantiate(obj)
+        if inspect.isclass(possible_class):
+            obj: AirbyteDestination = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
             assert obj.name == "test_name"
@@ -70,12 +70,12 @@ def test_source_constructors():
     Sanity check that we can instantiate all of the generated AirbyteSource classes
     and that they produce a reasonable-looking configuration JSON.
     """
-    for source, obj in inspect.getmembers(sources):
+    for source, possible_class in inspect.getmembers(sources):
         if source == "GeneratedAirbyteSource":
             continue
 
-        if inspect.isclass(obj):
-            obj: AirbyteSource = instantiate(obj)
+        if inspect.isclass(possible_class):
+            obj: AirbyteSource = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
             assert obj.name == "test_name"
