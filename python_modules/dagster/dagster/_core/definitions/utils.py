@@ -205,15 +205,14 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        config_from_pkg_resources(
-            pkg_resource_defs=[
-                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
-                ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
-            ],
-        )
+            config_from_pkg_resources(
+                pkg_resource_defs=[
+                    ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                    ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
+                ],
+            )
 
 
     Args:

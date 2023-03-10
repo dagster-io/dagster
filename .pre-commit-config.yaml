@@ -6,6 +6,6 @@ repos:
       # Make sure black reads its config from root `pyproject.toml`
       args: ["--config", "pyproject.toml"]
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.0.241
+  rev: v0.0.255
   hooks:
     - id: ruff

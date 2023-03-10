@@ -159,6 +159,8 @@ def make_dagster_definitions_from_airflow_example_dags(
             `dagit -f path/to/make_dagster_definitions.py`
 
     Args:
+        resource_defs: Optional[Mapping[str, ResourceDefinition]]
+            Resource definitions to be used with the definitions
 
     Returns:
         Definitions

@@ -364,7 +364,7 @@ class EmrJobRunner:
             cluster_id (str): EMR cluster ID
             step_id (str): EMR step ID for the job that was submitted.
 
-        Returns
+        Returns:
             (str, str): Tuple of stdout log string contents, and stderr log string contents
         """
         check.str_param(cluster_id, "cluster_id")

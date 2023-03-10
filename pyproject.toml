@@ -126,21 +126,6 @@ extend-exclude = [
 
 ignore = [
 
-  # (non-google docstring)  These docstring rules are collectively incompatible
-  # with the Google-style docstrings we use. List taken from:
-  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
-  "D203",
-  "D204",
-  "D213",
-  "D215",
-  "D400",
-  "D404",
-  "D406",
-  "D407",
-  "D408",
-  "D409",
-  "D413",
-
   # (missing public docstrings) These work off of the Python sense of "public", rather than our
   # bespoke definition based off of `@public`. When ruff supports custom plugins then we can write
   # appropriate rules to require docstrings for `@public`.
@@ -176,9 +161,6 @@ ignore = [
   # readable.
   "E731",
 
-  # (no redundant alias) Allow redundant import aliases for explicit re-exports.
-  "PLC0414",
-
   # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
   "RUF005",
 
@@ -199,6 +181,9 @@ ignore = [
   "D208", # (over-indented docstring)
   "D402", # (first line should not be the function's "signature")
 
+  # (redefined-loop-name) Many instances of this in the code.
+  "PLW2901",
+
   # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
   # can bulk-convert our pylint disables.
   "T201",  # (no print call)
@@ -213,9 +198,8 @@ line-length = 100
 # Here we append to the defaults.
 select = [
 
-  # (pydocstyle) Docstring-related rules. See above ignore section for selected
-  # exclusions that sculpt the rules to fit Google-style docstrings. See:
-  # https://github.com/charliermarsh/ruff#does-ruff-support-numpy--or-google-style-docstrings
+  # (pydocstyle) Docstring-related rules. A large subset of these are ignored by the
+  # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
 
   # (pycodestyle) use all pycodestyle rules
@@ -227,9 +211,8 @@ select = [
   # (isort) detect improperly sorted imports
   "I001",
 
-  # (pylint) use all pylint rules (ruff currently implements only a subset of
-  # pylint's rules)
-  "PLC",
+  # (pylint) use all pylint rules from categories "Convention", "Error", and "Warning" (ruff
+  # currently implements only a subset of pylint's rules)
   "PLE",
   "PLW",
 
@@ -246,7 +229,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.241"
+required-version = "0.0.255"
 
 [tool.ruff.isort]
 
@@ -257,6 +240,18 @@ combine-as-imports = true
 # Imports of the form `from foo import bar as baz` show one `import bar as baz`
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
+
+[tool.ruff.per-file-ignores]
+
+# Don't format docstrings in alembic migrations.
+"**/alembic/versions/*.py" = ["D"]
+
+[tool.ruff.pydocstyle]
+
+# Enforce google-style docstrings. This is equivalent to ignoring a large number of pydocstyle (D)
+# rules incompatible with google-style docstrings. See:
+# https://google.github.io/styleguide/pyguide.html#383-functions-and-methods
+convention = "google"
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
