@@ -8,7 +8,7 @@ from tqdm import tqdm
 from typing_extensions import Final, TypeAlias
 
 import dagster._check as check
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 from ...execution.job_backfill import PartitionBackfill
 from ..pipeline_run import DagsterRun, DagsterRunStatus, RunRecord
@@ -196,7 +196,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_as(row[0], DagsterRun)
+                run = deserialize_value(row[0], DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 
@@ -251,7 +251,7 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                backfill = deserialize_as(row[0], PartitionBackfill)
+                backfill = deserialize_value(row[0], PartitionBackfill)
                 storage_id = row[1]
                 conn.execute(
                     BulkActionsTable.update()

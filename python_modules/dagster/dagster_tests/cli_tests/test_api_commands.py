@@ -11,7 +11,7 @@ from dagster._core.execution.retries import RetryState
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.host_representation import JobHandle
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster._serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_value
 
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
 
@@ -56,7 +56,7 @@ def test_execute_run():
                 pipeline_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
+            input_json = serialize_value(
                 ExecuteRunArgs(
                     pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
@@ -115,7 +115,7 @@ def test_execute_run_with_secrets_loader():
                 pipeline_code_origin=recon_job.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
+            input_json = serialize_value(
                 ExecuteRunArgs(
                     pipeline_origin=recon_job.get_python_origin(),
                     pipeline_run_id=run.run_id,
@@ -146,7 +146,7 @@ def test_execute_run_with_secrets_loader():
             pipeline_code_origin=recon_job.get_python_origin(),
         )
 
-        input_json = serialize_dagster_namedtuple(
+        input_json = serialize_value(
             ExecuteRunArgs(
                 pipeline_origin=recon_job.get_python_origin(),
                 pipeline_run_id=run.run_id,
@@ -184,7 +184,7 @@ def test_execute_run_fail_pipeline():
                 pipeline_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json = serialize_dagster_namedtuple(
+            input_json = serialize_value(
                 ExecuteRunArgs(
                     pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
@@ -207,7 +207,7 @@ def test_execute_run_fail_pipeline():
                 pipeline_code_origin=job_handle.get_python_origin(),
             )
 
-            input_json_raise_on_failure = serialize_dagster_namedtuple(
+            input_json_raise_on_failure = serialize_value(
                 ExecuteRunArgs(
                     pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id=run.run_id,
@@ -231,7 +231,7 @@ def test_execute_run_fail_pipeline():
                     instance, pipeline_name="foo", run_id="new_run_framework_error"
                 )
 
-                input_json_raise_on_failure = serialize_dagster_namedtuple(
+                input_json_raise_on_failure = serialize_value(
                     ExecuteRunArgs(
                         pipeline_origin=job_handle.get_python_origin(),
                         pipeline_run_id=run.run_id,
@@ -257,7 +257,7 @@ def test_execute_run_cannot_load():
         with get_foo_job_handle(instance) as job_handle:
             runner = CliRunner()
 
-            input_json = serialize_dagster_namedtuple(
+            input_json = serialize_value(
                 ExecuteRunArgs(
                     pipeline_origin=job_handle.get_python_origin(),
                     pipeline_run_id="FOOBAR",
@@ -454,7 +454,7 @@ def test_execute_step_non_compressed():
                 instance_ref=instance.get_ref(),
             )
 
-            result = runner_execute_step(runner, [serialize_dagster_namedtuple(args)])
+            result = runner_execute_step(runner, [serialize_value(args)])
 
         assert "STEP_SUCCESS" in result.stdout
 

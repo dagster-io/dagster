@@ -8,6 +8,7 @@ from dagster import (
     IOManager,
     PartitionKeyRange,
     ResourceDefinition,
+    SourceAsset,
     asset,
     fs_io_manager,
     io_manager,
@@ -34,6 +35,49 @@ def test_single_asset():
             assert context.upstream_output.metadata["a"] == "b"
             assert context.upstream_output.op_def == asset1.op
             assert context.upstream_output.name == "result"
+            assert context.dagster_type.typing_type == int
+            return 5
+
+    happenings = set()
+
+    @io_manager
+    @contextmanager
+    def my_io_manager():
+        try:
+            happenings.add("resource_inited")
+            yield MyIOManager()
+        finally:
+            happenings.add("torn_down")
+
+    @repository
+    def repo():
+        return with_resources([asset1], resource_defs={"my_io_manager": my_io_manager})
+
+    with repo.get_asset_value_loader() as loader:
+        assert "resource_inited" not in happenings
+        assert "torn_down" not in happenings
+        value = loader.load_asset_value(AssetKey("asset1"), python_type=int)
+        assert "resource_inited" in happenings
+        assert "torn_down" not in happenings
+        assert value == 5
+
+    assert "torn_down" in happenings
+
+    assert repo.load_asset_value(AssetKey("asset1"), python_type=int) == 5
+
+
+def test_source_asset():
+    asset1 = SourceAsset("asset1", io_manager_key="my_io_manager", metadata={"a": "b"})
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert context.asset_key == AssetKey("asset1")
+            assert context.upstream_output.asset_key == AssetKey("asset1")
+            assert context.upstream_output.metadata["a"] == "b"
+            assert context.upstream_output.name == "asset1"
             assert context.dagster_type.typing_type == int
             return 5
 

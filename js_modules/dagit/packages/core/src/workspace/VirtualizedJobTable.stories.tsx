@@ -3,6 +3,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {StorybookProvider} from '../testing/StorybookProvider';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
@@ -22,7 +23,10 @@ const mocks = {
 };
 
 export const Standard = () => {
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const repoAddress = React.useMemo(
     () =>

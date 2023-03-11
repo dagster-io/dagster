@@ -2,7 +2,7 @@ import abc
 from typing import Iterable, Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
@@ -13,7 +13,7 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 
 
-class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
+class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract class for managing persistance of scheduler artifacts."""
 
     @abc.abstractmethod

@@ -34,7 +34,7 @@ from dagster._core.host_representation.external_data import (
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -928,7 +928,7 @@ def test_back_compat_external_sensor():
         '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode":'
         ' "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
     )
-    external_sensor_data = deserialize_json_to_dagster_namedtuple(SERIALIZED_0_12_10_SENSOR)
+    external_sensor_data = deserialize_value(SERIALIZED_0_12_10_SENSOR, ExternalSensorData)
     assert isinstance(external_sensor_data, ExternalSensorData)
     assert len(external_sensor_data.target_dict) == 1
     assert "my_pipeline" in external_sensor_data.target_dict

@@ -160,6 +160,7 @@ _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
 T = TypeVar("T")
 U = TypeVar("U")
 T_Type = TypeVar("T_Type", bound=Type[object])
+T_Scalar = TypeVar("T_Scalar", bound=Union[str, int, float, bool, None])
 
 
 @overload
@@ -335,7 +336,9 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer[T_NamedTuple]):
         # the constructor. If a property is present in the serialized object, but doesn't exist in
         # the version of the class loaded into memory, that property will be completely ignored.
         unpacked_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: unpack_value(
+                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
+            )
             for key, value in storage_dict.items()
             if key in args_for_class
         }
@@ -366,7 +369,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer[T_NamedTuple]):
         for key, inner_value in value._asdict().items():
             if key in skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP:
                 continue
-            base_dict[key] = pack_inner_value(inner_value, whitelist_map, f"{descent_path}.{key}")
+            base_dict[key] = pack_value(inner_value, whitelist_map, f"{descent_path}.{key}")
 
         klass_name = value.__class__.__name__
         base_dict["__class__"] = (
@@ -379,43 +382,67 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer[T_NamedTuple]):
 
 
 ###################################################################################################
-# Serialize
+# Serialize / Pack
 ###################################################################################################
 
 
-def serialize_dagster_namedtuple(nt: NamedTuple, **json_kwargs: object) -> str:
-    """Serialize a whitelisted named tuple to a json encoded string."""
-    check.tuple_param(nt, "nt")
-    return _serialize_dagster_namedtuple(nt, whitelist_map=_WHITELIST_MAP, **json_kwargs)
-
-
-def _serialize_dagster_namedtuple(
-    nt: NamedTuple, whitelist_map: WhitelistMap, **json_kwargs: object
+def serialize_value(
+    val: PackableValue, whitelist_map: WhitelistMap = _WHITELIST_MAP, **json_kwargs: object
 ) -> str:
-    return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
+    """Serialize an object to a JSON string.
 
-
-def serialize_value(val: PackableValue, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> str:
-    """Serialize a value to a json encoded string."""
-    return seven.json.dumps(
-        pack_inner_value(val, whitelist_map=whitelist_map, descent_path=_root(val))
-    )
-
-
-def pack_value(val: PackableValue) -> JsonSerializableValue:
+    Objects are first converted to a JSON-serializable form with `pack_value`.
     """
-    Transform a value in to a json serializable form.
+    packed_value = pack_value(val, whitelist_map=whitelist_map)
+    return seven.json.dumps(packed_value, **json_kwargs)
 
-    The following types are transformed in to dicts:
+
+@overload
+def pack_value(
+    val: T_Scalar, whitelist_map: WhitelistMap = ..., descent_path: Optional[str] = ...
+) -> T_Scalar:
+    ...
+
+
+@overload
+def pack_value(
+    val: Union[
+        Mapping[str, PackableValue], Set[PackableValue], FrozenSet[PackableValue], NamedTuple, Enum
+    ],
+    whitelist_map: WhitelistMap = ...,
+    descent_path: Optional[str] = ...,
+) -> Mapping[str, JsonSerializableValue]:
+    ...
+
+
+@overload
+def pack_value(
+    val: Sequence[PackableValue],
+    whitelist_map: WhitelistMap = ...,
+    descent_path: Optional[str] = ...,
+) -> Sequence[JsonSerializableValue]:
+    ...
+
+
+def pack_value(
+    val: PackableValue,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    descent_path: Optional[str] = None,
+) -> JsonSerializableValue:
+    """
+    Convert an object into a json serializable complex of dicts, lists, and scalars.
+
+    The following types are transformed in to dicts with special marker keys:
         * whitelisted named tuples
         * whitelisted enums
         * set
         * frozenset
     """
-    return pack_inner_value(val, whitelist_map=_WHITELIST_MAP, descent_path=_root(val))
+    descent_path = _root(val) if descent_path is None else descent_path
+    return _pack_value(val, whitelist_map=whitelist_map, descent_path=_root(val))
 
 
-def pack_inner_value(
+def _pack_value(
     val: PackableValue, whitelist_map: WhitelistMap, descent_path: str
 ) -> JsonSerializableValue:
     if is_named_tuple_instance(val):
@@ -444,28 +471,27 @@ def pack_inner_value(
         return val
     if isinstance(val, collections.abc.Sequence):
         return [
-            pack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _pack_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
             "__set__": [
-                pack_inner_value(item, whitelist_map, set_path)
-                for item in sorted(list(val), key=str)
+                _pack_value(item, whitelist_map, set_path) for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, frozenset):
         frz_set_path = descent_path + "{}"
         return {
             "__frozenset__": [
-                pack_inner_value(item, whitelist_map, frz_set_path)
+                _pack_value(item, whitelist_map, frz_set_path)
                 for item in sorted(list(val), key=str)
             ]
         }
     if isinstance(val, collections.abc.Mapping):
         return {
-            key: pack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _pack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
@@ -474,82 +500,145 @@ def pack_inner_value(
 
 
 ###################################################################################################
-# Deserialize
+# Deserialize / Unpack
 ###################################################################################################
 
+T_PackableValue = TypeVar("T_PackableValue", bound=PackableValue, default=PackableValue)
+U_PackableValue = TypeVar("U_PackableValue", bound=PackableValue, default=PackableValue)
 
-def deserialize_json_to_dagster_namedtuple(
-    json_str: str,
-) -> NamedTuple:
-    """Deserialize a json encoded string in to a whitelisted named tuple."""
+
+@overload
+def deserialize_value(
+    val: str,
+    as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
+    whitelist_map: WhitelistMap = ...,
+) -> Union[T_PackableValue, U_PackableValue]:
+    ...
+
+
+@overload
+def deserialize_value(
+    val: str,
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+) -> T_PackableValue:
+    ...
+
+
+@overload
+def deserialize_value(
+    val: str,
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+) -> PackableValue:
+    ...
+
+
+def deserialize_value(
+    val: str,
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
+    """Deserialize a json encoded string to a Python object.
+
+    Three steps:
+
+    - Parse the input string as JSON.
+    - Unpack the complex of lists, dicts, and scalars resulting from JSON parsing into a complex of richer
+      Python objects (e.g. dagster-specific `NamedTuple` objects).
+    - Optionally, check that the resulting object is of the expected type.
+    """
+    check.str_param(val, "val")
+
+    # `metadata_entries` as a constructor argument is deprecated, but it is still used by serdes
+    # machinery.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
 
-        dagster_namedtuple = _deserialize_json(
-            check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
-        )
-
-    if not is_named_tuple_instance(dagster_namedtuple):
-        raise DeserializationError(
-            "Output of deserialized json_str was not expected type of tuple. Received type"
-            f" {type(dagster_namedtuple)}."
-        )
-
-    return dagster_namedtuple
-
-
-@overload
-def deserialize_as(json_str: str, cls: Tuple[Type[T], Type[U]]) -> Union[T, U]:
-    pass
+        packed_value = seven.json.loads(val)
+        unpacked_value = unpack_value(packed_value, whitelist_map=whitelist_map)
+        if as_type and not (
+            is_named_tuple_instance(unpacked_value)
+            if as_type is NamedTuple
+            else isinstance(unpacked_value, as_type)
+        ):
+            raise DeserializationError(
+                f"Deserialized object was not expected type {as_type}, got {type(unpacked_value)}"
+            )
+        return unpacked_value
 
 
 @overload
-def deserialize_as(json_str: str, cls: Type[T]) -> T:
-    pass
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Tuple[Type[T_PackableValue], Type[U_PackableValue]],
+    whitelist_map: WhitelistMap = ...,
+    descent_path: str = ...,
+) -> Union[T_PackableValue, U_PackableValue]:
+    ...
 
 
-def deserialize_as(json_str: str, cls: Union[Type[T], Tuple[Type[T], Type[U]]]) -> Union[T, U]:
-    """Deserialize a json encoded string to a specific namedtuple class."""
-    val = deserialize_json_to_dagster_namedtuple(json_str)
-    if not isinstance(val, cls):
-        check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
-    return cast(Union[T, U], val)
+@overload
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Type[T_PackableValue],
+    whitelist_map: WhitelistMap = ...,
+    descent_path: str = ...,
+) -> T_PackableValue:
+    ...
 
 
-def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
-    """Optionally deserialize a json encoded string to a specific namedtuple class."""
-    return deserialize_as(json_str, cls) if json_str else None
+@overload
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: None = ...,
+    whitelist_map: WhitelistMap = ...,
+    descent_path: str = ...,
+) -> PackableValue:
+    ...
 
 
-def _deserialize_json(json_str: str, whitelist_map: WhitelistMap) -> PackableValue:
-    value = seven.json.loads(json_str)
-    return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
+def unpack_value(
+    val: JsonSerializableValue,
+    as_type: Optional[
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
+    ] = None,
+    whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    descent_path: Optional[str] = None,
+) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
+    """Convert a JSON-serializable complex of dicts, lists, and scalars into domain objects.
 
-
-def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> PackableValue:
-    """Deserialize a json encoded string in to its original value."""
-    return unpack_inner_value(
-        seven.json.loads(check.str_param(val, "val")),
-        whitelist_map=whitelist_map,
-        descent_path="",
-    )
-
-
-def unpack_value(val: JsonSerializableValue) -> PackableValue:
-    """Convert a packed value in to its original form."""
-    return unpack_inner_value(
+    Dicts with special keys are processed specially:
+    - {"__set__": [...]}: becomes a set()
+    - {"__frozenset__": [...]}: becomes a frozenset()
+    - {"__enum__": "<class>.<name>"}: becomes an Enum class[name], where `class` is an Enum descendant
+    - {"__class__": "<class>", ...}: becomes a NamedTuple, where `class` is a NamedTuple descendant
+    """
+    descent_path = _root(val) if descent_path is None else descent_path
+    unpacked_value = _unpack_value(
         val,
-        whitelist_map=_WHITELIST_MAP,
-        descent_path="",
+        whitelist_map,
+        descent_path,
     )
+    if as_type and not (
+        is_named_tuple_instance(unpacked_value)
+        if as_type is NamedTuple
+        else isinstance(unpacked_value, as_type)
+    ):
+        raise DeserializationError(
+            f"Unpacked object was not expected type {as_type}, got {type(val)}"
+        )
+    return unpacked_value
 
 
-def unpack_inner_value(
+def _unpack_value(
     val: JsonSerializableValue, whitelist_map: WhitelistMap, descent_path: str
 ) -> PackableValue:
     if isinstance(val, list):
         return [
-            unpack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            _unpack_value(item, whitelist_map, f"{descent_path}[{idx}]")
             for idx, item in enumerate(val)
         ]
     if isinstance(val, dict) and val.get("__class__"):
@@ -591,17 +680,17 @@ def unpack_inner_value(
             )
         enum_class, enum_serializer = whitelist_map.get_enum_entry(name)
         return enum_serializer.value_from_storage_str(member, enum_class)
-    if isinstance(val, dict) and val.get("__set__") is not None:
+    if isinstance(val, dict) and "__set__" in val:
         set_path = descent_path + "{}"
         items = cast(List[JsonSerializableValue], val["__set__"])
-        return set([unpack_inner_value(item, whitelist_map, set_path) for item in items])
-    if isinstance(val, dict) and val.get("__frozenset__") is not None:
+        return set([_unpack_value(item, whitelist_map, set_path) for item in items])
+    if isinstance(val, dict) and "__frozenset__" in val:
         frz_set_path = descent_path + "{}"
         items = cast(List[JsonSerializableValue], val["__frozenset__"])
-        return frozenset([unpack_inner_value(item, whitelist_map, frz_set_path) for item in items])
+        return frozenset([_unpack_value(item, whitelist_map, frz_set_path) for item in items])
     if isinstance(val, dict):
         return {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            key: _unpack_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 

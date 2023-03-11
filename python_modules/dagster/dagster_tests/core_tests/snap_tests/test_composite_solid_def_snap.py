@@ -4,7 +4,8 @@ from dagster._core.snap import (
     DependencyStructureIndex,
     build_composite_solid_def_snap,
 )
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 
 
 def test_noop_comp_solid_definition():
@@ -20,7 +21,7 @@ def test_noop_comp_solid_definition():
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_value(serialize_value(comp_solid_meta), CompositeSolidDefSnap)
         == comp_solid_meta
     )
 
@@ -42,7 +43,7 @@ def test_basic_comp_solid_definition():
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_value(serialize_value(comp_solid_meta), CompositeSolidDefSnap)
         == comp_solid_meta
     )
 
@@ -70,7 +71,7 @@ def test_complex_comp_solid_definition():
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_value(serialize_value(comp_solid_meta), CompositeSolidDefSnap)
         == comp_solid_meta
     )
 

@@ -7,7 +7,7 @@ from dagster._core.host_representation.external_data import ExternalSensorExecut
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
 from dagster._grpc.types import SensorExecutionArgs
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -59,7 +59,7 @@ def sync_get_external_sensor_execution_data_grpc(
 
     origin = repository_handle.get_external_origin()
 
-    result = deserialize_as(
+    result = deserialize_value(
         api_client.external_sensor_execution(
             sensor_execution_args=SensorExecutionArgs(
                 repository_origin=origin,

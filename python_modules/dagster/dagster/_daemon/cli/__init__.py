@@ -16,7 +16,7 @@ from dagster._daemon.controller import (
     get_daemon_statuses,
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import capture_interrupts
 
 
@@ -51,7 +51,7 @@ def run_command(code_server_log_level, instance_ref, **kwargs):
     try:
         with capture_interrupts():
             with DagsterInstance.from_ref(
-                deserialize_as(instance_ref, InstanceRef)
+                deserialize_value(instance_ref, InstanceRef)
             ) if instance_ref else DagsterInstance.get() as instance:
                 _daemon_run_command(instance, code_server_log_level, kwargs)
     except KeyboardInterrupt:

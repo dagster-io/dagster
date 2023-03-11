@@ -11,7 +11,7 @@ from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
@@ -44,7 +44,7 @@ def sync_get_external_execution_plan_grpc(
     check.opt_inst_param(known_state, "known_state", KnownExecutionState)
     check.opt_inst_param(instance, "instance", DagsterInstance)
 
-    result = deserialize_as(
+    result = deserialize_value(
         api_client.execution_plan_snapshot(
             execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
                 pipeline_origin=pipeline_origin,

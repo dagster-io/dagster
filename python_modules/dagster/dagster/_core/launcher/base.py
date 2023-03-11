@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import NamedTuple, Optional
 
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
@@ -57,7 +57,7 @@ class CheckRunHealthResult(NamedTuple):
         return f"{self.status.value}: '{self.msg}'"
 
 
-class RunLauncher(ABC, MayHaveInstanceWeakref):
+class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run.

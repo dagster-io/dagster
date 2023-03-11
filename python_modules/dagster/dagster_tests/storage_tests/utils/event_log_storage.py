@@ -68,7 +68,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import AssetGroup, build_assets_job
 from dagster._loggers import colored_console_logger
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
 
 TEST_TIMEOUT = 5
@@ -659,7 +659,7 @@ class TestEventLogStorage:
 
         rows = _fetch_all_events(storage, run_id=test_run_id)
 
-        out_events = list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
+        out_events = list(map(lambda r: deserialize_value(r[0], EventLogEntry), rows))
 
         # messages can come out of order
         event_type_counts = CollectionsCounter(_event_types(out_events))
@@ -945,7 +945,7 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             events_one, _ = _synthesize_events(_ops, instance=created_instance, run_id=test_run_id)
@@ -985,7 +985,7 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(instance)
             events_one, _ = _synthesize_events(_ops, instance=instance)
             for event in events_one:
@@ -1001,14 +1001,14 @@ class TestEventLogStorage:
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_value",
                         return_value="not_an_event_record",
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_value",
                         return_value="not_an_event_record",
                     )
                 )
@@ -1035,14 +1035,14 @@ class TestEventLogStorage:
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_value",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_value",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
@@ -1336,7 +1336,7 @@ class TestEventLogStorage:
             materialize_one()
 
         with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(instance)
 
             # first run
@@ -1523,7 +1523,7 @@ class TestEventLogStorage:
             return_one()
 
         with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(instance)
 
             run_id = make_new_run_id()
@@ -1610,7 +1610,7 @@ class TestEventLogStorage:
 
     def test_asset_keys(self, storage, instance):
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             events_one, result1 = _synthesize_events(
@@ -1632,7 +1632,7 @@ class TestEventLogStorage:
 
     def test_has_asset_key(self, storage, instance):
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             events_one, result_1 = _synthesize_events(
@@ -1651,7 +1651,7 @@ class TestEventLogStorage:
 
     def test_asset_run_ids(self, storage, instance):
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             one_run_id = "one"
@@ -1673,7 +1673,7 @@ class TestEventLogStorage:
 
     def test_asset_normalization(self, storage, test_run_id):
         with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(instance)
 
             @op
@@ -1695,7 +1695,7 @@ class TestEventLogStorage:
 
     def test_asset_wipe(self, storage, instance):
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             one_run_id = "one_run_id"
@@ -1747,7 +1747,7 @@ class TestEventLogStorage:
 
     def test_asset_secondary_index(self, storage, instance):
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             events_one, result = _synthesize_events(
@@ -1800,7 +1800,7 @@ class TestEventLogStorage:
             yield Output(1)
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             get_partitioned_config = lambda partition: {
@@ -1849,7 +1849,7 @@ class TestEventLogStorage:
             yield Output(1)
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             events, _ = _synthesize_events(
@@ -1908,7 +1908,7 @@ class TestEventLogStorage:
             return storage.get_materialization_count_by_partition([c, d], after_cursor=after_cursor)
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             run_id_1 = make_new_run_id()
@@ -2293,7 +2293,7 @@ class TestEventLogStorage:
             yield Output(1)
 
         with instance_for_test() as instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(instance)
 
             events_one, _ = _synthesize_events(
@@ -2323,7 +2323,7 @@ class TestEventLogStorage:
         run_id_2 = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
             with instance_for_test() as created_instance:
-                if not storage._instance:  # pylint: disable=protected-access
+                if not storage.has_instance:
                     storage.register_instance(created_instance)
 
                 events, _ = _synthesize_events(
@@ -2357,7 +2357,7 @@ class TestEventLogStorage:
             return 2
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             my_asset_key = AssetKey("my_asset")
@@ -2445,7 +2445,7 @@ class TestEventLogStorage:
         run_id_3 = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
             with instance_for_test() as created_instance:
-                if not storage._instance:  # pylint: disable=protected-access
+                if not storage.has_instance:
                     storage.register_instance(created_instance)
 
                 events, result = _synthesize_events(
@@ -2489,7 +2489,7 @@ class TestEventLogStorage:
         run_id_2 = make_new_run_id()
         with create_and_delete_test_runs(instance, [run_id_1, run_id_2]):
             with instance_for_test() as created_instance:
-                if not storage._instance:  # pylint: disable=protected-access
+                if not storage.has_instance:
                     storage.register_instance(created_instance)
 
                 asset_key = AssetKey("never_materializes_asset")
@@ -3101,7 +3101,7 @@ class TestEventLogStorage:
             yield Output(5)
 
         with instance_for_test() as created_instance:
-            if not storage._instance:  # pylint: disable=protected-access
+            if not storage.has_instance:
                 storage.register_instance(created_instance)
 
             run_id_1 = make_new_run_id()

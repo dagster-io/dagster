@@ -26,7 +26,9 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,
 )
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 
 CACHEABLE_PARTITION_TYPES = (
     TimeWindowPartitionsDefinition,
@@ -95,12 +97,13 @@ class AssetStatusCacheValue(
         )
 
     @staticmethod
-    def from_db_string(db_string):
+    def from_db_string(db_string: str) -> Optional["AssetStatusCacheValue"]:
         if not db_string:
             return None
 
-        cached_data = deserialize_json_to_dagster_namedtuple(db_string)
-        if not isinstance(cached_data, AssetStatusCacheValue):
+        try:
+            cached_data = deserialize_value(db_string, AssetStatusCacheValue)
+        except DeserializationError:
             return None
 
         return cached_data

@@ -59,7 +59,7 @@ from dagster._grpc.impl import (
     get_partition_tags,
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
 
@@ -179,7 +179,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -199,7 +199,7 @@ class RepositoryLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,
     ) -> "ScheduleExecutionData":
         pass
 
@@ -453,7 +453,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -461,7 +461,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance)
             )
 
         return get_partition_names(
@@ -485,12 +485,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
-            scheduled_execution_timestamp=scheduled_execution_time.timestamp()
-            if scheduled_execution_time
-            else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
-            if scheduled_execution_time
-            else None,
+            scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -694,13 +690,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return self._use_ssl
 
     def _reload_current_image(self) -> Optional[str]:
-        return deserialize_as(
+        return deserialize_value(
             self.client.get_current_image(),
             GetCurrentImageResult,
         ).current_image
 
     def get_current_runs(self) -> Sequence[str]:
-        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
+        return deserialize_value(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
 
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
@@ -812,7 +808,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> "ExternalPartitionNamesData":
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -820,7 +816,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance=instance)
             )
 
         return sync_get_external_partition_names_grpc(

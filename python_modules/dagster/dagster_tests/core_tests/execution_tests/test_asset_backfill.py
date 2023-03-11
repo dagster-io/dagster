@@ -256,6 +256,7 @@ def execute_asset_backfill_iteration_consume_generator(
         asset_backfill_data=asset_backfill_data,
         instance=instance,
         asset_graph=asset_graph,
+        run_tags={},
     ):
         if isinstance(result, AssetBackfillIterationResult):
             counts = traced_counter.get().counts()

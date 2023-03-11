@@ -25,7 +25,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
 from sqlalchemy.engine import Connection
 
 from ..utils import (
@@ -301,7 +301,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     SqlEventLogStorageTable.c.id == cursor
                 ),
             )
-            return deserialize_as(cursor_res.scalar(), EventLogEntry)  # type: ignore
+            return deserialize_value(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         if self._event_watcher is None:

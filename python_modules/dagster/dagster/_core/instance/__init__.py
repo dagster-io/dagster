@@ -26,13 +26,12 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    TypeVar,
     Union,
     cast,
 )
 
 import yaml
-from typing_extensions import Protocol, runtime_checkable
+from typing_extensions import Protocol, TypeVar, runtime_checkable
 
 import dagster._check as check
 from dagster._annotations import public
@@ -210,7 +209,7 @@ class InstanceType(Enum):
     EPHEMERAL = "EPHEMERAL"
 
 
-T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance")
+T_DagsterInstance = TypeVar("T_DagsterInstance", bound="DagsterInstance", default="DagsterInstance")
 
 
 class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
@@ -222,6 +221,10 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         self._instance_weakref = None
 
     @property
+    def has_instance(self) -> bool:
+        return hasattr(self, "_instance_weakref") and (self._instance_weakref is not None)
+
+    @property
     def _instance(self) -> T_DagsterInstance:
         instance = (
             self._instance_weakref()
@@ -230,7 +233,12 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
             if (hasattr(self, "_instance_weakref") and self._instance_weakref is not None)
             else None
         )
-        return cast(T_DagsterInstance, instance)
+        if instance is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to resolve undefined DagsterInstance weakref."
+            )
+        else:
+            return instance
 
     def register_instance(self, instance: T_DagsterInstance):
         check.invariant(
