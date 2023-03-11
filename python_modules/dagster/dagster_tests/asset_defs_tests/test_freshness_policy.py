@@ -120,11 +120,9 @@ def test_policies_available_equals_evaluation_time(
     evaluation_time,
     expected_minutes_late,
 ):
-    used_data_times = {AssetKey("root"): used_data_time}
-
     minutes_late = policy.minutes_late(
+        data_time=used_data_time,
         evaluation_time=evaluation_time,
-        used_data_times=used_data_times,
     )
 
     assert minutes_late == expected_minutes_late
