@@ -30,7 +30,7 @@ def _capitalize(s: str) -> str:
 
 
 def _to_class_name(name: str) -> str:
-    class_name = "".join([_capitalize(_remove_invalid_chars(x)) for x in re.split("\W+", name)])
+    class_name = "".join([_capitalize(_remove_invalid_chars(x)) for x in re.split(r"\W+", name)])
     if class_name in KEYWORDS:
         class_name += "_"
     return class_name
@@ -87,7 +87,6 @@ class SchemaType(ABC):
         self.description = description.replace("\n", " ")
 
     def get_doc_desc(self, name: str, scope: Optional[str] = None) -> Optional[str]:
-
         if not self.description:
             return None
         formatted_desc = (
@@ -162,7 +161,9 @@ class OptType(SchemaType):
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
-        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
+        return (
+            f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
+        )
 
     def get_check(self, name: str, scope: Optional[str] = None):
         inner_check = self.inner.get_check(name, scope)
@@ -480,7 +481,7 @@ def airbyte_repo_path(airbyte_repo_root: Optional[str], tag: str):
         subprocess.call(["git", "clone", "--depth", "1", "--branch", "master", AIRBYTE_REPO_URL])
         os.chdir("./airbyte")
         subprocess.call(["git", "fetch", "--all", "--tags"])
-        subprocess.call(["git", "checkout", "-b" f"tags/{tag}", f"tags/{tag}"])
+        subprocess.call(["git", "checkout", f"-btags/{tag}", f"tags/{tag}"])
 
         yield os.path.join(str(build_dir), "airbyte")
 
@@ -508,7 +509,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
     with airbyte_repo_path(airbyte_repo_root, airbyte_tag) as airbyte_dir:
         connectors_root = os.path.join(airbyte_dir, "airbyte-integrations/connectors")
 
-        for (title, prefix, out_file, imp, is_source) in [
+        for title, prefix, out_file, imp, is_source in [
             ("Source", "source-", SOURCE_OUT_FILE, "GeneratedAirbyteSource", True),
             ("Destination", "destination-", DEST_OUT_FILE, "GeneratedAirbyteDestination", False),
         ]:
@@ -555,7 +556,6 @@ from dagster._annotations import public
                     )
                     for root, file in files:
                         if file == "spec.json" or file == "spec.yml" or file == "spec.yaml":
-
                             # First, attempt to load the spec file and generate
                             # the class definition
                             new_out = out

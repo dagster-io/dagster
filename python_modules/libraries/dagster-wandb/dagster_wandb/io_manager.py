@@ -600,7 +600,7 @@ class ArtifactsIOManager(IOManager):
                 "Unique ID for this run, used for resuming. It must be unique in the project, and"
                 " if you delete a run you can't reuse the ID. Use the name field for a short"
                 " descriptive name, or config for saving hyperparameters to compare across runs."
-                " The ID cannot contain the following special characters: /\#?%:.. You need to set"
+                r" The ID cannot contain the following special characters: /\#?%:.. You need to set"
                 " the Run ID when you are doing experiment tracking inside Dagster to allow the IO"
                 " Manager to resume the run. By default it`s set to the Dagster Run ID e.g "
                 " 7e4df022-1bf2-44b5-a383-bb852df4077e."
