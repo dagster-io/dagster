@@ -234,4 +234,4 @@ class FreshnessPolicy(
             evaluation_tick = evaluation_time
 
         required_time = evaluation_tick - self.maximum_lag_delta
-        return (required_time - data_time).total_seconds() / 60
+        return max(0.0, (required_time - data_time).total_seconds() / 60)
