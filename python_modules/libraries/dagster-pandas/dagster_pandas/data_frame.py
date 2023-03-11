@@ -138,8 +138,7 @@ def create_dagster_pandas_dataframe_metadata(
         Union[TypeCheck, MetadataValue]: If the input is not a pandas DataFrame, it returns a TypeCheck object
         with success=False. Otherwise, it returns a MetadataValue object with the TableSchema for the DataFrame.
     """
-    if not isinstance(pandas_df, pd.DataFrame):
-        return TypeCheck(success=False)
+    check.inst(pandas_df, pd.DataFrame, "Input must be a pandas DataFrame object")
     return MetadataValue.table_schema(
         TableSchema(
             columns=[

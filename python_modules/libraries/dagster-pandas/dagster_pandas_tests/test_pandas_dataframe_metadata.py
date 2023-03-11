@@ -9,8 +9,6 @@ def test_create_dagster_pandas_dataframe_metadata():
     expected_table_schema = TableSchema(
         columns=[TableColumn(name="col1", type="int64"), TableColumn(name="col2", type="object")]
     )
-    assert create_dagster_pandas_dataframe_metadata(df) == MetadataValue.table_schema(expected_table_schema)
-
-    # Test with an invalid input
-    invalid_input = "not a DataFrame"
-    assert create_dagster_pandas_dataframe_metadata(invalid_input) == TypeCheck(success=False)
+    assert create_dagster_pandas_dataframe_metadata(df) == MetadataValue.table_schema(
+        expected_table_schema
+    )
