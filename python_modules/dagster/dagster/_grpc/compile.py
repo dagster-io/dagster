@@ -30,12 +30,7 @@ GENERATED_HEADER = [
     "\n",
 ]
 
-GENERATED_GRPC_PYLINT_DIRECTIVE = [
-    "# pylint: disable=unused-argument\n",
-    "\n",
-]
-
-GENERATED_PB2_PYLINT_DIRECTIVE = [
+GENERATED_PB2_RUFF_DIRECTIVE = [
     "# noqa: SLF001\n",
     "\n",
 ]
@@ -62,9 +57,8 @@ def protoc(generated_dir: str):
         ]
     )
 
-    # The generated api_pb2_grpc.py file must be altered in two ways:
-    # 1. Add a pylint directive, `disable=unused-argument`
-    # 2. Change the import from `import api_pb2 as api__pb2` to `from . import api_pb2 as api__pb2`.
+    # The generated api_pb2_grpc.py file must be altered:
+    # 1. Change the import from `import api_pb2 as api__pb2` to `from . import api_pb2 as api__pb2`.
     #    See: https://github.com/grpc/grpc/issues/22914
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
@@ -74,9 +68,6 @@ def protoc(generated_dir: str):
         with open(tempfile_path, "r", encoding="utf8") as generated:
             with open(generated_grpc_path, "w", encoding="utf8") as rewritten:
                 for line in GENERATED_HEADER:
-                    rewritten.write(line)
-
-                for line in GENERATED_GRPC_PYLINT_DIRECTIVE:
                     rewritten.write(line)
 
                 for line in generated.readlines():
@@ -95,7 +86,7 @@ def protoc(generated_dir: str):
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 
-                for line in GENERATED_PB2_PYLINT_DIRECTIVE:
+                for line in GENERATED_PB2_RUFF_DIRECTIVE:
                     rewritten.write(line)
 
                 for line in generated.readlines():

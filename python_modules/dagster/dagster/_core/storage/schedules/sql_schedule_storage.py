@@ -466,11 +466,9 @@ class SqlScheduleStorage(ScheduleStorage):
         return len(results) > 0
 
     def mark_index_built(self, migration_name: str) -> None:
-        query = (
-            SecondaryIndexMigrationTable.insert().values(
-                name=migration_name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=migration_name,
+            migration_completed=datetime.now(),
         )
         with self.connect() as conn:
             try:

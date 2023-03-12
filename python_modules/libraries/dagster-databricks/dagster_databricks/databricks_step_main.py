@@ -90,7 +90,7 @@ def main(
                 databricks_config = pickle.load(handle)
 
             # sc and dbutils are globally defined in the Databricks runtime.
-            databricks_config.setup(dbutils, sc)  # noqa: F821  # type: ignore
+            databricks_config.setup(dbutils, sc)  # noqa: F821
 
             with open(step_run_ref_filepath, "rb") as handle:
                 step_run_ref = pickle.load(handle)

@@ -858,12 +858,10 @@ class SqlRunStorage(RunStorage):
         check.inst_param(snapshot_type, "snapshot_type", SnapshotType)
 
         with self.connect() as conn:
-            snapshot_insert = (
-                SnapshotsTable.insert().values(
-                    snapshot_id=snapshot_id,
-                    snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
-                    snapshot_type=snapshot_type.value,
-                )
+            snapshot_insert = SnapshotsTable.insert().values(
+                snapshot_id=snapshot_id,
+                snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
+                snapshot_type=snapshot_type.value,
             )
             conn.execute(snapshot_insert)
             return snapshot_id
@@ -1003,11 +1001,9 @@ class SqlRunStorage(RunStorage):
         return len(results) > 0
 
     def mark_index_built(self, migration_name: str) -> None:
-        query = (
-            SecondaryIndexMigrationTable.insert().values(
-                name=migration_name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=migration_name,
+            migration_completed=datetime.now(),
         )
         with self.connect() as conn:
             try:

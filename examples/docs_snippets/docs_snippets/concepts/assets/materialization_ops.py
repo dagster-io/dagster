@@ -39,7 +39,9 @@ def my_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     context.log_event(
-        AssetMaterialization(asset_key="my_dataset", description="Persisted result to storage")
+        AssetMaterialization(
+            asset_key="my_dataset", description="Persisted result to storage"
+        )
     )
     return remote_storage_path
 
@@ -56,7 +58,9 @@ def my_partitioned_asset_op(context):
     partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
-    context.log_event(AssetMaterialization(asset_key="my_dataset", partition=partition_date))
+    context.log_event(
+        AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    )
     return remote_storage_path
 
 
@@ -78,7 +82,9 @@ def my_metadata_materialization_op(context):
             metadata={
                 "text_metadata": "Text-based metadata for this event",
                 "path": MetadataValue.path(remote_storage_path),
-                "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
                 "size (bytes)": calculate_bytes(df),
             },
         )
