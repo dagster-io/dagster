@@ -1,4 +1,4 @@
-# pylint: redefined-builtin
+# ruff: noqa: A001, A002
 from typing import Optional, Union
 
 import dagster._check as check

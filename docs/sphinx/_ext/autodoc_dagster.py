@@ -159,7 +159,7 @@ class DagsterClassDocumenter(ClassDocumenter):
     objtype = "class"
 
     option_spec = ClassDocumenter.option_spec.copy()
-    option_spec["deprecated_aliases"] = lambda str: [s.strip() for s in str.split(",")]
+    option_spec["deprecated_aliases"] = lambda string: [s.strip() for s in string.split(",")]
 
     def add_content(self, *args, **kwargs):
         super().add_content(*args, **kwargs)

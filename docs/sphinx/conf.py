@@ -74,7 +74,7 @@ for path in paths:
 # -- Project information -----------------------------------------------------
 
 project = "Dagster"
-copyright = "2019, Elementl, Inc"  # pylint: disable=redefined-builtin
+copyright = "2019, Elementl, Inc"  # noqa: A001
 author = "The Dagster Team"
 
 # The short X.Y version

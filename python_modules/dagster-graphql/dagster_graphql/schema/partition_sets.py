@@ -180,7 +180,7 @@ class GraphenePartition(graphene.ObjectType):
     def resolve_runs(
         self,
         graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):

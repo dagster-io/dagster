@@ -583,7 +583,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_pipelineRunsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -601,7 +601,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -619,7 +619,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runGroupsOrError(
         self,
         graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):

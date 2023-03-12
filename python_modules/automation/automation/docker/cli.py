@@ -19,8 +19,8 @@ def cli():
     pass
 
 
-@cli.command()
-def list():  # pylint: disable=redefined-builtin
+@cli.command(name="list")
+def lst():
     for image in list_images():
         print(image.image)  # noqa: T201
 

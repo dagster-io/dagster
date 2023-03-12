@@ -181,6 +181,11 @@ line-length = 100
 # Here we append to the defaults.
 select = [
 
+  # (flake8-builtins) detect shadowing of python builtin symbols by variables and arguments.
+  # Attributes are OK (which is why A003) is not included here.
+  "A001",
+  "A002",
+
   # (pydocstyle) Docstring-related rules. A large subset of these are ignored by the
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
@@ -216,6 +221,11 @@ select = [
 
 # Fail if Ruff is not running this version.
 required-version = "0.0.255"
+
+[tool.ruff.flake8-builtins]
+
+# We use `id` in many places and almost never want to use the python builtin.
+builtins-ignorelist = ["id"]
 
 [tool.ruff.isort]
 
