@@ -518,7 +518,7 @@ def gen_airbyte_classes(airbyte_repo_root, airbyte_tag):
 
             click.secho(f"\n\nGenerating Airbyte {title} Classes...\n\n\n", fg="green")
 
-            out = f"""# pylint: disable=unused-import,redefined-builtin
+            out = f"""# ruff: noqa: F401, A002
 from typing import Any, List, Optional, Union
 
 from dagster_airbyte.managed.types import {imp}
