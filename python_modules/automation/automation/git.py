@@ -150,8 +150,6 @@ def git_commit_updates(repo_dir: str, message: str) -> None:
         'git commit -m "{}"'.format(message),
     ]
 
-    print(  # noqa: T201
-        "Committing to {} with message {}".format(repo_dir, message)
-    )
+    print("Committing to {} with message {}".format(repo_dir, message))  # noqa: T201
     for cmd in cmds:
         subprocess.call(cmd, cwd=repo_dir, shell=True)

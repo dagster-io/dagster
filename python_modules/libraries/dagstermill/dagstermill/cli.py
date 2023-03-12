@@ -34,9 +34,7 @@ def get_kernelspec(kernel: Optional[str] = None):
             )
         ) + list(kernelspecs["kernelspecs"].keys())
         kernel = preferred_kernels[0]
-        print(  # noqa: T201
-            "No kernel specified, defaulting to '{kernel}'".format(kernel=kernel)
-        )
+        print("No kernel specified, defaulting to '{kernel}'".format(kernel=kernel))  # noqa: T201
 
     check.invariant(
         kernel in kernelspecs["kernelspecs"],
