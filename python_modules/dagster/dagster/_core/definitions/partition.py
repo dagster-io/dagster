@@ -376,9 +376,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
             )
 
 
-class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
-):
+class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 
     Example:
@@ -404,7 +402,7 @@ class StaticPartitionsDefinition(
 
     def get_partitions(
         self,
-        current_time: Optional[datetime] = None,  # pylint: disable=unused-argument
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition[str]]:
         return self._partitions
@@ -738,9 +736,7 @@ class PartitionSetDefinition(Generic[T_cov]):
         tags_fn_for_partition: Callable[
             [Partition[T_cov]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
-        partitions_def: Optional[
-            PartitionsDefinition[T_cov]
-        ] = None,
+        partitions_def: Optional[PartitionsDefinition[T_cov]] = None,
         job_name: Optional[str] = None,
     ):
         check.invariant(

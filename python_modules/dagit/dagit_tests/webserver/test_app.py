@@ -79,7 +79,7 @@ def test_static_resources(test_client: TestClient):
 # https://graphql.org/learn/serving-over-http/
 
 
-def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unused-argument
+def test_graphql_get(instance, test_client: TestClient):
     # base case
     response = test_client.get(
         "/graphql",
@@ -112,7 +112,7 @@ def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unus
     assert response.status_code == 400, response.text
 
 
-def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
+def test_graphql_invalid_json(instance, test_client: TestClient):
     # base case
     response = test_client.post(
         "/graphql",

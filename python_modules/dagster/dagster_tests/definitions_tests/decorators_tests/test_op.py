@@ -1286,7 +1286,7 @@ def test_output_mismatch_tuple_lengths():
 
 def test_none_annotated_input():
     with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
-        # pylint: disable=unused-argument
+
         @op
         def op1(input1: None):
             ...

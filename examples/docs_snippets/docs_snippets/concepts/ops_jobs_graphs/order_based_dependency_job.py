@@ -1,6 +1,3 @@
-# pylint: disable=unused-argument
-
-
 class MockDatabase:
     def execute(self, query: str):
         pass
@@ -16,9 +13,7 @@ from dagster import In, Nothing, job, op
 
 @op
 def create_table_1():
-    get_database_connection().execute(
-        "create table_1 as select * from some_source_table"
-    )
+    get_database_connection().execute("create table_1 as select * from some_source_table")
 
 
 @op(ins={"start": In(Nothing)})

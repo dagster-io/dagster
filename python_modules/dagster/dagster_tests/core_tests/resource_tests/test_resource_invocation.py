@@ -34,7 +34,7 @@ def test_resource_invocation_none_arg():
         basic_resource()
 
     @resource
-    def basic_resource_arb_context(arb_context):  # pylint: disable=unused-argument
+    def basic_resource_arb_context(arb_context):
         return 5
 
     assert basic_resource_arb_context(None) == 5

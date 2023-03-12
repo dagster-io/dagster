@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 import json
 import warnings
 from collections import namedtuple

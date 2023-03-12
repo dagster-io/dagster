@@ -22,9 +22,7 @@ def get_dbt_solid_context(project_dir, profiles_dir, **kwargs):
     )
 
 
-def test_unconfigured(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_unconfigured(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run(project_dir=test_project_dir, profiles_dir=dbt_config_dir)
@@ -35,7 +33,7 @@ def test_unconfigured(
     assert len(dbt_result.result["results"]) == 4
 
 
-def test_seed(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=unused-argument
+def test_seed(conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.seed()
@@ -45,7 +43,7 @@ def test_seed(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable
     assert len(dbt_result.result["results"]) == 1
 
 
-def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=unused-argument
+def test_ls(conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.ls()
@@ -55,9 +53,7 @@ def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=u
     assert len(dbt_result.raw_output.split("\n\n")) == 25
 
 
-def test_ls_resource_type(
-    conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_ls_resource_type(conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.ls(resource_type="model")
@@ -67,9 +63,7 @@ def test_ls_resource_type(
     assert len(dbt_result.raw_output.split("\n\n")) == 6
 
 
-def test_test(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_test(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         context.resources.dbt.run()
@@ -80,9 +74,7 @@ def test_test(
     assert len(dbt_result.result["results"]) == 17
 
 
-def test_basic_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_basic_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run()
@@ -92,9 +84,7 @@ def test_basic_run(
     assert len(dbt_result.result["results"]) == 4
 
 
-def test_models_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_models_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run(models=["least_caloric"])
@@ -104,9 +94,7 @@ def test_models_run(
     assert len(dbt_result.result["results"]) == 1
 
 
-def test_models_default_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_models_default_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run()
@@ -116,9 +104,7 @@ def test_models_default_run(
     assert len(dbt_result.result["results"]) == 1
 
 
-def test_docs_url_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_docs_url_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run()
@@ -129,9 +115,7 @@ def test_docs_url_run(
     assert dbt_result.docs_url == "foo.com"
 
 
-def test_models_override_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_models_override_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run(models=["least_caloric"])
@@ -141,9 +125,7 @@ def test_models_override_run(
     assert len(dbt_result.result["results"]) == 1
 
 
-def test_models_removed_for_run_operation(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_models_removed_for_run_operation(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
         return context.resources.dbt.run_operation("log_macro", args={"msg": "foo"})
@@ -155,9 +137,7 @@ def test_models_removed_for_run_operation(
     assert "least_caloric" not in dbt_result.command
 
 
-def test_extra_args_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_extra_args_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     my_vars = {"foo": 1, "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
@@ -170,9 +150,7 @@ def test_extra_args_run(
     assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
 
 
-def test_models_and_extra_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_models_and_extra_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     my_vars = {"foo": 1, "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
@@ -186,9 +164,7 @@ def test_models_and_extra_run(
     assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
 
 
-def test_exclude_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_exclude_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     my_vars = {"foo": 1, "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
@@ -202,9 +178,7 @@ def test_exclude_run(
     assert json.loads(dbt_result.result["args"]["vars"]) == my_vars
 
 
-def test_merged_extra_flags_run(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_merged_extra_flags_run(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     configured_vars = {"hello": "world"}
     my_vars = {"foo": 1, "bar": "baz"}
 

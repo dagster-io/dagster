@@ -19,7 +19,6 @@ from dagster._core.errors import ScheduleExecutionError
 from dagster._utils.merger import merge_dicts
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
-# pylint: disable=unused-argument
 
 
 def test_scheduler():

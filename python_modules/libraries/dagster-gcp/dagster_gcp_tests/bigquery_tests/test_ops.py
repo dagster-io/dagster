@@ -219,7 +219,7 @@ def test_pd_df_load():
         ins={"success": In(Nothing)},
         out=Out(DataFrame),
     )
-    def return_df(_context):  # pylint: disable=unused-argument
+    def return_df(_context):
         return test_df
 
     @job(resource_defs={"bigquery": bigquery_resource})
@@ -291,7 +291,7 @@ def test_gcs_load():
         ins={"success": In(Nothing)},
         out=Out(List[str]),
     )
-    def return_gcs_uri(_context):  # pylint: disable=unused-argument
+    def return_gcs_uri(_context):
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
     @job(resource_defs={"bigquery": bigquery_resource})

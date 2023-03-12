@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 import subprocess
 
 import dagster._check as check

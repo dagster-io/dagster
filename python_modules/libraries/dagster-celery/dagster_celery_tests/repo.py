@@ -103,7 +103,7 @@ def fails():
 
 
 @op
-def should_never_execute(foo):  # pylint: disable=unused-argument
+def should_never_execute(foo):
     assert False  # should never execute
 
 

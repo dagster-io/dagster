@@ -405,7 +405,7 @@ def test_multi_asset_sensor_selection():
         return 1, 2
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a")])
-    def passing_sensor(context):  # pylint: disable=unused-argument
+    def passing_sensor(context):
         pass
 
     @repository
@@ -647,7 +647,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
             )
         },
     )
-    def downstream_daily_partitions(upstream):  # pylint: disable=unused-argument
+    def downstream_daily_partitions(upstream):
         return 1
 
     @repository

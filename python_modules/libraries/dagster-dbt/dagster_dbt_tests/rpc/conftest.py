@@ -43,7 +43,7 @@ atexit.register(kill_all_subprocs)
 
 
 @pytest.fixture(scope="class")
-def dbt_rpc_server(dbt_seed, dbt_executable, dbt_config_dir):  # pylint: disable=unused-argument
+def dbt_rpc_server(dbt_seed, dbt_executable, dbt_config_dir):
     proc = subprocess.Popen(
         [
             "dbt-rpc",

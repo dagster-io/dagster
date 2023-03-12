@@ -828,7 +828,7 @@ def start(context):
 
 
 @op(required_resource_keys={"b"})
-def will_fail(context, num):  # pylint: disable=unused-argument
+def will_fail(context, num):
     assert context.resources.b == "B"
     raise Exception("fail")
 
@@ -856,7 +856,7 @@ def retry_resource_pipeline():
         "start_skip": Out(str, is_required=False),
     },
 )
-def can_fail(context, inp):  # pylint: disable=unused-argument
+def can_fail(context, inp):
     if context.op_config["fail"]:
         raise Exception("blah")
 
@@ -1453,12 +1453,12 @@ dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 @asset
 def first_asset(
     dummy_source_asset,
-):  # pylint: disable=unused-argument
+):
     return 1
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context, first_asset):  # pylint: disable=unused-argument
+def hanging_asset(context, first_asset):
     """Asset that hangs forever, used to test in-progress ops."""
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
@@ -1470,7 +1470,7 @@ def hanging_asset(context, first_asset):  # pylint: disable=unused-argument
 @asset
 def never_runs_asset(
     hanging_asset,
-):  # pylint: disable=unused-argument
+):
     pass
 
 
@@ -1491,7 +1491,7 @@ def my_op():
 
 
 @op(required_resource_keys={"hanging_asset_resource"})
-def hanging_op(context, my_op):  # pylint: disable=unused-argument
+def hanging_op(context, my_op):
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1500,7 +1500,7 @@ def hanging_op(context, my_op):  # pylint: disable=unused-argument
 
 
 @op
-def never_runs_op(hanging_op):  # pylint: disable=unused-argument
+def never_runs_op(hanging_op):
     pass
 
 
@@ -1518,7 +1518,7 @@ def memoization_job():
 
 
 @asset
-def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
+def downstream_asset(hanging_graph):
     return 1
 
 

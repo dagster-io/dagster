@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 from dagster import In, job, op, root_input_manager
 
 
@@ -27,8 +26,6 @@ def execute_with_config():
         my_op()
 
     my_job.execute_in_process(
-        run_config={
-            "ops": {"my_op": {"inputs": {"dataframe": {"table_name": "table1"}}}}
-        },
+        run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table_name": "table1"}}}}},
     )
     # execute_end_marker

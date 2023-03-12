@@ -73,7 +73,7 @@ def instance(tempdir):
 
 
 @pytest.fixture(scope="function")
-def dagster_celery_worker(rabbitmq, instance):  # pylint: disable=unused-argument
+def dagster_celery_worker(rabbitmq, instance):
     with start_celery_worker():
         yield
 

@@ -506,9 +506,7 @@ class ConfigurableResource(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def create_resource(
-        self, context: InitResourceContext
-    ) -> TResValue:  # pylint: disable=unused-argument
+    def create_resource(self, context: InitResourceContext) -> TResValue:
         """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.

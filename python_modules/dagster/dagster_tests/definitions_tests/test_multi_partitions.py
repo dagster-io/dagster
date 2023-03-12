@@ -94,7 +94,7 @@ def test_tags_multi_dimensional_partitions():
         return 1
 
     @asset(partitions_def=composite)
-    def asset2(asset1):  # pylint: disable=unused-argument
+    def asset2(asset1):
         return 2
 
     @repository

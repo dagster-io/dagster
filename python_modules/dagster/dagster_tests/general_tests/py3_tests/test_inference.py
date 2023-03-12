@@ -141,7 +141,7 @@ def test_kitchen_sink():
         o: Optional[str],
         m: List[str],
         c: Custom,
-    ):  # pylint: disable=unused-argument
+    ):
         pass
 
     assert sink.input_defs[0].name == "n"

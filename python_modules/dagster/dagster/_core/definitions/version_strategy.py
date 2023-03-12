@@ -63,9 +63,7 @@ class VersionStrategy(ABC):
         raise NotImplementedError()
 
     @public
-    def get_resource_version(
-        self, context: ResourceVersionContext  # pylint: disable=unused-argument
-    ) -> Optional[str]:
+    def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
         return None
 
 

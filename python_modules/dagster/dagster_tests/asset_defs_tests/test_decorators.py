@@ -261,7 +261,7 @@ def test_multi_asset_internal_asset_deps_metadata():
             "my_other_out_name": {AssetKey("my_in_name")},
         },
     )
-    def my_asset(my_in_name):  # pylint: disable=unused-argument
+    def my_asset(my_in_name):
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 

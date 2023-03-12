@@ -140,7 +140,7 @@ def test_hook_with_resource():
 
 def test_hook_resource_error():
     @event_list_hook(required_resource_keys={"resource_b"})
-    def a_hook(context, event_list):  # pylint: disable=unused-argument
+    def a_hook(context, event_list):
         return HookExecutionResult(hook_name="a_hook")
 
     @op

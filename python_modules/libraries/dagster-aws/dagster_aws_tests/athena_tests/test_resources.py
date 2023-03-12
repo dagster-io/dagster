@@ -5,7 +5,7 @@ from moto import mock_athena
 
 
 @pytest.fixture
-def mock_athena_client(mock_s3_resource):  # pylint: disable=unused-argument
+def mock_athena_client(mock_s3_resource):
     with mock_athena():
         yield boto3.client("athena", region_name="us-east-1")
 
@@ -61,7 +61,7 @@ def test_execute_query_succeeds_on_last_poll(mock_athena_client):
     athena.execute_query("SELECT 1", expected_states=["SUCCEEDED"])
 
 
-def test_op(mock_athena_client):  # pylint: disable=unused-argument
+def test_op(mock_athena_client):
     from dagster import build_op_context, op
     from dagster_aws.athena import fake_athena_resource
 

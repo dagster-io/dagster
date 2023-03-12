@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 from dagster import In, IOManager, Out, io_manager, job, op, root_input_manager
 
 
@@ -60,9 +59,7 @@ def execute_full():
 def execute_subselection():
     # start_execute_subselection
     my_job.execute_in_process(
-        run_config={
-            "ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}
-        },
+        run_config={"ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
         op_selection=["op2"],
     )
 

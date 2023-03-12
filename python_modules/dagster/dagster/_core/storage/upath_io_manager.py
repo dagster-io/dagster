@@ -46,8 +46,8 @@ class UPathIOManager(MemoizableIOManager):
 
     def get_metadata(
         self,
-        context: OutputContext,  # pylint: disable=unused-argument
-        obj: Any,  # pylint: disable=unused-argument
+        context: OutputContext,
+        obj: Any,
     ) -> Dict[str, MetadataValue]:
         """Child classes should override this method to add custom metadata to the outputs."""
         return {}

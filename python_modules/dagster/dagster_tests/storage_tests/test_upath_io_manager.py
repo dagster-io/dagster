@@ -388,9 +388,7 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         def load_from_path(self, context: InputContext, path: UPath) -> Any:
             return
 
-        def get_metadata(
-            self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
-        ) -> Dict[str, MetadataValue]:
+        def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
             return {"length": MetadataValue.int(get_length(obj))}
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})

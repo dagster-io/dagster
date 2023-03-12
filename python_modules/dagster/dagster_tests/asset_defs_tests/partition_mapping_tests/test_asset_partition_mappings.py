@@ -61,10 +61,8 @@ def test_filter_mapping_partitions_dep():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partition_key_range is not None
             return PartitionKeyRange(
@@ -75,10 +73,8 @@ def test_filter_mapping_partitions_dep():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
                 upstream_partition_key_range.start.split("|")[-1],
@@ -350,10 +346,8 @@ def test_from_graph():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partition_key_range is not None
             self.upstream_calls += 1
@@ -362,10 +356,8 @@ def test_from_graph():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             self.downstream_calls += 1
             return upstream_partition_key_range
@@ -551,14 +543,14 @@ def test_partition_keys_in_range():
         assert context.asset_partition_keys_for_output() == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
-    def downstream(context, upstream):  # pylint: disable=unused-argument
+    def downstream(context, upstream):
         assert (
             context.asset_partition_keys_for_input("upstream")
             == daily_partition_keys_for_week_2022_09_11
         )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["2022-09-11"]
@@ -696,7 +688,7 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
     )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["a"]
@@ -751,7 +743,7 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
     )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):

@@ -1,5 +1,4 @@
 # isort: skip_file
-# pylint: disable=unused-argument
 
 
 class Engine:

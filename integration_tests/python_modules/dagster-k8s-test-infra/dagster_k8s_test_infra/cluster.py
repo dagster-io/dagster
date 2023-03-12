@@ -181,7 +181,7 @@ def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher
 @pytest.fixture(scope="session")
 def helm_postgres_url_for_user_deployments_subchart_disabled(
     helm_namespace_for_user_deployments_subchart_disabled,
-):  # pylint: disable=unused-argument
+):
     with local_port_forward_postgres(
         namespace=helm_namespace_for_user_deployments_subchart_disabled
     ) as local_forward_port:

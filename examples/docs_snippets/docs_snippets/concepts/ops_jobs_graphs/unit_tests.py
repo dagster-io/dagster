@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument
+
 from dagster import (
     AssetMaterialization,
     DagsterEventType,

@@ -189,7 +189,7 @@ def test_cleanup_on_error(
     mock_mlflow_end_run,
     any_error,
     context,
-    cleanup_mlflow_runs,  # pylint: disable=unused-argument
+    cleanup_mlflow_runs,
 ):
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow

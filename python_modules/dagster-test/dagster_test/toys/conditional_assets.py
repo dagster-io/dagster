@@ -30,7 +30,7 @@ def success_job():
 
 
 @asset_sensor(asset_key=AssetKey("may_not_materialize"), job=success_job)
-def may_not_materialize_sensor(context, asset_event):  # pylint: disable=unused-argument
+def may_not_materialize_sensor(context, asset_event):
     return RunRequest(run_key=None)
 
 

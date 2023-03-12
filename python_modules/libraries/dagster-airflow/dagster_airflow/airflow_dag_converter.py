@@ -105,7 +105,7 @@ def make_dagster_op_from_airflow_task(
             delay=task.retry_delay.total_seconds() if task.retry_delay is not None else 0,
         ),
     )
-    def _op(context: OpExecutionContext):  # pylint: disable=unused-argument
+    def _op(context: OpExecutionContext):
         # reloading forces picking up any config that's been set for execution
         if is_airflow_2_loaded_in_environment():
             importlib.reload(airflow.configuration)

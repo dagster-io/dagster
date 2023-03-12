@@ -1,5 +1,5 @@
 # ruff: noqa: T201
-# pylint: disable=unused-argument
+
 import base64
 import os
 import subprocess
@@ -261,7 +261,7 @@ def helm_namespace_for_user_deployments_subchart_disabled(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     namespace = helm_namespace_for_user_deployments_subchart
 
     with helm_chart_for_user_deployments_subchart_disabled(
@@ -280,7 +280,7 @@ def helm_namespace_for_user_deployments_subchart(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_user_deployments_subchart(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -294,7 +294,7 @@ def helm_namespace_for_daemon(
     configmaps,
     aws_configmap,
     secrets,
-):  # pylint: disable=unused-argument
+):
     with helm_chart_for_daemon(namespace, dagster_docker_image, should_cleanup):
         yield namespace
 
@@ -320,7 +320,7 @@ def helm_namespace(
     aws_configmap,
     secrets,
     celery_backend,
-):  # pylint: disable=unused-argument
+):
     with helm_chart(namespace, dagster_docker_image, celery_backend, should_cleanup):
         yield namespace
 
@@ -392,7 +392,7 @@ def helm_namespaces_for_k8s_run_launcher(
     aws_configmap,
     secrets,
     request,
-):  # pylint: disable=unused-argument
+):
     subchart_enabled = request.param
     with ExitStack() as stack:
         if subchart_enabled:

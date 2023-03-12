@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument
+
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
@@ -98,9 +98,7 @@ def my_metadata_expectation_op(context, df):
             description="ensure dataframe has rows",
             metadata={
                 "text_metadata": "Text-based metadata for this event",
-                "dashboard_url": MetadataValue.url(
-                    "http://mycoolsite.com/url_for_my_data"
-                ),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
                 "raw_count": len(df),
                 "size (bytes)": calculate_bytes(df),
             },

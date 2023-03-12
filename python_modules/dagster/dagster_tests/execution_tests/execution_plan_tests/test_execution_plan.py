@@ -587,7 +587,7 @@ def test_configured_input_should_skip_step():
         yield Output(1)
 
     @op
-    def op_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+    def op_should_not_skip(_, input_one, input_two):
         called["yup"] = True
 
     @job

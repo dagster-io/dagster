@@ -1,5 +1,5 @@
 # pylint doesn't know about pytest fixtures
-# pylint: disable=unused-argument
+
 
 import os
 import time

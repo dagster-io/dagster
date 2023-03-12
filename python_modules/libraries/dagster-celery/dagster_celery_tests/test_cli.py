@@ -1,5 +1,3 @@
-# pylint: disable=unused-argument
-
 import time
 
 import dagster._check as check

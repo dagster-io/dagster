@@ -379,7 +379,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
+    def instance(self, request) -> Optional[DagsterInstance]:
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -2351,7 +2351,7 @@ class TestEventLogStorage:
             return 1
 
         @asset
-        def second_asset(my_asset):  # pylint: disable=unused-argument
+        def second_asset(my_asset):
             return 2
 
         with instance_for_test() as created_instance:
