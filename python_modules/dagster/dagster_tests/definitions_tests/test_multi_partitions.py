@@ -373,11 +373,6 @@ def test_keys_with_dimension_value():
             ("a", "2015-01-04"),
         ]
     ]
-    print(
-        multipartitions_def.get_multipartition_keys_with_dimension_value(
-            "date", "2015-01-01", current_time=datetime(year=2015, month=1, day=5)
-        )
-    )
     assert multipartitions_def.get_multipartition_keys_with_dimension_value(
         "date", "2015-01-01", current_time=datetime(year=2015, month=1, day=5)
     ) == [

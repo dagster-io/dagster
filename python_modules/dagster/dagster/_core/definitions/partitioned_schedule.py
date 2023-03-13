@@ -81,9 +81,10 @@ def build_schedule_from_partitioned_job(
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
     """
     Creates a schedule from a time window-partitioned job or a job that targets
-    time window-partitioned assets.
+    time window-partitioned assets. The job can also be multipartitioned, as long as one
+    of the partitions dimensions is time-partitioned.
 
-    The schedule executes at the cadence specified by the partitioning of the job or assets.
+    The schedule executes at the cadence specified by the time partitioning of the job or assets.
 
     Examples:
         .. code-block:: python
