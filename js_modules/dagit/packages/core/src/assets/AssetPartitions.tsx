@@ -181,6 +181,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
+            dimensionType={selections[timeDimensionIdx].dimension.type}
           />
         </Box>
       )}

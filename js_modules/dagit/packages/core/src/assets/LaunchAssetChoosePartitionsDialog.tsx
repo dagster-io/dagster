@@ -429,28 +429,41 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           </Box>
 
           {selections.map((range, idx) => (
-            <DimensionRangeWizard
+            <Box
               key={range.dimension.name}
-              partitionKeys={range.dimension.partitionKeys}
-              health={{
-                ranges: displayedHealth.rangesForSingleDimension(
-                  idx,
-                  selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
-                ),
+              border={{
+                side: 'top',
+                width: 1,
+                color: Colors.KeylineGray,
               }}
-              isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
-              selected={range.selectedKeys}
-              setSelected={(selectedKeys) =>
-                setSelections((selections) =>
-                  selections.map((r) =>
-                    r.dimension === range.dimension ? {...r, selectedKeys} : r,
+              padding={{vertical: 12}}
+            >
+              <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
+                <Icon name="partition" />
+                {range.dimension.name}
+              </Box>
+              <DimensionRangeWizard
+                partitionKeys={range.dimension.partitionKeys}
+                health={{
+                  ranges: displayedHealth.rangesForSingleDimension(
+                    idx,
+                    selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
                   ),
-                )
-              }
-              partitionDefinitionName={displayedPartitionDefinition?.name}
-              repoAddress={repoAddress}
-              refetch={refetch}
-            />
+                }}
+                dimensionType={range.dimension.type}
+                selected={range.selectedKeys}
+                setSelected={(selectedKeys) =>
+                  setSelections((selections) =>
+                    selections.map((r) =>
+                      r.dimension === range.dimension ? {...r, selectedKeys} : r,
+                    ),
+                  )
+                }
+                partitionDefinitionName={displayedPartitionDefinition?.name}
+                repoAddress={repoAddress}
+                refetch={refetch}
+              />
+            </Box>
           ))}
 
           {target.type === 'pureAssetBackfill' ? (

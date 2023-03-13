@@ -17,8 +17,10 @@ import {useHistory} from 'react-router';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
+import {PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -187,6 +189,11 @@ export const BackfillPartitionSelector: React.FC<{
               setSelected={setRange}
               health={{partitionStateForKey: (key) => partitionData[key]}}
               partitionKeys={partitionNames}
+              dimensionType={
+                isTimeseriesPartition(partitionNames[0])
+                  ? PartitionDefinitionType.TIME_WINDOW
+                  : PartitionDefinitionType.STATIC
+              }
             />
 
             <PartitionStateCheckboxes

@@ -441,6 +441,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
 class GrapheneDimensionPartitionKeys(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     partition_keys = non_null_list(graphene.String)
+    type = graphene.NonNull(GraphenePartitionDefinitionType)
 
     class Meta:
         name = "DimensionPartitionKeys"

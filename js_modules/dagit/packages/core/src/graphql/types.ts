@@ -984,6 +984,7 @@ export type DimensionPartitionKeys = {
   __typename: 'DimensionPartitionKeys';
   name: Scalars['String'];
   partitionKeys: Array<Scalars['String']>;
+  type: PartitionDefinitionType;
 };
 
 export type DisplayableEvent = {
