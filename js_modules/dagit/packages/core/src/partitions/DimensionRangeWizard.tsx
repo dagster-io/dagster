@@ -9,7 +9,6 @@ import {
   MenuItem,
   TagSelectorWithSearch,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
