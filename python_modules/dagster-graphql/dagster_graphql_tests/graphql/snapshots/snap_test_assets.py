@@ -1426,7 +1426,7 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': {
                 'currentMinutesLate': 0.0,
-                'latestMaterializationMinutesLate': 0.0
+                'latestMaterializationMinutesLate': None
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
@@ -1652,7 +1652,7 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': {
                 'currentMinutesLate': 0.0,
-                'latestMaterializationMinutesLate': 0.0
+                'latestMaterializationMinutesLate': None
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
@@ -1878,7 +1878,7 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': {
                 'currentMinutesLate': 0.0,
-                'latestMaterializationMinutesLate': 0.0
+                'latestMaterializationMinutesLate': None
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
@@ -2104,7 +2104,7 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': {
                 'currentMinutesLate': 0.0,
-                'latestMaterializationMinutesLate': 0.0
+                'latestMaterializationMinutesLate': None
             },
             'freshnessPolicy': {
                 'cronSchedule': None,
