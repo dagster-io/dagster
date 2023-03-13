@@ -19,20 +19,7 @@ You can follow the [Set up data and connections](#set-up-data-and-connections) s
 
 Dagster allows using environment variables to handle sensitive information. You can define various configuration options and access environment variables through them. This also allows you to parameterize your pipeline without modifying code.
 
-In this example, we ingest data from Airbyte by reading info from an [Airbyte connection](https://airbytehq.github.io/understanding-airbyte/connections/) where it syncs data from Postgres to Postgres. So, in order to kick off runs successfully, you'll need the following environment variables to configure the connection:
-- Airbyte
-  - `AIRBYTE_CONNECTION_ID`
-  - `AIRBYTE_HOST`
-  - `AIRBYTE_PORT`
-- Postgres
-  - `PG_USERNAME`
-  - `PG_PASSWORD`
-  - `PG_HOST`
-  - `PG_PORT`
-  - `PG_SOURCE_DATABASE`
-  - `PG_DESTINATION_DATABASE`
-
-You can find all the configurations in [`assets_modern_data_stack/utils/constants.py`](./assets_modern_data_stack/utils/constants.py).
+In this example, we ingest data from Airbyte by reading info from an [Airbyte connection](https://airbytehq.github.io/understanding-airbyte/connections/) where it syncs data from Postgres to Postgres. This example uses the default username, passwords, hosts, and ports for Airbyte and Dagster. These default configuration values can be changed pointing at environment variables, see `assets_modern_data_stack.assets.airbyte_iaac`.
 
 You can declare environment variables in various ways:
 - **Local development**: [Using `.env` files to load env vars into local environments](https://docs.dagster.io/guides/dagster/using-environment-variables-and-secrets#declaring-environment-variables)
@@ -48,6 +35,8 @@ Check out [Using environment variables and secrets guide](https://docs.dagster.i
 The easiest way to spin up your Dagster project is to use [Dagster Serverless](https://docs.dagster.io/dagster-cloud/deployment/serverless). It provides out-of-the-box CI/CD and native branching that make development and deployment easy.
 
 Check out the [Dagster Cloud](https://dagster.io/cloud) to get started.
+
+> Note: To use Dagster Cloud with this example you will need Airbyte and Postgres running separately.
 
 ### Option 2: Running it locally
 
@@ -91,27 +80,27 @@ $ cd airbyte
 $ docker-compose up
 ```
 
-Once you've done this, you should be able to go to http://localhost:8000, and see Airbyte's UI.
+Once you've done this, you should be able to go to http://localhost:8000, and see Airbyte's UI, the default username is `airbyte` and the default password is `password`.
 
-#### Set up data and connections
+#### Set up data
 
-Now, you'll want to seed some data into the empty database you just created, and create an Airbyte connection between the source and destination databases.
+Now, you'll want to seed some data into the empty database you just created.
 
 There's a script provided that should handle this all for you, which you can run with:
 
-```
-$ python -m assets_modern_data_stack.utils.setup_airbyte
-```
-
-At the end of this output, you should see something like:
-
-```
-Created Airbyte Connection: c90cb8a5-c516-4c1a-b243-33dfe2cfb9e8
+```bash
+$ python -m assets_modern_data_stack.utils.setup_postgres
 ```
 
-This connection id is specific to your local setup, so you'll need to update `constants.py` with this
-value. Once you've update your `constants.py` file, you're good to go!
+#### Set up Airbyte connections
 
+This example uses Dagster to [manage Airbyte ingestion as code](https://docs.dagster.io/guides/dagster/airbyte-ingestion-as-code).
+
+To setup the Airbyte connections between the Postgres source and sink run:
+
+```shell
+dagster-airbyte apply --module assets_modern_data_stack.assets.airbyte_iaac:airbyte_reconciler
+```
 
 ## Learning more
 

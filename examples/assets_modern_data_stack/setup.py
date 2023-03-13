@@ -9,6 +9,7 @@ setup(
         "dagster-cloud",
         "boto3",
         "dagster-airbyte",
+        "dagster-managed-elements",
         "dagster-dbt",
         "dagster-postgres",
         "pandas",

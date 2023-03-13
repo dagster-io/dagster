@@ -1,5 +1,18 @@
 import pandas as pd
 from dagster import IOManager, io_manager
+from dagster_postgres.utils import get_conn_string
+from assets_modern_data_stack.assets.airbyte_iaac import POSTGRES_BASE_CONFIG
+import os
+
+POSTGRES_CONFIG = {
+    "con_string": get_conn_string(
+        username=POSTGRES_BASE_CONFIG["username"],
+        password=POSTGRES_BASE_CONFIG["password"],
+        hostname=POSTGRES_BASE_CONFIG["host"],
+        port=POSTGRES_BASE_CONFIG["port"],
+        db_name="postgres_replica",
+    )
+}
 
 
 class DbIOManager(IOManager):
@@ -15,7 +28,9 @@ class DbIOManager(IOManager):
     def handle_output(self, context, obj):
         if isinstance(obj, pd.DataFrame):
             # write df to table
-            obj.to_sql(name=context.asset_key.path[-1], con=self._con, if_exists="replace")
+            obj.to_sql(
+                name=context.asset_key.path[-1], con=self._con, if_exists="replace"
+            )
         elif obj is None:
             # dbt has already written the data to this table
             pass
