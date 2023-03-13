@@ -244,18 +244,18 @@ class PerfScenario(NamedTuple):
 # ==============================================
 
 # 2000 assets, no partitions
-giant_unpartitioned_assets = RandomAssets(
+unpartitioned_2000_assets = RandomAssets(
     name="giant_unpartitioned_assets", n_assets=2000, n_sources=500
 )
-giant_unpartitioned_assets_1_run = InstanceSnapshot(assets=giant_unpartitioned_assets)
-giant_unpartitioned_assets_2_random_runs = InstanceSnapshot(
-    assets=giant_unpartitioned_assets,
+unpartitioned_2000_assets_1_run = InstanceSnapshot(assets=unpartitioned_2000_assets)
+unpartitioned_2000_assets_2_random_runs = InstanceSnapshot(
+    assets=unpartitioned_2000_assets,
     n_runs=2,
     randomize_runs=True,
 )
 
 # 2000 assets, roots are daily partitioned
-giant_root_partitioned_assets_1_run = InstanceSnapshot(
+root_partitioned_2000_assets_1_run = InstanceSnapshot(
     assets=RandomAssets(
         name="giant_root_daily_partitioned_assets",
         n_assets=2000,
@@ -266,40 +266,40 @@ giant_root_partitioned_assets_1_run = InstanceSnapshot(
 )
 
 # 500 assets, no partitions
-large_unpartitioned_assets_2_random_runs = InstanceSnapshot(
+unpartitioned_500_assets_2_random_runs = InstanceSnapshot(
     assets=RandomAssets(name="large_unpartitioned_assets", n_assets=500, n_sources=100),
     n_runs=2,
     randomize_runs=True,
 )
 
 # 500 assets, all daily partitioned
-large_all_daily_partitioned_assets = RandomAssets(
+all_daily_partitioned_500_assets = RandomAssets(
     name="large_all_daily_partitioned_assets",
     n_assets=500,
     asset_partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
 )
-large_all_partitioned_assets_2_partition_keys = InstanceSnapshot(
-    assets=large_all_daily_partitioned_assets,
+all_daily_partitioned_500_assets_2_partition_keys = InstanceSnapshot(
+    assets=all_daily_partitioned_500_assets,
     partition_keys_to_backfill=["2020-01-01", "2020-01-02"],
 )
-large_all_partitioned_assets_20_partition_keys = InstanceSnapshot(
-    assets=large_all_daily_partitioned_assets,
+all_daily_partitioned_500_assets_20_partition_keys = InstanceSnapshot(
+    assets=all_daily_partitioned_500_assets,
     partition_keys_to_backfill=[f"2020-01-{i+1:02}" for i in range(20)],
 )
 
 # 100 assets, all hourly partitioned
 hourly_partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
-medium_all_hourly_partitioned_assets = RandomAssets(
-    name="medium_all_hourly_partitioned_assets",
+all_hourly_partitioned_100_assets = RandomAssets(
+    name="all_hourly_partitioned_100_assets",
     n_assets=100,
     asset_partitions_def=hourly_partitions_def,
 )
-medium_all_partitioned_assets_2_partition_keys = InstanceSnapshot(
-    assets=medium_all_hourly_partitioned_assets,
+all_hourly_partitioned_100_assets_2_partition_keys = InstanceSnapshot(
+    assets=all_hourly_partitioned_100_assets,
     partition_keys_to_backfill=["2020-01-01-00:00", "2020-01-02-00:00"],
 )
-medium_all_partitioned_assets_100_partition_keys = InstanceSnapshot(
-    assets=medium_all_hourly_partitioned_assets,
+all_hourly_partitioned_100_assets_100_partition_keys = InstanceSnapshot(
+    assets=all_hourly_partitioned_100_assets,
     partition_keys_to_backfill=hourly_partitions_def.get_partition_keys_in_range(
         PartitionKeyRange("2020-01-01-00:00", "2020-01-05-03:00")
     ),
@@ -311,47 +311,47 @@ medium_all_partitioned_assets_100_partition_keys = InstanceSnapshot(
 # ==============================================
 perf_scenarios = [
     PerfScenario(
-        snapshot=giant_unpartitioned_assets_1_run,
+        snapshot=unpartitioned_2000_assets_1_run,
         n_freshness_policies=0,
         max_execution_time_seconds=10,
     ),
     PerfScenario(
-        snapshot=giant_unpartitioned_assets_1_run,
+        snapshot=unpartitioned_2000_assets_1_run,
         n_freshness_policies=10,
         max_execution_time_seconds=20,
     ),
     PerfScenario(
-        snapshot=giant_unpartitioned_assets_1_run,
+        snapshot=unpartitioned_2000_assets_1_run,
         n_freshness_policies=100,
         max_execution_time_seconds=25,
     ),
     PerfScenario(
-        snapshot=giant_unpartitioned_assets_2_random_runs,
+        snapshot=unpartitioned_2000_assets_2_random_runs,
         n_freshness_policies=0,
         max_execution_time_seconds=10,
     ),
     PerfScenario(
-        snapshot=giant_unpartitioned_assets_2_random_runs,
+        snapshot=unpartitioned_2000_assets_2_random_runs,
         n_freshness_policies=10,
         max_execution_time_seconds=25,
     ),
     PerfScenario(
-        snapshot=large_unpartitioned_assets_2_random_runs,
+        snapshot=unpartitioned_500_assets_2_random_runs,
         n_freshness_policies=0,
         max_execution_time_seconds=5,
     ),
     PerfScenario(
-        snapshot=large_unpartitioned_assets_2_random_runs,
+        snapshot=unpartitioned_500_assets_2_random_runs,
         n_freshness_policies=100,
         max_execution_time_seconds=10,
     ),
     PerfScenario(
-        snapshot=large_all_partitioned_assets_2_partition_keys,
+        snapshot=all_daily_partitioned_500_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=15,
     ),
     PerfScenario(
-        snapshot=medium_all_partitioned_assets_2_partition_keys,
+        snapshot=all_hourly_partitioned_100_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
     ),
@@ -360,7 +360,7 @@ perf_scenarios = [
 
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_reconciliation_perf(scenario: PerfScenario):
-    if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 20:
+    if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 30:
         pytest.skip("Skipping slow test on BK")
 
     scenario.do_scenario()
