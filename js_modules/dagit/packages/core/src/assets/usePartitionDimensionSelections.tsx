@@ -76,8 +76,6 @@ export const usePartitionDimensionSelections = (opts: {
     shouldReadPartitionQueryStringParam = false,
   } = opts;
 
-  console.log({assetHealth});
-
   const serializer = React.useMemo(() => buildSerializer(assetHealth), [assetHealth]);
   const [query, setQuery] = useQueryPersistedState<DimensionQueryState[]>(serializer);
   const [local, setLocal] = React.useState<DimensionQueryState[]>([]);
