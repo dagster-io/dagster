@@ -32,7 +32,10 @@ def monitor_starting_run(
     launch_time = check.not_none(
         run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
     )
-    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
+    if (
+        instance.run_launcher.supports_check_run_worker_health
+        and time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds
+    ):
         msg = (
             "Run timed out due to taking longer than"
             f" {instance.run_monitoring_start_timeout_seconds} seconds to start."
@@ -65,54 +68,48 @@ def monitor_started_run(
 ) -> None:
     run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTED)
-    instance.handle_started_run(run_record, logger)
-    check_health_result = instance.run_launcher.check_run_worker_health(run)
-    if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
-        num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
-        recheck_run = check.not_none(instance.get_run_by_id(run.run_id))
-        status_changed = run.status != recheck_run.status
-        if status_changed:
-            msg = (
-                "Detected run status changed during monitoring loop: "
-                f"{run.status} -> {recheck_run.status}, disregarding for now"
-            )
-            logger.info(msg)
-            return
-        if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
-            msg = (
-                f"Detected run worker status {check_health_result}. Resuming run {run.run_id} with "
-                "a new worker."
-            )
-            logger.info(msg)
-            instance.report_engine_event(msg, run)
-            attempt_number = num_prev_attempts + 1
-            instance.resume_run(
-                run.run_id,
-                workspace,
-                attempt_number,
-            )
-        else:
-            debug_info = ""
-            try:
-                debug_info = instance.run_launcher.get_run_worker_debug_info(run)
-            except Exception:
-                logger.exception("Failure fetching debug info for failed run worker")
-
-            if instance.run_launcher.supports_resume_run:
+    if instance.run_launcher.supports_check_run_worker_health:
+        check_health_result = instance.run_launcher.check_run_worker_health(run)
+        if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
+            num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
+            recheck_run = check.not_none(instance.get_run_by_id(run.run_id))
+            status_changed = run.status != recheck_run.status
+            if status_changed:
                 msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
-                    " failed, because it has surpassed the configured maximum attempts to resume"
-                    f" the run: {instance.run_monitoring_max_resume_run_attempts}."
-                    + (f"\n{debug_info}" if debug_info else "")
+                    "Detected run status changed during monitoring loop: "
+                    f"{run.status} -> {recheck_run.status}, disregarding for now"
+                )
+                logger.info(msg)
+                return
+            if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
+                msg = (
+                    f"Detected run worker status {check_health_result}. Resuming run"
+                    f" {run.run_id} with a new worker."
+                )
+                logger.info(msg)
+                instance.report_engine_event(msg, run)
+                attempt_number = num_prev_attempts + 1
+                instance.resume_run(
+                    run.run_id,
+                    workspace,
+                    attempt_number,
                 )
             else:
-                msg = (
-                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
-                    " failed."
-                    + (f"\n{debug_info}" if debug_info else "")
-                )
-            logger.info(msg)
-            instance.report_run_failed(run, msg)
+                if instance.run_launcher.supports_resume_run:
+                    msg = (
+                        f"Detected run worker status {check_health_result}. Marking run"
+                        f" {run.run_id} as failed, because it has surpassed the configured maximum"
+                        " attempts to resume the run:"
+                        f" {instance.run_monitoring_max_resume_run_attempts}."
+                    )
+                else:
+                    msg = (
+                        f"Detected run worker status {check_health_result}. Marking run"
+                        f" {run.run_id} as failed."
+                    )
+                logger.info(msg)
+                instance.report_run_failed(run, msg)
+    instance.handle_started_run(run_record, logger)
 
 
 def execute_monitoring_iteration(
@@ -121,9 +118,6 @@ def execute_monitoring_iteration(
     _debug_crash_flags: Optional[DebugCrashFlags] = None,
 ) -> Iterator[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
-    check.invariant(
-        instance.run_launcher.supports_check_run_worker_health, "Must use a supported run launcher"
-    )
 
     # TODO: consider limiting number of runs to fetch
     run_records = list(
@@ -150,7 +144,9 @@ def execute_monitoring_iteration(
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(f"Hit error while monitoring run {run_record.dagster_run.run_id}: {str(error_info)}")
+            logger.error(
+                f"Hit error while monitoring run {run_record.dagster_run.run_id}: {str(error_info)}"
+            )
             yield error_info
         else:
             yield
