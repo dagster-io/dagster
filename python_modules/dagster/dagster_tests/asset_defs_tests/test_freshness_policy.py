@@ -1,5 +1,4 @@
 import pytest
-from dagster import AssetKey
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
