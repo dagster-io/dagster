@@ -45,22 +45,6 @@ export const DimensionRangeWizard: React.FC<{
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
 
-  const didSetInitialPartition = React.useRef(false);
-  React.useEffect(() => {
-    if (didSetInitialPartition.current || !partitionKeys.length) {
-      return;
-    }
-    didSetInitialPartition.current = true;
-    const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
-    const partitions = ((query.partition as string) || '').split('|') as string[];
-    for (const partition of partitions) {
-      if (partition && partitionKeys.includes(partition)) {
-        setSelected([partition]);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partitionKeys]);
-
   return (
     <>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
