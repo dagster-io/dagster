@@ -14,7 +14,7 @@ import styled from 'styled-components/macro';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {RunTag} from '../runs/RunTag';
+import {RunTag, TagAction} from '../runs/RunTag';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -28,6 +28,7 @@ interface ITagContainerProps {
   tagsFromDefinition?: PipelineRunTag[];
   tagsFromSession: PipelineRunTag[];
   onRequestEdit: () => void;
+  actions?: TagAction[];
 }
 
 export const TagEditor: React.FC<ITagEditorProps> = ({
@@ -181,7 +182,11 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   );
 };
 
-export const TagContainer = ({tagsFromSession, tagsFromDefinition}: ITagContainerProps) => {
+export const TagContainer = ({
+  tagsFromSession,
+  tagsFromDefinition,
+  actions,
+}: ITagContainerProps) => {
   return (
     <Container>
       <TagList>
