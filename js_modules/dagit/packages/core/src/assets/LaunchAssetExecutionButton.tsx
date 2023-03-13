@@ -210,8 +210,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             <Menu>
               <MenuItem
                 onClick={(e: React.MouseEvent<any>) => {
-                  e.shiftKey = true;
-                  onClick(firstOption.assetKeys, e);
+                  onClick(firstOption.assetKeys, e, true);
                 }}
                 text="Open in lanchpad"
               />
@@ -249,7 +248,11 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
-  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
+  const onClick = async (
+    assetKeys: AssetKey[],
+    e: React.MouseEvent<any>,
+    _forceLaunchpad = false,
+  ) => {
     if (state.type === 'loading') {
       return;
     }
@@ -267,7 +270,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
 
     const assets = result.data.assetNodes;
-    const forceLaunchpad = e.shiftKey;
+    const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
 
