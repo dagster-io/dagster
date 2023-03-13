@@ -62,6 +62,18 @@ const resourceDisplayName = (
     : resource.name;
 };
 
+const SectionHeader: React.FC = (props) => {
+  return (
+    <Box
+      padding={{left: 24, vertical: 16}}
+      background={Colors.Gray50}
+      border={{width: 1, color: Colors.KeylineGray, side: 'all'}}
+    >
+      {props.children}
+    </Box>
+  );
+};
+
 export const ResourceRoot: React.FC<Props> = (props) => {
   useTrackPageView();
 
@@ -128,9 +140,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
               {value: cv.value, type: cv.type},
             ]),
           );
-          const nestedResources = Object.fromEntries(
-            topLevelResourceDetailsOrError.nestedResources.map((nr) => [nr.name, nr.resource]),
-          );
+          const nestedResources = topLevelResourceDetailsOrError.nestedResources;
           const resourceTypeSuccinct = succinctType(topLevelResourceDetailsOrError.resourceType);
           return (
             <div style={{height: '100%', display: 'flex'}}>
@@ -140,7 +150,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                 firstMinSize={400}
                 first={
                   <div style={{overflowY: 'scroll'}}>
-                    {Object.keys(nestedResources).length > 0 && (
+                    {nestedResources.length > 0 && (
                       <Box>
                         <SectionHeader>
                           <Subheading>Resource dependencies</Subheading>
@@ -153,15 +163,11 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                             </tr>
                           </thead>
                           <tbody>
-                            {Object.keys(nestedResources).map((key) => {
+                            {nestedResources.map((resource) => {
                               return (
-                                <tr key={key}>
+                                <tr key={resource.name}>
                                   <td>
-                                    <Box
-                                      flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}
-                                    >
-                                      <strong>{key}</strong>
-                                    </Box>
+                                    <strong>{resource.name}</strong>
                                   </td>
                                   <td colSpan={2}>
                                     <Tag icon="resource">
@@ -169,10 +175,10 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                                       <Link
                                         to={workspacePathFromAddress(
                                           repoAddress,
-                                          `/resources/${nestedResources[key].name}`,
+                                          `/resources/${resource.name}`,
                                         )}
                                       >
-                                        {resourceDisplayName(nestedResources[key])}
+                                        {resourceDisplayName(resource.resource)}
                                       </Link>
                                     </Tag>
                                   </td>
@@ -198,14 +204,12 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                         <tbody>
                           {topLevelResourceDetailsOrError.configFields.map((field) => {
                             const defaultValue = field.defaultValueAsJson;
-                            const type =
-                              field.name in configuredValues
-                                ? configuredValues[field.name].type
-                                : null;
-                            const actualValue =
-                              field.name in configuredValues
-                                ? configuredValues[field.name].value
-                                : defaultValue;
+                            const type = configuredValues.hasOwnProperty(field.name)
+                              ? configuredValues[field.name].type
+                              : null;
+                            const actualValue = configuredValues.hasOwnProperty(field.name)
+                              ? configuredValues[field.name].value
+                              : defaultValue;
 
                             const isDefault = type === 'VALUE' && defaultValue === actualValue;
                             return (
@@ -222,7 +226,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                                 </td>
                                 <td>{remapName(field.configTypeKey)}</td>
                                 <td>
-                                  <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                  <Box flex={{direction: 'row', gap: 8}}>
                                     <Tooltip
                                       content={<>Default: {defaultValue}</>}
                                       canShow={!isDefault}
@@ -329,20 +333,4 @@ const RESOURCE_ROOT_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const SECTION_HEADER_HEIGHT = 48;
-const SectionHeader = styled.div`
-  background-color: ${Colors.Gray50};
-  border: 0;
-  box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
-  cursor: pointer;
-  display: block;
-  width: 100%;
-  margin: 0;
-  height: ${SECTION_HEADER_HEIGHT}px;
-  line-height: ${SECTION_HEADER_HEIGHT}px;
-  text-align: left;
-  padding-left: 24px;
-  font-weight: bold;
 `;
