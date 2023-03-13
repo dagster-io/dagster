@@ -1,0 +1,162 @@
+---
+title: Operationalizing your machine learning pipelines | Dagster Docs
+description: This guide illustrates how to use Dagster to operationaize your machine learning pipeline
+---
+
+# Operationalizing your machine learning pipelines
+
+In this guide, we’ll walk you through how to take your machine learning models and deploy and mantain them in production using Dagster, reliably and efficently.
+
+This guide assumes you have some familiarity with several Dagster concepts, including [software-defined assets](/concepts/assets/software-defined-assets) and [jobs](/concepts/ops-jobs-graphs/jobs).
+
+We will work through several aspects of MLOps, including using assets for different elements of your machine learning pipeline, how to automate model training and monitoring your model's drift.
+
+---
+
+## Machine learning development
+
+Before we go into how to operatialize a machine learning model, let's go over some of the tools you can use in Dagster to develop a machine learning model.
+
+If you are already using Dagster for your ETL pipelines, it is a natural progression to build out and test your models in Dagster.
+
+For this guide, we will be using the hackernews data which is demoed in the [tutorial](/docs/content/tutorial/).
+
+The machine learning model we will walk through is taking the hackernews stories, using the title to predict the number of comments that a story will generate. This will be a supervised model since we have the number of comments for all the previous stories.
+
+### Data Ingestion
+
+First, we will be creating an asset which retrieves all the hackernews records from the previous run to the latest hackernews record.
+
+```python file=/guides/dagster/ml_ops/ml_ops.py startafter=data_ingestion_start endbefore=data_ingestion_end
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
+def hackernews_stories(previous_item):
+    """Get the max ID number from hacker news """
+
+    latest_item = requests.get(f"https://hacker-news.firebaseio.com/v0/maxitem.json").json()
+
+    """Get items based on story ids from the HackerNews items endpoint"""
+    results = []
+    scope = range(previous_item, latest_item)
+    for item_id in scope:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
+
+    df = pd.DataFrame(results)
+    if len(df)>0:
+
+      df = df[df.type=='story']
+      df = df[~df.title.isna()]
+
+    return df, latest_item
+```
+
+### Data Transformation
+
+Now that we have a dataframe with all valid stories, we want to transform that data into something our machine learning model will be able to use.
+
+The first step is taking the dataframe and splitting into a training and test set. In some of your models, you also might choose to have an additional split for a validation set. The reason we split the data is so that we can have a test and/or a validation dataset that is independent of the training set and we can use that to see how well our model did.
+
+```python file=/guides/dagster/ml_ops/ml_ops.py startafter=test_train_split_start endbefore=test_train_split_end
+@asset
+def test_train_split(hackernews_stories):
+    hackernews_stories, max_item = hackernews_stories
+    X = hackernews_stories.title
+    y = hackernews_stories.descendants
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    return X_train, X_test, y_train, y_test
+```
+
+Next, we will take both the training and test data subsets and tokenize the data. To do this, we will be using the training set to fit the tokenizer, in this case we are using [TfidfVectorizer](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html) and then transforming both the training and test set based with that tokenizer.
+
+```python file=/guides/dagster/ml_ops/ml_ops.py startafter=vectorizer_start endbefore=vectorizer_end
+@asset
+def transform_train(test_train_split):
+    X_train, X_test, y_train, y_test = test_train_split
+    vectorizer = TfidfVectorizer()
+    transformed_X_train = vectorizer.fit_transform(X_train)
+    transformed_X_train = transformed_X_train.toarray()
+    y_train = y_train.fillna(0)
+    transformed_y_train = np.array(y_train)
+
+    return vectorizer, transformed_X_train, transformed_y_train
+
+@asset
+def transform_test(test_train_split, transform_train):
+    X_train, X_test, y_train, y_test = test_train_split
+    vectorizer, transformed_X_train, transformed_y_train = transform_train
+    transformed_X_test = vectorizer.transform(X_test)
+    transformed_y_test = np.array(y_test)
+    y_test = y_test.fillna(0)
+    transformed_y_test = np.array(y_test)
+    return transformed_X_test, transformed_y_test
+```
+
+We have also transformed the dataframes into numpy arrays and removed na values to prepare the data for training.
+
+### Model training
+
+At this point, we have X_train, y_train, X_test, y_test ready to go for our model. We can use any number of models to train our model from libraries like [sklearn](https://scikit-learn.org/), [tensorflow](https://www.tensorflow.org/) and [pytorch](https://pytorch.org/).
+
+In our example, we will train two models, one will be a [decision tree](https://scikit-learn.org/stable/modules/tree.html) and the other will be using [XGBoost](https://xgboost.readthedocs.io/en/stable/index.html).
+
+```python file=/guides/dagster/ml_ops/ml_ops.py startafter=models_start endbefore=models_end
+from sklearn.tree import DecisionTreeRegressor
+
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
+def decision_tree(transform_train, transform_test):
+    vectorizer, transformed_X_train, transformed_y_train = transform_train
+    decision_tree1 = DecisionTreeRegressor(max_depth=10)
+    decision_tree1.fit(transformed_X_train, transformed_y_train)
+    transformed_X_test, transformed_y_test = transform_test
+    score = decision_tree1.score(transformed_X_test, transformed_y_test)
+    return decision_tree1, decision_tree1.score(transformed_X_test, transformed_y_test)
+
+import xgboost as xg
+from sklearn.metrics import mean_absolute_error
+
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
+def xgboost(transform_train, transform_test):
+    vectorizer, transformed_X_train, transformed_y_train = transform_train
+    xgb_r = xg.XGBRegressor(objective ='reg:squarederror', eval_metric=mean_absolute_error,
+                  n_estimators = 20)
+    xgb_r.fit(transformed_X_train, transformed_y_train)
+    transformed_X_test, transformed_y_test = transform_test
+    score = xgb_r.score(transformed_X_test, transformed_y_test)
+    return xgb_r, score
+```
+We include freshness policies in the models here which will ensure the upstream data transformation assets are updated to comply with these policies. 
+
+### Evaluate our results
+
+In our model assets, we evaluated each of the models on the test data and in this case, got the error between the predicted and actual results.
+
+Depending on what the objective of your ML model is, you can use this data to set alerts, save model performance history and trigger retraining.
+
+Dagster integrates with [Weights & Biases](/\_apidocs/libraries/dagster-wandb) and an [example](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb) which demonstrates how to use W\&B's artifacts with Dagster.
+
+---
+
+## Machine learning operations
+
+Now that we have set up our data and machine learning pipeline, let's go over some of the Dagster tools to operationalize your pipeline.
+
+### Monitoring
+
+Integrating your machine learning models into your ETL pipelines in Dagster will allow you to understand what assets, including your ML models, were refreshed and when, what has failed. With Dagster, setting up monitoring on the performance on your ML model can not only let you know that something has failed or a model is not performing, but allows you to set up remidation paths such as triggering model retraining that can help automatically resolve issues like model drift. 
+
+### Automation
+
+Whether you have a large or small model, Dagster can help automate the data refreshes and model training based on your specific business needs.
+
+If we think through our hackernews example:
+
+- We want to refresh the hackernews stories and store them in a database using [I/O managers](/concepts/io-management/io-managers) every 10 minutes using a [freshness policy](/concepts/partitions-schedules-sensors/asset-sensors#freshness-policy-sensors)
+- We want to retrain the machine learning model using a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules#basic-schedules)
+- We want to trigger the hyperparameters to optimize the model when the model performance is declining using a [graph backed asset](/concepts/assets/graph-backed-assets)
+- We want to use the model to predict the engagement on some sample titles to see which we should chose to generate maximum engagement on a post. We can set up an input mechanism such as a file in an S3 bucket with a series of titles and a [sensor](concepts/partitions-schedules-sensors/sensors) that triggers a job that populates the predicted values.
+
+### Asset Partitions
+
+By using asset partitions within the scope of a machine learning pipeline, you can use new partitions of labeled data to continuously track the performance of your model.
