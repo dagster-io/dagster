@@ -61,7 +61,7 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
 The graph loaded into Dagster's web UI:
 
 <p align="center">
-  <img width="400px" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/readme-asset-graph.png">
+  <img width="400px" alt="An example asset graph as rendered in the Dagster UI" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
 </p>
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
