@@ -17,8 +17,12 @@ export type PartitionHealthQuery = {
           name: string;
           partitionKeys: Array<string>;
         }>;
-        materializedPartitions:
-          | {__typename: 'DefaultPartitions'; materializedPartitions: Array<string>}
+        assetPartitionStatuses:
+          | {
+              __typename: 'DefaultPartitions';
+              materializedPartitions: Array<string>;
+              failedPartitions: Array<string>;
+            }
           | {
               __typename: 'MultiPartitions';
               primaryDimensionName: string;
@@ -29,11 +33,16 @@ export type PartitionHealthQuery = {
                 primaryDimStartTime: number | null;
                 primaryDimEndTime: number | null;
                 secondaryDim:
-                  | {__typename: 'DefaultPartitions'; materializedPartitions: Array<string>}
+                  | {
+                      __typename: 'DefaultPartitions';
+                      materializedPartitions: Array<string>;
+                      failedPartitions: Array<string>;
+                    }
                   | {
                       __typename: 'TimePartitions';
                       ranges: Array<{
                         __typename: 'TimePartitionRange';
+                        status: Types.PartitionRangeStatus;
                         startTime: number;
                         endTime: number;
                         startKey: string;
@@ -46,6 +55,7 @@ export type PartitionHealthQuery = {
               __typename: 'TimePartitions';
               ranges: Array<{
                 __typename: 'TimePartitionRange';
+                status: Types.PartitionRangeStatus;
                 startTime: number;
                 endTime: number;
                 startKey: string;

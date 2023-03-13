@@ -672,7 +672,6 @@ class SqlEventLogStorage(EventLogStorage):
         if len(removed_asset_keys) > 0:
             keys_to_check = []
             keys_to_check.extend([key.to_string() for key in removed_asset_keys])  # type: ignore  # (bad sig?)
-            keys_to_check.extend([key.to_string(legacy=True) for key in removed_asset_keys])  # type: ignore  # (bad sig?)
             remaining_asset_keys = [
                 AssetKey.from_db_string(row[0])
                 for row in conn.execute(
@@ -685,7 +684,6 @@ class SqlEventLogStorage(EventLogStorage):
             if to_remove:
                 keys_to_remove = []
                 keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
-                keys_to_remove.extend([key.to_string(legacy=True) for key in to_remove])  # type: ignore  # (bad sig?)
                 conn.execute(
                     AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
                         AssetKeyTable.c.asset_key.in_(keys_to_remove)
@@ -783,12 +781,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         if event_records_filter.asset_key:
             query = query.where(
-                db.or_(
-                    SqlEventLogStorageTable.c.asset_key
-                    == event_records_filter.asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key
-                    == event_records_filter.asset_key.to_string(legacy=True),
-                )
+                SqlEventLogStorageTable.c.asset_key == event_records_filter.asset_key.to_string(),
             )
 
         if event_records_filter.asset_partitions:
@@ -1322,10 +1315,7 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
                     .where(
-                        db.or_(
-                            AssetKeyTable.c.asset_key == asset_key.to_string(),
-                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                        )
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
                     .values(cached_status_data=serialize_dagster_namedtuple(cache_values))
                 )
@@ -1431,10 +1421,7 @@ class SqlEventLogStorage(EventLogStorage):
         for i in range(len(assets_details)):
             asset_key, asset_details = asset_keys[i], assets_details[i]
             if asset_details and asset_details.last_wipe_timestamp:
-                asset_key_in_row = db.or_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                )
+                asset_key_in_row = SqlEventLogStorageTable.c.asset_key == asset_key.to_string()
                 # If asset key is in row, keep the row if the timestamp > wipe timestamp, else remove the row.
                 # If asset key is not in row, keep the row.
                 query = query.where(
@@ -1570,10 +1557,7 @@ class SqlEventLogStorage(EventLogStorage):
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
             )
             .where(
-                db.or_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                )
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
             )
             .group_by(
                 SqlEventLogStorageTable.c.run_id,
@@ -1648,10 +1632,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
                 .values(**wiped_values)
                 .where(
-                    db.or_(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
+                    AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
 
@@ -1670,13 +1651,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string() for asset_key in asset_keys]
-                        ),
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string(legacy=True) for asset_key in asset_keys]
-                        ),
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in asset_keys]
                     ),
                     SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                     SqlEventLogStorageTable.c.dagster_event_type
@@ -1705,6 +1681,118 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_count_by_partition
 
+    def get_latest_asset_partition_materialization_attempts_without_materializations(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, Tuple[str, int]]:
+        """
+        Fetch the latest materialzation and materialization planned events for each partition of the given asset.
+        Return the partitions that have a materialization planned event but no matching (same run) materialization event.
+        These materializations could be in progress, or they could have failed. A separate query checking the run status
+        is required to know.
+
+        Returns a mapping of partition to [run id, event id].
+        """
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        latest_event_ids_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                )
+            )
+            .group_by(
+                SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
+            )
+        )
+
+        assets_details = self._get_assets_details([asset_key])
+        latest_event_ids_subquery = self._add_assets_wipe_filter_to_query(
+            latest_event_ids_subquery, assets_details, [asset_key]
+        ).alias("latest_materialization_event_ids")
+
+        latest_events_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    SqlEventLogStorageTable.c.partition,
+                    SqlEventLogStorageTable.c.run_id,
+                    SqlEventLogStorageTable.c.id,
+                ]
+            )
+            .select_from(
+                latest_event_ids_subquery.join(
+                    SqlEventLogStorageTable,
+                    SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
+                ),
+            )
+            .alias("latest_materialization_events")
+        )
+
+        materialization_planned_events = (
+            db.select(
+                [
+                    latest_events_subquery.c.dagster_event_type,
+                    latest_events_subquery.c.partition,
+                    latest_events_subquery.c.run_id,
+                    latest_events_subquery.c.id,
+                ]
+            )
+            .where(
+                latest_events_subquery.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
+            )
+            .alias("materialization_planned_events")
+        )
+
+        materialization_events = (
+            db.select(
+                [
+                    latest_events_subquery.c.dagster_event_type,
+                    latest_events_subquery.c.partition,
+                    latest_events_subquery.c.run_id,
+                ]
+            )
+            .where(
+                latest_events_subquery.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION.value
+            )
+            .alias("materialization_events")
+        )
+
+        query = (
+            db.select(
+                [
+                    materialization_planned_events.c.partition,
+                    materialization_planned_events.c.run_id,
+                    materialization_planned_events.c.id,
+                ]
+            )
+            .select_from(
+                materialization_planned_events.join(
+                    materialization_events,
+                    db.and_(
+                        materialization_planned_events.c.partition
+                        == materialization_events.c.partition,
+                        materialization_planned_events.c.run_id == materialization_events.c.run_id,
+                    ),
+                    isouter=True,
+                )
+            )
+            .where(materialization_events.c.run_id == None)  # noqa: E711
+        )
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+            return {row["partition"]: (row["run_id"], row["id"]) for row in rows}
+
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for
         # partitions storage. Should be updated when the partitions storage schema changes.
@@ -1720,8 +1808,10 @@ class SqlEventLogStorage(EventLogStorage):
             DynamicPartitionsTable.c.partitions_def_name,
             DynamicPartitionsTable.c.partition,
         ]
-        query = db.select(columns).where(
-            DynamicPartitionsTable.c.partitions_def_name == partitions_def_name
+        query = (
+            db.select(columns)
+            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .order_by(DynamicPartitionsTable.c.id)
         )
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
@@ -1750,7 +1840,12 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchall()
-            new_keys = set(partition_keys) - set([row[0] for row in existing_rows])
+            existing_keys = set([row[0] for row in existing_rows])
+            new_keys = [
+                partition_key
+                for partition_key in partition_keys
+                if partition_key not in existing_keys
+            ]
 
             if new_keys:
                 conn.execute(

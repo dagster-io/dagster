@@ -3,10 +3,10 @@ from hashlib import sha256
 from typing import Any
 
 from dagster import (
+    DataVersion,
     Definitions,
     InputContext,
     IOManager,
-    LogicalVersion,
     OutputContext,
     asset,
     file_relative_path,
@@ -78,7 +78,7 @@ class ExternalFileInputManager(IOManager):
 @observable_source_asset(io_manager_key="external_file_input_manager")
 def input_number():
     with open(FILE_PATH) as ff:
-        return LogicalVersion(sha256_digest_from_str(ff.read()))
+        return DataVersion(sha256_digest_from_str(ff.read()))
 
 
 @asset(code_version="v3")
@@ -87,12 +87,12 @@ def versioned_number(input_number):
 
 
 @asset(code_version="v1")
-def multipled_number(versioned_number):
+def multiplied_number(versioned_number):
     return versioned_number * 2
 
 
 defs = Definitions(
-    assets=[input_number, versioned_number, multipled_number],
+    assets=[input_number, versioned_number, multiplied_number],
     resources={
         "io_manager": NumberTextFileIOManager.with_directory(
             os.path.join(get_system_temp_directory(), "versioning_example")

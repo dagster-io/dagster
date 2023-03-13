@@ -159,7 +159,10 @@ class TimeWindowPartitionMapping(
         to_partitions_def = cast(TimeWindowPartitionsDefinition, to_partitions_def)
 
         if start_offset != 0 or end_offset != 0:
-            check.invariant(from_partitions_def.cron_schedule == to_partitions_def.cron_schedule)
+            check.invariant(
+                from_partitions_def.cron_schedule == to_partitions_def.cron_schedule,
+                "Offset can't be used when cron schedules don't match",
+            )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")

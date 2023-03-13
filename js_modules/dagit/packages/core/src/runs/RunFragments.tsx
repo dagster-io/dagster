@@ -26,6 +26,9 @@ export const RUN_FRAGMENT = gql`
     runConfigYaml
     runId
     canTerminate
+    hasReExecutePermission
+    hasTerminatePermission
+    hasDeletePermission
     status
     mode
     tags {

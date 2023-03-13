@@ -408,12 +408,11 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               />
               <LaunchAssetObservationButton
                 preferredJobName={explorerPath.pipelineName}
-                assetKeys={(selectedDefinitions.length
-                  ? selectedDefinitions
-                  : allDefinitionsForMaterialize
-                )
-                  .filter((a) => a.isObservable)
-                  .map((n) => n.assetKey)}
+                scope={
+                  selectedDefinitions.length
+                    ? {selected: selectedDefinitions.filter((a) => a.isObservable)}
+                    : {all: allDefinitionsForMaterialize.filter((a) => a.isObservable)}
+                }
               />
               <LaunchAssetExecutionButton
                 preferredJobName={explorerPath.pipelineName}

@@ -387,6 +387,9 @@ def container_context_config(configured_secret):
             },
             "task_role_arn": "fake-task-role",
             "execution_role_arn": "fake-execution-role",
+            "runtime_platform": {
+                "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL",
+            },
         },
     }
 

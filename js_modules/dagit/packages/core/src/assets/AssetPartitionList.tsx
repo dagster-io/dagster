@@ -7,16 +7,23 @@ import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
 
-export const AssetPartitionList: React.FC<{
-  partitions: {dimensionKey: string; state: PartitionState}[];
+export interface AssetPartitionListProps {
+  partitions: string[];
+  stateForPartition: (dimensionKey: string) => PartitionState;
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
-}> = ({focusedDimensionKey, setFocusedDimensionKey, partitions}) => {
+}
+export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
+  focusedDimensionKey,
+  setFocusedDimensionKey,
+  partitions,
+  stateForPartition,
+}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: partitions.length,
-    getItemKey: (idx) => partitions[idx].dimensionKey,
+    getItemKey: (idx) => partitions[idx],
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 10,
@@ -26,10 +33,10 @@ export const AssetPartitionList: React.FC<{
 
   React.useEffect(() => {
     if (focusedDimensionKey) {
-      rowVirtualizer.scrollToIndex(
-        partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey),
-        {smoothScroll: false, align: 'auto'},
-      );
+      rowVirtualizer.scrollToIndex(partitions.indexOf(focusedDimensionKey), {
+        smoothScroll: false,
+        align: 'auto',
+      });
     }
   }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
@@ -42,18 +49,18 @@ export const AssetPartitionList: React.FC<{
         if (!setFocusedDimensionKey || !shift || !focusedDimensionKey || e.isDefaultPrevented()) {
           return;
         }
-        const nextIdx = partitions.findIndex((p) => p.dimensionKey === focusedDimensionKey) + shift;
+        const nextIdx = partitions.indexOf(focusedDimensionKey) + shift;
         const next = partitions[nextIdx];
         if (next) {
           e.preventDefault();
-          setFocusedDimensionKey(next.dimensionKey);
+          setFocusedDimensionKey(next);
         }
       }}
     >
       <Inner $totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
-          const {dimensionKey, state} = partitions[index];
-
+          const dimensionKey = partitions[index];
+          const state = stateForPartition(dimensionKey);
           return (
             <AssetListRow
               key={key}
@@ -89,6 +96,7 @@ export const AssetPartitionList: React.FC<{
                     state === PartitionState.MISSING) && (
                     <StateDot state={PartitionState.MISSING} />
                   )}
+                  {state === PartitionState.FAILURE && <StateDot state={PartitionState.FAILURE} />}
                 </Box>
               </Box>
             </AssetListRow>
@@ -99,7 +107,7 @@ export const AssetPartitionList: React.FC<{
   );
 };
 
-const StateDot = ({state}: {state: PartitionState}) => (
+export const StateDot = ({state}: {state: PartitionState}) => (
   <div
     key={state}
     style={{

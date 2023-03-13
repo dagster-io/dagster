@@ -1,6 +1,7 @@
 import importlib
 import os
 import warnings
+from datetime import datetime
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -36,6 +37,7 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -64,7 +66,7 @@ from .executor_definition import ExecutorDefinition, multi_or_in_process_executo
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
+from .metadata import RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
@@ -105,7 +107,7 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
@@ -594,6 +596,7 @@ class JobDefinition(PipelineDefinition):
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
+        current_time: Optional[datetime] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -609,6 +612,8 @@ class JobDefinition(PipelineDefinition):
             run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
                 a :py:class:`PartitionedConfig`, this value will override replace the config
                 provided by it.
+            current_time (Optional[datetime): Used to determine which time-partitions exist.
+                Defaults to now.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -624,7 +629,9 @@ class JobDefinition(PipelineDefinition):
                     "dynamic partition set"
                 )
 
-        partition = partition_set.get_partition(partition_key, instance)
+        partition = partition_set.get_partition(
+            partition_key, dynamic_partitions_store=instance, current_time=current_time
+        )
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags

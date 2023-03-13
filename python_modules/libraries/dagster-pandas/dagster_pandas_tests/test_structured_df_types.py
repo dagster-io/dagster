@@ -95,7 +95,7 @@ def test_failing_type_eval_column():
     assert len(output_metadata) == 1
     column_const = output_metadata[0]
     assert column_const.label == "columns-constraint-metadata"
-    column_const_data = column_const.entry_data.data
+    column_const_data = column_const.value.data
     assert column_const_data["expected"] == {
         "foo": {
             "in_range_validation_fn": in_range_validator.__doc__.strip(),
@@ -139,7 +139,7 @@ def test_failing_type_eval_aggregate():
     assert len(output_metadata) == 1
     column_const = output_metadata[0]
     assert column_const.label == "column-aggregates-constraint-metadata"
-    column_const_data = column_const.entry_data.data
+    column_const_data = column_const.value.data
     assert column_const_data["expected"] == {
         "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}
     }
@@ -173,7 +173,7 @@ def test_failing_type_eval_dataframe():
     assert len(output_metadata) == 1
     column_const = output_metadata[0]
     assert column_const.label == "dataframe-constraint-metadata"
-    column_const_data = column_const.entry_data.data
+    column_const_data = column_const.value.data
     assert column_const_data["expected"] == ["foo", "bar"]
     assert column_const_data["actual"] == {"extra_columns": ["baz"], "missing_columns": ["bar"]}
 
@@ -205,7 +205,7 @@ def test_failing_type_eval_multi_error():
     agg_data = output_metadata[0]
 
     assert agg_data.label == "column-aggregates-constraint-metadata"
-    agg_metadata = agg_data.entry_data.data
+    agg_metadata = agg_data.value.data
     assert agg_metadata["expected"] == {
         "bar": {"all_unique_validator": all_unique_validator.__doc__.strip()}
     }
@@ -213,7 +213,7 @@ def test_failing_type_eval_multi_error():
     assert agg_metadata["actual"] == {"bar": {"all_unique_validator": [10.0]}}
     column_const = output_metadata[1]
     assert column_const.label == "columns-constraint-metadata"
-    column_const_data = column_const.entry_data.data
+    column_const_data = column_const.value.data
     assert column_const_data["expected"] == {
         "foo": {
             "in_range_validation_fn": in_range_validator.__doc__.strip(),
@@ -232,6 +232,6 @@ def test_failing_type_eval_multi_error():
 
     df_data = output_metadata[2]
     assert df_data.label == "dataframe-constraint-metadata"
-    df_metadata = df_data.entry_data.data
+    df_metadata = df_data.value.data
     assert df_metadata["expected"] == ["foo", "bar"]
     assert df_metadata["actual"] == {"extra_columns": ["baz"], "missing_columns": []}

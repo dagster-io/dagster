@@ -1,0 +1,16 @@
+version: "3.7"
+
+services:
+  test-postgres-db-airflow:
+    image: postgres:11
+    container_name: airflow-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "airflow"
+      POSTGRES_USER: "airflow"
+      POSTGRES_DB: "airflow"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 3s
+      retries: 10

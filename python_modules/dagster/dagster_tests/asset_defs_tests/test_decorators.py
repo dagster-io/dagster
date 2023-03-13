@@ -8,6 +8,7 @@ from dagster import (
     AssetOut,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    FreshnessPolicy,
     In,
     Nothing,
     OpExecutionContext,
@@ -824,21 +825,28 @@ def test_graph_asset_decorator_no_args():
     assert my_graph.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
-def test_graph_asset_group_name():
+def test_graph_asset_with_args():
     @op
-    def my_op1(x):  # pylint: disable=unused-argument
+    def my_op1(x):
         return x
 
     @op
     def my_op2(y):
         return y
 
-    @graph_asset(group_name="group1")
+    @graph_asset(
+        group_name="group1",
+        metadata={"my_metadata": "some_metadata"},
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=5),
+    )
     def my_asset(x):
         return my_op2(my_op1(x))
 
-    # The asset key is the function name when there is only one output
     assert my_asset.group_names_by_key[AssetKey("my_asset")] == "group1"
+    assert my_asset.metadata_by_key[AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
+    assert my_asset.freshness_policies_by_key[AssetKey("my_asset")] == FreshnessPolicy(
+        maximum_lag_minutes=5
+    )
 
 
 def test_graph_asset_partitioned():
@@ -917,7 +925,11 @@ def test_graph_multi_asset_decorator():
         return 4, 5
 
     @graph_multi_asset(
-        outs={"first_asset": AssetOut(), "second_asset": AssetOut()}, group_name="grp"
+        outs={
+            "first_asset": AssetOut(),
+            "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
+        },
+        group_name="grp",
     )
     def two_assets(x, y):
         one, two = two_in_two_out(x, y)
@@ -930,6 +942,11 @@ def test_graph_multi_asset_decorator():
 
     assert two_assets.group_names_by_key[AssetKey("first_asset")] == "grp"
     assert two_assets.group_names_by_key[AssetKey("second_asset")] == "grp"
+
+    assert two_assets.freshness_policies_by_key.get(AssetKey("first_asset")) is None
+    assert two_assets.freshness_policies_by_key[AssetKey("second_asset")] == FreshnessPolicy(
+        maximum_lag_minutes=5
+    )
 
     @asset
     def x():

@@ -40,6 +40,7 @@ import download_for_offline from '../icon-svgs/download_for_offline.svg';
 import drag_handle from '../icon-svgs/drag_handle.svg';
 import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
 import edit from '../icon-svgs/edit.svg';
+import editor_role from '../icon-svgs/editor-role.svg';
 import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
@@ -87,6 +88,10 @@ import panel_show_left from '../icon-svgs/panel_show_left.svg';
 import panel_show_right from '../icon-svgs/panel_show_right.svg';
 import panel_show_top from '../icon-svgs/panel_show_top.svg';
 import partition from '../icon-svgs/partition.svg';
+import partition_failure from '../icon-svgs/partition_failure.svg';
+import partition_missing from '../icon-svgs/partition_missing.svg';
+import partition_stale from '../icon-svgs/partition_stale.svg';
+import partition_success from '../icon-svgs/partition_success.svg';
 import people from '../icon-svgs/people.svg';
 import refresh from '../icon-svgs/refresh.svg';
 import replay from '../icon-svgs/replay.svg';
@@ -149,6 +154,10 @@ export const Icons = {
   op_dynamic: bolt,
   partition_set: schedule,
   partition,
+  partition_missing,
+  partition_success,
+  partition_stale,
+  partition_failure,
   repo: source,
   resource: layers,
   run: history,
@@ -183,6 +192,7 @@ export const Icons = {
   gitlab,
   youtube,
   arrow_indent,
+  editor_role,
 
   graph_downstream,
   graph_upstream,

@@ -10,7 +10,10 @@ import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-import {CodeLocationStatusQuery} from './types/useCodeLocationsStatus.types';
+import {
+  CodeLocationStatusQuery,
+  CodeLocationStatusQueryVariables,
+} from './types/useCodeLocationsStatus.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -215,12 +218,15 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   };
 
-  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    skip,
-    onCompleted: onLocationUpdate,
-  });
+  const queryData = useQuery<CodeLocationStatusQuery, CodeLocationStatusQueryVariables>(
+    CODE_LOCATION_STATUS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      skip,
+      onCompleted: onLocationUpdate,
+    },
+  );
 
   useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
 

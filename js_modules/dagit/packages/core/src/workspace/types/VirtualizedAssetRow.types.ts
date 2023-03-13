@@ -22,10 +22,10 @@ export type SingleAssetQuery = {
           id: string;
           computeKind: string | null;
           opNames: Array<string>;
-          currentLogicalVersion: string | null;
-          projectedLogicalVersion: string | null;
+          staleStatus: Types.StaleStatus | null;
           groupName: string | null;
           isSource: boolean;
+          hasMaterializePermission: boolean;
           description: string | null;
           repository: {
             __typename: 'Repository';
@@ -54,10 +54,17 @@ export type SingleAssetQuery = {
             timestamp: string;
             runId: string;
           }>;
+          staleCauses: Array<{
+            __typename: 'StaleCause';
+            reason: string;
+            key: {__typename: 'AssetKey'; path: Array<string>};
+            dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
+          }>;
           partitionStats: {
             __typename: 'PartitionStats';
             numMaterialized: number;
             numPartitions: number;
+            numFailed: number;
           } | null;
           partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         } | null;

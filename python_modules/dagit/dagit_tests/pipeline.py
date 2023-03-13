@@ -20,7 +20,7 @@ def math():
 
 
 @daily_schedule(
-    pipeline_name="math",
+    job_name="math",
     start_date=today_at_midnight(),
 )
 def my_schedule(_):

@@ -321,9 +321,9 @@ def _validate_resource_requirements(
 
 
 class BoundOpExecutionContext(OpExecutionContext):
-    """The solid execution context that is passed to the compute function during invocation.
+    """The op execution context that is passed to the compute function during invocation.
 
-    This context is bound to a specific solid definition, for which the resources and config have
+    This context is bound to a specific op definition, for which the resources and config have
     been validated.
     """
 
@@ -422,7 +422,7 @@ class BoundOpExecutionContext(OpExecutionContext):
     def run_config(self) -> Mapping[str, object]:
         run_config: Dict[str, object] = {}
         if self._op_config:
-            run_config["solids"] = {self._op_def.name: {"config": self._op_config}}
+            run_config["ops"] = {self._op_def.name: {"config": self._op_config}}
         run_config["resources"] = self._resources_config
         return run_config
 
@@ -607,7 +607,7 @@ def build_op_context(
     config: Any = None,
     partition_key: Optional[str] = None,
     mapping_key: Optional[str] = None,
-) -> OpExecutionContext:
+) -> UnboundOpExecutionContext:
     """Builds op execution context from provided parameters.
 
     ``build_op_context`` can be used as either a function or context manager. If there is a
@@ -641,66 +641,12 @@ def build_op_context(
         )
 
     op_config = op_config if op_config else config
-    return build_solid_context(
-        resources=resources,
-        resources_config=resources_config,
-        solid_config=op_config,
-        instance=instance,
-        partition_key=partition_key,
-        mapping_key=mapping_key,
-    )
-
-
-def build_solid_context(
-    resources: Optional[Mapping[str, Any]] = None,
-    solid_config: Any = None,
-    resources_config: Optional[Mapping[str, Any]] = None,
-    instance: Optional[DagsterInstance] = None,
-    config: Any = None,
-    partition_key: Optional[str] = None,
-    mapping_key: Optional[str] = None,
-) -> UnboundOpExecutionContext:
-    """Builds solid execution context from provided parameters.
-
-    ``build_solid_context`` can be used as either a function or context manager. If there is a
-    provided resource that is a context manager, then ``build_solid_context`` must be used as a
-    context manager. This function can be used to provide the context argument when directly
-    invoking a solid.
-
-    Args:
-        resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
-            either values or resource definitions.
-        solid_config (Optional[Any]): The solid config to provide to the context. The value provided
-            here will be available as ``context.op_config``.
-        resources_config (Optional[Dict[str, Any]]): Configuration for any resource definitions
-            provided to the resources arg. The configuration under a specific key should match the
-            resource under a specific key in the resources dictionary.
-        instance (Optional[DagsterInstance]): The dagster instance configured for the context.
-            Defaults to DagsterInstance.ephemeral().
-
-    Examples:
-        .. code-block:: python
-
-            context = build_solid_context()
-            solid_to_invoke(context)
-
-            with build_solid_context(resources={"foo": context_manager_resource}) as context:
-                solid_to_invoke(context)
-    """
-    if solid_config and config:
-        raise DagsterInvalidInvocationError(
-            "Attempted to invoke ``build_solid_context`` with both ``solid_config``, and its "
-            "legacy version, ``config``. Please provide one or the other."
-        )
-
-    solid_config = solid_config if solid_config else config
-
     return UnboundOpExecutionContext(
         resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
         resources_config=check.opt_mapping_param(
             resources_config, "resources_config", key_type=str
         ),
-        op_config=solid_config,
+        op_config=op_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),

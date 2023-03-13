@@ -118,8 +118,8 @@ def test_pandera_schema_to_dagster_type(schema):
     assert isinstance(dagster_type, DagsterType)
     assert len(dagster_type.metadata_entries) == 1
     schema_entry = dagster_type.metadata_entries[0]
-    assert isinstance(schema_entry.entry_data, TableSchemaMetadataValue)
-    assert schema_entry.entry_data.schema == TableSchema(
+    assert isinstance(schema_entry.value, TableSchemaMetadataValue)
+    assert schema_entry.value.schema == TableSchema(
         constraints=TableConstraints(other=["sum(a) > sum(b)."]),
         columns=[
             TableColumn(

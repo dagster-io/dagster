@@ -1,10 +1,12 @@
-from typing import List, Optional, Tuple
+import os
+from typing import List, Mapping, Optional, Tuple
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
 from dagster import (
     Definitions,
     JobDefinition,
+    ResourceDefinition,
     ScheduleDefinition,
     _check as check,
 )
@@ -18,14 +20,17 @@ from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster_airflow.resources import (
     make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
 )
+from dagster_airflow.resources.airflow_ephemeral_db import AirflowEphemeralDatabase
+from dagster_airflow.resources.airflow_persistent_db import AirflowPersistentDatabase
 from dagster_airflow.utils import (
-    create_airflow_connections,
+    is_airflow_2_loaded_in_environment,
 )
 
 
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag: DagBag,
     connections: Optional[List[Connection]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> Definitions:
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
@@ -49,17 +54,21 @@ def make_dagster_definitions_from_airflow_dag_bag(
     """
     check.inst_param(dag_bag, "dag_bag", DagBag)
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
-    schedules, jobs = make_schedules_and_jobs_from_airflow_dag_bag(
-        dag_bag,
-        connections,
-    )
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+    if resource_defs is None or "airflow_db" not in resource_defs:
+        resource_defs = dict(resource_defs) if resource_defs else {}
+        resource_defs["airflow_db"] = make_ephemeral_airflow_db_resource(connections=connections)
 
-    airflow_database_resource = make_ephemeral_airflow_db_resource(connections=connections)
+    schedules, jobs = make_schedules_and_jobs_from_airflow_dag_bag(
+        dag_bag=dag_bag,
+        connections=connections,
+        resource_defs=resource_defs,
+    )
 
     return Definitions(
         schedules=schedules,
         jobs=jobs,
-        resources={"airflow_db": airflow_database_resource},
+        resources=resource_defs,
     )
 
 
@@ -67,6 +76,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     dag_path: str,
     safe_mode: bool = True,
     connections: Optional[List[Connection]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> Definitions:
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -98,8 +108,27 @@ def make_dagster_definitions_from_airflow_dags_path(
     check.str_param(dag_path, "dag_path")
     check.bool_param(safe_mode, "safe_mode")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
-    # add connections to airflow so that dag evaluation works
-    create_airflow_connections(connections)
+    resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
+    if resource_defs is None or "airflow_db" not in resource_defs:
+        resource_defs = dict(resource_defs) if resource_defs else {}
+        resource_defs["airflow_db"] = make_ephemeral_airflow_db_resource(connections=connections)
+
+    if (
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        == "AirflowEphemeralDatabase"
+    ):
+        AirflowEphemeralDatabase._initialize_database(connections=connections)
+    elif (
+        resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
+        == "AirflowPersistentDatabase"
+    ):
+        AirflowPersistentDatabase._initialize_database(
+            uri=os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
+            if is_airflow_2_loaded_in_environment()
+            else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", ""),
+            connections=connections,
+        )
+
     dag_bag = DagBag(
         dag_folder=dag_path,
         include_examples=False,  # Exclude Airflow example dags
@@ -109,10 +138,13 @@ def make_dagster_definitions_from_airflow_dags_path(
     return make_dagster_definitions_from_airflow_dag_bag(
         dag_bag=dag_bag,
         connections=connections,
+        resource_defs=resource_defs,
     )
 
 
-def make_dagster_definitions_from_airflow_example_dags() -> Definitions:
+def make_dagster_definitions_from_airflow_example_dags(
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+) -> Definitions:
     """Construct a Dagster repository for Airflow's example DAGs.
 
     Usage:
@@ -140,12 +172,15 @@ def make_dagster_definitions_from_airflow_example_dags() -> Definitions:
     # 'search_catalog' is missing a required position argument '_'. It is fixed in airflow v2
     patch_airflow_example_dag(dag_bag)
 
-    return make_dagster_definitions_from_airflow_dag_bag(dag_bag=dag_bag)
+    return make_dagster_definitions_from_airflow_dag_bag(
+        dag_bag=dag_bag, resource_defs=resource_defs
+    )
 
 
 def make_schedules_and_jobs_from_airflow_dag_bag(
     dag_bag: DagBag,
     connections: Optional[List[Connection]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> Tuple[List[ScheduleDefinition], List[JobDefinition]]:
     """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 
@@ -175,7 +210,9 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
             )
         else:
             job_defs.append(
-                make_dagster_job_from_airflow_dag(dag=dag, tags=None, connections=connections)
+                make_dagster_job_from_airflow_dag(
+                    dag=dag, tags=None, connections=connections, resource_defs=resource_defs
+                )
             )
 
         count += 1

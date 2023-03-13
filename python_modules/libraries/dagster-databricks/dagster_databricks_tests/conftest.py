@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.fixture
-def databricks_run_config():
+def databricks_run_config() -> dict:
     return {
         "run_name": "dagster-databricks-test",
         "cluster": {"existing": "foo"},

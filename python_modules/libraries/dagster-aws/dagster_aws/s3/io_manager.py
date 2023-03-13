@@ -140,7 +140,7 @@ def s3_pickle_io_manager(init_context):
 
         @asset
         def asset2(asset1):
-            return df[:5]
+            return asset1[:5]
 
         @repository
         def repo():
@@ -153,7 +153,6 @@ def s3_pickle_io_manager(init_context):
                     "s3": s3_resource,
                 },
             )
-        )
 
 
     2. Attach this IO manager to your job to make it available to your ops.

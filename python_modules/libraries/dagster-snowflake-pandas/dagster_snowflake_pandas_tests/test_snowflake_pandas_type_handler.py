@@ -57,13 +57,12 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
 
 
 @contextmanager
-def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
+def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
     snowflake_config = dict(database=db_name, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     with SnowflakeConnection(
         snowflake_config, logging.getLogger("temporary_snowflake_table")
     ).get_connection() as conn:
-        conn.cursor().execute(f"create table {schema_name}.{table_name} ({column_str})")
         try:
             yield table_name
         finally:
@@ -159,7 +158,6 @@ def test_io_manager_with_snowflake_pandas():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="foo string, quux integer",
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -204,7 +202,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
         time_df = pandas.DataFrame(
             {
@@ -256,7 +253,6 @@ def test_time_window_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
     ) as table_name:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
@@ -311,7 +307,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -323,7 +319,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -335,7 +331,7 @@ def test_time_window_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -345,7 +341,6 @@ def test_static_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str=" COLOR string, A string, B int",
     ) as table_name:
         partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
@@ -398,7 +393,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -410,7 +405,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -422,7 +417,7 @@ def test_static_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -432,7 +427,6 @@ def test_multi_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str=" COLOR string, TIME TIMESTAMP_NTZ(9), A string",
     ) as table_name:
         partitions_def = MultiPartitionsDefinition(
             {
@@ -491,7 +485,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -503,7 +497,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -515,7 +509,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
@@ -527,7 +521,7 @@ def test_multi_partitioned_asset():
         )
 
         out_df = snowflake_conn.execute_query(
-            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -537,7 +531,6 @@ def test_dynamic_partitions():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str=" FRUIT string, A string",
     ) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
@@ -583,7 +576,7 @@ def test_dynamic_partitions():
         resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            dynamic_fruits.add_partitions(["apple"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -594,11 +587,11 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            dynamic_fruits.add_partitions(["orange"], instance)
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -609,7 +602,7 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -622,6 +615,6 @@ def test_dynamic_partitions():
             )
 
             out_df = snowflake_conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True, fetch_results=True
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]

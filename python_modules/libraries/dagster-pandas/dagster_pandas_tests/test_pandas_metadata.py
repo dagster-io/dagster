@@ -31,7 +31,7 @@ def test_basic_pd_df_metadata():
     metadata_entries = input_event.step_input_data.type_check_data.metadata_entries
 
     assert metadata_entries[0].label == "row_count"
-    assert metadata_entries[0].entry_data.text == "2"
+    assert metadata_entries[0].value.text == "2"
 
     assert metadata_entries[1].label == "metadata"
-    assert metadata_entries[1].entry_data.data["columns"] == ["num1", "num2"]
+    assert metadata_entries[1].value.data["columns"] == ["num1", "num2"]

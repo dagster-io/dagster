@@ -5,7 +5,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataUserInput,
-    PartitionMetadataEntry,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -28,7 +27,7 @@ def observable_source_asset(
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     group_name: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> "_ObservableSourceAsset":
@@ -46,7 +45,7 @@ def observable_source_asset(
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     group_name: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
@@ -107,7 +106,7 @@ class _ObservableSourceAsset:
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):

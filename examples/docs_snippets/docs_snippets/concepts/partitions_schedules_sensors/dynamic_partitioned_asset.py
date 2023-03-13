@@ -33,10 +33,12 @@ def image_sensor(context):
     new_images = [
         img_filename
         for img_filename in os.listdir(os.getenv("MY_DIRECTORY"))
-        if not images_partitions_def.has_partition(img_filename, context.instance)
+        if not context.instance.has_dynamic_partition(
+            images_partitions_def.name, img_filename
+        )
     ]
 
-    images_partitions_def.add_partitions(new_images, context.instance)
+    context.instance.add_dynamic_partitions(images_partitions_def.name, new_images)
 
     run_requests = [
         images_job.run_request_for_partition(img_filename, instance=context.instance)

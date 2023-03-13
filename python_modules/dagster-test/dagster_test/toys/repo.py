@@ -33,7 +33,7 @@ from dagster_test.toys.many_events import many_events, many_events_subset_job
 from dagster_test.toys.metadata import with_metadata
 from dagster_test.toys.multi_inputs_outputs import multi_inputs_outputs_job
 from dagster_test.toys.notebooks import hello_world_notebook_pipeline
-from dagster_test.toys.partitioned_assets import partitioned_asset_group
+from dagster_test.toys.nothing_input import nothing_job
 from dagster_test.toys.retries import retry_job
 from dagster_test.toys.run_status_sensors import (
     cross_repo_job_sensor,
@@ -88,6 +88,7 @@ def toys_repository():
             longitudinal_job,
             many_events,
             many_events_subset_job,
+            nothing_job,
             sleepy_job,
             retry_job,
             branch_job,
@@ -132,6 +133,20 @@ def asset_groups_repository():
 
 
 @repository
+def nothing_repository():
+    from .nothing_assets import nothing_job
+
+    return [nothing_job]
+
+
+@repository
+def partitioned_assets_repository():
+    from . import partitioned_assets
+
+    return load_assets_from_modules([partitioned_assets])
+
+
+@repository
 def long_asset_keys_repository():
     return [long_asset_keys_group]
 
@@ -139,11 +154,6 @@ def long_asset_keys_repository():
 @repository
 def big_honkin_assets_repository():
     return [load_assets_from_modules([big_honkin_asset_graph_module])]
-
-
-@repository
-def partitioned_asset_repository():
-    return [partitioned_asset_group]
 
 
 @repository

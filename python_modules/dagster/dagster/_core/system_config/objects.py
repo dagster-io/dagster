@@ -71,13 +71,6 @@ class OutputsConfig(NamedTuple):
         else:
             return set()
 
-    @property
-    def type_materializer_specs(self) -> Sequence[object]:
-        if isinstance(self.config, list):
-            return self.config
-        else:
-            return []
-
     def get_output_manager_config(self, output_name) -> object:
         if isinstance(self.config, dict):
             return self.config.get(output_name)
@@ -214,7 +207,6 @@ class ResolvedRunConfig(
             pipeline_def, config_value.get(node_key, {}), mode_def.resource_defs
         )
         input_configs = config_value.get("inputs", {})
-
         return ResolvedRunConfig(
             ops=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
@@ -228,15 +220,15 @@ class ResolvedRunConfig(
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
         env_dict: Dict[str, Mapping[str, object]] = {}
 
-        solid_configs: Dict[str, object] = {}
-        for solid_name, solid_config in self.ops.items():
-            solid_configs[solid_name] = {
-                "config": solid_config.config,
-                "inputs": solid_config.inputs,
-                "outputs": solid_config.outputs.config,
+        op_configs: Dict[str, object] = {}
+        for op_name, op_config in self.ops.items():
+            op_configs[op_name] = {
+                "config": op_config.config,
+                "inputs": op_config.inputs,
+                "outputs": op_config.outputs.config,
             }
 
-        env_dict["solids"] = solid_configs
+        env_dict["ops"] = op_configs
 
         env_dict["execution"] = (
             {self.execution.execution_engine_name: self.execution.execution_engine_config}

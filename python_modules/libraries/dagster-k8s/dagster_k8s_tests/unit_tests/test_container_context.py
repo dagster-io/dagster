@@ -49,6 +49,12 @@ def container_context_config():
                 },
                 "job_spec_config": {"backoff_limit": 120},
             },
+            "env": [
+                {
+                    "name": "DD_AGENT_HOST",
+                    "value_from": {"field_ref": {"field_path": "status.hostIP"}},
+                },
+            ],
         },
     }
 
@@ -96,6 +102,7 @@ def other_container_context_config():
                 },
                 "job_spec_config": {"backoffLimit": 240},
             },
+            "env": [{"name": "FOO", "value": "BAR"}],
         },
     }
 
@@ -171,6 +178,7 @@ def test_empty_container_context(empty_container_context):
         empty_container_context.run_k8s_config[key] == {}
         for key in empty_container_context.run_k8s_config
     )
+    assert empty_container_context.env == []
 
 
 def test_invalid_config():
@@ -305,6 +313,13 @@ def test_merge(empty_container_context, container_context, other_container_conte
         "job_spec_config": {"backoff_limit": 240},
         "job_config": {},
     }
+    _check_same_sorted(
+        merged.env,
+        [
+            {"name": "FOO", "value": "BAR"},
+            {"name": "DD_AGENT_HOST", "value_from": {"field_ref": {"field_path": "status.hostIP"}}},
+        ],
+    )
 
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context

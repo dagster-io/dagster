@@ -3,10 +3,13 @@
 import logging
 import os
 import time
+from logging import Logger
+from typing import cast
 
 import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
@@ -15,6 +18,7 @@ from dagster._core.test_utils import (
     environ,
     instance_for_test,
 )
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
@@ -83,7 +87,7 @@ def instance():
 
 
 @pytest.fixture
-def workspace(instance):
+def workspace_context(instance):
     with create_test_daemon_workspace_context(
         workspace_load_target=EmptyWorkspaceTarget(), instance=instance
     ) as workspace:
@@ -114,7 +118,7 @@ def report_starting_event(instance, run, timestamp):
     instance.handle_new_event(event_record)
 
 
-def test_monitor_starting(instance, logger):
+def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
         pipeline_name="foo",
@@ -125,7 +129,9 @@ def test_monitor_starting(instance, logger):
         instance.get_run_by_id(run.run_id),
         logger,
     )
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTING
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTING
 
     run = create_run_for_test(instance, pipeline_name="foo")
     report_starting_event(instance, run, timestamp=time.time() - 1000)
@@ -135,34 +141,50 @@ def test_monitor_starting(instance, logger):
         instance.get_run_by_id(run.run_id),
         logger,
     )
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.FAILURE
 
 
-def test_monitor_started(instance, workspace, logger):
+def test_monitor_started(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
     run = create_run_for_test(instance, pipeline_name="foo", status=DagsterRunStatus.STARTED)
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast(TestRunLauncher, instance.run_launcher)
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         monitor_started_run(instance, workspace, run, logger)
-        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTED
-        assert instance.run_launcher.launch_run_calls == 0
-        assert instance.run_launcher.resume_run_calls == 0
+        run = instance.get_run_by_id(run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.STARTED
+        assert run_launcher.launch_run_calls == 0
+        assert run_launcher.resume_run_calls == 0
 
     monitor_started_run(instance, workspace, run, logger)
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 0
-    assert instance.run_launcher.resume_run_calls == 1
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
+    assert run_launcher.launch_run_calls == 0
+    assert run_launcher.resume_run_calls == 1
 
     monitor_started_run(instance, workspace, run, logger)
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 0
-    assert instance.run_launcher.resume_run_calls == 2
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
+    assert run_launcher.launch_run_calls == 0
+    assert run_launcher.resume_run_calls == 2
 
     monitor_started_run(instance, workspace, run, logger)
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 0
-    assert instance.run_launcher.resume_run_calls == 3
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.STARTED
+    assert run_launcher.launch_run_calls == 0
+    assert run_launcher.resume_run_calls == 3
 
     # exausted the 3 attempts
     monitor_started_run(instance, workspace, run, logger)
-    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE
-    assert instance.run_launcher.launch_run_calls == 0
-    assert instance.run_launcher.resume_run_calls == 3
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.FAILURE
+    assert run_launcher.launch_run_calls == 0
+    assert run_launcher.resume_run_calls == 3

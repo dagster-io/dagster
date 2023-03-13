@@ -6,7 +6,6 @@ from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._legacy import DagsterRunStatus
 from dagster._utils import file_relative_path
-from dagster._utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     RUN_EVENTS_QUERY,
@@ -708,43 +707,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         assert len(runs_with_tag) == 1
         assert runs_with_tag[0].run_id == run_id
-
-    def test_basic_start_pipeline_execution_with_materialization(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
-
-        with get_temp_file_name() as out_csv_path:
-            run_config = {
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")},
-                        "outputs": [{"result": out_csv_path}],
-                    }
-                }
-            }
-
-            run_logs = sync_execute_get_run_log_data(
-                context=graphql_context,
-                variables={
-                    "executionParams": {
-                        "selector": selector,
-                        "runConfigData": run_config,
-                        "mode": "default",
-                    }
-                },
-            )
-
-            step_mat_event = None
-
-            for message in run_logs["messages"]:
-                if message["__typename"] == "MaterializationEvent":
-                    # ensure only one event
-                    assert step_mat_event is None
-                    step_mat_event = message
-
-            # ensure only one event
-            assert step_mat_event
-            assert len(step_mat_event["metadataEntries"]) == 1
-            assert step_mat_event["metadataEntries"][0]["path"] == out_csv_path
 
     def test_start_job_execution_with_default_config(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "job_with_default_config")

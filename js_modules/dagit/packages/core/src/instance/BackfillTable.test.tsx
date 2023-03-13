@@ -1,9 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
 import * as Alerting from '../app/CustomAlertProvider';
-import {TestProvider} from '../testing/TestProvider';
 
 import {BackfillTable} from './BackfillTable';
 import {
@@ -19,12 +19,12 @@ describe('BackfillTable', () => {
     jest.spyOn(Alerting, 'showCustomAlert');
 
     render(
-      <TestProvider>
+      <MemoryRouter>
         <Alerting.CustomAlertProvider />
         <MockedProvider mocks={[BackfillTableFragmentFailedErrorStatus]}>
           <BackfillTable backfills={[BackfillTableFragmentFailedError]} refetch={() => {}} />
         </MockedProvider>
-      </TestProvider>,
+      </MemoryRouter>,
     );
 
     await waitFor(() => {

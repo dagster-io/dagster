@@ -1,7 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
+import {
+  PermissionFragment,
+  PermissionsQuery,
+  PermissionsQueryVariables,
+} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -11,6 +15,7 @@ export const EXPECTED_PERMISSIONS = {
   start_schedule: true,
   stop_running_schedule: true,
   edit_sensor: true,
+  update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
   reload_repository_location: true,
@@ -18,6 +23,7 @@ export const EXPECTED_PERMISSIONS = {
   wipe_assets: true,
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
+  edit_dynamic_partitions: true,
 };
 
 export type PermissionResult = {
@@ -31,6 +37,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
+  update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;
@@ -40,9 +47,11 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
 };
 
+export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+
 const DEFAULT_PERMISSIONS = {
   enabled: false,
-  disabledReason: 'Disabled by your administrator',
+  disabledReason: DEFAULT_DISABLED_REASON,
 };
 
 export const extractPermissions = (
@@ -94,9 +103,6 @@ type PermissionsContextType = {
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
   rawUnscopedData: PermissionFragment[];
-
-  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data?: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -107,7 +113,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
+  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
@@ -159,10 +165,7 @@ export const usePermissionsForLocation = (locationName: string | null | undefine
   return {...permissionsForLocation, loading};
 };
 
-// todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
-export const usePermissionsDEPRECATED = useUnscopedPermissions;
-
-const PERMISSIONS_QUERY = gql`
+export const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {
     unscopedPermissions: permissions {
       ...PermissionFragment

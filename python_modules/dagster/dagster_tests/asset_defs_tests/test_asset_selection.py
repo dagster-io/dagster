@@ -122,6 +122,17 @@ def test_asset_selection_subtraction(all_assets):
     assert sel.resolve(all_assets) == _asset_keys_of({bob})
 
 
+def test_asset_selection_nothing(all_assets):
+    sel = AssetSelection.keys()
+    assert sel.resolve(all_assets) == set()
+
+    sel = AssetSelection.groups("ladies") - AssetSelection.groups("ladies")
+    assert sel.resolve(all_assets) == set()
+
+    sel = AssetSelection.keys("alice", "bob") - AssetSelection.keys("alice", "bob")
+    assert sel.resolve(all_assets) == set()
+
+
 def test_asset_selection_sinks(all_assets):
     sel = AssetSelection.keys("alice", "bob").sinks()
     assert sel.resolve(all_assets) == _asset_keys_of({bob})

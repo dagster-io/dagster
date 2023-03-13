@@ -168,7 +168,7 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 <TabGroup>
 <TabItem name="Use a template">
 
-#### Using a template
+**With GitHub**
 
 1. Click **Select** to select a template.
 2. Sign in to your GitHub account, if prompted.
@@ -180,15 +180,22 @@ For **Serverless deployments**, there are two ways to deploy your code to Dagste
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
+**With Gitlab**
+
+1. Click **Select** to select a template.
+2. Sign in to your Gitlab account, if prompted.
+3. In Dagster Cloud, define the following:
+   - **Namespace** - Select the group or account to create the new project in.
+   - **Project** - Enter a name for the new project.
+   - Check the **Make git project private** box to make the project private.
+4. When finished, click **Clone and deploy**.
+
+When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
+
 </TabItem>
 <TabItem name="Import an existing project">
 
-#### Import an existing project
-
-To import existing Dagster code, you can use Dagster's GitHub app or the dagster-cloud CLI.
-
-<TabGroup>
-<TabItem name="GitHub integration">
+To import existing Dagster code, you can use Dagster's GitHub / Gitlab app or the dagster-cloud CLI.
 
 **Using the GitHub integration**
 
@@ -218,8 +225,33 @@ After you've committed the file to the repository, come back to Dagster Cloud to
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
-</TabItem>
-<TabItem name="dagster-cloud CLI">
+**Using the Gitlab integration**
+
+Using the Gitlab integration to import an existing Gitlab project also sets up CI/CD for you.
+
+Before you get started, note that the project must have a `dagster_cloud.yaml` file in order for Dagster Cloud to deploy it. This file defines the [code locations](/concepts/code-locations) in your Dagster code.
+
+If this file doesn't currently exist, create it in the root of your repository with the following code:
+
+```yaml
+# dagster_cloud.yaml
+
+locations:
+  - location_name: my_location_name # the name of the code location
+    code_source:
+      package_name: hackernews # the name of the python package associated with the code location
+```
+
+After you've committed the file to the project, come back to Dagster Cloud to complete the import process:
+
+1. Click the **Import an existing project** tab.
+2. Sign in to your Gitlab account, if prompted.
+3. In Dagster Cloud, define the following:
+   - **Namespace** - Select the group or account that the project is in.
+   - **Project** - Select the project.
+4. Click **Deploy**.
+
+When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
 
 **Using the dagster-cloud CLI**
 
@@ -256,9 +288,6 @@ After you've finished setting up your local project, move on to deploying using 
    ```
 
 When finished, [continue to the next step](#step-4-set-up-environment-variables-and-secrets).
-
-</TabItem>
-</TabGroup>
 
 </TabItem>
 </TabGroup>

@@ -8,6 +8,8 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    Nothing,
+    OpExecutionContext,
     Output,
     _check as check,
     multi_asset,
@@ -19,8 +21,9 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -43,6 +46,7 @@ def _build_fivetran_assets(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -62,6 +66,7 @@ def _build_fivetran_assets(
                 io_manager_key=io_manager_key,
                 key=user_facing_asset_keys[table],
                 metadata=_metadata_by_table_name.get(table),
+                dagster_type=Nothing,
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -69,8 +74,9 @@ def _build_fivetran_assets(
         compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
+        op_tags=op_tags,
     )
-    def _assets(context):
+    def _assets(context: OpExecutionContext) -> Any:
         fivetran_output = context.resources.fivetran.sync_and_poll(
             connector_id=connector_id,
             poll_interval=poll_interval,
@@ -88,7 +94,8 @@ def _build_fivetran_assets(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        cast(MetadataEntry, entry).label: cast(MetadataEntry, entry).value
+                        for entry in materialization.metadata_entries
                     },
                 )
                 materialized_asset_keys.add(materialization.asset_key)
@@ -97,11 +104,24 @@ def _build_fivetran_assets(
                 yield materialization
 
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
-        if unmaterialized_asset_keys and infer_missing_tables:
+        if infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
                 yield Output(
                     value=None,
                     output_name="_".join(asset_key.path),
+                )
+
+        else:
+            if unmaterialized_asset_keys:
+                asset_key = list(unmaterialized_asset_keys)[0]
+                output_name = "_".join(asset_key.path)
+                raise DagsterStepOutputNotFoundError(
+                    (
+                        f"Core compute for {context.op_def.name} did not return an output for"
+                        f' non-optional output "{output_name}".'
+                    ),
+                    step_key=context.get_step_execution_context().step.key,
+                    output_name=output_name,
                 )
 
     return [_assets]
@@ -118,6 +138,7 @@ def build_fivetran_assets(
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Build a set of assets for a given Fivetran connector.
@@ -147,6 +168,10 @@ def build_fivetran_assets(
             in destination_tables even if they are not present in the Fivetran sync output. This is useful
             in cases where Fivetran does not sync any data for a table and therefore does not include it
             in the sync output API response.
+        op_tags (Optional[Dict[str, Any]]):
+             A dictionary of tags for the op that computes the asset. Frameworks may expect and
+             require certain metadata to be attached to a op. Values that are not strings will be
+             json encoded and must meet the criteria that json.loads(json.dumps(value)) == value.
 
     **Examples:**
 
@@ -193,6 +218,7 @@ def build_fivetran_assets(
         metadata_by_table_name=metadata_by_table_name,
         group_name=group_name,
         infer_missing_tables=infer_missing_tables,
+        op_tags=op_tags,
     )
 
 

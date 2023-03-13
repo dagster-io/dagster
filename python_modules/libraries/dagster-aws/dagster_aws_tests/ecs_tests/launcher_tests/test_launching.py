@@ -14,7 +14,12 @@ from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
-from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
+from dagster_aws.ecs.launcher import (
+    DEFAULT_LINUX_RESOURCES,
+    DEFAULT_WINDOWS_RESOURCES,
+    RUNNING_STATUSES,
+    STOPPED_STATUSES,
+)
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
 
@@ -386,6 +391,14 @@ def test_reuse_task_definition(instance, ecs):
         container_name,
     )
 
+    # Changed runtime platform fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["runtimePlatform"] = {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"}
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Changed command fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
@@ -461,6 +474,111 @@ def test_reuse_task_definition(instance, ecs):
     )
 
 
+def test_default_task_definition_resources(
+    ecs, instance_cm, run, workspace, pipeline, external_pipeline
+):
+    task_role_arn = "fake-task-role"
+    execution_role_arn = "fake-execution-role"
+    with instance_cm(
+        {
+            "task_definition": {
+                "task_role_arn": task_role_arn,
+                "execution_role_arn": execution_role_arn,
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        task_definition_arn = task["taskDefinitionArn"]
+
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+
+        # Since this is not a windows task def, the default cpu/memory are 256/512
+        assert task_definition["cpu"] == DEFAULT_LINUX_RESOURCES["cpu"]
+        assert task_definition["memory"] == DEFAULT_LINUX_RESOURCES["memory"]
+
+    # But a windows task def has different defaults that are valid for window
+    with instance_cm(
+        {
+            "task_definition": {
+                "task_role_arn": task_role_arn,
+                "execution_role_arn": execution_role_arn,
+                "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        task_definition_arn = task["taskDefinitionArn"]
+
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+
+        # Default cpu/memory is higher on windows
+        assert task_definition["cpu"] == DEFAULT_WINDOWS_RESOURCES["cpu"]
+        assert task_definition["memory"] == DEFAULT_WINDOWS_RESOURCES["memory"]
+
+    # Setting resources on the run launcher ignores the defaults
+    with instance_cm(
+        {
+            "task_definition": {
+                "task_role_arn": task_role_arn,
+                "execution_role_arn": execution_role_arn,
+            },
+            "run_resources": {"cpu": "2048", "memory": "4096"},
+        }
+    ) as instance:
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = list(set(tasks).difference(initial_tasks))[0]
+
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        task_definition_arn = task["taskDefinitionArn"]
+
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+
+        assert task_definition["cpu"] == "2048"
+        assert task_definition["memory"] == "4096"
+
+
 def test_launching_with_task_definition_dict(
     ecs, instance_cm, run, workspace, pipeline, external_pipeline
 ):
@@ -485,6 +603,7 @@ def test_launching_with_task_definition_dict(
                 "execution_role_arn": execution_role_arn,
                 "sidecar_containers": [sidecar],
                 "requires_compatibilities": ["FARGATE"],
+                "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
             },
             "container_name": container_name,
         }
@@ -518,6 +637,9 @@ def test_launching_with_task_definition_dict(
 
         assert task_definition["taskRoleArn"] == task_role_arn
         assert task_definition["executionRoleArn"] == execution_role_arn
+        assert task_definition["runtimePlatform"] == {
+            "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"
+        }
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -721,6 +843,9 @@ def test_launch_run_with_container_context(
     assert (
         task_definition["executionRoleArn"] == container_context_config["ecs"]["execution_role_arn"]
     )
+    assert task_definition["runtimePlatform"] == container_context_config["ecs"]["runtime_platform"]
+    assert task_definition["cpu"] == container_context_config["ecs"]["run_resources"]["cpu"]
+    assert task_definition["memory"] == container_context_config["ecs"]["run_resources"]["memory"]
 
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):

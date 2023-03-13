@@ -32,6 +32,7 @@ from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
@@ -108,7 +109,7 @@ class Manager:
     def reconstitute_pipeline_context(
         self,
         executable_dict: Mapping[str, Any],
-        pipeline_run_dict: Mapping[str, DagsterRun],
+        pipeline_run_dict: Mapping[str, Any],
         node_handle_kwargs: Mapping[str, Any],
         instance_ref_dict: Mapping[str, Any],
         step_key: str,
@@ -140,14 +141,14 @@ class Manager:
         pipeline_def = pipeline.get_definition()
 
         try:
-            instance_ref = unpack_value(instance_ref_dict)
+            instance_ref = cast(InstanceRef, unpack_value(instance_ref_dict))
             instance = DagsterInstance.from_ref(instance_ref)
         except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
 
-        pipeline_run = unpack_value(pipeline_run_dict)
+        pipeline_run = cast(DagsterRun, unpack_value(pipeline_run_dict))
 
         node_handle = NodeHandle.from_dict(node_handle_kwargs)
         op = pipeline_def.get_solid(node_handle)

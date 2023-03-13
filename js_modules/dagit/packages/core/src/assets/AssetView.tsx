@@ -47,6 +47,7 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlots} from './AssetPlots';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
 import {AssetKey} from './types';
 import {
   AssetViewDefinitionNodeFragment,
@@ -97,11 +98,15 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // The "live" data is preferable and more current, but only available for SDAs. Fallback
   // to the materialization timestamp we loaded from assetOrError if live data is not available.
-  const lastMaterializedAt = (
-    liveDataByNode[toGraphId(assetKey)]?.lastMaterialization || lastMaterialization
-  )?.timestamp;
+  const liveDataForAsset: LiveDataForNode | undefined = liveDataByNode[toGraphId(assetKey)];
+  const lastMaterializedAt = (liveDataForAsset?.lastMaterialization || lastMaterialization)
+    ?.timestamp;
 
   const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
+
+  // Some tabs make expensive queries that should be refreshed after materializations or failures.
+  // We build a hint string from the live summary info and refresh the views when the hint changes.
+  const dataRefreshHint = `${lastMaterializedAt},${liveDataForAsset?.runWhichFailedToMaterialize?.id}`;
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
@@ -155,7 +160,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         tags={
           <AssetViewPageHeaderTags
             definition={definition}
-            liveData={liveDataByNode[toGraphId(assetKey)]}
+            liveData={liveDataForAsset}
             onShowUpstream={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
           />
         }
@@ -197,9 +202,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         }
         right={
           <Box style={{margin: '-4px 0'}}>
-            {definition && definition.jobNames.length > 0 && upstream && (
+            {definition && definition.isObservable ? (
+              <LaunchAssetObservationButton
+                intent="primary"
+                scope={{all: [definition], skipAllTerm: true}}
+              />
+            ) : definition && definition.jobNames.length > 0 && upstream ? (
               <LaunchAssetExecutionButton scope={{all: [definition]}} />
-            )}
+            ) : undefined}
           </Box>
         }
       />
@@ -232,21 +242,21 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             <AssetPartitions
               assetKey={assetKey}
               assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
-              assetLastMaterializedAt={lastMaterializedAt}
+              dataRefreshHint={dataRefreshHint}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
               setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+              liveData={liveDataForAsset}
             />
           ) : selectedTab === 'events' ? (
             <AssetEvents
               assetKey={assetKey}
               assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              assetLastMaterializedAt={lastMaterializedAt}
+              dataRefreshHint={dataRefreshHint}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
               setParams={setParams}
-              liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+              liveData={liveDataForAsset}
             />
           ) : selectedTab === 'plots' ? (
             <AssetPlots
@@ -342,7 +352,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   };
 };
 
-const ASSET_VIEW_DEFINITION_QUERY = gql`
+export const ASSET_VIEW_DEFINITION_QUERY = gql`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {

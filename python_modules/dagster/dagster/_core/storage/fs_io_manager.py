@@ -60,7 +60,7 @@ def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystem
 
         @asset
         def asset2(asset1):
-            return df[:5]
+            return asset1[:5]
 
         @repository
         def repo():
@@ -70,7 +70,6 @@ def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystem
                     "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
                 },
             )
-        )
 
 
     2. Specify a job-level IO manager using the reserved resource key ``"io_manager"``,

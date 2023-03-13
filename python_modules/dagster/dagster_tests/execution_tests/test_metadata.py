@@ -32,6 +32,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import execute_pipeline, pipeline
+from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster._utils import frozendict
 
 
@@ -48,11 +49,9 @@ def solid_events_for_type(
 
 
 def test_metadata_entry_construction():
-    entry_1 = MetadataEntry("foo", value=MetadataValue.text("bar"))
-    entry_2 = MetadataEntry("foo", entry_data=MetadataValue.text("bar"))
-    assert entry_1.value == MetadataValue.text("bar")
-    assert entry_2.value == MetadataValue.text("bar")
-    assert entry_1 == entry_2
+    entry = MetadataEntry("foo", value=MetadataValue.text("bar"))
+    assert entry.label == "foo"
+    assert entry.value == MetadataValue.text("bar")
 
 
 def test_metadata_asset_materialization():
@@ -85,9 +84,7 @@ def test_metadata_asset_materialization():
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
     assert len(materialization.metadata_entries) == 6
-    entry_map = {
-        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
-    }
+    entry_map = {entry.label: entry.value.__class__ for entry in materialization.metadata_entries}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -125,7 +122,7 @@ def test_metadata_asset_observation():
     assert len(observation_events) == 1
     observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata_entries) == 5
-    entry_map = {entry.label: entry.entry_data.__class__ for entry in observation.metadata_entries}
+    entry_map = {entry.label: entry.value.__class__ for entry in observation.metadata_entries}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -179,7 +176,7 @@ def test_parse_invalid_metadata():
     entries = normalize_metadata(metadata, [], allow_invalid=True)
     assert len(entries) == 1
     assert entries[0].label == "foo"
-    assert entries[0].entry_data == TextMetadataValue("[object] (unserializable)")
+    assert entries[0].value == TextMetadataValue("[object] (unserializable)")
 
 
 def test_parse_path_metadata():
@@ -188,7 +185,7 @@ def test_parse_path_metadata():
     entries = normalize_metadata(metadata, [])
     assert len(entries) == 1
     assert entries[0].label == "path"
-    assert entries[0].entry_data == PathMetadataValue("/a/b.csv")
+    assert entries[0].value == PathMetadataValue("/a/b.csv")
 
 
 def test_bad_json_metadata_value():
@@ -209,7 +206,7 @@ def test_bad_json_metadata_value():
     assert (
         str(exc_info.value)
         == 'Could not resolve the metadata value for "bad" to a known type. '
-        "Value is a dictionary but is not JSON serializable."
+        "Value is not JSON serializable."
     )
 
 
@@ -218,13 +215,13 @@ def test_table_metadata_value_schema_inference():
         "foo",
         value=MetadataValue.table(
             records=[
-                TableRecord(name="foo", status=False),
-                TableRecord(name="bar", status=True),
+                TableRecord(dict(name="foo", status=False)),
+                TableRecord(dict(name="bar", status=True)),
             ],
         ),
     )
 
-    schema = table_metadata_entry.entry_data.schema
+    schema = table_metadata_entry.value.schema
     assert isinstance(schema, TableSchema)
     assert schema.columns == [
         TableColumn(name="name", type="string"),
@@ -360,6 +357,19 @@ def test_table_schema_from_name_type_dict():
     )
 
 
+def test_table_serialization():
+    entry = MetadataEntry(
+        "foo",
+        value=MetadataValue.table(
+            records=[
+                TableRecord(dict(foo=1, bar=2)),
+            ],
+        ),
+    )
+    serialized = serialize_dagster_namedtuple(entry)
+    assert deserialize_as(serialized, MetadataEntry) == entry
+
+
 def test_bool_metadata_value():
     @op(out={})
     def the_solid():
@@ -382,8 +392,6 @@ def test_bool_metadata_value():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    entry_map = {
-        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
-    }
+    entry_map = {entry.label: entry.value.__class__ for entry in materialization.metadata_entries}
     assert entry_map["first_bool"] == BoolMetadataValue
     assert entry_map["second_bool"] == BoolMetadataValue

@@ -1,7 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {GET_SCHEDULE_QUERY, SCHEDULE_DRY_RUN_MUTATION} from '../EvaluateScheduleDialog';
-import {GetScheduleQuery, ScheduleDryRunMutation} from '../types/EvaluateSchedule.types';
+import {GetScheduleQuery, ScheduleDryRunMutation} from '../types/EvaluateScheduleDialog.types';
 
 export const GetScheduleQueryMock: MockedResponse<GetScheduleQuery> = {
   request: {
@@ -19,6 +19,7 @@ export const GetScheduleQueryMock: MockedResponse<GetScheduleQuery> = {
       __typename: 'DagitQuery',
       scheduleOrError: {
         __typename: 'Schedule',
+        id: 'foo',
         name: 'configurable_job_schedule',
         potentialTickTimestamps: [1, 2, 4, 5, 6, 7, 8, 9, 10],
       },

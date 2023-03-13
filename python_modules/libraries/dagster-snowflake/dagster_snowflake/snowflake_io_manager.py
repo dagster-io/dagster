@@ -10,7 +10,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
-from snowflake.connector import ProgrammingError
+from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeConnection
 
@@ -165,7 +165,11 @@ class SnowflakeDbClient(DbClient):
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
-        connection.execute(f"create schema if not exists {table_slice.schema};")
+        schemas = connection.execute(
+            f"show schemas like '{table_slice.schema}' in database {table_slice.database}"
+        ).fetchall()
+        if len(schemas) == 0:
+            connection.execute(f"create schema {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
@@ -183,14 +187,7 @@ class SnowflakeDbClient(DbClient):
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
-            partition_where = " AND\n".join(
-                _static_where_clause(partition_dimension)
-                if isinstance(partition_dimension.partition, str)
-                else _time_window_where_clause(partition_dimension)
-                for partition_dimension in table_slice.partition_dimensions
-            )
-
-            return query + partition_where
+            return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -204,19 +201,22 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
-        partition_where = " AND\n".join(
-            _static_where_clause(partition_dimension)
-            if isinstance(partition_dimension.partition, str)
-            else _time_window_where_clause(partition_dimension)
-            for partition_dimension in table_slice.partition_dimensions
-        )
-        return query + partition_where
+        return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
+def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
+    return " AND\n".join(
+        _time_window_where_clause(partition_dimension)
+        if isinstance(partition_dimension.partitions, TimeWindow)
+        else _static_where_clause(partition_dimension)
+        for partition_dimension in partition_dimensions
+    )
+
+
 def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
-    partition = cast(TimeWindow, table_partition.partition)
+    partition = cast(TimeWindow, table_partition.partitions)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
@@ -226,4 +226,5 @@ def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
 
 
 def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""
+    partitions = ", ".join(f"'{partition}'" for partition in table_partition.partitions)
+    return f"""{table_partition.partition_expr} in ({partitions})"""

@@ -4,7 +4,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -50,9 +49,9 @@ export const RunTable = (props: RunTableProps) => {
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
-  const canTerminateOrDelete =
-    canTerminatePipelineExecution.enabled || canDeletePipelineRun.enabled;
+  const canTerminateOrDeleteAny = React.useMemo(() => {
+    return runs.some((run) => run.hasTerminatePermission || run.hasDeletePermission);
+  }, [runs]);
 
   const {options} = useRepositoryOptions();
 
@@ -128,7 +127,7 @@ export const RunTable = (props: RunTableProps) => {
         <thead>
           <tr>
             <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-              {canTerminateOrDelete ? (
+              {canTerminateOrDeleteAny ? (
                 <Checkbox
                   indeterminate={checkedIds.size > 0 && checkedIds.size !== runs.length}
                   checked={checkedIds.size === runs.length}
@@ -152,7 +151,7 @@ export const RunTable = (props: RunTableProps) => {
         <tbody>
           {runs.map((run) => (
             <RunRow
-              canTerminateOrDelete={canTerminateOrDelete}
+              canTerminateOrDelete={run.hasTerminatePermission || run.hasDeletePermission}
               run={run}
               key={run.runId}
               onAddTag={onAddTag}
@@ -175,6 +174,9 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     status
     stepKeysToExecute
     canTerminate
+    hasReExecutePermission
+    hasTerminatePermission
+    hasDeletePermission
     mode
     rootRunId
     parentRunId

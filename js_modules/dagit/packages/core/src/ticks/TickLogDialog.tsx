@@ -13,11 +13,12 @@ import {
   Header,
 } from '../runs/LogsScrollingTableHeader';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+
 import {
-  TickLogEventFragment,
   TickLogEventsQuery,
   TickLogEventsQueryVariables,
-} from '../types/TickLogDialog.types';
+  TickLogEventFragment,
+} from './types/TickLogDialog.types';
 
 export const TickLogDialog: React.FC<{
   tick: HistoryTickFragment;

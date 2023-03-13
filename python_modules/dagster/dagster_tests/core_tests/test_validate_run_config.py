@@ -25,11 +25,11 @@ def test_validate_run_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"solids": {"requires_config": {"config": {"foo": "bar"}}}}
+        pipeline_requires_config, {"ops": {"requires_config": {"config": {"foo": "bar"}}}}
     )
 
     assert result == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
@@ -37,11 +37,11 @@ def test_validate_run_config():
 
     result_with_storage = validate_run_config(
         pipeline_requires_config,
-        {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result_with_storage == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},

@@ -15,6 +15,7 @@ from .errors import (
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
+from .tags import GraphenePipelineTagAndValues
 from .util import ResolveInfo, non_null_list
 
 
@@ -135,6 +136,32 @@ class GrapheneRunGroupsOrError(graphene.ObjectType):
     class Meta:
         types = (GrapheneRunGroups, GraphenePythonError)
         name = "RunGroupsOrError"
+
+
+class GrapheneRunTagKeys(graphene.ObjectType):
+    keys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RunTagKeys"
+
+
+class GrapheneRunTagKeysOrError(graphene.Union):
+    class Meta:
+        types = (GraphenePythonError, GrapheneRunTagKeys)
+        name = "RunTagKeysOrError"
+
+
+class GrapheneRunTags(graphene.ObjectType):
+    tags = non_null_list(GraphenePipelineTagAndValues)
+
+    class Meta:
+        name = "RunTags"
+
+
+class GrapheneRunTagsOrError(graphene.Union):
+    class Meta:
+        types = (GraphenePythonError, GrapheneRunTags)
+        name = "RunTagsOrError"
 
 
 class GrapheneRunConfigData(GenericScalar, graphene.Scalar):

@@ -2,6 +2,7 @@ from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
@@ -12,6 +13,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
@@ -82,7 +84,11 @@ def parse_timestamp(timestamp: Optional[str] = None) -> Optional[float]:
         return None
 
 
+GraphenePartitionRangeStatus = graphene.Enum.from_enum(PartitionRangeStatus)
+
+
 class GrapheneTimePartitionRange(graphene.ObjectType):
+    status = graphene.NonNull(GraphenePartitionRangeStatus)
     startTime = graphene.NonNull(graphene.Float)
     endTime = graphene.NonNull(graphene.Float)
     startKey = graphene.NonNull(graphene.String)
@@ -101,6 +107,7 @@ class GrapheneTimePartitions(graphene.ObjectType):
 
 class GrapheneDefaultPartitions(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
+    failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
 
     class Meta:
@@ -138,15 +145,16 @@ class GrapheneMultiPartitions(graphene.ObjectType):
         name = "MultiPartitions"
 
 
-class GrapheneMaterializedPartitions(graphene.Union):
+class GrapheneAssetPartitionStatuses(graphene.Union):
     class Meta:
         types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
-        name = "MaterializedPartitions"
+        name = "AssetPartitionStatuses"
 
 
 class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
+    numFailed = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"
@@ -353,6 +361,9 @@ class GrapheneRun(graphene.ObjectType):
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
+    hasReExecutePermission = graphene.NonNull(graphene.Boolean)
+    hasTerminatePermission = graphene.NonNull(graphene.Boolean)
+    hasDeletePermission = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -369,6 +380,28 @@ class GrapheneRun(graphene.ObjectType):
         self._pipeline_run = pipeline_run
         self._run_record = record
         self._run_stats: Optional[PipelineRunStatsSnapshot] = None
+
+    def _get_permission_value(self, permission: Permissions, graphene_info: ResolveInfo) -> bool:
+        location_name = (
+            self._pipeline_run.external_pipeline_origin.location_name
+            if self._pipeline_run.external_pipeline_origin
+            else None
+        )
+
+        return (
+            graphene_info.context.has_permission_for_location(permission, location_name)
+            if location_name
+            else graphene_info.context.has_permission(permission)
+        )
+
+    def resolve_hasReExecutePermission(self, graphene_info: ResolveInfo):
+        return self._get_permission_value(Permissions.LAUNCH_PIPELINE_REEXECUTION, graphene_info)
+
+    def resolve_hasTerminatePermission(self, graphene_info: ResolveInfo):
+        return self._get_permission_value(Permissions.TERMINATE_PIPELINE_EXECUTION, graphene_info)
+
+    def resolve_hasDeletePermission(self, graphene_info: ResolveInfo):
+        return self._get_permission_value(Permissions.DELETE_PIPELINE_RUN, graphene_info)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._pipeline_run.run_id

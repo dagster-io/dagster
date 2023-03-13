@@ -79,6 +79,7 @@ def create_step_outputs(
                     is_asset=asset_info is not None,
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
+                    is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
                 ),
             )
         )
@@ -119,10 +120,9 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
 
 
 def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
-    loop = asyncio.get_event_loop()
     while True:
         try:
-            yield loop.run_until_complete(async_gen.__anext__())
+            yield asyncio.run(async_gen.__anext__())  # type: ignore # subtle awaitable vs coroutine issue
         except StopAsyncIteration:
             return
 

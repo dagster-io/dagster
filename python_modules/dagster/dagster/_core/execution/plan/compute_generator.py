@@ -260,7 +260,7 @@ def validate_and_coerce_op_result_to_iterator(
                         output_name=output_def.name,
                         value=element.value,
                         metadata_entries=element.metadata_entries,
-                        logical_version=element.logical_version,
+                        data_version=element.data_version,
                     )
             else:
                 # If annotation indicates a generic output annotation, and an

@@ -10,7 +10,7 @@ from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
 )
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs
 
@@ -104,7 +104,7 @@ test_airflow_example_dags_inputs = [
     "expected_job_names, exclude_from_execution_tests",
     test_airflow_example_dags_inputs,
 )
-@requires_airflow_db
+@requires_local_db
 def test_airflow_example_dags(
     expected_job_names,
     exclude_from_execution_tests,
@@ -147,7 +147,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
-@requires_airflow_db
+@requires_local_db
 def test_retry_conversion():
     with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:

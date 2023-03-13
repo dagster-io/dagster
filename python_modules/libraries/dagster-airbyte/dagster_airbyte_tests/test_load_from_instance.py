@@ -1,9 +1,13 @@
+from typing import Any
+
 import pytest
 import responses
 from dagster import (
     AssetKey,
     FreshnessPolicy,
+    InputContext,
     IOManager,
+    OutputContext,
     asset,
     build_init_resource_context,
     io_manager,
@@ -46,12 +50,13 @@ def test_load_from_instance(
     load_calls = []
 
     @io_manager
-    def test_io_manager(_context):
+    def test_io_manager(_context) -> IOManager:
         class TestIOManager(IOManager):
-            def handle_output(self, context, obj):
+            def handle_output(self, context: OutputContext, obj) -> None:
+                assert context.dagster_type.is_nothing
                 return
 
-            def load_input(self, context):
+            def load_input(self, context: InputContext) -> Any:
                 load_calls.append(context.asset_key)
                 return None
 

@@ -87,21 +87,6 @@ def airflow_extra_cmds(version: str, _) -> List[str]:
     return [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-        + GCP_CREDS_LOCAL_FILE,
-        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-        "pushd python_modules/libraries/dagster-airflow/dagster_airflow_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-airflow",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
     ]
 
 
@@ -221,10 +206,16 @@ mysql_extra_cmds = [
     "pushd python_modules/libraries/dagster-mysql/dagster_mysql_tests/",
     "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mysql"),
-    *network_buildkite_container("mysqlbackcompat"),
+    *network_buildkite_container("mysql_pinned"),
+    *network_buildkite_container("mysql_pinned_backcompat"),
     *connect_sibling_docker_container("mysql", "test-mysql-db", "MYSQL_TEST_DB_HOST"),
     *connect_sibling_docker_container(
-        "mysqlbackcompat", "test-mysql-db-backcompat", "MYSQL_TEST_BACKCOMPAT_DB_HOST"
+        "mysql_pinned", "test-mysql-db-pinned", "MYSQL_TEST_PINNED_DB_HOST"
+    ),
+    *connect_sibling_docker_container(
+        "mysql_pinned_backcompat",
+        "test-mysql-db-pinned-backcompat",
+        "MYSQL_TEST_PINNED_BACKCOMPAT_DB_HOST",
     ),
     "popd",
 ]
@@ -335,6 +326,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "daemon_tests",
             "definitions_tests_old_pendulum",
             "general_tests",
+            "general_tests_old_protobuf",
             "scheduler_tests",
             "scheduler_tests_old_pendulum",
             "execution_tests",
@@ -398,9 +390,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=[
             "default-airflow1",
-            "requiresairflowdb-airflow1",
+            "localdb-airflow1",
+            "persistantdb-airflow1",
             "default-airflow2",
-            "requiresairflowdb-airflow2",
+            "localdb-airflow2",
+            "persistantdb-airflow2",
         ],
     ),
     PackageSpec(
@@ -458,6 +452,16 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=gcp_extra_cmds,
         retries=2,
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-gcp-pyspark",
+        env_vars=[
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GCP_PROJECT_ID",
+        ],
+        pytest_extra_cmds=gcp_extra_cmds,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",

@@ -312,15 +312,13 @@ def test_user_forgot_dict_type_annotation_for_multiple_partitions(
     def upstream_asset(context: OpExecutionContext) -> str:
         return context.partition_key
 
-    @asset(
-        partitions_def=daily,
-    )
+    @asset(partitions_def=daily)
     def downstream_asset(upstream_asset: str) -> str:
         return upstream_asset
 
     with pytest.raises(
         CheckError,
-        match=r".* but the input has multiple partitions. .* should be used in this case.",
+        match="the type annotation on the op input is not a dict",
     ):
         materialize(
             [*upstream_asset.to_source_assets(), downstream_asset],
@@ -419,6 +417,6 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
 
     assert handled_output_events[0].event_specific_data.metadata_entries[  # type: ignore[index,union-attr]
         1
-    ].entry_data.value == get_length(
+    ].value.value == get_length(
         json_data
     )

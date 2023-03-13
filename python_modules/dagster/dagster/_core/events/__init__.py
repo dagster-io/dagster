@@ -652,6 +652,8 @@ class DagsterEvent(
             return self.step_materialization_data.materialization.partition
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
             return self.asset_observation_data.asset_observation.partition
+        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+            return self.asset_materialization_planned_data.partition
         else:
             return None
 
@@ -1451,11 +1453,16 @@ class StepMaterializationData(
 
 @whitelist_for_serdes
 class AssetMaterializationPlannedData(
-    NamedTuple("_AssetMaterializationPlannedData", [("asset_key", AssetKey)])
+    NamedTuple(
+        "_AssetMaterializationPlannedData",
+        [("asset_key", AssetKey), ("partition", Optional[str])],
+    )
 ):
-    def __new__(cls, asset_key: AssetKey):
+    def __new__(cls, asset_key: AssetKey, partition: Optional[str] = None):
         return super(AssetMaterializationPlannedData, cls).__new__(
-            cls, asset_key=check.inst_param(asset_key, "asset_key", AssetKey)
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partition=check.opt_str_param(partition, "partition"),
         )
 
 

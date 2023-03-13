@@ -3,6 +3,7 @@ import random
 import string
 import time
 from contextlib import ExitStack, contextmanager
+from typing import cast
 
 import pendulum
 import pytest
@@ -26,6 +27,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocation,
     GrpcServerRepositoryLocationOrigin,
+    RepositoryLocation,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -135,18 +137,18 @@ def _solid_config(date):
     }
 
 
-@daily_schedule(pipeline_name="the_job", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
+@daily_schedule(job_name="the_job", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
 def simple_schedule(date):
     return _solid_config(date)
 
 
-@daily_schedule(pipeline_name="the_job", start_date=_COUPLE_DAYS_AGO)
+@daily_schedule(job_name="the_job", start_date=_COUPLE_DAYS_AGO)
 def daily_schedule_without_timezone(date):
     return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Central",
 )
@@ -174,7 +176,7 @@ def union_schedule(context):
 
 # Schedule that runs on a different day in Central Time vs UTC
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=23, minute=0),
     execution_timezone="US/Central",
@@ -184,7 +186,7 @@ def daily_late_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=2, minute=30),
     execution_timezone="US/Central",
@@ -194,7 +196,7 @@ def daily_dst_transition_schedule_skipped_time(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=1, minute=30),
     execution_timezone="US/Central",
@@ -204,7 +206,7 @@ def daily_dst_transition_schedule_doubled_time(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Eastern",
 )
@@ -213,7 +215,7 @@ def daily_eastern_time_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     end_date=datetime.datetime(year=2019, month=3, day=1),
     execution_timezone="UTC",
@@ -224,7 +226,7 @@ def simple_temporary_schedule(date):
 
 # forgot date arg
 @daily_schedule(  # type: ignore
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -237,7 +239,7 @@ NUM_CALLS = {"sync": 0, "async": 0}
 
 def get_passes_on_retry_schedule(key):
     @daily_schedule(
-        pipeline_name="the_job",
+        job_name="the_job",
         start_date=_COUPLE_DAYS_AGO,
         execution_timezone="UTC",
         name=f"passes_on_retry_schedule_{key}",
@@ -252,7 +254,7 @@ def get_passes_on_retry_schedule(key):
 
 
 @hourly_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -261,7 +263,7 @@ def simple_hourly_schedule(date):
 
 
 @hourly_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="US/Central",
 )
@@ -270,7 +272,7 @@ def hourly_central_time_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_throw,
     execution_timezone="UTC",
@@ -280,7 +282,7 @@ def bad_should_execute_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_throw_on_odd_day,
     execution_timezone="UTC",
@@ -290,7 +292,7 @@ def bad_should_execute_schedule_on_odd_days(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     should_execute=_never,
     execution_timezone="UTC",
@@ -300,7 +302,7 @@ def skip_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -391,7 +393,7 @@ def config_job():
 
 
 @daily_schedule(
-    pipeline_name="config_job",
+    job_name="config_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
 )
@@ -509,7 +511,7 @@ def the_repo():
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.RUNNING,
@@ -519,7 +521,7 @@ def always_running_schedule(date):
 
 
 @daily_schedule(
-    pipeline_name="the_job",
+    job_name="the_job",
     start_date=_COUPLE_DAYS_AGO,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.STOPPED,
@@ -2349,13 +2351,16 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
         instance=instance,
     ) as full_workspace_context:
         with pendulum.test(freeze_datetime):
-            full_location = next(
-                iter(
-                    full_workspace_context.create_request_context()
-                    .get_workspace_snapshot()
-                    .values()
-                )
-            ).repository_location
+            full_location = cast(
+                RepositoryLocation,
+                next(
+                    iter(
+                        full_workspace_context.create_request_context()
+                        .get_workspace_snapshot()
+                        .values()
+                    )
+                ).repository_location,
+            )
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
 
