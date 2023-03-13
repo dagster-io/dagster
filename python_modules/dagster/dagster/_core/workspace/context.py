@@ -110,12 +110,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
-    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+    def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         pass
 
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
         if self.has_repository_location_name(location_name):
-            permissions = self.permissions_for_location(location_name)
+            permissions = self.permissions_for_location(location_name=location_name)
             return permissions[permission].enabled
 
         # if not in workspace, fall back to the global permissions across all code locations
@@ -275,11 +275,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             external_partition_set.repository_handle.location_name
-        ).get_external_partition_names(external_partition_set)
+        ).get_external_partition_names(external_partition_set, instance=instance)
 
     def get_external_partition_set_execution_param_data(
         self,
@@ -356,7 +356,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(self._read_only)
 
-    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+    def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         return get_location_scoped_user_permissions(self._read_only)
 
     def has_permission(self, permission: str) -> bool:
@@ -547,7 +547,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(True)
 
-    def permissions_for_location(self, _location_name: str) -> Mapping[str, PermissionResult]:
+    def permissions_for_location(self, *, location_name: str) -> Mapping[str, PermissionResult]:
         return get_location_scoped_user_permissions(True)
 
     @property

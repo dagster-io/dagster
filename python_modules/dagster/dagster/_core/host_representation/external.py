@@ -19,7 +19,9 @@ from typing import (
 import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.metadata import (
+    MetadataEntry,
+)
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
@@ -40,6 +42,7 @@ from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -50,6 +53,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    EnvVarConsumer,
     ExternalAssetNode,
     ExternalJobRef,
     ExternalPartitionSetData,
@@ -57,6 +61,7 @@ from .external_data import (
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalResourceData,
+    ExternalResourceValue,
     ExternalScheduleData,
     ExternalSensorData,
     ExternalSensorMetadata,
@@ -159,6 +164,13 @@ class ExternalRepository:
 
     def get_external_resources(self) -> Iterable[ExternalResource]:
         return self._external_resources.values()
+
+    @property
+    def _utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self.external_repository_data.utilized_env_vars or {}
+
+    def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self._utilized_env_vars
 
     @property
     @cached_method
@@ -420,7 +432,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def metadata(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def metadata(self) -> Sequence[MetadataEntry]:
         return self._pipeline_index.pipeline_snapshot.metadata
 
     @property
@@ -564,7 +576,7 @@ class ExternalResource:
         return self._external_resource_data.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, str]:
+    def configured_values(self) -> Dict[str, ExternalResourceValue]:
         return self._external_resource_data.configured_values
 
     @property
@@ -877,9 +889,9 @@ class ExternalPartitionSet:
         # names
         return self._external_partition_set_data.external_partitions_data is not None
 
-    def get_partition_names(self) -> Sequence[str]:
+    def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())
         partitions = (
             self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
         )
-        return partitions.get_partition_keys()
+        return partitions.get_partition_keys(dynamic_partitions_store=instance)

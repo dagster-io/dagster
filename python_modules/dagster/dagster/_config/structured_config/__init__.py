@@ -257,7 +257,7 @@ class AllowDelayedDependencies:
                 _resolve_required_resource_keys_for_resource(v, resource_mapping)
             )
 
-        resources, _ = _separate_resource_params(self.__dict__)
+        resources, _ = separate_resource_params(self.__dict__)
         for v in resources.values():
             nested_resource_required_keys.update(
                 _resolve_required_resource_keys_for_resource(v, resource_mapping)
@@ -347,6 +347,10 @@ class ResourceWithKeyMapping(ResourceDefinition):
             self._resource, self._resource_id_to_key_mapping
         )
 
+    @property
+    def inner_resource(self):
+        return self._resource
+
 
 class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
     """
@@ -401,7 +405,7 @@ class ConfigurableResource(
     """
 
     def __init__(self, **data: Any):
-        resource_pointers, data_without_resources = _separate_resource_params(data)
+        resource_pointers, data_without_resources = separate_resource_params(data)
 
         schema = infer_schema_from_config_class(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
@@ -489,7 +493,7 @@ class ConfigurableResource(
             }
 
         # Also evaluate any resources that are not partial
-        resources_to_update, _ = _separate_resource_params(self.__dict__)
+        resources_to_update, _ = separate_resource_params(self.__dict__)
         resources_to_update = {
             attr_name: _call_resource_fn_with_default(resource_def, context)
             for attr_name, resource_def in resources_to_update.items()
@@ -541,7 +545,7 @@ class PartialResource(
     resource_cls: Type[ConfigurableResource[TResValue]]
 
     def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
-        resource_pointers, data_without_resources = _separate_resource_params(data)
+        resource_pointers, data_without_resources = separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
@@ -944,7 +948,7 @@ class SeparatedResourceParams(NamedTuple):
     non_resources: Dict[str, Any]
 
 
-def _separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
+def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     """
     Separates out the key/value inputs of fields in a structured config Resource class which
     are themselves Resources and those which are not.

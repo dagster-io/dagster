@@ -7,7 +7,7 @@ from airflow.models import DagBag
 from dagster import AssetKey, asset, materialize
 from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
 
-from dagster_airflow_tests.marks import requires_airflow_db
+from dagster_airflow_tests.marks import requires_local_db
 
 ASSET_DAG = """
 from airflow import models
@@ -47,7 +47,7 @@ with models.DAG(
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
-@requires_airflow_db
+@requires_local_db
 def test_load_assets_from_airflow_dag():
     with tempfile.TemporaryDirectory(suffix="assets") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:

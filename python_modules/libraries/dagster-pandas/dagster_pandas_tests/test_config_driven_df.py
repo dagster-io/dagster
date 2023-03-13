@@ -4,7 +4,6 @@ import pandas as pd
 import pytest
 from dagster import DagsterInvalidConfigError, In, Out, graph, op
 from dagster._utils import file_relative_path
-from dagster._utils.test import get_temp_file_name
 from dagster_pandas import DataFrame
 
 
@@ -252,95 +251,3 @@ def test_dataframe_pickle_from_inputs():
     assert called["yup"]
 
     os.remove(pickle_path)
-
-
-def test_dataframe_csv_materialization():
-    @op(out=Out(DataFrame))
-    def return_df(_context):
-        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
-
-    @graph
-    def return_df_graph():
-        return_df()
-
-    with get_temp_file_name() as filename:
-        result = return_df_graph.execute_in_process(
-            run_config={
-                "ops": {"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}}
-            },
-        )
-
-        assert result.success
-
-        df = pd.read_csv(filename)
-        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
-
-
-def test_dataframe_parquet_materialization():
-    check_parquet_support()
-
-    @op(out=Out(DataFrame))
-    def return_df(_context):
-        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
-
-    @graph
-    def return_df_graph():
-        return_df()
-
-    with get_temp_file_name() as filename:
-        result = return_df_graph.execute_in_process(
-            run_config={
-                "ops": {"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}}
-            },
-        )
-
-        assert result.success
-
-        df = pd.read_parquet(filename)
-        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
-
-
-def test_dataframe_table_materialization():
-    @op(out=Out(DataFrame))
-    def return_df(_context):
-        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
-
-    @graph
-    def return_df_graph():
-        return_df()
-
-    with get_temp_file_name() as filename:
-        filename = "/tmp/table_test.txt"
-        result = return_df_graph.execute_in_process(
-            run_config={
-                "ops": {"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}}
-            },
-        )
-
-        assert result.success
-
-        df = pd.read_csv(filename, sep="\t")
-        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
-
-
-def test_dataframe_pickle_materialization():
-    @op(out=Out(DataFrame))
-    def return_df(_context):
-        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
-
-    @graph
-    def return_df_graph():
-        return_df()
-
-    with get_temp_file_name() as filename:
-        filename = "/tmp/num.pickle"
-        result = return_df_graph.execute_in_process(
-            run_config={
-                "ops": {"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}}
-            },
-        )
-
-        assert result.success
-
-        df = pd.read_pickle(filename)
-        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}

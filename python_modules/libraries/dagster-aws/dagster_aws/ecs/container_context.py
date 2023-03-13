@@ -201,7 +201,7 @@ class EcsContainerContext(
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     @staticmethod
-    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["EcsRunLauncher"]):
+    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["EcsRunLauncher[Any]"]):
         context = EcsContainerContext()
         if run_launcher:
             context = context.merge(

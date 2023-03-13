@@ -7,7 +7,6 @@ import React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
@@ -70,12 +69,22 @@ type LaunchAssetsState =
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
 
 type Asset =
-  | {assetKey: AssetKey; partitionDefinition: {__typename: string} | null; isSource: boolean}
-  | {assetKey: AssetKey; isPartitioned: boolean; isSource: boolean};
+  | {
+      assetKey: AssetKey;
+      hasMaterializePermission: boolean;
+      partitionDefinition: {__typename: string} | null;
+      isSource: boolean;
+    }
+  | {
+      assetKey: AssetKey;
+      hasMaterializePermission: boolean;
+      isPartitioned: boolean;
+      isSource: boolean;
+    };
 
-type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
 
-type LaunchOption = {assetKeys: AssetKey[]; label: string};
+type LaunchOption = {assetKeys: AssetKey[]; label: string; hasMaterializePermission: boolean};
 
 const isAnyPartitioned = (assets: Asset[]) =>
   assets.some(
@@ -97,16 +106,22 @@ export function optionsForButton(
   // to materialize that selection.
   if ('selected' in scope) {
     const assets = scope.selected.filter((a) => !a.isSource);
+    const hasMaterializePermission = scope.selected.every(
+      (assetNode) => assetNode.hasMaterializePermission,
+    );
+
     return [
       {
         assetKeys: assets.map((a) => a.assetKey),
         label: `Materialize selected${countOrBlank(assets)}${isAnyPartitioned(assets) ? '…' : ''}`,
+        hasMaterializePermission,
       },
     ];
   }
 
   const options: LaunchOption[] = [];
   const assets = scope.all.filter((a) => !a.isSource);
+  const hasMaterializePermission = assets.every((assetNode) => assetNode.hasMaterializePermission);
 
   options.push({
     assetKeys: assets.map((a) => a.assetKey),
@@ -114,6 +129,7 @@ export function optionsForButton(
       assets.length > 1 && !scope.skipAllTerm
         ? `Materialize all${isAnyPartitioned(assets) ? '…' : ''}`
         : `Materialize${isAnyPartitioned(assets) ? '…' : ''}`,
+    hasMaterializePermission,
   });
 
   if (liveDataForStale) {
@@ -126,6 +142,7 @@ export function optionsForButton(
     options.push({
       assetKeys: missingOrStale.map((a) => a.assetKey),
       label: `Materialize stale and missing${countOrBlank(missingOrStale)}`,
+      hasMaterializePermission,
     });
   }
 
@@ -138,12 +155,12 @@ export const LaunchAssetExecutionButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
-  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
+  const hasMaterializePermission = firstOption.hasMaterializePermission;
 
   const {MaterializeButton} = useLaunchPadHooks();
 
@@ -151,7 +168,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     return <span />;
   }
 
-  if (!canLaunchPipelineExecution.enabled) {
+  if (!hasMaterializePermission) {
     return (
       <Tooltip content="You do not have permission to materialize assets" position="bottom-right">
         <Button intent={intent} icon={<Icon name="materialization" />} disabled>
@@ -599,6 +616,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     opNames
     jobNames
     graphName
+    hasMaterializePermission
     partitionDefinition {
       ...PartitionDefinitionForLaunchAsset
     }

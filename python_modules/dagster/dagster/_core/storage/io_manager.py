@@ -63,11 +63,9 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        # Unlike other configurable objects, whose config schemas default to Any, output_config_schema
-        # defaults to None. This the because IOManager input / output config shares config
-        # namespace with dagster type loaders and materializers. The absence of provided
-        # output_config_schema means that we should fall back to using the materializer that
-        # corresponds to the output dagster type.
+        # Unlike other configurable objects, whose config schemas default to Any,
+        # output_config_schema defaults to None. This the because IOManager input / output config
+        # shares config namespace with dagster type loaders.
         self._output_config_schema = (
             convert_user_facing_definition_config_schema(output_config_schema)
             if output_config_schema is not None

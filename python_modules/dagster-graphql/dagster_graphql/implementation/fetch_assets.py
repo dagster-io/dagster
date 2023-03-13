@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Tuple,
     Union,
     cast,
@@ -24,6 +25,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -46,12 +48,11 @@ from dagster._core.host_representation.repository_location import RepositoryLoca
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
     CACHEABLE_PARTITION_TYPES,
-    filter_incomplete_materialized_runs_to_failed,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
 )
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from dagster_graphql.implementation.loader import (
     CachingDynamicPartitionsLoader,
@@ -323,6 +324,28 @@ def get_unique_asset_id(
     )
 
 
+def _filter_incomplete_materialized_runs_to_failed(
+    instance: DagsterInstance, incomplete_materialization_runs: Mapping[str, Tuple[str, int]]
+) -> Set[str]:
+    if not incomplete_materialization_runs:
+        return set()
+
+    failed_run_ids = {
+        r.run_id
+        for r in instance.get_runs(
+            filters=RunsFilter(
+                run_ids=[run_id for run_id, _event_id in incomplete_materialization_runs.values()],
+                statuses=[DagsterRunStatus.FAILURE],
+            )
+        )
+    }
+    return {
+        p
+        for p, (run_id, _event_id) in incomplete_materialization_runs.items()
+        if run_id in failed_run_ids
+    }
+
+
 def get_materialized_and_failed_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
@@ -393,7 +416,7 @@ def get_materialized_and_failed_partition_subsets(
             validated_keys = get_validated_partition_keys(
                 dynamic_partitions_loader,
                 partitions_def,
-                filter_incomplete_materialized_runs_to_failed(
+                _filter_incomplete_materialized_runs_to_failed(
                     instance, incomplete_materialization_runs
                 ),
             )
@@ -580,14 +603,14 @@ def get_2d_run_length_encoded_partitions(
 def get_freshness_info(
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
-    data_time_queryer: CachingInstanceQueryer,
+    data_time_resolver: CachingDataTimeResolver,
     asset_graph: AssetGraph,
 ) -> "GrapheneAssetFreshnessInfo":
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    latest_record = data_time_queryer.get_latest_materialization_record(asset_key)
+    latest_record = data_time_resolver.instance_queryer.get_latest_materialization_record(asset_key)
     if latest_record is None:
         return GrapheneAssetFreshnessInfo(
             currentMinutesLate=None,
@@ -598,7 +621,7 @@ def get_freshness_info(
         tz=datetime.timezone.utc,
     )
 
-    used_data_times = data_time_queryer.get_used_data_times_for_record(
+    used_data_times = data_time_resolver.get_used_data_times_for_record(
         asset_graph=asset_graph, record=latest_record
     )
 

@@ -1,14 +1,11 @@
 from dagster import (
     String,
     dagster_type_loader,
-    dagster_type_materializer,
     resource,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
-from dagster._core.types.dagster_type import create_any_type
 from dagster._legacy import (
     ModeDefinition,
     execute_pipeline,
@@ -54,29 +51,6 @@ def test_user_error_boundary_input_hydration():
     pipeline_result = execute_pipeline(
         input_hydration_pipeline,
         {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
-        raise_on_error=False,
-    )
-    assert not pipeline_result.success
-
-
-def test_user_error_boundary_output_materialization():
-    @dagster_type_materializer(String)
-    def materialize(context, *_args, **_kwargs):
-        raise UserError()
-
-    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
-
-    @op(out=Out(CustomDagsterType))
-    def output_solid(_context):
-        return "hello"
-
-    @pipeline
-    def output_materialization_pipeline():
-        output_solid()
-
-    pipeline_result = execute_pipeline(
-        output_materialization_pipeline,
-        {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}},
         raise_on_error=False,
     )
     assert not pipeline_result.success

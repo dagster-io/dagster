@@ -44,6 +44,7 @@ from ..asset_defs import (
     _get_node_asset_key,
     _get_node_freshness_policy,
     _get_node_group_name,
+    _get_node_metadata,
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
@@ -319,6 +320,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
+            # TODO: In the future, allow this function to be specified
+            node_info_to_definition_metadata_fn=_get_node_metadata,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
@@ -552,6 +555,10 @@ def load_assets_from_dbt_cloud_job(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given

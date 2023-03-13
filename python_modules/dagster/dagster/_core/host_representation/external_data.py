@@ -7,7 +7,20 @@ for that.
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import pendulum
 
@@ -78,6 +91,7 @@ class ExternalRepositoryData(
             ("external_pipeline_datas", Optional[Sequence["ExternalPipelineData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
     )
 ):
@@ -91,6 +105,7 @@ class ExternalRepositoryData(
         external_pipeline_datas: Optional[Sequence["ExternalPipelineData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -121,6 +136,11 @@ class ExternalRepositoryData(
             ),
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
+            ),
+            utilized_env_vars=check.opt_nullable_mapping_param(
+                utilized_env_vars,
+                "utilized_env_vars",
+                key_type=str,
             ),
         )
 
@@ -249,6 +269,17 @@ class ExternalPipelineData(
             ),
             is_job=check.bool_param(is_job, "is_job"),
         )
+
+
+@whitelist_for_serdes
+class EnvVarConsumerType(Enum):
+    RESOURCE = "RESOURCE"
+
+
+@whitelist_for_serdes
+class EnvVarConsumer(NamedTuple):
+    type: EnvVarConsumerType
+    name: str
 
 
 @whitelist_for_serdes
@@ -878,13 +909,21 @@ class ExternalAssetDependedBy(
 
 
 @whitelist_for_serdes
+class ExternalResourceConfigEnvVar(NamedTuple):
+    name: str
+
+
+ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
+
+
+@whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
         "_ExternalResourceData",
         [
             ("name", str),
             ("resource_snapshot", ResourceDefSnap),
-            ("configured_values", Dict[str, str]),
+            ("configured_values", Dict[str, ExternalResourceValue]),
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
         ],
@@ -900,7 +939,7 @@ class ExternalResourceData(
         cls,
         name: str,
         resource_snapshot: ResourceDefSnap,
-        configured_values: Mapping[str, str],
+        configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
     ):
@@ -912,7 +951,10 @@ class ExternalResourceData(
             ),
             configured_values=dict(
                 check.mapping_param(
-                    configured_values, "configured_values", key_type=str, value_type=str
+                    configured_values,
+                    "configured_values",
+                    key_type=str,
+                    value_type=(str, ExternalResourceConfigEnvVar),
                 )
             ),
             config_field_snaps=check.list_param(
@@ -1085,6 +1127,13 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        utilized_env_vars={
+            env_var: [
+                EnvVarConsumer(type=EnvVarConsumerType.RESOURCE, name=res_name)
+                for res_name in res_names
+            ]
+            for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
+        },
     )
 
 
@@ -1298,6 +1347,12 @@ def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRe
     )
 
 
+def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
+    if isinstance(v, dict) and set(v.keys()) == {"env"}:
+        return ExternalResourceConfigEnvVar(name=v["env"])
+    return json.dumps(v)
+
+
 def external_resource_data_from_def(
     name: str, resource_def: ResourceDefinition
 ) -> ExternalResourceData:
@@ -1316,16 +1371,19 @@ def external_resource_data_from_def(
     config_type = check.not_none(unconfigured_config_schema.config_type)
     unconfigured_config_type_snap = snap_from_config_type(config_type)
 
-    # Right now, .configured sets the default value of the top-level Field
-    # we parse the JSON and break it out into defaults for each individual nested Field
-    # for display in the UI
-    configured_values_expanded = cast(
+    config_schema_default = cast(
         Mapping[str, Any],
         json.loads(resource_def.config_schema.default_value_as_json_str)
         if resource_def.config_schema.default_provided
         else {},
     )
-    configured_values = {k: json.dumps(v) for k, v in configured_values_expanded.items()}
+
+    # Right now, .configured sets the default value of the top-level Field
+    # we parse the JSON and break it out into defaults for each individual nested Field
+    # for display in the UI
+    configured_values = {
+        k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
+    }
 
     return ExternalResourceData(
         name=name,
@@ -1446,6 +1504,12 @@ def external_partition_set_data_from_def(
         partitions_def_data = external_time_window_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, StaticPartitionsDefinition):
         partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+    elif (
+        isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name is not None
+    ):
+        partitions_def_data = external_dynamic_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
+        partitions_def_data = external_multi_partitions_definition_from_def(partitions_def)
     else:
         partitions_def_data = None
 

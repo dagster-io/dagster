@@ -7,8 +7,9 @@ import {
   Menu,
   MenuDivider,
   MenuItem,
-  TagSelector,
+  TagSelectorWithSearch,
 } from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -43,6 +44,20 @@ export const DimensionRangeWizard: React.FC<{
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
+
+  const didSetInitialPartition = React.useRef(false);
+  React.useEffect(() => {
+    if (didSetInitialPartition.current || !partitionKeys.length) {
+      return;
+    }
+    didSetInitialPartition.current = true;
+    const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
+    const partition = query.partition as string;
+    if (partition && partitionKeys.includes(partition)) {
+      setSelected([partition]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partitionKeys]);
 
   return (
     <>
@@ -105,8 +120,9 @@ export const DimensionRangeWizard: React.FC<{
             setShowCreatePartition(false);
           }}
           refetch={refetch}
-          selected={selected}
-          setSelected={setSelected}
+          onCreated={(partitionName) => {
+            setSelected([...selected, partitionName]);
+          }}
         />
       )}
     </>
@@ -126,9 +142,6 @@ const DynamicPartitionSelector: React.FC<{
   setShowCreatePartition,
   health,
 }) => {
-  const isAllSelected =
-    allPartitions.length === selectedPartitions.length && allPartitions.length > 0;
-
   const statusForPartitionKey = (partitionKey: string) => {
     const index = allPartitions.indexOf(partitionKey);
     if ('ranges' in health) {
@@ -140,7 +153,7 @@ const DynamicPartitionSelector: React.FC<{
 
   return (
     <>
-      <TagSelector
+      <TagSelectorWithSearch
         allTags={allPartitions}
         selectedTags={selectedPartitions}
         setSelectedTags={setSelectedPartitions}
@@ -164,14 +177,8 @@ const DynamicPartitionSelector: React.FC<{
             </label>
           );
         }}
-        renderDropdown={(dropdown, {width}) => {
-          const toggleAll = () => {
-            if (isAllSelected) {
-              setSelectedPartitions([]);
-            } else {
-              setSelectedPartitions(allPartitions);
-            }
-          };
+        renderDropdown={(dropdown, {width, allTags}) => {
+          const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
           return (
             <Menu style={{width}}>
               <Box padding={4}>
@@ -190,15 +197,24 @@ const DynamicPartitionSelector: React.FC<{
                   />
                 </Box>
                 <MenuDivider />
-                {allPartitions.length ? (
+                {allTags.length ? (
                   <>
                     <label>
                       <MenuItem
                         tagName="div"
                         text={
                           <Box flex={{alignItems: 'center', gap: 12}}>
-                            <Checkbox checked={isAllSelected} onChange={toggleAll} />
-                            <span>Select all ({allPartitions.length})</span>
+                            <Checkbox
+                              checked={isAllSelected}
+                              onChange={() => {
+                                if (isAllSelected) {
+                                  setSelectedPartitions([]);
+                                } else {
+                                  setSelectedPartitions(allTags);
+                                }
+                              }}
+                            />
+                            <span>Select all ({allTags.length})</span>
                           </Box>
                         }
                       />
@@ -220,6 +236,7 @@ const DynamicPartitionSelector: React.FC<{
           }
           return tags;
         }}
+        searchPlaceholder="Filter partitions"
       />
     </>
   );

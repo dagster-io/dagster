@@ -7,8 +7,8 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (

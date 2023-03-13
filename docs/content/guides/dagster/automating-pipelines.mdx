@@ -41,7 +41,7 @@ basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 9 * * *")
 You can also use the <PyObject object="schedule" decorator /> decorator if you want to provide custom run config and tags. For example, if you want to pass a parameter to the job at runtime, for example, `activity = ‘party’` on the weekend and `activity=’grind’` on weekdays, you can use the configuration to pass parameters in.
 
 ```python file=/guides/dagster/automating_pipelines/config_schedule.py startafter=config_schedule_start endbefore=config_schedule_end
-##sets the schedule to be updated everyday at 9:00 AM
+# sets the schedule to be updated everyday at 9:00 AM
 @schedule(job=configurable_job, cron_schedule="0 9 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
     if context.scheduled_execution_time.weekday() < 5:

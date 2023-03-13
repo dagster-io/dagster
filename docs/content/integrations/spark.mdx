@@ -15,7 +15,7 @@ There are two approaches to writing Dagster ops that invoke Spark computations:
 
 With this approach, the code inside the op submits a Spark job to an external system like Databricks or EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
 
-If you want to use this approach to run a Spark job on Databricks, <PyObject module='dagster_databricks' object='create_databricks_job_op' /> helps create an op that submits a Spark job using the Databricks REST API.
+If you want to use this approach to run a Spark job on Databricks, <PyObject module='dagster_databricks' object='create_databricks_run_now_op' /> or <PyObject module='dagster_databricks' object='create_databricks_submit_run_op' /> help create ops that submit a Spark job using the Databricks REST API.
 
 If you want to run a Spark job against YARN or a Spark Standalone cluster, you can use <PyObject module='dagster_shell' object='create_shell_command_op' /> to create an op that invokes `spark-submit`.
 

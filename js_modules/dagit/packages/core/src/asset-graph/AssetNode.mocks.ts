@@ -24,6 +24,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = {
   computeKind: null,
   description: 'This is a test asset description',
   graphName: null,
+  hasMaterializePermission: true,
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,
@@ -348,9 +349,32 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
-    numMaterialized: 5,
+    numMaterialized: 6,
     numPartitions: 1500,
     numFailed: 0,
+  },
+};
+
+export const LiveDataForNodePartitionedSomeFailed: LiveDataForNode = {
+  stepKey: 'partitioned_asset',
+  unstartedRunIds: [],
+  inProgressRunIds: [],
+  lastMaterialization: {
+    __typename: 'MaterializationEvent',
+    runId: 'ABCDEF',
+    timestamp: TIMESTAMP,
+  },
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  runWhichFailedToMaterialize: null,
+  staleStatus: StaleStatus.FRESH,
+  staleCauses: [],
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  partitionStats: {
+    numMaterialized: 6,
+    numPartitions: 1500,
+    numFailed: 849,
   },
 };
 
@@ -381,6 +405,25 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   stepKey: 'asset1',
   unstartedRunIds: [],
   inProgressRunIds: [],
+  lastMaterialization: null,
+  lastMaterializationRunStatus: null,
+  lastObservation: null,
+  runWhichFailedToMaterialize: null,
+  staleStatus: StaleStatus.MISSING,
+  staleCauses: [],
+  freshnessInfo: null,
+  freshnessPolicy: null,
+  partitionStats: {
+    numMaterialized: 0,
+    numPartitions: 1500,
+    numFailed: 0,
+  },
+};
+
+export const LiveDataForNodePartitionedMaterializing: LiveDataForNode = {
+  stepKey: 'asset1',
+  unstartedRunIds: ['LMAANO'],
+  inProgressRunIds: ['ABCDEF', 'CDEFG', 'HIHKA'],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -499,9 +542,9 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
-    numMaterialized: 1500,
+    numMaterialized: 1495,
     numPartitions: 1500,
-    numFailed: 0,
+    numFailed: 1,
   },
 };
 
@@ -639,48 +682,68 @@ export const AssetNodeScenariosPartitioned = [
     title: 'Partitioned Asset - Some Missing',
     liveData: LiveDataForNodePartitionedSomeMissing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '1,495 missing'],
+    expectedText: ['999+', '6', '1,500 partitions'],
+  },
+
+  {
+    title: 'Partitioned Asset - Some Failed',
+    liveData: LiveDataForNodePartitionedSomeFailed,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['645', '849', '1,500 partitions'],
   },
 
   {
     title: 'Partitioned Asset - None Missing',
     liveData: LiveDataForNodePartitionedNoneMissing,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Never Materialized',
     liveData: LiveDataForNodePartitionedNeverMaterialized,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '1,500 missing'],
+    expectedText: ['1,500 partitions'],
+  },
+
+  {
+    title: 'Materializing...',
+    liveData: LiveDataForNodePartitionedMaterializing,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['Materializing', 'ABCDEF'],
   },
 
   {
     title: 'Partitioned Asset - Stale',
     liveData: LiveDataForNodePartitionedStale,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Partitioned Asset - Stale and Late',
     liveData: LiveDataForNodePartitionedStaleAndLate,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '12 minutes late'],
+    expectedText: ['All', '12 minutes late'],
   },
 
   {
     title: 'Partitioned Asset - Stale and Fresh',
     liveData: LiveDataForNodePartitionedStaleAndFresh,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['1,500 partitions', 'All'],
   },
 
   {
     title: 'Partitioned Asset - Last Run Failed',
     liveData: LiveDataForNodePartitionedLatestRunFailed,
     definition: AssetNodeFragmentPartitioned,
-    expectedText: ['1,500 partitions', '0 missing'],
+    expectedText: ['4', '999+', '1,500 partitions'],
+  },
+  {
+    title: 'Partitioned Asset - Live Data Loading',
+    liveData: undefined,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['Loading'],
   },
 ];

@@ -18,6 +18,7 @@ export type AssetCatalogTableQuery = {
             id: string;
             groupName: string | null;
             isSource: boolean;
+            hasMaterializePermission: boolean;
             description: string | null;
             partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
             repository: {
@@ -52,6 +53,7 @@ export type AssetCatalogGroupTableQuery = {
     id: string;
     groupName: string | null;
     isSource: boolean;
+    hasMaterializePermission: boolean;
     description: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
@@ -69,6 +71,7 @@ export type AssetCatalogGroupTableNodeFragment = {
   id: string;
   groupName: string | null;
   isSource: boolean;
+  hasMaterializePermission: boolean;
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;

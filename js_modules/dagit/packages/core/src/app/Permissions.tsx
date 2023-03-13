@@ -1,7 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
+import {
+  PermissionFragment,
+  PermissionsQuery,
+  PermissionsQueryVariables,
+} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -99,9 +103,6 @@ type PermissionsContextType = {
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
   rawUnscopedData: PermissionFragment[];
-
-  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data?: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -112,7 +113,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
+  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
@@ -163,9 +164,6 @@ export const usePermissionsForLocation = (locationName: string | null | undefine
   }
   return {...permissionsForLocation, loading};
 };
-
-// todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
-export const usePermissionsDEPRECATED = useUnscopedPermissions;
 
 export const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {

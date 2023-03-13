@@ -25,6 +25,7 @@ export type SingleAssetQuery = {
           staleStatus: Types.StaleStatus | null;
           groupName: string | null;
           isSource: boolean;
+          hasMaterializePermission: boolean;
           description: string | null;
           repository: {
             __typename: 'Repository';

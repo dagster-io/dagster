@@ -17,7 +17,7 @@ from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._legacy import pipeline
-from dagster._serdes.serdes import deserialize_as
+from dagster._serdes.serdes import deserialize_value
 
 from .utils import get_bar_repo_repository_location
 
@@ -122,9 +122,9 @@ def test_defer_snapshots(instance):
                 repo_origin,
                 ref.name,
             )
-            return deserialize_as(reply.serialized_job_data, ExternalPipelineData)
+            return deserialize_value(reply.serialized_job_data, ExternalPipelineData)
 
-        external_repository_data = deserialize_as(ser_repo_data, ExternalRepositoryData)
+        external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
 
         assert len(external_repository_data.external_job_refs) == 5
         assert external_repository_data.external_pipeline_datas is None

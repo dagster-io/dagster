@@ -5,7 +5,7 @@ from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster._core.storage.pipeline_run import (
     DagsterRun,
@@ -28,7 +28,7 @@ class RunGroupInfo(TypedDict):
     runs: Iterable[DagsterRun]
 
 
-class RunStorage(ABC, MayHaveInstanceWeakref):
+class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement

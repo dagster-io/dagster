@@ -1,4 +1,5 @@
 import sqlalchemy as db
+from sqlalchemy.dialects import sqlite
 
 from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
@@ -72,6 +73,12 @@ SnapshotsTable = db.Table(
 DaemonHeartbeatsTable = db.Table(
     "daemon_heartbeats",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("daemon_type", db.String(255), unique=True, nullable=False),
     db.Column("daemon_id", db.String(255)),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
@@ -93,12 +100,24 @@ BulkActionsTable = db.Table(
 InstanceInfo = db.Table(
     "instance_info",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("run_storage_id", db.Text),
 )
 
 KeyValueStoreTable = db.Table(
     "kvs",
     RunStorageSqlMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
     db.Column("key", db.Text, nullable=False),
     db.Column("value", db.Text),
 )

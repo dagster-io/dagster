@@ -745,7 +745,12 @@ def helm_chart_for_k8s_run_launcher(
                 "runCoordinator": {"enabled": False},  # No run queue
                 "env": ({"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}),
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
+                "runMonitoring": {
+                    "enabled": True,
+                    "pollIntervalSeconds": 5,
+                    "startTimeoutSeconds": 180,
+                    "maxResumeRunAttempts": 3,
+                }
                 if run_monitoring
                 else {},
             },
@@ -962,6 +967,8 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
             "runMonitoring": {
                 "enabled": True,
                 "pollIntervalSeconds": 5,
+                "startTimeoutSeconds": 180,
+                "maxResumeRunAttempts": 0,
             },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config

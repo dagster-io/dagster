@@ -433,8 +433,7 @@ def test_async_solid():
         await asyncio.sleep(0.01)
         return "done"
 
-    loop = asyncio.get_event_loop()
-    assert loop.run_until_complete(aio_solid()) == "done"
+    assert asyncio.run(aio_solid()) == "done"
 
 
 def test_async_gen_invocation():
@@ -451,8 +450,7 @@ def test_async_gen_invocation():
             res.append(output)
         return res
 
-    loop = asyncio.get_event_loop()
-    output = loop.run_until_complete(get_results())[0]
+    output = asyncio.run(get_results())[0]
     assert output.value == "done"
 
 
@@ -541,8 +539,7 @@ def test_optional_output_yielded_async():
             res.append(output)
         return res
 
-    loop = asyncio.get_event_loop()
-    output = loop.run_until_complete(get_results())[0]
+    output = asyncio.run(get_results())[0]
     assert output.value == 2
 
 
@@ -602,7 +599,6 @@ def test_missing_required_output_generator_async():
             res.append(output)
         return res
 
-    loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
@@ -610,7 +606,7 @@ def test_missing_required_output_generator_async():
             "for non-optional output '1'"
         ),
     ):
-        loop.run_until_complete(get_results())
+        asyncio.run(get_results())
 
 
 def test_missing_required_output_return():
@@ -805,8 +801,7 @@ def test_coroutine_asyncio_invocation():
         result = await foo_async()
         assert result == "bar"
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(my_coroutine_test())
+    asyncio.run(my_coroutine_test())
 
 
 def test_solid_invocation_nothing_deps():
@@ -900,8 +895,7 @@ def test_dynamic_output_async_gen():
             res.append(output)
         return res
 
-    loop = asyncio.get_event_loop()
-    a1, a2, b = loop.run_until_complete(get_results())
+    a1, a2, b = asyncio.run(get_results())
 
     assert a1.value == 1
     assert a1.mapping_key == "1"
@@ -939,22 +933,21 @@ def test_dynamic_output_async_non_gen():
             "a": DynamicOut(is_required=False),
         }
     )
-    def should_not_work():
-        asyncio.sleep(0.01)
+    async def should_not_work():
+        await asyncio.sleep(0.01)
         return DynamicOutput(value=1, mapping_key="1", output_name="a")
 
-    loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
         match="dynamic output 'a' expected a list of DynamicOutput objects",
     ):
-        loop.run_until_complete(should_not_work())
+        asyncio.run(should_not_work())
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="dynamic output 'a' expected a list of DynamicOutput objects",
     ):
-        execute_solid(should_not_work())
+        execute_solid(should_not_work)
 
 
 def test_solid_invocation_with_bad_resources(capsys):

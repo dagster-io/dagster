@@ -7,7 +7,7 @@ from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive
 from dagster._annotations import experimental
 from dagster._utils.merger import merge_dicts
 
-from ..client import DagsterKubernetesClient
+from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
 from ..container_context import K8sContainerContext
 from ..job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
 from ..launcher import K8sRunLauncher
@@ -202,7 +202,7 @@ def execute_k8s_job(
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
-        include_run_tags=True,
+        include_run_tags=False,
     )
 
     container_config = container_config.copy() if container_config else {}
@@ -336,11 +336,16 @@ def execute_k8s_job(
         except StopIteration:
             break
 
+    if job_spec_config and job_spec_config.get("parallelism"):
+        num_pods_to_wait_for = job_spec_config["parallelism"]
+    else:
+        num_pods_to_wait_for = DEFAULT_JOB_POD_COUNT
     api_client.wait_for_running_job_to_succeed(
         job_name=job_name,
         namespace=namespace,
         wait_timeout=timeout,
         start_time=start_time,
+        num_pods_to_wait_for=num_pods_to_wait_for,
     )
 
 

@@ -141,7 +141,6 @@ class PresetDefinition(
         """Load a preset from a package resource, using :py:func:`pkg_resources.resource_string`.
 
         Example:
-
         .. code-block:: python
 
             PresetDefinition.from_pkg_resources(

@@ -1,5 +1,6 @@
 # pylint: disable=protected-access
 
+import datetime
 import os
 import re
 import subprocess
@@ -23,6 +24,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import file_relative_path
 from sqlalchemy import inspect
@@ -805,3 +807,83 @@ def test_add_dynamic_partitions_table(hostname, conn_string):
             instance.upgrade()
             assert "dynamic_partitions" in get_tables(instance)
             assert instance.get_dynamic_partitions("foo") == []
+
+
+def _get_table_row_count(run_storage, table, with_non_null_id=False):
+    query = db.select([db.func.count()]).select_from(table)
+    if with_non_null_id:
+        query = query.where(table.c.id.isnot(None))
+    with run_storage.connect() as conn:
+        row_count = conn.execute(query).fetchone()[0]
+    return row_count
+
+
+def test_add_primary_keys(hostname, conn_string):
+    from dagster._core.storage.runs.schema import (
+        DaemonHeartbeatsTable,
+        InstanceInfo,
+        KeyValueStoreTable,
+    )
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_1_22_pre_primary_key/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "id" not in get_columns(instance, "kvs")
+            # trigger insert, and update
+            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.kvs_set({"a": "A"})
+            kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
+            assert kvs_row_count > 0
+
+            assert "id" not in get_columns(instance, "instance_info")
+            instance_info_row_count = _get_table_row_count(instance.run_storage, InstanceInfo)
+            assert instance_info_row_count > 0
+
+            assert "id" not in get_columns(instance, "daemon_heartbeats")
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            daemon_heartbeats_row_count = _get_table_row_count(
+                instance.run_storage, DaemonHeartbeatsTable
+            )
+            assert daemon_heartbeats_row_count > 0
+
+            instance.upgrade()
+
+            assert "id" in get_columns(instance, "kvs")
+            with instance.run_storage.connect():
+                kvs_id_count = _get_table_row_count(
+                    instance.run_storage, KeyValueStoreTable, with_non_null_id=True
+                )
+            assert kvs_id_count == kvs_row_count
+
+            assert "id" in get_columns(instance, "instance_info")
+            with instance.run_storage.connect():
+                instance_info_id_count = _get_table_row_count(
+                    instance.run_storage, InstanceInfo, with_non_null_id=True
+                )
+            assert instance_info_id_count == instance_info_row_count
+
+            assert "id" in get_columns(instance, "daemon_heartbeats")
+            with instance.run_storage.connect():
+                daemon_heartbeats_id_count = _get_table_row_count(
+                    instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
+                )
+            assert daemon_heartbeats_id_count == daemon_heartbeats_row_count

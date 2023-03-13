@@ -20,6 +20,7 @@ defs = Definitions(
                 "project": "my-gcp-project",  # required
                 "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
                 "dataset": "IRIS",  # optional, defaults to PUBLIC
+                "timeout": 15.0,  # optional, defaults to None
             }
         )
     },

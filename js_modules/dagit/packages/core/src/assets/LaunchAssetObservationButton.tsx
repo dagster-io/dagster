@@ -3,19 +3,18 @@ import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 import {
+  AssetsInScope,
   buildAssetCollisionsAlert,
   executionParamsForAssetJob,
   getCommonJob,
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
-import {AssetKey} from './types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -32,25 +31,31 @@ type ObserveAssetsState =
     };
 
 export const LaunchAssetObservationButton: React.FC<{
-  assetKeys: AssetKey[]; // Memoization not required
+  scope: AssetsInScope;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, intent = 'none'}) => {
-  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
+}> = ({scope, preferredJobName, intent = 'none'}) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
   const [state, setState] = React.useState<ObserveAssetsState>({type: 'none'});
   const client = useApolloClient();
 
-  const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const label = `Observe sources ${count}`;
-
-  if (!assetKeys.length) {
+  const scopeAssets = 'selected' in scope ? scope.selected : scope.all;
+  if (!scopeAssets.length) {
     return <span />;
   }
 
-  if (!canLaunchPipelineExecution.enabled) {
+  const count = scopeAssets.length > 1 ? ` (${scopeAssets.length})` : '';
+  const label =
+    'selected' in scope
+      ? `Observe selected${count}`
+      : scope.skipAllTerm
+      ? `Observe${count}`
+      : `Observe sources ${count}`;
+
+  const hasMaterializePermission = scopeAssets.every((a) => a.hasMaterializePermission);
+  if (!hasMaterializePermission) {
     return (
       <Tooltip content="You do not have permission to observe source assets">
         <Button intent={intent} icon={<Icon name="observation" />} disabled>
@@ -68,7 +73,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
     const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
-      variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
+      variables: {assetKeys: scopeAssets.map((a) => ({path: a.assetKey.path}))},
     });
 
     if (result.data.assetNodeDefinitionCollisions.length) {

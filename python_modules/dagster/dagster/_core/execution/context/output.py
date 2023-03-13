@@ -20,10 +20,8 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     Materialization,
-    MetadataEntry,
-    PartitionMetadataEntry,
 )
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
@@ -72,7 +70,6 @@ class OutputContext:
             output.
 
     Example:
-
     .. code-block:: python
 
         from dagster import IOManager, OutputContext
@@ -690,13 +687,13 @@ class OutputContext:
 
     def get_logged_metadata_entries(
         self,
-    ) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    ) -> Sequence[MetadataEntry]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries or []
 
     def consume_logged_metadata_entries(
         self,
-    ) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
+    ) -> Sequence[MetadataEntry]:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.

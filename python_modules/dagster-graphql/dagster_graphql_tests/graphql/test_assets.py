@@ -143,14 +143,14 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
-GET_ASSET_LOGICAL_VERSIONS = """
+GET_ASSET_DATA_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
             assetKey {
               path
             }
-            currentLogicalVersion
+            currentDataVersion
             staleStatus
             staleCauses {
                 key { path }
@@ -213,6 +213,18 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
         }
     }
 """
+
+GET_LATEST_RUN_FOR_PARTITION = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $partition: String!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            latestRunForPartition(partition: $partition) {
+                runId
+            }
+        }
+    }
+"""
+
 
 GET_MATERIALIZATION_USED_DATA = """
     query AssetNodeQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
@@ -850,6 +862,28 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert new_start_time > start_time
 
         assert asset_node["latestMaterializationByPartition"][1] is None
+
+    def test_latest_run_for_partition(self, graphql_context):
+        run_id = _create_partitioned_run(
+            graphql_context, "partition_materialization_job", partition_key="a"
+        )
+
+        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_RUN_FOR_PARTITION,
+            variables={"pipelineSelector": selector, "partition": "a"},
+        )
+        assert result.data
+        assert result.data["assetNodes"][0]["latestRunForPartition"]["runId"] == run_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_RUN_FOR_PARTITION,
+            variables={"pipelineSelector": selector, "partition": "b"},
+        )
+        assert result.data
+        assert result.data["assetNodes"][0]["latestRunForPartition"] is None
 
     def test_materialization_used_data(self, graphql_context):
         def get_response_by_asset(response):

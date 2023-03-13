@@ -5,6 +5,7 @@ from airflow.models.dag import DAG
 from dagster import (
     GraphDefinition,
     JobDefinition,
+    ResourceDefinition,
     _check as check,
 )
 from dagster._core.definitions.utils import validate_tags
@@ -23,6 +24,7 @@ def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -87,13 +89,15 @@ def make_dagster_job_from_airflow_dag(
         tags=mutated_tags,
     )
 
-    airflow_database_resource = make_ephemeral_airflow_db_resource(connections=connections)
+    if resource_defs is None or "airflow_db" not in resource_defs:
+        resource_defs = dict(resource_defs) if resource_defs else {}
+        resource_defs["airflow_db"] = make_ephemeral_airflow_db_resource(connections=connections)
 
     job_def = JobDefinition(
         name=normalized_name(dag.dag_id),
         description="",
         graph_def=graph_def,
-        resource_defs={"airflow_db": airflow_database_resource},
+        resource_defs=resource_defs,
         tags=mutated_tags,
         metadata={},
         op_retry_policy=None,

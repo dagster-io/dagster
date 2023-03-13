@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.schedules.base import ScheduleStorage
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._utils import PrintFn
 
 from ..schedules.schema import InstigatorsTable, JobTable, JobTickTable
@@ -47,7 +47,7 @@ def add_selector_id_to_jobs_table(
         rows_progress = tqdm(rows) if print_fn else rows
 
         for row_id, state_str, create_timestamp, update_timestamp in rows_progress:
-            state = deserialize_as(state_str, InstigatorState)
+            state = deserialize_value(state_str, InstigatorState)
             selector_id = state.selector_id
 
             # insert the state into a new instigator table, which has a unique constraint on

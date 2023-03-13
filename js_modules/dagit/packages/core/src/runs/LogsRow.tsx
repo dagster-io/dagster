@@ -208,15 +208,15 @@ const StructuredMemoizedContent: React.FC<{
       onMouseLeave={() => setHighlightedGanttChartTime(null)}
       highlighted={highlighted}
     >
-      <OpColumn stepKey={'stepKey' in node && node.stepKey} />
-      <StructuredContent>
-        <LogsRowStructuredContent node={node} metadata={metadata} />
-      </StructuredContent>
       <TimestampColumn
         time={'timestamp' in node ? node.timestamp : null}
         runStartTime={metadata.startedPipelineAt}
         stepStartTime={stepStartTime}
       />
+      <OpColumn stepKey={'stepKey' in node && node.stepKey} />
+      <StructuredContent>
+        <LogsRowStructuredContent node={node} metadata={metadata} />
+      </StructuredContent>
     </Row>
   );
 });
@@ -279,6 +279,11 @@ const UnstructuredMemoizedContent: React.FC<{
       onMouseLeave={() => setHighlightedGanttChartTime(null)}
       highlighted={highlighted}
     >
+      <TimestampColumn
+        time={node.timestamp}
+        runStartTime={metadata.startedPipelineAt}
+        stepStartTime={stepStartTime}
+      />
       <OpColumn stepKey={node.stepKey} />
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{node.level}</span>
@@ -286,11 +291,6 @@ const UnstructuredMemoizedContent: React.FC<{
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {node.message}
       </Box>
-      <TimestampColumn
-        time={node.timestamp}
-        runStartTime={metadata.startedPipelineAt}
-        stepStartTime={stepStartTime}
-      />
     </Row>
   );
 });

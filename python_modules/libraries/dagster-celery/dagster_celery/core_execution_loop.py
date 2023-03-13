@@ -8,7 +8,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.tags import PRIORITY_TAG
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .defaults import task_default_priority, task_default_queue
@@ -100,7 +100,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                             sys.exc_info()
                         )
                     for step_event in step_events:
-                        event = deserialize_json_to_dagster_namedtuple(step_event)
+                        event = deserialize_value(step_event, DagsterEvent)
                         yield event
                         active_execution.handle_event(event)
 

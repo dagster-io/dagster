@@ -170,6 +170,9 @@ class RepositoryDefinition:
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
 
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        return self._repository_data.get_env_vars_by_top_level_resource()
+
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -352,7 +355,9 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
+        with AssetValueLoader(
+            self._assets_defs_by_key, self.source_assets_by_key, instance=instance
+        ) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -381,7 +386,9 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+        return AssetValueLoader(
+            self._assets_defs_by_key, self.source_assets_by_key, instance=instance
+        )
 
     @property
     def asset_graph(self) -> InternalAssetGraph:

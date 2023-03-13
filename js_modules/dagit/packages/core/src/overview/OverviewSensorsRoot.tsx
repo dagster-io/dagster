@@ -19,6 +19,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -36,6 +37,7 @@ import {
   OverviewSensorsQuery,
   OverviewSensorsQueryVariables,
   UnloadableSensorsQuery,
+  UnloadableSensorsQueryVariables,
 } from './types/OverviewSensorsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
@@ -43,9 +45,12 @@ export const OverviewSensorsRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Sensors');
 
-  const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
     OVERVIEW_SENSORS_QUERY,
@@ -230,7 +235,9 @@ const UnloadableSensorsAlert: React.FC<{
 };
 
 const UnloadableSensorDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSensorsQuery>(UNLOADABLE_SENSORS_QUERY);
+  const {data} = useQuery<UnloadableSensorsQuery, UnloadableSensorsQueryVariables>(
+    UNLOADABLE_SENSORS_QUERY,
+  );
   if (!data) {
     return <Spinner purpose="section" />;
   }

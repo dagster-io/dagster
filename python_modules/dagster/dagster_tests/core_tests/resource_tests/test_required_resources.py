@@ -1,6 +1,5 @@
 import pytest
 from dagster import (
-    AssetMaterialization,
     DagsterType,
     DagsterUnknownResourceError,
     In,
@@ -8,7 +7,6 @@ from dagster import (
     ResourceDefinition,
     String,
     dagster_type_loader,
-    dagster_type_materializer,
     graph,
     job,
     op,
@@ -16,10 +14,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
-from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import OutputDefinition
 
 
 def get_resource_init_pipeline(resources_initted):
@@ -372,151 +367,6 @@ def test_resource_dependent_hydration_with_selective_init():
     assert set(resources_initted.keys()) == set()
 
 
-def define_materialization_pipeline(should_require_resources=True, resources_initted=None):
-    if resources_initted is None:
-        resources_initted = {}
-
-    @resource
-    def resource_a(_):
-        resources_initted["a"] = True
-        yield "A"
-
-    @dagster_type_materializer(
-        String, required_resource_keys={"a"} if should_require_resources else set()
-    )
-    def materialize(context, *_args, **_kwargs):
-        assert context.resources.a == "A"
-        return AssetMaterialization("hello")
-
-    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
-
-    @op(out=Out(CustomDagsterType))
-    def output_op(_context):
-        return "hello"
-
-    @job(resource_defs={"a": resource_a})
-    def output_job():
-        output_op()
-
-    return output_job
-
-
-def test_custom_type_with_resource_dependent_materialization():
-    under_required_pipeline = define_materialization_pipeline(should_require_resources=False)
-    with pytest.raises(DagsterUnknownResourceError):
-        under_required_pipeline.execute_in_process(
-            {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}},
-        )
-
-    resources_initted = {}
-    sufficiently_required_pipeline = define_materialization_pipeline(
-        should_require_resources=True, resources_initted=resources_initted
-    )
-    res = sufficiently_required_pipeline.execute_in_process(
-        {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}},
-    )
-    assert res.success
-    assert res.output_for_node("output_op") == "hello"
-    assert set(resources_initted.keys()) == set("a")
-
-    resources_initted = {}
-    assert (
-        define_materialization_pipeline(resources_initted=resources_initted)
-        .execute_in_process()
-        .success
-    )
-    assert set(resources_initted.keys()) == set()
-
-
-def define_composite_materialization_pipeline(
-    should_require_resources=True, resources_initted=None
-):
-    if resources_initted is None:
-        resources_initted = {}
-
-    @resource
-    def resource_a(_):
-        resources_initted["a"] = True
-        yield "A"
-
-    @dagster_type_materializer(
-        String, required_resource_keys={"a"} if should_require_resources else set()
-    )
-    def materialize(context, *_args, **_kwargs):
-        assert context.resources.a == "A"
-        return AssetMaterialization("hello")
-
-    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
-
-    @op(out=Out(CustomDagsterType))
-    def output_op(_context):
-        return "hello"
-
-    wrap_solid = GraphDefinition(
-        name="wrap_solid",
-        node_defs=[output_op],
-        output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_op")],
-    )
-
-    @job(resource_defs={"a": resource_a})
-    def output_job():
-        wrap_solid()
-
-    return output_job
-
-
-def test_custom_type_with_resource_dependent_composite_materialization():
-    under_required_pipeline = define_composite_materialization_pipeline(
-        should_require_resources=False
-    )
-    with pytest.raises(DagsterUnknownResourceError):
-        under_required_pipeline.execute_in_process(
-            {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
-        )
-
-    sufficiently_required_pipeline = define_composite_materialization_pipeline(
-        should_require_resources=True
-    )
-    assert sufficiently_required_pipeline.execute_in_process(
-        {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
-    ).success
-
-    # test that configured output materialization of the wrapping composite initializes resource
-    resources_initted = {}
-    assert (
-        define_composite_materialization_pipeline(resources_initted=resources_initted)
-        .execute_in_process(
-            {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
-        )
-        .success
-    )
-    assert set(resources_initted.keys()) == set("a")
-
-    # test that configured output materialization of the inner solid initializes resource
-    resources_initted = {}
-    assert (
-        define_composite_materialization_pipeline(resources_initted=resources_initted)
-        .execute_in_process(
-            {
-                "solids": {
-                    "wrap_solid": {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}}
-                }
-            },
-        )
-        .success
-    )
-    assert set(resources_initted.keys()) == set("a")
-
-    # test that no output config will not initialize anything
-    resources_initted = {}
-    assert (
-        define_composite_materialization_pipeline(resources_initted=resources_initted)
-        .execute_in_process()
-        .success
-    )
-    assert set(resources_initted.keys()) == set()
-
-
 def test_custom_type_with_resource_dependent_type_check():
     def define_type_check_pipeline(should_require_resources):
         @resource
@@ -616,34 +466,6 @@ def test_loader_missing_resource_fails():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="required by the loader on type 'CustomType'",
-    ):
-
-        @job
-        def _type_check_job():
-            custom_type_op()
-
-
-def test_materialize_missing_resource_fails():
-    @dagster_type_materializer(String, required_resource_keys={"a"})
-    def materialize(context, *_args, **_kwargs):
-        assert context.resources.a == "A"
-        return AssetMaterialization("hello")
-
-    CustomType = create_any_type(name="CustomType", materializer=materialize)
-
-    @op(
-        out={
-            "custom_type": Out(
-                CustomType,
-            )
-        }
-    )
-    def custom_type_op(_):
-        return "A"
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="required by the materializer on type 'CustomType'",
     ):
 
         @job

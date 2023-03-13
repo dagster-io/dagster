@@ -41,7 +41,6 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
     assert len(materializations) == 1
     assert len(materializations[0].metadata_entries) == 1
     assert (
-        materializations[0].metadata_entries[0].entry_data.path
-        == f"s3://{mock_s3_bucket.name}/some-key"
+        materializations[0].metadata_entries[0].value.path == f"s3://{mock_s3_bucket.name}/some-key"
     )
     assert materializations[0].metadata_entries[0].label == "some-key"

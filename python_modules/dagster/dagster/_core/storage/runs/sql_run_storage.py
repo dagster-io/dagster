@@ -52,10 +52,9 @@ from dagster._core.storage.tags import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
-    deserialize_as,
-    serialize_dagster_namedtuple,
+    deserialize_value,
+    serialize_value,
 )
-from dagster._serdes.serdes import deserialize_json_to_dagster_namedtuple
 from dagster._seven import JSONDecodeError
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
@@ -142,7 +141,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             run_id=pipeline_run.run_id,
             pipeline_name=pipeline_run.pipeline_name,
             status=pipeline_run.status.value,
-            run_body=serialize_dagster_namedtuple(pipeline_run),
+            run_body=serialize_value(pipeline_run),
             snapshot_id=pipeline_run.pipeline_snapshot_id,
             partition=partition,
             partition_set=partition_set,
@@ -202,7 +201,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
+                    run_body=serialize_value(run.with_status(new_pipeline_status)),
                     status=new_pipeline_status.value,
                     update_timestamp=now,
                     **kwargs,
@@ -210,7 +209,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
 
     def _row_to_run(self, row: SqlAlchemyRow) -> DagsterRun:
-        run = deserialize_as(row["run_body"], DagsterRun)
+        run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
         # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
@@ -578,9 +577,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    run_body=serialize_dagster_namedtuple(
-                        run.with_tags(merge_dicts(current_tags, new_tags))
-                    ),
+                    run_body=serialize_value(run.with_tags(merge_dicts(current_tags, new_tags))),
                     partition=partition,
                     partition_set=partition_set,
                     update_timestamp=pendulum.now("UTC"),
@@ -864,9 +861,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             snapshot_insert = (
                 SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
                     snapshot_id=snapshot_id,
-                    snapshot_body=zlib.compress(
-                        serialize_dagster_namedtuple(snapshot_obj).encode("utf-8")
-                    ),
+                    snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
                     snapshot_type=snapshot_type.value,
                 )
             )
@@ -900,7 +895,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         row = self.fetchone(query)
 
-        return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None  # type: ignore
+        return defensively_unpack_execution_plan_snapshot_query(logging, row) if row else None  # type: ignore
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
@@ -1049,7 +1044,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
-                        body=serialize_dagster_namedtuple(daemon_heartbeat),
+                        body=serialize_value(daemon_heartbeat),
                     )
                 )
             except db_exc.IntegrityError:
@@ -1059,16 +1054,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     .values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
-                        body=serialize_dagster_namedtuple(daemon_heartbeat),
+                        body=serialize_value(daemon_heartbeat),
                     )
                 )
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         with self.connect() as conn:
-            rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
+            rows = conn.execute(db.select([DaemonHeartbeatsTable.c.body]))
             heartbeats = []
             for row in rows:
-                heartbeats.append(deserialize_as(row.body, DaemonHeartbeat))
+                heartbeats.append(deserialize_value(row.body, DaemonHeartbeat))
             return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self) -> None:
@@ -1105,13 +1100,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.limit(limit)
         query = query.order_by(BulkActionsTable.c.id.desc())
         rows = self.fetchall(query)
-        return [deserialize_as(row[0], PartitionBackfill) for row in rows]
+        return [deserialize_value(row[0], PartitionBackfill) for row in rows]
 
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
         check.str_param(backfill_id, "backfill_id")
         query = db.select([BulkActionsTable.c.body]).where(BulkActionsTable.c.key == backfill_id)
         row = self.fetchone(query)
-        return deserialize_as(row[0], PartitionBackfill) if row else None
+        return deserialize_value(row[0], PartitionBackfill) if row else None
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
@@ -1119,7 +1114,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
             timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-            body=serialize_dagster_namedtuple(cast(NamedTuple, partition_backfill)),
+            body=serialize_value(cast(NamedTuple, partition_backfill)),
         )
 
         if self.has_bulk_actions_selector_cols():
@@ -1144,7 +1139,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .where(BulkActionsTable.c.key == backfill_id)
                 .values(
                     status=partition_backfill.status.value,
-                    body=serialize_dagster_namedtuple(partition_backfill),
+                    body=serialize_value(partition_backfill),
                 )
             )
 
@@ -1156,7 +1151,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             rows = conn.execute(
-                db.select(KeyValueStoreTable.columns).where(KeyValueStoreTable.c.key.in_(keys)),
+                db.select([KeyValueStoreTable.c.key, KeyValueStoreTable.c.value]).where(
+                    KeyValueStoreTable.c.key.in_(keys)
+                ),
             )
             return {row.key: row.value for row in rows}
 
@@ -1182,7 +1179,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run.run_id)
                 .values(
-                    run_body=serialize_dagster_namedtuple(run.with_job_origin(job_origin)),
+                    run_body=serialize_value(run.with_job_origin(job_origin)),
                 )
             )
             conn.execute(
@@ -1196,9 +1193,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 
-def defensively_unpack_pipeline_snapshot_query(
+def defensively_unpack_execution_plan_snapshot_query(
     logger: logging.Logger, row: SqlAlchemyRow
-) -> Optional[PipelineSnapshot]:
+) -> Optional[Union[ExecutionPlanSnapshot, PipelineSnapshot]]:
     # no checking here because sqlalchemy returns a special
     # row proxy and don't want to instance check on an internal
     # implementation detail
@@ -1223,7 +1220,7 @@ def defensively_unpack_pipeline_snapshot_query(
         return None
 
     try:
-        return deserialize_json_to_dagster_namedtuple(decoded_str)  # type: ignore
+        return deserialize_value(decoded_str, (ExecutionPlanSnapshot, PipelineSnapshot))
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None

@@ -7,6 +7,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetNodeSearch} from '../assets/useAssetSearch';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -24,8 +25,11 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Assets: ${repoName}`);
 
-  const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   const queryResultOverview = useQuery<WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables>(
     WORKSPACE_ASSETS_QUERY,

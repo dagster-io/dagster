@@ -64,6 +64,7 @@ export type AssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   graphName: string | null;
+  hasMaterializePermission: boolean;
   jobNames: Array<string>;
   opNames: Array<string>;
   opVersion: string | null;

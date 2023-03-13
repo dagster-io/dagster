@@ -125,7 +125,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
+  const {canLaunchPipelineExecution, canLaunchPartitionBackfill} = usePermissionsForLocation(
+    repoAddress.location,
+  );
   const [launching, setLaunching] = React.useState(false);
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
@@ -250,6 +252,14 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       return;
     }
 
+    if (!canLaunchPipelineExecution.enabled) {
+      // Should never happen, this is essentially an assertion failure
+      showCustomAlert({
+        title: 'Unable to launch as single run',
+        body: 'You do not have permission to launch this job.',
+      });
+    }
+
     const {data: tagAndConfigData} = await client.query<
       ConfigPartitionSelectionQuery,
       ConfigPartitionSelectionQueryVariables
@@ -357,6 +367,46 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     } else {
       showBackfillErrorToast(launchBackfillData);
     }
+  };
+
+  const launchButton = () => {
+    if (launchAsBackfill && !canLaunchPartitionBackfill.enabled) {
+      return (
+        <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+          <Button disabled>
+            {target.type === 'job'
+              ? `Launch ${keysFiltered.length}-run backfill`
+              : 'Launch backfill'}
+          </Button>
+        </Tooltip>
+      );
+    }
+
+    if (!launchAsBackfill && !canLaunchPipelineExecution.enabled) {
+      return (
+        <Tooltip content={canLaunchPipelineExecution.disabledReason}>
+          <Button disabled>Launch 1 run</Button>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Button
+        data-testid={testId('launch-button')}
+        intent="primary"
+        onClick={onLaunch}
+        disabled={keysFiltered.length === 0}
+        loading={launching}
+      >
+        {launching
+          ? 'Launching...'
+          : launchAsBackfill
+          ? target.type === 'job'
+            ? `Launch ${keysFiltered.length}-run backfill`
+            : 'Launch backfill'
+          : `Launch 1 run`}
+      </Button>
+    );
   };
 
   return (
@@ -535,31 +585,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {launchAsBackfill && !canLaunchPartitionBackfill.enabled ? (
-          <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>
-              {target.type === 'job'
-                ? `Launch ${keysFiltered.length}-Run Backfill`
-                : 'Launch Backfill'}
-            </Button>
-          </Tooltip>
-        ) : (
-          <Button
-            data-testid={testId('launch-button')}
-            intent="primary"
-            onClick={onLaunch}
-            disabled={keysFiltered.length === 0}
-            loading={launching}
-          >
-            {launching
-              ? 'Launching...'
-              : launchAsBackfill
-              ? target.type === 'job'
-                ? `Launch ${keysFiltered.length}-Run Backfill`
-                : 'Launch Backfill'
-              : `Launch 1 Run`}
-          </Button>
-        )}
+        {launchButton()}
       </DialogFooter>
     </>
   );

@@ -30,8 +30,9 @@ from dagster._grpc.server import (
     open_server_process,
     wait_for_grpc_server,
 )
-from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._grpc.types import ListRepositoriesResponse, SensorExecutionArgs, StartRunResult
+from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, find_free_port
 from dagster._utils.error import SerializableErrorInfo
@@ -507,10 +508,9 @@ def test_lazy_load_with_error():
         wait_for_grpc_server(
             process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
         )
-        list_repositories_response = deserialize_json_to_dagster_namedtuple(
-            DagsterGrpcClient(port=port).list_repositories()
+        list_repositories_response = deserialize_value(
+            DagsterGrpcClient(port=port).list_repositories(), SerializableErrorInfo
         )
-        assert isinstance(list_repositories_response, SerializableErrorInfo)
         assert "Dagster recognizes standard cron expressions" in list_repositories_response.message
     finally:
         process.terminate()
@@ -541,10 +541,9 @@ def test_lazy_load_via_env_var():
             wait_for_grpc_server(
                 process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
             )
-            list_repositories_response = deserialize_json_to_dagster_namedtuple(
-                DagsterGrpcClient(port=port).list_repositories()
+            list_repositories_response = deserialize_value(
+                DagsterGrpcClient(port=port).list_repositories(), SerializableErrorInfo
             )
-            assert isinstance(list_repositories_response, SerializableErrorInfo)
             assert (
                 "Dagster recognizes standard cron expressions" in list_repositories_response.message
             )
@@ -572,10 +571,9 @@ def test_load_with_missing_env_var():
     process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
     try:
         wait_for_grpc_server(process, client, subprocess_args)
-        list_repositories_response = deserialize_json_to_dagster_namedtuple(
-            client.list_repositories()
+        list_repositories_response = deserialize_value(
+            client.list_repositories(), SerializableErrorInfo
         )
-        assert isinstance(list_repositories_response, SerializableErrorInfo)
         assert "Missing env var" in list_repositories_response.message
     finally:
         client.shutdown_server()
@@ -608,18 +606,14 @@ def test_load_with_secrets_loader_instance_ref():
                 + [
                     "--inject-env-vars-from-instance",
                     "--instance-ref",
-                    serialize_dagster_namedtuple(instance.get_ref()),
+                    serialize_value(instance.get_ref()),
                 ],
                 cwd=os.path.dirname(__file__),
             )
             try:
                 wait_for_grpc_server(process, client, subprocess_args)
 
-                list_repositories_response = deserialize_json_to_dagster_namedtuple(
-                    client.list_repositories()
-                )
-
-                assert isinstance(list_repositories_response, ListRepositoriesResponse)
+                deserialize_value(client.list_repositories(), ListRepositoriesResponse)
 
                 # Launch a run and verify that it finishes
 
@@ -636,14 +630,15 @@ def test_load_with_secrets_loader_instance_ref():
                     ),
                 )
 
-                res = deserialize_json_to_dagster_namedtuple(
+                res = deserialize_value(
                     client.start_run(
                         ExecuteExternalPipelineArgs(
                             pipeline_origin=pipeline_origin,
                             pipeline_run_id=run.run_id,
                             instance_ref=instance.get_ref(),
                         )
-                    )
+                    ),
+                    StartRunResult,
                 )
 
                 assert res.success
@@ -687,11 +682,9 @@ def test_load_with_secrets_loader_no_instance_ref():
 
             try:
                 wait_for_grpc_server(process, client, subprocess_args)
-                list_repositories_response = deserialize_json_to_dagster_namedtuple(
-                    DagsterGrpcClient(port=port).list_repositories()
+                deserialize_value(
+                    DagsterGrpcClient(port=port).list_repositories(), ListRepositoriesResponse
                 )
-
-                assert isinstance(list_repositories_response, ListRepositoriesResponse)
 
             finally:
                 client.shutdown_server()
