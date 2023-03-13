@@ -456,7 +456,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return json.loads(overrides)
         return {}
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         tags = self._get_run_tags(run_id)
 
         if not (tags.arn and tags.cluster):
@@ -471,6 +471,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return False
 
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
+
+        run = self._instance.get_run_by_id(run_id)
+        self._instance.report_run_canceling(run, message=message)
         return True
 
     def _get_current_task_metadata(self):

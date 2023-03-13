@@ -69,7 +69,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def terminate(self, run_id: str) -> bool:
+    def terminate(self, run_id: str, message=None) -> bool:
         """Terminates a process.
 
         Returns False is the process was already terminated. Returns true if
