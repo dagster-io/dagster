@@ -469,8 +469,11 @@ def determine_asset_partitions_to_reconcile(
             return False
 
         if any(
+            # do not reconcile assets if the freshness system will update them
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
+            # do not reconcile assets if an active backfill will update them
             or candidate in backfill_target_asset_graph_subset
+            # do not reconcile assets if they are not in the target selection
             or candidate.asset_key not in target_asset_keys
             for candidate in candidates_unit
         ):
