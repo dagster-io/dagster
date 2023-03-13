@@ -29,6 +29,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
@@ -203,9 +204,6 @@ class AssetReconciliationCursor(NamedTuple):
             )
         )
         return serialized
-
-
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 
 def get_active_backfill_target_asset_graph_subset(
