@@ -12,8 +12,11 @@ from typing import (
     Tuple,
     Type,
     Union,
+    Dict,
     cast,
+    List,
 )
+import itertools
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -549,6 +552,221 @@ class MultiToSingleDimensionPartitionMapping(
                     upstream_partitions_subset, partition_dimension_name
                 )
             )
+
+
+class DimensionMapping(
+    NamedTuple(
+        "_DimensionMapping",
+        [
+            ("upstream_dimension_name", str),
+            ("downstream_dimension_name", str),
+            ("partition_mapping", PartitionMapping),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        upstream_dimension_name: str,
+        downstream_dimension_name: str,
+        partition_mapping: PartitionMapping,
+    ):
+        return super(DimensionMapping, cls).__new__(
+            cls,
+            upstream_dimension_name=check.str_param(
+                upstream_dimension_name, "upstream_dimension_name"
+            ),
+            downstream_dimension_name=check.str_param(
+                downstream_dimension_name, "downstream_dimension_name"
+            ),
+            partition_mapping=check.inst_param(
+                partition_mapping, "partition_mapping", PartitionMapping
+            ),
+        )
+
+
+@experimental
+@whitelist_for_serdes
+class MultiPartitionsMapping(
+    PartitionMapping,
+    NamedTuple("_MultiPartitionMapping", [("dimension_mappings", Sequence[DimensionMapping])]),
+):
+    """
+    TODO add docstrings
+    """
+
+    def __new__(cls, dimension_mappings: Sequence[DimensionMapping]):
+        upstream_dimension_names = set()
+        downstream_dimension_names = set()
+        for dimension_mapping in dimension_mappings:
+            check.invariant(
+                dimension_mapping.upstream_dimension_name not in upstream_dimension_names,
+                "upstream_dimension_name must be unique in dimension_mappings",
+            )
+            check.invariant(
+                dimension_mapping.downstream_dimension_name not in downstream_dimension_names,
+                "downstream_dimension_name must be unique in dimension_mappings",
+            )
+            upstream_dimension_names.add(dimension_mapping.upstream_dimension_name)
+            downstream_dimension_names.add(dimension_mapping.downstream_dimension_name)
+
+        return super(MultiPartitionsMapping, cls).__new__(
+            cls,
+            dimension_mappings=check.list_param(
+                dimension_mappings, "dimension_mappings", of_type=DimensionMapping
+            ),
+        )
+
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: Optional[PartitionKeyRange],
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+    def _check_all_dimensions_accounted_for(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ) -> None:
+        if any(
+            not isinstance(partitions_def, MultiPartitionsDefinition)
+            for partitions_def in (upstream_partitions_def, downstream_partitions_def)
+        ):
+            check.failed(
+                "Both partitions defs provided to a MultiPartitionsMapping must be"
+                " multi-partitioned"
+            )
+
+        upstream_dimension_names = set(
+            [
+                dim.name
+                for dim in cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
+            ]
+        )
+        downstream_dimension_names = set(
+            [
+                dim.name
+                for dim in cast(
+                    MultiPartitionsDefinition, downstream_partitions_def
+                ).partitions_defs
+            ]
+        )
+
+        if len(upstream_dimension_names) != len(downstream_dimension_names):
+            check.failed(
+                "The number of dimensions in the upstream and downstream partitions defs must match"
+            )
+
+        for dimension_mapping in self.dimension_mappings:
+            upstream_dimension_names.remove(dimension_mapping.upstream_dimension_name)
+            downstream_dimension_names.remove(dimension_mapping.downstream_dimension_name)
+
+        check.invariant(
+            not upstream_dimension_names,
+            "Upstream partitions def has dimensions that are not mapped: {}".format(
+                upstream_dimension_names
+            ),
+        )
+        check.invariant(
+            not downstream_dimension_names,
+            "Downstream partitions def has dimensions that are not mapped: {}".format(
+                downstream_dimension_names
+            ),
+        )
+
+    def get_upstream_partitions_for_partitions(
+        self,
+        downstream_partitions_subset: Optional[PartitionsSubset],
+        upstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        if downstream_partitions_subset is None:
+            check.failed("downstream asset is not partitioned")
+
+        downstream_partitions_def = cast(
+            MultiPartitionsDefinition, downstream_partitions_subset.partitions_def
+        )
+        upstream_partitions_def = cast(MultiPartitionsDefinition, upstream_partitions_def)
+
+        self._check_all_dimensions_accounted_for(upstream_partitions_def, downstream_partitions_def)
+
+        downstream_to_upstream_dimension_mapping = {
+            dimension_mapping.downstream_dimension_name: (
+                dimension_mapping.upstream_dimension_name,
+                dimension_mapping,
+            )
+            for dimension_mapping in self.dimension_mappings
+        }
+
+        downstream_keys_by_dimension = defaultdict(set)
+        downstream_keys = downstream_partitions_subset.get_partition_keys()
+        for partition_key in downstream_keys:
+            for dimension_name, key in cast(
+                MultiPartitionKey, partition_key
+            ).keys_by_dimension.items():
+                downstream_keys_by_dimension[dimension_name].add(key)
+
+        upstream_keys_by_downstream_key_and_dim: Dict[str, Dict[str, List[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+        for dimension_name, keys in downstream_keys_by_dimension.items():
+            upstream_dimension_name, dimension_mapping = downstream_to_upstream_dimension_mapping[
+                dimension_name
+            ]
+            downstream_dimension_partitions_def = (
+                downstream_partitions_def.get_partitions_def_for_dimension(dimension_name)
+            )
+            upstream_dimension_partitions_def = (
+                upstream_partitions_def.get_partitions_def_for_dimension(upstream_dimension_name)
+            )
+            for key in keys:
+                upstream_keys = (
+                    dimension_mapping.partition_mapping.get_upstream_partitions_for_partitions(
+                        downstream_dimension_partitions_def.empty_subset().with_partition_keys(
+                            [key]
+                        ),
+                        upstream_dimension_partitions_def,
+                        dynamic_partitions_store,
+                    )
+                )
+
+                upstream_keys_by_downstream_key_and_dim[dimension_name][key] = list(
+                    upstream_keys.get_partition_keys()
+                )
+
+        upstream_keys = set()
+        dimension_names = [dim.name for dim in downstream_partitions_def.partitions_defs]
+        for key in downstream_keys:
+            key = cast(MultiPartitionKey, key)
+            upstream_keys_per_dimension = [
+                upstream_keys_by_downstream_key_and_dim[dim][key.keys_by_dimension[dim]]
+                for dim in dimension_names
+            ]
+            for upstream_key_values in itertools.product(*upstream_keys_per_dimension):
+                upstream_keys.add(
+                    MultiPartitionKey(
+                        {dimension_names[i]: key for i, key in enumerate(upstream_key_values)}
+                    )
+                )
+
+        return upstream_partitions_def.empty_subset().with_partition_keys(upstream_keys)
+
+    def get_downstream_partitions_for_partitions(
+        self,
+        upstream_partitions_subset: PartitionsSubset,
+        downstream_partitions_def: PartitionsDefinition,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        raise NotImplementedError()
 
 
 @whitelist_for_serdes
