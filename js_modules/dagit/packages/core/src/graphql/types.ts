@@ -2244,6 +2244,7 @@ export enum PartitionDefinitionType {
 export enum PartitionRangeStatus {
   FAILED = 'FAILED',
   MATERIALIZED = 'MATERIALIZED',
+  MATERIALIZING = 'MATERIALIZING',
 }
 
 export type PartitionRun = {
