@@ -398,34 +398,15 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_extra_cmds=dagster_graphql_extra_cmds,
         pytest_tox_factors=[
             "not_graphql_context_test_suite",
-            "sqlite_instance_multi_location",
-            "sqlite_instance_managed_grpc_env",
-            "sqlite_instance_deployed_grpc_env",
+            "sqlite-multi_location",
+            "sqlite-managed_grpc_env",
+            "sqlite-deployed_grpc_env",
             "graphql_python_client",
             "postgres-graphql_context_variants",
-            "postgres-instance_multi_location",
-            "postgres-instance_managed_grpc_env",
-            "postgres-instance_deployed_grpc_env",
+            "postgres-multi_location",
+            "postgres-managed_grpc_env",
+            "postgres-deployed_grpc_env",
         ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    in {
-                        # test suites particularly likely to crash and/or hang
-                        # due to https://github.com/grpc/grpc/issues/31885
-                        "sqlite_instance_managed_grpc_env",
-                        "sqlite_instance_deployed_grpc_env",
-                        "sqlite_instance_multi_location",
-                        "postgres-instance_multi_location",
-                        "postgres-instance_managed_grpc_env",
-                        "postgres-instance_deployed_grpc_env",
-                    }
-                )
-                else []
-            )
-        ),
     ),
     PackageSpec(
         "python_modules/dagster-test",

@@ -74,10 +74,8 @@ setup(
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
         # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-        # (except on python 3.11, where newer versions are required just to install the grpcio package)
-        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
-        "grpcio>=1.44.0; python_version>='3.11'",
+        # grpcio 1.50.0 introduces https://github.com/grpc/grpc/issues/31885
+        "grpcio>=1.44.0,<1.50.0",
         "grpcio-health-checking>=1.44.0",
         "packaging>=20.9",
         "pendulum",
