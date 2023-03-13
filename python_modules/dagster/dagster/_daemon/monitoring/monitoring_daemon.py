@@ -11,8 +11,8 @@ from dagster._core.events import DagsterEventType
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
-    DagsterRun,
     DagsterRunStatus,
+    RunRecord,
     RunsFilter,
 )
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
@@ -23,8 +23,9 @@ RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
 def monitor_starting_run(
-    instance: DagsterInstance, run: DagsterRun, logger: logging.Logger
+    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
 ) -> None:
+    run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
 
@@ -51,10 +52,12 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
 def monitor_started_run(
     instance: DagsterInstance,
     workspace: IWorkspace,
-    run: DagsterRun,
+    run_record: RunRecord,
     logger: logging.Logger,
 ) -> None:
+    run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTED)
+    instance.handle_started_run(run_record, logger)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
         num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
@@ -107,29 +110,31 @@ def execute_monitoring_iteration(
     )
 
     # TODO: consider limiting number of runs to fetch
-    runs = list(instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)))
+    run_records = list(
+        instance.get_run_records(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+    )
 
-    if not runs:
+    if not run_records:
         return
 
-    logger.info(f"Collected {len(runs)} runs for monitoring")
+    logger.info(f"Collected {len(run_records)} runs for monitoring")
     workspace = workspace_process_context.create_request_context()
-    for run in runs:
+    for run_record in run_records:
         try:
-            logger.info(f"Checking run {run.run_id}")
+            logger.info(f"Checking run {run_record.dagster_run.run_id}")
 
-            if run.status == DagsterRunStatus.STARTING:
-                monitor_starting_run(instance, run, logger)
-            elif run.status == DagsterRunStatus.STARTED:
-                monitor_started_run(instance, workspace, run, logger)
-            elif run.status == DagsterRunStatus.CANCELING:
+            if run_record.dagster_run.status == DagsterRunStatus.STARTING:
+                monitor_starting_run(instance, run_record, logger)
+            elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
+                monitor_started_run(instance, workspace, run_record, logger)
+            elif run_record.dagster_run.status == DagsterRunStatus.CANCELING:
                 # TODO: implement canceling timeouts
                 pass
             else:
-                check.invariant(False, f"Unexpected run status: {run.status}")
+                check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(f"Hit error while monitoring run {run.run_id}: {str(error_info)}")
+            logger.error(f"Hit error while monitoring run {run_record.dagster_run.run_id}: {str(error_info)}")
             yield error_info
         else:
             yield
