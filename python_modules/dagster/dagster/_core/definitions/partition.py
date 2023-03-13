@@ -3,6 +3,7 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
+from collections import Counter
 from datetime import (
     datetime,
     time,
@@ -400,6 +401,12 @@ class StaticPartitionsDefinition(
 
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
+
+        if len(partition_keys) != len(set(partition_keys)):
+            raise DagsterInvalidDefinitionError(
+                "Partition keys must be unique. Found duplicate keys: "
+                f"{[k for k, v in Counter(partition_keys).items() if v > 1]}"
+            )
 
         raise_error_on_invalid_partition_key_substring(partition_keys)
 
