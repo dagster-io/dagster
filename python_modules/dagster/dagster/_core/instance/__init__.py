@@ -1556,10 +1556,13 @@ class DagsterInstance(DynamicPartitionsStore):
             and pendulum.now().timestamp() - run_record.start_time > max_time
         ):
             logger.info(
-                f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of {max_time} seconds:"
-                " terminating run."
+                f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"
+                f" {max_time} seconds: terminating run."
             )
-            self.run_launcher.terminate(run_id=run_record.dagster_run.run_id)
+            self.run_launcher.terminate(
+                run_id=run_record.dagster_run.run_id,
+                message="Run has exceeded maximum allowed runtime.",
+            )
 
     @traced
     def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
