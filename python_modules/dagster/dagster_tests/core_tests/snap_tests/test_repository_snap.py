@@ -92,8 +92,11 @@ def test_repository_snap_definitions_resources_nested() -> None:
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
     inner = [data for data in external_repo_data.external_resource_data if data.name == "_nested_0"]
 
-    assert foo
-    assert inner
+    assert len(foo) == 1
+    assert len(inner) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources and foo[0].nested_resources["inner"] == "_nested_0"
 
 
 def test_repository_snap_definitions_resources_complex():
