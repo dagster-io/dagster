@@ -268,23 +268,6 @@ def test_custom_groups(
     }
 
 
-def test_default_freshness_policy():
-    manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r", encoding="utf8") as f:
-        manifest_json = json.load(f)
-
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
-
-    assert dbt_assets[0].freshness_policies_by_key == {
-        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): FreshnessPolicy(
-            maximum_lag_minutes=123,
-            cron_schedule="0 9 * * *",
-            cron_schedule_timezone="America/New_York",
-        ),
-        AssetKey(["sort_hot_cereals_by_calories"]): FreshnessPolicy(maximum_lag_minutes=123),
-    }
-
-
 def test_custom_freshness_policy():
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
