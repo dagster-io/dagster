@@ -197,9 +197,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const canLaunchWithRangesAsTags =
     selections.every((s) => s.selectedRanges.length === 1) &&
     selections.some((s) => s.selectedKeys.length > 1);
-
-  console.log({canLaunchWithRangesAsTags});
-
   const keysFiltered = React.useMemo(
     () =>
       missingFailedOnly
