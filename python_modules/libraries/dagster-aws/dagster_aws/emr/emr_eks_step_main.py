@@ -8,15 +8,12 @@ import sys
 import boto3
 from dagster.core.execution.plan.external_step import run_step_from_ref
 from dagster.core.instance import DagsterInstance
-from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
-from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME
 
 # Any event whose JSON representation is larger than this
 # will be dropped. Otherwise, it can cause EMR to stop
 # reporting all logs to Cloudwatch Logs.
 _MAX_EVENT_SIZE_BYTES = 64 * 1024
-from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME
-
+CODE_ZIP_NAME = 'code.zip'
 
 def main(s3_bucket_step_run_ref: str, s3_key_step_run_ref: str) -> None:
     session = boto3.client("s3")
@@ -25,9 +22,12 @@ def main(s3_bucket_step_run_ref: str, s3_key_step_run_ref: str) -> None:
     # Force the right version of dagstersdk to get imported before
     # Dagster messes with the Python path.
     _adjust_pythonpath_for_staged_assets(os.getenv("ENV_PATHS").split(","))
-    print(f"Python path: {sys.path}")
 
+    print(f"Python path: {sys.path}")
+    
     # Read the step description
+    from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
+
     file_manager = S3FileManager(session, s3_bucket_step_run_ref, "")
     file_handle = S3FileHandle(s3_bucket_step_run_ref, s3_key_step_run_ref)
 

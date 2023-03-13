@@ -49,7 +49,7 @@ from dagster._core.execution.plan.external_step import (
 )
 from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME, PICKLED_STEP_RUN_REF_FILE_NAME
 
-from . import job_main
+from . import emr_eks_step_main
 from .monitor import EmrEksJobError, EmrEksJobRunMonitor
 
 
@@ -82,7 +82,7 @@ from .monitor import EmrEksJobError, EmrEksJobRunMonitor
                 "List of relative relative paths which are not correctly reachable from the"
                 " repository base"
             ),
-            default_value=["dagstersdk/", "dagster-sdk/dagstersdk/"],
+            default_value=[],
         ),
         "spark_conf": Field(Permissive(), default_value={}, is_required=False),
         "log4j_conf": Field(Permissive(), default_value={}, is_required=False),
@@ -90,8 +90,6 @@ from .monitor import EmrEksJobError, EmrEksJobRunMonitor
 )
 def emr_eks_pyspark_resource(context):
     spark_conf = context.resource_config.get("spark_conf")
-    spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_PROJECT"] = "dagster-sdk"
-    spark_conf[f"spark.kubernetes.driverEnv.RAPTOR_ENV_CLOUD_ENV_KEY_REF"] = "branch"
 
     return EmrEksPySparkResource(
         cluster_id=context.resource_config.get("cluster_id"),
@@ -123,7 +121,8 @@ def build_pyspark_zip(zip_file, path):
     check.str_param(path, "path")
 
     with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, _, files in os.walk(path):
+        #TODO remove `followlinks=True`, it is a hack for testing`
+        for root, _, files in os.walk(path, followlinks=True):
             for fname in files:
                 abs_fname = os.path.join(root, fname)
                 # Skip various artifacts
@@ -651,7 +650,7 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         return os.path.basename(self._main_file_local_path())
 
     def _main_file_local_path(self):
-        return job_main.__file__
+        return emr_eks_step_main.__file__
 
     def _sanitize_step_key(self, step_key: str) -> str:
         # step_keys of dynamic steps contain brackets, which are invalid characters
