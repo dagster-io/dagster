@@ -68,7 +68,6 @@ class InputContext:
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
 
     Example:
-
     .. code-block:: python
 
         from dagster import IOManager, InputContext

@@ -63,6 +63,10 @@ GET_PARTITION_SET_QUERY = """
                             }
                         }
                     }
+                    ... on PythonError {
+                        message
+                        stack
+                    }
                 }
             }
         }
@@ -182,6 +186,18 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         assert invalid_partition_set_result.data
 
         snapshot.assert_match(invalid_partition_set_result.data)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_SET_QUERY,
+            variables={
+                "partitionSetName": "dynamic_partitioned_assets_job_partition_set",
+                "repositorySelector": selector,
+            },
+        )
+
+        assert result.data
+        snapshot.assert_match(result.data)
 
     def test_get_partition_tags(self, graphql_context):
         selector = infer_repository_selector(graphql_context)

@@ -6,13 +6,21 @@ from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
 
-def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
+def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     api_client = DagsterKubernetesClient.production_client()
     pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
-    return api_client.retrieve_pod_logs(
-        pod_names[0], namespace=namespace, container_name=container_name
-    )
+    pods_logs = []
+    for pod_name in pod_names:
+        pod_logs = api_client.retrieve_pod_logs(
+            pod_name, namespace=namespace, container_name=container_name
+        )
+        pods_logs.append(pod_logs)
+    return pods_logs
+
+
+def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
+    return _get_pods_logs(cluster_provider, job_name, namespace, container_name)[0]
 
 
 @pytest.mark.default
@@ -338,3 +346,34 @@ def test_k8s_job_op_ignore_job_tags(namespace, cluster_provider):
     pod_logs = _get_pod_logs(cluster_provider, job_name, namespace)
     assert "FROM_JOB_TAGS" not in pod_logs
     assert "FROM_OP_TAGS" in pod_logs
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_paralellism(namespace, cluster_provider):
+    with_parallelism = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo HI"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "job_spec_config": {
+                "parallelism": 2,
+                "completions": 2,
+            },
+        },
+        name="with_parallelism",
+    )
+
+    @job
+    def with_parallelism_job():
+        with_parallelism()
+
+    execute_result = with_parallelism_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_parallelism.name)
+    pods_logs = _get_pods_logs(cluster_provider, job_name, namespace)
+
+    assert "HI" in pods_logs[0]
+    assert "HI" in pods_logs[1]

@@ -160,7 +160,6 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
         :class:`logging.Logger`: A logger whose output will be captured by Dagster.
 
     Example:
-
         .. code-block:: python
 
             from dagster import get_dagster_logger, op

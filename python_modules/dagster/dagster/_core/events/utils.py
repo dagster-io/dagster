@@ -1,7 +1,8 @@
 from json import JSONDecodeError
 
 import dagster._check as check
-from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._core.events import DagsterEvent
+from dagster._serdes.serdes import deserialize_value
 
 
 def filter_dagster_events_from_cli_logs(log_lines):
@@ -38,7 +39,7 @@ def filter_dagster_events_from_cli_logs(log_lines):
     events = []
     for line in coalesced_lines:
         try:
-            events.append(deserialize_json_to_dagster_namedtuple(line))
+            events.append(deserialize_value(line, DagsterEvent))
         except JSONDecodeError:
             pass
         except check.CheckError:

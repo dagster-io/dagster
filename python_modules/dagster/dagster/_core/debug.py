@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import serialize_value, whitelist_for_serdes
 
 
 @whitelist_for_serdes
@@ -56,4 +56,4 @@ class DebugRunPayload(
         )
 
     def write(self, output_file):
-        return output_file.write(serialize_dagster_namedtuple(self).encode("utf-8"))
+        return output_file.write(serialize_value(self).encode("utf-8"))

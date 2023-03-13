@@ -13,6 +13,7 @@ import * as React from 'react';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {RunTimeline} from '../runs/RunTimeline';
 import {useHourWindow, HourWindow} from '../runs/useHourWindow';
@@ -45,10 +46,13 @@ export const OverviewTimelineRoot = () => {
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
-  const [searchValue, setSearchValue] = React.useState('');
   const [hourWindow, setHourWindow] = useHourWindow('12');
   const [now, setNow] = React.useState(() => Date.now());
   const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
 
   React.useEffect(() => {
     setNow(Date.now());

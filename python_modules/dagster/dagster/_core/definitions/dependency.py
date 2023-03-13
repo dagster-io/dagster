@@ -428,7 +428,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
@@ -455,7 +454,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))

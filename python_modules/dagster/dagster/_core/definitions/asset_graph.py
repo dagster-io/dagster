@@ -49,6 +49,7 @@ class AssetGraph:
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
+        is_observable_by_key: Mapping[AssetKey, bool],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -58,6 +59,7 @@ class AssetGraph:
         self._freshness_policies_by_key = freshness_policies_by_key
         self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
         self._code_versions_by_key = code_versions_by_key
+        self._is_observable_by_key = is_observable_by_key
 
     @property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -96,12 +98,14 @@ class AssetGraph:
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
+        is_observable_by_key: Dict[AssetKey, bool] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
                 source_assets.append(asset)
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
+                is_observable_by_key[asset.key] = asset.is_observable
             else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -126,6 +130,7 @@ class AssetGraph:
             assets=assets_defs,
             source_assets=source_assets,
             code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
 
     @property
@@ -162,6 +167,9 @@ class AssetGraph:
         return len(partitions_defs) <= 1 or all(
             partitions_defs[i] == partitions_defs[0] for i in range(1, len(partitions_defs))
         )
+
+    def is_observable(self, asset_key: AssetKey) -> bool:
+        return self._is_observable_by_key.get(asset_key, False)
 
     def get_children(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets that depend on the given asset."""
@@ -202,6 +210,7 @@ class AssetGraph:
         """
         Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
+
         Args:
             parent_partition_key (Optional[str]): The partition key to convert.
             parent_asset_key (AssetKey): The asset key of the upstream asset, which the provided
@@ -274,6 +283,7 @@ class AssetGraph:
         Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
+
         Args:
             partition_key (Optional[str]): The partition key to convert.
             child_asset_key (AssetKey): The asset key of the child asset, which the provided
@@ -506,6 +516,7 @@ class InternalAssetGraph(AssetGraph):
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
+        is_observable_by_key: Mapping[AssetKey, bool],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -516,6 +527,7 @@ class InternalAssetGraph(AssetGraph):
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
         self._assets = assets
         self._source_assets = source_assets

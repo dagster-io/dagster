@@ -7,7 +7,7 @@ from tqdm import tqdm
 from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 
 def _recent_failed_runs_text(instance):
@@ -71,7 +71,7 @@ def import_command(input_files: Tuple[str, ...]):
     for input_file in input_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_as(blob, DebugRunPayload)
+            debug_payload = deserialize_value(blob, DebugRunPayload)
             debug_payloads.append(debug_payload)
 
     with DagsterInstance.get() as instance:

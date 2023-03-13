@@ -340,8 +340,8 @@ class ReconstructablePipeline(
     def for_module(module: str, fn_name: str) -> ReconstructablePipeline:
         return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
 
-    def to_dict(self) -> Mapping[str, Any]:
-        return pack_value(self)  # type: ignore
+    def to_dict(self) -> Mapping[str, object]:
+        return pack_value(self)
 
     @staticmethod
     def from_dict(val: Mapping[str, Any]) -> ReconstructablePipeline:

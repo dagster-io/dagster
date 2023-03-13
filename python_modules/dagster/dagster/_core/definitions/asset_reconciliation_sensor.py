@@ -242,8 +242,9 @@ def find_parent_materialized_asset_partitions(
             asset_key,
             latest_record.partition_key,
         ):
-            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
-                latest_record.run_id, child
+            if (
+                child.asset_key in target_asset_keys
+                and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
             ):
                 result_asset_partitions.add(child)
 
@@ -748,9 +749,10 @@ def reconcile(
     asset_graph = repository_def.asset_graph
 
     # fetch some data in advance to batch together some queries
-    instance_queryer.prefetch_for_keys(
-        list(asset_selection.upstream(depth=1).resolve(asset_graph)),
-        after_cursor=cursor.latest_storage_id,
+    relevant_asset_keys = list(asset_selection.upstream(depth=1).resolve(asset_graph))
+    instance_queryer.prefetch_asset_records(relevant_asset_keys)
+    instance_queryer.prefetch_asset_partition_counts(
+        relevant_asset_keys, after_cursor=cursor.latest_storage_id
     )
 
     (

@@ -21,7 +21,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._utils import utc_datetime_from_timestamp
 from sqlalchemy.engine import Connection
 
@@ -179,15 +179,20 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
-                    body=serialize_dagster_namedtuple(daemon_heartbeat),
+                    body=serialize_value(daemon_heartbeat),
                 )
                 .on_conflict_do_update(
                     index_elements=[DaemonHeartbeatsTable.c.daemon_type],
                     set_={
                         "timestamp": utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         "daemon_id": daemon_heartbeat.daemon_id,
-                        "body": serialize_dagster_namedtuple(daemon_heartbeat),
+                        "body": serialize_value(daemon_heartbeat),
                     },
+                )
+                .returning(
+                    # required because sqlalchemy might by default return the declared primary key,
+                    # which might not exist
+                    DaemonHeartbeatsTable.c.daemon_type,
                 )
             )
 
@@ -203,6 +208,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 KeyValueStoreTable.c.key,
             ],
             set_={"value": insert_stmt.excluded.value},
+        ).returning(
+            # required because sqlalchemy might by default return the declared primary key,
+            # which might not exist
+            KeyValueStoreTable.c.key
         )
 
         with self.connect() as conn:

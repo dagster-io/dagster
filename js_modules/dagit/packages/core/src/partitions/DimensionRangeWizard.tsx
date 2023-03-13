@@ -7,7 +7,7 @@ import {
   Menu,
   MenuDivider,
   MenuItem,
-  TagSelector,
+  TagSelectorWithSearch,
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
@@ -144,9 +144,6 @@ const DynamicPartitionSelector: React.FC<{
   setShowCreatePartition,
   health,
 }) => {
-  const isAllSelected =
-    allPartitions.length === selectedPartitions.length && allPartitions.length > 0;
-
   const statusForPartitionKey = (partitionKey: string) => {
     const index = allPartitions.indexOf(partitionKey);
     if ('ranges' in health) {
@@ -158,7 +155,7 @@ const DynamicPartitionSelector: React.FC<{
 
   return (
     <>
-      <TagSelector
+      <TagSelectorWithSearch
         allTags={allPartitions}
         selectedTags={selectedPartitions}
         setSelectedTags={setSelectedPartitions}
@@ -182,14 +179,8 @@ const DynamicPartitionSelector: React.FC<{
             </label>
           );
         }}
-        renderDropdown={(dropdown, {width}) => {
-          const toggleAll = () => {
-            if (isAllSelected) {
-              setSelectedPartitions([]);
-            } else {
-              setSelectedPartitions(allPartitions);
-            }
-          };
+        renderDropdown={(dropdown, {width, allTags}) => {
+          const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
           return (
             <Menu style={{width}}>
               <Box padding={4}>
@@ -208,15 +199,24 @@ const DynamicPartitionSelector: React.FC<{
                   />
                 </Box>
                 <MenuDivider />
-                {allPartitions.length ? (
+                {allTags.length ? (
                   <>
                     <label>
                       <MenuItem
                         tagName="div"
                         text={
                           <Box flex={{alignItems: 'center', gap: 12}}>
-                            <Checkbox checked={isAllSelected} onChange={toggleAll} />
-                            <span>Select all ({allPartitions.length})</span>
+                            <Checkbox
+                              checked={isAllSelected}
+                              onChange={() => {
+                                if (isAllSelected) {
+                                  setSelectedPartitions([]);
+                                } else {
+                                  setSelectedPartitions(allTags);
+                                }
+                              }}
+                            />
+                            <span>Select all ({allTags.length})</span>
                           </Box>
                         }
                       />
@@ -238,6 +238,7 @@ const DynamicPartitionSelector: React.FC<{
           }
           return tags;
         }}
+        searchPlaceholder="Filter partitions"
       />
     </>
   );
