@@ -113,7 +113,7 @@ class SensorEvaluationContext:
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
@@ -148,7 +148,7 @@ class SensorEvaluationContext:
             my_sensor(context)
         """
 
-        self._resources_cm = build_resources(resource_defs or {})
+        self._resources_cm = build_resources(resources or {})
 
         self._resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -292,7 +292,7 @@ RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFuncti
 SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, RunRequest]]]
 
 
-def context_param_name_if_present(fn: Callable) -> Optional[str]:
+def get_context_param_name(fn: Callable) -> Optional[str]:
     """
     Determines the sensor's context parameter name by excluding all resource parameters.
     """
@@ -329,7 +329,7 @@ def get_or_create_sensor_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    context_param_name = context_param_name_if_present(fn)
+    context_param_name_if_present = get_context_param_name(fn)
 
     if len(args) + len(kwargs) > 1:
         raise DagsterInvalidInvocationError(
@@ -342,13 +342,13 @@ def get_or_create_sensor_context(
     if len(args) > 0:
         context = check.opt_inst(args[0], SensorEvaluationContext)
     elif len(kwargs) > 0:
-        if context_param_name and context_param_name not in kwargs:
+        if context_param_name_if_present and context_param_name_if_present not in kwargs:
             raise DagsterInvalidInvocationError(
-                f"Sensor invocation expected argument '{context_param_name}'."
+                f"Sensor invocation expected argument '{context_param_name_if_present}'."
             )
-        context_param_name = context_param_name or list(kwargs.keys())[0]
-        context = check.opt_inst(kwargs.get(context_param_name), SensorEvaluationContext)
-    elif context_param_name:
+        context_param_name_if_present = context_param_name_if_present or list(kwargs.keys())[0]
+        context = check.opt_inst(kwargs.get(context_param_name_if_present), SensorEvaluationContext)
+    elif context_param_name_if_present:
         # If the context parameter is present but no value was provided, we error
         raise DagsterInvalidInvocationError(
             "Sensor evaluation function expected context argument, but no context argument "
@@ -472,10 +472,12 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
-        context_param_name = context_param_name_if_present(self._raw_fn)
+        context_param_name_if_present = get_context_param_name(self._raw_fn)
         context = get_or_create_sensor_context(self._raw_fn, *args, **kwargs)
 
-        context_param = {context_param_name: context} if context_param_name else {}
+        context_param = (
+            {context_param_name_if_present: context} if context_param_name_if_present else {}
+        )
 
         resources = _validate_and_get_resource_dict(
             context, self.name, self._required_resource_keys
@@ -704,8 +706,10 @@ def wrap_sensor_evaluation(
             context, sensor_name, resource_arg_names
         )
 
-        context_param_name = context_param_name_if_present(fn)
-        context_param = {context_param_name: context} if context_param_name else {}
+        context_param_name_if_present = get_context_param_name(fn)
+        context_param = (
+            {context_param_name_if_present: context} if context_param_name_if_present else {}
+        )
         result = fn(**context_param, **resource_args_populated)
 
         if inspect.isgenerator(result) or isinstance(result, list):
@@ -786,7 +790,7 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
         sensor_name=sensor_name,
-        resource_defs=(resources_to_build),
+        resources=(resources_to_build),
     )
 
 

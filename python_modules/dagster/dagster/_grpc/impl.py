@@ -322,7 +322,7 @@ def get_external_sensor_execution(
                 repository_name=repo_def.name,
                 repository_def=repo_def,
                 sensor_name=sensor_name,
-                resource_defs=resources_to_build,
+                resources=resources_to_build,
             )
         )
 
