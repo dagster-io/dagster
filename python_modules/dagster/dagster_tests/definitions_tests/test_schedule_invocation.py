@@ -139,7 +139,7 @@ def test_schedule_invocation_resources() -> None:
         basic_schedule_resource_req(build_schedule_context())
 
     assert hasattr(
-        build_schedule_context(resource_defs={"my_resource": MyResource(a_str="foo")}).resources,
+        build_schedule_context(resources={"my_resource": MyResource(a_str="foo")}).resources,
         "my_resource",
     )
 
@@ -147,6 +147,6 @@ def test_schedule_invocation_resources() -> None:
     assert cast(
         RunRequest,
         basic_schedule_resource_req(
-            build_schedule_context(resource_defs={"my_resource": MyResource(a_str="foo")})
+            build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}

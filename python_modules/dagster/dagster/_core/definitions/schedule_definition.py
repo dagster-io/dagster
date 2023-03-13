@@ -93,9 +93,9 @@ def get_or_create_schedule_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    from dagster._core.definitions.sensor_definition import context_param_name_if_present
+    from dagster._core.definitions.sensor_definition import get_context_param_name
 
-    context_param_name = context_param_name_if_present(fn)
+    context_param_name = get_context_param_name(fn)
 
     if len(args) + len(kwargs) > 1:
         raise DagsterInvalidInvocationError(
@@ -172,7 +172,7 @@ class ScheduleEvaluationContext:
         scheduled_execution_time: Optional[datetime],
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
         from dagster._core.definitions.scoped_resources_builder import (
             IContainsGenerator,
@@ -199,7 +199,7 @@ class ScheduleEvaluationContext:
         self._repository_name = repository_name
         self._schedule_name = schedule_name
 
-        self._resources_cm = build_resources(resource_defs or {})
+        self._resources_cm = build_resources(resources or {})
 
         self._resources = self._resources_cm.__enter__()
 
@@ -304,7 +304,7 @@ class DecoratedScheduleFunction(NamedTuple):
 def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
-    resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -331,7 +331,7 @@ def build_schedule_context(
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
-        resource_defs=resource_defs,
+        resources=resources,
     )
 
 
@@ -600,7 +600,7 @@ class ScheduleDefinition:
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
-        from dagster._core.definitions.sensor_definition import context_param_name_if_present
+        from dagster._core.definitions.sensor_definition import get_context_param_name
 
         from .decorators.schedule_decorator import DecoratedScheduleFunction
 
@@ -610,7 +610,7 @@ class ScheduleDefinition:
                 "decorators."
             )
 
-        context_param_name = context_param_name_if_present(self._execution_fn.decorated_fn)
+        context_param_name = get_context_param_name(self._execution_fn.decorated_fn)
         context = get_or_create_schedule_context(self._execution_fn.decorated_fn, *args, **kwargs)
         context_param = {context_param_name: context} if context_param_name else {}
 

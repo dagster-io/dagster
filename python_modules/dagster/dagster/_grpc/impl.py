@@ -291,7 +291,7 @@ def get_external_schedule_execution(
         scheduled_execution_time,
         repo_def.name,
         schedule_name,
-        resource_defs=resources_to_build,
+        resources=resources_to_build,
     ) as schedule_context:
         try:
             with user_code_error_boundary(
