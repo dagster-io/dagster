@@ -100,8 +100,6 @@ export type PermissionsMap = ReturnType<typeof extractPermissions>;
 export type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
 export type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
 export type PermissionsState = {
-  // todo dish: Temporary for cross-build safety, delete immediately.
-  canReloadRepositoryLocation: PermissionResult;
   permissions: PermissionBooleans;
   disabledReasons: PermissionDisabledReasons;
   loading: boolean;
@@ -191,11 +189,6 @@ export const useUnscopedPermissions = (): PermissionsState => {
 
   return React.useMemo(() => {
     return {
-      // todo dish: Temporary for cross-build safety. Delete asap.
-      canReloadRepositoryLocation: {
-        enabled: unpacked.booleans.canReloadRepositoryLocation,
-        disabledReason: unpacked.disabledReasons.canReloadRepositoryLocation,
-      },
       permissions: unpacked.booleans,
       disabledReasons: unpacked.disabledReasons,
       loading,
@@ -220,11 +213,6 @@ export const usePermissionsForLocation = (
   const unpacked = unpackPermissions(permissionsForLocation);
   return React.useMemo(() => {
     return {
-      // todo dish: Temporary for cross-build safety. Delete asap.
-      canReloadRepositoryLocation: {
-        enabled: unpacked.booleans.canReloadRepositoryLocation,
-        disabledReason: unpacked.disabledReasons.canReloadRepositoryLocation,
-      },
       permissions: unpacked.booleans,
       disabledReasons: unpacked.disabledReasons,
       loading,
