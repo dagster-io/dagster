@@ -63,15 +63,10 @@ export const usePartitionDimensionSelections = (opts: {
   modifyQueryString: boolean;
   knownDimensionNames?: string[]; // improves loading state if available
   skipPartitionKeyValidation?: boolean;
-  shouldReadPartitionQueryStringParam?: boolean; // This hook is used in 2 different cases and it's a little weird because the first use case is inconsistent with the second.
-  // The first use case uses the data to filter the UI, whereas the second use case uses it ONLY to record the user's selections.
-
-  // The first use case is in AssetPartitions.tsx and it uses this state to filter the partitions in the table but only for time partitioned dimensions.
-  // For non time partitioned dimension we don't want to do any filtering at all in this view. So for that reason we set shouldFilterPartitions to false
-  // which means we ignore the "partition" query string param and only rely on the "date_range" params.
-
-  // The second use case is in LaunchAssetChoosePartitionsDialog and it's being used to record the selections the user makes.
-  // In this case we don't ignore the "partition" query string param
+  shouldReadPartitionQueryStringParam?: boolean; // This hook is used in 2 different cases
+  // The first use case (AssetPartitions.tsx) uses this state to filter the available partitions to select from when filtering using time based partitions.
+  // The second use case (LaunchAssetChoosePartitionsDialog.tsx) uses this state to store the user's selections, which includes non-time based partitions.
+  //   For the second use case we rely on the "partition" query string param in addition to the existing "{dimension}_range" query string params.
 }) => {
   const {
     assetHealth,
