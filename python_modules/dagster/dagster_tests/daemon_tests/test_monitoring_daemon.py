@@ -4,12 +4,14 @@ import time
 from logging import Logger
 from typing import Any, Mapping, Optional, cast
 
+import pendulum
 import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.tags import MAX_RUNTIME_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
@@ -30,6 +32,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
         self.launch_run_calls = 0
         self.resume_run_calls = 0
+        self.termination_calls = []
         super().__init__()
 
     @property
@@ -56,7 +59,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
         pass
 
     def terminate(self, run_id):
-        raise NotImplementedError()
+        self.termination_calls.append(run_id)
 
     @property
     def supports_resume_run(self):
@@ -120,6 +123,25 @@ def report_starting_event(instance, run, timestamp):
     instance.handle_new_event(event_record)
 
 
+def report_started_event(instance, run, timestamp):
+    launch_started_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_START.value,
+        pipeline_name=run.pipeline_name,
+    )
+
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.INFO,
+        pipeline_name=run.pipeline_name,
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=timestamp,
+        dagster_event=launch_started_event,
+    )
+
+    instance.handle_new_event(event_record)
+
+
 def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
@@ -128,7 +150,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
         instance,
-        instance.get_run_by_id(run.run_id),  # type: ignore  # (possible none)
+        instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
         logger,
     )
     run = instance.get_run_by_id(run.run_id)
@@ -140,7 +162,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
 
     monitor_starting_run(
         instance,
-        instance.get_run_by_id(run.run_id),  # type: ignore  # (possible none)
+        instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
         logger,
     )
     run = instance.get_run_by_id(run.run_id)
@@ -151,32 +173,36 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
 def test_monitor_started(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
-    run = create_run_for_test(instance, pipeline_name="foo", status=DagsterRunStatus.STARTED)
+    run_id = create_run_for_test(
+        instance, pipeline_name="foo", status=DagsterRunStatus.STARTED
+    ).run_id
+    run_record = instance.get_run_record_by_id(run_id)
+    assert run_record is not None
     workspace = workspace_context.create_request_context()
     run_launcher = cast(TestRunLauncher, instance.run_launcher)
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        monitor_started_run(instance, workspace, run, logger)
-        run = instance.get_run_by_id(run.run_id)
+        monitor_started_run(instance, workspace, run_record, logger)
+        run = instance.get_run_by_id(run_record.dagster_run.run_id)
         assert run
         assert run.status == DagsterRunStatus.STARTED
         assert run_launcher.launch_run_calls == 0
         assert run_launcher.resume_run_calls == 0
 
-    monitor_started_run(instance, workspace, run, logger)
+    monitor_started_run(instance, workspace, run_record, logger)
     run = instance.get_run_by_id(run.run_id)
     assert run
     assert run.status == DagsterRunStatus.STARTED
     assert run_launcher.launch_run_calls == 0
     assert run_launcher.resume_run_calls == 1
 
-    monitor_started_run(instance, workspace, run, logger)
+    monitor_started_run(instance, workspace, run_record, logger)
     run = instance.get_run_by_id(run.run_id)
     assert run
     assert run.status == DagsterRunStatus.STARTED
     assert run_launcher.launch_run_calls == 0
     assert run_launcher.resume_run_calls == 2
 
-    monitor_started_run(instance, workspace, run, logger)
+    monitor_started_run(instance, workspace, run_record, logger)
     run = instance.get_run_by_id(run.run_id)
     assert run
     assert run.status == DagsterRunStatus.STARTED
@@ -184,9 +210,79 @@ def test_monitor_started(
     assert run_launcher.resume_run_calls == 3
 
     # exausted the 3 attempts
-    monitor_started_run(instance, workspace, run, logger)
+    monitor_started_run(instance, workspace, run_record, logger)
     run = instance.get_run_by_id(run.run_id)
     assert run
     assert run.status == DagsterRunStatus.FAILURE
     assert run_launcher.launch_run_calls == 0
     assert run_launcher.resume_run_calls == 3
+
+
+def test_long_running_termination(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    initial = pendulum.now().subtract(1000)
+    with pendulum.test(initial):
+        too_long_run = create_run_for_test(
+            instance,
+            pipeline_name="foo",
+            status=DagsterRunStatus.STARTING,
+            tags={MAX_RUNTIME_TAG: "500"},
+        )
+        okay_run = create_run_for_test(
+            instance,
+            pipeline_name="foo",
+            status=DagsterRunStatus.STARTING,
+            tags={MAX_RUNTIME_TAG: "1000"},
+        )
+        run_no_tag = create_run_for_test(
+            instance, pipeline_name="foo", status=DagsterRunStatus.STARTING
+        )
+    started_time = initial.add(seconds=1)
+    with pendulum.test(started_time):
+        report_started_event(instance, too_long_run, started_time.timestamp())
+        report_started_event(instance, okay_run, started_time.timestamp())
+        report_started_event(instance, run_no_tag, started_time.timestamp())
+
+    too_long_record = instance.get_run_record_by_id(too_long_run.run_id)
+    assert too_long_record is not None
+    assert too_long_record.dagster_run.status == DagsterRunStatus.STARTED
+    assert too_long_record.start_time == started_time.timestamp()
+
+    okay_record = instance.get_run_record_by_id(okay_run.run_id)
+    assert okay_record is not None
+    assert okay_record.dagster_run.status == DagsterRunStatus.STARTED
+    assert okay_record.start_time == started_time.timestamp()
+
+    no_tag_record = instance.get_run_record_by_id(run_no_tag.run_id)
+    assert no_tag_record is not None
+    assert no_tag_record.dagster_run.status == DagsterRunStatus.STARTED
+    assert no_tag_record.start_time == started_time.timestamp()
+
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast(TestRunLauncher, instance.run_launcher)
+
+    eval_time = started_time.add(seconds=501)
+    with pendulum.test(eval_time):
+        # run_no_tag has no maximum run tag set, so no termination event should be
+        # triggered.
+        monitor_started_run(instance, workspace, no_tag_record, logger)
+        run = instance.get_run_by_id(okay_record.dagster_run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.STARTED
+        assert not run_launcher.termination_calls
+
+        # Not enough time has elapsed for okay_run to hit its maximum runtime, so no
+        # termination event should be triggered
+        monitor_started_run(instance, workspace, okay_record, logger)
+        run = instance.get_run_by_id(okay_record.dagster_run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.STARTED
+        assert not run_launcher.termination_calls
+
+        # Enough runtime has elapsed for too_long_run to hit its maximum runtime so a
+        # termination event should be triggered.
+        monitor_started_run(instance, workspace, too_long_record, logger)
+        assert run
+        assert run.status == DagsterRunStatus.STARTED
+        assert len(run_launcher.termination_calls) == 1
