@@ -243,6 +243,7 @@ def _create_repository_using_definitions_args(
     )
     nested_resources = {}
 
+    resource_key_mapping_with_nested = {**resource_key_mapping}
     nested_resource_ctr = 0
     if resources:
         for resource in resources.values():
@@ -251,7 +252,7 @@ def _create_repository_using_definitions_args(
                     if id(nested_resource) in resource_key_mapping:
                         continue
                     new_key = gen_key_for_nested_resource(nested_resource, nested_resource_ctr)
-                    resource_key_mapping[id(nested_resource)] = new_key
+                    resource_key_mapping_with_nested[id(nested_resource)] = new_key
                     nested_resources[new_key] = nested_resource
                     nested_resource_ctr += 1
 
@@ -302,7 +303,7 @@ The following jobs are affected: {jobs_text}
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
         _ui_visible_resources=ui_visible_resources,
-        _resource_key_mapping=resource_key_mapping,
+        _resource_key_mapping=resource_key_mapping_with_nested,
     )
     def created_repo():
         return [
