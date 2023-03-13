@@ -131,7 +131,7 @@ def test_sensor_invocation_resources() -> None:
     assert cast(
         RunRequest,
         basic_sensor_resource_req(
-            build_sensor_context(resource_defs={"my_resource": MyResource(a_str="foo")})
+            build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}
 
@@ -151,10 +151,10 @@ def test_sensor_invocation_resources_context_manager() -> None:
         DagsterInvariantViolationError, match="At least one provided resource is a generator"
     ):
         basic_sensor_str_resource_req(
-            build_sensor_context(resource_defs={"my_resource": my_cm_resource})
+            build_sensor_context(resources={"my_resource": my_cm_resource})
         )
 
-    with build_sensor_context(resource_defs={"my_resource": my_cm_resource}) as context:
+    with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
         assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
 
 

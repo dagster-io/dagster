@@ -140,11 +140,11 @@ class SensorEvaluationContext:
         
         For example:
         
-        my_sensor(build_sensor_context(resource_defs={"my_resource": my_non_cm_resource})
+        my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
         
         will work ok, but for a CM resource we must do
 
-        with build_sensor_context(resource_defs={"my_resource": my_cm_resource}) as context:
+        with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
             my_sensor(context)
         """
 
@@ -736,7 +736,7 @@ def build_sensor_context(
     repository_name: Optional[str] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
-    resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -750,7 +750,7 @@ def build_sensor_context(
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
             If needed by the sensor top-level resource definitions will be pulled from this repository.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): A set of resource definitions
+        resources (Optional[Mapping[str, ResourceDefinition]]): A set of resource definitions
             to provide to the sensor. If passed, these will override any resource definitions
             provided by the repository.
 
@@ -767,14 +767,14 @@ def build_sensor_context(
 
     # Determine the set of resources to pass by
     # 1. Trying to pull the required resource keys from the repository, if available
-    # 2. Using the resource_defs explicitly passed in
+    # 2. Using the resources explicitly passed in
     required_resource_keys = None
     if repository_def and sensor_name:
         sensor_def = repository_def.get_sensor_def(sensor_name)
         required_resource_keys = sensor_def.required_resource_keys
 
     top_level_resources = repository_def.get_top_level_resources() if repository_def else {}
-    all_resources = {**top_level_resources, **(resource_defs or {})}
+    all_resources = {**top_level_resources, **(resources or {})}
 
     resources_to_build = (
         {k: v for k, v in all_resources.items() if k in required_resource_keys}
