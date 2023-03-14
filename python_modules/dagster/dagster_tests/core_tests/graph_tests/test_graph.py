@@ -1,8 +1,9 @@
 import enum
 import json
 from datetime import datetime
-from typing import Any, List, Optional
 from itertools import count
+from typing import Any, List, Optional
+
 import pendulum
 import pytest
 from dagster import (
