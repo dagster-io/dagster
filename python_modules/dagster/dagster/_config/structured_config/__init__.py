@@ -779,6 +779,7 @@ def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> Conf
     # special case pydantic constrained types to their source equivalents
     if safe_is_subclass(potential_dagster_type, ConstrainedStr):
         return StringSource
+    # no FloatSource, so we just return float
     elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
         potential_dagster_type = float
     elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
