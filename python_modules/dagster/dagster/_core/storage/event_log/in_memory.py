@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, cast
+from typing import Callable, Optional, cast
 
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import NullPool
@@ -10,6 +10,7 @@ from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 
 from .schema import SqlEventLogStorageMetadata
 from .sql_event_log import SqlEventLogStorage
@@ -22,7 +23,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
     """
 
-    def __init__(self, inst_data=None, preload=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None, preload=None):
         self._inst_data = inst_data
         self._engine = None
         self._conn = None

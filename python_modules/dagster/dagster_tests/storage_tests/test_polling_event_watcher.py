@@ -1,13 +1,15 @@
 import tempfile
 import time
 from contextlib import contextmanager
-from typing import Callable, Union
+from typing import Any, Callable, Mapping, Union
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEventWatcher
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):
@@ -23,8 +25,10 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         self._watcher = SqlPollingEventWatcher(self)
         self._disposed = False
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return SqlitePollingEventLogStorage(inst_data=inst_data, **config_value)
 
     def watch(

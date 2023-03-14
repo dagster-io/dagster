@@ -7,7 +7,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 from dagster import _check as check
@@ -103,37 +102,30 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
             },
         }
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Mapping[str, str]]
+        cls,
+        inst_data: Optional[ConfigurableClassData],
+        config_value: Mapping[str, Mapping[str, str]],
     ) -> "CompositeStorage":
         run_storage_config = config_value["run_storage"]
-        run_storage = cast(
-            RunStorage,
-            ConfigurableClassData(
-                module_name=run_storage_config["module_name"],
-                class_name=run_storage_config["class_name"],
-                config_yaml=run_storage_config["config_yaml"],
-            ).rehydrate(),
-        )
+        run_storage = ConfigurableClassData(
+            module_name=run_storage_config["module_name"],
+            class_name=run_storage_config["class_name"],
+            config_yaml=run_storage_config["config_yaml"],
+        ).rehydrate(as_type=RunStorage)
         event_log_storage_config = config_value["event_log_storage"]
-        event_log_storage = cast(
-            EventLogStorage,
-            ConfigurableClassData(
-                module_name=event_log_storage_config["module_name"],
-                class_name=event_log_storage_config["class_name"],
-                config_yaml=event_log_storage_config["config_yaml"],
-            ).rehydrate(),
-        )
+        event_log_storage = ConfigurableClassData(
+            module_name=event_log_storage_config["module_name"],
+            class_name=event_log_storage_config["class_name"],
+            config_yaml=event_log_storage_config["config_yaml"],
+        ).rehydrate(as_type=EventLogStorage)
         schedule_storage_config = config_value["schedule_storage"]
-        schedule_storage = cast(
-            ScheduleStorage,
-            ConfigurableClassData(
-                module_name=schedule_storage_config["module_name"],
-                class_name=schedule_storage_config["class_name"],
-                config_yaml=schedule_storage_config["config_yaml"],
-            ).rehydrate(),
-        )
+        schedule_storage = ConfigurableClassData(
+            module_name=schedule_storage_config["module_name"],
+            class_name=schedule_storage_config["class_name"],
+            config_yaml=schedule_storage_config["config_yaml"],
+        ).rehydrate(as_type=ScheduleStorage)
         return CompositeStorage(
             run_storage, event_log_storage, schedule_storage, inst_data=inst_data
         )
@@ -177,18 +169,16 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
             "config_yaml": str,
         }
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
     ) -> "LegacyRunStorage":
         storage = ConfigurableClassData(
             module_name=config_value["module_name"],
             class_name=config_value["class_name"],
             config_yaml=config_value["config_yaml"],
-        ).rehydrate()
-        # Type checker says LegacyRunStorage is abstract and can't be instantiated. Not sure whether
-        # type check is wrong, or is unused code path.
-        return LegacyRunStorage(storage, inst_data=inst_data)  # type: ignore
+        ).rehydrate(as_type=DagsterStorage)
+        return LegacyRunStorage(storage, inst_data=inst_data)
 
     def add_run(self, pipeline_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(pipeline_run)
@@ -364,18 +354,15 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             "config_yaml": str,
         }
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
     ) -> "LegacyEventLogStorage":
-        storage = cast(
-            DagsterStorage,
-            ConfigurableClassData(
-                module_name=config_value["module_name"],
-                class_name=config_value["class_name"],
-                config_yaml=config_value["config_yaml"],
-            ).rehydrate(),
-        )
+        storage = ConfigurableClassData(
+            module_name=config_value["module_name"],
+            class_name=config_value["class_name"],
+            config_yaml=config_value["config_yaml"],
+        ).rehydrate(as_type=DagsterStorage)
         # Type checker says LegacyEventStorage is abstract and can't be instantiated. Not sure whether
         # type check is wrong, or is unused code path.
         return LegacyEventLogStorage(storage, inst_data=inst_data)
@@ -563,18 +550,15 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             "config_yaml": str,
         }
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
     ) -> "LegacyScheduleStorage":
-        storage = cast(
-            DagsterStorage,
-            ConfigurableClassData(
-                module_name=config_value["module_name"],
-                class_name=config_value["class_name"],
-                config_yaml=config_value["config_yaml"],
-            ).rehydrate(),
-        )
+        storage = ConfigurableClassData(
+            module_name=config_value["module_name"],
+            class_name=config_value["class_name"],
+            config_yaml=config_value["config_yaml"],
+        ).rehydrate(as_type=DagsterStorage)
         return LegacyScheduleStorage(storage, inst_data=inst_data)
 
     @property

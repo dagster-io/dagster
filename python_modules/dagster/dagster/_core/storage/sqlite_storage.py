@@ -74,9 +74,9 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: ConfigurableClassData, config_value: SqliteStorageConfig
+        cls, inst_data: ConfigurableClassData, config_value: SqliteStorageConfig
     ) -> "DagsterSqliteStorage":
         return DagsterSqliteStorage.from_local(inst_data=inst_data, **config_value)
 

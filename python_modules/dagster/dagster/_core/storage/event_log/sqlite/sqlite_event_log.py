@@ -131,9 +131,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
+        cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 

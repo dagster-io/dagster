@@ -140,9 +140,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Any]
+        cls, inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Any]
     ) -> "PostgresEventLogStorage":
         return PostgresEventLogStorage(
             inst_data=inst_data,

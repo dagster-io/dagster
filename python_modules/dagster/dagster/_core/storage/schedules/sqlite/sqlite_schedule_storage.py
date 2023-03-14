@@ -46,9 +46,9 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value
+        cls, inst_data: Optional[ConfigurableClassData], config_value
     ) -> "SqliteScheduleStorage":
         return SqliteScheduleStorage.from_local(inst_data=inst_data, **config_value)
 

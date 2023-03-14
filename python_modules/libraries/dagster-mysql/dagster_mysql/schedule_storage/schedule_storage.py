@@ -97,9 +97,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return mysql_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(
             inst_data=inst_data, mysql_url=mysql_url_from_config(config_value)

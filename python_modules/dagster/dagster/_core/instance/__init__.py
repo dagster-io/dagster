@@ -524,12 +524,12 @@ class DagsterInstance(DynamicPartitionsStore):
         return klass(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
-            run_storage=run_storage,
-            event_storage=event_storage,
+            run_storage=run_storage,  # type: ignore  # (possible none)
+            event_storage=event_storage,  # type: ignore  # (possible none)
             schedule_storage=schedule_storage,
             compute_log_manager=instance_ref.compute_log_manager,
             scheduler=instance_ref.scheduler,
-            run_coordinator=instance_ref.run_coordinator,
+            run_coordinator=instance_ref.run_coordinator,  # type: ignore  # (possible none)
             run_launcher=None,  # lazy load
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,

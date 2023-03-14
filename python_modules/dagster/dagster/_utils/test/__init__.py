@@ -423,9 +423,9 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def config_type(cls):
         return {"base_dir": str}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: object, config_value: Mapping[str, object]
+        cls, inst_data: object, config_value: Mapping[str, object]
     ) -> "FilesystemTestScheduler":
         artifacts_dir = cast(str, config_value["base_dir"])
         return FilesystemTestScheduler(artifacts_dir=artifacts_dir, inst_data=inst_data)

@@ -1,6 +1,8 @@
 import importlib
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Mapping, NamedTuple, Type
+from typing import Any, Dict, Mapping, NamedTuple, Optional, Type, TypeVar, Union, overload
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -8,6 +10,8 @@ from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
 from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
+
+T_ConfigurableClass = TypeVar("T_ConfigurableClass")
 
 
 class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer["ConfigurableClassData"]):
@@ -62,7 +66,17 @@ class ConfigurableClassData(
             "config": self.config_dict,
         }
 
-    def rehydrate(self) -> object:
+    @overload
+    def rehydrate(self, as_type: Type[T_ConfigurableClass]) -> T_ConfigurableClass:
+        ...
+
+    @overload
+    def rehydrate(self, as_type: None = ...) -> "ConfigurableClass":
+        ...
+
+    def rehydrate(
+        self, as_type: Optional[Type[T_ConfigurableClass]] = None
+    ) -> Union["ConfigurableClass", T_ConfigurableClass]:
         from dagster._config import process_config, resolve_to_config_type
         from dagster._core.errors import DagsterInvalidConfigError
 
@@ -81,7 +95,7 @@ class ConfigurableClassData(
                 f"configurable class {self.module_name}.{self.class_name}"
             )
 
-        if not issubclass(klass, ConfigurableClass):
+        if not issubclass(klass, as_type or ConfigurableClass):
             raise check.CheckError(
                 klass,
                 f"class {self.class_name} in module {self.module_name}",
@@ -131,7 +145,7 @@ class ConfigurableClass(ABC):
 
     @property
     @abstractmethod
-    def inst_data(self) -> Any:
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         """
         Subclass must be able to return the inst_data as a property if it has been constructed
         through the from_config_value code path.
@@ -140,17 +154,31 @@ class ConfigurableClass(ABC):
     @classmethod
     @abstractmethod
     def config_type(cls) -> "UserConfigSchema":
-        """dagster.ConfigType: The config type against which to validate a config yaml fragment
+        """Get the config type against which to validate a config yaml fragment.
+
+        The only place config values matching this type are used is inside `from_config_value`. This
+        is an alternative constructor for a class. It is a common pattern for the config type to
+        match constructor arguments, so `from_config_value`
+
+        The config type against which to validate a config yaml fragment
         serialized in an instance of ``ConfigurableClassData``.
         """
+        ...
+        # We need to raise `NotImplementedError` here because nothing prevents abstract class
+        # methods from being called.
         raise NotImplementedError(f"{cls.__name__} must implement the config_type classmethod")
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def from_config_value(inst_data: Any, config_value: Any) -> object:
-        """New up an instance of the ConfigurableClass from a validated config value.
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
+        """Create an instance of the ConfigurableClass from a validated config value.
 
-        Called by ConfigurableClassData.rehydrate.
+        The config value used here should be derived from the accompanying `inst_data` argument.
+        `inst_data` contains the yaml-serialized config-- this must be parsed and
+        validated/normalized, then passed to this method for object instantiation. This is done in
+        ConfigurableClassData.rehydrate.
 
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
@@ -163,14 +191,11 @@ class ConfigurableClass(ABC):
 
         .. code-block:: python
 
-            @staticmethod
-            def from_config_value(inst_data, config_value):
+            @classmethod
+            def from_config_value(cls, inst_data, config_value):
                 return MyConfigurableClass(inst_data=inst_data, **config_value)
 
         """
-        raise NotImplementedError(
-            "ConfigurableClass subclasses must implement the from_config_value staticmethod"
-        )
 
 
 def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:

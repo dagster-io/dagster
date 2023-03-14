@@ -5,9 +5,10 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Generator, NamedTuple, Optional, Sequence, TypeVar
+from typing import Any, Generator, Mapping, NamedTuple, Optional, Sequence, TypeVar
 
 import pendulum
+from typing_extensions import Self
 
 from dagster import (
     Permissive,
@@ -32,6 +33,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
@@ -266,7 +268,7 @@ def today_at_midnight(timezone_name="UTC"):
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
 
         super().__init__()
@@ -279,8 +281,10 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return ExplodingRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context):
@@ -294,7 +298,12 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, bad_run_ids=None, bad_user_code_run_ids=None):
+    def __init__(
+        self,
+        inst_data: Optional[ConfigurableClassData] = None,
+        bad_run_ids=None,
+        bad_user_code_run_ids=None,
+    ):
         self._inst_data = inst_data
         self._queue = []
         self._launched_run_ids = set()
@@ -346,7 +355,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
         self._queue = []
 
@@ -399,8 +408,10 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
     def config_type(cls):
         return {"env_vars": Field(Permissive())}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return TestSecretsLoader(inst_data=inst_data, **config_value)
 
 

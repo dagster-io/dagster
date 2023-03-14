@@ -59,7 +59,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         dequeue_num_workers=None,
         max_user_code_failure_retries=None,
         user_code_failure_retry_delay=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._max_concurrent_runs = check.opt_int_param(

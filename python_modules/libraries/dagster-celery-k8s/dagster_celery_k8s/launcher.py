@@ -1,5 +1,5 @@
 import sys
-from typing import cast
+from typing import Optional, cast
 
 import kubernetes
 from dagster import (
@@ -72,7 +72,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         include=None,
         config_source=None,
         retries=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         k8s_client_batch_api=None,
         env_config_maps=None,
         env_secrets=None,

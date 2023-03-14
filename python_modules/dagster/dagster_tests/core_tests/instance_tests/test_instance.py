@@ -1,4 +1,5 @@
 import re
+from typing import Any, Mapping, Optional
 
 import pytest
 import yaml
@@ -42,6 +43,7 @@ from dagster._core.test_utils import (
 from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 from dagster_tests.api_tests.utils import get_bar_workspace
 
@@ -261,7 +263,7 @@ def test_get_required_daemon_types():
 
 
 class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
         super().__init__()
 
@@ -273,8 +275,10 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return TestNonResumeRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context):
