@@ -28,8 +28,10 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._utils.cached_method import cached_method
-from pydantic import BaseModel
-from pydantic import Field as PyField
+from pydantic import (
+    BaseModel,
+    Field as PyField,
+)
 
 
 def test_disallow_config_schema_conflict():
@@ -678,8 +680,8 @@ def test_structured_run_config_optional() -> None:
     def a_struct_config_op(config: ANewConfigOpConfig):
         executed["yes"] = True
         assert config.a_string is None
-        assert config.an_int == None
-        assert config.a_float == None
+        assert config.an_int is None
+        assert config.a_float is None
 
     @job
     def a_job():
@@ -770,6 +772,32 @@ def test_structured_run_config_assets():
         run_config=RunConfig(
             ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+            }
+        ),
+    )
+    assert asset_result.success
+    assert executed["yes"]
+
+
+def test_structured_run_config_assets_optional() -> None:
+    class AnAssetConfig(Config):
+        a_string: str = PyField(None)
+        an_int: Optional[int] = None
+
+    executed = {}
+
+    @asset
+    def my_asset(config: AnAssetConfig):
+        assert config.a_string is None
+        assert config.an_int is None
+        executed["yes"] = True
+
+    # materialize
+    asset_result = materialize(
+        [my_asset],
+        run_config=RunConfig(
+            ops={
+                "my_asset": AnAssetConfig(),  # type: ignore
             }
         ),
     )
