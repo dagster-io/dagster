@@ -198,16 +198,16 @@ export const TagContainer = ({
                 return (
                   <Tooltip key={key} content="Overriden by custom tag value" placement="top">
                     <span style={{opacity: 0.2}}>
-                      <RunTag tag={tag} key={idx} />
+                      <RunTag tag={tag} key={idx} actions={actions} />
                     </span>
                   </Tooltip>
                 );
               }
-              return <RunTag tag={tag} key={idx} />;
+              return <RunTag tag={tag} key={idx} actions={actions} />;
             })
           : undefined}
         {tagsFromSession.map((tag, idx) => (
-          <RunTag tag={tag} key={idx} />
+          <RunTag tag={tag} key={idx} actions={actions} />
         ))}
       </TagList>
     </Container>

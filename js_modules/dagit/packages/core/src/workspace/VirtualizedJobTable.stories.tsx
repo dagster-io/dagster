@@ -46,9 +46,12 @@ export const Standard = () => {
     [],
   );
 
-  const onChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value);
-  }, []);
+  const onChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchValue(e.target.value);
+    },
+    [setSearchValue],
+  );
 
   const filtered = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase();

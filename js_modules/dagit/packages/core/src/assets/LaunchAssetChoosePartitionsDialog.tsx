@@ -48,7 +48,6 @@ import {
   UsingDefaultLauncherAlert,
   USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from '../partitions/BackfillMessaging';
-import {Section} from '../partitions/BackfillSelector';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
