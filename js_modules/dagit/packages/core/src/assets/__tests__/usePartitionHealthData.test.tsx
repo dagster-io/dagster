@@ -261,6 +261,7 @@ describe('usePartitionHealthData', () => {
         {
           name: 'default',
           partitionKeys: DIMENSION_ONE_KEYS,
+          type: 'TIME_WINDOW',
         },
       ]);
 
@@ -292,10 +293,12 @@ describe('usePartitionHealthData', () => {
         {
           name: 'time',
           partitionKeys: DIMENSION_ONE_KEYS,
+          type: 'TIME_WINDOW',
         },
         {
           name: 'state',
           partitionKeys: DIMENSION_TWO_KEYS,
+          type: 'STATIC',
         },
       ]);
 
