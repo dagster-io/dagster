@@ -1,4 +1,4 @@
-`from functools import update_wrapper
+from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
