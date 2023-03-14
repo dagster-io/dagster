@@ -112,7 +112,7 @@ class TimeWindowPartitionsDefinition(
         if isinstance(start, datetime):
             start_dt = start
         else:
-            start_dt = datetime.strptime(start, fmt)
+            start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
         if cron_schedule is not None:
             check.invariant(
@@ -679,8 +679,10 @@ class TimeWindowPartitionsDefinition(
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
-            time_obj = datetime.strptime(partition_key, self.fmt)
-            return time_obj.timestamp() >= self.start.timestamp()
+            partition_time = pendulum.instance(
+                datetime.strptime(partition_key, self.fmt), tz=self.timezone
+            )
+            return partition_time.timestamp() >= self.start.timestamp()
         except ValueError:
             return False
 
