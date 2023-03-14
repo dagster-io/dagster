@@ -789,6 +789,7 @@ type TimePartitionsDefinitionMetadata {
 type DimensionPartitionKeys {
   name: String!
   partitionKeys: [String!]!
+  type: PartitionDefinitionType!
 }
 
 enum StaleStatus {
