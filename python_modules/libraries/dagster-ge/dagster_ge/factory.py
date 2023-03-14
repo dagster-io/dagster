@@ -21,7 +21,7 @@ from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
     # ge < v0.13.0
-    from great_expectations.core import convert_to_json_serializable
+    from great_expectations.core import convert_to_json_serializable  # type: ignore
 except ImportError:
     # ge >= v0.13.0
     from great_expectations.core.util import convert_to_json_serializable
