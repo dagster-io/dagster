@@ -370,6 +370,8 @@ def build_caching_repository_data_from_dict(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
 
+    # Late validate all jobs' resource requirements are satisfied, since
+    # they may not be applied until now
     for pipeline_or_job in repository_definitions["jobs"].values():
         if isinstance(pipeline_or_job, PipelineDefinition):
             pipeline_or_job.validate_resource_requirements_satisfied()
