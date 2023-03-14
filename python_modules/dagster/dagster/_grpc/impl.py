@@ -280,8 +280,18 @@ def get_external_schedule_execution(
         else None
     )
 
+    resources_to_build = {
+        k: v
+        for k, v in repo_def.get_top_level_resources().items()
+        if k in schedule_def.required_resource_keys
+    }
+
     with ScheduleEvaluationContext(
-        instance_ref, scheduled_execution_time, repo_def.name, schedule_name
+        instance_ref,
+        scheduled_execution_time,
+        repo_def.name,
+        schedule_name,
+        resources=resources_to_build,
     ) as schedule_context:
         try:
             with user_code_error_boundary(
