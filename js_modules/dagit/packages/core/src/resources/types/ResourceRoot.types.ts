@@ -41,7 +41,8 @@ export type ResourceRootQuery = {
         nestedResources: Array<{
           __typename: 'NestedResourceEntry';
           name: string;
-          resource: {__typename: 'ResourceDetails'; name: string; resourceType: string};
+          type: Types.NestedResourceType;
+          resource: {__typename: 'ResourceDetails'; name: string; resourceType: string} | null;
         }>;
       }
     | {__typename: 'ResourceNotFoundError'};

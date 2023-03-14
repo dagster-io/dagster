@@ -2075,8 +2075,14 @@ export type MultiPartitions = {
 export type NestedResourceEntry = {
   __typename: 'NestedResourceEntry';
   name: Scalars['String'];
-  resource: ResourceDetails;
+  resource: Maybe<ResourceDetails>;
+  type: NestedResourceType;
 };
+
+export enum NestedResourceType {
+  ANONYMOUS = 'ANONYMOUS',
+  TOP_LEVEL = 'TOP_LEVEL',
+}
 
 export type NoModeProvidedError = Error & {
   __typename: 'NoModeProvidedError';

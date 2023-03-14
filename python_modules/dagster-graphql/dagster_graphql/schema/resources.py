@@ -7,6 +7,7 @@ from dagster._core.host_representation.external import ExternalResource
 from dagster._core.host_representation.external_data import (
     ExternalResourceConfigEnvVar,
     ExternalResourceValue,
+    NestedResourceType,
 )
 
 from dagster_graphql.schema.errors import (
@@ -47,9 +48,13 @@ class GrapheneConfiguredValue(graphene.ObjectType):
             self.value = external_resource_value
 
 
+GrapheneNestedResourceType = graphene.Enum.from_enum(NestedResourceType)
+
+
 class GrapheneNestedResourceEntry(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    resource = graphene.NonNull(lambda: GrapheneResourceDetails)
+    type = graphene.NonNull(GrapheneNestedResourceType)
+    resource = graphene.Field(lambda: GrapheneResourceDetails)
 
     class Meta:
         name = "NestedResourceEntry"
@@ -121,14 +126,17 @@ class GrapheneResourceDetails(graphene.ObjectType):
         return [
             GrapheneNestedResourceEntry(
                 name=k,
+                type=v.type,
                 resource=get_resource_or_error(
                     graphene_info,
                     ResourceSelector(
                         location_name=self._location_name,
                         repository_name=self._repository_name,
-                        resource_name=v,
+                        resource_name=v.name,
                     ),
-                ),
+                )
+                if v.type == NestedResourceType.TOP_LEVEL
+                else None,
             )
             for k, v in self._nested_resources.items()
         ]

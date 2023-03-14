@@ -164,24 +164,26 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                           </thead>
                           <tbody>
                             {nestedResources.map((resource) => {
+                              const resourceName =
+                                resource.type === 'TOP_LEVEL' && resource.resource ? (
+                                  <Link
+                                    to={workspacePathFromAddress(
+                                      repoAddress,
+                                      `/resources/${resource.name}`,
+                                    )}
+                                  >
+                                    {resourceDisplayName(resource.resource)}
+                                  </Link>
+                                ) : (
+                                  resource.name
+                                );
+
                               return (
                                 <tr key={resource.name}>
                                   <td>
                                     <strong>{resource.name}</strong>
                                   </td>
-                                  <td colSpan={2}>
-                                    <Tag icon="resource">
-                                      {' '}
-                                      <Link
-                                        to={workspacePathFromAddress(
-                                          repoAddress,
-                                          `/resources/${resource.name}`,
-                                        )}
-                                      >
-                                        {resourceDisplayName(resource.resource)}
-                                      </Link>
-                                    </Tag>
-                                  </td>
+                                  <td colSpan={2}>{resourceName}</td>
                                 </tr>
                               );
                             })}
@@ -322,6 +324,7 @@ const RESOURCE_ROOT_QUERY = gql`
         }
         nestedResources {
           name
+          type
           resource {
             name
             resourceType

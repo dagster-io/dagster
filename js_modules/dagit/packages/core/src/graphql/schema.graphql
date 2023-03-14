@@ -1931,7 +1931,13 @@ enum ConfiguredValueType {
 
 type NestedResourceEntry {
   name: String!
-  resource: ResourceDetails!
+  type: NestedResourceType!
+  resource: ResourceDetails
+}
+
+enum NestedResourceType {
+  ANONYMOUS
+  TOP_LEVEL
 }
 
 type RepositoryConnection {
