@@ -31,13 +31,23 @@ from dagster import (
     multi_asset,
     repository,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.partition import DefaultPartitionsSubset, DynamicPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
+    PartitionsSubset,
+)
+from dagster._core.definitions.time_window_partitions import (
+    HourlyPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -56,6 +66,7 @@ class AssetReconciliationScenario(NamedTuple):
     cursor_from: Optional["AssetReconciliationScenario"] = None
     current_time: Optional[datetime.datetime] = None
     asset_selection: Optional[AssetSelection] = None
+    active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
@@ -67,6 +78,36 @@ class AssetReconciliationScenario(NamedTuple):
             @repository
             def repo():
                 return self.assets
+
+            # add any backfills to the instance
+            for i, target in enumerate(self.active_backfill_targets or []):
+                target_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key=target,
+                    non_partitioned_asset_keys=set(),
+                )
+                empty_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key={},
+                    non_partitioned_asset_keys=set(),
+                )
+                asset_backfill_data = AssetBackfillData(
+                    latest_storage_id=0,
+                    target_subset=target_subset,
+                    requested_runs_for_target_roots=False,
+                    materialized_subset=empty_subset,
+                    requested_subset=empty_subset,
+                    failed_and_downstream_subset=empty_subset,
+                )
+                backfill = PartitionBackfill(
+                    backfill_id=f"backfill{i}",
+                    status=BulkActionStatus.REQUESTED,
+                    from_failure=False,
+                    tags={},
+                    backfill_timestamp=test_time.timestamp(),
+                    serialized_asset_backfill_data=asset_backfill_data.serialize(),
+                )
+                instance.add_backfill(backfill)
 
             if self.cursor_from is not None:
                 run_requests, cursor = self.cursor_from.do_scenario(instance)
@@ -807,6 +848,86 @@ scenarios = {
                 PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
             )
         ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_independent": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("daily"): TimeWindowPartitionsSubset(
+                    daily_partitions_def, num_partitions=1, included_partition_keys={"2013-01-06"}
+                )
+            },
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=3,
+                    included_partition_keys={
+                        "2013-01-06-01:00",
+                        "2013-01-06-02:00",
+                        "2013-01-06-03:00",
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_intersecting": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=3,
+                    included_partition_keys={
+                        "2013-01-06-04:00",
+                        "2013-01-06-05:00",
+                        "2013-01-06-06:00",
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-07:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_superceding": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=len(
+                        {
+                            partition_key
+                            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                            )
+                        },
+                    ),
+                    included_partition_keys={
+                        partition_key
+                        for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                            PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                        )
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[],
     ),
     ################################################################################################
     # Exotic partition-mappings

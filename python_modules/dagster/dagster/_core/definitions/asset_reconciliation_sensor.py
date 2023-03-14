@@ -22,6 +22,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
@@ -203,6 +204,35 @@ class AssetReconciliationCursor(NamedTuple):
             )
         )
         return serialized
+
+
+def get_active_backfill_target_asset_graph_subset(
+    instance: "DagsterInstance", asset_graph: AssetGraph
+) -> AssetGraphSubset:
+    """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
+    an active asset backfill.
+    """
+    from dagster._core.execution.asset_backfill import AssetBackfillData
+    from dagster._core.execution.backfill import BulkActionStatus
+
+    asset_backfills = [
+        backfill
+        for backfill in instance.get_backfills(status=BulkActionStatus.REQUESTED)
+        if backfill.is_asset_backfill
+    ]
+
+    result = AssetGraphSubset(asset_graph)
+    for asset_backfill in asset_backfills:
+        if asset_backfill.serialized_asset_backfill_data is None:
+            check.failed("Asset backfill missing serialized_asset_backfill_data")
+
+        asset_backfill_data = AssetBackfillData.from_serialized(
+            asset_backfill.serialized_asset_backfill_data, asset_graph
+        )
+
+        result |= asset_backfill_data.target_subset
+
+    return result
 
 
 def find_parent_materialized_asset_partitions(
@@ -401,6 +431,11 @@ def determine_asset_partitions_to_reconcile(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
+    backfill_target_asset_graph_subset = get_active_backfill_target_asset_graph_subset(
+        asset_graph=asset_graph,
+        instance=instance_queryer.instance,
+    )
+
     def parents_will_be_reconciled(
         candidate: AssetKeyPartitionKey,
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
@@ -432,7 +467,11 @@ def determine_asset_partitions_to_reconcile(
             return False
 
         if any(
+            # do not reconcile assets if the freshness system will update them
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
+            # do not reconcile assets if an active backfill will update them
+            or candidate in backfill_target_asset_graph_subset
+            # do not reconcile assets if they are not in the target selection
             or candidate.asset_key not in target_asset_keys
             for candidate in candidates_unit
         ):
