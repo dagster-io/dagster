@@ -383,7 +383,7 @@ class AssetGraph:
             )
         )
         current_policy = self.freshness_policies_by_key.get(asset_key)
-        if current_policy is not None:
+        if self.get_partitions_def(asset_key) is None and current_policy is not None:
             downstream_policies.add(current_policy)
 
         return downstream_policies
