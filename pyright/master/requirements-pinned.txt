@@ -1,4 +1,4 @@
-acryl-datahub==0.8.41.1
+acryl-datahub==0.8.45
 agate==1.6.3
 aiohttp==3.8.4
 aiosignal==1.3.1
