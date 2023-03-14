@@ -109,10 +109,13 @@ class TimeWindowPartitionsDefinition(
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
     ):
+        check.opt_str_param(timezone, "timezone")
+        timezone = timezone or "UTC"
+
         if isinstance(start, datetime):
-            start_dt = start
+            start_dt = pendulum.instance(start, tz=timezone)
         else:
-            start_dt = datetime.strptime(start, fmt)
+            start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
         if cron_schedule is not None:
             check.invariant(
@@ -139,7 +142,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
+            cls, start_dt, timezone, fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -679,8 +682,10 @@ class TimeWindowPartitionsDefinition(
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
-            time_obj = datetime.strptime(partition_key, self.fmt)
-            return time_obj.timestamp() >= self.start.timestamp()
+            partition_time = pendulum.instance(
+                datetime.strptime(partition_key, self.fmt), tz=self.timezone
+            )
+            return partition_time >= self.start
         except ValueError:
             return False
 
