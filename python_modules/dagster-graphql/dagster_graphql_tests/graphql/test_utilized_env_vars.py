@@ -32,9 +32,18 @@ def test_get_used_env_vars(definitions_graphql_context, snapshot) -> None:
     assert result.data
     assert result.data["utilizedEnvVarsOrError"]
 
-    assert sorted(
-        result.data["utilizedEnvVarsOrError"]["results"], key=lambda x: x["envVarName"]
-    ) == [
+    def sort_env_var_entry(entry):
+        return {
+            "envVarName": entry["envVarName"],
+            "envVarConsumers": sorted(entry["envVarConsumers"], key=lambda x: x["name"]),
+        }
+
+    sorted_env_vars = sorted(
+        [sort_env_var_entry(x) for x in result.data["utilizedEnvVarsOrError"]["results"]],
+        key=lambda x: x["envVarName"],
+    )
+
+    assert sorted_env_vars == [
         {
             "envVarName": "MY_OTHER_STRING",
             "envVarConsumers": [
@@ -58,5 +67,7 @@ def test_get_used_env_vars(definitions_graphql_context, snapshot) -> None:
             ],
         },
     ]
+
+    result.data["utilizedEnvVarsOrError"]["results"] = sorted_env_vars
 
     snapshot.assert_match(result.data)
