@@ -433,7 +433,7 @@ class ScheduleDefinition:
         """Returns a copy of this schedule with the job replaced.
 
         Args:
-            job (Union[GraphDefinition, JobDefinition]): The job that should execute when this
+            job (ExecutableDefinition): The job that should execute when this
                 schedule runs.
         """
         return ScheduleDefinition(
