@@ -52,10 +52,7 @@ from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME, PICKLED_STEP_RU
 from . import emr_eks_step_main
 from .monitor import EmrEksJobError, EmrEksJobRunMonitor
 
-
-# TODO: improve types and documentation
-@resource(
-    config_schema={
+EMR_EKS_CONFIG_SCHEMA={
         "cluster_id": Field(
             StringSource,
             description="Name of the virtual cluster on which to execute.",
@@ -87,6 +84,29 @@ from .monitor import EmrEksJobError, EmrEksJobRunMonitor
         "spark_conf": Field(Permissive(), default_value={}, is_required=False),
         "log4j_conf": Field(Permissive(), default_value={}, is_required=False),
     }
+
+
+def build_pyspark_zip(zip_file, path, skip_hidden=True, follow_links=False):
+    """Archives the current path into a file named `zip_file`."""
+    check.str_param(zip_file, "zip_file")
+    check.str_param(path, "path")
+
+    with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(path, followlinks=follow_links):
+            for fname in files:
+                abs_fname = os.path.join(root, fname)
+
+                # Skip various artifacts
+                if "pytest" in abs_fname or "__pycache__" in abs_fname or "pyc" in abs_fname:
+                    if skip_hidden and "." in root:
+                        continue
+                    continue
+
+                zf.write(abs_fname, os.path.relpath(os.path.join(root, fname), path))
+
+
+@resource(
+    config_schema=EMR_EKS_CONFIG_SCHEMA
 )
 def emr_eks_pyspark_resource(context):
     spark_conf = context.resource_config.get("spark_conf")
@@ -107,34 +127,6 @@ def emr_eks_pyspark_resource(context):
         additional_relative_paths=context.resource_config.get("additional_relative_paths"),
     )
 
-
-class EmrEksPySparkSubmitType(Enum):
-    """Type of job submission. See ``EmrEksPySparkResource``."""
-
-    CONTAINER_WITH_CODE = 1
-    STAGE_CODE = 2
-
-
-def build_pyspark_zip(zip_file, path):
-    """Archives the current path into a file named `zip_file`."""
-    check.str_param(zip_file, "zip_file")
-    check.str_param(path, "path")
-
-    with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zf:
-        #TODO remove `followlinks=True`, it is a hack for testing`
-        for root, _, files in os.walk(path, followlinks=True):
-            for fname in files:
-                abs_fname = os.path.join(root, fname)
-                # Skip various artifacts
-                if (
-                    "pytest" in abs_fname
-                    or "__pycache__" in abs_fname
-                    or "pyc" in abs_fname
-                    or "." in root
-                ):
-                    continue
-
-                zf.write(abs_fname, os.path.relpath(os.path.join(root, fname), path))
 
 
 class EmrEksPySparkResource(PySparkResource, StepLauncher):
@@ -285,8 +277,6 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         `spark-submit --py-files my_pyspark_project.zip emr_step_main.py` on EMR this will
         print 1, 2.
         """
-        # from dagster_pyspark.utils import build_pyspark_zip
-
         with tempfile.TemporaryDirectory() as temp_dir:
             s3 = boto3.client("s3", region_name=self.region_name)
 
@@ -311,7 +301,7 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
                 # Zip and upload package containing job
                 zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
 
-                build_pyspark_zip(zip_local_path, local_job_package_path)
+                build_pyspark_zip(zip_local_path, local_job_package_path, skip_hidden=False, follow_links=True)
                 _upload_file_to_s3(zip_local_path, CODE_ZIP_NAME)
 
             # Create step run ref pickle file
@@ -328,12 +318,10 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         # Determine type of submission and set container image
         if self.deploy_local_job_package:
             log.info("Local code will be staged")
-            submit_type = EmrEksPySparkSubmitType.STAGE_CODE
         else:
             log.info(f"Using image '{self.container_image}' with code from repository origin")
-            submit_type = EmrEksPySparkSubmitType.CONTAINER_WITH_CODE
 
-        step_run_ref = self._step_run_ref(step_context, submit_type)
+        step_run_ref = self._step_run_ref(step_context)
         run_id = step_context.dagster_run.run_id
         step_key = step_context.step.key
 
@@ -587,7 +575,6 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
     def _step_run_ref(
         self,
         step_context: StepExecutionContext,
-        submit_type: EmrEksPySparkSubmitType,
     ) -> StepRunRef:
         """Build a StepRunRef that can be used to run the step
         in a remote process.
@@ -596,7 +583,7 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
             step_context,
         )
 
-        if submit_type == EmrEksPySparkSubmitType.CONTAINER_WITH_CODE:
+        if not self.deploy_local_job_package:
             # Container has the code, but we need to point Dagster to it
             step_run_ref = EmrEksPySparkResource._set_step_run_ref_working_directory(step_run_ref)
 
