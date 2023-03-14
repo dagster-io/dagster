@@ -12,7 +12,7 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster_pandera import pandera_schema_to_dagster_type
-from pandera.typing.config import BaseConfig
+from pandera.api.pandas.model_config import BaseConfig
 
 # ########################
 # ##### FIXTURES
@@ -141,7 +141,7 @@ def test_pandera_schema_to_dagster_type(schema):
                 constraints=TableColumnConstraints(
                     nullable=False,
                     other=[
-                        "str_startswith(value_)",
+                        "str_startswith('value_')",
                         "Two words separated by underscore.",
                     ],
                 ),

@@ -114,7 +114,7 @@ class UPathIOManager(MemoizableIOManager):
 
     def _get_multipartition_backcompat_paths(
         self, context: Union[InputContext, OutputContext]
-    ) -> UPath:
+    ) -> Mapping[str, UPath]:
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
