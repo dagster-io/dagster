@@ -65,6 +65,7 @@ from .external_data import (
     ExternalSensorData,
     ExternalSensorMetadata,
     ExternalTargetData,
+    NestedResource,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -578,7 +579,7 @@ class ExternalResource:
         return self._external_resource_data.config_schema_snap
 
     @property
-    def nested_resources(self) -> Dict[str, str]:
+    def nested_resources(self) -> Dict[str, NestedResource]:
         return self._external_resource_data.nested_resources
 
     @property
