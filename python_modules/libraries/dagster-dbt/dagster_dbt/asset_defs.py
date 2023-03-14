@@ -167,6 +167,7 @@ def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[Freshne
         return FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
+            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
         )
     return None
 
