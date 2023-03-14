@@ -1123,11 +1123,10 @@ scenarios = {
             assets=overlapping_freshness_inf,
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
-        # change at the top, doesn't need to be propagated to 1, 3, 5 as freshness policy will
-        # handle it, but assets 2, 4, 6 will not recieve an update in the plan window. 2 can be
-        # updated immediately, but 4 and 6 depend on 3, so will be defered
+        # change at the top, will not propagate immediately as freshness policies will handle it
+        # (even though it will take awhile)
         unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2"])],
+        expected_run_requests=[],
     ),
     "freshness_overlapping_defer_propagate2": AssetReconciliationScenario(
         assets=overlapping_freshness_none,
@@ -1135,7 +1134,10 @@ scenarios = {
             assets=overlapping_freshness_inf,
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
-        # same as above
+        # change at the top, doesn't need to be propagated to 1, 3, 5 as freshness policy will
+        # handle it, but assets 2, 4, 6 will not recieve an update because they are not
+        # upstream of a freshness policy. 2 can be updated immediately, but 4 and 6 depend on
+        # 3, so will be defered
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
