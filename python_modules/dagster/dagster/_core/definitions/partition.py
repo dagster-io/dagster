@@ -3,7 +3,6 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from collections import Counter
 from datetime import (
     datetime,
     time,
@@ -402,12 +401,7 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        if len(partition_keys) != len(set(partition_keys)):
-            raise DagsterInvalidDefinitionError(
-                "Partition keys must be unique. Found duplicate keys: "
-                f"{[k for k, v in Counter(partition_keys).items() if v > 1]}"
-            )
-
+        # TODO 1.3.0 enforce that partition keys are unique
         raise_error_on_invalid_partition_key_substring(partition_keys)
 
         self._partitions = [Partition(key) for key in partition_keys]
@@ -429,6 +423,16 @@ class StaticPartitionsDefinition(
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
+
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        # We don't currently throw an error when a duplicate partition key is defined
+        # in a static partitions definition, though we will at 1.3.0.
+        # This ensures that partition counts are correct in Dagit.
+        return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
 
 
 class ScheduleTimeBasedPartitionsDefinition(

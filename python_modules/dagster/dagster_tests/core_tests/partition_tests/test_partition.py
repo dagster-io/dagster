@@ -53,9 +53,8 @@ def test_invalid_partition_key():
         StaticPartitionsDefinition(["foo", "foo...bar"])
 
 
-def test_no_duplicate_static_partitions():
-    with pytest.raises(DagsterInvalidDefinitionError, match="Partition keys must be unique"):
-        StaticPartitionsDefinition(["foo", "foo"])
+def test_count_unique_static_partitions():
+    return StaticPartitionsDefinition(["foo", "foo"]).get_num_partitions() == 1
 
 
 @pytest.mark.parametrize(
