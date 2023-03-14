@@ -9,7 +9,7 @@ import {AssetEventList} from './AssetEventList';
 import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
+import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
@@ -122,15 +122,18 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
       )}
 
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
-
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
+      {!assetHasDefinedPartitions && (
+        <>
+          <FailedRunSinceMaterializationBanner
+            run={liveData?.runWhichFailedToMaterialize || null}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          />
+          <CurrentRunsBanner
+            liveData={liveData}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+          />
+        </>
+      )}
 
       <Box
         style={{flex: 1, minHeight: 0, outline: 'none'}}
@@ -169,6 +172,7 @@ export const AssetEvents: React.FC<Props> = ({
                   group={focused}
                   hasLineage={assetHasLineage}
                   assetKey={assetKey}
+                  latestRunForPartition={null}
                 />
               ) : (
                 <AssetPartitionDetailEmpty />

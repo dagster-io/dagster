@@ -164,7 +164,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         params={params}
         paramsTimeWindowOnly={!!params.asOf}
         setParams={setParams}
-        liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
       />
     );
   };
