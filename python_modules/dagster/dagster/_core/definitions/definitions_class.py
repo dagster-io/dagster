@@ -265,6 +265,8 @@ defs = Definitions(
     jobs=BindResourcesToJobs([my_job, my_other_job, ...])
 )
 
+In later releases, this will be the default behavior, and `BindResourcesToJobs` will not be required.
+
 The following jobs are affected: {jobs_text}
                 """
             )
