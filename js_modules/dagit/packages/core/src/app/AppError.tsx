@@ -167,7 +167,9 @@ export const setupErrorToasts = () => {
 
       const msg = `${args[0]}`;
       if (!IGNORED_CONSOLE_ERRORS.some((ignored) => msg.includes(ignored))) {
-        // Use setTimeout to avoid infinite loop in the case of ErrorToast.show causing another console.error
+        // If the console.error happens during render, then our ErrorToaster.show call
+        // will trigger the "Can't re-render component during render" console error
+        // which would send us in an infinite loop. So we use setTimeout to avoid this.
         setTimeout(() => {
           ErrorToaster.show({
             intent: 'danger',
