@@ -23,7 +23,7 @@ from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessConstraint
+from dagster._core.definitions.freshness_policy import FreshnessConstraint, FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -493,53 +493,8 @@ def determine_asset_partitions_to_reconcile(
     )
 
 
-def get_freshness_constraints_by_key(
-    data_time_resolver: "CachingDataTimeResolver",
-    asset_graph: AssetGraph,
-    plan_window_start: datetime.datetime,
-    plan_window_end: datetime.datetime,
-) -> Mapping[AssetKey, AbstractSet[FreshnessConstraint]]:
-    # a dictionary mapping each asset to a set of constraints that must be satisfied about the data
-    # times of its upstream assets
-    constraints_by_key: Dict[AssetKey, AbstractSet[FreshnessConstraint]] = defaultdict(set)
-
-    # for each asset with a FreshnessPolicy, get all unsolved constraints for the given time window
-    has_freshness_policy = False
-    for key, freshness_policy in asset_graph.freshness_policies_by_key.items():
-        # TODO: generate constraints for partitioned assets. For now, the alternative reconciliation
-        # logic will handle them.
-        if freshness_policy is None or asset_graph.is_partitioned(key):
-            continue
-        has_freshness_policy = True
-        upstream_keys = asset_graph.get_non_source_roots(key)
-        constraints_by_key[key] = freshness_policy.constraints_for_time_window(
-            window_start=plan_window_start,
-            window_end=plan_window_end,
-            upstream_keys=frozenset(upstream_keys),
-        )
-
-    # no freshness policies, so don't bother with constraints
-    if not has_freshness_policy:
-        return {}
-
-    # propagate constraints upwards through the graph
-    #
-    # we ignore whether or not the constraint we're propagating corresponds to an asset which
-    # is actually upstream of the asset we're operating on, as we'll filter those invalid
-    # constraints out in the next step, and it's expensive to calculate if a given asset is
-    # upstream of another asset.
-    for level in reversed(asset_graph.toposort_asset_keys()):
-        for key in level:
-            if asset_graph.is_source(key):
-                continue
-            for upstream_key in asset_graph.get_parents(key):
-                # pass along all of your constraints to your parents
-                constraints_by_key[upstream_key] |= constraints_by_key[key]
-    return constraints_by_key
-
-
-def get_execution_time_window_for_constraints(
-    constraints: AbstractSet[FreshnessConstraint],
+def get_execution_time_window_for_policies(
+    policies: AbstractSet[FreshnessPolicy],
     current_data_time: Optional[datetime.datetime],
     in_progress_data_time: Optional[datetime.datetime],
     failed_data_time: Optional[datetime.datetime],
@@ -602,15 +557,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     plan_window_start = current_time
     plan_window_end = plan_window_start + datetime.timedelta(hours=12)
 
-    # get a set of constraints that must be satisfied for each key
-    constraints_by_key = get_freshness_constraints_by_key(
-        data_time_resolver, asset_graph, plan_window_start, plan_window_end
-    )
-
-    # no constraints, so exit early
-    if not constraints_by_key:
-        return (set(), set())
-
     # get the set of asset keys we're allowed to execute
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
@@ -621,10 +567,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     for level in asset_graph.toposort_asset_keys():
         for key in level:
             if asset_graph.is_source(key):
-                continue
-            # no need to evaluate this key, as it has no constraints
-            constraints = constraints_by_key[key]
-            if not constraints:
                 continue
 
             # figure out the current contents of this asset with respect to its constraints
@@ -668,9 +610,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # number of constraints
                 (
                     execution_window_start,
-                    _,
-                ) = get_execution_time_window_for_constraints(
-                    constraints=constraints,
+                    execution_window_end,
+                ) = get_execution_time_window_for_policies(
+                    policies=asset_graph.get_downstream_freshness_policies(asset_key=key),
                     current_data_time=current_data_time,
                     in_progress_data_time=in_progress_data_time,
                     failed_data_time=failed_data_time,

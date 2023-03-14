@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, NamedTuple, Optional
+from typing import AbstractSet, FrozenSet, NamedTuple, Optional, Tuple
 
 import pendulum
 
@@ -148,6 +148,14 @@ class FreshnessPolicy(
     @property
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)
+
+    def get_execution_window(
+        self,
+        data_time: Optional[datetime.datetime],
+        evaluation_time: datetime.datetime,
+    ) -> Tuple[datetime.datetime, datetime.datetime]:
+        if data_time is None:
+            return (evaluation_time, evaluation_time)
 
     def constraints_for_time_window(
         self,
