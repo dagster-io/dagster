@@ -151,7 +151,6 @@ RUN apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
 
-
 # Temp image used to get non-dagster Python dependencies
 FROM system_base AS snapshot_builder
 
@@ -175,3 +174,6 @@ COPY --from=snapshot_builder /snapshot-reqs.txt .
 # builds faster in Buildkite.
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
+
+# New versions of debian require allowlisting folders where `git` can run
+RUN git config --system --add safe.directory \*

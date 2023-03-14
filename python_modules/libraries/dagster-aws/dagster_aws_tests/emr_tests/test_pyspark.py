@@ -108,6 +108,7 @@ def define_do_nothing_pipe():
     return do_nothing_pipe
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_local():
     result = execute_pipeline(
         pipeline=pyspark_pipe,
@@ -120,6 +121,7 @@ def test_local():
 @mock_emr
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
     with instance_for_test() as instance:
         result = execute_pipeline(
@@ -250,6 +252,7 @@ def test_do_it_live_emr():
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
 @mock.patch("dagster._core.events.log_step_event")
+@pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):
