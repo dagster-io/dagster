@@ -6,10 +6,16 @@ import {IconWrapper} from './Icon';
 export const RadioContainer = styled.div`
   .bp3-control {
     margin-bottom: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    input {
+      display: none;
+    }
   }
 
   .bp3-control.bp3-radio {
-    padding: 12px 20px;
+    padding: 12px 12px;
   }
 
   .bp3-control.bp3-radio.bp3-disabled {

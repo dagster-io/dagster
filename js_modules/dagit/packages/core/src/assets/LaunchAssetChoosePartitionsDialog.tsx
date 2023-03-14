@@ -519,7 +519,22 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 disabled={!canLaunchWithRangesAsTags}
                 onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
               >
-                Single run
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                  <span>Single run</span>
+                  <Tooltip
+                    targetTagName="div"
+                    position="top-left"
+                    content={
+                      <div style={{maxWidth: 300}}>
+                        This option requires that your assets are written to operate on a partition
+                        key range via context.asset_partition_key_range_for_output or
+                        context.asset_partitions_time_window_for_output.
+                      </div>
+                    }
+                  >
+                    <Icon name="info" color={Colors.Gray500} />
+                  </Tooltip>
+                </Box>
               </Radio>
               <Radio
                 name="grant"
@@ -769,7 +784,7 @@ const ToggleableSection = ({
         padding={{vertical: 12, horizontal: 24}}
         style={{cursor: 'pointer'}}
       >
-        <Rotateable rotate={!isOpen}>
+        <Rotateable $rotate={!isOpen}>
           <Icon name="arrow_drop_down" />
         </Rotateable>
         <div style={{flex: 1}}>{title}</div>
@@ -779,6 +794,6 @@ const ToggleableSection = ({
   );
 };
 
-const Rotateable = styled.span<{rotate: boolean}>`
-  ${({rotate}) => (rotate ? 'transform: rotate(-90deg);' : '')}
+const Rotateable = styled.span<{$rotate: boolean}>`
+  ${({$rotate}) => ($rotate ? 'transform: rotate(-90deg);' : '')}
 `;
