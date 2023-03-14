@@ -38,6 +38,9 @@ class GrapheneEnvVarWithConsumers(graphene.ObjectType):
         non_null_list(GrapheneEnvVarConsumer),
     )
 
+    class Meta:
+        name = "EnvVarWithConsumers"
+
     def __init__(self, name: str, consumers: Sequence[EnvVarConsumer]):
         super().__init__()
 
