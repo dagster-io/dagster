@@ -67,7 +67,7 @@ class EmrEksJobRunMonitor:
 
             # Remove the log stream name prefix: e.g.,
             # `some/prefix/stdout` -> `stdout`.
-            log_stream = log_record["logStreamName"][len(log_stream_name_prefix) :]  # noqa
+            log_stream = log_record["logStreamName"][len(log_stream_name_prefix) :]
 
             if self._is_dagster_event(msg):
                 yield from self._yield_event(msg)

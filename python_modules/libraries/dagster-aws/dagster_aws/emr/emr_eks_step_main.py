@@ -13,7 +13,8 @@ from dagster.core.instance import DagsterInstance
 # will be dropped. Otherwise, it can cause EMR to stop
 # reporting all logs to Cloudwatch Logs.
 _MAX_EVENT_SIZE_BYTES = 64 * 1024
-CODE_ZIP_NAME = 'code.zip'
+CODE_ZIP_NAME = "code.zip"
+
 
 def main(s3_bucket_step_run_ref: str, s3_key_step_run_ref: str) -> None:
     session = boto3.client("s3")
@@ -24,7 +25,7 @@ def main(s3_bucket_step_run_ref: str, s3_key_step_run_ref: str) -> None:
     _adjust_pythonpath_for_staged_assets(os.getenv("ENV_PATHS").split(","))
 
     print(f"Python path: {sys.path}")
-    
+
     # Read the step description
     from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 

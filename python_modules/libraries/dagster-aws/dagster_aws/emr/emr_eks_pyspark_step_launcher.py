@@ -1,30 +1,27 @@
 """Resource to run PySpark operations on EMR on EKS clusters."""
 import dataclasses
-import logging
-import os
-import pickle
-import tempfile
-import time
-from enum import Enum
-from typing import Dict, Iterator
 import hashlib
-import zipfile
+import os
+import time
+from typing import Dict, Iterator
 from urllib.parse import urlparse
 
 import boto3
 from dagster import (
-    BoolSource,
+    Array,
     Field,
     MetadataEntry,
     MetadataValue,
     Permissive,
     StringSource,
-    Array,
     check,
     resource,
 )
+from dagster._core.execution.plan.external_step import (
+    PICKLED_STEP_RUN_REF_FILE_NAME,
+)
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
+from dagster.core.definitions.step_launcher import StepRunRef
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     raise_execution_interrupts,
@@ -44,92 +41,60 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster_pyspark.resources import PySparkResource
 
-from dagster._core.execution.plan.external_step import (
-    PICKLED_STEP_RUN_REF_FILE_NAME,
+from dagster_aws.emr.pyspark_step_launcher import (
+    CODE_ZIP_NAME,
+    EMR_PY_SPARK_STEP_LAUNCHER_BASE_CONFIG,
+    EmrPySparkStepLauncherBase,
 )
-from dagster_aws.emr.pyspark_step_launcher import CODE_ZIP_NAME, PICKLED_STEP_RUN_REF_FILE_NAME
 
 from . import emr_eks_step_main
 from .monitor import EmrEksJobError, EmrEksJobRunMonitor
 
-EMR_EKS_CONFIG_SCHEMA={
-        "cluster_id": Field(
-            StringSource,
-            description="Name of the virtual cluster on which to execute.",
-        ),
+EMR_EKS_CONFIG_SCHEMA = dict(
+    **EMR_PY_SPARK_STEP_LAUNCHER_BASE_CONFIG,
+    **{
         "emr_release_label": Field(StringSource, description="EMR release label"),
         "container_image": Field(StringSource, description="Container image to use"),
-        "stage_code": Field(
-            BoolSource,
-        ),
         "job_role_arn": Field(StringSource, description="ARN of the role to use for job execution"),
         "log_group_name": Field(StringSource, description="Cloudwatch log group"),
-        "region_name": Field(StringSource, description="The AWS region that the cluster is in."),
-        "s3_staging_bucket": Field(
-            StringSource,
-            description="S3 bucket to use for staging job assets",
-        ),
-        "s3_staging_prefix": Field(
-            StringSource,
-            description="S3 prefix to use for staging jobs assets",
-        ),
         "additional_relative_paths": Field(
             Array(StringSource),
             description=(
-                "List of relative relative paths which are not correctly reachable from the"
-                " repository base"
+                "List of relative relative paths which are not correctly reachable from the "
+                "repository base. In practice let's say we have a package located at "
+                "`/root/some/involved/path/target_package` it can still be imported "
+                "as `target_package` if `some/involved/path/` is added to the list. "
+                "This can be useful, for example, in case of git submodules."
             ),
             default_value=[],
         ),
-        "spark_conf": Field(Permissive(), default_value={}, is_required=False),
         "log4j_conf": Field(Permissive(), default_value={}, is_required=False),
-    }
-
-
-def build_pyspark_zip(zip_file, path, skip_hidden=True, follow_links=False):
-    """Archives the current path into a file named `zip_file`."""
-    check.str_param(zip_file, "zip_file")
-    check.str_param(path, "path")
-
-    with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zf:
-        for root, _, files in os.walk(path, followlinks=follow_links):
-            for fname in files:
-                abs_fname = os.path.join(root, fname)
-
-                # Skip various artifacts
-                if "pytest" in abs_fname or "__pycache__" in abs_fname or "pyc" in abs_fname:
-                    if skip_hidden and "." in root:
-                        continue
-                    continue
-
-                zf.write(abs_fname, os.path.relpath(os.path.join(root, fname), path))
-
-
-@resource(
-    config_schema=EMR_EKS_CONFIG_SCHEMA
+    },
 )
+
+
+@resource(config_schema=EMR_EKS_CONFIG_SCHEMA)
 def emr_eks_pyspark_resource(context):
-    spark_conf = context.resource_config.get("spark_conf")
+    spark_config = context.resource_config.get("spark_config")
 
     return EmrEksPySparkResource(
         cluster_id=context.resource_config.get("cluster_id"),
         container_image=context.resource_config.get("container_image"),
-        stage_code=context.resource_config.get("stage_code"),
+        deploy_local_job_package=context.resource_config.get("deploy_local_job_package"),
         emr_release_label=context.resource_config.get("emr_release_label"),
         job_role_arn=context.resource_config.get("job_role_arn"),
         log_group_name=context.resource_config.get("log_group_name"),
         log4j_conf=context.resource_config.get("log4j_conf"),
         region_name=context.resource_config.get("region_name"),
-        s3_staging_bucket=context.resource_config.get("s3_staging_bucket"),
-        s3_staging_prefix=context.resource_config.get("s3_staging_prefix"),
-        spark_conf=spark_conf,
+        staging_bucket=context.resource_config.get("staging_bucket"),
+        staging_prefix=context.resource_config.get("staging_prefix"),
+        spark_config=spark_config,
         ephemeral_instance=context.instance.is_ephemeral,
         additional_relative_paths=context.resource_config.get("additional_relative_paths"),
     )
 
 
-
-class EmrEksPySparkResource(PySparkResource, StepLauncher):
+class EmrEksPySparkResource(PySparkResource, EmrPySparkStepLauncherBase):
     """A PySpark resource where code is executed on a remote
     EMR on EKS cluster.
 
@@ -212,29 +177,34 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         self,
         cluster_id,
         container_image,
-        stage_code,
+        deploy_local_job_package,
         emr_release_label,
         job_role_arn,
         log_group_name,
         log4j_conf,
         region_name,
-        s3_staging_bucket,
-        s3_staging_prefix,
-        spark_conf,
+        staging_bucket,
+        staging_prefix,
+        spark_config,
         ephemeral_instance,
         additional_relative_paths,
     ):
-        self.cluster_id = check.str_param(cluster_id, "cluster_id")
+        EmrPySparkStepLauncherBase.__init__(
+            self,
+            region_name,
+            staging_bucket,
+            staging_prefix,
+            deploy_local_job_package,
+            cluster_id,
+            spark_config,
+            emr_eks_step_main.__file__,
+        )
+
         self.container_image = check.str_param(container_image, "container_image")
-        self.deploy_local_job_package = check.bool_param(stage_code, "stage_code")
         self.emr_release_label = check.str_param(emr_release_label, "emr_release_label")
         self.job_role_arn = check.str_param(job_role_arn, "job_role_arn")
         self.log_group_name = check.str_param(log_group_name, "log_group_name")
-        self.region_name = check.str_param(region_name, "region_name")
-        self.staging_bucket = check.str_param(s3_staging_bucket, "region_name")
-        self.staging_prefix = check.str_param(s3_staging_prefix, "region_name")
         self.additional_relative_paths = additional_relative_paths
-        self.spark_conf = spark_conf
         self.log4j_conf = log4j_conf
 
         # TODO: all this configuration business is extremely verbose. How can we
@@ -256,60 +226,6 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
             # We do not pass any configuration to the session, as
             # it will be defined when we submit the job run instead.
             super(EmrEksPySparkResource, self).__init__({})
-
-    def _post_artifacts(self, log, step_run_ref, run_id, step_key, local_job_package_path):
-        """
-        Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
-        For the zip file, consider the following toy example:
-            # Folder: my_pyspark_project/
-            # a.py
-            def foo():
-                print(1)
-            # b.py
-            def bar():
-                print(2)
-            # main.py
-            from a import foo
-            from b import bar
-            foo()
-            bar()
-        This will zip up `my_pyspark_project/` as `my_pyspark_project.zip`. Then, when running
-        `spark-submit --py-files my_pyspark_project.zip emr_step_main.py` on EMR this will
-        print 1, 2.
-        """
-        with tempfile.TemporaryDirectory() as temp_dir:
-            s3 = boto3.client("s3", region_name=self.region_name)
-
-            # Upload step run ref
-            def _upload_file_to_s3(local_path, s3_filename):
-                key = self._artifact_s3_key(run_id, step_key, s3_filename)
-                s3_uri = self._artifact_s3_uri(run_id, step_key, s3_filename)
-                log.debug(
-                    "Uploading file {local_path} to {s3_uri}".format(
-                        local_path=local_path, s3_uri=s3_uri
-                    )
-                )
-                s3.upload_file(Filename=local_path, Bucket=self.staging_bucket, Key=key)
-
-            # Upload main file.
-            # The remote Dagster installation should also have the file, but locating it there
-            # could be a pain.
-            main_local_path = self._main_file_local_path()
-            _upload_file_to_s3(main_local_path, self._main_file_name())
-
-            if self.deploy_local_job_package:
-                # Zip and upload package containing job
-                zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
-
-                build_pyspark_zip(zip_local_path, local_job_package_path, skip_hidden=False, follow_links=True)
-                _upload_file_to_s3(zip_local_path, CODE_ZIP_NAME)
-
-            # Create step run ref pickle file
-            step_run_ref_local_path = os.path.join(temp_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
-            with open(step_run_ref_local_path, "wb") as step_pickle_file:
-                pickle.dump(step_run_ref, step_pickle_file)
-
-            _upload_file_to_s3(step_run_ref_local_path, PICKLED_STEP_RUN_REF_FILE_NAME)
 
     def launch_step(self, step_context: StepExecutionContext) -> Iterator[DagsterEvent]:
         log = step_context.log
@@ -400,19 +316,19 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         driver_entrypoint = self._artifact_s3_uri(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME)
 
         # Configuration
-        spark_conf = dict(self.spark_conf)
+        spark_config = dict(self.spark_config)
 
         # Determine type of submission and set container image
 
-        spark_conf["spark.kubernetes.container.image"] = self.container_image
+        spark_config["spark.kubernetes.container.image"] = self.container_image
 
         # Configure staging location
         upload_key = "spark.kubernetes.file.upload.path"
 
-        if upload_key not in spark_conf:
-            spark_conf[upload_key] = f"s3://{self.staging_bucket}/{self.staging_prefix}"
+        if upload_key not in spark_config:
+            spark_config[upload_key] = f"s3://{self.staging_bucket}/{self.staging_prefix}"
 
-        spark_conf[f"spark.kubernetes.driverEnv.ENV_PATHS"] = ",".join(
+        spark_config["spark.kubernetes.driverEnv.ENV_PATHS"] = ",".join(
             self.additional_relative_paths
         )
 
@@ -420,7 +336,7 @@ class EmrEksPySparkResource(PySparkResource, StepLauncher):
         configs = [
             {
                 "classification": "spark-defaults",
-                "properties": spark_conf,
+                "properties": spark_config,
             },
             {"classification": "spark-log4j", "properties": self.log4j_conf},
         ]

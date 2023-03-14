@@ -3,6 +3,7 @@ import pickle
 import sys
 import tempfile
 import time
+import zipfile
 
 import boto3
 from botocore.exceptions import ClientError
@@ -31,119 +32,125 @@ EMR_SPARK_HOME = "/usr/lib/spark/"
 CODE_ZIP_NAME = "code.zip"
 
 
+EMR_PY_SPARK_STEP_LAUNCHER_BASE_CONFIG = {
+    "spark_config": get_spark_config(),
+    "cluster_id": Field(
+        StringSource, description="Name of the job flow (cluster) on which to execute."
+    ),
+    "region_name": Field(StringSource, description="The AWS region that the cluster is in."),
+    "staging_bucket": Field(
+        StringSource,
+        is_required=True,
+        description="S3 bucket to use for passing files between the plan process and EMR process.",
+    ),
+    "staging_prefix": Field(
+        StringSource,
+        is_required=False,
+        default_value="emr_staging",
+        description=(
+            "S3 key prefix inside the staging_bucket to use for files passed the plan "
+            "process and EMR process"
+        ),
+    ),
+    "deploy_local_job_package": Field(
+        bool,
+        default_value=False,
+        is_required=False,
+        description=(
+            "If set, before every step run, the launcher will zip up all the code in"
+            " local_job_package_path, upload it to s3, and pass it to spark-submit's --py-files"
+            " option. This gives the remote process access to up-to-date user code. If not set,"
+            " the assumption is that some other mechanism is used for distributing code to the"
+            " EMR cluster. If this option is set to True, s3_job_package_path should not also"
+            " be set."
+        ),
+    ),
+}
+
+
 @resource(
-    {
-        "spark_config": get_spark_config(),
-        "cluster_id": Field(
-            StringSource, description="Name of the job flow (cluster) on which to execute."
-        ),
-        "region_name": Field(StringSource, description="The AWS region that the cluster is in."),
-        "action_on_failure": Field(
-            str,
-            is_required=False,
-            default_value="CANCEL_AND_WAIT",
-            description=(
-                "The EMR action to take when the cluster step fails: "
-                "https://docs.aws.amazon.com/emr/latest/APIReference/API_StepConfig.html"
+    dict(
+        **{
+            "action_on_failure": Field(
+                str,
+                is_required=False,
+                default_value="CANCEL_AND_WAIT",
+                description=(
+                    "The EMR action to take when the cluster step fails: "
+                    "https://docs.aws.amazon.com/emr/latest/APIReference/API_StepConfig.html"
+                ),
             ),
-        ),
-        "staging_bucket": Field(
-            StringSource,
-            is_required=True,
-            description=(
-                "S3 bucket to use for passing files between the plan process and EMR process."
+            "wait_for_logs": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "If set, the system will wait for EMR logs to appear on S3. Note that logs are"
+                    " copied every 5 minutes, so enabling this will add several minutes to the job"
+                    " runtime."
+                ),
             ),
-        ),
-        "staging_prefix": Field(
-            StringSource,
-            is_required=False,
-            default_value="emr_staging",
-            description=(
-                "S3 key prefix inside the staging_bucket to use for files passed the plan "
-                "process and EMR process"
+            "local_job_package_path": Field(
+                StringSource,
+                is_required=False,
+                description=(
+                    "Absolute path to the package that contains the job definition(s) whose steps"
+                    " will execute remotely on EMR. This is a path on the local fileystem of the"
+                    " process executing the job. The expectation is that this package will also be"
+                    " available on the python path of the launched process running the Spark step"
+                    " on EMR, either deployed on step launch via the deploy_local_job_package"
+                    " option, referenced on s3 via the s3_job_package_path option, or installed on"
+                    " the cluster via bootstrap actions."
+                ),
             ),
-        ),
-        "wait_for_logs": Field(
-            bool,
-            is_required=False,
-            default_value=False,
-            description=(
-                "If set, the system will wait for EMR logs to appear on S3. Note that logs "
-                "are copied every 5 minutes, so enabling this will add several minutes to the job "
-                "runtime."
+            "local_pipeline_package_path": Field(
+                StringSource,
+                is_required=False,
+                description=(
+                    "(legacy) Absolute path to the package that contains the pipeline definition(s)"
+                    " whose steps will execute remotely on EMR. This is a path on the local"
+                    " fileystem of the process executing the pipeline. The expectation is that this"
+                    " package will also be available on the python path of the launched process"
+                    " running the Spark step on EMR, either deployed on step launch via the"
+                    " deploy_local_pipeline_package option, referenced on s3 via the"
+                    " s3_pipeline_package_path option, or installed on the cluster via bootstrap"
+                    " actions."
+                ),
             ),
-        ),
-        "local_job_package_path": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "Absolute path to the package that contains the job definition(s) whose steps will"
-                " execute remotely on EMR. This is a path on the local fileystem of the process"
-                " executing the job. The expectation is that this package will also be available on"
-                " the python path of the launched process running the Spark step on EMR, either"
-                " deployed on step launch via the deploy_local_job_package option, referenced on s3"
-                " via the s3_job_package_path option, or installed on the cluster via bootstrap"
-                " actions."
+            "deploy_local_pipeline_package": Field(
+                bool,
+                default_value=False,
+                is_required=False,
+                description=(
+                    "(legacy) If set, before every step run, the launcher will zip up all the code"
+                    " in local_job_package_path, upload it to s3, and pass it to spark-submit's"
+                    " --py-files option. This gives the remote process access to up-to-date user"
+                    " code. If not set, the assumption is that some other mechanism is used for"
+                    " distributing code to the EMR cluster. If this option is set to True,"
+                    " s3_job_package_path should not also be set."
+                ),
             ),
-        ),
-        "local_pipeline_package_path": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "(legacy) Absolute path to the package that contains the pipeline definition(s)"
-                " whose steps will execute remotely on EMR. This is a path on the local fileystem"
-                " of the process executing the pipeline. The expectation is that this package will"
-                " also be available on the python path of the launched process running the Spark"
-                " step on EMR, either deployed on step launch via the deploy_local_pipeline_package"
-                " option, referenced on s3 via the s3_pipeline_package_path option, or installed on"
-                " the cluster via bootstrap actions."
+            "s3_job_package_path": Field(
+                StringSource,
+                is_required=False,
+                description=(
+                    "If set, this path will be passed to the --py-files option of spark-submit. "
+                    "This should usually be a path to a zip file.  If this option is set, "
+                    "deploy_local_job_package should not be set to True."
+                ),
             ),
-        ),
-        "deploy_local_job_package": Field(
-            bool,
-            default_value=False,
-            is_required=False,
-            description=(
-                "If set, before every step run, the launcher will zip up all the code in"
-                " local_job_package_path, upload it to s3, and pass it to spark-submit's --py-files"
-                " option. This gives the remote process access to up-to-date user code. If not set,"
-                " the assumption is that some other mechanism is used for distributing code to the"
-                " EMR cluster. If this option is set to True, s3_job_package_path should not also"
-                " be set."
+            "s3_pipeline_package_path": Field(
+                StringSource,
+                is_required=False,
+                description=(
+                    "If set, this path will be passed to the --py-files option of spark-submit. "
+                    "This should usually be a path to a zip file.  If this option is set, "
+                    "deploy_local_pipeline_package should not be set to True."
+                ),
             ),
-        ),
-        "deploy_local_pipeline_package": Field(
-            bool,
-            default_value=False,
-            is_required=False,
-            description=(
-                "(legacy) If set, before every step run, the launcher will zip up all the code in"
-                " local_job_package_path, upload it to s3, and pass it to spark-submit's --py-files"
-                " option. This gives the remote process access to up-to-date user code. If not set,"
-                " the assumption is that some other mechanism is used for distributing code to the"
-                " EMR cluster. If this option is set to True, s3_job_package_path should not also"
-                " be set."
-            ),
-        ),
-        "s3_job_package_path": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "If set, this path will be passed to the --py-files option of spark-submit. "
-                "This should usually be a path to a zip file.  If this option is set, "
-                "deploy_local_job_package should not be set to True."
-            ),
-        ),
-        "s3_pipeline_package_path": Field(
-            StringSource,
-            is_required=False,
-            description=(
-                "If set, this path will be passed to the --py-files option of spark-submit. "
-                "This should usually be a path to a zip file.  If this option is set, "
-                "deploy_local_pipeline_package should not be set to True."
-            ),
-        ),
-    }
+        },
+        **EMR_PY_SPARK_STEP_LAUNCHER_BASE_CONFIG,
+    )
 )
 def emr_pyspark_step_launcher(context):
     # Resolve legacy arguments
@@ -214,47 +221,52 @@ emr_pyspark_step_launcher.__doc__ = "\n".join(
 )
 
 
-class EmrPySparkStepLauncher(StepLauncher):
+def build_pyspark_zip(zip_file, path, skip_hidden=True, follow_links=False):
+    """Archives the current path into a file named `zip_file`."""
+    check.str_param(zip_file, "zip_file")
+    check.str_param(path, "path")
+
+    with zipfile.ZipFile(zip_file, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(path, followlinks=follow_links):
+            for fname in files:
+                abs_fname = os.path.join(root, fname)
+
+                # Skip various artifacts
+                if (
+                    "pytest" in abs_fname
+                    or "__pycache__" in abs_fname
+                    or "pyc" in abs_fname
+                    or (skip_hidden and "." in root)
+                ):
+                    continue
+
+                zf.write(abs_fname, os.path.relpath(os.path.join(root, fname), path))
+
+
+class EmrPySparkStepLauncherBase(StepLauncher):
     def __init__(
         self,
         region_name,
         staging_bucket,
         staging_prefix,
-        wait_for_logs,
-        action_on_failure,
+        deploy_local_job_package,
         cluster_id,
         spark_config,
-        local_job_package_path,
-        deploy_local_job_package,
-        s3_job_package_path=None,
+        main_file_local_path,
     ):
         self.region_name = check.str_param(region_name, "region_name")
         self.staging_bucket = check.str_param(staging_bucket, "staging_bucket")
         self.staging_prefix = check.str_param(staging_prefix, "staging_prefix")
-        self.wait_for_logs = check.bool_param(wait_for_logs, "wait_for_logs")
-        self.action_on_failure = check.str_param(action_on_failure, "action_on_failure")
-        self.cluster_id = check.str_param(cluster_id, "cluster_id")
-        self.spark_config = spark_config
-
-        check.invariant(
-            not deploy_local_job_package or not s3_job_package_path,
-            (
-                "If deploy_local_job_package is set to True, s3_job_package_path should not "
-                "also be set."
-            ),
-        )
-
-        self.local_job_package_path = check.str_param(
-            local_job_package_path, "local_job_package_path"
-        )
         self.deploy_local_job_package = check.bool_param(
             deploy_local_job_package, "deploy_local_job_package"
         )
-        self.s3_job_package_path = check.opt_str_param(s3_job_package_path, "s3_job_package_path")
 
-        self.emr_job_runner = EmrJobRunner(region=self.region_name)
+        self.main_file_local_path = check.str_param(main_file_local_path, "main_file_local_path")
 
-    def _post_artifacts(self, log, step_run_ref, run_id, step_key):
+        self.cluster_id = check.str_param(cluster_id, "cluster_id")
+        self.spark_config = spark_config
+
+    def _post_artifacts(self, log, step_run_ref, run_id, step_key, local_job_package_path):
         """
         Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
 
@@ -280,7 +292,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         `spark-submit --py-files my_pyspark_project.zip emr_step_main.py` on EMR this will
         print 1, 2.
         """
-        from dagster_pyspark.utils import build_pyspark_zip
+        # from dagster_pyspark.utils import build_pyspark_zip
 
         with tempfile.TemporaryDirectory() as temp_dir:
             s3 = boto3.client("s3", region_name=self.region_name)
@@ -306,7 +318,9 @@ class EmrPySparkStepLauncher(StepLauncher):
                 # Zip and upload package containing job
                 zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
 
-                build_pyspark_zip(zip_local_path, self.local_job_package_path)
+                build_pyspark_zip(
+                    zip_local_path, local_job_package_path, skip_hidden=True, follow_links=True
+                )
                 _upload_file_to_s3(zip_local_path, CODE_ZIP_NAME)
 
             # Create step run ref pickle file
@@ -316,6 +330,76 @@ class EmrPySparkStepLauncher(StepLauncher):
 
             _upload_file_to_s3(step_run_ref_local_path, PICKLED_STEP_RUN_REF_FILE_NAME)
 
+    def _sanitize_step_key(self, step_key: str) -> str:
+        # step_keys of dynamic steps contain brackets, which are invalid characters
+        return step_key.replace("[", "__").replace("]", "__")
+
+    def _artifact_s3_uri(self, run_id, step_key, filename):
+        key = self._artifact_s3_key(run_id, self._sanitize_step_key(step_key), filename)
+        return "s3://{bucket}/{key}".format(bucket=self.staging_bucket, key=key)
+
+    def _artifact_s3_key(self, run_id, step_key, filename):
+        return "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                self._sanitize_step_key(step_key),
+                os.path.basename(filename),
+            ]
+        )
+
+    def _main_file_name(self):
+        return os.path.basename(self._main_file_local_path())
+
+    def _main_file_local_path(self):
+        return self.main_file_local_path
+
+
+class EmrPySparkStepLauncher(EmrPySparkStepLauncherBase):
+    def __init__(
+        self,
+        region_name,
+        staging_bucket,
+        staging_prefix,
+        wait_for_logs,
+        action_on_failure,
+        cluster_id,
+        spark_config,
+        local_job_package_path,
+        deploy_local_job_package,
+        s3_job_package_path=None,
+    ):
+        super(EmrPySparkStepLauncher, self).__init__(
+            region_name,
+            staging_bucket,
+            staging_prefix,
+            deploy_local_job_package,
+            cluster_id,
+            spark_config,
+            emr_step_main.__file__,
+        )
+
+        self.local_job_package_path = check.str_param(
+            local_job_package_path, "local_job_package_path"
+        )
+
+        self.wait_for_logs = check.bool_param(wait_for_logs, "wait_for_logs")
+        self.action_on_failure = check.str_param(action_on_failure, "action_on_failure")
+
+        check.invariant(
+            not deploy_local_job_package or not s3_job_package_path,
+            (
+                "If deploy_local_job_package is set to True, s3_job_package_path should not "
+                "also be set."
+            ),
+        )
+        self.deploy_local_job_package = check.bool_param(
+            deploy_local_job_package, "deploy_local_job_package"
+        )
+        self.s3_job_package_path = check.opt_str_param(s3_job_package_path, "s3_job_package_path")
+
+        self.emr_job_runner = EmrJobRunner(region=self.region_name)
+
     def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(step_context, self.local_job_package_path)
 
@@ -323,7 +407,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         log = step_context.log
 
         step_key = step_run_ref.step_key
-        self._post_artifacts(log, step_run_ref, run_id, step_key)
+        self._post_artifacts(log, step_run_ref, run_id, step_key, self.local_job_package_path)
 
         emr_step_def = self._get_emr_step_def(run_id, step_key, step_context.solid.name)
         emr_step_id = self.emr_job_runner.add_job_flow_steps(log, self.cluster_id, [emr_step_def])[
@@ -458,28 +542,4 @@ class EmrPySparkStepLauncher(StepLauncher):
 
         return EmrJobRunner.construct_step_dict_for_command(
             "Execute Solid/Op %s" % solid_name, command, action_on_failure=action_on_failure
-        )
-
-    def _main_file_name(self):
-        return os.path.basename(self._main_file_local_path())
-
-    def _main_file_local_path(self):
-        return emr_step_main.__file__
-
-    def _sanitize_step_key(self, step_key: str) -> str:
-        # step_keys of dynamic steps contain brackets, which are invalid characters
-        return step_key.replace("[", "__").replace("]", "__")
-
-    def _artifact_s3_uri(self, run_id, step_key, filename):
-        key = self._artifact_s3_key(run_id, self._sanitize_step_key(step_key), filename)
-        return "s3://{bucket}/{key}".format(bucket=self.staging_bucket, key=key)
-
-    def _artifact_s3_key(self, run_id, step_key, filename):
-        return "/".join(
-            [
-                self.staging_prefix,
-                run_id,
-                self._sanitize_step_key(step_key),
-                os.path.basename(filename),
-            ]
         )
