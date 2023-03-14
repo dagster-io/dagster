@@ -3,9 +3,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 from dagster import (
-    Field,
     MetadataEntry,
-    StringSource,
     _check as check,
 )
 from dagster._cli.api import ExecuteRunArgs
@@ -17,7 +15,6 @@ from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.merger import merge_dicts
 
 from .client import DagsterKubernetesClient
 from .container_context import K8sContainerContext
@@ -188,12 +185,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
         """
-        job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
-
-        run_launcher_extra_cfg = {
-            "job_namespace": Field(StringSource, is_required=False, default_value="default"),
-        }
-        return merge_dicts(job_cfg, run_launcher_extra_cfg)
+        return DagsterK8sJobConfig.config_type_run_launcher()
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):

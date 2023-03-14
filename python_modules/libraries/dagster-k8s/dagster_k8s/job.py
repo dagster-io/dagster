@@ -390,6 +390,7 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="Raw Kubernetes configuration for launched runs.",
                 ),
+                "job_namespace": Field(StringSource, is_required=False, default_value="default"),
             },
         )
 
