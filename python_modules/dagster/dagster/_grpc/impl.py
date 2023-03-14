@@ -308,6 +308,11 @@ def get_external_sensor_execution(
     sensor_def = repo_def.get_sensor_def(sensor_name)
 
     with ExitStack() as stack:
+        resources_to_build = {
+            k: v
+            for k, v in repo_def.get_top_level_resources().items()
+            if k in sensor_def.required_resource_keys
+        }
         sensor_context = stack.enter_context(
             SensorEvaluationContext(
                 instance_ref,
@@ -317,6 +322,7 @@ def get_external_sensor_execution(
                 repository_name=repo_def.name,
                 repository_def=repo_def,
                 sensor_name=sensor_name,
+                resources=resources_to_build,
             )
         )
 
