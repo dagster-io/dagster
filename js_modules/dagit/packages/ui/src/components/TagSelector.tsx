@@ -12,14 +12,14 @@ import {Tag} from './Tag';
 import {TextInput, TextInputStyles} from './TextInput';
 import {useViewport} from './useViewport';
 
-type TagProps = {
+export type TagSelectorTagProps = {
   remove: (ev: React.SyntheticEvent<HTMLDivElement>) => void;
 };
-type DropdownItemProps = {
+export type TagSelectorDropdownItemProps = {
   toggle: () => void;
   selected: boolean;
 };
-type DropdownProps = {
+export type TagSelectorDropdownProps = {
   width: string;
   allTags: string[];
 };
@@ -28,16 +28,22 @@ type Props = {
   allTags: string[];
   selectedTags: string[];
   setSelectedTags: (tags: string[]) => void;
-  renderTag?: (tag: string, tagProps: TagProps) => React.ReactNode;
+  renderTag?: (tag: string, tagProps: TagSelectorTagProps) => React.ReactNode;
   renderTagList?: (tags: React.ReactNode[]) => React.ReactNode;
-  renderDropdown?: (dropdown: React.ReactNode, dropdownProps: DropdownProps) => React.ReactNode;
-  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactNode;
+  renderDropdown?: (
+    dropdown: React.ReactNode,
+    dropdownProps: TagSelectorDropdownProps,
+  ) => React.ReactNode;
+  renderDropdownItem?: (
+    tag: string,
+    dropdownItemProps: TagSelectorDropdownItemProps,
+  ) => React.ReactNode;
   dropdownStyles?: React.CSSProperties;
   rowWidth?: number;
   rowHeight?: number;
 };
 
-const defaultRenderTag = (tag: string, tagProps: TagProps) => {
+const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
   return (
     <Tag key={tag}>
       <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between', alignItems: 'center'}}>
@@ -50,7 +56,10 @@ const defaultRenderTag = (tag: string, tagProps: TagProps) => {
   );
 };
 
-const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemProps) => {
+const defaultRenderDropdownItem = (
+  tag: string,
+  dropdownItemProps: TagSelectorDropdownItemProps,
+) => {
   return (
     <label>
       <MenuItem
@@ -230,27 +239,30 @@ export const TagSelectorWithSearch = (
       selectedTags={selectedTags}
       setSelectedTags={setSelectedTags}
       dropdownStyles={{width: 'auto'}}
-      renderDropdown={(dropdownContent, dropdownProps) => {
-        return (
-          <Menu style={{width: 'auto'}}>
-            <Box flex={{direction: 'column'}}>
-              <Box flex={{direction: 'column', grow: 1}} padding={{horizontal: 8}}>
-                <TextInput
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={searchPlaceholder || 'Search'}
-                  ref={(input) => {
-                    if (input) {
-                      input.focus();
-                    }
-                  }}
-                />
+      renderDropdown={React.useCallback(
+        (dropdownContent, dropdownProps) => {
+          return (
+            <Menu style={{width: 'auto'}}>
+              <Box flex={{direction: 'column'}}>
+                <Box flex={{direction: 'column', grow: 1}} padding={{horizontal: 8}}>
+                  <TextInput
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={searchPlaceholder || 'Search'}
+                    ref={(input) => {
+                      if (input) {
+                        input.focus();
+                      }
+                    }}
+                  />
+                </Box>
+                {renderDropdown ? renderDropdown(dropdownContent, dropdownProps) : dropdownContent}
               </Box>
-              {renderDropdown ? renderDropdown(dropdownContent, dropdownProps) : dropdownContent}
-            </Box>
-          </Menu>
-        );
-      }}
+            </Menu>
+          );
+        },
+        [renderDropdown, search, searchPlaceholder],
+      )}
     />
   );
 };
