@@ -130,7 +130,15 @@ class Config(MakeConfigCacheable):
         Returns a dictionary representation of this config object,
         ignoring any private fields.
         """
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        output = {}
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            field = self.__fields__.get(key)
+            if field and value is None and not _is_pydantic_field_required(field):
+                continue
+            output[key] = value
+        return output
 
 
 @experimental

@@ -29,6 +29,7 @@ from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInv
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._utils.cached_method import cached_method
 from pydantic import BaseModel
+from pydantic import Field as PyField
 
 
 def test_disallow_config_schema_conflict():
@@ -661,6 +662,31 @@ def test_structured_run_config_ops():
 
     a_job.execute_in_process(
         RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string="foo", an_int=2)})
+    )
+    assert executed["yes"]
+
+
+def test_structured_run_config_optional() -> None:
+    class ANewConfigOpConfig(Config):
+        a_string: Optional[str]
+        an_int: Optional[int] = None
+        a_float: float = PyField(None)
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: ANewConfigOpConfig):
+        executed["yes"] = True
+        assert config.a_string is None
+        assert config.an_int == None
+        assert config.a_float == None
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string=None)})  # type: ignore
     )
     assert executed["yes"]
 
