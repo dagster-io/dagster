@@ -84,7 +84,7 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
     assert result.data["allTopLevelResourceDetailsOrError"]
     assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 3
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 4
 
     snapshot.assert_match(result.data)
 

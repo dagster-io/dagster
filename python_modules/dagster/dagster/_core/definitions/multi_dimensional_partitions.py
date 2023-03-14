@@ -364,6 +364,80 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         tags.update(get_tags_from_multi_partition_key(partition_key))
         return tags
 
+    @property
+    def time_window_dimension(self) -> PartitionDimensionDefinition:
+        time_window_dims = [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        check.invariant(
+            len(time_window_dims) == 1, "Expected exactly one time window partitioned dimension"
+        )
+        return next(iter(time_window_dims))
+
+    def get_cron_schedule(
+        self,
+        minute_of_hour: Optional[int] = None,
+        hour_of_day: Optional[int] = None,
+        day_of_week: Optional[int] = None,
+        day_of_month: Optional[int] = None,
+    ) -> str:
+        return cast(
+            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
+        ).get_cron_schedule(minute_of_hour, hour_of_day, day_of_week, day_of_month)
+
+    @property
+    def timezone(self) -> Optional[str]:
+        return cast(
+            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
+        ).timezone
+
+    def get_multipartition_keys_with_dimension_value(
+        self,
+        dimension_name: str,
+        dimension_partition_key: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
+    ) -> Sequence[MultiPartitionKey]:
+        check.str_param(dimension_name, "dimension_name")
+        check.str_param(dimension_partition_key, "dimension_partition_key")
+
+        matching_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name == dimension_name
+        ]
+        other_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name != dimension_name
+        ]
+
+        check.invariant(
+            len(matching_dimensions) == 1,
+            (
+                f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
+                f" {[dim.name for dim in self.partitions_defs]}"
+            ),
+        )
+
+        partition_sequences = [
+            partition_dim.partitions_def.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for partition_dim in other_dimensions
+        ] + [[dimension_partition_key]]
+
+        # Names of partitions dimensions in the same order as partition_sequences
+        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+
+        return [
+            MultiPartitionKey(
+                {
+                    partition_dim_names[i]: partition_key
+                    for i, partition_key in enumerate(partitions_tuple)
+                }
+            )
+            for partitions_tuple in itertools.product(*partition_sequences)
+        ]
+
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):
     def __init__(

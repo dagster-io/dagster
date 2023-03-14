@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -38,7 +39,6 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
-    has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name

@@ -14,6 +14,7 @@ from typing import (
     cast,
 )
 
+from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
 from dagster._annotations import experimental
@@ -775,6 +776,15 @@ def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
 
 
 def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+    # special case pydantic constrained types to their source equivalents
+    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+        return StringSource
+    # no FloatSource, so we just return float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+        potential_dagster_type = float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+        return IntSource
+
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
         return StringSource

@@ -141,6 +141,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
             name: 'default',
             __typename: 'DimensionPartitionKeys',
             partitionKeys: ASSET_DAILY_PARTITION_KEYS,
+            type: PartitionDefinitionType.TIME_WINDOW,
           },
         ],
         assetPartitionStatuses: {
@@ -212,6 +213,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
           {
             name: 'default',
             __typename: 'DimensionPartitionKeys',
+            type: PartitionDefinitionType.TIME_WINDOW,
             partitionKeys: generateDailyTimePartitions(
               new Date('2020-01-01'),
               new Date('2023-02-22'),
@@ -247,6 +249,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
           {
             name: 'default',
             __typename: 'DimensionPartitionKeys',
+            type: PartitionDefinitionType.TIME_WINDOW,
             partitionKeys: generateDailyTimePartitions(
               new Date('2020-01-01'),
               new Date('2023-02-22'),

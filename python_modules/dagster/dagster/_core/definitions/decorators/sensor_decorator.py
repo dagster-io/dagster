@@ -1,7 +1,7 @@
 import collections.abc
 import inspect
 from functools import update_wrapper
-from typing import Callable, Optional, Sequence, Union
+from typing import Callable, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -35,6 +35,7 @@ def sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[AssetSelection] = None,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
@@ -78,6 +79,7 @@ def sensor(
             jobs=jobs,
             default_status=default_status,
             asset_selection=asset_selection,
+            required_resource_keys=required_resource_keys,
         )
 
         update_wrapper(sensor_def, wrapped=fn)

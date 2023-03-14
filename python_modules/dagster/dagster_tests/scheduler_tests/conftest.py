@@ -18,6 +18,13 @@ def instance_session_scoped_fixture():
         yield instance
 
 
+@pytest.fixture(name="instance_module_scoped", scope="module")
+def instance_module_scoped_fixture(instance_session_scoped):
+    instance_session_scoped.wipe()
+    instance_session_scoped.wipe_all_schedules()
+    yield instance_session_scoped
+
+
 @pytest.fixture(name="instance", scope="function")
 def instance_fixture(instance_session_scoped):
     instance_session_scoped.wipe()

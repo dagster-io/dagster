@@ -93,7 +93,10 @@ const OpJobPartitionsViewContent: React.FC<{
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
-  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPartitionBackfill},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
   const [pageSize, setPageSize] = React.useState(60);
@@ -197,7 +200,7 @@ const OpJobPartitionsViewContent: React.FC<{
           <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
             {showSteps ? 'Hide per-step status' : 'Show per-step status'}
           </Button>
-          {canLaunchPartitionBackfill.enabled ? (
+          {canLaunchPartitionBackfill ? (
             <Button
               onClick={() => setShowBackfillSetup(!showBackfillSetup)}
               icon={<Icon name="add_circle" />}
@@ -206,7 +209,7 @@ const OpJobPartitionsViewContent: React.FC<{
               Launch backfill...
             </Button>
           ) : (
-            <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
+            <Tooltip content={disabledReasons.canLaunchPartitionBackfill}>
               <Button icon={<Icon name="add_circle" />} disabled>
                 Launch backfill...
               </Button>

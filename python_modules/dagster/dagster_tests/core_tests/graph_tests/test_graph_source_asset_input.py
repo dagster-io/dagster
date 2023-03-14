@@ -215,7 +215,7 @@ def test_source_assets_list_input_value():
     # not yet supported
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Lists can only contain the output from previous solid invocations or input mappings",
+        match="Lists can only contain the output from previous op invocations or input mappings",
     ):
 
         @graph

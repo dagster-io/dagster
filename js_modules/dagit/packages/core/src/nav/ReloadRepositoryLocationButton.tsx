@@ -26,8 +26,9 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
 
   const {basePath} = React.useContext(AppContext);
 
-  const {canReloadRepositoryLocation} = usePermissionsForLocation(location);
-  const hasReloadPermission = canReloadRepositoryLocation.enabled;
+  const {
+    permissions: {canReloadRepositoryLocation: hasReloadPermission},
+  } = usePermissionsForLocation(location);
 
   const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, error, tryReload} = useRepositoryLocationReload({

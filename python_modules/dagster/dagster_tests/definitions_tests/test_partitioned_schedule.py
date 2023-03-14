@@ -2,9 +2,21 @@ from datetime import datetime
 from typing import cast
 
 import pendulum
-from dagster import build_schedule_context, graph, op, repository
+import pytest
+from dagster import (
+    DagsterInvalidDefinitionError,
+    asset,
+    build_schedule_context,
+    define_asset_job,
+    graph,
+    op,
+    repository,
+)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
     TimeWindow,
     daily_partitioned_config,
     hourly_partitioned_config,
@@ -375,3 +387,55 @@ def test_future_tick():
             "end": "2022-03-05T00:00:00+00:00",
         }
         assert run_request.tags["test_tag_key"] == "test_tag_value"
+
+
+def test_multipartitioned_job_schedule():
+    time_window_partitions = DailyPartitionsDefinition(start_date="2020-01-01")
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "static": static_partitions,
+            "date": time_window_partitions,
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset():
+        return 1
+
+    my_schedule = build_schedule_from_partitioned_job(
+        define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+    )
+    run_requests = my_schedule.evaluate_tick(
+        build_schedule_context(
+            scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT)
+        )
+    ).run_requests
+    assert len(run_requests) == 4
+    assert set([req.partition_key for req in run_requests]) == set(
+        [
+            "2020-01-01|a",
+            "2020-01-01|b",
+            "2020-01-01|c",
+            "2020-01-01|d",
+        ]
+    )
+
+
+def test_invalid_multipartitioned_job_schedule():
+    static_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "1": static_partitions,
+            "2": static_partitions,
+        }
+    )
+
+    @asset(partitions_def=multipartitions_def)
+    def my_asset():
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        build_schedule_from_partitioned_job(
+            define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+        )
