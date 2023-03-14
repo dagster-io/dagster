@@ -9,7 +9,6 @@ import {
   MenuItem,
   TagSelectorWithSearch,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -44,20 +43,6 @@ export const DimensionRangeWizard: React.FC<{
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
-
-  const didSetInitialPartition = React.useRef(false);
-  React.useEffect(() => {
-    if (didSetInitialPartition.current || !partitionKeys.length) {
-      return;
-    }
-    didSetInitialPartition.current = true;
-    const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
-    const partition = query.partition as string;
-    if (partition && partitionKeys.includes(partition)) {
-      setSelected([partition]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partitionKeys]);
 
   return (
     <>

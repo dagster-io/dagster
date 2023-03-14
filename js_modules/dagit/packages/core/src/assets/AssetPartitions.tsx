@@ -59,6 +59,7 @@ export const AssetPartitions: React.FC<Props> = ({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,
     assetHealth,
+    shouldReadPartitionQueryStringParam: false,
   });
 
   const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({

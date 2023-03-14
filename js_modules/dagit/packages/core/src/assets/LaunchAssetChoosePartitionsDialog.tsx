@@ -172,6 +172,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     assetHealth: displayedHealth,
     skipPartitionKeyValidation:
       displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
+    shouldReadPartitionQueryStringParam: true,
   });
 
   const keysInSelection = React.useMemo(
@@ -441,7 +442,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
-                setSelections(
+                setSelections((selections) =>
                   selections.map((r) =>
                     r.dimension === range.dimension ? {...r, selectedKeys} : r,
                   ),
