@@ -2848,10 +2848,10 @@ type ResourceDetailsList {
 union EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError
 
 type EnvVarWithConsumersList {
-  results: [GrapheneEnvVarWithConsumers!]!
+  results: [EnvVarWithConsumers!]!
 }
 
-type GrapheneEnvVarWithConsumers {
+type EnvVarWithConsumers {
   envVarName: String!
   envVarConsumers: [EnvVarConsumer!]!
 }

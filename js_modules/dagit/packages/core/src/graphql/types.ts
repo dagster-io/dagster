@@ -1064,9 +1064,15 @@ export enum EnvVarConsumerType {
   RESOURCE = 'RESOURCE',
 }
 
+export type EnvVarWithConsumers = {
+  __typename: 'EnvVarWithConsumers';
+  envVarConsumers: Array<EnvVarConsumer>;
+  envVarName: Scalars['String'];
+};
+
 export type EnvVarWithConsumersList = {
   __typename: 'EnvVarWithConsumersList';
-  results: Array<GrapheneEnvVarWithConsumers>;
+  results: Array<EnvVarWithConsumers>;
 };
 
 export type EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError;
@@ -1394,12 +1400,6 @@ export type GraphSelector = {
   graphName: Scalars['String'];
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
-};
-
-export type GrapheneEnvVarWithConsumers = {
-  __typename: 'GrapheneEnvVarWithConsumers';
-  envVarConsumers: Array<EnvVarConsumer>;
-  envVarName: Scalars['String'];
 };
 
 export type HandledOutputEvent = DisplayableEvent &
