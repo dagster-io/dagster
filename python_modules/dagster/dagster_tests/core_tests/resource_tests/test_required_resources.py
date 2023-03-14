@@ -448,6 +448,10 @@ def test_type_missing_resource_fails():
         def _type_check_job():
             custom_type_op()
 
+        @repository
+        def _repo():
+            return [_type_check_job]
+
 
 def test_loader_missing_resource_fails():
     @dagster_type_loader(String, required_resource_keys={"a"})
@@ -471,6 +475,10 @@ def test_loader_missing_resource_fails():
         @job
         def _type_check_job():
             custom_type_op()
+
+        @repository
+        def _repo():
+            return [_type_check_job]
 
 
 def test_extra_configured_resources():
@@ -537,6 +545,10 @@ def test_root_input_manager_missing_fails():
         def _invalid():
             requires_missing_root_input_manager()
 
+        @repository
+        def _repo():
+            return [_invalid]
+
 
 def test_io_manager_missing_fails():
     @op(out={"result": Out(int, io_manager_key="missing_io_manager")})
@@ -554,3 +566,7 @@ def test_io_manager_missing_fails():
         @job
         def _invalid():
             requires_missing_io_manager()
+
+        @repository
+        def _repo():
+            return [_invalid]
