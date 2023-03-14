@@ -13,6 +13,7 @@ from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
 )
+from dagster._core.host_representation.external_data import NestedResource, NestedResourceType
 from dagster._core.snap import PipelineSnapshot
 
 
@@ -87,16 +88,44 @@ def test_repository_snap_definitions_resources_nested() -> None:
     external_repo_data = external_repository_data_from_def(repo)
     assert external_repo_data.external_resource_data
 
+    assert len(external_repo_data.external_resource_data) == 1
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+
+    assert len(foo) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(
+        NestedResourceType.ANONYMOUS, "MyInnerResource"
+    )
+
+
+def test_repository_snap_definitions_resources_nested_top_level() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner), "inner": inner},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
     assert len(external_repo_data.external_resource_data) == 2
 
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
-    inner = [data for data in external_repo_data.external_resource_data if data.name == "_nested_0"]
 
     assert len(foo) == 1
-    assert len(inner) == 1
 
     assert len(foo[0].nested_resources) == 1
-    assert "inner" in foo[0].nested_resources and foo[0].nested_resources["inner"] == "_nested_0"
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
 
 
 def test_repository_snap_definitions_resources_complex():

@@ -2742,7 +2742,7 @@ type DagitQuery {
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
-  resourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
+  topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
   allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!

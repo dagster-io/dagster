@@ -211,7 +211,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Retrieve all the schedules.",
     )
 
-    resourceDetailsOrError = graphene.Field(
+    topLevelResourceDetailsOrError = graphene.Field(
         graphene.NonNull(GrapheneResourceDetailsOrError),
         resourceSelector=graphene.NonNull(GrapheneResourceSelector),
         description=(
@@ -536,7 +536,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(repositorySelector),
         )
 
-    def resolve_resourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
+    def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
         return get_resource_or_error(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
         )

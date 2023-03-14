@@ -40,7 +40,7 @@ query ResourceDetailsListQuery($selector: RepositorySelector!) {
 
 TOP_LEVEL_RESOURCE_QUERY = """
 query ResourceDetailsQuery($selector: ResourceSelector!) {
-  resourceDetailsOrError(resourceSelector: $selector) {
+  topLevelResourceDetailsOrError(resourceSelector: $selector) {
     __typename
     ... on ResourceDetails {
         name
@@ -99,8 +99,8 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data["resourceDetailsOrError"]
-    my_resource = result.data["resourceDetailsOrError"]
+    assert result.data["topLevelResourceDetailsOrError"]
+    my_resource = result.data["topLevelResourceDetailsOrError"]
 
     assert my_resource["description"] == "My description."
     assert len(my_resource["configFields"]) == 2
@@ -130,8 +130,8 @@ def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot)
 
     assert not result.errors
     assert result.data
-    assert result.data["resourceDetailsOrError"]
-    my_resource = result.data["resourceDetailsOrError"]
+    assert result.data["topLevelResourceDetailsOrError"]
+    my_resource = result.data["topLevelResourceDetailsOrError"]
 
     assert my_resource["description"] == "My description."
     assert len(my_resource["configFields"]) == 2

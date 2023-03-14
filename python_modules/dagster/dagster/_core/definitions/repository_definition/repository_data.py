@@ -73,15 +73,6 @@ class RepositoryData(ABC):
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         pass
 
-    @abstractmethod
-    def get_ui_resources(self) -> Mapping[str, ResourceDefinition]:
-        """Return all resources to appear in the Dagster UI, currently
-        those provided to the Definitions constructor and their nested resources.
-
-        Returns:
-            List[ResourceDefinition]: All resources in the repository to make visible in the UI.
-        """
-
     @public
     def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.
@@ -312,7 +303,6 @@ class CachingRepositoryData(RepositoryData):
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
-        ui_visible_resources: Mapping[str, ResourceDefinition],
         resource_key_mapping: Mapping[int, str],
     ):
         """Constructs a new CachingRepositoryData object.
@@ -376,12 +366,6 @@ class CachingRepositoryData(RepositoryData):
             key_type=str,
         )
         check.mapping_param(
-            ui_visible_resources,
-            "ui_visible_resources",
-            key_type=str,
-            value_type=ResourceDefinition,
-        )
-        check.mapping_param(
             resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
 
@@ -415,7 +399,6 @@ class CachingRepositoryData(RepositoryData):
         self._assets_defs_by_key = assets_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
-        self._ui_visible_resources = ui_visible_resources
         self._resource_key_mapping = resource_key_mapping
 
         def load_partition_sets_from_pipelines() -> Sequence[PartitionSetDefinition]:
@@ -481,7 +464,6 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        ui_visible_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         resource_key_mapping: Optional[Mapping[int, str]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
@@ -500,7 +482,6 @@ class CachingRepositoryData(RepositoryData):
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
-            ui_visible_resources=ui_visible_resources,
             resource_key_mapping=resource_key_mapping,
         )
 
@@ -555,9 +536,6 @@ class CachingRepositoryData(RepositoryData):
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._top_level_resources
-
-    def get_ui_resources(self) -> Mapping[str, ResourceDefinition]:
-        return self._ui_visible_resources
 
     def get_all_pipelines(self) -> Sequence[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.

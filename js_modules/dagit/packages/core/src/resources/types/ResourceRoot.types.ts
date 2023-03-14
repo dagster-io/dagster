@@ -8,7 +8,7 @@ export type ResourceRootQueryVariables = Types.Exact<{
 
 export type ResourceRootQuery = {
   __typename: 'DagitQuery';
-  resourceDetailsOrError:
+  topLevelResourceDetailsOrError:
     | {
         __typename: 'PythonError';
         message: string;

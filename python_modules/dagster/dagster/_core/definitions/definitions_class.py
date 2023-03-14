@@ -15,13 +15,11 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._config.structured_config import (
-    ConfigurableResource,
     attach_resource_id_to_key_mapping,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -189,14 +187,6 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
-def gen_key_for_nested_resource(resource_def: ResourceDefinition, counter: int) -> str:
-    """Generates a unique identifier for a nested resource. This is used to identify it in the UI.
-    URLs may break if the repository updates, but reloading the same repo will result in a
-    deterministic set of nested resource keys.
-    """
-    return f"_nested_{counter}"
-
-
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -241,24 +231,8 @@ def _create_repository_using_definitions_args(
         if resources
         else {}
     )
-    nested_resources = {}
-
-    resource_key_mapping_with_nested = {**resource_key_mapping}
-    nested_resource_ctr = 0
-    if resources:
-        for resource in resources.values():
-            if isinstance(resource, ConfigurableResource):
-                for nested_resource in resource.nested_resources.values():
-                    if id(nested_resource) in resource_key_mapping:
-                        continue
-                    new_key = gen_key_for_nested_resource(nested_resource, nested_resource_ctr)
-                    resource_key_mapping_with_nested[id(nested_resource)] = new_key
-                    nested_resources[new_key] = nested_resource
-                    nested_resource_ctr += 1
 
     resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
-    nested_resource_defs = wrap_resources_for_execution(nested_resources)
-    ui_visible_resources = {**resource_defs, **nested_resource_defs}
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
@@ -302,8 +276,7 @@ The following jobs are affected: {jobs_text}
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
-        _ui_visible_resources=ui_visible_resources,
-        _resource_key_mapping=resource_key_mapping_with_nested,
+        _resource_key_mapping=resource_key_mapping,
     )
     def created_repo():
         return [

@@ -187,9 +187,6 @@ class RepositoryDefinition:
     def get_resource_key_mapping(self) -> Mapping[int, str]:
         return self._repository_data.get_resource_key_mapping()
 
-    def get_ui_resources(self) -> Mapping[str, ResourceDefinition]:
-        return self._repository_data.get_ui_resources()
-
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -427,7 +424,6 @@ class PendingRepositoryDefinition:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
-        _ui_visible_resources: Optional[Mapping[str, ResourceDefinition]] = None,
         _resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self._repository_definitions = check.list_param(
@@ -442,7 +438,6 @@ class PendingRepositoryDefinition:
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
-        self._ui_visible_resources = _ui_visible_resources
         self._resource_key_mapping = _resource_key_mapping
 
     @property
@@ -490,7 +485,6 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
             top_level_resources=self._top_level_resources,
-            ui_visible_resources=self._ui_visible_resources,
             resource_key_mapping=self._resource_key_mapping,
         )
 

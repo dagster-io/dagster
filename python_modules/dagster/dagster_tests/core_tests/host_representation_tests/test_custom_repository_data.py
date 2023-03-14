@@ -49,9 +49,6 @@ class TestDynamicRepositoryData(RepositoryData):
     def get_env_vars_by_top_level_resource(self):
         return {}
 
-    def get_ui_resources(self):
-        return {}
-
     def get_resource_key_mapping(self):
         return {}
 

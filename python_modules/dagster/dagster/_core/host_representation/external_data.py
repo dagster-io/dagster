@@ -286,6 +286,18 @@ class EnvVarConsumer(NamedTuple):
 
 
 @whitelist_for_serdes
+class NestedResourceType(Enum):
+    ANONYMOUS = "ANONYMOUS"
+    TOP_LEVEL = "TOP_LEVEL"
+
+
+@whitelist_for_serdes
+class NestedResource(NamedTuple):
+    type: NestedResourceType
+    name: str
+
+
+@whitelist_for_serdes
 class ExternalJobRef(
     NamedTuple(
         "_ExternalJobRef",
@@ -914,7 +926,7 @@ class ExternalResourceData(
             ("configured_values", Dict[str, ExternalResourceValue]),
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
-            ("nested_resources", Dict[str, str]),
+            ("nested_resources", Dict[str, NestedResource]),
             ("resource_type", str),
             ("is_top_level", bool),
         ],
@@ -932,7 +944,7 @@ class ExternalResourceData(
         configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
-        nested_resources: Mapping[str, str],
+        nested_resources: Mapping[str, NestedResource],
         resource_type: str,
         is_top_level: bool = True,
     ):
@@ -957,7 +969,9 @@ class ExternalResourceData(
                 config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot
             ),
             nested_resources=dict(
-                check.opt_mapping_param(nested_resources, "nested_resources", key_type=str)
+                check.opt_mapping_param(
+                    nested_resources, "nested_resources", key_type=str, value_type=NestedResource
+                )
             ),
             is_top_level=check.bool_param(is_top_level, "is_top_level"),
             resource_type=check.str_param(resource_type, "resource_type"),
@@ -1094,7 +1108,7 @@ def external_repository_data_from_def(
         )
         job_refs = None
 
-    resource_datas = repository_def.get_ui_resources()
+    resource_datas = repository_def.get_top_level_resources()
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1123,7 +1137,6 @@ def external_repository_data_from_def(
                 external_resource_data_from_def(
                     res_name,
                     res_data,
-                    not res_name.startswith("_nested"),
                     repository_def.get_resource_key_mapping(),
                 )
                 for res_name, res_data in resource_datas.items()
@@ -1358,24 +1371,34 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
 
 def _get_nested_resources(
     resource_def: ResourceDefinition, resource_key_mapping: Mapping[int, str]
-) -> Mapping[str, str]:
+) -> Mapping[str, NestedResource]:
     if isinstance(resource_def, ResourceWithKeyMapping):
         resource_def = resource_def.wrapped_resource
 
     return (
         {
-            k: resource_key_mapping[id(nested_resource)]
+            k: (
+                NestedResource(
+                    NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
+                )
+                if id(nested_resource) in resource_key_mapping
+                else NestedResource(
+                    NestedResourceType.ANONYMOUS, nested_resource.__class__.__name__
+                )
+            )
             for k, nested_resource in resource_def.nested_resources.items()
         }
         if isinstance(resource_def, (ConfigurableResource, PartialResource))
-        else {k: k for k in resource_def.required_resource_keys}
+        else {
+            k: NestedResource(NestedResourceType.TOP_LEVEL, k)
+            for k in resource_def.required_resource_keys
+        }
     )
 
 
 def external_resource_data_from_def(
     name: str,
     resource_def: ResourceDefinition,
-    is_top_level: bool,
     resource_key_mapping: Mapping[int, str],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
@@ -1415,7 +1438,7 @@ def external_resource_data_from_def(
         config_field_snaps=unconfigured_config_type_snap.fields or [],
         config_schema_snap=config_type.get_schema_snapshot(),
         nested_resources=nested_resources,
-        is_top_level=is_top_level,
+        is_top_level=True,
         resource_type=str(type(resource_def))[8:-2],
     )
 

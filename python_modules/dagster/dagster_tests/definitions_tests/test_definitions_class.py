@@ -174,10 +174,8 @@ def test_nested_resources() -> None:
     )
     repo = resolve_pending_repo_if_required(defs)
 
-    assert len(repo.get_ui_resources()) == 2
+    assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
-    assert "_nested_0" not in repo.get_top_level_resources()
-    assert "_nested_0" in repo.get_ui_resources()
 
 
 def test_resource_coercion():
