@@ -205,3 +205,28 @@ def metadata_config() -> None:
     MyMetadataConfig(person_name="Alice", age=200)
 
     # end_metadata_config
+
+
+def optional_config() -> None:
+    # start_optional_config
+
+    from typing import Optional
+    from dagster import asset, Config, materialize, RunConfig
+
+    class MyAssetConfig(Config):
+        person_name: Optional[str] = None
+        greeting_phrase: str = "hello"
+
+    @asset
+    def greeting(config: MyAssetConfig) -> str:
+        if config.person_name:
+            return f"{config.greeting_phrase} {config.person_name}"
+        else:
+            return config.greeting_phrase
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig({"greeting": MyAssetConfig()}),
+    )
+
+    # end_optional_config
