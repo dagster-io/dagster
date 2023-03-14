@@ -693,3 +693,98 @@ def new_resource_testing_with_state() -> None:
         assert my_asset(mocked_client_resource) == "my_result"
 
     # end_new_resource_testing_with_state
+
+
+def new_resource_on_sensor() -> None:
+    # start_new_resource_on_sensor
+    from dagster import (
+        sensor,
+        RunRequest,
+        SensorEvaluationContext,
+        ConfigurableResource,
+        job,
+        Definitions,
+        RunConfig,
+    )
+    import requests
+    from typing import List
+
+    class UsersAPI(ConfigurableResource):
+        url: str
+
+        def fetch_users(self) -> List[str]:
+            return requests.get(self.url).json()
+
+    @job
+    def process_user():
+        ...
+
+    @sensor(job=process_user)
+    def process_new_users_sensor(
+        context: SensorEvaluationContext,
+        users_api: UsersAPI,
+    ):
+        last_user = int(context.cursor) if context.cursor else 0
+        users = users_api.fetch_users()
+
+        num_users = len(users)
+        for user_id in users[last_user:]:
+            yield RunRequest(
+                run_key=user_id,
+                run_config=RunConfig(ops={"insert_user": {"user_id": user_id}}),  # type: ignore
+                tags={},
+            )
+
+        context.update_cursor(str(num_users))
+
+    defs = Definitions(
+        jobs=[process_user],
+        sensors=[process_new_users_sensor],
+        resources={"users_api": UsersAPI("https://my-api.com/users")},
+    )
+    # end_new_resource_on_sensor
+
+
+def new_resource_on_schedule() -> None:
+    # start_new_resource_on_schedule
+    from dagster import (
+        schedule,
+        ScheduleEvaluationContext,
+        ConfigurableResource,
+        job,
+        RunRequest,
+        RunConfig,
+        Definitions,
+    )
+    from datetime import datetime
+    from typing import List
+
+    class DateFormatter(ConfigurableResource):
+        format: str
+
+        def strftime(self, dt: datetime) -> str:
+            return dt.strftime(self.format)
+
+    @job
+    def process_data():
+        ...
+
+    @schedule(job=process_data, cron_schedule="* * * * *")
+    def process_data_schedule(
+        context: ScheduleEvaluationContext,
+        date_formatter: DateFormatter,
+    ):
+        formatted_date = date_formatter.strftime(context.scheduled_execution_time)
+
+        return RunRequest(
+            run_key=None,
+            run_config=RunConfig(ops={"fetch_data": {"date": formatted_date}}),  # type: ignore
+            tags={},
+        )
+
+    defs = Definitions(
+        jobs=[process_data],
+        schedules=[process_data_schedule],
+        resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+    )
+    # end_new_resource_on_schedule
