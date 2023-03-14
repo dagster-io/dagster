@@ -499,9 +499,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             ) : null}
             <div>
               <Button onClick={() => setTagEditorOpen(true)}>
-                {`${tags.length ? 'Edit' : 'Add'} tags${
-                  launchAsBackfill ? ' to backfill runs' : ''
-                }`}
+                {`${tags.length ? 'Edit' : 'Add'} tags`}
               </Button>
             </div>
           </Box>
@@ -732,7 +730,9 @@ const Warnings = ({
     }),
     instance && launchAsBackfill && DaemonNotRunningAlert({instance}),
     instance && launchAsBackfill && UsingDefaultLauncherAlert({instance}),
-  ].filter((a) => !!a);
+  ]
+    .filter((a) => !!a)
+    .map((a, index) => <Box key={index}>{a}</Box>);
 
   if (!instance || !alerts.length) {
     return null;
