@@ -1,7 +1,6 @@
 import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import without from 'lodash/without';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -44,7 +43,11 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE];
+const DISPLAYED_STATES = [
+  PartitionState.MISSING,
+  PartitionState.SUCCESS,
+  PartitionState.FAILURE,
+].sort();
 
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
@@ -107,23 +110,23 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {dimension, selectedRanges} = selections[idx];
     const allKeys = dimension.partitionKeys;
-
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
-
-    const getKeysWithStates = (states: PartitionState[]) => {
-      const materializedInSelection = rangesClippedToSelection(
-        materializedRangesByDimension[idx],
-        selectedRanges,
-      );
-      return materializedInSelection.flatMap((r) =>
-        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
-      );
-    };
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
       return getSelectionKeys(); // optimization for the default case
     }
+
+    const rangesInSelection = rangesClippedToSelection(
+      materializedRangesByDimension[idx],
+      selectedRanges,
+    );
+
+    const getKeysWithStates = (states: PartitionState[]) => {
+      return rangesInSelection.flatMap((r) =>
+        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+      );
+    };
 
     const states: PartitionState[] = [];
     if (stateFilters.includes(PartitionState.SUCCESS)) {
@@ -136,11 +139,11 @@ export const AssetPartitions: React.FC<Props> = ({
 
     // We have to add in "missing" separately because it's the absence of a range
     if (stateFilters.includes(PartitionState.MISSING)) {
-      const missing = without(
-        getSelectionKeys(),
-        ...getKeysWithStates([PartitionState.SUCCESS, PartitionState.FAILURE]),
+      return allKeys.filter(
+        (a, idx) =>
+          matching.includes(a) ||
+          !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
       );
-      return uniq([...matching, ...missing]);
     } else {
       return matching;
     }
