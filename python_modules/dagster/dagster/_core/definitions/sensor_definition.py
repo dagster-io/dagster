@@ -782,22 +782,6 @@ def build_sensor_context(
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
 
-    # Determine the set of resources to pass by
-    # 1. Trying to pull the required resource keys from the repository, if available
-    # 2. Using the resources explicitly passed in
-    required_resource_keys = None
-    if repository_def and sensor_name:
-        sensor_def = repository_def.get_sensor_def(sensor_name)
-        required_resource_keys = sensor_def.required_resource_keys
-
-    top_level_resources = repository_def.get_top_level_resources() if repository_def else {}
-    all_resources = {**top_level_resources, **(resources or {})}
-
-    resources_to_build = (
-        {k: v for k, v in all_resources.items() if k in required_resource_keys}
-        if required_resource_keys
-        else all_resources
-    )
     return SensorEvaluationContext(
         instance_ref=None,
         last_completion_time=None,
@@ -807,7 +791,7 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
         sensor_name=sensor_name,
-        resources=(resources_to_build),
+        resources=resources,
     )
 
 
