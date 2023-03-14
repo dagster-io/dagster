@@ -167,14 +167,17 @@ export const setupErrorToasts = () => {
 
       const msg = `${args[0]}`;
       if (!IGNORED_CONSOLE_ERRORS.some((ignored) => msg.includes(ignored))) {
-        ErrorToaster.show({
-          intent: 'danger',
-          message: (
-            <div
-              style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
-            >{`console.error: ${msg}`}</div>
-          ),
-        });
+        // Use setTimeout to avoid infinite loop in the case of ErrorToast.show causing another console.error
+        setTimeout(() => {
+          ErrorToaster.show({
+            intent: 'danger',
+            message: (
+              <div
+                style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
+              >{`console.error: ${msg}`}</div>
+            ),
+          });
+        }, 0);
       }
     },
   });
