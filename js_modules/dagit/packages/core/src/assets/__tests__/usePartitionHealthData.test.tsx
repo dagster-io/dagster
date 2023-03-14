@@ -1,4 +1,4 @@
-import {PartitionRangeStatus} from '../../graphql/types';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
 import {PartitionState} from '../../partitions/PartitionStatus';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {
@@ -53,6 +53,7 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
         __typename: 'DimensionPartitionKeys',
         name: 'default',
         partitionKeys: DIMENSION_ONE_KEYS,
+        type: PartitionDefinitionType.TIME_WINDOW,
       },
     ],
     assetPartitionStatuses: {
@@ -89,11 +90,13 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
         __typename: 'DimensionPartitionKeys',
         name: 'time',
         partitionKeys: DIMENSION_ONE_KEYS,
+        type: PartitionDefinitionType.TIME_WINDOW,
       },
       {
         __typename: 'DimensionPartitionKeys',
         name: 'state',
         partitionKeys: DIMENSION_TWO_KEYS,
+        type: PartitionDefinitionType.STATIC,
       },
     ],
     assetPartitionStatuses: {
@@ -163,11 +166,13 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
         __typename: 'DimensionPartitionKeys',
         name: 'state1',
         partitionKeys: DIMENSION_TWO_KEYS,
+        type: PartitionDefinitionType.STATIC,
       },
       {
         __typename: 'DimensionPartitionKeys',
         name: 'state2',
         partitionKeys: DIMENSION_TWO_KEYS,
+        type: PartitionDefinitionType.STATIC,
       },
     ],
     assetPartitionStatuses: {
@@ -213,11 +218,13 @@ const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
         __typename: 'DimensionPartitionKeys',
         name: 'time',
         partitionKeys: DIMENSION_ONE_KEYS,
+        type: PartitionDefinitionType.STATIC,
       },
       {
         __typename: 'DimensionPartitionKeys',
         name: 'state',
         partitionKeys: DIMENSION_TWO_KEYS,
+        type: PartitionDefinitionType.STATIC,
       },
     ],
     assetPartitionStatuses: {
