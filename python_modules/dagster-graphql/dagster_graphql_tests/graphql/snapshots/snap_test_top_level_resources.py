@@ -154,6 +154,38 @@ snapshots['test_fetch_top_level_resources 1'] = {
                 ],
                 'description': 'my description',
                 'name': 'my_resource_env_vars'
+            },
+            {
+                'configFields': [
+                    {
+                        'configType': {
+                            'key': 'StringSourceType'
+                        },
+                        'description': None,
+                        'name': 'a_string'
+                    },
+                    {
+                        'configType': {
+                            'key': 'StringSourceType'
+                        },
+                        'description': None,
+                        'name': 'an_unset_string'
+                    }
+                ],
+                'configuredValues': [
+                    {
+                        'key': 'a_string',
+                        'type': 'ENV_VAR',
+                        'value': 'MY_STRING'
+                    },
+                    {
+                        'key': 'an_unset_string',
+                        'type': 'ENV_VAR',
+                        'value': 'MY_OTHER_STRING'
+                    }
+                ],
+                'description': 'my description',
+                'name': 'my_resource_two_env_vars'
             }
         ]
     }

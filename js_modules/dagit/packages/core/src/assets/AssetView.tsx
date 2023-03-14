@@ -114,6 +114,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   );
 
   const renderDefinitionTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
     if (!definition) {
       return <AssetNoDefinitionState />;
     }
@@ -129,9 +132,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   };
 
   const renderLineageTab = () => {
-    if (!definition) {
-      return <AssetNoDefinitionState />;
-    }
     if (!visibleAssetGraph.assetGraphData) {
       return (
         <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
@@ -143,11 +143,59 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <AssetNodeLineage
         params={params}
         setParams={setParams}
-        assetNode={definition}
+        assetKey={assetKey}
         liveDataByNode={liveDataByNode}
         requestedDepth={visible.requestedDepth}
         assetGraphData={visibleAssetGraph.assetGraphData}
         graphQueryItems={visibleAssetGraph.graphQueryItems}
+      />
+    );
+  };
+
+  const renderPartitionsTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    return (
+      <AssetPartitions
+        assetKey={assetKey}
+        assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
+        dataRefreshHint={dataRefreshHint}
+        params={params}
+        paramsTimeWindowOnly={!!params.asOf}
+        setParams={setParams}
+        liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+      />
+    );
+  };
+
+  const renderEventsTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    return (
+      <AssetEvents
+        assetKey={assetKey}
+        assetHasDefinedPartitions={!!definition?.partitionDefinition}
+        dataRefreshHint={dataRefreshHint}
+        params={params}
+        paramsTimeWindowOnly={!!params.asOf}
+        setParams={setParams}
+        liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
+      />
+    );
+  };
+
+  const renderPlotsTab = () => {
+    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+      return <AssetLoadingDefinitionState />;
+    }
+    return (
+      <AssetPlots
+        assetKey={assetKey}
+        assetHasDefinedPartitions={!!definition?.partitionDefinition}
+        params={params}
+        setParams={setParams}
       />
     );
   };
@@ -220,59 +268,33 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           hasDefinition={!!definition}
         />
       )}
-
-      {
-        // Avoid thrashing the events UI (which chooses a different default query based on whether
-        // data is partitioned) by waiting for the definition to be loaded before we show any tab content
-      }
-      {definitionQueryResult.loading && !definitionQueryResult.previousData ? (
-        <Box
-          style={{height: 390}}
-          flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
-        >
-          <Spinner purpose="page" />
-        </Box>
-      ) : (
-        <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
-          {selectedTab === 'definition' ? (
-            renderDefinitionTab()
-          ) : selectedTab === 'lineage' ? (
-            renderLineageTab()
-          ) : selectedTab === 'partitions' ? (
-            <AssetPartitions
-              assetKey={assetKey}
-              assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
-              dataRefreshHint={dataRefreshHint}
-              params={params}
-              paramsTimeWindowOnly={!!params.asOf}
-              setParams={setParams}
-              liveData={liveDataForAsset}
-            />
-          ) : selectedTab === 'events' ? (
-            <AssetEvents
-              assetKey={assetKey}
-              assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              dataRefreshHint={dataRefreshHint}
-              params={params}
-              paramsTimeWindowOnly={!!params.asOf}
-              setParams={setParams}
-              liveData={liveDataForAsset}
-            />
-          ) : selectedTab === 'plots' ? (
-            <AssetPlots
-              assetKey={assetKey}
-              assetHasDefinedPartitions={!!definition?.partitionDefinition}
-              params={params}
-              setParams={setParams}
-            />
-          ) : (
-            <span />
-          )}
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
+        {selectedTab === 'definition' ? (
+          renderDefinitionTab()
+        ) : selectedTab === 'lineage' ? (
+          renderLineageTab()
+        ) : selectedTab === 'partitions' ? (
+          renderPartitionsTab()
+        ) : selectedTab === 'events' ? (
+          renderEventsTab()
+        ) : selectedTab === 'plots' ? (
+          renderPlotsTab()
+        ) : (
+          <span />
+        )}
+      </ErrorBoundary>
     </Box>
   );
 };
+
+const AssetLoadingDefinitionState = () => (
+  <Box
+    style={{height: 390}}
+    flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+  >
+    <Spinner purpose="page" />
+  </Box>
+);
 
 const AssetNoDefinitionState = () => (
   <Box padding={{vertical: 32}}>

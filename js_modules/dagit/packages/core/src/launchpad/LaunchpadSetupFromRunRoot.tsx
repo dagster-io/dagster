@@ -24,14 +24,16 @@ import {
 
 export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
     pipelinePath: string;
     runId: string;
   }>();
 
-  if (!canLaunchPipelineExecution.enabled) {
+  if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return (

@@ -887,7 +887,7 @@ def test_fan_in_scalars_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Lists can only contain the output from previous solid invocations or input mappings",
+        match="Lists can only contain the output from previous op invocations or input mappings",
     ):
 
         @job
