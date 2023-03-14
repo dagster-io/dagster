@@ -230,6 +230,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             role="button"
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
+            disabled={options.slice(1).every((o) => o.assetKeys.length === 0)}
             intent={intent}
           />
         </Popover>
