@@ -10,6 +10,7 @@ from dagster import (
     graph,
     job,
     op,
+    repository,
     resource,
     usable_as_dagster_type,
 )
@@ -479,6 +480,33 @@ def test_loader_missing_resource_fails():
         @repository
         def _repo():
             return [_type_check_job]
+
+
+def test_extra_resources():
+    @resource
+    def resource_a(_):
+        return "a"
+
+    @resource(config_schema=int)
+    def resource_b(_):
+        return "b"
+
+    @op(required_resource_keys={"A"})
+    def echo(context):
+        return context.resources.A
+
+    @job(
+        resource_defs={
+            "A": resource_a,
+            "B": resource_b,
+            "BB": resource_b,
+        }
+    )
+    def extra():
+        echo()
+
+    # should work since B & BB's resources are not needed so missing config should be fine
+    assert extra.execute_in_process().success
 
 
 def test_extra_configured_resources():
