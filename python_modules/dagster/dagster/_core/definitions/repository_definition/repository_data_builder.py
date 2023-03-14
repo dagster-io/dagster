@@ -273,6 +273,9 @@ def build_caching_repository_data_from_list(
             )
             pipelines_or_jobs[name] = resolved_job
 
+    for pipeline_or_job in pipelines_or_jobs.values():
+        pipeline_or_job.validate_resource_requirements_satisfied()
+
     pipelines: Dict[str, PipelineDefinition] = {}
     jobs: Dict[str, JobDefinition] = {}
     for name, pipeline_or_job in pipelines_or_jobs.items():
@@ -366,6 +369,12 @@ def build_caching_repository_data_from_dict(
             raise DagsterInvalidDefinitionError(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
+
+    # Late validate all jobs' resource requirements are satisfied, since
+    # they may not be applied until now
+    for pipeline_or_job in repository_definitions["jobs"].values():
+        if isinstance(pipeline_or_job, PipelineDefinition):
+            pipeline_or_job.validate_resource_requirements_satisfied()
 
     return CachingRepositoryData(
         **repository_definitions,

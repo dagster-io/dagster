@@ -21,6 +21,7 @@ from dagster import (
     job,
     materialize,
     op,
+    repository,
     resource,
     root_input_manager,
 )
@@ -779,6 +780,10 @@ def test_resource_not_input_manager():
         def basic():
             op_requires_manager()
 
+        @repository
+        def _my_repo():
+            return [basic]
+
 
 def test_mode_missing_input_manager():
     @op(ins={"a": In(root_manager_key="missing_root_manager")})
@@ -790,6 +795,10 @@ def test_mode_missing_input_manager():
         @job
         def _my_job():
             my_op()
+
+        @repository
+        def _my_repo():
+            return [_my_job]
 
 
 def test_missing_input_manager():

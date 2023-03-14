@@ -376,7 +376,10 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'stuff' required by op 'needy' was not provided",
+    ):
 
         @repository
         def _test():
@@ -661,7 +664,10 @@ def test_bad_coerce():
     def bar():
         foo()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'x' required by op 'foo' was not provided",
+    ):
 
         @repository
         def _fails():

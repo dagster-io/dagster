@@ -173,6 +173,7 @@ class JobDefinition(PipelineDefinition):
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
 
+        did_user_provide_resources = bool(resource_defs)
         if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
@@ -253,6 +254,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
+            _should_validate_resource_requirements=did_user_provide_resources,
         )
 
     @property
@@ -303,6 +305,7 @@ class JobDefinition(PipelineDefinition):
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        resources: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -331,6 +334,9 @@ class JobDefinition(PipelineDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+            resources (Optional[Mapping[str, Any]]):
+                The resources needed if any are required. Can provide resource instances directly,
+                or resource definitions.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -338,11 +344,15 @@ class JobDefinition(PipelineDefinition):
         """
         from dagster._core.definitions.executor_definition import execute_in_process_executor
         from dagster._core.definitions.run_config import convert_config_input
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
         asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
+        resources = check.opt_mapping_param(resources, "resources", key_type=str)
+
+        resource_defs = wrap_resources_for_execution(resources)
 
         check.invariant(
             not (op_selection and asset_selection),
@@ -360,12 +370,12 @@ class JobDefinition(PipelineDefinition):
         # execute_in_process will override those provided on the definition.
         input_values = merge_dicts(self.input_values, input_values)
 
-        resource_defs = dict(self.resource_defs)
+        bound_resource_defs = dict(self.resource_defs)
         logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            resource_defs=_swap_default_io_man(resource_defs, self),
+            resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
             executor_def=execute_in_process_executor,
             logger_defs=logger_defs,
             hook_defs=self.hook_defs,
@@ -666,6 +676,49 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
+        )
+
+        update_wrapper(job_def, self, updated=())
+
+        return job_def
+
+    @public
+    def with_top_level_resources(
+        self, resource_defs: Mapping[str, ResourceDefinition]
+    ) -> "JobDefinition":
+        """Apply a set of resources to all op instances within the job."""
+        resource_defs = check.dict_param(resource_defs, "resource_defs", key_type=str)
+
+        merged_resource_defs = {
+            **resource_defs,
+            **self.resource_defs,
+        }
+
+        # If we are using the default io_manager, we want to replace it with the one
+        # provided at the top level
+        if (
+            "io_manager" in resource_defs
+            and self.resource_defs.get("io_manager") == default_job_io_manager
+        ):
+            merged_resource_defs["io_manager"] = resource_defs["io_manager"]
+
+        job_def = JobDefinition(
+            name=self._name,
+            graph_def=self._graph_def,
+            resource_defs=merged_resource_defs,
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            config=self.partitioned_config or self.config_mapping,
+            description=self._description,
+            tags=self._tags,
+            hook_defs=self._hook_defs,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self._asset_layer,
+            _metadata_entries=self._metadata_entries,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,

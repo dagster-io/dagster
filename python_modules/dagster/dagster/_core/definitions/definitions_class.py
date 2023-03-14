@@ -1,4 +1,16 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Type, Union
+import warnings
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -17,7 +29,7 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, default_job_io_manager
 from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
@@ -85,6 +97,100 @@ def create_repository_using_definitions_args(
     )
 
 
+class _AttachedObjects(NamedTuple):
+    jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+    schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    sensors: Iterable[SensorDefinition]
+
+
+def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str, Any]) -> bool:
+    """
+    Explicitly replace the default IO manager in jobs that don't specify one, if a top-level
+    I/O manager is provided to Definitions.
+    """
+    return (
+        job.resource_defs.get("io_manager") == default_job_io_manager
+        and "io_manager" in resource_defs
+    )
+
+
+def _jobs_which_will_have_io_manager_replaced(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    resource_defs: Mapping[str, Any],
+) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    """
+    Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
+    the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
+    the case.
+    """
+    jobs = jobs or []
+    return [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition) and _io_manager_needs_replacement(job, resource_defs)
+    ]
+
+
+def _attach_resources_to_jobs_and_instigator_jobs(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ],
+    sensors: Optional[Iterable[SensorDefinition]],
+    resource_defs: Mapping[str, Any],
+) -> _AttachedObjects:
+    """
+    Given a list of jobs, schedules, and sensors along with top-level resource definitions,
+    attach the resource definitions to the jobs, schedules, and sensors which require them.
+    """
+    jobs = jobs or []
+    schedules = schedules or []
+    sensors = sensors or []
+
+    # Find unsatisfied jobs
+    unsatisfied_jobs = [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition)
+        and (
+            job.is_missing_required_resources() or _io_manager_needs_replacement(job, resource_defs)
+        )
+    ]
+
+    # Create a mapping of job id to a version of the job with the resource defs bound
+    unsatisfied_job_to_resource_bound_job = {
+        id(job): job.with_top_level_resources(resource_defs)
+        for job in jobs
+        if job in unsatisfied_jobs
+    }
+
+    # Update all jobs to use the resource bound version
+    jobs_with_resources = [
+        unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
+        for job in jobs
+    ]
+
+    # Update all schedules and sensors to use the resource bound version
+    updated_schedules = [
+        schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+        if (
+            isinstance(schedule, ScheduleDefinition)
+            and schedule.has_loadable_target()
+            and schedule.job in unsatisfied_jobs
+        )
+        else schedule
+        for schedule in schedules
+    ]
+    updated_sensors = [
+        sensor.with_updated_job(unsatisfied_job_to_resource_bound_job[id(sensor.job)])
+        if sensor.has_loadable_targets() and sensor.job in unsatisfied_jobs
+        else sensor
+        for sensor in sensors
+    ]
+
+    return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -133,6 +239,41 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
+    if isinstance(jobs, BindResourcesToJobs):
+        # Binds top-level resources to jobs and any jobs attached to schedules or sensors
+        (
+            jobs_with_resources,
+            schedules_with_resources,
+            sensors_with_resources,
+        ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
+    else:
+        jobs_to_warn = _jobs_which_will_have_io_manager_replaced(jobs, resource_defs)
+        if jobs_to_warn:
+            jobs_text = ", ".join([f"`{job.name}`" for job in jobs_to_warn[:10]])
+            if len(jobs_to_warn) > 10:
+                jobs_text += f", and {len(jobs_to_warn) - 10} others"
+            warnings.warn(
+                f"""You have overridden the default `io_manager` on `Definitions`. One or more jobs utilize the default filesystem I/O manager. In the future, these jobs will use the `Definitions`-level override instead. To silence this warning, explicitly set the `io_manager` on the jobs in question:
+
+@job(resource_defs={{'io_manager': fs_io_manager}})
+def my_job():
+    ...
+    
+Alternatively, wrap the jobs input to `Definitions` with `BindResourceToJobs`:
+
+defs = Definitions(
+    jobs=BindResourcesToJobs([my_job, my_other_job, ...])
+)
+
+In later releases, this will be the default behavior, and `BindResourcesToJobs` will not be required.
+
+The following jobs are affected: {jobs_text}
+                """
+            )
+        jobs_with_resources = jobs or []
+        schedules_with_resources = schedules or []
+        sensors_with_resources = sensors or []
+
     @repository(
         name=name,
         default_executor_def=executor_def,
@@ -142,12 +283,16 @@ def _create_repository_using_definitions_args(
     def created_repo():
         return [
             *with_resources(assets or [], resource_defs),
-            *(schedules or []),
-            *(sensors or []),
-            *(jobs or []),
+            *(schedules_with_resources),
+            *(sensors_with_resources),
+            *(jobs_with_resources),
         ]
 
     return created_repo
+
+
+class BindResourcesToJobs(list):
+    pass
 
 
 class Definitions:
