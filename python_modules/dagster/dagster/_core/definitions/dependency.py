@@ -28,9 +28,6 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
 from dagster._utils import frozentags
@@ -335,25 +332,7 @@ class OpNode(Node):
         return f"op '{self.name}'"
 
 
-class NodeHandleSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # persist using legacy name SolidHandle
-        storage["__class__"] = "SolidHandle"
-        return storage
-
-
-@whitelist_for_serdes(serializer=NodeHandleSerializer)
+@whitelist_for_serdes(storage_name="SolidHandle")
 class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])):
     """
     A structured object to identify nodes in the potentially recursive graph structure.
@@ -527,10 +506,6 @@ class NodeOutputHandle(
     """
     A structured object to uniquely identify outputs in the potentially recursive graph structure.
     """
-
-
-# previous name for NodeHandle was SolidHandle
-register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):

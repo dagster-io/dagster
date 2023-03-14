@@ -1,5 +1,4 @@
 import re
-import warnings
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -22,7 +21,7 @@ import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils import last_file_comp
 from dagster._utils.backcompat import experimental_class_param_warning
 
@@ -555,15 +554,7 @@ class AssetMaterialization(
         return {entry.label: entry.value for entry in self.metadata_entries}
 
 
-class MaterializationSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_unpacked(cls, unpacked_dict, klass):
-        # override the default `from_storage_dict` implementation in order to skip the deprecation
-        # warning for historical Materialization events, loaded from event_log storage
-        return Materialization(skip_deprecation_warning=True, **unpacked_dict)
-
-
-@whitelist_for_serdes(serializer=MaterializationSerializer)
+@whitelist_for_serdes
 class Materialization(
     NamedTuple(
         "_Materialization",
@@ -603,7 +594,6 @@ class Materialization(
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
-        skip_deprecation_warning: Optional[bool] = False,
     ):
         if asset_key and isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
@@ -618,9 +608,6 @@ class Materialization(
                 "Either label or asset_key with a path must be provided",
             )
             label = asset_key.to_string()
-
-        if not skip_deprecation_warning:
-            warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
 
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry

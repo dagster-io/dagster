@@ -6,19 +6,14 @@ from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"JobType"})
 class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
-
-
-register_serdes_enum_fallbacks({"JobType": InstigatorType})
-# for internal backcompat
-JobType = InstigatorType
 
 
 @whitelist_for_serdes

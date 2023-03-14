@@ -1,4 +1,4 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Set, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -15,7 +15,6 @@ from dagster._core.definitions.metadata import (
     MetadataEntry,
 )
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import DefaultNamedTupleSerializer
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,
@@ -23,13 +22,7 @@ from .dep_snapshot import (
 )
 
 
-class InputDefSnapSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=InputDefSnapSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"metadata_entries"})
 class InputDefSnap(
     NamedTuple(
         "_InputDefSnap",
@@ -59,13 +52,7 @@ class InputDefSnap(
         )
 
 
-class OutputDefSnapSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=OutputDefSnapSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"metadata_entries"})
 class OutputDefSnap(
     NamedTuple(
         "_OutputDefSnap",

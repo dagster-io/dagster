@@ -2,7 +2,9 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    whitelist_for_serdes,
+)
 from dagster._utils import frozenlist
 
 # ########################
@@ -19,7 +21,7 @@ class TableRecord(
     strings, integers, floats, or bools.
     """
 
-    def __new__(cls, data):
+    def __new__(cls, data: Mapping[str, Union[str, int, float, bool]]):
         check.dict_param(
             data,
             "data",
