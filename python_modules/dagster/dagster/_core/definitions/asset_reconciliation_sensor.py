@@ -718,6 +718,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 execution_window_start = None
                 expected_data_times = {}
             else:
+                # this key will be updated eventually
+                if constraints:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
+
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = data_time_resolver.get_in_progress_data_times_for_key(
@@ -738,7 +742,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # number of constraints
                 (
                     execution_window_start,
-                    execution_window_end,
+                    _,
                 ) = get_execution_time_window_for_constraints(
                     constraints=constraints,
                     current_data_times=current_data_times,
@@ -747,10 +751,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     expected_data_times=expected_data_times,
                     relevant_upstream_keys=relevant_upstream_keys,
                 )
-
-                # this key will be updated within the plan window
-                if execution_window_end is not None and execution_window_end <= plan_window_end:
-                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
             # a key may already be in to_materialize by the time we get here if a required
             # neighbor was selected to be updated
