@@ -1,21 +1,23 @@
 import pytest
 from dagster import (
+    AllPartitionMapping,
+    DailyPartitionsDefinition,
+    IdentityPartitionMapping,
     MultiPartitionKey,
     MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    DailyPartitionsDefinition,
-    WeeklyPartitionsDefinition,
-    IdentityPartitionMapping,
-    TimeWindowPartitionMapping,
     SpecificPartitionsPartitionMapping,
+    StaticPartitionMapping,
+    StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
+    WeeklyPartitionsDefinition,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
-    MultiToSingleDimensionPartitionMapping,
-    MultiPartitionsMapping,
     DimensionMapping,
+    MultiPartitionsMapping,
+    MultiToSingleDimensionPartitionMapping,
 )
 
 
@@ -218,190 +220,311 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
 
+upstream_and_downstream_tests = [
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "abc",
+                    IdentityPartitionMapping(),
+                ),
+                DimensionMapping(
+                    "daily",
+                    "weekly",
+                    TimeWindowPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("a", "2023-01-01"),
+                ("a", "2023-01-02"),
+                ("a", "2023-01-03"),
+                ("a", "2023-01-04"),
+                ("a", "2023-01-05"),
+                ("a", "2023-01-06"),
+                ("a", "2023-01-07"),
+            ]
+        ],
+        [MultiPartitionKey({"abc": "a", "weekly": "2023-01-01"})],
+    ),
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "abc",
+                    IdentityPartitionMapping(),
+                ),
+                DimensionMapping(
+                    "daily",
+                    "weekly",
+                    TimeWindowPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("a", "2023-01-01"),
+                ("a", "2023-01-02"),
+                ("a", "2023-01-03"),
+                ("a", "2023-01-04"),
+                ("a", "2023-01-05"),
+                ("a", "2023-01-06"),
+                ("a", "2023-01-07"),
+                ("b", "2023-01-08"),
+                ("b", "2023-01-09"),
+                ("b", "2023-01-10"),
+                ("b", "2023-01-11"),
+                ("b", "2023-01-12"),
+                ("b", "2023-01-13"),
+                ("b", "2023-01-14"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("a", "2023-01-01"),
+                ("b", "2023-01-08"),
+            ]
+        ],
+    ),
+]
+
+upstream_only_tests = [
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "123",
+                    SpecificPartitionsPartitionMapping(["c"]),
+                ),
+                DimensionMapping(
+                    "weekly",
+                    "daily",
+                    TimeWindowPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("c", "2023-01-01"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("1", "2023-01-01"),
+                ("3", "2023-01-02"),
+            ]
+        ],
+    ),
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "123",
+                    SpecificPartitionsPartitionMapping(["c"]),
+                ),
+                DimensionMapping(
+                    "weekly",
+                    "daily",
+                    TimeWindowPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("c", "2023-01-01"),
+                ("c", "2023-01-08"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("1", "2023-01-01"),
+                ("1", "2023-01-02"),
+                ("1", "2023-01-03"),
+                ("1", "2023-01-04"),
+                ("1", "2023-01-05"),
+                ("1", "2023-01-06"),
+                ("1", "2023-01-07"),
+                ("3", "2023-01-08"),
+                ("3", "2023-01-09"),
+                ("3", "2023-01-10"),
+                ("3", "2023-01-11"),
+                ("3", "2023-01-12"),
+                ("3", "2023-01-13"),
+                ("3", "2023-01-14"),
+            ]
+        ],
+    ),
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "123",
+                    AllPartitionMapping(),
+                ),
+                DimensionMapping(
+                    "daily",
+                    "daily",
+                    IdentityPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("a", "2023-01-01"),
+                ("b", "2023-01-01"),
+                ("c", "2023-01-01"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"123": values[0], "daily": values[1]})
+            for values in [
+                ("1", "2023-01-01"),
+            ]
+        ],
+    ),
+]
+
+
+downstream_only_tests = [
+    (
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "abc",
+                    "123",
+                    StaticPartitionMapping({"a": "1", "b": "2", "c": "3"}),
+                ),
+                DimensionMapping(
+                    "weekly",
+                    "daily",
+                    TimeWindowPartitionMapping(),
+                ),
+            ]
+        ),
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("c", "2023-01-01"),
+                ("a", "2023-01-08"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("3", "2023-01-01"),
+                ("3", "2023-01-02"),
+                ("3", "2023-01-03"),
+                ("3", "2023-01-04"),
+                ("3", "2023-01-05"),
+                ("3", "2023-01-06"),
+                ("3", "2023-01-07"),
+                ("1", "2023-01-08"),
+                ("1", "2023-01-09"),
+                ("1", "2023-01-10"),
+                ("1", "2023-01-11"),
+                ("1", "2023-01-12"),
+                ("1", "2023-01-13"),
+                ("1", "2023-01-14"),
+            ]
+        ],
+    ),
+]
+
+
 @pytest.mark.parametrize(
     "upstream_partitions_def,downstream_partitions_def,partitions_mapping,upstream_partition_keys,downstream_partition_keys",
     [
-        (
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "daily": DailyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "weekly": WeeklyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsMapping(
-                [
-                    DimensionMapping(
-                        "abc",
-                        "abc",
-                        IdentityPartitionMapping(),
-                    ),
-                    DimensionMapping(
-                        "daily",
-                        "weekly",
-                        TimeWindowPartitionMapping(),
-                    ),
-                ]
-            ),
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("a", "2023-01-01"),
-                    ("a", "2023-01-02"),
-                    ("a", "2023-01-03"),
-                    ("a", "2023-01-04"),
-                    ("a", "2023-01-05"),
-                    ("a", "2023-01-06"),
-                    ("a", "2023-01-07"),
-                ]
-            ],
-            [MultiPartitionKey({"abc": "a", "weekly": "2023-01-01"})],
-        ),
-        (
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "daily": DailyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "weekly": WeeklyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsMapping(
-                [
-                    DimensionMapping(
-                        "abc",
-                        "abc",
-                        IdentityPartitionMapping(),
-                    ),
-                    DimensionMapping(
-                        "daily",
-                        "weekly",
-                        TimeWindowPartitionMapping(),
-                    ),
-                ]
-            ),
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("a", "2023-01-01"),
-                    ("a", "2023-01-02"),
-                    ("a", "2023-01-03"),
-                    ("a", "2023-01-04"),
-                    ("a", "2023-01-05"),
-                    ("a", "2023-01-06"),
-                    ("a", "2023-01-07"),
-                    ("b", "2023-01-08"),
-                    ("b", "2023-01-09"),
-                    ("b", "2023-01-10"),
-                    ("b", "2023-01-11"),
-                    ("b", "2023-01-12"),
-                    ("b", "2023-01-13"),
-                    ("b", "2023-01-14"),
-                ]
-            ],
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("a", "2023-01-01"),
-                    ("b", "2023-01-08"),
-                ]
-            ],
-        ),
-        (
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "weekly": WeeklyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsDefinition(
-                {
-                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
-                    "daily": DailyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsMapping(
-                [
-                    DimensionMapping(
-                        "abc",
-                        "123",
-                        SpecificPartitionsPartitionMapping(["c"]),
-                    ),
-                    DimensionMapping(
-                        "weekly",
-                        "daily",
-                        TimeWindowPartitionMapping(),
-                    ),
-                ]
-            ),
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("c", "2023-01-01"),
-                ]
-            ],
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("1", "2023-01-01"),
-                    ("3", "2023-01-02"),
-                ]
-            ],
-        ),
-        (
-            MultiPartitionsDefinition(
-                {
-                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
-                    "weekly": WeeklyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsDefinition(
-                {
-                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
-                    "daily": DailyPartitionsDefinition("2023-01-01"),
-                }
-            ),
-            MultiPartitionsMapping(
-                [
-                    DimensionMapping(
-                        "abc",
-                        "123",
-                        SpecificPartitionsPartitionMapping(["c"]),
-                    ),
-                    DimensionMapping(
-                        "weekly",
-                        "daily",
-                        TimeWindowPartitionMapping(),
-                    ),
-                ]
-            ),
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("c", "2023-01-01"),
-                    ("c", "2023-01-08"),
-                ]
-            ],
-            [
-                MultiPartitionKey({"abc": values[0], "daily": values[1]})
-                for values in [
-                    ("1", "2023-01-01"),
-                    ("3", "2023-01-10"),
-                ]
-            ],
-        ),
+        *upstream_and_downstream_tests,
+        *upstream_only_tests,
     ],
 )
-def test_multipartitions_mapping(
+def test_multipartitions_mapping_get_upstream_partitions(
     upstream_partitions_def,
     downstream_partitions_def,
     partitions_mapping,
@@ -412,3 +535,79 @@ def test_multipartitions_mapping(
         downstream_partitions_def.empty_subset().with_partition_keys(downstream_partition_keys),
         upstream_partitions_def,
     ).get_partition_keys() == set(upstream_partition_keys)
+
+
+@pytest.mark.parametrize(
+    "upstream_partitions_def,downstream_partitions_def,partitions_mapping,upstream_partition_keys,downstream_partition_keys",
+    [
+        *upstream_and_downstream_tests,
+        *downstream_only_tests,
+    ],
+)
+def test_multipartitions_mapping_get_downstream_partitions(
+    upstream_partitions_def,
+    downstream_partitions_def,
+    partitions_mapping,
+    upstream_partition_keys,
+    downstream_partition_keys,
+):
+    assert partitions_mapping.get_downstream_partitions_for_partitions(
+        upstream_partitions_def.empty_subset().with_partition_keys(upstream_partition_keys),
+        downstream_partitions_def,
+    ).get_partition_keys() == set(downstream_partition_keys)
+
+
+def test_error_multipartitions_mapping():
+    weekly_abc = MultiPartitionsDefinition(
+        {
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+            "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+        }
+    )
+    daily_123 = MultiPartitionsDefinition(
+        {
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            "daily": DailyPartitionsDefinition("2023-01-01"),
+        }
+    )
+
+    with pytest.raises(CheckError, match="dimensions that are not mapped"):
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "123",
+                    "abc",
+                    SpecificPartitionsPartitionMapping(["c"]),
+                )
+            ]
+        ).get_upstream_partitions_for_partitions(weekly_abc.empty_subset(), daily_123)
+
+    with pytest.raises(
+        CheckError, match="upstream dimension name that is not in the upstream partitions def"
+    ):
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "nonexistent dimension",
+                    "other nonexistent dimension",
+                    SpecificPartitionsPartitionMapping(["c"]),
+                )
+            ]
+        ).get_upstream_partitions_for_partitions(weekly_abc.empty_subset(), daily_123)
+
+    with pytest.raises(ValueError):
+        MultiPartitionsMapping(
+            [
+                DimensionMapping(
+                    "123",
+                    "abc",
+                    StaticPartitionMapping({"1": "a", "2": "b", "3": "c"}),
+                ),
+                DimensionMapping("daily", "weekly", IdentityPartitionMapping()),  # Invalid
+            ]
+        ).get_upstream_partitions_for_partitions(
+            weekly_abc.empty_subset().with_partition_keys(
+                MultiPartitionKey({"abc": "a", "weekly": "2023-01-01"})
+            ),
+            daily_123,
+        )
