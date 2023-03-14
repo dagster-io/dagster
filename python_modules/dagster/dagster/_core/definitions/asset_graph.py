@@ -379,6 +379,7 @@ class AssetGraph:
             *(
                 self.get_downstream_freshness_policies(asset_key=child_key)
                 for child_key in self.get_children(asset_key)
+                if child_key != asset_key
             )
         )
         current_policy = self.freshness_policies_by_key.get(asset_key)
