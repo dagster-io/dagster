@@ -10,7 +10,6 @@ from dagster import (
     graph,
     job,
     op,
-    repository,
     resource,
     usable_as_dagster_type,
 )
@@ -472,10 +471,6 @@ def test_loader_missing_resource_fails():
         @job
         def _type_check_job():
             custom_type_op()
-
-        @repository
-        def _repo():
-            return [_type_check_job]
 
 
 def test_extra_resources():
