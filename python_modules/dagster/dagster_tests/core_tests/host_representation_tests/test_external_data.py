@@ -1064,3 +1064,9 @@ def test_external_time_window_valid_partition_key():
         )
         is True
     )
+    assert (
+        external_partitions_def.get_partitions_definition().start.timestamp()
+        == pendulum.instance(
+            datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
+        ).timestamp()
+    )
