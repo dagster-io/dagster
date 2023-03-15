@@ -33,6 +33,9 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.definitions.run_request import DynamicPartitionsAction, DynamicPartitionsRequest
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
@@ -88,6 +91,10 @@ class Partition(Generic[T_cov]):
         else:
             other = cast(Partition[object], other)
             return self.value == other.value and self.name == other.name
+
+
+class PendingPartition(Partition):
+    pass
 
 
 def schedule_partition_range(
@@ -708,6 +715,25 @@ class DynamicPartitionsDefinition(
 
         return dynamic_partitions_store.has_dynamic_partition(
             partitions_def_name=self._validated_name(), partition_key=partition_key
+        )
+
+    def get_pending_partition(self, partition_key: str) -> PendingPartition:
+        return PendingPartition(partition_key)
+
+    def request_for_adding_partitions(
+        self, partition_keys: Sequence[str]
+    ) -> DynamicPartitionsRequest:
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        validated_name = self._validated_name()
+        return DynamicPartitionsRequest(validated_name, partition_keys, DynamicPartitionsAction.ADD)
+
+    def request_for_deleting_partitions(
+        self, partition_keys: Sequence[str]
+    ) -> DynamicPartitionsRequest:
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        validated_name = self._validated_name()
+        return DynamicPartitionsRequest(
+            validated_name, partition_keys, DynamicPartitionsAction.DELETE
         )
 
 

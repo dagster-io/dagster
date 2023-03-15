@@ -27,6 +27,11 @@ from typing_extensions import Self, TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.run_request import (
+    DynamicPartitionsAction,
+    InstigatorType,
+    RunRequest,
+)
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.definitions.utils import validate_tags
@@ -582,6 +587,32 @@ def _evaluate_sensor(
         context.add_log_info(sensor_runtime_data.captured_log_key)
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
+
+    if sensor_runtime_data.dynamic_partitions_requests:
+        for request in sensor_runtime_data.dynamic_partitions_requests:
+            if request.action == DynamicPartitionsAction.ADD:
+                instance.add_dynamic_partitions(
+                    request.partitions_def_name,
+                    request.partition_keys,
+                )
+                context.logger.info(
+                    "Added partition keys to dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {request.partition_keys}"
+                )
+            else:
+                if request.action is not DynamicPartitionsAction.DELETE:
+                    check.failed(
+                        f"Unexpected action {request.action} for dynamic partition request"
+                    )
+
+                # TODO add a bulk delete method to the instance
+                for partition in request.partition_keys:
+                    instance.delete_dynamic_partition(request.partitions_def_name, partition)
+
+                context.logger.info(
+                    "Deleted partition keys from dynamic partitions definition"
+                    f" '{request.partitions_def_name}': {request.partition_keys}"
+                )
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.pipeline_run_reactions:
             for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:

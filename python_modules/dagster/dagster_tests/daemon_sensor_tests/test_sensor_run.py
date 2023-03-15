@@ -18,6 +18,7 @@ from dagster import (
     AssetSelection,
     CodeLocationSelector,
     DagsterRunStatus,
+    DynamicPartitionsDefinition,
     Field,
     HourlyPartitionsDefinition,
     JobSelector,
@@ -539,6 +540,47 @@ def logging_status_sensor(context):
     context.log.info(f"run succeeded: {context.dagster_run.run_id}")
 
 
+quux = DynamicPartitionsDefinition(name="quux")
+
+
+@asset(partitions_def=quux)
+def quux_asset(context):
+    return 1
+
+
+quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def=quux)
+
+
+@sensor()
+def add_dynamic_partitions_sensor(context):
+    return SensorTickResult(
+        dynamic_partitions_requests=[
+            quux.request_for_adding_partitions(["baz"]),
+        ],
+    )
+
+
+@sensor(job=quux_asset_job)
+def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
+    return SensorTickResult(
+        dynamic_partitions_requests=[
+            quux.request_for_adding_partitions(["1"]),
+            quux.request_for_deleting_partitions(["2"]),
+        ],
+        run_requests=[quux_asset_job.run_request_for_partition("1")],
+    )
+
+
+@sensor(job=quux_asset_job)
+def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
+    return SensorTickResult(
+        dynamic_partitions_requests=[
+            quux.request_for_deleting_partitions(["2"]),
+        ],
+        run_requests=[quux_asset_job.run_request_for_partition("2")],
+    )
+
+
 @repository
 def the_repo():
     return [
@@ -591,6 +633,10 @@ def the_repo():
         multi_asset_sensor_targets_asset_selection,
         logging_sensor,
         logging_status_sensor,
+        add_delete_dynamic_partitions_and_yield_run_requests_sensor,
+        add_dynamic_partitions_sensor,
+        quux_asset_job,
+        error_on_deleted_dynamic_partitions_run_requests_sensor,
     ]
 
 
@@ -2936,6 +2982,115 @@ def test_sensor_logging(executor, instance, workspace_context, external_repo):
     record = records[0]
     assert record[DAGSTER_META_KEY]["orig_message"] == "hello hello"
     instance.compute_log_manager.delete_logs(log_key=tick.log_key)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_add_dynamic_partitions_sensor(
+    caplog, executor, instance, workspace_context, external_repo
+):
+    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
+    assert set(instance.get_dynamic_partitions("quux")) == set()
+    external_sensor = external_repo.get_external_sensor("add_dynamic_partitions_sensor")
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    assert set(instance.get_dynamic_partitions("quux")) == set(["baz"])
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+
+    assert "Added partition keys to dynamic partitions definition 'quux': ['baz']" in caplog.text
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_add_dynamic_partitions_and_launch_runs(
+    caplog, executor, instance, workspace_context, external_repo
+):
+    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
+    instance.add_dynamic_partitions("quux", ["2"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
+    external_sensor = external_repo.get_external_sensor(
+        "add_delete_dynamic_partitions_and_yield_run_requests_sensor"
+    )
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+    assert set(instance.get_dynamic_partitions("quux")) == set(["1"])
+
+    assert instance.get_runs_count() == 2
+    assert "Added partition keys to dynamic partitions definition 'quux': ['1']" in caplog.text
+    assert "Deleted partition keys from dynamic partitions definition 'quux': ['2']" in caplog.text
+    run = instance.get_runs()[0]
+    assert run.run_config == {}
+    assert run.tags
+    assert run.tags.get("dagster/partition") == "1"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_error_on_deleted_dynamic_partitions_run_request(
+    executor, instance, workspace_context, external_repo
+):
+    execute_pipeline(foo_pipeline, instance=instance)  # creates event log storage tables
+    instance.add_dynamic_partitions("quux", ["2"])
+    assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
+    external_sensor = external_repo.get_external_sensor(
+        "error_on_deleted_dynamic_partitions_run_requests_sensor"
+    )
+    instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(),
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+        )
+    )
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 0
+
+    evaluate_sensors(workspace_context, executor)
+
+    ticks = instance.get_ticks(
+        external_sensor.get_external_origin_id(), external_sensor.selector_id
+    )
+    assert len(ticks) == 1
+    validate_tick(
+        ticks[0],
+        external_repo.get_external_sensor(
+            "error_on_deleted_dynamic_partitions_run_requests_sensor"
+        ),
+        expected_datetime=None,
+        expected_status=TickStatus.FAILURE,
+        expected_run_ids=None,
+        expected_error="Cannot create run request for partition 2 because it does not exist.",
+    )
+    assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
 
 
 def test_code_location_construction():
