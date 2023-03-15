@@ -1,51 +1,45 @@
 import os
+from enum import Enum
+from typing import Any, Dict, Optional
 
 from dagster import (
-    Enum,
-    EnumValue,
+    Config,
     Failure,
-    Field,
     In,
-    Noneable,
     Nothing,
+    OpExecutionContext,
     Out,
-    Permissive,
     _check as check,
     op,
 )
+from pydantic import Field as PyField
 
 from .utils import execute, execute_script_file
 
 
-def shell_op_config():
-    return {
-        "env": Field(
-            Noneable(Permissive()),
-            is_required=False,
-            description="An optional dict of environment variables to pass to the subprocess.",
-        ),
-        "output_logging": Field(
-            Enum(
-                name="OutputType",
-                enum_values=[
-                    EnumValue("STREAM", description="Stream script stdout/stderr."),
-                    EnumValue(
-                        "BUFFER",
-                        description="Buffer shell script stdout/stderr, then log upon completion.",
-                    ),
-                    EnumValue("NONE", description="No logging"),
-                ],
-            ),
-            is_required=False,
-            default_value="BUFFER",
-        ),
-        "cwd": Field(
-            Noneable(str),
-            default_value=None,
-            is_required=False,
-            description="Working directory in which to execute shell script",
-        ),
-    }
+class OutputType(Enum):
+    STREAM = "STREAM"
+    BUFFER = "BUFFER"
+    NONE = "NONE"
+
+
+class ShellOpConfig(Config):
+    env: Optional[Dict[str, str]] = PyField(
+        None, description="An optional dict of environment variables to pass to the subprocess."
+    )
+    output_logging: OutputType = PyField(
+        OutputType.BUFFER.value,
+    )
+    cwd: Optional[str] = PyField(
+        None, description="Working directory in which to execute shell script"
+    )
+
+    def to_execute_params(self) -> Dict[str, Any]:
+        return {
+            "env": {**os.environ, **(self.env or {})},
+            "output_logging": self.output_logging.value,
+            "cwd": self.cwd,
+        }
 
 
 @op(
@@ -58,12 +52,11 @@ def shell_op_config():
     ),
     ins={"shell_command": In(str)},
     out=Out(str),
-    config_schema=shell_op_config(),
 )
-def shell_op(context, shell_command):
-    op_config = context.op_config.copy()
-    op_config["env"] = {**os.environ, **op_config.get("env", {})}
-    output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
+def shell_op(context: OpExecutionContext, shell_command, config: ShellOpConfig):
+    output, return_code = execute(
+        shell_command=shell_command, log=context.log, **config.to_execute_params()
+    )
 
     if return_code:
         raise Failure(description=f"Shell command execution failed with output: {output}")
@@ -113,14 +106,13 @@ def create_shell_command_op(
         description=description,
         ins={"start": In(Nothing)},
         out=Out(str),
-        config_schema=shell_op_config(),
         required_resource_keys=required_resource_keys,
         tags=tags,
     )
-    def _shell_fn(context):
-        op_config = context.op_config.copy()
-        op_config["env"] = {**os.environ, **op_config.get("env", {})}
-        output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
+    def _shell_fn(context, config: ShellOpConfig):
+        output, return_code = execute(
+            shell_command=shell_command, log=context.log, **config.to_execute_params()
+        )
 
         if return_code:
             raise Failure(
@@ -175,14 +167,11 @@ def create_shell_script_op(shell_script_path, name="create_shell_script_op", ins
         description=kwargs.pop("description", "An op to invoke a shell command."),
         ins=ins or {"start": In(Nothing)},
         out=Out(str),
-        config_schema=shell_op_config(),
         **kwargs,
     )
-    def _shell_script_fn(context):
-        op_config = context.op_config.copy()
-        op_config["env"] = {**os.environ, **op_config.get("env", {})}
+    def _shell_script_fn(context, config: ShellOpConfig):
         output, return_code = execute_script_file(
-            shell_script_path=shell_script_path, log=context.log, **op_config
+            shell_script_path=shell_script_path, log=context.log, **config.to_execute_params()
         )
 
         if return_code:
