@@ -45,10 +45,10 @@ _UPGRADING_INSTANCE = None
 
 @contextmanager
 def upgrading_instance(instance: DagsterInstance) -> Iterator[None]:
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
+    global _UPGRADING_INSTANCE  # noqa: PLW0603
     check.invariant(_UPGRADING_INSTANCE is None, "update already in progress")
     try:
-        _UPGRADING_INSTANCE = instance
+        _UPGRADING_INSTANCE = instance  # noqa: PLW0603
         yield
     finally:
         _UPGRADING_INSTANCE = None

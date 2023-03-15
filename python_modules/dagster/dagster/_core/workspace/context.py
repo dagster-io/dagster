@@ -724,7 +724,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._stack.close()
 
     def copy_for_test_instance(self, instance: DagsterInstance) -> "WorkspaceProcessContext":
-        """make a copy with a different instance, created for tests."""
+        """Make a copy with a different instance, created for tests."""
         return WorkspaceProcessContext(
             instance=instance,
             workspace_load_target=self.workspace_load_target,

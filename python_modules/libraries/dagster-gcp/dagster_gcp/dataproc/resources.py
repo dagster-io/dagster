@@ -98,7 +98,7 @@ class DataprocResource:
         ).execute()
 
     def wait_for_job(self, job_id, wait_timeout=TWENTY_MINUTES):
-        """This method polls job status every 5 seconds."""  # noqa: D202
+        """This method polls job status every 5 seconds."""
 
         # TODO: Add logging here print('Waiting for job ID {} to finish...'.format(job_id))
         def iter_fn():

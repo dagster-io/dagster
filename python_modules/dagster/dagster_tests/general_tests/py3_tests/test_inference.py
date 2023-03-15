@@ -1,3 +1,5 @@
+# ruff: noqa: D416
+
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
