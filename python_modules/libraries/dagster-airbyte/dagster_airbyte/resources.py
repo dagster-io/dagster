@@ -35,9 +35,7 @@ class AirbyteState:
 
 
 class AirbyteResource(ConfigurableResource):
-    """
-    This class exposes methods on top of the Airbyte REST API.
-    """
+    """This class exposes methods on top of the Airbyte REST API."""
 
     _log: logging.Logger
 

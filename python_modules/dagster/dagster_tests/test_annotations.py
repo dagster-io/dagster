@@ -13,7 +13,7 @@ from dagster._annotations import (
     is_experimental,
     is_public,
     public,
-    quiet_experimental,
+    quiet_experimental_warnings,
 )
 from typing_extensions import Annotated
 
@@ -99,10 +99,41 @@ def test_experimental_quiet_experimental() -> None:
         def my_experimental_function(my_arg) -> None:
             pass
 
-        @quiet_experimental
+        @quiet_experimental_warnings
         def my_quiet_wrapper(my_arg) -> None:
             my_experimental_function(my_arg)
 
         assert len(w) == 0
         my_quiet_wrapper("foo")
+        assert len(w) == 0
+
+
+def test_experimental_quiet_experimental_class() -> None:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimental:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        assert len(w) == 0
+        MyExperimental("foo")
+        assert len(w) == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        @experimental
+        class MyExperimentalTwo:
+            def __init__(self, _string_in: str) -> None:
+                pass
+
+        class MyExperimentalWrapped(MyExperimentalTwo):
+            @quiet_experimental_warnings
+            def __init__(self, string_in: str) -> None:
+                super().__init__(string_in)
+
+        assert len(w) == 0
+        MyExperimentalWrapped("foo")
         assert len(w) == 0
