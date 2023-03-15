@@ -5,6 +5,7 @@ from dagster import Resource, op
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import TwilioResource, twilio_resource
+from dagster_twilio.resources import TwilioResource
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
@@ -20,6 +21,9 @@ def twilio_resource_option_fixture(request) -> ResourceDefinition:
 def test_twilio_resource(twilio_resource_option) -> None:
     account_sid = os.environ.get("TWILIO_TEST_ACCOUNT_SID")
     auth_token = os.environ.get("TWILIO_TEST_AUTH_TOKEN")
+
+    assert account_sid, "TWILIO_TEST_ACCOUNT_SID not set"
+    assert auth_token, "TWILIO_TEST_AUTH_TOKEN not set"
 
     @op
     def twilio_op(twilio: Resource[Client]):
