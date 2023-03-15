@@ -15,7 +15,7 @@ export const RadioContainer = styled.div`
   }
 
   .bp3-control.bp3-radio {
-    padding: 8px;
+    padding: 4px 4px 4px 0;
   }
 
   .bp3-control.bp3-radio.bp3-disabled {
@@ -43,5 +43,11 @@ export const RadioContainer = styled.div`
 
   .bp3-control.bp3-radio input:disabled:checked ~ .bp3-control-indicator {
     background-color: ${Colors.Blue200};
+  }
+
+  .bp3-control .bp3-control-indicator,
+  .bp3-control .bp3-control-indicator::before {
+    width: 18px;
+    height: 18px;
   }
 `;
