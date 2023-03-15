@@ -1,4 +1,3 @@
-import datetime
 import logging
 import os
 import sys
@@ -7,9 +6,23 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
+from types import TracebackType
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import pendulum
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -35,30 +48,29 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
 
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
-TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
+TDaemonGenerator: TypeAlias = Iterator[Optional[SerializableErrorInfo]]
 
 
 class DagsterSensorDaemonError(DagsterError):
     """Error when running the SensorDaemon."""
 
 
-class SkippedSensorRun(
-    NamedTuple(
-        "SkippedSensorRun",
-        [
-            ("run_key", Optional[str]),
-            ("existing_run", DagsterRun),
-        ],
-    )
-):
+class SkippedSensorRun(NamedTuple):
     """Placeholder for runs that are skipped during the run_key idempotence check."""
+
+    run_key: Optional[str]
+    existing_run: DagsterRun
 
 
 class SensorLaunchContext:
@@ -82,21 +94,21 @@ class SensorLaunchContext:
             self._purge_settings[day_offset].add(status)
 
     @property
-    def status(self):
+    def status(self) -> TickStatus:
         return self._tick.status
 
     @property
-    def logger(self):
+    def logger(self) -> logging.Logger:
         return self._logger
 
     @property
-    def run_count(self):
+    def run_count(self) -> int:
         return len(self._tick.run_ids)
 
-    def update_state(self, status, **kwargs):
-        skip_reason = kwargs.get("skip_reason")
-        cursor = kwargs.get("cursor")
-        origin_run_id = kwargs.get("origin_run_id")
+    def update_state(self, status: TickStatus, **kwargs: object):
+        skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
+        cursor = cast(Optional[str], kwargs.get("cursor"))
+        origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
@@ -120,16 +132,16 @@ class SensorLaunchContext:
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
 
-    def add_run_info(self, run_id=None, run_key=None):
+    def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
 
-    def add_log_info(self, log_key):
+    def add_log_info(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
 
-    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
+    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool) -> None:
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
 
-    def _write(self):
+    def _write(self) -> None:
         self._instance.update_tick(self._tick)
 
         if self._tick.status not in FINISHED_TICK_STATES:
@@ -146,19 +158,19 @@ class SensorLaunchContext:
             state = self._instance.get_instigator_state(
                 self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
             )
-            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None
+            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
             if self._tick.run_keys and should_update_cursor_and_last_run_key:
                 last_run_key = self._tick.run_keys[-1]
 
-            cursor = state.instigator_data.cursor if state.instigator_data else None
+            cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
             if should_update_cursor_and_last_run_key:
                 cursor = self._tick.cursor
 
             marked_timestamp = max(
-                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0
+                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0  # type: ignore  # (possible none)
             )
             self._instance.update_instigator_state(
-                state.with_data(
+                state.with_data(  # type: ignore  # (possible none)
                     SensorInstigatorData(
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
@@ -169,10 +181,15 @@ class SensorLaunchContext:
                 )
             )
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: Type[BaseException],
+        exception_value: Exception,
+        traceback: TracebackType,
+    ) -> None:
         if exception_type and isinstance(exception_value, KeyboardInterrupt):
             return
 
@@ -194,7 +211,9 @@ class SensorLaunchContext:
             )
 
 
-def _check_for_debug_crash(debug_crash_flags, key):
+def _check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
     if not debug_crash_flags:
         return
 
@@ -214,7 +233,7 @@ def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     shutdown_event: threading.Event,
-    until=None,
+    until: Optional[float] = None,
 ) -> TDaemonGenerator:
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -278,7 +297,7 @@ def execute_sensor_iteration(
     sensor_tick_futures: Optional[Dict[str, Future]] = None,
     sensor_state_lock: Optional[threading.Lock] = None,
     log_verbose_checks: bool = True,
-    debug_crash_flags=None,
+    debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
 
@@ -423,7 +442,7 @@ def _process_tick(
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
     sensor_state_lock: threading.Lock,
-    sensor_debug_crash_flags,
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
 ):
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
@@ -447,7 +466,7 @@ def _process_tick_generator(
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
     sensor_state_lock: threading.Lock,
-    sensor_debug_crash_flags,
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
     tick_retention_settings,
 ):
     instance = workspace_process_context.instance
@@ -513,8 +532,8 @@ def _mark_sensor_state_for_tick(
     instance: DagsterInstance,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    now: datetime.datetime,
-):
+    now: "DateTime",
+) -> None:
     instigator_data = _sensor_instigator_data(sensor_state)
     instance.update_instigator_state(
         sensor_state.with_data(
@@ -536,7 +555,7 @@ def _evaluate_sensor(
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
     state: InstigatorState,
-    sensor_debug_crash_flags=None,
+    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
@@ -775,7 +794,7 @@ def _get_or_create_sensor_run(
     run_request: RunRequest,
     target_data: ExternalTargetData,
     existing_runs_by_key: Mapping[str, DagsterRun],
-):
+) -> Union[DagsterRun, SkippedSensorRun]:
     if not run_request.run_key:
         return _create_sensor_run(
             instance, repo_location, external_sensor, external_pipeline, run_request, target_data
@@ -809,7 +828,7 @@ def _create_sensor_run(
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
     target_data: ExternalTargetData,
-):
+) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     external_execution_plan = repo_location.get_external_execution_plan(

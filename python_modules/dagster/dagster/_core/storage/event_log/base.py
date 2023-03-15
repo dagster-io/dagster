@@ -156,7 +156,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
-    ) -> Iterable["EventLogEntry"]:
+    ) -> Sequence["EventLogEntry"]:
         """Get all of the logs corresponding to a run.
 
         Args:

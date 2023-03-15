@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -812,13 +813,15 @@ def build_sensor_context(
 
 
 def _run_requests_with_base_asset_jobs(
-    run_requests, context, outer_asset_selection
+    run_requests: Iterable[RunRequest],
+    context: SensorEvaluationContext,
+    outer_asset_selection: AssetSelection,
 ) -> Sequence[RunRequest]:
     """
     For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.
     """
-    asset_graph = context.repository_def.asset_graph
+    asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []
     for run_request in run_requests:
         if run_request.asset_selection:
@@ -835,10 +838,10 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name, asset_selection=list(asset_keys)
+                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
             )
         )
 

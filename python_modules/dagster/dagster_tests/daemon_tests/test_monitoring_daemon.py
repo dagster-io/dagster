@@ -129,7 +129,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
         instance,
-        instance.get_run_by_id(run.run_id),
+        instance.get_run_by_id(run.run_id),  # type: ignore  # (possible none)
         logger,
     )
     run = instance.get_run_by_id(run.run_id)
@@ -141,7 +141,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
 
     monitor_starting_run(
         instance,
-        instance.get_run_by_id(run.run_id),
+        instance.get_run_by_id(run.run_id),  # type: ignore  # (possible none)
         logger,
     )
     run = instance.get_run_by_id(run.run_id)

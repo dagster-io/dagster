@@ -156,11 +156,11 @@ class Scheduler(abc.ABC):
         return stopped_state
 
     @abc.abstractmethod
-    def debug_info(self):
+    def debug_info(self) -> str:
         """Returns debug information about the scheduler."""
 
     @abc.abstractmethod
-    def get_logs_path(self, instance, schedule_origin_id):
+    def get_logs_path(self, instance: DagsterInstance, schedule_origin_id: str) -> str:
         """Get path to store logs for schedule.
 
         Args:
@@ -179,8 +179,8 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
 
     def __init__(
         self,
-        max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
-        max_tick_retries=0,
+        max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
+        max_tick_retries: int = 0,
         inst_data: Optional[ConfigurableClassData] = None,
     ):
         self.max_catchup_runs = check.opt_int_param(
@@ -190,7 +190,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         self._inst_data = inst_data
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
@@ -228,13 +228,15 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     ) -> Self:
         return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
 
-    def debug_info(self):
+    def debug_info(self) -> str:
         return ""
 
-    def wipe(self, instance):
+    def wipe(self, instance: DagsterInstance) -> None:
         pass
 
-    def _get_or_create_logs_directory(self, instance, schedule_origin_id):
+    def _get_or_create_logs_directory(
+        self, instance: DagsterInstance, schedule_origin_id: str
+    ) -> str:
         check.inst_param(instance, "instance", DagsterInstance)
         check.str_param(schedule_origin_id, "schedule_origin_id")
 
@@ -244,7 +246,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
 
         return logs_directory
 
-    def get_logs_path(self, instance, schedule_origin_id):
+    def get_logs_path(self, instance: DagsterInstance, schedule_origin_id: str) -> str:
         check.inst_param(instance, "instance", DagsterInstance)
         check.str_param(schedule_origin_id, "schedule_origin_id")
 

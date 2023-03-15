@@ -2,7 +2,7 @@ import os
 import sys
 import tempfile
 from contextlib import ExitStack, contextmanager
-from typing import Any, Generator, Mapping, Optional
+from typing import Any, Iterator, Mapping, Optional
 
 import yaml
 
@@ -13,7 +13,7 @@ from .instance import DagsterInstance
 
 
 @contextmanager
-def environ(env):
+def environ(env: Mapping[str, str]) -> Iterator[None]:
     """Temporarily set environment variables inside the context manager and
     fully restore previous environment afterwards.
     """
@@ -40,7 +40,7 @@ def instance_for_test(
     overrides: Optional[Mapping[str, Any]] = None,
     set_dagster_home: bool = True,
     temp_dir: Optional[str] = None,
-) -> Generator[DagsterInstance, None, None]:
+) -> Iterator[DagsterInstance]:
     """Creates a persistent :py:class:`~dagster.DagsterInstance` available within a context manager.
 
     When a context manager is opened, if no `temp_dir` parameter is set, a new
@@ -106,7 +106,7 @@ def instance_for_test(
                 cleanup_test_instance(instance)
 
 
-def cleanup_test_instance(instance: DagsterInstance):
+def cleanup_test_instance(instance: DagsterInstance) -> None:
     # To avoid filesystem contention when we close the temporary directory, wait for
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.

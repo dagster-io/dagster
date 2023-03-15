@@ -34,7 +34,7 @@ class DaemonHeartbeat(
         cls,
         timestamp: float,
         daemon_type: str,
-        daemon_id: str,
+        daemon_id: Optional[str],
         errors: Optional[Sequence[SerializableErrorInfo]] = None,
     ):
         errors = check.opt_sequence_param(errors, "errors", of_type=SerializableErrorInfo)

@@ -1,11 +1,14 @@
 from enum import Enum
 from typing import List, NamedTuple, Optional, Sequence, Union
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 
 # re-export
 from dagster._core.definitions.run_request import (
     InstigatorType as InstigatorType,
+    SkipReason as SkipReason,
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
@@ -15,6 +18,8 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
+
+InstigatorData: TypeAlias = Union["ScheduleInstigatorData", "SensorInstigatorData"]
 
 
 @whitelist_for_serdes(old_storage_names={"JobStatus"})
@@ -73,7 +78,7 @@ class ScheduleInstigatorData(
     def __new__(
         cls, cron_schedule: Union[str, Sequence[str]], start_timestamp: Optional[float] = None
     ):
-        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
 
@@ -89,8 +94,8 @@ class ScheduleInstigatorData(
 
 def check_instigator_data(
     instigator_type: InstigatorType,
-    instigator_data: Optional[Union[ScheduleInstigatorData, SensorInstigatorData]],
-):
+    instigator_data: Optional[InstigatorData],
+) -> Optional[InstigatorData]:
     if instigator_type == InstigatorType.SCHEDULE:
         check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
     elif instigator_type == InstigatorType.SENSOR:
@@ -118,7 +123,7 @@ class InstigatorState(
             ("origin", ExternalInstigatorOrigin),
             ("instigator_type", InstigatorType),
             ("status", InstigatorStatus),
-            ("instigator_data", Optional[Union[ScheduleInstigatorData, SensorInstigatorData]]),
+            ("instigator_data", Optional[InstigatorData]),
         ],
     )
 ):
@@ -127,7 +132,7 @@ class InstigatorState(
         origin: ExternalInstigatorOrigin,
         instigator_type: InstigatorType,
         status: InstigatorStatus,
-        instigator_data: Optional[Union[ScheduleInstigatorData, SensorInstigatorData]] = None,
+        instigator_data: Optional[InstigatorData] = None,
     ):
         return super(InstigatorState, cls).__new__(
             cls,
@@ -138,19 +143,19 @@ class InstigatorState(
         )
 
     @property
-    def is_running(self):
+    def is_running(self) -> bool:
         return self.status != InstigatorStatus.STOPPED
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.origin.instigator_name
 
     @property
-    def instigator_name(self):
+    def instigator_name(self) -> str:
         return self.origin.instigator_name
 
     @property
-    def repository_origin_id(self):
+    def repository_origin_id(self) -> str:
         return self.origin.external_repository_origin.get_id()
 
     @property
@@ -161,15 +166,15 @@ class InstigatorState(
         )
 
     @property
-    def repository_selector_id(self):
+    def repository_selector_id(self) -> str:
         return create_snapshot_id(self.repository_selector)
 
     @property
-    def instigator_origin_id(self):
+    def instigator_origin_id(self) -> str:
         return self.origin.get_id()
 
     @property
-    def selector_id(self):
+    def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
                 self.origin.external_repository_origin.repository_location_origin.location_name,
@@ -178,7 +183,7 @@ class InstigatorState(
             )
         )
 
-    def with_status(self, status):
+    def with_status(self, status: InstigatorStatus) -> "InstigatorState":
         check.inst_param(status, "status", InstigatorStatus)
         return InstigatorState(
             self.origin,
@@ -187,7 +192,7 @@ class InstigatorState(
             instigator_data=self.instigator_data,
         )
 
-    def with_data(self, instigator_data):
+    def with_data(self, instigator_data: InstigatorData) -> "InstigatorState":
         check_instigator_data(self.instigator_type, instigator_data)
         return InstigatorState(
             self.origin,
@@ -216,72 +221,72 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             check.inst_param(tick_data, "tick_data", TickData),
         )
 
-    def with_status(self, status, **kwargs):
+    def with_status(self, status: TickStatus, **kwargs: object):
         check.inst_param(status, "status", TickStatus)
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 
-    def with_reason(self, skip_reason):
+    def with_reason(self, skip_reason: str) -> "InstigatorTick":
         check.opt_str_param(skip_reason, "skip_reason")
         return self._replace(tick_data=self.tick_data.with_reason(skip_reason))
 
-    def with_run_info(self, run_id=None, run_key=None):
+    def with_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None):
         return self._replace(tick_data=self.tick_data.with_run_info(run_id, run_key))
 
-    def with_cursor(self, cursor):
+    def with_cursor(self, cursor: Optional[str]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_cursor(cursor))
 
-    def with_origin_run(self, origin_run_id):
+    def with_origin_run(self, origin_run_id: str) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_origin_run(origin_run_id))
 
-    def with_log_key(self, log_key):
+    def with_log_key(self, log_key: Sequence[str]) -> "InstigatorTick":
         return self._replace(tick_data=self.tick_data.with_log_key(log_key))
 
     @property
-    def instigator_origin_id(self):
+    def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
 
     @property
-    def selector_id(self):
+    def selector_id(self) -> Optional[str]:
         return self.tick_data.selector_id
 
     @property
-    def instigator_name(self):
+    def instigator_name(self) -> str:
         return self.tick_data.instigator_name
 
     @property
-    def instigator_type(self):
+    def instigator_type(self) -> InstigatorType:
         return self.tick_data.instigator_type
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> float:
         return self.tick_data.timestamp
 
     @property
-    def status(self):
+    def status(self) -> TickStatus:
         return self.tick_data.status
 
     @property
-    def run_ids(self):
+    def run_ids(self) -> Sequence[str]:
         return self.tick_data.run_ids
 
     @property
-    def run_keys(self):
+    def run_keys(self) -> Sequence[str]:
         return self.tick_data.run_keys
 
     @property
-    def error(self):
+    def error(self) -> Optional[SerializableErrorInfo]:
         return self.tick_data.error
 
     @property
-    def skip_reason(self):
+    def skip_reason(self) -> Optional[str]:
         return self.tick_data.skip_reason
 
     @property
-    def cursor(self):
+    def cursor(self) -> Optional[str]:
         return self.tick_data.cursor
 
     @property
-    def origin_run_ids(self):
+    def origin_run_ids(self) -> Optional[Sequence[str]]:
         return self.tick_data.origin_run_ids
 
     @property
@@ -395,7 +400,13 @@ class TickData(
             log_key=log_key,
         )
 
-    def with_status(self, status, error=None, timestamp=None, failure_count=None):
+    def with_status(
+        self,
+        status: TickStatus,
+        error: Optional[SerializableErrorInfo] = None,
+        timestamp: Optional[float] = None,
+        failure_count: Optional[int] = None,
+    ) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
@@ -410,7 +421,9 @@ class TickData(
             )
         )
 
-    def with_run_info(self, run_id=None, run_key=None):
+    def with_run_info(
+        self, run_id: Optional[str] = None, run_key: Optional[str] = None
+    ) -> "TickData":
         check.opt_str_param(run_id, "run_id")
         check.opt_str_param(run_key, "run_key")
         return TickData(
@@ -431,7 +444,7 @@ class TickData(
             )
         )
 
-    def with_failure_count(self, failure_count):
+    def with_failure_count(self, failure_count: int) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
@@ -441,19 +454,19 @@ class TickData(
             )
         )
 
-    def with_reason(self, skip_reason):
+    def with_reason(self, skip_reason: Optional[str]) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(), {"skip_reason": check.opt_str_param(skip_reason, "skip_reason")}
             )
         )
 
-    def with_cursor(self, cursor):
+    def with_cursor(self, cursor: Optional[str]) -> "TickData":
         return TickData(
             **merge_dicts(self._asdict(), {"cursor": check.opt_str_param(cursor, "cursor")})
         )
 
-    def with_origin_run(self, origin_run_id):
+    def with_origin_run(self, origin_run_id: str) -> "TickData":
         check.str_param(origin_run_id, "origin_run_id")
         return TickData(
             **merge_dicts(
@@ -462,7 +475,7 @@ class TickData(
             )
         )
 
-    def with_log_key(self, log_key):
+    def with_log_key(self, log_key: Sequence[str]) -> "TickData":
         return TickData(
             **merge_dicts(
                 self._asdict(),
@@ -471,7 +484,13 @@ class TickData(
         )
 
 
-def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_reason=None):
+def _validate_tick_args(
+    instigator_type: InstigatorType,
+    status: TickStatus,
+    run_ids: Optional[Sequence[str]] = None,
+    error: Optional[SerializableErrorInfo] = None,
+    skip_reason: Optional[str] = None,
+) -> None:
     check.inst_param(instigator_type, "instigator_type", InstigatorType)
     check.inst_param(status, "status", TickStatus)
 

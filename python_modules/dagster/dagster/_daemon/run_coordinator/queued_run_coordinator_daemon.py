@@ -27,7 +27,7 @@ from dagster._core.storage.pipeline_run import (
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._daemon.daemon import IntervalDaemon, TDaemonGenerator
+from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._utils import len_iter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
@@ -70,7 +70,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         fixed_iteration_time: Optional[float] = None,  # used for tests
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         run_coordinator = workspace_process_context.instance.run_coordinator
         if not isinstance(run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {run_coordinator}")
