@@ -16,19 +16,19 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import linear_model
 
 
-@asset
-def previous_item():
-    previous_item = requests.get(
-        f"https://hacker-news.firebaseio.com/v0/maxitem.json"
-    ).json()
-    return previous_item
+# @asset
+# def previous_item():
+#     previous_item = requests.get(
+#         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
+#     ).json()
+#     return previous_item
 
 
 ## data_ingestion_start
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
-def hackernews_stories(previous_item):
+def hackernews_stories():
     """Get the max ID number from hacker news"""
 
     latest_item = requests.get(
@@ -37,7 +37,7 @@ def hackernews_stories(previous_item):
 
     """Get items based on story ids from the HackerNews items endpoint"""
     results = []
-    scope = range(previous_item, latest_item)
+    scope = range(latest_item-1000, latest_item)
     for item_id in scope:
         item = requests.get(
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
@@ -49,7 +49,7 @@ def hackernews_stories(previous_item):
         df = df[df.type == "story"]
         df = df[~df.title.isna()]
 
-    return df, latest_item
+    return df
 
 
 ## data_ingestion_end
@@ -59,7 +59,7 @@ def hackernews_stories(previous_item):
 
 @asset
 def test_train_split(hackernews_stories):
-    hackernews_stories, max_item = hackernews_stories
+    hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
@@ -95,45 +95,23 @@ def transform_test(test_train_split, transform_train):
 
 ## vectorizer_end
 
+
 ## models_start
-
-from sklearn.tree import DecisionTreeRegressor
-
-
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
-def decision_tree(transform_train, transform_test):
-    vectorizer, transformed_X_train, transformed_y_train = transform_train
-    decision_tree1 = DecisionTreeRegressor(max_depth=10)
-    decision_tree1.fit(transformed_X_train, transformed_y_train)
-    transformed_X_test, transformed_y_test = transform_test
-    score = decision_tree1.score(transformed_X_test, transformed_y_test)
-    return decision_tree1, decision_tree1.score(transformed_X_test, transformed_y_test)
-
 
 import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
-
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=24*60))
+@asset
 def xgboost(transform_train, transform_test):
-    vectorizer, transformed_X_train, transformed_y_train = transform_train
-    xgb_r = xg.XGBRegressor(
-        objective="reg:squarederror", eval_metric=mean_absolute_error, n_estimators=20
-    )
+    vectorizer, transformed_X_train, transformed_y_train = transform_train 
+    xgb_r = xg.XGBRegressor(objective ='reg:squarederror', eval_metric=mean_absolute_error,
+                  n_estimators = 20)
     xgb_r.fit(transformed_X_train, transformed_y_train)
     transformed_X_test, transformed_y_test = transform_test
     score = xgb_r.score(transformed_X_test, transformed_y_test)
-    return xgb_r, score
-
+    return xgb_r, score  
 
 ## models_end
 
 
-@asset
-def reg_model(transform_train, transform_test):
-    vectorizer, transformed_X_train, transformed_y_train = transform_train
-    reg = linear_model.LinearRegression()
-    reg.fit(transformed_X_train, transformed_y_train)
-    transformed_X_test, transformed_y_test = transform_test
-    score = reg.score(transformed_X_test, transformed_y_test)
-    return reg, score
+

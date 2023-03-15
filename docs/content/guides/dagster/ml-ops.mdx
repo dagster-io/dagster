@@ -29,7 +29,7 @@ First, we will be creating an asset which retrieves all the hackernews records f
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=data_ingestion_start endbefore=data_ingestion_end
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
-def hackernews_stories(previous_item):
+def hackernews_stories():
     """Get the max ID number from hacker news"""
 
     latest_item = requests.get(
@@ -38,7 +38,7 @@ def hackernews_stories(previous_item):
 
     """Get items based on story ids from the HackerNews items endpoint"""
     results = []
-    scope = range(previous_item, latest_item)
+    scope = range(latest_item-1000, latest_item)
     for item_id in scope:
         item = requests.get(
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
@@ -50,7 +50,7 @@ def hackernews_stories(previous_item):
         df = df[df.type == "story"]
         df = df[~df.title.isna()]
 
-    return df, latest_item
+    return df
 ```
 
 ### Data Transformation
@@ -62,7 +62,7 @@ The first step is taking the dataframe and splitting into a training and test se
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=test_train_split_start endbefore=test_train_split_end
 @asset
 def test_train_split(hackernews_stories):
-    hackernews_stories, max_item = hackernews_stories
+    hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
@@ -101,32 +101,17 @@ We have also transformed the dataframes into numpy arrays and removed na values 
 
 At this point, we have X_train, y_train, X_test, y_test ready to go for our model. We can use any number of models to train our model from libraries like [sklearn](https://scikit-learn.org/), [tensorflow](https://www.tensorflow.org/) and [pytorch](https://pytorch.org/).
 
-In our example, we will train two models, one will be a [decision tree](https://scikit-learn.org/stable/modules/tree.html) and the other will be using [XGBoost](https://xgboost.readthedocs.io/en/stable/index.html).
+In our example, we will be training a [XGBoost model](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor) to predict a numerical value.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=models_start endbefore=models_end
-from sklearn.tree import DecisionTreeRegressor
-
-
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
-def decision_tree(transform_train, transform_test):
-    vectorizer, transformed_X_train, transformed_y_train = transform_train
-    decision_tree1 = DecisionTreeRegressor(max_depth=10)
-    decision_tree1.fit(transformed_X_train, transformed_y_train)
-    transformed_X_test, transformed_y_test = transform_test
-    score = decision_tree1.score(transformed_X_test, transformed_y_test)
-    return decision_tree1, decision_tree1.score(transformed_X_test, transformed_y_test)
-
-
 import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
-
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
+@asset
 def xgboost(transform_train, transform_test):
     vectorizer, transformed_X_train, transformed_y_train = transform_train
-    xgb_r = xg.XGBRegressor(
-        objective="reg:squarederror", eval_metric=mean_absolute_error, n_estimators=20
-    )
+    xgb_r = xg.XGBRegressor(objective ='reg:squarederror', eval_metric=mean_absolute_error,
+                  n_estimators = 20)
     xgb_r.fit(transformed_X_train, transformed_y_train)
     transformed_X_test, transformed_y_test = transform_test
     score = xgb_r.score(transformed_X_test, transformed_y_test)
