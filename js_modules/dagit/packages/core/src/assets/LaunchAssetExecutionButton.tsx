@@ -42,7 +42,7 @@ import {
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
-  | {type: 'pureAssetBackfill'; anchorAssetKey: AssetKey};
+  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -412,7 +412,7 @@ async function stateForLaunchingAssets(
     return {
       type: 'partitions',
       assets,
-      target: {type: 'pureAssetBackfill', anchorAssetKey: anchorAsset.assetKey},
+      target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
