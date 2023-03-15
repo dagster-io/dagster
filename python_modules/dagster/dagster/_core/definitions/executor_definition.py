@@ -256,7 +256,8 @@ class _ExecutorDecoratorCallable:
             requirements=self.requirements,
         )
 
-        update_wrapper(executor_def, wrapped=fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(executor_def, wrapped=fn)  # type: ignore
 
         return executor_def
 
