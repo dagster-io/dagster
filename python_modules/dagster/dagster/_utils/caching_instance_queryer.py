@@ -139,6 +139,31 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
         return next(iter(records), None)
 
+    def materialization_exists(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        after_cursor: Optional[int] = None,
+    ) -> bool:
+        """Returns True if there is a materialization record for the given asset partition after
+        the specified cursor. Because this function does not need to return the actual record, it
+        is more efficient than get_latest_materialization_record when partitioned assets involved.
+
+        Args:
+            asset_partition (AssetKeyPartitionKey): The asset partition to query.
+            after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
+                greater than this value will be considered.
+        """
+        if asset_partition.partition_key is not None:
+            partition_counts = self.get_materialized_partition_counts(
+                asset_partition.asset_key, after_cursor=after_cursor
+            )
+            return partition_counts.get(asset_partition.partition_key, 0) > 0
+        else:
+            return (
+                self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)
+                is not None
+            )
+
     def get_latest_materialization_record(
         self,
         asset: Union[AssetKey, AssetKeyPartitionKey],
@@ -381,17 +406,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def is_reconciled(
         self, *, asset_partition: AssetKeyPartitionKey, asset_graph: AssetGraph
     ) -> bool:
-        """Returns a boolean representing if the given `asset_partition` is currently reconciled.
-        An asset (partition) is considered unreconciled if any of:
-        - It has never been materialized
-        - One of its parents has been updated more recently than it has
-        - One of its parents is unreconciled.
-        """
-        latest_materialization_record = self.get_latest_materialization_record(
-            asset_partition, None
-        )
-
-        if latest_materialization_record is None:
+        if not self.materialization_exists(asset_partition):
             return False
 
         for parent in asset_graph.get_parents_partitions(
@@ -402,13 +417,29 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_graph.is_source(parent.asset_key):
                 continue
 
-            if (
-                self.get_latest_materialization_record(
-                    parent, after_cursor=latest_materialization_record.storage_id
+            # For performance, we want to avoid querying for the latest materialization record for
+            # each partition of a partitioned asset, so we reverse the order of the logic as
+            # necessary to avoid this.
+            if asset_partition.partition_key is None and parent.partition_key is not None:
+                latest_materialization_record = self.get_latest_materialization_record(
+                    asset_partition, None
                 )
-                is not None
-            ):
-                return False
+                # check to make sure there IS NOT a materialization of the parent after the most
+                # recent materialization of this asset
+                if latest_materialization_record is None or self.materialization_exists(
+                    parent, after_cursor=latest_materialization_record.storage_id
+                ):
+                    return False
+            else:
+                latest_parent_materialization_record = self.get_latest_materialization_record(
+                    parent, None
+                )
+                # check to make sure there IS a materialization of this asset after the most recent
+                # materialization of the parent
+                if latest_parent_materialization_record is None or not self.materialization_exists(
+                    asset_partition, after_cursor=latest_parent_materialization_record.storage_id
+                ):
+                    return False
 
             if not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
                 return False
