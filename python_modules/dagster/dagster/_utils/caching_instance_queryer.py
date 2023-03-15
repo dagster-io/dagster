@@ -423,10 +423,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_graph.is_source(parent.asset_key):
                 continue
 
-            # For performance, we want to avoid querying for the latest materialization record for
-            # each partition of a partitioned asset, so we reverse the order of the logic as
-            # necessary to avoid this.
-            if asset_partition.partition_key is None and parent.partition_key is not None:
+            # For performance, we try to only call get_latest_materialization on unpartitioned
+            # assets. To do so, we reverse the order of operations based on the partitioning of
+            # the current asset.
+            if asset_partition.partition_key is None:
                 latest_materialization_record = self.get_latest_materialization_record(
                     asset_partition, None
                 )
