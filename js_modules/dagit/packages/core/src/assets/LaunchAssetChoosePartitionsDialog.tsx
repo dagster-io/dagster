@@ -505,7 +505,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         </ToggleableSection>
         <ToggleableSection
           title={<Subheading data-testid={testId('backfill-options')}>Backfill options</Subheading>}
-          isInitiallyOpen={false}
+          isInitiallyOpen={true}
         >
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
             <Subheading>Launch as...</Subheading>
