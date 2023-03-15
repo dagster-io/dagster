@@ -1,9 +1,11 @@
 import inspect
+from enum import Enum
 from typing import (
     AbstractSet,
     Any,
     Dict,
     Generic,
+    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -17,8 +19,9 @@ from typing import (
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
+from dagster import Enum as DagEnum
 from dagster._annotations import experimental
-from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, Noneable
+from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
@@ -772,6 +775,15 @@ def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> Conf
         potential_dagster_type = float
     elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
         return IntSource
+
+    if safe_is_subclass(potential_dagster_type, Enum):
+        return DagEnum(
+            potential_dagster_type.__name__,
+            [
+                EnumValue(v.name, python_value=v.value)
+                for v in cast(Iterable[Enum], potential_dagster_type)
+            ],
+        )
 
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
