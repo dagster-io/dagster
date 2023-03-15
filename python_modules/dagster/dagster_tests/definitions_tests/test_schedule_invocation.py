@@ -104,7 +104,7 @@ def test_instance_access():
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
-        build_schedule_context().instance  # pylint: disable=expression-not-assigned
+        build_schedule_context().instance
 
     with instance_for_test() as instance:
         assert isinstance(build_schedule_context(instance).instance, DagsterInstance)
