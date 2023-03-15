@@ -1,16 +1,24 @@
 from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
-from dagster import job, op
-from dagster._config.config_type import ConfigTypeKind
+from dagster import (
+    Field as DagsterField,
+    IntSource,
+    Map,
+    Shape,
+    job,
+    op,
+)
+from dagster._config.config_type import ConfigTypeKind, Noneable
 from dagster._config.structured_config import Config, PermissiveConfig
+from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from typing_extensions import Literal
 
 
-def test_default_config_class_non_permissive():
+def test_default_config_class_non_permissive() -> None:
     class AnOpConfig(Config):
         a_string: str
         an_int: int
@@ -39,7 +47,7 @@ def test_default_config_class_non_permissive():
         )
 
 
-def test_struct_config_permissive():
+def test_struct_config_permissive() -> None:
     class AnOpConfig(PermissiveConfig):
         a_string: str
         an_int: int
@@ -60,8 +68,9 @@ def test_struct_config_permissive():
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
     # test fields are inferred correctly
+    assert a_struct_config_op.config_schema.config_type
     assert a_struct_config_op.config_schema.config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE
-    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [
+    assert list(a_struct_config_op.config_schema.config_type.fields.keys()) == [  # type: ignore
         "a_string",
         "an_int",
     ]
@@ -83,7 +92,7 @@ def test_struct_config_permissive():
     assert executed["yes"]
 
 
-def test_struct_config_persmissive_cached_method():
+def test_struct_config_persmissive_cached_method() -> None:
     calls = {"plus": 0}
 
     class PlusConfig(PermissiveConfig):
@@ -104,7 +113,7 @@ def test_struct_config_persmissive_cached_method():
     assert calls["plus"] == 1
 
 
-def test_struct_config_array():
+def test_struct_config_array() -> None:
     class AnOpConfig(Config):
         a_string_list: List[str]
 
@@ -130,7 +139,7 @@ def test_struct_config_array():
         )
 
 
-def test_struct_config_map():
+def test_struct_config_map() -> None:
     class AnOpConfig(Config):
         a_string_to_int_dict: Dict[str, int]
 
@@ -167,7 +176,7 @@ def test_struct_config_map():
         )
 
 
-def test_struct_config_mapping():
+def test_struct_config_mapping() -> None:
     class AnOpConfig(Config):
         a_string_to_int_mapping: Mapping[str, int]
 
@@ -193,7 +202,7 @@ def test_struct_config_mapping():
 
 
 @pytest.mark.skip(reason="not yet supported")
-def test_struct_config_optional_nested():
+def test_struct_config_optional_nested() -> None:
     class ANestedConfig(Config):
         a_str: str
 
@@ -215,7 +224,7 @@ def test_struct_config_optional_nested():
     assert executed["yes"]
 
 
-def test_struct_config_nested_in_list():
+def test_struct_config_nested_in_list() -> None:
     class ANestedConfig(Config):
         a_str: str
 
@@ -246,7 +255,7 @@ def test_struct_config_nested_in_list():
     assert executed["yes"]
 
 
-def test_struct_config_nested_in_dict():
+def test_struct_config_nested_in_dict() -> None:
     class ANestedConfig(Config):
         a_str: str
 
@@ -304,7 +313,7 @@ def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
     assert executed["yes"]
 
 
-def test_descriminated_unions():
+def test_descriminated_unions() -> None:
     class Cat(Config):
         pet_type: Literal["cat"]
         meows: int
@@ -386,7 +395,7 @@ def test_descriminated_unions():
         )
 
 
-def test_nested_discriminated_unions():
+def test_nested_discriminated_unions() -> None:
     class Poodle(Config):
         breed_type: Literal["poodle"]
         fluffy: bool
@@ -439,3 +448,79 @@ def test_nested_discriminated_unions():
         }
     )
     assert executed["yes"]
+
+
+def test_struct_config_optional_map() -> None:
+    class AnOpConfig(Config):
+        an_optional_dict: Optional[Dict[str, int]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+
+    assert print_config_type_to_string(
+        a_struct_config_op.config_schema.config_type
+    ) == print_config_type_to_string(
+        Shape(fields={"an_optional_dict": DagsterField(Noneable(Map(str, IntSource)))})
+    )
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"an_optional_dict": {"foo": 1, "bar": 2}}}}}
+    )
+    assert executed["yes"]
+
+    a_job.execute_in_process()
+    assert executed["yes"]
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"an_optional_dict": None}}}}
+    )
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_struct_config_op": {
+                        "config": {"an_optional_dict": {"foo": 1, "bar": 2, "baz": "qux"}}
+                    }
+                }
+            }
+        )
+
+
+def test_struct_config_optional_array() -> None:
+    class AnOpConfig(Config):
+        a_string_list: Optional[List[str]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar"]}}}}
+    )
+    assert executed["yes"]
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_string_list": None}}}})
+    assert executed["yes"]
+
+    a_job.execute_in_process()
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
+        )
