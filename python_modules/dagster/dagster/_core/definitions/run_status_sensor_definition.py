@@ -613,16 +613,20 @@ class RunStatusSensorDefinition(SensorDefinition):
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
-                        # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(
-                            RunStatusSensorContext(  # type: ignore
-                                sensor_name=name,
-                                dagster_run=pipeline_run,
-                                dagster_event=event_log_entry.dagster_event,
-                                instance=context.instance,
-                                context=context,
+                        if has_at_least_one_parameter(run_status_sensor_fn):
+                            # one user code invocation maps to one failure event
+                            sensor_return = run_status_sensor_fn(
+                                RunStatusSensorContext(
+                                    sensor_name=name,
+                                    dagster_run=pipeline_run,
+                                    dagster_event=event_log_entry.dagster_event,
+                                    instance=context.instance,
+                                    context=context,
+                                )
                             )
-                        )
+                        else:
+                            sensor_return = run_status_sensor_fn()  # type: ignore
+
                         if sensor_return is not None:
                             context.update_cursor(
                                 RunStatusSensorCursor(

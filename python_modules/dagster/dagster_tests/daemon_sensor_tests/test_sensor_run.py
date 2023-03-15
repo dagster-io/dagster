@@ -481,7 +481,7 @@ def request_list_sensor(_ctx):
     run_status=DagsterRunStatus.SUCCESS,
     request_job=the_job,
 )
-def cross_repo_job_sensor(_ctx):
+def cross_repo_job_sensor():
     from time import time
 
     return RunRequest(run_key=str(time()))
@@ -504,8 +504,8 @@ def cross_repo_sensor(context):
     monitor_all_repositories=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor(context):
-    assert isinstance(context.instance, DagsterInstance)
+def instance_sensor():
+    pass
 
 
 @sensor(job=the_job)
