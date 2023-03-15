@@ -114,7 +114,7 @@ import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=1440))
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=24*60))
 def xgboost(transform_train, transform_test):
     vectorizer, transformed_X_train, transformed_y_train = transform_train
     xgb_r = xg.XGBRegressor(
