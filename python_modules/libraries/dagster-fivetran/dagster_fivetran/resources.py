@@ -8,15 +8,16 @@ from urllib.parse import urljoin
 import requests
 from dagster import (
     Failure,
-    Field,
+    InitResourceContext,
     MetadataValue,
-    StringSource,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
+from dagster._config.structured_config import ConfigurableResource, infer_schema_from_config_class
 from dateutil import parser
+from pydantic import Field as PyField
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -31,25 +32,37 @@ FIVETRAN_CONNECTOR_PATH = "connectors/"
 DEFAULT_POLL_INTERVAL = 10
 
 
-class FivetranResource:
+class FivetranResource(ConfigurableResource):
     """This class exposes methods on top of the Fivetran REST API."""
 
-    def __init__(
-        self,
-        api_key: str,
-        api_secret: str,
-        disable_schedule_on_trigger: bool = True,
-        request_max_retries: int = 3,
-        request_retry_delay: float = 0.25,
-        log: logging.Logger = get_dagster_logger(),
-    ):
-        self._auth = HTTPBasicAuth(api_key, api_secret)
-        self._disable_schedule_on_trigger = disable_schedule_on_trigger
+    api_key: str = PyField(..., description="The Fivetran API key to use for this resource.")
+    api_secret: str = PyField(..., description="The Fivetran API secret to use for this resource.")
+    disable_schedule_on_trigger: bool = PyField(
+        True,
+        description=(
+            "Specifies if you would like any connector that is sync'd using this "
+            "resource to be automatically taken off its Fivetran schedule."
+        ),
+    )
+    request_max_retries: int = PyField(
+        3,
+        description=(
+            "The maximum number of times requests to the Fivetran API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = PyField(
+        0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
 
-        self._request_max_retries = request_max_retries
-        self._request_retry_delay = request_retry_delay
+    @property
+    def _auth(self) -> HTTPBasicAuth:
+        return HTTPBasicAuth(self.api_key, self.api_secret)
 
-        self._log = log
+    @property
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
 
     @property
     def api_base_url(self) -> str:
@@ -98,12 +111,12 @@ class FivetranResource:
                 return resp_dict["data"] if "data" in resp_dict else resp_dict
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
-                if num_retries == self._request_max_retries:
+                if num_retries == self.request_max_retries:
                     break
                 num_retries += 1
-                time.sleep(self._request_retry_delay)
+                time.sleep(self.request_retry_delay)
 
-        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """Gets details about a given connector from the Fivetran Connector API.
@@ -206,7 +219,7 @@ class FivetranResource:
             Dict[str, Any]: Parsed json data representing the connector details API response after
                 the sync is started.
         """
-        if self._disable_schedule_on_trigger:
+        if self.disable_schedule_on_trigger:
             self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
@@ -233,7 +246,7 @@ class FivetranResource:
             Dict[str, Any]: Parsed json data representing the connector details API response after
                 the resync is started.
         """
-        if self._disable_schedule_on_trigger:
+        if self.disable_schedule_on_trigger:
             self._log.info("Disabling Fivetran sync schedule.")
             self.update_schedule_type(connector_id, "manual")
         self._assert_syncable_connector(connector_id)
@@ -376,49 +389,8 @@ class FivetranResource:
         return FivetranOutput(connector_details=final_details, schema_config=schema_config)
 
 
-@resource(
-    config_schema={
-        "api_key": Field(
-            StringSource,
-            is_required=True,
-            description=(
-                "Fivetran API Key. You can find this value on the Fivetran settings page: "
-                "https://fivetran.com/account/settings"
-            ),
-        ),
-        "api_secret": Field(
-            StringSource,
-            is_required=True,
-            description=(
-                "Fivetran API Secret. You can find this value on the Fivetran settings page: "
-                "https://fivetran.com/account/settings"
-            ),
-        ),
-        "disable_schedule_on_trigger": Field(
-            bool,
-            default_value=True,
-            description=(
-                "Specifies if you would like any connector that is sync'd using this "
-                "resource to be automatically taken off its Fivetran schedule."
-            ),
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description=(
-                "The maximum number of times requests to the Fivetran API should be retried "
-                "before failing."
-            ),
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-    },
-    description="This resource helps manage Fivetran connectors",
-)
-def fivetran_resource(context) -> FivetranResource:
+@resource(config_schema=infer_schema_from_config_class(FivetranResource))
+def fivetran_resource(context: InitResourceContext) -> FivetranResource:
     """This resource allows users to programatically interface with the Fivetran REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
@@ -448,11 +420,4 @@ def fivetran_resource(context) -> FivetranResource:
             ...
 
     """
-    return FivetranResource(
-        api_key=context.resource_config["api_key"],
-        api_secret=context.resource_config["api_secret"],
-        disable_schedule_on_trigger=context.resource_config["disable_schedule_on_trigger"],
-        request_max_retries=context.resource_config["request_max_retries"],
-        request_retry_delay=context.resource_config["request_retry_delay"],
-        log=context.log,
-    )
+    return FivetranResource(**context.resource_config).resource_fn(context)  # type: ignore
