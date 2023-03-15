@@ -384,3 +384,29 @@ def test_keys_with_dimension_value():
             ("d", "2015-01-01"),
         ]
     ]
+
+
+def test_get_num_partitions():
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    assert multipartitions_def.get_num_partitions() == len(
+        set(multipartitions_def.get_partition_keys())
+    )
+
+    static_keys = ["a", "a", "a"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    assert multipartitions_def.get_num_partitions() == len(
+        set(multipartitions_def.get_partition_keys())
+    )
