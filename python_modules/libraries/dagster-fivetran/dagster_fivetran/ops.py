@@ -5,10 +5,8 @@ from dagster import (
     Config,
     In,
     Nothing,
-    OpExecutionContext,
     Out,
     Output,
-    Resource,
     op,
 )
 from pydantic import Field as PyField
@@ -69,9 +67,7 @@ class SyncConfig(Config):
     ),
     tags={"kind": "fivetran"},
 )
-def fivetran_sync_op(
-    context: OpExecutionContext, config: SyncConfig, fivetran: Resource["FivetranResource"]
-) -> Any:
+def fivetran_sync_op(config: SyncConfig, fivetran: "FivetranResource") -> Any:
     """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
     the details of the Fivetran connector after the sync successfully completes, as well as details
@@ -141,9 +137,8 @@ class FivetranResyncConfig(SyncConfig):
     tags={"kind": "fivetran"},
 )
 def fivetran_resync_op(
-    context: OpExecutionContext,
     config: FivetranResyncConfig,
-    fivetran: Resource["FivetranResource"],
+    fivetran: "FivetranResource",
 ) -> Any:
     """Executes a Fivetran historical resync for a given ``connector_id``, and polls until that resync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
