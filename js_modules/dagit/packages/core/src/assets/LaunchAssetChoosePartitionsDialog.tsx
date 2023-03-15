@@ -554,53 +554,55 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           </Box>
         </ToggleableSection>
 
-        {previewCount > 0 && (
-          <Box
-            margin={{top: 16}}
-            flex={{direction: 'column', gap: 8}}
-            padding={{vertical: 16, horizontal: 20}}
-            border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
-            background={Colors.Gray100}
-            style={{
-              marginLeft: -20,
-              marginRight: -20,
-              overflowY: 'auto',
-              overflowX: 'visible',
-              maxHeight: '35vh',
-            }}
-          >
-            {partitionedAssets.slice(0, previewCount).map((a) => (
-              <PartitionHealthSummary
-                key={displayNameForAssetKey(a.assetKey)}
-                assetKey={a.assetKey}
-                showAssetKey
-                data={assetHealth}
-                selections={
-                  a.partitionDefinition &&
-                  displayedPartitionDefinition &&
-                  partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition)
-                    ? selections
-                    : undefined
-                }
-              />
-            ))}
-            {morePreviewsCount > 0 && (
-              <Box margin={{vertical: 8}}>
-                <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
-                  Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
-                </ButtonLink>
-              </Box>
-            )}
-          </Box>
-        )}
+        <Box padding={{horizontal: 24}}>
+          {previewCount > 0 && (
+            <Box
+              margin={{top: 16}}
+              flex={{direction: 'column', gap: 8}}
+              padding={{vertical: 16, horizontal: 20}}
+              border={{side: 'horizontal', width: 1, color: Colors.KeylineGray}}
+              background={Colors.Gray100}
+              style={{
+                marginLeft: -20,
+                marginRight: -20,
+                overflowY: 'auto',
+                overflowX: 'visible',
+                maxHeight: '35vh',
+              }}
+            >
+              {partitionedAssets.slice(0, previewCount).map((a) => (
+                <PartitionHealthSummary
+                  key={displayNameForAssetKey(a.assetKey)}
+                  assetKey={a.assetKey}
+                  showAssetKey
+                  data={assetHealth}
+                  selections={
+                    a.partitionDefinition &&
+                    displayedPartitionDefinition &&
+                    partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition)
+                      ? selections
+                      : undefined
+                  }
+                />
+              ))}
+              {morePreviewsCount > 0 && (
+                <Box margin={{vertical: 8}}>
+                  <ButtonLink onClick={() => setPreviewCount(partitionedAssets.length)}>
+                    Show {morePreviewsCount} more {morePreviewsCount > 1 ? 'previews' : 'preview'}
+                  </ButtonLink>
+                </Box>
+              )}
+            </Box>
+          )}
 
-        {previewCount === 0 && partitionedAssets.length > 1 && (
-          <Box margin={{top: 16, bottom: 8}}>
-            <ButtonLink onClick={() => setPreviewCount(5)}>
-              Show per-asset partition health
-            </ButtonLink>
-          </Box>
-        )}
+          {previewCount === 0 && partitionedAssets.length > 1 && (
+            <Box margin={{top: 16, bottom: 8}}>
+              <ButtonLink onClick={() => setPreviewCount(5)}>
+                Show per-asset partition health
+              </ButtonLink>
+            </Box>
+          )}
+        </Box>
       </div>
 
       <DialogFooter
