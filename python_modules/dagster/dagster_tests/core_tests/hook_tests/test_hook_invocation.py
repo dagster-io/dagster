@@ -2,13 +2,22 @@ import re
 
 import mock
 import pytest
-from dagster import HookContext, build_hook_context, failure_hook, op, resource, success_hook
+from dagster import (
+    DagsterInstance,
+    HookContext,
+    build_hook_context,
+    failure_hook,
+    op,
+    resource,
+    success_hook,
+)
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.instance_for_test import instance_for_test
 
 
 def test_event_list_hook_invocation():
@@ -230,6 +239,22 @@ def test_properties_on_hook_context():
         assert isinstance(context.job_name, str)
         assert isinstance(context.run_id, str)
         assert isinstance(context.op_exception, BaseException)
+        assert isinstance(context.instance, DagsterInstance)
 
     error = DagsterInvariantViolationError("blah")
-    basic_hook(build_hook_context(run_id="blah", job_name="blah", op_exception=error))
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "Tried to access the HookContext instance, but no instance was provided to"
+            " `build_hook_context`."
+        ),
+    ):
+        basic_hook(build_hook_context(run_id="blah", job_name="blah", op_exception=error))
+
+    with instance_for_test() as instance:
+        basic_hook(
+            build_hook_context(
+                run_id="blah", job_name="blah", op_exception=error, instance=instance
+            )
+        )
