@@ -15,11 +15,12 @@ describe('useFormatDateTime', () => {
   interface Props {
     date: Date;
     options: Intl.DateTimeFormatOptions;
+    language?: string;
   }
 
-  const Test: React.FC<Props> = ({date, options}) => {
+  const Test: React.FC<Props> = ({date, options, language}) => {
     const formatDateTime = useFormatDateTime();
-    return <div>{formatDateTime(date, options)}</div>;
+    return <div>{formatDateTime(date, options, language)}</div>;
   };
 
   afterEach(() => {
@@ -129,6 +130,42 @@ describe('useFormatDateTime', () => {
         </TimezoneProvider>,
       );
       expect(screen.getByText(/^7:00 AM GMT\+1/)).toBeVisible();
+    });
+  });
+
+  describe('Manual language setting', () => {
+    beforeEach(() => {
+      const languageGetter = jest.spyOn(window.navigator, 'language', 'get');
+      languageGetter.mockReturnValue('de-DE');
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('uses navigator.language by default (de-DE)', () => {
+      render(
+        <TimezoneProvider>
+          <Test
+            date={new Date(NYD_2023_CST)}
+            options={{month: 'short', day: 'numeric', year: 'numeric', timeZoneName: 'short'}}
+          />
+        </TimezoneProvider>,
+      );
+      expect(screen.getByText(/31\. Dez\. 2022, GMT-10/)).toBeVisible();
+    });
+
+    it('uses allows passing a custom language (pt-PT overrides de-DE)', () => {
+      render(
+        <TimezoneProvider>
+          <Test
+            date={new Date(NYD_2023_CST)}
+            options={{month: 'short', day: 'numeric', year: 'numeric', timeZoneName: 'short'}}
+            language="pt-PT"
+          />
+        </TimezoneProvider>,
+      );
+      expect(screen.getByText(/31\/12\/2022, GMT-10/)).toBeVisible();
     });
   });
 });

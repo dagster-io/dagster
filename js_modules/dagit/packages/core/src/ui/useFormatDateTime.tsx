@@ -13,8 +13,8 @@ export const useFormatDateTime = () => {
   const [storedTimezone] = React.useContext(TimezoneContext);
   const timeZone = storedTimezone === 'Automatic' ? browserTimezone() : storedTimezone;
   return React.useCallback(
-    (date: Date, options: Intl.DateTimeFormatOptions) => {
-      return Intl.DateTimeFormat(navigator.language, {timeZone, ...options}).format(date);
+    (date: Date, options: Intl.DateTimeFormatOptions, language = navigator.language) => {
+      return Intl.DateTimeFormat(language, {timeZone, ...options}).format(date);
     },
     [timeZone],
   );
