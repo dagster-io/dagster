@@ -122,7 +122,9 @@ class TableSchema(
         names of data types of those columns.
         """
         return TableSchema(
-            columns=[TableColumn(name=name, type=type) for name, type in name_type_dict.items()]
+            columns=[
+                TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
+            ]
         )
 
 
@@ -195,7 +197,7 @@ class TableColumn(
     def __new__(
         cls,
         name: str,
-        type: str = "string",  # pylint: disable=redefined-builtin
+        type: str = "string",  # noqa: A002
         description: Optional[str] = None,
         constraints: Optional["TableColumnConstraints"] = None,
     ):

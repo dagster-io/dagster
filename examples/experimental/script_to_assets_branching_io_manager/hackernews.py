@@ -51,6 +51,6 @@ def load(md_content: str):
 
 
 if __name__ == "__main__":
-    input = extract()
-    output = transform(input)
+    inp = extract()
+    output = transform(inp)
     load(output)

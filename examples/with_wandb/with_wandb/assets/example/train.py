@@ -130,7 +130,7 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
-    iter = 0
+    count = 0
     for epoch in range(config.epochs):
         for i, (training_images, training_labels) in enumerate(train_loader):
             images = Variable(training_images)
@@ -151,9 +151,9 @@ def main():
             # Updating parameters
             optimizer.step()
 
-            iter += 1
+            count += 1
 
-            if iter % 100 == 0:
+            if count % 100 == 0:
                 # Calculate Accuracy
                 correct = 0.0
                 correct_arr = [0.0] * 10
@@ -191,7 +191,9 @@ def main():
                 wandb.log(metrics)
 
                 # Print Loss
-                print("Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(iter, loss, accuracy))
+                print(
+                    "Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(count, loss, accuracy)
+                )
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

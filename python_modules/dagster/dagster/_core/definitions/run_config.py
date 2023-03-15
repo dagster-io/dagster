@@ -685,8 +685,8 @@ CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]
 T = TypeVar("T")
 
 
-def convert_config_input(input: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
-    if isinstance(input, RunConfig):
-        return input.to_config_dict()
+def convert_config_input(inp: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
+    if isinstance(inp, RunConfig):
+        return inp.to_config_dict()
     else:
-        return input
+        return inp
