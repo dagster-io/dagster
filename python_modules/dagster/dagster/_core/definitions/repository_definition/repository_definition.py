@@ -252,7 +252,7 @@ class RepositoryDefinition:
         return self._repository_data.get_source_assets_by_key()
 
     @property
-    def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
@@ -354,7 +354,7 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         with AssetValueLoader(
-            self._assets_defs_by_key, self.source_assets_by_key, instance=instance
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
         ) as loader:
             return loader.load_asset_value(
                 asset_key,
@@ -384,13 +384,13 @@ class RepositoryDefinition:
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
         return AssetValueLoader(
-            self._assets_defs_by_key, self.source_assets_by_key, instance=instance
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
         )
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
         return AssetGraph.from_assets(
-            [*set(self._assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be

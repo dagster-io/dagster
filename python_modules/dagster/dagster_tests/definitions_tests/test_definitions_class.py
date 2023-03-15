@@ -51,7 +51,7 @@ from dagster._core.test_utils import instance_for_test
 def get_all_assets_from_defs(defs: Definitions):
     # could not find public method on repository to do this
     repo = resolve_pending_repo_if_required(defs)
-    return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
+    return list(repo.assets_defs_by_key.values())
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
