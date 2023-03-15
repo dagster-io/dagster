@@ -507,7 +507,7 @@ def get_execution_period_for_policy(
     else:
         return pendulum.Period(
             # we don't want to execute this too frequently
-            start=effective_data_time + 0.8 * freshness_policy.maximum_lag_delta,
+            start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
             end=max(effective_data_time + freshness_policy.maximum_lag_delta, evaluation_time),
         )
 
@@ -562,7 +562,22 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
-    for level in asset_graph.toposort_asset_keys():
+
+    # EXPERIMENT: handle the root data assets
+    levels = asset_graph.toposort_asset_keys()
+    for key in levels[0]:
+        """get a mapping from downstream asset key to downstream freshness policy
+
+        for each asset_key,freshness policy pair, get the execution period for that policy
+
+        do the execution period thing, keeping track of which downstream assets have freshness
+        policies that made it into the merge
+
+        * somehow we want to optimize for the minimum number of runs across all root assets
+        """
+        pass
+
+    for level in levels[1:]:
         for key in level:
             if asset_graph.is_source(key) or not asset_graph.get_downstream_freshness_policies(
                 asset_key=key
