@@ -20,8 +20,7 @@ class CapturedLogContext(
         ],
     )
 ):
-    """
-    Object representing the context in which logs are captured.  Can be used by external logging
+    """Object representing the context in which logs are captured.  Can be used by external logging
     sidecar implementations to point dagit to an external url to view compute logs instead of a
     Dagster-managed location.
     """
@@ -41,8 +40,7 @@ class CapturedLogData(
         ],
     )
 ):
-    """
-    Object representing captured log data, either a partial chunk of the log data or the full
+    """Object representing captured log data, either a partial chunk of the log data or the full
     capture.  Contains the raw bytes and optionally the cursor offset for the partial chunk.
     """
 
@@ -67,8 +65,7 @@ class CapturedLogMetadata(
         ],
     )
 ):
-    """
-    Object representing metadata info for the captured log data, containing a display string for
+    """Object representing metadata info for the captured log data, containing a display string for
     the location of the log data and a URL for direct download of the captured log data.
     """
 
@@ -144,8 +141,7 @@ class CapturedLogManager(ABC):
     @abstractmethod
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Generator[CapturedLogContext, None, None]:
-        """
-        Context manager for capturing the stdout/stderr within the current process, and persisting
+        """Context manager for capturing the stdout/stderr within the current process, and persisting
         it under the given log key.
 
         Args:
@@ -157,8 +153,7 @@ class CapturedLogManager(ABC):
     def open_log_stream(
         self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Iterator[Optional[IO[bytes]]]:
-        """
-        Context manager for providing an IO stream that enables the caller to write to a log stream
+        """Context manager for providing an IO stream that enables the caller to write to a log stream
         managed by the captured log manager, to be read later using the given log key.
 
         Args:

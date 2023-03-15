@@ -33,9 +33,7 @@ from upath import UPath
 
 
 class DummyIOManager(UPathIOManager):
-    """
-    This IOManager simply outputs the object path without loading or writing anything.
-    """
+    """This IOManager simply outputs the object path without loading or writing anything."""
 
     def dump_to_path(self, context: OutputContext, obj: str, path: UPath):
         pass

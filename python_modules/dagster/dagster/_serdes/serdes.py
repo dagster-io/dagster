@@ -1,5 +1,4 @@
-"""
-Serialization & deserialization for Dagster objects.
+"""Serialization & deserialization for Dagster objects.
 
 Why have custom serialization?
 
@@ -195,8 +194,7 @@ def whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
 ) -> Union[T_Type, Callable[[T_Type], T_Type]]:
-    """
-    Decorator to whitelist a NamedTuple or Enum subclass to be serializable. Various arguments can be passed
+    """Decorator to whitelist a NamedTuple or Enum subclass to be serializable. Various arguments can be passed
     to alter serialization behavior for backcompat purposes.
 
     Args:
@@ -471,8 +469,7 @@ def pack_value(
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
     descent_path: Optional[str] = None,
 ) -> JsonSerializableValue:
-    """
-    Convert an object into a json serializable complex of dicts, lists, and scalars.
+    """Convert an object into a json serializable complex of dicts, lists, and scalars.
 
     The following types are transformed in to dicts with special marker keys:
         * whitelisted named tuples
@@ -808,9 +805,7 @@ def copy_packed_set(
     packed_set: Mapping[str, Sequence[JsonSerializableValue]],
     as_type: Literal["__frozenset__", "__set__"],
 ) -> Mapping[str, Sequence[JsonSerializableValue]]:
-    """
-    Returns a copy of the packed collection.
-    """
+    """Returns a copy of the packed collection."""
     if "__set__" in packed_set:
         return {as_type: packed_set["__set__"]}
     elif "__frozenset__" in packed_set:

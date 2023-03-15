@@ -20,8 +20,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
-    """
-    Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
+    """Points to an unresolved asset job. The asset selection isn't resolved yet, so we can't resolve
     the PartitionsDefinition, so we can't resolve the schedule cadence.
     """
 
@@ -79,8 +78,7 @@ def build_schedule_from_partitioned_job(
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     tags: Optional[Mapping[str, str]] = None,
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
-    """
-    Creates a schedule from a time window-partitioned job or a job that targets
+    """Creates a schedule from a time window-partitioned job or a job that targets
     time window-partitioned assets. The job can also be multipartitioned, as long as one
     of the partitions dimensions is time-partitioned.
 

@@ -255,8 +255,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         self.emr_job_runner = EmrJobRunner(region=self.region_name)
 
     def _post_artifacts(self, log, step_run_ref, run_id, step_key):
-        """
-        Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
+        """Synchronize the step run ref and pyspark code to an S3 staging bucket for use on EMR.
 
         For the zip file, consider the following toy example:
 

@@ -41,8 +41,7 @@ def test_schema_type_names_without_graphene(runner):
 
 
 def test_schema_types_have_descriptions(runner):
-    """
-    This test is opt-in right now, but once we have enough descriptions under test, we can
+    """This test is opt-in right now, but once we have enough descriptions under test, we can
     switch this to be opt-out.
     """
     query = """

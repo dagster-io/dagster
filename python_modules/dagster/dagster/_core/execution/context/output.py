@@ -43,8 +43,7 @@ RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
-    """
-    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
+    """The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
     Users should not instantiate this object directly. To construct an
     `OutputContext` for testing an IO Manager's `handle_output` method, use
@@ -715,10 +714,9 @@ def get_output_context(
     version: Optional[str],
     warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
-    """
-    Args:
-        run_id (str): The run ID of the run that produced the output, not necessarily the run that
-            the context will be used in.
+    """Args:
+    run_id (str): The run ID of the run that produced the output, not necessarily the run that
+        the context will be used in.
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config

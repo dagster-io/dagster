@@ -175,9 +175,7 @@ def test_prefix(prefix):
     ],
 )
 def test_load_assets_cacheable(load_fn, prefix):
-    """
-    Tests the load-from-module and load-from-package-name functinos with cacheable assets.
-    """
+    """Tests the load-from-module and load-from-package-name functinos with cacheable assets."""
     from . import asset_package_with_cacheable
 
     assets_defs = load_fn(asset_package_with_cacheable)

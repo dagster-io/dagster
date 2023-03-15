@@ -59,8 +59,7 @@ def _get_run_by_id(storage, run_id):
 
 
 class TestRunStorage:
-    """
-    You can extend this class to easily run these set of tests on any run storage. When extending,
+    """You can extend this class to easily run these set of tests on any run storage. When extending,
     you simply need to override the `run_storage` fixture and return your implementation of
     `RunStorage`.
 

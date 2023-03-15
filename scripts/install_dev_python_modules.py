@@ -21,8 +21,7 @@ parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 def main(
     quiet: bool, extra_packages: List[str], include_prebuilt_grpcio_wheel: Optional[bool]
 ) -> None:
-    """
-    Especially on macOS, there may be missing wheels for new major Python versions, which means that
+    """Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
     system packages such as freetype, gfortran, etc.; on macOS, Homebrew should suffice.
     """

@@ -13,8 +13,7 @@ from pandas import DataFrame, Series
     key_prefix=["snowflake", "recommender"],
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
-    """
-    Comments linked to their root stories.
+    """Comments linked to their root stories.
 
     Owners: sandy@elementl.com, owen@elementl.com
     """

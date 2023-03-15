@@ -65,8 +65,7 @@ def asset_aware_io_manager():
 
 
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
-    """
-    Get a predefined set of assets for testing.
+    """Get a predefined set of assets for testing.
 
     Dependencies:
         "upstream": {

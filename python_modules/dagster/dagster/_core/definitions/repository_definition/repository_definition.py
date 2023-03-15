@@ -282,8 +282,7 @@ class RepositoryDefinition:
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        """
-        Returns the asset base job that contains all the given assets, or None if there is no such
+        """Returns the asset base job that contains all the given assets, or None if there is no such
         job.
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
@@ -333,8 +332,7 @@ class RepositoryDefinition:
         partition_key: Optional[str] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
-        """
-        Load the contents of an asset as a Python object.
+        """Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -369,8 +367,7 @@ class RepositoryDefinition:
     def get_asset_value_loader(
         self, instance: Optional[DagsterInstance] = None
     ) -> "AssetValueLoader":
-        """
-        Returns an object that can load the contents of assets as Python objects.
+        """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
         spinning up resources separately for each asset.

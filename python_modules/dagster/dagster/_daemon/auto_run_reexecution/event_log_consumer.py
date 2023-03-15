@@ -35,8 +35,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """
-        List of functions that will be called with the list of run records that have new events.
+        """List of functions that will be called with the list of run records that have new events.
         """
         return [consume_new_runs_for_automatic_reexecution]
 
@@ -151,8 +150,7 @@ def get_new_cursor(
     fetch_limit: int,
     new_event_ids: Sequence[int],
 ) -> int:
-    """
-    Return the new cursor value for an event type, or None if one shouldn't be persisted.
+    """Return the new cursor value for an event type, or None if one shouldn't be persisted.
 
     The cursor is guaranteed to be:
 

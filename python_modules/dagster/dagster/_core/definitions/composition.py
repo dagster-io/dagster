@@ -133,8 +133,7 @@ class InputMappingNode(NamedTuple):
 
 
 class DynamicFanIn(NamedTuple):
-    """
-    Type to signify collecting over a dynamic output, output by collect() on a
+    """Type to signify collecting over a dynamic output, output by collect() on a
     InvokedNodeDynamicOutputWrapper.
     """
 
@@ -790,8 +789,7 @@ class InvokedNode(NamedTuple):
 
 
 class InvokedNodeDynamicOutputWrapper:
-    """
-    The return value for a dynamic output when invoking a solid in a composition function.
+    """The return value for a dynamic output when invoking a solid in a composition function.
     Must be unwrapped by invoking map or collect.
     """
 
@@ -1035,8 +1033,7 @@ def do_composition(
     Sequence[str],
     Mapping[str, Mapping[str, "SourceAsset"]],
 ]:
-    """
-    This a function used by both @job and @graph to implement their composition
+    """This a function used by both @job and @graph to implement their composition
     function which is our DSL for constructing a dependency graph.
 
     Args:

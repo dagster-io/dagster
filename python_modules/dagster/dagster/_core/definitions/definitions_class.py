@@ -60,8 +60,7 @@ def create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-    """
-    Create a named repository using the same arguments as :py:class:`Definitions`. In older
+    """Create a named repository using the same arguments as :py:class:`Definitions`. In older
     versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
     and jobs. There could be many repositories per code location. This was a complicated ontology but
     gave users a way to organize code locations that contained large numbers of heterogenous definitions.
@@ -104,8 +103,7 @@ class _AttachedObjects(NamedTuple):
 
 
 def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str, Any]) -> bool:
-    """
-    Explicitly replace the default IO manager in jobs that don't specify one, if a top-level
+    """Explicitly replace the default IO manager in jobs that don't specify one, if a top-level
     I/O manager is provided to Definitions.
     """
     return (
@@ -118,8 +116,7 @@ def _jobs_which_will_have_io_manager_replaced(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     resource_defs: Mapping[str, Any],
 ) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
-    """
-    Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
+    """Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
     the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
     the case.
     """
@@ -139,8 +136,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     sensors: Optional[Iterable[SensorDefinition]],
     resource_defs: Mapping[str, Any],
 ) -> _AttachedObjects:
-    """
-    Given a list of jobs, schedules, and sensors along with top-level resource definitions,
+    """Given a list of jobs, schedules, and sensors along with top-level resource definitions,
     attach the resource definitions to the jobs, schedules, and sensors which require them.
     """
     jobs = jobs or []
@@ -296,8 +292,7 @@ class BindResourcesToJobs(list):
 
 
 class Definitions:
-    """
-    A set of definitions explicitly available and loadable by Dagster tools.
+    """A set of definitions explicitly available and loadable by Dagster tools.
 
     Parameters:
         assets (Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]):
@@ -436,8 +431,7 @@ class Definitions:
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
     ) -> object:
-        """
-        Load the contents of an asset as a Python object.
+        """Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -465,8 +459,7 @@ class Definitions:
     def get_asset_value_loader(
         self, instance: Optional[DagsterInstance] = None
     ) -> "AssetValueLoader":
-        """
-        Returns an object that can load the contents of assets as Python objects.
+        """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
         spinning up resources separately for each asset.
@@ -505,8 +498,7 @@ class Definitions:
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
-        """
-        Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
+        """Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
         in order to access an functionality which is not exposed on Definitions. This method
         also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
         """

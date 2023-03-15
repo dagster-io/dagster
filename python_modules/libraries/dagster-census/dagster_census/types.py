@@ -11,8 +11,7 @@ class CensusOutput(
         ],
     )
 ):
-    """
-    Contains recorded information about the state of a Census sync after a sync completes.
+    """Contains recorded information about the state of a Census sync after a sync completes.
 
     Attributes:
         sync_run (Dict[str, Any]):

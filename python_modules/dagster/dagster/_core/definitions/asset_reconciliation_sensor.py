@@ -45,16 +45,15 @@ if TYPE_CHECKING:
 
 
 class AssetReconciliationCursor(NamedTuple):
-    """
-    Attributes:
-        latest_storage_id: The latest observed storage ID across all assets. Useful for
-            finding out what has happened since the last tick.
-        materialized_or_requested_root_asset_keys: Every entry is a non-partitioned asset with no
-            parents that has been requested by this sensor or has been materialized (even if not by
-            this sensor).
-        materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
-            asset. Every value is the set of that asset's partitoins that have been requested by
-            this sensor or have been materialized (even if not by this sensor).
+    """Attributes:
+    latest_storage_id: The latest observed storage ID across all assets. Useful for
+        finding out what has happened since the last tick.
+    materialized_or_requested_root_asset_keys: Every entry is a non-partitioned asset with no
+        parents that has been requested by this sensor or has been materialized (even if not by
+        this sensor).
+    materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
+        asset. Every value is the set of that asset's partitoins that have been requested by
+        this sensor or have been materialized (even if not by this sensor).
     """
 
     latest_storage_id: Optional[int]
@@ -100,8 +99,7 @@ class AssetReconciliationCursor(NamedTuple):
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         asset_graph: AssetGraph,
     ) -> "AssetReconciliationCursor":
-        """
-        Returns a cursor that represents this cursor plus the updates that have happened within the
+        """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
         """
         requested_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
@@ -241,8 +239,7 @@ def find_parent_materialized_asset_partitions(
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
-    """
-    Finds asset partitions in the given selection whose parents have been materialized since
+    """Finds asset partitions in the given selection whose parents have been materialized since
     latest_storage_id.
 
     Returns:

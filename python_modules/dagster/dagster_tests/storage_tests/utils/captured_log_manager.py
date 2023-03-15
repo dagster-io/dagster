@@ -10,8 +10,7 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 
 
 class TestCapturedLogManager:
-    """
-    You can extend this class to easily run these set of tests on any compute log manager. When
+    """You can extend this class to easily run these set of tests on any compute log manager. When
     extending, you simply need to override the `compute_log_manager` fixture and return your
     implementation of `CapturedLogManager`.
 

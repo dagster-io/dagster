@@ -64,8 +64,7 @@ class IPCErrorMessage(
         [("serializable_error_info", SerializableErrorInfo), ("message", Optional[str])],
     )
 ):
-    """
-    This represents a user error encountered during the IPC call. This indicates a business
+    """This represents a user error encountered during the IPC call. This indicates a business
     logic error, rather than a protocol. Consider this a "task failed successfully"
     use case.
     """
@@ -87,8 +86,7 @@ class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
 
 
 class DagsterIPCProtocolError(DagsterError):
-    """
-    This indicates that something went wrong with the protocol. E.g. the
+    """This indicates that something went wrong with the protocol. E.g. the
     process being called did not emit an IPCStartMessage first.
     """
 

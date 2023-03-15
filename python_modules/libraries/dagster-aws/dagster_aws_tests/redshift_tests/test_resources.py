@@ -136,8 +136,7 @@ LIMIT 1;
     reason="This test only works with a live Redshift cluster",
 )
 def test_live_redshift(s3_bucket):
-    """
-    Test live redshift instance.
+    """Test live redshift instance.
 
     This test is based on:
 

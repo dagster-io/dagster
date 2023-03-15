@@ -14,8 +14,7 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 class MemoizableIOManager(IOManager):
-    """
-    Base class for IO manager enabled to work with memoized execution. Users should implement
+    """Base class for IO manager enabled to work with memoized execution. Users should implement
     the ``load_input`` and ``handle_output`` methods described in the ``IOManager`` API, and the
     ``has_output`` method, which returns a boolean representing whether a data object can be found.
     """

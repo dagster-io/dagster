@@ -22,9 +22,7 @@ from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 
 @click.group(name="schedule")
 def schedule_cli():
-    """
-    Commands for working with Dagster schedules.
-    """
+    """Commands for working with Dagster schedules."""
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):

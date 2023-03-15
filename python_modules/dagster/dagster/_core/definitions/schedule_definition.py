@@ -86,8 +86,7 @@ class DefaultScheduleStatus(Enum):
 def get_or_create_schedule_context(
     fn: Callable, *args: Any, **kwargs: Any
 ) -> "ScheduleEvaluationContext":
-    """
-    Based on the passed resource function and the arguments passed to it, returns the
+    """Based on the passed resource function and the arguments passed to it, returns the
     user-passed ScheduleEvaluationContext or creates one if it is not passed.
 
     Raises an exception if the user passes more than one argument or if the user-provided
@@ -369,8 +368,7 @@ class ScheduleExecutionData(
 def validate_and_get_schedule_resource_dict(
     resources: Resources, schedule_name: str, required_resource_keys: Set[str]
 ) -> Dict[str, Any]:
-    """
-    Validates that the context has all the required resources and returns a dictionary of
+    """Validates that the context has all the required resources and returns a dictionary of
     resource key to resource object.
     """
     for k in required_resource_keys:

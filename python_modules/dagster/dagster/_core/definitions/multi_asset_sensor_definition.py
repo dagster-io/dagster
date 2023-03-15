@@ -402,8 +402,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def materialization_records_for_key(
         self, asset_key: AssetKey, limit: int
     ) -> Iterable["EventLogRecord"]:
-        """
-        Fetches asset materialization event records for asset_key, with the earliest event first.
+        """Fetches asset materialization event records for asset_key, with the earliest event first.
 
         Only fetches events after the latest consumed event ID for the given asset key.
 
@@ -433,8 +432,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return events
 
     def _get_cursor(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
-        """
-        Returns the MultiAssetSensorAssetCursorComponent for the asset key.
+        """Returns the MultiAssetSensorAssetCursorComponent for the asset key.
 
         For more information, view the docstring for the MultiAssetSensorAssetCursorComponent class.
         """
@@ -448,8 +446,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_key: AssetKey,
         after_cursor_partition: Optional[bool] = False,
     ) -> Mapping[str, "EventLogRecord"]:
-        """
-        Given an asset, returns a mapping of partition key to the latest materialization event
+        """Given an asset, returns a mapping of partition key to the latest materialization event
         for that partition. Fetches only materializations that have not been marked as "consumed"
         via a call to `advance_cursor`.
 
@@ -546,8 +543,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def latest_materialization_records_by_partition_and_asset(
         self,
     ) -> Mapping[str, Mapping[AssetKey, "EventLogRecord"]]:
-        """
-        Finds the most recent unconsumed materialization for each partition for each asset
+        """Finds the most recent unconsumed materialization for each partition for each asset
         monitored by the sensor. Aggregates all materializations into a mapping of partition key
         to a mapping of asset key to the materialization event for that partition.
 
@@ -607,8 +603,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def all_partitions_materialized(
         self, asset_key: AssetKey, partitions: Optional[Sequence[str]] = None
     ) -> bool:
-        """
-        A utility method to check if a provided list of partitions have been materialized
+        """A utility method to check if a provided list of partitions have been materialized
         for a particular asset. This method ignores the cursor and checks all materializations
         for the asset.
 
@@ -674,8 +669,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def get_downstream_partition_keys(
         self, partition_key: str, from_asset_key: AssetKey, to_asset_key: AssetKey
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition key in a downstream
+        """Converts a partition key from one asset to the corresponding partition key in a downstream
         asset. Uses the existing partition mapping between the upstream asset and the downstream
         asset if it exists, otherwise, uses the default partition mapping.
 
@@ -723,8 +717,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def advance_cursor(
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ):
-        """
-        Marks the provided materialization records as having been consumed by the sensor.
+        """Marks the provided materialization records as having been consumed by the sensor.
 
         At the end of the tick, the cursor will be updated to advance past all materializations
         records provided via `advance_cursor`. In the next tick, records that have been consumed
@@ -745,8 +738,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def advance_all_cursors(self):
-        """
-        Updates the cursor to the most recent materialization event for all assets monitored by
+        """Updates the cursor to the most recent materialization event for all assets monitored by
         the multi_asset_sensor.
 
         Marks all materialization events as consumed by the sensor, including unconsumed events.
@@ -794,8 +786,7 @@ class MultiAssetSensorCursorAdvances:
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
     ) -> Optional[str]:
-        """
-        Given the multi asset sensor context and the cursor at the start of the tick,
+        """Given the multi asset sensor context and the cursor at the start of the tick,
         returns the cursor that should be used in the next tick.
 
         If the cursor has not been updated, returns None

@@ -59,9 +59,7 @@ from .utils import get_instance_for_service
 
 @click.group(name="job")
 def job_cli():
-    """
-    Commands for working with Dagster jobs.
-    """
+    """Commands for working with Dagster jobs."""
 
 
 def apply_click_params(command, *click_params):

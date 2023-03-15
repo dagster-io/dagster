@@ -567,8 +567,7 @@ class ActiveExecution:
     def rebuild_from_events(
         self, dagster_events: Sequence[DagsterEvent]
     ) -> Sequence[ExecutionStep]:
-        """
-        Replay events to rebuild the execution state and continue after a failure.
+        """Replay events to rebuild the execution state and continue after a failure.
 
         Returns a list of steps that are possibly in flight. Current status of the event log implies
         that the previous run worker might have crashed before launching these steps, or it may have

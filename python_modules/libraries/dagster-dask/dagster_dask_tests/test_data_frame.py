@@ -42,8 +42,7 @@ def test_dataframe_inputs(file_type):
 
 
 def test_dataframe_loader_config_keys_dont_overlap():
-    """
-    Test that the read_keys, which are deprecated, do not overlap with
+    """Test that the read_keys, which are deprecated, do not overlap with
     the normal loader config_keys.
     """
     config_keys = set(DataFrameUtilities.keys())

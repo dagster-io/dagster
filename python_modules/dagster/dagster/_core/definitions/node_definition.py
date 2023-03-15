@@ -175,8 +175,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def resolve_input_to_destinations(
         self, input_handle: "NodeInputHandle"
     ) -> Sequence["NodeInputHandle"]:
-        """
-        Recursively follow input mappings to find all op inputs that correspond to the given input
+        """Recursively follow input mappings to find all op inputs that correspond to the given input
         to this graph.
         """
 

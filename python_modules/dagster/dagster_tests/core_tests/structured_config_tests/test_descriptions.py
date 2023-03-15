@@ -10,9 +10,7 @@ def test_new_config_descriptions_and_defaults():
         an_int: Annotated[int, Field(description="An int")]
 
     class AnOpConfig(Config):
-        """
-        Config for my new op.
-        """
+        """Config for my new op."""
 
         a_string: str = Field(description="A string")
         nested: ANestedOpConfig = Field(description="A nested config")

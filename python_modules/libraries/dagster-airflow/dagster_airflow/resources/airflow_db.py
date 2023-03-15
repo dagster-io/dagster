@@ -26,10 +26,7 @@ else:
 
 
 class AirflowDatabase:
-    """
-    Airflow database Dagster resource.
-
-    """
+    """Airflow database Dagster resource."""
 
     def __init__(self, dagster_run: DagsterRun):
         self.dagster_run = dagster_run

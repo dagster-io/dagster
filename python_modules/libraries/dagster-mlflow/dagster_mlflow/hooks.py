@@ -19,8 +19,7 @@ def _create_mlflow_run_hook(name):
 
 
 def _cleanup_on_success(context):
-    """
-    Checks if the current solid in the context is the last solid in the pipeline
+    """Checks if the current solid in the context is the last solid in the pipeline
     and ends the mlflow run with a successful status when this is the case.
     """
     last_solid_name = context._step_execution_context.pipeline_def.solids_in_topological_order[

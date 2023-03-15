@@ -118,8 +118,7 @@ class TableSchema(
     @public
     @staticmethod
     def from_name_type_dict(name_type_dict: Mapping[str, str]):
-        """
-        Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        """Constructs a TableSchema from a dictionary whose keys are column names and values are the
         names of data types of those columns.
         """
         return TableSchema(

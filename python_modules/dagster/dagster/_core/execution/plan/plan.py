@@ -853,9 +853,8 @@ class ExecutionPlan(
         instance: DagsterInstance,
         selected_step_keys: Optional[Sequence[str]],
     ) -> "ExecutionPlan":
-        """
-        Returns:
-            ExecutionPlan: Execution plan that runs only unmemoized steps.
+        """Returns:
+        ExecutionPlan: Execution plan that runs only unmemoized steps.
         """
         from ...storage.memoizable_io_manager import MemoizableIOManager
         from ..build_resources import build_resources, initialize_console_manager
@@ -1311,8 +1310,7 @@ def _compute_artifacts_persisted(
     resolved_run_config: ResolvedRunConfig,
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> bool:
-    """
-    Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
+    """Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
 
     Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
     """
@@ -1367,10 +1365,9 @@ def _get_executable_step_deps(
     step_handles_to_execute: Sequence[StepHandleUnion],
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> Mapping[str, Set[str]]:
-    """
-    Returns:
-        Dict[str, Set[str]]: Maps step keys to sets of step keys that they depend on. Includes
-            only steps that are included in step_handles_to_execute.
+    """Returns:
+    Dict[str, Set[str]]: Maps step keys to sets of step keys that they depend on. Includes
+        only steps that are included in step_handles_to_execute.
     """
     deps = {}
 

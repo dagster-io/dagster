@@ -103,8 +103,7 @@ def my_op_factory(
     ins=None,
     **kwargs,
 ):
-    """
-    Args:
+    """Args:
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 

@@ -15,8 +15,7 @@ from .source_asset import SourceAsset
 
 
 class AssetSelection(ABC):
-    """
-    An AssetSelection defines a query over a set of assets, normally all the assets in a code location.
+    """An AssetSelection defines a query over a set of assets, normally all the assets in a code location.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of
     asset selections, respectively.
@@ -57,8 +56,7 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
-        """
-        Returns a selection that includes assets with any of the provided keys.
+        """Returns a selection that includes assets with any of the provided keys.
 
         Examples:
             .. code-block:: python
@@ -93,8 +91,7 @@ class AssetSelection(ABC):
     def downstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
-        """
-        Returns a selection that includes all assets that are downstream of any of the assets in
+        """Returns a selection that includes all assets that are downstream of any of the assets in
         this selection, selecting the assets in this selection by default. Iterates through each
         asset in this selection and returns the union of all downstream assets.
 
@@ -113,8 +110,7 @@ class AssetSelection(ABC):
     def upstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
-        """
-        Returns a selection that includes all assets that are upstream of any of the assets in
+        """Returns a selection that includes all assets that are upstream of any of the assets in
         this selection, selecting the assets in this selection by default. Iterates through each
         asset in this selection and returns the union of all downstream assets.
 
@@ -132,8 +128,7 @@ class AssetSelection(ABC):
 
     @public
     def sinks(self) -> "SinkAssetSelection":
-        """
-        Given an asset selection, returns a new asset selection that contains all of the sink
+        """Given an asset selection, returns a new asset selection that contains all of the sink
         assets within the original asset selection.
 
         A sink asset is an asset that has no downstream dependencies within the asset selection.
@@ -143,8 +138,7 @@ class AssetSelection(ABC):
 
     @public
     def sources(self) -> "SourceAssetSelection":
-        """
-        Given an asset selection, returns a new asset selection that contains all of the source
+        """Given an asset selection, returns a new asset selection that contains all of the source
         assets within the original asset selection.
 
         A source asset is an asset that has no upstream dependencies within the asset selection.

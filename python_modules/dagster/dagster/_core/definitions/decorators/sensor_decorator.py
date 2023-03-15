@@ -37,8 +37,7 @@ def sensor(
     asset_selection: Optional[AssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
-    """
-    Creates a sensor where the decorated function is used as the sensor's evaluation function.
+    """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
     The decorated function may:
 
@@ -101,8 +100,7 @@ def asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
-    """
-    Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
+    """Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
     function.
 
     The decorated function may:
@@ -204,8 +202,7 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
-    """
-    Creates an asset sensor that can monitor multiple assets.
+    """Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:

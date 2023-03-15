@@ -75,8 +75,7 @@ def asset_aware_io_manager():
 
 
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
-    """
-    Get a predefined set of assets definitions for testing.
+    """Get a predefined set of assets definitions for testing.
 
     Dependencies:
         "upstream": {
@@ -436,8 +435,7 @@ def test_subset_does_not_respect_context():
 
 
 def test_subset_cycle_resolution_embed_assets_in_complex_graph():
-    """
-    This represents a single large multi-asset with two assets embedded inside of it.
+    """This represents a single large multi-asset with two assets embedded inside of it.
 
     Ops:
         foo produces: a, b, c, d, e, f, g, h
@@ -520,8 +518,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
 
 
 def test_subset_cycle_resolution_complex():
-    """
-    Test cycle resolution.
+    """Test cycle resolution.
 
     Ops:
         foo produces: a, b, c, d, e, f
@@ -592,8 +589,7 @@ def test_subset_cycle_resolution_complex():
 
 
 def test_subset_cycle_resolution_basic():
-    """
-    Ops:
+    """Ops:
         foo produces: a, b
         foo_prime produces: a', b'
     Assets:

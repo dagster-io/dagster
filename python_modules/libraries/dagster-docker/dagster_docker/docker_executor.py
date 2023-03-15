@@ -49,8 +49,7 @@ from .container_context import DockerContainerContext
 )
 @experimental
 def docker_executor(init_context: InitExecutorContext) -> Executor:
-    """
-    Executor which launches steps as Docker containers.
+    """Executor which launches steps as Docker containers.
 
     To use the `docker_executor`, set it as the `executor_def` when defining a job:
 

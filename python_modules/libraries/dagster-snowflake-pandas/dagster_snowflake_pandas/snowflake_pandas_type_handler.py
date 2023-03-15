@@ -11,8 +11,7 @@ from snowflake.connector.pandas_tools import pd_writer
 
 
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
-    """
-    Converts columns of data of type pd.Timestamp to string so that it can be stored in
+    """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
@@ -22,8 +21,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
 
 
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
-    """
-    Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
+    """Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
     _convert_timestamp_to_string.
 
     This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
@@ -39,8 +37,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
-    """
-    Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
+    """Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
     Examples:
         .. code-block:: python

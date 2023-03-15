@@ -75,8 +75,7 @@ if TYPE_CHECKING:
 
 
 class RepositoryLocation(AbstractContextManager):
-    """
-    A RepositoryLocation represents a target containing user code which has a set of Dagster
+    """A RepositoryLocation represents a target containing user code which has a set of Dagster
     definition objects. A given location will contain some number of uniquely named
     RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
 

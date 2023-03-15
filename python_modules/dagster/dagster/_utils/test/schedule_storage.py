@@ -22,8 +22,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:
-    """
-    You can extend this class to easily run these set of tests on any schedule storage. When extending,
+    """You can extend this class to easily run these set of tests on any schedule storage. When extending,
     you simply need to override the `schedule_storage` fixture and return your implementation of
     `ScheduleStorage`.
 

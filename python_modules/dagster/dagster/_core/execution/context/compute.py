@@ -584,8 +584,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """
-        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
         """
         return self._step_execution_context.previous_attempt_count
 
@@ -594,16 +593,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """
-        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
 
     @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        """
-        Return the provenance information for the most recent materialization of an asset.
+        """Return the provenance information for the most recent materialization of an asset.
 
         Args:
             asset_key (AssetKey): Key of the asset for which to retrieve provenance.

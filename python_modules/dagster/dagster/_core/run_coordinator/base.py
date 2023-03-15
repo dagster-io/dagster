@@ -7,9 +7,7 @@ from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
 
 
 class SubmitRunContext(NamedTuple):
-    """
-    Context available within a run coordinator's submit_run method.
-    """
+    """Context available within a run coordinator's submit_run method."""
 
     pipeline_run: DagsterRun
     workspace: IWorkspace
@@ -30,8 +28,7 @@ class SubmitRunContext(NamedTuple):
 class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        """
-        Submit a run to the run coordinator for execution.
+        """Submit a run to the run coordinator for execution.
 
         Args:
             context (SubmitRunContext): information about the submission - every run coordinator
@@ -44,15 +41,13 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def cancel_run(self, run_id):
-        """
-        Cancels a run. The run may be queued in the coordinator, or it may have been launched.
+        """Cancels a run. The run may be queued in the coordinator, or it may have been launched.
 
         Returns False is the process was already canceled. Returns true if the cancellation was
         successful.
         """
 
     def dispose(self):
-        """
-        Do any resource cleanup that should happen when the DagsterInstance is
+        """Do any resource cleanup that should happen when the DagsterInstance is
         cleaning itself up.
         """

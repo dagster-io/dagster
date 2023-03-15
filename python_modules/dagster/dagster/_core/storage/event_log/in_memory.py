@@ -17,8 +17,7 @@ from .sql_event_log import SqlEventLogStorage
 
 
 class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
-    """
-    In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
+    """In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
 
     WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
     """

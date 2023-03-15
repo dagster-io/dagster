@@ -209,8 +209,7 @@ def _trigger_hook(
 def dagster_event_sequence_for_step(
     step_context: StepExecutionContext, force_local_execution: bool = False
 ) -> Iterator[DagsterEvent]:
-    """
-    Yield a sequence of dagster events for the given step with the step context.
+    """Yield a sequence of dagster events for the given step with the step context.
 
     This function also processes errors. It handles a few error cases:
 

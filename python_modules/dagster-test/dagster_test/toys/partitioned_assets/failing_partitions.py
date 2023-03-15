@@ -45,8 +45,7 @@ def failing_multi_partitioned(context):
 
 @asset(partitions_def=composite)
 def failing_pattern_multi_partitioned(context):
-    """
-    Fail in different patterns for different partitions.
+    """Fail in different patterns for different partitions.
 
     2022-01: fail d
     2022-03: fail even days

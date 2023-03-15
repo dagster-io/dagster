@@ -128,8 +128,7 @@ def create_dagster_pandas_dataframe_type(
     dataframe_constraints=None,
     loader=None,
 ):
-    """
-    Constructs a custom pandas dataframe dagster type.
+    """Constructs a custom pandas dataframe dagster type.
 
     Args:
         name (str): Name of the dagster pandas type.
@@ -198,9 +197,7 @@ def create_structured_dataframe_type(
     dataframe_validator=None,
     loader=None,
 ):
-    """
-
-    Args:
+    """Args:
         name (str): the name of the new type
         description (Optional[str]): the description of the new type
         columns_validator (Optional[Union[ColumnConstraintWithMetadata, MultiColumnConstraintWithMetadata]]):

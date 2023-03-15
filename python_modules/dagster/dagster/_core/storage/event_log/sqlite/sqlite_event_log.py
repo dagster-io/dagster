@@ -226,8 +226,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return self._connect(INDEX_SHARD_NAME)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """
-        Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
+        """Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
         cross-run asset queries.
 
         Args:

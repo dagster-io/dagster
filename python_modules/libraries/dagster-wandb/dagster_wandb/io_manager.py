@@ -641,8 +641,7 @@ class ArtifactsIOManager(IOManager):
     },
 )
 def wandb_artifacts_io_manager(context: InitResourceContext):
-    """
-    Dagster IO Manager to create and consume W&B Artifacts.
+    """Dagster IO Manager to create and consume W&B Artifacts.
 
     It allows any Dagster @op or @asset to create and consume W&B Artifacts natively.
 

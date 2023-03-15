@@ -307,8 +307,7 @@ class JobDefinition(PipelineDefinition):
         tags: Optional[Mapping[str, str]] = None,
         resources: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
-        """
-        Execute the Job in-process, gathering results in-memory.
+        """Execute the Job in-process, gathering results in-memory.
 
         The `executor_def` on the Job will be ignored, and replaced with the in-process executor.
         If using the default `io_manager`, it will switch from filesystem to in-memory.
@@ -608,8 +607,7 @@ class JobDefinition(PipelineDefinition):
         instance: Optional["DagsterInstance"] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
-        """
-        Creates a RunRequest object for a run that processes the given partition.
+        """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
             partition_key: The key of the partition to request a run for.
@@ -794,8 +792,7 @@ class JobDefinition(PipelineDefinition):
 
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):
-    """
-    Used to create the user facing experience of the default io_manager
+    """Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
     """
     from dagster._core.storage.mem_io_manager import mem_io_manager
@@ -1081,8 +1078,7 @@ def get_run_config_schema_for_job(
 
 
 def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
-    """
-    For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
+    """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
     AssetLayer that includes those SourceAssets.
     """
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}

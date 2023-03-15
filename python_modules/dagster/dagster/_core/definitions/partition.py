@@ -93,8 +93,7 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 
 
 class Partition(Generic[T_cov]):
-    """
-    A Partition represents a single slice of the entire set of a job's possible work. It consists
+    """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
     used to label the partition in a human-readable way.
 
@@ -223,8 +222,7 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T_cov]):
-    """
-    Defines a set of partitions, which can be attached to a software-defined asset or job.
+    """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
     Abstract class with implementations for different kinds of partitions.
     """
@@ -381,8 +379,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 class StaticPartitionsDefinition(
     PartitionsDefinition[str]
 ):  # pylint: disable=unsubscriptable-object
-    """
-    A statically-defined set of partitions.
+    """A statically-defined set of partitions.
 
     Example:
         .. code-block:: python
@@ -579,8 +576,7 @@ class DynamicPartitionsDefinition(
         ],
     ),
 ):
-    """
-    A partitions definition whose partition keys can be dynamically added and removed.
+    """A partitions definition whose partition keys can be dynamically added and removed.
 
     This is useful for cases where the set of partitions is not known at definition time,
     but is instead determined at runtime.
@@ -700,8 +696,7 @@ class DynamicPartitionsDefinition(
 
 
 class PartitionSetDefinition(Generic[T_cov]):
-    """
-    Defines a partition set, representing the set of slices making up an axis of a pipeline.
+    """Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
     Args:
         name (str): Name for this partition set

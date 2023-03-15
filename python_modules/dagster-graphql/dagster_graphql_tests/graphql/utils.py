@@ -9,8 +9,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, execute_dagster_
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):
-    """
-    You should almost certainly ensure that this run has complete or terminated in order
+    """You should almost certainly ensure that this run has complete or terminated in order
     to get reliable results that you can test against.
     """
     check.inst_param(context, "context", BaseWorkspaceRequestContext)

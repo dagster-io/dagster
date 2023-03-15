@@ -86,8 +86,7 @@ class Manager:
         instance: Optional[DagsterInstance],
         emit_persistent_events: Optional[bool],
     ):
-        """
-        Drop-in replacement for
+        """Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
         `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it.
         """

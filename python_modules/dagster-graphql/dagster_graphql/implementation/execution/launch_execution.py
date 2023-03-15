@@ -76,9 +76,7 @@ def _launch_pipeline_execution(
 def launch_reexecution_from_parent_run(
     graphene_info: "ResolveInfo", parent_run_id: str, strategy: str
 ) -> "GrapheneLaunchRunSuccess":
-    """
-    Launch a re-execution by referencing the parent run id.
-    """
+    """Launch a re-execution by referencing the parent run id."""
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.runs import GrapheneLaunchRunSuccess
 

@@ -77,8 +77,7 @@ from .utils import op_execution_error_boundary
 def _step_output_error_checked_user_event_sequence(
     step_context: StepExecutionContext, user_event_sequence: Iterator[OpOutputUnion]
 ) -> Iterator[OpOutputUnion]:
-    """
-    Process the event sequence to check for invariant violations in the event
+    """Process the event sequence to check for invariant violations in the event
     sequence related to Output events emitted from the compute_fn.
 
     This consumes and emits an event sequence.
@@ -316,8 +315,7 @@ def _type_check_output(
 def core_dagster_event_sequence_for_step(
     step_context: StepExecutionContext,
 ) -> Iterator[DagsterEvent]:
-    """
-    Execute the step within the step_context argument given the in-memory
+    """Execute the step within the step_context argument given the in-memory
     events. This function yields a sequence of DagsterEvents, but without
     catching any exceptions that have bubbled up during the computation
     of the step.

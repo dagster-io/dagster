@@ -14,8 +14,7 @@ from pyspark.sql import DataFrame as PySparkDataFrame
 
 
 class PartitionedParquetIOManager(ConfigurableIOManager):
-    """
-    This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
+    """This IOManager will take in a pandas or pyspark dataframe and store it in parquet at the
     specified path.
 
     It stores outputs for different partitions in different filepaths.

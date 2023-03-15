@@ -28,9 +28,7 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 @click.group(name="sensor")
 def sensor_cli():
-    """
-    Commands for working with Dagster sensors.
-    """
+    """Commands for working with Dagster sensors."""
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):

@@ -1,5 +1,4 @@
-"""
-Unit testing the Mlflow class.
+"""Unit testing the Mlflow class.
 """
 # pylint: disable=redefined-outer-name
 import logging

@@ -23,8 +23,7 @@ def current_process_is_orphaned(parent_pid):
 
 
 def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
-    """
-    Tails a file and outputs the content to the specified stream via polling.
+    """Tails a file and outputs the content to the specified stream via polling.
     The pid of the parent process (if provided) is checked to see if the tail process should be
     terminated, in case the parent is hard-killed / segfaults.
     """

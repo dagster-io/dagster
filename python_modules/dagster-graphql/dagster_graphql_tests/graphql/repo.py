@@ -1460,9 +1460,7 @@ def first_asset(
 
 @asset(required_resource_keys={"hanging_asset_resource"})
 def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
-    """
-    Asset that hangs forever, used to test in-progress ops.
-    """
+    """Asset that hangs forever, used to test in-progress ops."""
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 

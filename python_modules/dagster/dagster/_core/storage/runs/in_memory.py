@@ -14,8 +14,7 @@ from .sql_run_storage import SqlRunStorage
 
 
 class InMemoryRunStorage(SqlRunStorage):
-    """
-    In memory only run storage. Used by ephemeral DagsterInstance or for testing purposes.
+    """In memory only run storage. Used by ephemeral DagsterInstance or for testing purposes.
 
     WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
     """

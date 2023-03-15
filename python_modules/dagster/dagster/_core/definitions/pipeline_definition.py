@@ -709,8 +709,7 @@ def _get_pipeline_subset_def(
     pipeline_def: PipelineDefinition,
     solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
-    """
-    Build a pipeline which is a subset of another pipeline.
+    """Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)

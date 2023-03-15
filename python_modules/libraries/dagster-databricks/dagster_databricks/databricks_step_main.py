@@ -38,8 +38,7 @@ DONE = object()
 
 
 def event_writing_loop(events_queue: Queue, put_events_fn):
-    """
-    Periodically check whether the instance has posted any new events to the queue.  If they have,
+    """Periodically check whether the instance has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to DBFS.
     """
     all_events = []

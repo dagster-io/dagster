@@ -82,8 +82,7 @@ def graphql_postgres_instance(overrides):
 
 
 class MarkedManager:
-    """
-    MarkedManagers are passed to GraphQLContextVariants. They contain
+    """MarkedManagers are passed to GraphQLContextVariants. They contain
     a contextmanager function "manager_fn" that yield the relevant
     instace, and it includes marks that will be applied to any
     context-variant-driven test case that includes this MarkedManager.
@@ -421,8 +420,7 @@ def none_manager():
 
 
 class GraphQLContextVariant:
-    """
-    An instance of this class represents a context variant that will be run
+    """An instance of this class represents a context variant that will be run
     against *every* method in the test class, defined as a class
     created by inheriting from make_graphql_context_test_suite.
 
@@ -596,8 +594,7 @@ class GraphQLContextVariant:
 
     @staticmethod
     def all_variants():
-        """
-        There is a test case that keeps this up-to-date. If you add a static
+        """There is a test case that keeps this up-to-date. If you add a static
         method that returns a GraphQLContextVariant you have to add it to this
         list in order for tests to pass.
         """
@@ -637,16 +634,12 @@ class GraphQLContextVariant:
 
     @staticmethod
     def all_readonly_variants():
-        """
-        Return all read only variants. If you try to run any mutation these will error.
-        """
+        """Return all read only variants. If you try to run any mutation these will error."""
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
 
     @staticmethod
     def all_non_launchable_variants():
-        """
-        Return all non_launchable variants. If you try to start or launch these will error.
-        """
+        """Return all non_launchable variants. If you try to start or launch these will error."""
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.non_launchable)
 
     @staticmethod
@@ -717,8 +710,7 @@ def graphql_context_variants_fixture(context_variants):
 
 
 def make_graphql_context_test_suite(context_variants):
-    """
-    Arguments:
+    """Arguments:
         context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.

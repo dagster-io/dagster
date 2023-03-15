@@ -121,8 +121,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
 
 def execute(shell_command, output_logging, log, cwd=None, env=None):
-    """
-    This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
+    """This function is a utility for executing shell commands from within a Dagster op (or from Python in general).
     It can be used to execute shell commands on either op input data, or any data generated within a generic python op.
 
     Internally, it executes a shell script specified by the argument ``shell_command``. The script will be written

@@ -127,8 +127,7 @@ def _build_graph_dependencies(
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> None:
-    """
-    Scans through every node in the graph, making a recursive call when a node is a graph.
+    """Scans through every node in the graph, making a recursive call when a node is a graph.
 
     Builds two dictionaries:
 
@@ -176,8 +175,7 @@ def _get_dependency_node_output_handles(
     ],
     node_output_handle: NodeOutputHandle,
 ) -> Sequence[NodeOutputHandle]:
-    """
-    Given a node output handle, return all upstream op node output handles. All node output handles
+    """Given a node output handle, return all upstream op node output handles. All node output handles
     belong in the same graph-backed asset node.
 
     Arguments:
@@ -236,8 +234,7 @@ def _get_dependency_node_output_handles(
 def get_dep_node_handles_of_graph_backed_asset(
     graph_def: GraphDefinition, assets_def: "AssetsDefinition"
 ) -> Mapping[AssetKey, Set[NodeHandle]]:
-    """
-    Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
+    """Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
 
     Arguments:
@@ -260,8 +257,7 @@ def asset_key_to_dep_node_handles(
     graph_def: GraphDefinition,
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> Tuple[Mapping[AssetKey, Set[NodeHandle]], Mapping[AssetKey, Sequence[NodeOutputHandle]]]:
-    """
-    For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
+    """For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
     within the asset's node that are upstream dependencies of the asset.
 
     Returns a tuple with two objects:
@@ -356,8 +352,7 @@ def asset_key_to_dep_node_handles(
 
 
 class AssetLayer:
-    """
-    Stores all of the asset-related information for a Dagster job / pipeline. Maps each
+    """Stores all of the asset-related information for a Dagster job / pipeline. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
     dependencies between each asset.
 
@@ -464,8 +459,7 @@ class AssetLayer:
         source_assets: Sequence["SourceAsset"],
         resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
-        """
-        Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
+        """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
 
         Args:
@@ -703,8 +697,7 @@ class AssetLayer:
         return self._partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
-        """
-        Given the node handle of an op within a graph-backed asset and an output name,
+        """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 
         For example, for the following asset:

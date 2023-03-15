@@ -6,8 +6,7 @@ def wait_for_job_and_get_raw_logs(
     namespace: str,
     wait_timeout: int = 300,
 ):
-    """
-    Wait for a dagster-k8s job to complete, ensure it launched only one pod,
+    """Wait for a dagster-k8s job to complete, ensure it launched only one pod,
     and then grab the logs from the pod it launched.
 
     wait_timeout: default 5 minutes

@@ -104,15 +104,11 @@ def test_multi_val_constraint():
 
 def test_multi_column_constraint():
     def col_val_three(value):
-        """
-        returns values greater than or equal to 3.
-        """
+        """returns values greater than or equal to 3."""  # noqa: D403
         return (value >= 2, {})
 
     def col_val_two(value):
-        """
-        returns values less than 2.
-        """
+        """returns values less than 2."""  # noqa: D403
         return (value < 2, {})
 
     df = DataFrame({"foo": [1, 2, 3], "bar": [3, 2, 1], "baz": [1, 4, 5]})

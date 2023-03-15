@@ -27,8 +27,7 @@ class AssetIn(
         ],
     )
 ):
-    """
-    Defines an asset dependency.
+    """Defines an asset dependency.
 
     Attributes:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the

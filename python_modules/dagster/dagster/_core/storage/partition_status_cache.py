@@ -50,8 +50,7 @@ class AssetStatusCacheValue(
         ],
     )
 ):
-    """
-    Set of asset fields that reflect partition materialization status. This is used to display
+    """Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.
 
     Properties:
@@ -196,8 +195,7 @@ def _build_status_cache(
     latest_storage_id: int,
     partitions_def: Optional[PartitionsDefinition],
 ) -> AssetStatusCacheValue:
-    """
-    This method refreshes the asset status cache for a given asset key. It recalculates
+    """This method refreshes the asset status cache for a given asset key. It recalculates
     the materialized partition subset for the asset key and updates the cache value.
     """
     if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
@@ -340,8 +338,7 @@ def _get_updated_status_cache(
     current_status_cache_value: AssetStatusCacheValue,
     partitions_def: Optional[PartitionsDefinition],
 ) -> AssetStatusCacheValue:
-    """
-    This method accepts the current asset status cache value, and fetches unevaluated
+    """This method accepts the current asset status cache value, and fetches unevaluated
     records from the event log. It then updates the cache value with the new materializations.
     """
     # if earliest_in_progress_materialization_event_id is set, we fetch all events including the

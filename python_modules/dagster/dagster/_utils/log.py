@@ -143,8 +143,7 @@ BASE_DAGSTER_LOGGER = logging.getLogger(name="dagster")
 
 
 def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
-    """
-    Creates a python logger whose output messages will be captured and converted into Dagster log
+    """Creates a python logger whose output messages will be captured and converted into Dagster log
     messages. This means they will have structured information such as the step_key, run_id, etc.
     embedded into them, and will show up in the Dagster event log.
 

@@ -6,8 +6,7 @@ from dagster import MetadataValue, Output, asset
 
 @asset
 def hackernews_top_story_ids():
-    """
-    Get top stories from the HackerNews top stories endpoint.
+    """Get top stories from the HackerNews top stories endpoint.
 
     API Docs: https://github.com/HackerNews/API#new-top-and-best-stories.
     """

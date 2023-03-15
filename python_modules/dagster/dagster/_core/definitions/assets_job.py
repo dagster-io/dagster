@@ -436,8 +436,7 @@ def _attempt_resolve_cycles(
     assets_defs: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
 ) -> Sequence["AssetsDefinition"]:
-    """
-    DFS starting at root nodes to color the asset dependency graph. Each time you leave your
+    """DFS starting at root nodes to color the asset dependency graph. Each time you leave your
     current AssetsDefinition, the color increments.
 
     At the end of this process, we'll have a coloring for the asset graph such that any asset which

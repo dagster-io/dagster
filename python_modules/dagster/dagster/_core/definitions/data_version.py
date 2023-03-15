@@ -256,8 +256,7 @@ class StaleCause(NamedTuple):
 
 
 class CachingStaleStatusResolver:
-    """
-    Used to resolve data version information. Avoids redundant database
+    """Used to resolve data version information. Avoids redundant database
     calls that would otherwise occur. Intended for use within the scope of a
     single "request" (e.g. GQL request, RunRequest resolution).
     """

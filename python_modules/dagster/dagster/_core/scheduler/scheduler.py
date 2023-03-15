@@ -66,8 +66,7 @@ class Scheduler(abc.ABC):
     def start_schedule(
         self, instance: DagsterInstance, external_schedule: ExternalSchedule
     ) -> InstigatorState:
-        """
-        Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
+        """Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
         This should not be overridden by subclasses.
 
@@ -113,8 +112,7 @@ class Scheduler(abc.ABC):
         schedule_selector_id: str,
         external_schedule: Optional[ExternalSchedule],
     ) -> InstigatorState:
-        """
-        Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
+        """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
         This should not be overridden by subclasses.
 

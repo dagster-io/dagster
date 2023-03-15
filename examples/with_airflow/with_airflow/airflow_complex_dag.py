@@ -17,8 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Example Airflow DAG that shows the complex DAG structure.
+"""Example Airflow DAG that shows the complex DAG structure.
 """
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with

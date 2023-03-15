@@ -141,8 +141,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
 
 
 def script_relative_path(file_path: str) -> str:
-    """
-    Useful for testing with local files. Use a path relative to where the
+    """Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
     ran the test.
@@ -655,9 +654,7 @@ def process_is_alive(pid: int) -> bool:
 
 
 def compose(*args):
-    """
-    Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
-    """
+    """Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x))."""
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
@@ -689,9 +686,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
 def traced(func: T_Callable) -> T_Callable:
-    """
-    A decorator that keeps track of how many times a function is called.
-    """
+    """A decorator that keeps track of how many times a function is called."""
 
     def inner(*args, **kwargs):
         counter = traced_counter.get()

@@ -17,8 +17,7 @@ from .source_asset import SourceAsset
 def _find_assets_in_module(
     module: ModuleType,
 ) -> Generator[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition], None, None]:
-    """
-    Finds assets in the given module and adds them to the given sets of assets and source assets.
+    """Finds assets in the given module and adds them to the given sets of assets and source assets.
     """
     for attr in dir(module):
         value = getattr(module, attr)
@@ -34,8 +33,7 @@ def _find_assets_in_module(
 def assets_from_modules(
     modules: Iterable[ModuleType], extra_source_assets: Optional[Sequence[SourceAsset]] = None
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
-    """
-    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
+    """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable
     assets from the given modules.
 
     Args:
@@ -96,8 +94,7 @@ def load_assets_from_modules(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets and source assets from the given modules.
+    """Constructs a list of assets and source assets from the given modules.
 
     Args:
         modules (Iterable[ModuleType]): The Python modules to look for assets inside.
@@ -148,8 +145,7 @@ def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets, source assets, and cacheable assets from the module where
+    """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
     Args:
@@ -180,8 +176,7 @@ def assets_from_package_module(
     package_module: ModuleType,
     extra_source_assets: Optional[Sequence[SourceAsset]] = None,
 ) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset], Sequence[CacheableAssetsDefinition]]:
-    """
-    Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
+    """Constructs three lists, a list of assets, a list of source assets, and a list of cacheable assets
     from the given package module.
 
     Args:
@@ -204,8 +199,7 @@ def load_assets_from_package_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets and source assets that includes all asset
+    """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
     A package module is the result of importing a package.
@@ -255,8 +249,7 @@ def load_assets_from_package_name(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-    """
-    Constructs a list of assets, source assets, and cacheable assets that includes all asset
+    """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
     Args:
@@ -299,8 +292,7 @@ def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]
 def prefix_assets(
     assets_defs: Sequence[AssetsDefinition], key_prefix: CoercibleToAssetKeyPrefix
 ) -> Sequence[AssetsDefinition]:
-    """
-    Given a list of assets, prefix the input and output asset keys with key_prefix.
+    """Given a list of assets, prefix the input and output asset keys with key_prefix.
     The prefix is not added to source assets.
 
     Input asset keys that reference other assets within assets_defs are "brought along" -
@@ -365,9 +357,7 @@ def prefix_assets(
 def with_group(
     assets_defs: Sequence[AssetsDefinition], group_name: Optional[str]
 ) -> Sequence[AssetsDefinition]:
-    """
-    Given a list of assets, groups them under the group_name.
-    """
+    """Given a list of assets, groups them under the group_name."""
     group_name = check.opt_str_param(group_name, "group_name")
     if not group_name:
         return assets_defs

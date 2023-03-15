@@ -343,8 +343,7 @@ class TickData(
         ],
     )
 ):
-    """
-    This class defines the data that is serialized and stored for each schedule/sensor tick. We
+    """This class defines the data that is serialized and stored for each schedule/sensor tick. We
     depend on the storage implementation to provide tick ids, and therefore separate all other
     data into this serializable class that can be stored independently of the id.
 

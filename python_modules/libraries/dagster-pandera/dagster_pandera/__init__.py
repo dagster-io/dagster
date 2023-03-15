@@ -55,8 +55,7 @@ VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> DagsterType:
-    """
-    Convert a Pandera dataframe schema to a `DagsterType`.
+    """Convert a Pandera dataframe schema to a `DagsterType`.
 
     The generated Dagster type will be given an automatically generated `name`. The schema's `title`
     property, `name` property, or class name (in that order) will be used. If neither `title` or

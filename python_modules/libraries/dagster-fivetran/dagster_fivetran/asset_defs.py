@@ -140,8 +140,7 @@ def build_fivetran_assets(
     infer_missing_tables: bool = False,
     op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
-    """
-    Build a set of assets for a given Fivetran connector.
+    """Build a set of assets for a given Fivetran connector.
 
     Returns an AssetsDefinition which connects the specified ``asset_keys`` to the computation that
     will update them. Internally, executes a Fivetran sync for a given ``connector_id``, and
@@ -398,9 +397,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
 
 
 def _clean_name(name: str) -> str:
-    """
-    Cleans an input to be a valid Dagster asset name.
-    """
+    """Cleans an input to be a valid Dagster asset name."""
     return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
@@ -416,8 +413,7 @@ def load_assets_from_fivetran_instance(
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
+    """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
     instance is not reachable.
 

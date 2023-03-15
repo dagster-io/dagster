@@ -44,8 +44,7 @@ from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDe
 
 
 def _find_env_vars(config_entry: Any) -> Set[str]:
-    """
-    Given a part of a config dictionary, return a set of environment variables that are used in
+    """Given a part of a config dictionary, return a set of environment variables that are used in
     that part of the config.
     """
     # Actual env var entry
@@ -63,8 +62,7 @@ def _find_env_vars(config_entry: Any) -> Set[str]:
 
 
 def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
-    """
-    Given a resource definition, return a set of environment variables that are used in the
+    """Given a resource definition, return a set of environment variables that are used in the
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
     """
@@ -392,8 +390,7 @@ def _process_and_validate_target(
     pipelines_or_jobs: Dict[str, PipelineDefinition],
     target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
 ):
-    """
-    This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
+    """This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
     """
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"

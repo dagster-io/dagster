@@ -185,8 +185,7 @@ class AssetGraph:
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns every partition in every of the given asset's children that depends on the given
+        """Returns every partition in every of the given asset's children that depends on the given
         partition of that asset.
         """
         result: Set[AssetKeyPartitionKey] = set()
@@ -207,8 +206,7 @@ class AssetGraph:
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition keys in a downstream
+        """Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
 
         Args:
@@ -254,8 +252,7 @@ class AssetGraph:
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns every partition in every of the given asset's parents that the given partition of
+        """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
         result: Set[AssetKeyPartitionKey] = set()
@@ -279,8 +276,7 @@ class AssetGraph:
         child_asset_key: AssetKey,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition keys in one of its
+        """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
 
@@ -384,8 +380,7 @@ class AssetGraph:
         condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
         initial_subset: "AssetGraphSubset",
     ) -> "AssetGraphSubset":
-        """
-        Returns asset partitions within the graph that satisfy supplied criteria.
+        """Returns asset partitions within the graph that satisfy supplied criteria.
 
         - Are >= initial_asset_partitions
         - Asset matches the condition_fn
@@ -463,8 +458,7 @@ class AssetGraph:
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns asset partitions within the graph that satisfy supplied criteria.
+        """Returns asset partitions within the graph that satisfy supplied criteria.
 
         - Are >= initial_asset_partitions
         - Match the condition_fn

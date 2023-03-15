@@ -14,8 +14,7 @@ def semver_tuple(release: str) -> Tuple[int, ...]:
 
 @sensor(asset_selection=AssetSelection.all())
 def release_sensor(context):
-    """
-    Polls the Github API for new releases.
+    """Polls the Github API for new releases.
 
     When we find one, add it to the set of partitions and run the pipeline on it.
     """

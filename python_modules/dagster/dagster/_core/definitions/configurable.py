@@ -40,8 +40,7 @@ class ConfigurableDefinition(ABC):
         return field
 
     def apply_config_mapping(self, config: Any) -> EvaluateValueResult:
-        """
-        Applies user-provided config mapping functions to the given configuration and validates the
+        """Applies user-provided config mapping functions to the given configuration and validates the
         results against the respective config schema.
 
         Expects incoming config to be validated and have fully-resolved values (StringSource values
@@ -75,8 +74,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
     ) -> Self:
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
+        """Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
         Using ``configured`` may result in config values being displayed in
@@ -121,8 +119,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
     ) -> Self:
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
+        """Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
         Using ``configured`` may result in config values being displayed in
@@ -200,8 +197,7 @@ def configured(
     config_schema: Optional[UserConfigSchema] = None,
     **kwargs: Any,
 ) -> Callable[[object], T_Configurable]:
-    """
-    A decorator that makes it easy to create a function-configured version of an object.
+    """A decorator that makes it easy to create a function-configured version of an object.
 
     The following definition types can be configured using this function:
 

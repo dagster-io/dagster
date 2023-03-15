@@ -19,8 +19,7 @@ NO_VALUE_IN_CACHE_SENTINEL: Final = _Sentinel()
 
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
-    """
-    Caches the results of a method call.
+    """Caches the results of a method call.
 
     Usage:
 
@@ -77,8 +76,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
 
 class _HashedSeq(list):
-    """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432.
+    """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L432.
 
     This class guarantees that hash() will be called no more than once
     per element.  This is important because the lru_cache() will hash
@@ -100,8 +98,7 @@ def _make_key(
     kwds: Mapping[str, object],
     fasttypes: AbstractSet[Type[object]] = {int, str},
 ) -> Hashable:
-    """
-    Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
+    """Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 
     Make a cache key from optionally typed positional and keyword arguments
     The key is constructed in a way that is flat as possible rather than

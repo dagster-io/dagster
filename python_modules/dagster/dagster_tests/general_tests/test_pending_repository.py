@@ -172,8 +172,7 @@ def define_resource_dependent_cacheable_and_uncacheable_assets():
 
 
 def test_resolve_no_resources():
-    """
-    Test that loading a repo with a resource-dependent cacheable asset fails if the resource is not
+    """Test that loading a repo with a resource-dependent cacheable asset fails if the resource is not
     provided.
     """
     with pytest.raises(DagsterInvalidDefinitionError):
@@ -196,8 +195,7 @@ def test_resolve_no_resources():
 
 
 def test_resolve_with_resources():
-    """
-    Test that loading a repo with a resource-dependent cacheable asset succeeds if the resource is
+    """Test that loading a repo with a resource-dependent cacheable asset succeeds if the resource is
     provided.
     """
 
@@ -222,9 +220,7 @@ def test_resolve_with_resources():
 
 
 def test_group_cached_assets():
-    """
-    Test that with_prefix_or_group works properly on cacheable assets.
-    """
+    """Test that with_prefix_or_group works properly on cacheable assets."""
 
     class MyCacheableAssets(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
@@ -278,8 +274,7 @@ def test_group_cached_assets():
 
 
 def test_multiple_wrapped_cached_assets():
-    """
-    Test that multiple wrappers (with_prefix_or_group, with_resources) work properly on cacheable assets.
+    """Test that multiple wrappers (with_prefix_or_group, with_resources) work properly on cacheable assets.
     """
 
     @resource

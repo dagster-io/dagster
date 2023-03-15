@@ -340,9 +340,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return Tags(arn, cluster, cpu, memory)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        """
-        Launch a run in an ECS task.
-        """
+        """Launch a run in an ECS task."""
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
@@ -499,8 +497,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return container_context.container_name or self.container_name
 
     def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
-        """
-        Return a dictionary of args to launch the ECS task, registering a new task
+        """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
         environment = self._environment(container_context)

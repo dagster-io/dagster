@@ -174,8 +174,7 @@ class UnresolvedStepOutputHandle(
         ],
     )
 ):
-    """
-    Placeholding that will resolve to StepOutputHandle for each mapped output once the
+    """Placeholding that will resolve to StepOutputHandle for each mapped output once the
     upstream dynamic step has completed.
     """
 

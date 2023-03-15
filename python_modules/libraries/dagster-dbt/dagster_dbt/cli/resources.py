@@ -18,8 +18,7 @@ from .utils import (
 
 
 class DbtCliResource(DbtResource):
-    """
-    A resource that allows you to execute dbt cli commands.
+    """A resource that allows you to execute dbt cli commands.
 
     For the most up-to-date documentation on the specific parameters available to you for each
     command, check out the dbt docs:
@@ -56,16 +55,14 @@ class DbtCliResource(DbtResource):
 
     @property
     def default_flags(self) -> Mapping[str, Any]:
-        """
-        A set of params populated from resource config that are passed as flags to each dbt CLI command.
+        """A set of params populated from resource config that are passed as flags to each dbt CLI command.
         """
         return self._format_params(self._default_flags, replace_underscores=True)
 
     @property
     def strict_flags(self) -> Set[str]:
-        """
-        A set of flags that should not be auto-populated from the default flags unless they are
-            arguments to the associated function.
+        """A set of flags that should not be auto-populated from the default flags unless they are
+        arguments to the associated function.
         """
         return {"models", "exclude", "select"}
 
@@ -85,8 +82,7 @@ class DbtCliResource(DbtResource):
 
     @public
     def cli(self, command: str, **kwargs) -> DbtCliOutput:
-        """
-        Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
+        """Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
             default flags that were configured on resource initialization (if any) overriding the
             default values if necessary.
 
@@ -113,8 +109,7 @@ class DbtCliResource(DbtResource):
         )
 
     def cli_stream_json(self, command: str, **kwargs) -> Iterator[Mapping[str, Any]]:
-        """
-        Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
+        """Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
             default flags that were configured on resource initialization (if any) overriding the
             default values if necessary.
 
@@ -144,8 +139,7 @@ class DbtCliResource(DbtResource):
         select: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             models (List[str], optional): the models to include in compilation.
@@ -166,8 +160,7 @@ class DbtCliResource(DbtResource):
         select: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             models (List[str], optional): the models to include in the run.
@@ -187,8 +180,7 @@ class DbtCliResource(DbtResource):
         exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the snapshots to include in the run.
@@ -210,8 +202,7 @@ class DbtCliResource(DbtResource):
         select: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``test`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``test`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             models (List[str], optional): the models to include in testing.
@@ -247,8 +238,7 @@ class DbtCliResource(DbtResource):
         exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             show (bool, optional): If ``True``, then show a sample of the seeded data in the
@@ -270,8 +260,7 @@ class DbtCliResource(DbtResource):
         exclude: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
-        """
-        Run the ``ls`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``ls`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the resources to include in the output.
@@ -286,8 +275,7 @@ class DbtCliResource(DbtResource):
 
     @public
     def build(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtCliOutput:
-        """
-        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the models/resources to include in the run.
@@ -300,8 +288,7 @@ class DbtCliResource(DbtResource):
 
     @public
     def freshness(self, select: Optional[Sequence[str]] = None, **kwargs) -> DbtCliOutput:
-        """
-        Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             select (List[str], optional): the sources to include in the run.
@@ -314,8 +301,7 @@ class DbtCliResource(DbtResource):
 
     @public
     def generate_docs(self, compile_project: bool = False, **kwargs) -> DbtCliOutput:
-        """
-        Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``docs generate`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             compile_project (bool, optional): If true, compile the project before generating a catalog.
@@ -330,8 +316,7 @@ class DbtCliResource(DbtResource):
     def run_operation(
         self, macro: str, args: Optional[Mapping[str, Any]] = None, **kwargs
     ) -> DbtCliOutput:
-        """
-        Run the ``run-operation`` command on a dbt project. kwargs are passed in as additional parameters.
+        """Run the ``run-operation`` command on a dbt project. kwargs are passed in as additional parameters.
 
         Args:
             macro (str): the dbt macro to invoke.
@@ -345,8 +330,7 @@ class DbtCliResource(DbtResource):
 
     @public
     def get_run_results_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the run_results.json file for the relevant dbt project.
+        """Get a parsed version of the run_results.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
@@ -358,17 +342,14 @@ class DbtCliResource(DbtResource):
 
     @public
     def remove_run_results_json(self, **kwargs):
-        """
-        Remove the run_results.json file from previous runs (if it exists).
-        """
+        """Remove the run_results.json file from previous runs (if it exists)."""
         project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
         target_path = kwargs.get("target_path", self._target_path)
         remove_run_results(project_dir, target_path)
 
     @public
     def get_manifest_json(self, **kwargs) -> Optional[Mapping[str, Any]]:
-        """
-        Get a parsed version of the manifest.json file for the relevant dbt project.
+        """Get a parsed version of the manifest.json file for the relevant dbt project.
 
         Returns:
             Dict[str, Any]: dictionary containing the parsed contents of the manifest json file

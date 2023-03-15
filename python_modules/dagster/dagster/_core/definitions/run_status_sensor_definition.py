@@ -193,8 +193,7 @@ def build_run_status_sensor_context(
     dagster_run: DagsterRun,
     context: Optional[SensorEvaluationContext] = None,
 ) -> RunStatusSensorContext:
-    """
-    Builds run status sensor context from provided parameters.
+    """Builds run status sensor context from provided parameters.
 
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@run_status_sensor` or `@run_failure_sensor`, such as when writing unit tests.
@@ -309,8 +308,7 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
-    """
-    Creates a sensor that reacts to job failure events, where the decorated function will be
+    """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
     Takes a :py:class:`~dagster.RunFailureSensorContext`.
@@ -377,8 +375,7 @@ def run_failure_sensor(
 
 
 class RunStatusSensorDefinition(SensorDefinition):
-    """
-    Define a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Define a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be evaluated when a run is at the given status.
 
     Args:
@@ -754,8 +751,7 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
-    """
-    Creates a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Creates a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
 
     Takes a :py:class:`~dagster.RunStatusSensorContext`.

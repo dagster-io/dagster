@@ -581,8 +581,7 @@ def wait_for_futures(futures, timeout=None):
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):
-    """
-    Utility class for testing threadpool executor logic which executes functions in a single
+    """Utility class for testing threadpool executor logic which executes functions in a single
     thread, for easier unit testing.
     """
 

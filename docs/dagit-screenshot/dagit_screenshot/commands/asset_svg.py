@@ -45,9 +45,7 @@ with open(SVG_FONT_DATA_FILE, "r", encoding="utf-8") as f:
 
 
 def _add_font_info_to_svg(svg_filepath: str):
-    """
-    Adds embedded Dagster font information to an SVG file downloaded from Dagit.
-    """
+    """Adds embedded Dagster font information to an SVG file downloaded from Dagit."""
     with open(svg_filepath, "r", encoding="utf-8") as f:
         svg = f.read()
     with open(svg_filepath, "w", encoding="utf-8") as f:
@@ -55,9 +53,7 @@ def _add_font_info_to_svg(svg_filepath: str):
 
 
 def _get_latest_download(file_extension: str) -> str:
-    """
-    Returns the path to the most recently downloaded file with the given extension.
-    """
+    """Returns the path to the most recently downloaded file with the given extension."""
     # https://stackoverflow.com/a/60004701
     downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
     list_of_downloads = glob.glob(downloads_folder + f"/*.{file_extension}")
@@ -66,8 +62,7 @@ def _get_latest_download(file_extension: str) -> str:
 
 @contextmanager
 def _setup_snippet_file(code_path: str, snippet_fn: Optional[str]):
-    """
-    Creates a temporary file that contains the contents of the given code file,
+    """Creates a temporary file that contains the contents of the given code file,
     setting up the given snippet function as a repository if specified.
     """
     with TemporaryDirectory() as temp_dir:
@@ -90,8 +85,7 @@ def demo_repo():
 
 
 def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Optional[str]):
-    """
-    Generates an SVG for the given code file & entry function, saving it to the given destination path.
+    """Generates an SVG for the given code file & entry function, saving it to the given destination path.
     """
     driver = None
     dagit_process = None
@@ -132,8 +126,7 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
 
 
 def parse_params(param_str: str) -> Dict[str, str]:
-    """
-    Parses a set of params for a markdown code block.
+    """Parses a set of params for a markdown code block.
 
     For example, returns {"foo": "bar", "baz": "qux"} for:
 

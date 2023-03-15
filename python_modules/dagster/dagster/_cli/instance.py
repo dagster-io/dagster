@@ -8,9 +8,7 @@ from dagster._core.instance import DagsterInstance
 
 @click.group(name="instance")
 def instance_cli():
-    """
-    Commands for working with the current Dagster instance.
-    """
+    """Commands for working with the current Dagster instance."""
 
 
 @instance_cli.command(name="info", help="List the information about the current instance.")
