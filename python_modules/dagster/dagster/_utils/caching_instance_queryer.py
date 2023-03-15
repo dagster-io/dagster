@@ -406,6 +406,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def is_reconciled(
         self, *, asset_partition: AssetKeyPartitionKey, asset_graph: AssetGraph
     ) -> bool:
+        """Returns a boolean representing if the given `asset_partition` is currently reconciled.
+        An asset (partition) is considered unreconciled if any of:
+        - It has never been materialized
+        - One of its parents has been updated more recently than it has
+        - One of its parents is unreconciled.
+        """
         if not self.materialization_exists(asset_partition):
             return False
 
