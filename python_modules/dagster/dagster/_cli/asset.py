@@ -157,8 +157,7 @@ def asset_wipe_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            with DagsterInstance.get() as instance:
-                instance.wipe_assets(asset_keys)
-                click.echo("Removed asset indexes from event logs")
+            instance.wipe_assets(asset_keys)
+            click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")

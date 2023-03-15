@@ -328,8 +328,10 @@ def multi_asset_sensor_hourly_to_weekly(context):
         mapped_partitions = context.get_downstream_partition_keys(
             partition, to_asset_key=weekly_asset.key, from_asset_key=hourly_asset.key
         )
-        for partition in mapped_partitions:
-            yield weekly_asset_job.run_request_for_partition(partition_key=partition, run_key=None)
+        for mapped_partition in mapped_partitions:
+            yield weekly_asset_job.run_request_for_partition(
+                partition_key=mapped_partition, run_key=None
+            )
 
         context.advance_cursor({hourly_asset.key: materialization})
 
@@ -346,9 +348,9 @@ def multi_asset_sensor_hourly_to_hourly(context):
             mapped_partitions = context.get_downstream_partition_keys(
                 partition, to_asset_key=hourly_asset_3.key, from_asset_key=hourly_asset.key
             )
-            for partition in mapped_partitions:
+            for mapped_partition in mapped_partitions:
                 yield hourly_asset_job.run_request_for_partition(
-                    partition_key=partition, run_key=None
+                    partition_key=mapped_partition, run_key=None
                 )
 
             latest_partition = (

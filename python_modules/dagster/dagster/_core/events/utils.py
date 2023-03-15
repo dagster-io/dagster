@@ -21,8 +21,8 @@ def filter_dagster_events_from_cli_logs(log_lines):
     coalesced_lines = []
     buffer = []
     in_split_line = False
-    for line in log_lines:
-        line = line.strip()
+    for raw_line in log_lines:
+        line = raw_line.strip()
         if not in_split_line and line.startswith("{"):
             if line.endswith("}"):
                 coalesced_lines.append(line)

@@ -282,9 +282,8 @@ class SnowflakeConnection:
         results: List[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
-                for sql in sql_queries:
-                    if sys.version_info[0] < 3:
-                        sql = sql.encode("utf-8")
+                for raw_sql in sql_queries:
+                    sql = raw_sql.encode("utf-8") if sys.version_info[0] < 3 else raw_sql
                     self.log.info("Executing query: " + sql)
                     parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                     cursor.execute(sql, parameters)

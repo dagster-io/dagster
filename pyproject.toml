@@ -181,9 +181,6 @@ ignore = [
   "D208", # (over-indented docstring)
   "D402", # (first line should not be the function's "signature")
 
-  # (redefined-loop-name) Many instances of this in the code.
-  "PLW2901",
-
   # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
   # can bulk-convert our pylint disables.
   "T201",  # (no print call)

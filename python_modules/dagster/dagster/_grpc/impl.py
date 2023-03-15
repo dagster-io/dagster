@@ -168,7 +168,7 @@ def _run_in_subprocess(
             if execute_run_args.instance_ref
             else nullcontext()
         ) as instance:
-            instance = check.not_none(instance)
+            instance = check.not_none(instance)  # noqa: PLW2901
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
 
             if not pipeline_run:

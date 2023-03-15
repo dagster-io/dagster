@@ -342,7 +342,6 @@ def test_hello_world_reexecution():
             )
             reexecution_notebook_file.flush()
 
-            result = None
             reexecution_job = ReconstructablePipeline.for_file(
                 reexecution_notebook_file.name, "reexecution_job"
             )

@@ -127,9 +127,9 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .order_by(SqlEventLogStorageTable.c.timestamp.desc())
                     .limit(1)
                 )
-                row = conn.execute(materialization_query).fetchone()
-                if row:
-                    event = deserialize_value(row[0], NamedTuple)
+                materialization_row = conn.execute(materialization_query).fetchone()
+                if materialization_row:
+                    event = deserialize_value(materialization_row[0], NamedTuple)
 
             if not event:
                 # this must be a wiped asset
