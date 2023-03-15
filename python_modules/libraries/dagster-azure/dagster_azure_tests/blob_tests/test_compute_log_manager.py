@@ -146,12 +146,9 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert (
-        instance.compute_log_manager._storage_account  # pylint: disable=protected-access
-        == storage_account
-    )
-    assert instance.compute_log_manager._container == container  # pylint: disable=protected-access
-    assert instance.compute_log_manager._blob_prefix == prefix  # pylint: disable=protected-access
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
+    assert instance.compute_log_manager._container == container  # noqa: SLF001
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
@@ -366,12 +363,9 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert (
-        instance.compute_log_manager._storage_account  # pylint: disable=protected-access
-        == storage_account
-    )
-    assert instance.compute_log_manager._container == container  # pylint: disable=protected-access
-    assert instance.compute_log_manager._blob_prefix == prefix  # pylint: disable=protected-access
-    assert instance.compute_log_manager._default_azure_credential == {
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
+    assert instance.compute_log_manager._container == container  # noqa: SLF001
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
+    assert instance.compute_log_manager._default_azure_credential == {  # noqa: SLF001
         "exclude_environment_credentials": True
-    }  # pylint: disable=protected-access
+    }

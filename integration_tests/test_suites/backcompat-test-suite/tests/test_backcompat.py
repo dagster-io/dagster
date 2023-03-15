@@ -237,10 +237,8 @@ def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=
     )
     assert_run_success(client, run_id)
 
-    locations = (
-        client._get_repo_locations_and_names_with_pipeline(  # pylint: disable=protected-access
-            pipeline_name=name
-        )
+    locations = client._get_repo_locations_and_names_with_pipeline(  # noqa: SLF001
+        pipeline_name=name
     )
     assert len(locations) == 1
     assert locations[0].pipeline_name == name

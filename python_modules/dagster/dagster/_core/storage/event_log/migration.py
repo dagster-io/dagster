@@ -25,7 +25,7 @@ def migrate_event_log_data(instance=None):
     """
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 
-    event_log_storage = instance._event_storage  # pylint: disable=protected-access
+    event_log_storage = instance._event_storage  # noqa: SLF001
 
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return

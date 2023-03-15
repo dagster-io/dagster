@@ -77,7 +77,7 @@ class HelmTemplate:
             k8s_objects = [k8s_object for k8s_object in yaml.full_load_all(templates) if k8s_object]
             if self.model:
                 k8s_objects = [
-                    self.api_client._ApiClient__deserialize_model(  # pylint: disable=W0212
+                    self.api_client._ApiClient__deserialize_model(  # pylint: disable=W0212  # noqa: SLF001
                         k8s_object, self.model
                     )
                     for k8s_object in k8s_objects

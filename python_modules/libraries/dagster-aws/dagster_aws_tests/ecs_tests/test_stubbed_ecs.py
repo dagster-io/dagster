@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -83,7 +82,7 @@ def test_list_account_settings(ecs):
 
 
 def test_list_tags_for_resource(ecs):
-    invalid_arn = ecs._task_arn("invalid")
+    invalid_arn = ecs._task_arn("invalid")  # noqa: SLF001
     with pytest.raises(ClientError):
         # The task doesn't exist
         ecs.list_tags_for_resource(resourceArn=invalid_arn)
@@ -311,11 +310,13 @@ def test_run_task(ecs, ec2, subnet):
     assert response["tasks"][0]["lastStatus"] == "RUNNING"
 
     # It uses the default cluster
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("default")
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("default")  # noqa: SLF001
     response = ecs.run_task(taskDefinition="bridge", cluster="dagster")
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
-    response = ecs.run_task(taskDefinition="bridge", cluster=ecs._cluster_arn("dagster"))
-    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
+    response = ecs.run_task(
+        taskDefinition="bridge", cluster=ecs._cluster_arn("dagster")  # noqa: SLF001
+    )
+    assert response["tasks"][0]["clusterArn"] == ecs._cluster_arn("dagster")  # noqa: SLF001
 
     # It includes memory and cpu
     assert response["tasks"][0]["cpu"] == "256"
@@ -414,7 +415,7 @@ def test_run_task(ecs, ec2, subnet):
 def test_stop_task(ecs):
     with pytest.raises(ClientError):
         # The task doesn't exist
-        ecs.stop_task(task=ecs._task_arn("invalid"))
+        ecs.stop_task(task=ecs._task_arn("invalid"))  # noqa: SLF001
 
     ecs.register_task_definition(
         family="bridge", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
@@ -433,7 +434,7 @@ def test_stop_task(ecs):
 def test_tag_resource(ecs):
     tags = [{"key": "foo", "value": "bar"}]
 
-    invalid_arn = ecs._task_arn("invalid")
+    invalid_arn = ecs._task_arn("invalid")  # noqa: SLF001
     with pytest.raises(ClientError):
         # The task doesn't exist
         ecs.tag_resource(resourceArn=invalid_arn, tags=tags)

@@ -35,7 +35,7 @@ class ThrowAnErrorCommand(ChildProcessCommand):  # pylint: disable=no-init
 class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
     def execute(self):
         # access inner API to simulate hard crash
-        os._exit(1)  # pylint: disable=protected-access
+        os._exit(1)  # noqa: SLF001
 
 
 class SegfaultCommand(ChildProcessCommand):  # pylint: disable=no-init

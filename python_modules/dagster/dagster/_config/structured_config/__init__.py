@@ -229,7 +229,7 @@ def _resolve_required_resource_keys_for_resource(
     this mapping is used to obtain the top-level resource keys to depend on.
     """
     if isinstance(resource, AllowDelayedDependencies):
-        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
     return resource.required_resource_keys
 
 
@@ -499,9 +499,9 @@ class ConfigurableResource(
 
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
         with_nested_resources = self._resolve_and_update_nested_resources(context)
-        with_env_vars = with_nested_resources._resolve_and_update_env_vars()
+        with_env_vars = with_nested_resources._resolve_and_update_env_vars()  # noqa: SLF001
 
-        return with_env_vars._create_object_fn(context)
+        return with_env_vars._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)

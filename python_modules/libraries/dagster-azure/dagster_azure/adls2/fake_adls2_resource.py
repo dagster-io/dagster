@@ -36,7 +36,7 @@ class FakeLeaseClient:
         self.id = None
 
         # client needs a ref to self to check if a given lease is valid
-        self.client._lease = self
+        self.client._lease = self  # noqa: SLF001
 
     def acquire(self, lease_duration=-1):  # pylint: disable=unused-argument
         if self.id is None:

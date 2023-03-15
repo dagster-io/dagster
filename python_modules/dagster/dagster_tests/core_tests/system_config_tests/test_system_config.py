@@ -36,9 +36,7 @@ def create_creation_data(job_def):
         ignored_solids=[],
         required_resources=set(),
         is_using_graph_job_op_apis=job_def.is_job,
-        direct_inputs=job_def._input_values  # pylint: disable = protected-access
-        if job_def.is_job
-        else {},
+        direct_inputs=job_def._input_values if job_def.is_job else {},  # noqa: SLF001
         asset_layer=job_def.asset_layer,
     )
 

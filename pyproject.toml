@@ -212,6 +212,10 @@ select = [
   # functionality from an existing linter).
   "RUF",
 
+  # (private member access) Flag access to `_`-prefixed symbols. By default the various special
+  # methods on `NamedTuple` are ignored (e.g. `_replace`).
+  "SLF001",
+
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 

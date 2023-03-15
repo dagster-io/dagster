@@ -1556,7 +1556,7 @@ class TestRunStorage:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             if storage.has_instance:
-                instance = storage._instance  # pylint: disable=protected-access
+                instance = storage._instance  # noqa: SLF001
             else:
                 instance = DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,

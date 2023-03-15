@@ -48,7 +48,7 @@ def noop_pipeline():
 
 @op
 def crashy_solid(_):
-    os._exit(1)  # pylint: disable=W0212
+    os._exit(1)  # pylint: disable=W0212  # noqa: SLF001
 
 
 @pipeline(mode_defs=[default_mode_def])

@@ -109,9 +109,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
-        ):
+        with self.local_manager._watch_logs(pipeline_run, step_key):  # noqa: SLF001
             yield
 
     @property

@@ -116,7 +116,7 @@ def test_get_run_by_id():
         pipeline_run = DagsterRun("foo_pipeline", "new_run")
         assert instance.get_run_by_id(pipeline_run.run_id) is None
 
-        instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
+        instance._run_storage.add_run(pipeline_run)  # noqa: SLF001
 
         assert instance.get_runs() == [pipeline_run]
 
@@ -130,7 +130,7 @@ def test_get_run_by_id():
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
-            # pylint: disable=protected-access
+
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
                 self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 return False
@@ -150,7 +150,6 @@ def test_get_run_by_id():
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
-            # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
                 self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True  # noqa: PLW0603

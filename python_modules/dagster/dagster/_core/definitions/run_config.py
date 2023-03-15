@@ -655,7 +655,7 @@ def construct_config_type_dictionary(
 
 def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}
+        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}  # noqa: SLF001
         for k, v in configs.items()
     }
 

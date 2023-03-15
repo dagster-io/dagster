@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 import collections.abc
 import re
 import sys

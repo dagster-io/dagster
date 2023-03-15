@@ -1,5 +1,3 @@
-# pylint: disable=protected-access
-
 import os
 import sys
 import tempfile
@@ -76,14 +74,16 @@ def test_compute_log_manager(mock_s3_bucket):
                 assert expected in stderr
 
             # Check S3 directly
-            s3_object = mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDERR))
+            s3_object = mock_s3_bucket.Object(
+                key=manager._s3_key(log_key, ComputeIOType.STDERR)  # noqa: SLF001
+            )
             stderr_s3 = s3_object.get()["Body"].read().decode("utf-8")
             for expected in EXPECTED_LOGS:
                 assert expected in stderr_s3
 
             # Check download behavior by deleting locally cached logs
             local_dir = os.path.dirname(
-                manager._local_manager.get_captured_local_path(
+                manager._local_manager.get_captured_local_path(  # noqa: SLF001
                     log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
                 )
             )
@@ -119,11 +119,8 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert (
-        instance.compute_log_manager._s3_bucket  # pylint: disable=protected-access
-        == mock_s3_bucket.name
-    )
-    assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access
+    assert instance.compute_log_manager._s3_bucket == mock_s3_bucket.name  # noqa: SLF001
+    assert instance.compute_log_manager._s3_prefix == s3_prefix  # noqa: SLF001
 
 
 def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
@@ -165,13 +162,15 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
             file_key = event.logs_captured_data.file_key
             log_key = manager.build_log_key_for_run(result.run_id, file_key)
             stderr_object = mock_s3_bucket.Object(
-                key=manager._s3_key(log_key, ComputeIOType.STDERR)
+                key=manager._s3_key(log_key, ComputeIOType.STDERR)  # noqa: SLF001
             )
             assert stderr_object
 
             with pytest.raises(ClientError):
                 # stdout is not uploaded because we do not print anything to stdout
-                mock_s3_bucket.Object(key=manager._s3_key(log_key, ComputeIOType.STDOUT)).get()
+                mock_s3_bucket.Object(
+                    key=manager._s3_key(log_key, ComputeIOType.STDOUT)  # noqa: SLF001
+                ).get()
 
 
 def test_blank_compute_logs(mock_s3_bucket):

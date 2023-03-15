@@ -36,7 +36,7 @@ def a_df() -> SparkDF:
 
 @op(out=Out(metadata={"schema": "add_one"}))
 def add_one(df: SparkDF) -> SparkDF:
-    return df.withColumn("_1", df._1 + 1)  # pylint: disable=protected-access
+    return df.withColumn("_1", df._1 + 1)  # noqa: SLF001
 
 
 @graph
@@ -78,7 +78,7 @@ def b_df() -> SparkDF:
 
 @asset(key_prefix=["my_schema"])
 def b_plus_one(b_df: SparkDF) -> SparkDF:
-    return b_df.withColumn("_1", b_df._1 + 1)  # pylint: disable=protected-access
+    return b_df.withColumn("_1", b_df._1 + 1)  # noqa: SLF001
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):

@@ -63,7 +63,7 @@ def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
         return FIELD_HASH_CACHE[key]
 
     defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
-    defined_cls_inst._initialized = False  # pylint: disable=protected-access
+    defined_cls_inst._initialized = False  # noqa: SLF001
     FIELD_HASH_CACHE[key] = defined_cls_inst
     return defined_cls_inst
 
@@ -470,7 +470,8 @@ def _config_dictionary_from_values_inner(obj: Any):
         return {"env": str(obj)}
     elif isinstance(obj, Config):
         return {
-            k: _config_dictionary_from_values_inner(v) for k, v in obj._as_config_dict().items()
+            k: _config_dictionary_from_values_inner(v)
+            for k, v in obj._as_config_dict().items()  # noqa: SLF001
         }
 
     return obj

@@ -49,7 +49,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
-        # pylint: disable=protected-access
+
         with open(
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
@@ -92,7 +92,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             traceback.print_tb(exc_info[2])
 
     def test_concurrent_sqlite_event_log_connections(self, storage):
-        tmpdir_path = storage._base_dir  # pylint: disable=protected-access
+        tmpdir_path = storage._base_dir  # noqa: SLF001
         ctx = multiprocessing.get_context("spawn")
         exceptions = ctx.Queue()
         ps = []

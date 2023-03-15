@@ -398,7 +398,7 @@ def test_tag_concurrency_limits():
 
         assert next_steps[0].key == "tiny_op_pri_3"
 
-        for step_key in active_execution._in_flight.copy():  # pylint: disable=protected-access
+        for step_key in active_execution._in_flight.copy():  # noqa: SLF001
             active_execution.mark_skipped(step_key)
 
 

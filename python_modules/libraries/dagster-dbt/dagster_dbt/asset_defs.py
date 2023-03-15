@@ -100,7 +100,7 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
 
     return (
         version.parse(dbt.version.__version__) >= version.parse("1.4.0")
-        and dbt_resource._json_log_format
+        and dbt_resource._json_log_format  # noqa: SLF001
     )
 
 

@@ -36,7 +36,7 @@ GENERATED_GRPC_PYLINT_DIRECTIVE = [
 ]
 
 GENERATED_PB2_PYLINT_DIRECTIVE = [
-    "# pylint: disable=protected-access,no-name-in-module\n",
+    "# noqa: SLF001,no-name-in-module\n",
     "\n",
 ]
 

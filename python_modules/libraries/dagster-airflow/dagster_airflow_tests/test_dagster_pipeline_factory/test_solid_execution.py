@@ -199,7 +199,7 @@ def test_template_task_dag():
 
         capture_events = [
             event
-            for event in result._event_list
+            for event in result._event_list  # noqa: SLF001
             if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
         assert len(capture_events) == 1
