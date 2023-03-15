@@ -164,6 +164,38 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 is not None
             )
 
+    def _materialization_of_a_exists_after_b(
+        self,
+        a: AssetKeyPartitionKey,
+        b: AssetKeyPartitionKey,
+    ) -> bool:
+        """Returns True if there is a materialization record for asset partition a after the latest
+        materialization record for asset partition b.
+
+        Attempts to optimize cases where exactly one of the inputs is partitioned, and we expect
+        this to be called multiple times for the same inputs, only varying the partitioned asset's key.
+
+        Args:
+            a (AssetKeyPartitionKey): The asset partition that we're looking for new
+                materializations of.
+            b (AssetKeyPartitionKey): The anchor asset partition that we're comparing against.
+        """
+        # For performance, we try to only call get_latest_materialization on unpartitioned
+        # assets. To do so, we reverse the order of operations based on the partitioning of
+        # the inputs.
+        if a.partition_key is None:
+            latest_a = self.get_latest_materialization_record(a)
+            if latest_a is None:
+                return False
+            # if a materialization of b exists after the latest materialization of a, then
+            # a materialization of a cannot exist after the latest materialization of b
+            return not self.materialization_exists(b, after_cursor=latest_a.storage_id)
+        else:
+            latest_b = self.get_latest_materialization_record(b)
+            if latest_b is None:
+                return False
+            return self.materialization_exists(a, after_cursor=latest_b.storage_id)
+
     def get_latest_materialization_record(
         self,
         asset: Union[AssetKey, AssetKeyPartitionKey],
@@ -423,29 +455,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_graph.is_source(parent.asset_key):
                 continue
 
-            # For performance, we try to only call get_latest_materialization on unpartitioned
-            # assets. To do so, we reverse the order of operations based on the partitioning of
-            # the current asset.
-            if asset_partition.partition_key is None:
-                latest_materialization_record = self.get_latest_materialization_record(
-                    asset_partition, None
-                )
-                # check to make sure there IS NOT a materialization of the parent after the most
-                # recent materialization of this asset
-                if latest_materialization_record is None or self.materialization_exists(
-                    parent, after_cursor=latest_materialization_record.storage_id
-                ):
-                    return False
-            else:
-                latest_parent_materialization_record = self.get_latest_materialization_record(
-                    parent, None
-                )
-                # check to make sure there IS a materialization of this asset after the most recent
-                # materialization of the parent
-                if latest_parent_materialization_record is None or not self.materialization_exists(
-                    asset_partition, after_cursor=latest_parent_materialization_record.storage_id
-                ):
-                    return False
+            if self._materialization_of_a_exists_after_b(a=parent, b=asset_partition):
+                return False
 
             if not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
                 return False
