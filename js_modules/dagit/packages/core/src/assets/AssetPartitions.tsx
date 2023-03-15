@@ -66,17 +66,18 @@ export const AssetPartitions: React.FC<Props> = ({
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
   const sortedPartitions = React.useMemo(() => {
     return selections.map((selection, idx) => {
-      return selection.dimension.partitionKeys.slice().sort((a, b) => {
-        let sort = selectionSorts[idx];
-        if (sort === undefined) {
-          sort = 1;
-          if (selection.dimension.type === PartitionDefinitionType.TIME_WINDOW) {
-            // Reverse sort for time window dimensions by default so that the latest partition shows up first
-            sort = -1;
-          }
+      let sort = selectionSorts[idx];
+      if (sort === undefined) {
+        sort = 1;
+        if (selection.dimension.type === PartitionDefinitionType.TIME_WINDOW) {
+          // Reverse sort for time window dimensions by default so that the latest partition shows up first
+          sort = -1;
         }
-        return sort * a.localeCompare(b);
-      });
+      }
+      if (sort === 1) {
+        return selection.dimension.partitionKeys;
+      }
+      return selection.dimension.partitionKeys.slice().reverse();
     });
   }, [selections, selectionSorts]);
 
