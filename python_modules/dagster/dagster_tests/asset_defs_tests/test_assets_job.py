@@ -1467,7 +1467,6 @@ def test_empty_asset_job():
     assert empty_selection.resolve([a, b]) == set()
 
     empty_job = define_asset_job("empty_job", selection=empty_selection).resolve([a, b], [])
-    print(vars(empty_job))
     assert empty_job.all_node_defs == []
 
     result = empty_job.execute_in_process()

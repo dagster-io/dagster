@@ -338,7 +338,7 @@ def test_k8s_run_launcher_terminate(
         time.sleep(5)
 
     # useful to have logs here, because the worker pods get deleted
-    print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # pylint: disable=print-call
+    print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # noqa: T201
 
     assert pipeline_run.status == DagsterRunStatus.CANCELED
 

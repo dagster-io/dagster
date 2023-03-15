@@ -485,7 +485,7 @@ class DagsterGrpcClient:
                     health_pb2.HealthCheckRequest(service="DagsterApi")
                 )
         except grpc.RpcError as e:
-            print(e)  # pylint: disable=print-call
+            print(e)  # noqa: T201
             return health_pb2.HealthCheckResponse.UNKNOWN  # pylint: disable=no-member
 
         status_number = response.status

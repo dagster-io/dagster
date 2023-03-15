@@ -1,6 +1,6 @@
 # isort: skip_file
 # pylint: disable=unused-argument
-# pylint: disable=print-call
+
 
 from dagster import graph, job, op
 
@@ -58,7 +58,7 @@ from dagster import GraphOut
 
 @op
 def echo(i):
-    print(i)
+    print(i)  # noqa: T201
 
 
 @op

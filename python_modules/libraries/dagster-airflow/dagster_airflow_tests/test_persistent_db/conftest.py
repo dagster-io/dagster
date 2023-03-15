@@ -67,9 +67,9 @@ def postgres_airflow_db(
                     db.initdb()
                     break
                 except OperationalError as e:
-                    print(e)
+                    print(e)  # noqa: T201
                 time.sleep(RETRY_DELAY_SEC)
-                print(
+                print(  # noqa: T201
                     "Waiting for Airflow postgres database to start and initialize"
                     + "." * (3 + (now - start_time).seconds // RETRY_DELAY_SEC)
                 )

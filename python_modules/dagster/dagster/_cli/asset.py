@@ -108,7 +108,7 @@ def asset_list_command(**kwargs):
         ]
 
     for asset_key in sorted(asset_keys):
-        print(asset_key.to_user_string())
+        print(asset_key.to_user_string())  # noqa: T201
 
 
 @asset_cli.command(name="wipe")

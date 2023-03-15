@@ -95,7 +95,7 @@ def main(
 
             with open(step_run_ref_filepath, "rb") as handle:
                 step_run_ref = pickle.load(handle)
-            print("Running dagster job")
+            print("Running dagster job")  # noqa: T201
 
             step_run_dir = os.path.dirname(step_run_ref_filepath)
             if step_run_ref.known_state is not None:

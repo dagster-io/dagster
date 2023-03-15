@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: T201
 
 """
 Based on: https://github.com/wandb/examples/blob/master/examples/pytorch/pytorch-cnn-fashion/train.py

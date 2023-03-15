@@ -39,7 +39,7 @@ def rabbitmq():  # pylint: disable=redefined-outer-name
 
     subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
 
-    print("Waiting for rabbitmq to be ready...")  # pylint: disable=print-call
+    print("Waiting for rabbitmq to be ready...")  # noqa: T201
     while True:
         logs = str(subprocess.check_output(["docker", "logs", service_name]))
         if "started TCP listener on [::]:5672" in logs:
@@ -88,7 +88,7 @@ def dagster_docker_image():
         try:
             client = docker.from_env()
             client.images.get(docker_image)
-            print(  # pylint: disable=print-call
+            print(  # noqa: T201
                 "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
                 "docker rmi {image}".format(image=docker_image)
             )

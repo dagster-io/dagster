@@ -63,4 +63,4 @@ def test_lazy_load():
         }
     ) as instance:
         with pytest.raises(Exception, match="Expected init fail"):
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201

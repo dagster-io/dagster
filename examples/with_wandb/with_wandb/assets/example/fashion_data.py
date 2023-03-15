@@ -114,7 +114,7 @@ class fashion(data.Dataset):
                 raise
 
         for url in self.urls:
-            print("Downloading " + url)
+            print("Downloading " + url)  # noqa: T201
             data = urllib.request.urlopen(url)
             filename = url.rpartition("/")[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
@@ -127,7 +127,7 @@ class fashion(data.Dataset):
             os.unlink(file_path)
 
         # process and save as torch files
-        print("Processing...")
+        print("Processing...")  # noqa: T201
 
         training_set = (
             read_image_file(os.path.join(self.root, self.raw_folder, "train-images-idx3-ubyte")),
@@ -142,7 +142,7 @@ class fashion(data.Dataset):
         with open(os.path.join(self.root, self.processed_folder, self.test_file), "wb") as f:
             torch.save(test_set, f)
 
-        print("Done!")
+        print("Done!")  # noqa: T201
 
 
 def get_int(b):

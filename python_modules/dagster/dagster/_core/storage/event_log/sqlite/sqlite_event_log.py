@@ -108,16 +108,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def upgrade(self) -> None:
         all_run_ids = self.get_all_run_ids()
-        print(  # pylint: disable=print-call
-            f"Updating event log storage for {len(all_run_ids)} runs on disk..."
-        )
+        print(f"Updating event log storage for {len(all_run_ids)} runs on disk...")  # noqa: T201
         alembic_config = get_alembic_config(__file__)
         if all_run_ids:
             for run_id in tqdm(all_run_ids):
                 with self.run_connection(run_id) as conn:
                     run_alembic_upgrade(alembic_config, conn, run_id)
 
-        print("Updating event log storage for index db on disk...")  # pylint: disable=print-call
+        print("Updating event log storage for index db on disk...")  # noqa: T201
         with self.index_connection() as conn:
             run_alembic_upgrade(alembic_config, conn, "index")
 

@@ -49,8 +49,8 @@ class TestCapturedLogManager:
         log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
 
         with captured_log_manager.capture_logs(log_key) as context:
-            print("HELLO WORLD")  # pylint: disable=print-call
-            print("HELLO ERROR", file=sys.stderr)  # pylint: disable=print-call
+            print("HELLO WORLD")  # noqa: T201
+            print("HELLO ERROR", file=sys.stderr)  # noqa: T201
             assert not captured_log_manager.is_capture_complete(log_key)
             assert context.log_key == log_key
 
@@ -74,8 +74,8 @@ class TestCapturedLogManager:
         log_key = ["".join(random.choice(string.ascii_lowercase) for x in range(300))]
 
         with captured_log_manager.capture_logs(log_key) as context:
-            print("HELLO WORLD")  # pylint: disable=print-call
-            print("HELLO ERROR", file=sys.stderr)  # pylint: disable=print-call
+            print("HELLO WORLD")  # noqa: T201
+            print("HELLO ERROR", file=sys.stderr)  # noqa: T201
             assert not captured_log_manager.is_capture_complete(log_key)
             assert context.log_key == log_key
 
@@ -110,8 +110,8 @@ class TestCapturedLogManager:
         now = pendulum.now("UTC")
         log_key = ["streaming", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
-            print("hello stdout")  # pylint: disable=print-call
-            print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
+            print("hello stdout")  # noqa: T201
+            print("hello stderr", file=sys.stderr)  # noqa: T201
 
             # read before the write manager has a chance to upload partial results
             log_data = read_manager.get_log_data(log_key)
@@ -147,8 +147,8 @@ class TestCapturedLogManager:
         now = pendulum.now("UTC")
         log_key = ["complete", "test", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
-            print("hello stdout")  # pylint: disable=print-call
-            print("hello stderr", file=sys.stderr)  # pylint: disable=print-call
+            print("hello stdout")  # noqa: T201
+            print("hello stderr", file=sys.stderr)  # noqa: T201
             assert not write_manager.is_capture_complete(log_key)
             assert not read_manager.is_capture_complete(log_key)
 

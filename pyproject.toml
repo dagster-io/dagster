@@ -181,11 +181,6 @@ ignore = [
   "D208", # (over-indented docstring)
   "D402", # (first line should not be the function's "signature")
 
-  # (disallow print statements) Allowing until there are file-scoped error-specific ignores and we
-  # can bulk-convert our pylint disables.
-  "T201",  # (no print call)
-  "T203",  # (no pprint call)
-
 ]
 
 # Match black. Note that this also checks comment line length, but black does not format comments.
@@ -222,7 +217,7 @@ select = [
   "RUF",
 
   # (disallow print statements) keep debugging statements out of the codebase
-  "T",
+  "T20",
 
   # (invalid escape sequence) flag errant backslashes
   "W605",

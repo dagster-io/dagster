@@ -354,7 +354,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         try:
             subprocess.check_output(cli_cmd)
         except subprocess.CalledProcessError as cpe:
-            print(cpe)  # pylint: disable=print-call
+            print(cpe)  # noqa: T201
             raise cpe
 
 

@@ -39,7 +39,7 @@ def test_compute_log_manager(
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -257,7 +257,7 @@ def test_compute_log_manager_default_azure_credential(
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()

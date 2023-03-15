@@ -634,7 +634,7 @@ class DatabricksConfig:
             name = secret["name"]
             key = secret["key"]
             scope = secret["scope"]
-            print(  # pylint: disable=print-call
+            print(  # noqa: T201
                 "Exporting {} from Databricks secret {}, scope {}".format(name, key, scope)
             )
             val = dbutils.secrets.get(scope=scope, key=key)

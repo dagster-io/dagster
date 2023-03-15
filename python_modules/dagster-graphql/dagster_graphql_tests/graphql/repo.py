@@ -737,7 +737,7 @@ def materialization_pipeline():
 def spew_pipeline():
     @op
     def spew(_):
-        print("HELLO WORLD")  # pylint: disable=print-call
+        print("HELLO WORLD")  # noqa: T201
 
     spew()
 
@@ -906,11 +906,11 @@ def disable_gc(_context):
     # Workaround for termination signals being raised during GC and getting swallowed during
     # tests
     try:
-        print("Disabling GC")  # pylint: disable=print-call
+        print("Disabling GC")  # noqa: T201
         gc.disable()
         yield
     finally:
-        print("Re-enabling GC")  # pylint: disable=print-call
+        print("Re-enabling GC")  # noqa: T201
         gc.enable()
 
 

@@ -353,7 +353,7 @@ def test_cant_combine_network_and_networks(aws_env):
                 }
             }
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
 
 def test_terminate(aws_env):

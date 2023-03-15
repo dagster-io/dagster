@@ -60,7 +60,7 @@ class TestStepHandler(StepHandler):
             assert step_handler_context.step_tags["baz_op"] == {"foo": "bar"}
 
         TestStepHandler.launch_step_count += 1
-        print("TestStepHandler Launching Step!")  # pylint: disable=print-call
+        print("TestStepHandler Launching Step!")  # noqa: T201
         TestStepHandler.processes.append(
             subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )

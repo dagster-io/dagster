@@ -94,7 +94,7 @@ def find_local_test_image(docker_image):
     try:
         client = docker.from_env()
         client.images.get(docker_image)
-        print(  # pylint: disable=print-call
+        print(  # noqa: T201
             "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
             "docker rmi {image}".format(image=docker_image)
         )
@@ -350,5 +350,5 @@ def get_test_project_docker_image():
     final_docker_image = "{repository}/{image_name}:{tag}".format(
         repository=docker_repository, image_name=image_name, tag=docker_image_tag
     )
-    print("Using Docker image: %s" % final_docker_image)  # pylint: disable=print-call
+    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

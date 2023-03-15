@@ -1,4 +1,5 @@
 # isort: skip_file
+# ruff: noqa: T201
 # pylint: disable=unused-argument,reimported,unnecessary-ellipsis
 
 

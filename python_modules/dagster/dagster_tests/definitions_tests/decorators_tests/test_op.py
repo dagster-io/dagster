@@ -1317,7 +1317,7 @@ def test_colliding_args():
 
     @op
     def foo(x, y):
-        print(x, y)
+        print(x, y)  # noqa: T201
 
     # in composition
     with pytest.raises(
@@ -1332,7 +1332,7 @@ def test_colliding_args():
 
     @op
     def bar(x, y=2):
-        print(x, y)
+        print(x, y)  # noqa: T201
 
     # or direct invocation
     with pytest.raises(

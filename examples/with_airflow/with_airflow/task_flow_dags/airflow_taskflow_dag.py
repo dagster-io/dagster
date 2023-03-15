@@ -54,7 +54,7 @@ def tutorial_taskflow_api():
         A simple Load task which takes in the result of the Transform task and
         instead of saving it to end user review, just prints it out.
         """
-        print(f"Total order value is: {total_order_value:.2f}")
+        print(f"Total order value is: {total_order_value:.2f}")  # noqa: T201
 
     order_data = extract()
     order_summary = transform(order_data)

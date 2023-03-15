@@ -76,11 +76,7 @@ def define_out_of_process_context(python_file, fn_name, instance, read_only=Fals
     with define_out_of_process_workspace(
         python_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
-        x = workspace_process_context.create_request_context()
-        print(python_file)
-        print(x.repository_locations)
-        print(x.repository_location_errors())
-        yield x
+        yield workspace_process_context.create_request_context()
 
 
 def define_out_of_process_workspace(python_file, fn_name, instance, read_only=False):

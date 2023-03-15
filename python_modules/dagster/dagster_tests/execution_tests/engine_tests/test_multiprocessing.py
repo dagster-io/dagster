@@ -432,7 +432,7 @@ def test_failure_multiprocessing():
 @op
 def sys_exit(context):
     context.log.info("Informational message")
-    print("Crashy output to stdout")  # pylint: disable=print-call
+    print("Crashy output to stdout")  # noqa: T201
     sys.stdout.flush()
     os._exit(1)  # pylint: disable=W0212
 
@@ -487,7 +487,7 @@ def test_crash_multiprocessing():
 @op
 def segfault_solid(context):
     context.log.info("Informational message")
-    print("Crashy output to stdout")  # pylint: disable=print-call
+    print("Crashy output to stdout")  # noqa: T201
     segfault()
 
 

@@ -50,5 +50,5 @@ def test_query_get_solid_exists(graphql_context):
     )
 
     assert not result.errors
-    print(result.data["repositoryOrError"])  # pylint: disable=print-call
+    print(result.data["repositoryOrError"])  # noqa: T201
     assert result.data["repositoryOrError"]["usedSolid"]["definition"]["name"] == "sum_solid"
