@@ -137,10 +137,12 @@ class DataprocResource:
 
     @contextmanager
     def cluster_context_manager(self):
-        """This context manager gives syntactic sugar so you can run:
+        """Context manager allowing execution with a dataproc cluster.
 
-        with context.resources.dataproc.cluster as cluster:
-            # do stuff...
+        Example:
+        .. code-block::
+            with context.resources.dataproc.cluster as cluster:
+                # do stuff...
         """
         self.create_cluster()
         try:

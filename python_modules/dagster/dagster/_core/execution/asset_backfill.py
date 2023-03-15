@@ -256,7 +256,7 @@ def submit_run_request(
     workspace: BaseWorkspaceRequestContext,
 ) -> None:
     """
-    Creates and submits a run for the given run request
+    Creates and submits a run for the given run request.
     """
     repo_handle = asset_graph.get_repository_handle(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]

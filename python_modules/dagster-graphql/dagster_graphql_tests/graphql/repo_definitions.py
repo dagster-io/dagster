@@ -18,7 +18,7 @@ def my_asset():
 
 
 class MyResource(ConfigurableResource):
-    """my description"""
+    """My description."""
 
     a_string: str = "baz"
     an_unset_string: str = "defaulted"

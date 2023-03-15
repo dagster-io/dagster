@@ -809,7 +809,7 @@ def copy_packed_set(
     as_type: Literal["__frozenset__", "__set__"],
 ) -> Mapping[str, Sequence[JsonSerializableValue]]:
     """
-    Returns a copy of the packed collection
+    Returns a copy of the packed collection.
     """
     if "__set__" in packed_set:
         return {as_type: packed_set["__set__"]}

@@ -610,7 +610,7 @@ class StaticPartitionMapping(
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
         """
-        validate that the mapping from upstream to downstream is only defined on upstream keys
+        validate that the mapping from upstream to downstream is only defined on upstream keys.
         """
         check.inst(
             upstream_partitions_def,
@@ -627,7 +627,7 @@ class StaticPartitionMapping(
     @cached_method
     def _check_downstream(self, *, downstream_partitions_def: PartitionsDefinition):
         """
-        validate that the mapping from upstream to downstream only maps to downstream keys
+        validate that the mapping from upstream to downstream only maps to downstream keys.
         """
         check.inst(
             downstream_partitions_def,

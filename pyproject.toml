@@ -171,7 +171,6 @@ ignore = [
   "D200",  # (one-line docstring should fit)
   "D205",  # (blank line after summary)
   "D212",  # (multi-line docstring summary should start at 1st line)
-  "D415",  # (docstring summary should end with a period)
   "D417",  # (missing arg in docstring)
 
   # (indent docstring rules) These rules should be enabled when ruff lands

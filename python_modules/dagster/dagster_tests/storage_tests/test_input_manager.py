@@ -417,7 +417,7 @@ def test_input_manager_with_assets():
 
 def test_input_manager_with_assets_no_default_io_manager():
     """Tests loading an upstream asset with an input manager when the downstream asset also uses a
-    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided
+    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided.
     """
 
     @asset
@@ -454,7 +454,7 @@ def test_input_manager_with_assets_no_default_io_manager():
 
 def test_input_manager_with_assets_and_config():
     """Tests that the correct config is passed to the io manager when using input_manager_key.
-    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager
+    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager.
     """
 
     @asset

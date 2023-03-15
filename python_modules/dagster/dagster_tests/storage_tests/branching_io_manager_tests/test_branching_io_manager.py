@@ -114,7 +114,7 @@ def test_write_alternative_branch_metadata_key():
 
 def test_basic_workflow():
     """
-    In this test we are going to iterate on an asset in the middle of a graph
+    In this test we are going to iterate on an asset in the middle of a graph.
 
     now_time --> now_time_plus_N --> now_time_plus_20_after_plus_N
 

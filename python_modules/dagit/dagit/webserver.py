@@ -205,7 +205,7 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
     def index_html_endpoint(self, request: Request):
         """
-        Serves root html
+        Serves root html.
         """
         index_path = self.relative_path("webapp/build/index.html")
 
@@ -327,7 +327,8 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
 
 
 class DagsterTracedCounterMiddleware:
-    """Middleware for counting traced dagster calls
+    """Middleware for counting traced dagster calls.
+
     Args:
       app (ASGI application): ASGI application
     """

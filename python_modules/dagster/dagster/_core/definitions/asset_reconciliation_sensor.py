@@ -348,7 +348,7 @@ def allowable_time_window_for_partitions_def(
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> Optional[TimeWindow]:
     """Returns a time window encompassing the partitions that the reconciliation sensor is currently
-    allowed to materialize for this partitions_def
+    allowed to materialize for this partitions_def.
     """
     latest_partition_window = partitions_def.get_last_partition_window()
     if latest_partition_window is None:

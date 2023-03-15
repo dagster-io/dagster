@@ -38,8 +38,9 @@ def sensor(
     required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
-    Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
-    decorated function may:
+    Creates a sensor where the decorated function is used as the sensor's evaluation function.
+
+    The decorated function may:
 
     1. Return a `RunRequest` object.
     2. Return a list of `RunRequest` objects.
@@ -102,7 +103,9 @@ def asset_sensor(
 ) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
     """
     Creates an asset sensor where the decorated function is used as the asset sensor's evaluation
-    function.  The decorated function may:
+    function.
+
+    The decorated function may:
 
     1. Return a `RunRequest` object.
     2. Return a list of `RunRequest` objects.

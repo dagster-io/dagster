@@ -375,7 +375,7 @@ def test_basic_multi_asset():
         }
     )
     def assets():
-        """Some docstring for this operation"""
+        """Some docstring for this operation."""
         pass
 
     assets_job = build_assets_job("assets_job", [assets])

@@ -105,8 +105,9 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """By default:
+    """Get the asset key for a dbt node.
 
+    By default:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
     the model itself.

@@ -16,12 +16,12 @@ def read_dataframe_from_table(**_kwargs):
 # ops_start_marker
 @op(out=Out(metadata={"schema": "some_schema", "table": "some_table"}))
 def op_1():
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 @op(out=Out(metadata={"schema": "other_schema", "table": "other_table"}))
 def op_2(_input_dataframe):
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 # ops_end_marker

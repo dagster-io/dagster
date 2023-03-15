@@ -62,7 +62,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def prefetch_asset_partition_counts(
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]
     ):
-        """For performance, batches together queries for selected assets"""
+        """For performance, batches together queries for selected assets."""
         self._asset_partition_count_cache[None] = dict(
             self.instance.get_materialization_count_by_partition(
                 asset_keys=asset_keys,
@@ -78,7 +78,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
 
     def prefetch_asset_records(self, asset_keys: Sequence[AssetKey]):
-        """For performance, batches together queries for selected assets"""
+        """For performance, batches together queries for selected assets."""
         # get all asset records for the selected assets
         asset_records = self.instance.get_asset_records(asset_keys)
         for asset_record in asset_records:

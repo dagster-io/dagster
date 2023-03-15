@@ -8,7 +8,8 @@ from dagster import MetadataValue, Output, asset
 def hackernews_top_story_ids():
     """
     Get top stories from the HackerNews top stories endpoint.
-    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories
+
+    API Docs: https://github.com/HackerNews/API#new-top-and-best-stories.
     """
     top_story_ids = requests.get(
         "https://hacker-news.firebaseio.com/v0/topstories.json"
@@ -19,7 +20,7 @@ def hackernews_top_story_ids():
 # asset dependencies can be inferred from parameter names
 @asset
 def hackernews_top_stories(hackernews_top_story_ids):
-    """Get items based on story ids from the HackerNews items endpoint"""
+    """Get items based on story ids from the HackerNews items endpoint."""
     results = []
     for item_id in hackernews_top_story_ids:
         item = requests.get(

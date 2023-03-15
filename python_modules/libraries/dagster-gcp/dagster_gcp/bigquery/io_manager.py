@@ -154,7 +154,7 @@ def build_bigquery_io_manager(
         }
     )
     def bigquery_io_manager(init_context):
-        """I/O Manager for storing outputs in a BigQuery database
+        """I/O Manager for storing outputs in a BigQuery database.
 
         Assets will be stored in the dataset and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.

@@ -681,7 +681,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
 
 
 class GrapheneSetNuxSeenMutation(graphene.Mutation):
-    """Store whether we've shown the nux to any user and they've dismissed or submitted it"""
+    """Store whether we've shown the nux to any user and they've dismissed or submitted it."""
 
     Output = graphene.NonNull(graphene.Boolean)
 

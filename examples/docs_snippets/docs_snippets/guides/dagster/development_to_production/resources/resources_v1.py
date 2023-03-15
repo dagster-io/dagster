@@ -7,7 +7,7 @@ import requests
 
 class HNAPIClient:
     """
-    Hacker News client that fetches live data
+    Hacker News client that fetches live data.
     """
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:

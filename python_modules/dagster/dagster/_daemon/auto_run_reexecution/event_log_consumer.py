@@ -152,8 +152,9 @@ def get_new_cursor(
     new_event_ids: Sequence[int],
 ) -> int:
     """
-    Return the new cursor value for an event type, or None if one shouldn't be persisted. The cursor
-    is guaranteed to be:
+    Return the new cursor value for an event type, or None if one shouldn't be persisted.
+
+    The cursor is guaranteed to be:
 
     - greater than or equal to any id in new_event_ids (otherwise we could process an event twice)
     - less than the id of any event of the desired type that hasn't been fetched yet (otherwise we

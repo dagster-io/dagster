@@ -32,12 +32,12 @@ def my_io_manager(_):
 
 @op(out=Out(io_manager_key="my_io_manager"))
 def op1():
-    """Do stuff"""
+    """Do stuff."""
 
 
 @op(ins={"dataframe": In(root_manager_key="my_root_input_manager")})
 def op2(dataframe):
-    """Do stuff"""
+    """Do stuff."""
 
 
 @job(

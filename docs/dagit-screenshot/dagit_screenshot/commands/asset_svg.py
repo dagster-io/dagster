@@ -133,8 +133,13 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
 
 def parse_params(param_str: str) -> Dict[str, str]:
     """
-    Parses a set of params for a markdown code block, e.g. returns {"foo": "bar", "baz": "qux"} for
-    ```python foo=bar baz=qux
+    Parses a set of params for a markdown code block.
+
+    For example, returns {"foo": "bar", "baz": "qux"} for:
+
+    ```python
+    foo=bar baz=qux.
+    ```
     """
     params = re.split(r"\s+", param_str)
     return {param.split("=")[0]: param.split("=")[1] for param in params if len(param) > 0}

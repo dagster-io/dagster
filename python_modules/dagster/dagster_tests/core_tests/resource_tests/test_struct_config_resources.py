@@ -324,7 +324,7 @@ def test_io_manager_factory_class():
         a_config_value: str
 
         def create_io_manager(self, _) -> IOManager:
-            """Implement as one would implement a @io_manager decorator function"""
+            """Implement as one would implement a @io_manager decorator function."""
             return AnIOManagerImplementation(self.a_config_value)
 
     executed = {}
