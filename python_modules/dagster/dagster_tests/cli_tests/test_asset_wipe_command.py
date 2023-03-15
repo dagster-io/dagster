@@ -51,7 +51,7 @@ def pipeline_two():
     solid_two()
 
 
-def test_asset_wipe_errors(instance_runner):  # pylint: disable=unused-argument
+def test_asset_wipe_errors(instance_runner):
     _, runner = instance_runner
     result = runner.invoke(asset_wipe_command)
     assert result.exit_code == 2
@@ -65,7 +65,7 @@ def test_asset_wipe_errors(instance_runner):  # pylint: disable=unused-argument
     assert "Error, cannot use more than one of: asset key, `--all`." in result.output
 
 
-def test_asset_exit(instance_runner):  # pylint: disable=unused-argument
+def test_asset_exit(instance_runner):
     _, runner = instance_runner
     result = runner.invoke(asset_wipe_command, ["--all"], input="NOT_DELETE\n")
     assert result.exit_code == 0

@@ -101,7 +101,7 @@ def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     )
     manager.handle_output(context, json_data)
 
-    with manager._get_path(context).open("r") as file:  # pylint: disable=W0212  # noqa: SLF001
+    with manager._get_path(context).open("r") as file:  # noqa: SLF001
         assert json.load(file) == json_data
 
     context = build_input_context(
@@ -145,7 +145,7 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
     )
     manager.handle_output(context, data)
 
-    with manager._get_path(context).open("rb") as file:  # pylint: disable=W0212  # noqa: SLF001
+    with manager._get_path(context).open("rb") as file:  # noqa: SLF001
         assert data == pickle.load(file)
 
     context = build_input_context(
@@ -388,9 +388,7 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         def load_from_path(self, context: InputContext, path: UPath) -> Any:
             return
 
-        def get_metadata(
-            self, context: OutputContext, obj: Any  # pylint: disable=unused-argument
-        ) -> Dict[str, MetadataValue]:
+        def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
             return {"length": MetadataValue.int(get_length(obj))}
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})

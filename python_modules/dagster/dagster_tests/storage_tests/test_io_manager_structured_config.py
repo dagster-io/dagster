@@ -1,5 +1,3 @@
-# pylint: disable=unused-argument
-
 from dagster import Definitions, In, asset, job, op
 from dagster._config.structured_config import ConfigurableIOManager, ConfigurableResource
 

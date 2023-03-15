@@ -74,7 +74,6 @@ from dagster._utils import datetime_as_float
 TEST_TIMEOUT = 5
 
 # py36 & 37 list.append not hashable
-# pylint: disable=unnecessary-lambda
 
 
 @contextmanager
@@ -364,7 +363,7 @@ class TestEventLogStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def event_log_storage(self):  # pylint: disable=arguments-differ
+        def event_log_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -380,7 +379,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
+    def instance(self, request) -> Optional[DagsterInstance]:
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -472,7 +471,7 @@ class TestEventLogStorage:
             pytest.skip("storage cannot watch runs")
 
         watched = []
-        watcher = lambda x, y: watched.append(x)  # pylint: disable=unnecessary-lambda
+        watcher = lambda x, y: watched.append(x)
 
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
@@ -2352,7 +2351,7 @@ class TestEventLogStorage:
             return 1
 
         @asset
-        def second_asset(my_asset):  # pylint: disable=unused-argument
+        def second_asset(my_asset):
             return 2
 
         with instance_for_test() as created_instance:

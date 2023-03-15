@@ -6,9 +6,6 @@ from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import PresetDefinition, pipeline
 
 
-# pylint:disable=no-member
-
-
 @op(
     ins={"units": In(List[Int])},
     out={"total": Out(Int)},

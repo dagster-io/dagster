@@ -37,7 +37,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
+class AbstractComputeExecutionContext(ABC):
     """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
     """
 

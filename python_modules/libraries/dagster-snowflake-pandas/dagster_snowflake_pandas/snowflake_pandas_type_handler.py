@@ -55,7 +55,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ) -> Mapping[str, RawMetadataValue]:
-        from snowflake import connector  # pylint: disable=no-name-in-module
+        from snowflake import connector
 
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")

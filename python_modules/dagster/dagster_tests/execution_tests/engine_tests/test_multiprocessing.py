@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 import os
 import sys
 import time
@@ -434,7 +433,7 @@ def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # noqa: T201
     sys.stdout.flush()
-    os._exit(1)  # pylint: disable=W0212  # noqa: SLF001
+    os._exit(1)  # noqa: SLF001
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])

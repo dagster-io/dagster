@@ -187,7 +187,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
         storage_account,
         container,
         credential,
-    ):  # pylint: disable=arguments-differ
+    ):
         with mock.patch(
             "dagster_azure.blob.compute_log_manager.generate_blob_sas"
         ) as generate_blob_sas, mock.patch(
@@ -212,7 +212,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
         storage_account,
         container,
         credential,
-    ):  # pylint: disable=arguments-differ
+    ):
         with mock.patch(
             "dagster_azure.blob.compute_log_manager.generate_blob_sas"
         ) as generate_blob_sas, mock.patch(
@@ -231,7 +231,7 @@ class TestAzureComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, captured_log_manager):  # pylint: disable=arguments-differ
+    def read_manager(self, captured_log_manager):
         yield captured_log_manager
 
 

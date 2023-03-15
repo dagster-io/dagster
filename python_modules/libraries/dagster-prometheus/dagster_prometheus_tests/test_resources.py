@@ -122,7 +122,7 @@ def test_prometheus_enum():
             registry=context.resources.prometheus.registry,
         )
         # no idea why pylint doesn't like this line, it's correct
-        e.state("running")  # pylint: disable=no-member
+        e.state("running")
 
         metric = None
         for metric in context.resources.prometheus.registry.collect():

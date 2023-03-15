@@ -28,7 +28,7 @@ def get_repo_v1():
         return True
 
     @asset
-    def bar(foo):  # pylint: disable=unused-argument
+    def bar(foo):
         return True
 
     @repository

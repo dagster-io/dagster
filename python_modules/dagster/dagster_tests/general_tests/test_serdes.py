@@ -150,7 +150,6 @@ def test_serdes_enum_backcompat():
 
             return super().unpack(value)
 
-    # pylint: disable=function-redefined
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=CorgeBackCompatSerializer)
     class Corge(Enum):
         BAR = 2
@@ -503,9 +502,7 @@ def test_named_tuple_skip_when_empty_fields() -> None:
     @_whitelist_for_serdes(whitelist_map=test_map, skip_when_empty_fields={"bar"})
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
-            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
-                cls, foo, bar
-            )
+            return super(SameSnapshotTuple, cls).__new__(cls, foo, bar)
 
     for bar_val in [None, [], {}, set()]:
         new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)

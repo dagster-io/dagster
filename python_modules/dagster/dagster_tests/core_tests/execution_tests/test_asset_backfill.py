@@ -477,12 +477,8 @@ def test_serialization(static_serialization, time_window_serialization):
     assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is True
     assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
 
-    daily_asset._partitions_def = (  # noqa: SLF001
-        static_partitions  # pylint: disable=protected-access
-    )
-    static_asset._partitions_def = (  # noqa: SLF001
-        time_window_partitions  # pylint: disable=protected-access
-    )
+    daily_asset._partitions_def = static_partitions  # noqa: SLF001
+    static_asset._partitions_def = time_window_partitions  # noqa: SLF001
 
     asset_graph = external_asset_graph_from_assets_by_repo_name(
         {"repo": [daily_asset, static_asset]}

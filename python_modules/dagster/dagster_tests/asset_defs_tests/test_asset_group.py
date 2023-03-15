@@ -845,7 +845,7 @@ def test_job_with_reserved_name():
     ):
 
         @repository
-        def the_repo():  # pylint: disable=unused-variable
+        def the_repo():
             return [the_job]
 
 

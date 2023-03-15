@@ -143,7 +143,7 @@ def test_load_from_instance(connector_to_group_fn, filter_connector, connector_t
     )
 
     @asset(ins={"xyz": AssetIn(key=xyz_asset_key)})
-    def downstream_asset(xyz):  # pylint: disable=unused-argument
+    def downstream_asset(xyz):
         return
 
     all_assets = [downstream_asset] + ft_assets

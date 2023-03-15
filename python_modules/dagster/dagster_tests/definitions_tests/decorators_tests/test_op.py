@@ -1,4 +1,3 @@
-# mypy: disable-error-code=return-value
 import time
 from functools import partial
 from typing import Dict, Generator, List, Tuple
@@ -674,7 +673,6 @@ def test_log_metadata_after_dynamic_output():
 
 
 def test_args_kwargs_op():
-    # pylint: disable=function-redefined
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"@op 'the_op' decorated function has positional vararg parameter "
@@ -1288,7 +1286,7 @@ def test_output_mismatch_tuple_lengths():
 
 def test_none_annotated_input():
     with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
-        # pylint: disable=unused-argument
+
         @op
         def op1(input1: None):
             ...

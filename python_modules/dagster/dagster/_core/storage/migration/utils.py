@@ -61,7 +61,7 @@ def get_currently_upgrading_instance() -> DagsterInstance:
 
 
 # alembic magic breaks pylint
-# pylint: disable=no-member
+
 
 # These intentionally use the schema at the time of the 0.10.0 release, to be used
 # during the 0.10.0 new tables migration

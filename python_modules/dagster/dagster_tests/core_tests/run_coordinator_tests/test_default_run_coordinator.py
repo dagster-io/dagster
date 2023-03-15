@@ -18,13 +18,13 @@ def instance():
 
 
 @pytest.fixture()
-def coodinator(instance):  # pylint: disable=redefined-outer-name
+def coodinator(instance):
     run_coordinator = DefaultRunCoordinator()
     run_coordinator.register_instance(instance)
     yield run_coordinator
 
 
-def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefined-outer-name
+def create_run(instance, external_pipeline, **kwargs):
     pipeline_args = merge_dicts(
         {
             "pipeline_name": "foo",
@@ -36,7 +36,7 @@ def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefi
     return create_run_for_test(instance, **pipeline_args)
 
 
-def test_submit_run(instance, coodinator):  # pylint: disable=redefined-outer-name
+def test_submit_run(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
         external_pipeline = (
             workspace.get_repository_location("bar_repo_location")
@@ -55,7 +55,7 @@ def test_submit_run(instance, coodinator):  # pylint: disable=redefined-outer-na
         assert instance.get_run_by_id("foo-1")
 
 
-def test_submit_run_checks_status(instance, coodinator):  # pylint: disable=redefined-outer-name
+def test_submit_run_checks_status(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
         external_pipeline = (
             workspace.get_repository_location("bar_repo_location")

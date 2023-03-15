@@ -2,7 +2,7 @@ import warnings
 
 try:
     # Centralise Azure imports here so we only need to warn in one place
-    from azure.core.exceptions import ResourceNotFoundError  # pylint: disable=unused-import
+    from azure.core.exceptions import ResourceNotFoundError
     from azure.storage.filedatalake import DataLakeServiceClient
 except ImportError:
     msg = (

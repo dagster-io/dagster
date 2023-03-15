@@ -34,7 +34,7 @@ LAUNCHER_RESOURCES = {
 
 
 @pytest.fixture
-def k8s_run_launcher_instance(kubeconfig_file):  # pylint: disable=redefined-outer-name
+def k8s_run_launcher_instance(kubeconfig_file):
     with environ({"BAR_TEST": "bar"}):
         with instance_for_test(
             overrides={

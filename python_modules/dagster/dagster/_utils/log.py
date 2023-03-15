@@ -45,7 +45,7 @@ class JsonFileHandler(logging.Handler):
                 text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -94,7 +94,7 @@ class JsonEventLoggerHandler(logging.Handler):
                 ff.write(text_line + "\n")
 
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -116,7 +116,7 @@ class StructuredLoggerHandler(logging.Handler):
                 )
             )
         # Need to catch Exception here, so disabling lint
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
@@ -206,7 +206,7 @@ def get_stack_trace_array(exception):
     return traceback.format_tb(tb)
 
 
-def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
+def _mockable_formatTime(record, datefmt=None):
     """Uses pendulum.now to determine the logging time, causing pendulum
     mocking to affect the logger timestamp in tests.
     """

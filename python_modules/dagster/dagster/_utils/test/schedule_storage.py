@@ -33,7 +33,7 @@ class TestScheduleStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def schedule_storage(self):  # pylint: disable=arguments-differ
+        def schedule_storage(self):
             return MyStorageImplementation()
     ```
     """

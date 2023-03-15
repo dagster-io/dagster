@@ -132,7 +132,7 @@ class SqlEventLogStorage(EventLogStorage):
                 partition = event.dagster_event.partition
 
         # https://stackoverflow.com/a/54386260/324449
-        return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+        return SqlEventLogStorageTable.insert().values(
             run_id=event.run_id,
             event=serialize_value(event),
             dagster_event_type=dagster_event_type,
@@ -291,7 +291,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             for tag in existing_tags:
                 conn.execute(
-                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.update()
                     .where(
                         db.and_(
                             AssetEventTagsTable.c.event_id == event_id,
@@ -304,7 +304,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             if added_tags:
                 conn.execute(
-                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.insert(),
                     [
                         dict(
                             event_id=event_id,
@@ -615,28 +615,24 @@ class SqlEventLogStorage(EventLogStorage):
 
         # https://stackoverflow.com/a/54386260/324449
         with self.run_connection(run_id=None) as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
         with self.index_connection() as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
@@ -647,10 +643,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
 
-        delete_statement = (
-            SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                SqlEventLogStorageTable.c.run_id == run_id
-            )
+        delete_statement = SqlEventLogStorageTable.delete().where(
+            SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
@@ -680,9 +674,7 @@ class SqlEventLogStorage(EventLogStorage):
                 keys_to_remove = []
                 keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
                 conn.execute(
-                    AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-                        AssetKeyTable.c.asset_key.in_(keys_to_remove)
-                    )
+                    AssetKeyTable.delete().where(AssetKeyTable.c.asset_key.in_(keys_to_remove))
                 )
 
     @property
@@ -703,7 +695,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.run_connection(run_id=event.run_id) as conn:
             conn.execute(
-                SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.update()
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .values(
                     event=serialize_value(event),
@@ -747,18 +739,16 @@ class SqlEventLogStorage(EventLogStorage):
         """This method marks an event_log data migration as complete, to indicate that a summary
         data migration is complete.
         """
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=name,
+            migration_completed=datetime.now(),
         )
         with self.index_connection() as conn:
             try:
                 conn.execute(query)
             except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
@@ -1303,7 +1293,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.can_cache_asset_status_data():
             with self.index_connection() as conn:
                 conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetKeyTable.update()
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
@@ -1617,7 +1607,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_connection() as conn:
             conn.execute(
-                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                AssetKeyTable.update()
                 .values(**wiped_values)
                 .where(
                     AssetKeyTable.c.asset_key == asset_key.to_string(),

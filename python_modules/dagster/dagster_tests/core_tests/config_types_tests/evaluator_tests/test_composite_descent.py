@@ -287,7 +287,7 @@ def test_double_nested_input_via_config_mapping():
             config_schema={},
         )
     )
-    def wrap_solid():  # pylint: disable=unused-variable
+    def wrap_solid():
         return number()
 
     @graph

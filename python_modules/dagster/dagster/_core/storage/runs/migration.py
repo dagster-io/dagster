@@ -94,7 +94,7 @@ def chunked_run_records_iterator(
                 yield run
 
             if progress:
-                progress.update(len(chunk))  # pylint: disable=no-member
+                progress.update(len(chunk))
 
 
 def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
@@ -146,7 +146,7 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
 
     with run_storage.connect() as conn:
         conn.execute(
-            RunsTable.update()  # pylint: disable=no-value-for-parameter
+            RunsTable.update()
             .where(RunsTable.c.run_id == run_id)
             .values(
                 start_time=run_stats.start_time,
@@ -207,7 +207,7 @@ def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
     repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
     try:
         conn.execute(
-            RunTagsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            RunTagsTable.insert().values(
                 run_id=run.run_id,
                 key=REPOSITORY_LABEL_TAG,
                 value=repository_label,

@@ -73,7 +73,7 @@ def test_load_grpc_server(capfd):
 
         subprocess.check_call(["dagster", "api", "grpc-health-check", "--port", str(port)])
 
-        ssl_result = subprocess.run(  # pylint:disable=subprocess-run-check
+        ssl_result = subprocess.run(
             ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"]
         )
         assert ssl_result.returncode == 1

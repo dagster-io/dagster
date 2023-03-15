@@ -299,7 +299,7 @@ def test_grpc_override_settings():
         assert instance.code_server_process_startup_timeout == 60
 
 
-def test_run_monitoring(capsys):  # pylint: disable=unused-argument
+def test_run_monitoring(capsys):
     with instance_for_test(
         overrides={
             "run_monitoring": {"enabled": True},

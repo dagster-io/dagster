@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 import operator
 from functools import reduce
 

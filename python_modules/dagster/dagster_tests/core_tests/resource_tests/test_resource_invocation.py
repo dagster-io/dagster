@@ -31,10 +31,10 @@ def test_resource_invocation_none_arg():
             "context was provided when invoking."
         ),
     ):
-        basic_resource()  # pylint: disable=no-value-for-parameter
+        basic_resource()
 
     @resource
-    def basic_resource_arb_context(arb_context):  # pylint: disable=unused-argument
+    def basic_resource_arb_context(arb_context):
         return 5
 
     assert basic_resource_arb_context(None) == 5
@@ -44,9 +44,7 @@ def test_resource_invocation_none_arg():
         DagsterInvalidInvocationError,
         match="Resource initialization expected argument 'arb_context'.",
     ):
-        assert (  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            basic_resource_arb_context(wrong_context=None) == 5
-        )
+        assert basic_resource_arb_context(wrong_context=None) == 5
 
 
 def test_resource_invocation_with_resources():

@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 from unittest.mock import MagicMock
 
 import pendulum

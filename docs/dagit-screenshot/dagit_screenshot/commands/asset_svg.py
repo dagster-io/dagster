@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, Optional
 
-from selenium import webdriver  # pylint: disable=import-error
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT

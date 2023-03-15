@@ -119,7 +119,7 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
 def define_execution_field(executor_defs: Sequence[ExecutorDefinition], description: str) -> Field:
     default_in_process = False
     for executor_def in executor_defs:
-        if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
+        if executor_def == in_process_executor:
             default_in_process = True
 
     selector = selector_for_named_defs(executor_defs)
@@ -130,11 +130,7 @@ def define_execution_field(executor_defs: Sequence[ExecutorDefinition], descript
         )
 
     # If we are using the execute_in_process executor, then ignore all executor config.
-    if (
-        len(executor_defs) == 1
-        and executor_defs[0]  # pylint: disable=comparison-with-callable
-        == execute_in_process_executor
-    ):
+    if len(executor_defs) == 1 and executor_defs[0] == execute_in_process_executor:
         return Field(Permissive(), is_required=False, default_value={}, description=description)
 
     return Field(selector, description=description)

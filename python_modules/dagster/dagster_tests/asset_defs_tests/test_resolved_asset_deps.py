@@ -24,7 +24,7 @@ def test_multi_asset_group_name():
         pass
 
     @multi_asset(group_name="somegroup", outs={"a": AssetOut(), "b": AssetOut()})
-    def multi_downstream(upstream):  # pylint: disable=unused-argument
+    def multi_downstream(upstream):
         pass
 
     resolved = resolve_assets_def_deps([upstream, multi_downstream], [])

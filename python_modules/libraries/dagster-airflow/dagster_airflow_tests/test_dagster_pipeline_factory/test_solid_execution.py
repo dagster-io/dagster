@@ -178,7 +178,6 @@ def test_template_task_dag():
         dag=dag,
     )
 
-    # pylint: disable=pointless-statement
     t1 >> [t2, t3]
 
     with instance_for_test() as instance:

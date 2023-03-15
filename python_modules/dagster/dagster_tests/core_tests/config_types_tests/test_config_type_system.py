@@ -1131,7 +1131,7 @@ def test_typing_types_into_config():
         typing.Tuple[int, int],
     ]:
         with pytest.raises(DagsterInvalidDefinitionError):
-            # pylint: disable=cell-var-from-loop; (false positive)
+
             @op(config_schema=Field(ttype))
             def _op(_):
                 pass

@@ -120,13 +120,13 @@ def test_load_from_instance(
     if connection_to_asset_key_fn:
 
         @asset
-        def downstream_asset(G_dagster_tags):  # pylint: disable=unused-argument
+        def downstream_asset(G_dagster_tags):
             return
 
     else:
 
         @asset
-        def downstream_asset(dagster_tags):  # pylint: disable=unused-argument
+        def downstream_asset(dagster_tags):
             return
 
     all_assets = [downstream_asset] + ab_assets

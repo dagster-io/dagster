@@ -508,7 +508,7 @@ def test_fan_in_skip():
         @op(out={"skip": Out(is_required=False)})
         def skip():
             return
-            yield  # pylint: disable=unreachable
+            yield
 
         @op
         def one():

@@ -261,12 +261,10 @@ def serialize(result: SparkConfigNode) -> bytes:
         printer.line("from dagster import Bool, Field, Float, IntSource, Permissive, StringSource")
         printer.blank_line()
         printer.blank_line()
-        printer.line("# pylint: disable=line-too-long")
         printer.line("def spark_config():")
         with printer.with_indent():
             printer.append("return ")
             result.write(printer)
-        printer.line("# pylint: enable=line-too-long")
         return printer.read().strip().encode("utf-8")
 
 

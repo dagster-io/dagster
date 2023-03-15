@@ -69,7 +69,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.utils import get_conn_string  # pylint: disable=import-error
+        from dagster_mysql.utils import get_conn_string
 
         if kwargs.get("port") == 3307:
             env_name = "MYSQL_TEST_PINNED_DB_HOST"
@@ -96,7 +96,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.run_storage import MySQLRunStorage  # pylint: disable=import-error
+        from dagster_mysql.run_storage import MySQLRunStorage
 
         storage = MySQLRunStorage.create_clean_storage(conn_string)
         assert storage
@@ -108,7 +108,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.event_log import MySQLEventLogStorage  # pylint: disable=import-error
+        from dagster_mysql.event_log import MySQLEventLogStorage
 
         storage = MySQLEventLogStorage.create_clean_storage(conn_string)
         assert storage
@@ -120,7 +120,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.schedule_storage.schedule_storage import (  # pylint: disable=import-error
+        from dagster_mysql.schedule_storage.schedule_storage import (
             MySQLScheduleStorage,
         )
 
@@ -142,7 +142,7 @@ class TestMySQLInstance:
         )
         conn_args = check.opt_dict_param(conn_args, "conn_args") if conn_args else {}
 
-        from dagster_mysql.utils import wait_for_connection  # pylint: disable=import-error
+        from dagster_mysql.utils import wait_for_connection
 
         if BUILDKITE:
             yield TestMySQLInstance.conn_string(

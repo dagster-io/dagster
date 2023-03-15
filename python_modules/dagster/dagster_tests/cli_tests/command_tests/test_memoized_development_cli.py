@@ -14,8 +14,8 @@ from ...execution_tests.memoized_dev_loop_pipeline import asset_job
 
 class Capturing(list):
     def __enter__(self):
-        self._stdout = sys.stdout  # pylint: disable=W0201
-        self._stringio = BytesIO()  # pylint: disable=W0201
+        self._stdout = sys.stdout
+        self._stringio = BytesIO()
         sys.stdout = self._stringio
         return self
 

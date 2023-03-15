@@ -75,14 +75,12 @@ def sample_schema_model(**config_attrs):
         c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
 
         @pa.check("c")
-        def c_check(  # pylint: disable=no-self-argument
-            cls, series: pa.typing.Series[str]
-        ) -> pa.typing.Series[bool]:
+        def c_check(cls, series: pa.typing.Series[str]) -> pa.typing.Series[bool]:
             """Two words separated by underscore."""
             return series.str.split("_", expand=True).shape[1] == 2  # type: ignore  # (bad stubs)
 
         @pa.dataframe_check
-        def a_gt_b(cls, df):  # pylint: disable=no-self-argument
+        def a_gt_b(cls, df):
             """sum(a) > sum(b)."""
             return df["a"].sum() > df["b"].sum()
 

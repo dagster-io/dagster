@@ -115,9 +115,7 @@ class InstigationLogger(logging.Logger):
             record.msg = " - ".join([self._repository_name, self._name, message])
         return record
 
-    def makeRecord(  # pylint: disable=signature-differs
-        self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo
-    ):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
         return self._annotate_record(record)
 

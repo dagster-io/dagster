@@ -70,7 +70,7 @@ def start_listening(connection, channels):
 
 def construct_signals(arg) -> signal.Signals:
     # function exists to consolidate and scope pylint directive
-    return signal.Signals(arg)  # pylint: disable=no-member
+    return signal.Signals(arg)
 
 
 def await_pg_notifications(

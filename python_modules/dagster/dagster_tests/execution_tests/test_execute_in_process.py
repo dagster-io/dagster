@@ -382,7 +382,6 @@ def test_retries_exceeded():
 
 
 def test_execute_in_process_defaults_override():
-    # pylint: disable=comparison-with-callable
     @op
     def some_op(context):
         assert context.job_def.resource_defs["io_manager"] == mem_io_manager

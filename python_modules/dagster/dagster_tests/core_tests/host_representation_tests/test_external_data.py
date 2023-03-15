@@ -146,7 +146,7 @@ def test_input_name_matches_output_name():
     not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
     @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
-    def something(result):  # pylint: disable=unused-argument
+    def something(result):
         pass
 
     assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
@@ -413,7 +413,7 @@ def test_inter_op_dependency():
         pass
 
     @asset
-    def downstream(only_in, mixed, only_out):  # pylint: disable=unused-argument
+    def downstream(only_in, mixed, only_out):
         pass
 
     @multi_asset(
@@ -425,7 +425,7 @@ def test_inter_op_dependency():
         },
         can_subset=True,
     )
-    def assets(in1, in2):  # pylint: disable=unused-argument
+    def assets(in1, in2):
         pass
 
     assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
@@ -558,7 +558,7 @@ def test_source_asset_with_op():
     foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
-    def bar(foo):  # pylint: disable=unused-argument
+    def bar(foo):
         pass
 
     assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])

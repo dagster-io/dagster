@@ -1,5 +1,3 @@
-# pylint: disable=anomalous-backslash-in-string
-
 import datetime
 import itertools
 import json

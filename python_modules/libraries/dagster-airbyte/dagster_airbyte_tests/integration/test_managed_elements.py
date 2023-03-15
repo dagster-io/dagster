@@ -1,5 +1,5 @@
 # ruff: noqa: T201
-# pylint: disable=unused-argument
+
 
 import os
 import time

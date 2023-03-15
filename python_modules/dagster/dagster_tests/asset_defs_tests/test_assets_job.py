@@ -672,7 +672,7 @@ def test_nasty_nested_graph_assets():
 
 def test_internal_asset_deps():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     with pytest.raises(Exception, match="output_name non_exist_output_name"):
@@ -693,7 +693,7 @@ def test_internal_asset_deps():
 
 def test_asset_def_from_op_inputs():
     @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
-    def my_op(my_input, other_input):  # pylint: disable=unused-argument
+    def my_op(my_input, other_input):
         pass
 
     assets_def = AssetsDefinition.from_op(
@@ -709,7 +709,7 @@ def test_asset_def_from_op_inputs():
 
 def test_asset_def_from_op_outputs():
     @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
-    def x_op(my_input, other_input):  # pylint: disable=unused-argument
+    def x_op(my_input, other_input):
         pass
 
     assets_def = AssetsDefinition.from_op(
@@ -725,7 +725,7 @@ def test_asset_def_from_op_outputs():
 
 def test_asset_from_op_no_args():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     assets_def = AssetsDefinition.from_op(
@@ -739,7 +739,7 @@ def test_asset_from_op_no_args():
 
 def test_asset_def_from_graph_inputs():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     @graph(ins={"x": GraphIn(), "y": GraphIn()})
@@ -779,7 +779,7 @@ def test_asset_def_from_graph_outputs():
 
 def test_graph_asset_decorator_no_args():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     @graph
@@ -797,7 +797,7 @@ def test_graph_asset_decorator_no_args():
 
 def test_graph_asset_group_name():
     @op
-    def my_op1(x):  # pylint: disable=unused-argument
+    def my_op1(x):
         return x
 
     @op
@@ -886,7 +886,7 @@ def test_all_assets_job():
         return 1
 
     @asset
-    def a2(a1):  # pylint: disable=unused-argument
+    def a2(a1):
         return 2
 
     job = build_assets_job("graph_asset_job", [a1, a2])
@@ -911,7 +911,7 @@ def test_basic_graph():
     def thing():
         da = get_string()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
+        o1, o2 = combine_strings_and_split(da, db)
         return o1
 
     @asset
@@ -1000,7 +1000,7 @@ def test_nested_graph():
     def thing():
         da = inside_thing()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
+        o1, o2 = combine_strings_and_split(da, db)
         return o1
 
     thing_asset = AssetsDefinition(
@@ -1170,7 +1170,7 @@ def test_internal_asset_deps_assets():
             "my_other_out_name": {AssetKey("thing")},
         },
     )
-    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
+    def multi_asset_with_internal_deps(thing):
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
@@ -1406,11 +1406,11 @@ def test_job_preserved_with_asset_subset():
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": int})
-    def two(context, one):  # pylint: disable=unused-argument
+    def two(context, one):
         assert context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": int})
-    def three(context, two):  # pylint: disable=unused-argument
+    def three(context, two):
         assert context.op_config["baz"] == 3
 
     foo_job = define_asset_job(
@@ -1441,11 +1441,11 @@ def test_job_default_config_preserved_with_asset_subset():
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": Field(int, default_value=2)})
-    def two(context, one):  # pylint: disable=unused-argument
+    def two(context, one):
         assert context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": Field(int, default_value=3)})
-    def three(context, two):  # pylint: disable=unused-argument
+    def three(context, two):
         assert context.op_config["baz"] == 3
 
     foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
@@ -1837,7 +1837,7 @@ def test_transitive_io_manager_dep_not_provided():
     )
 
     @asset
-    def my_derived_asset(my_source_asset):  # pylint: disable=unused-argument
+    def my_derived_asset(my_source_asset):
         pass
 
     with pytest.raises(

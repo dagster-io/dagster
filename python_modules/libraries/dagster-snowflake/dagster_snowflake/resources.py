@@ -32,7 +32,7 @@ class SnowflakeConnection:
     :py:func:`snowflake_resource`.
     """
 
-    def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
+    def __init__(self, config: Mapping[str, str], log):
         # Extract parameters from resource config. Note that we can't pass None values to
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
@@ -170,7 +170,7 @@ class SnowflakeConnection:
 
         """
         if self.connector == "sqlalchemy":
-            from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+            from snowflake.sqlalchemy import URL
             from sqlalchemy import create_engine
 
             engine = create_engine(URL(**self.conn_args), connect_args=self.sqlalchemy_engine_args)

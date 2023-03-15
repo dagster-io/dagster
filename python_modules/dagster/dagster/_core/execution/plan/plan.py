@@ -1200,8 +1200,6 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
     If true, this indicates that it's OK to execute steps in their own processes, because their
     outputs will be available to other processes.
     """
-    # pylint: disable=comparison-with-callable
-
     output_defs = [
         output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
     ]
@@ -1314,8 +1312,6 @@ def _compute_artifacts_persisted(
 
     Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
     """
-    # pylint: disable=comparison-with-callable
-
     mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
     if len(step_dict) == 0:

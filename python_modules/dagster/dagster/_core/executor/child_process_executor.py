@@ -43,7 +43,7 @@ class ChildProcessSystemErrorEvent(
     pass
 
 
-class ChildProcessCommand(ABC):  # pylint: disable=no-init
+class ChildProcessCommand(ABC):
     """Inherit from this class in order to use this library.
 
     The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.

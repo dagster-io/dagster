@@ -520,7 +520,6 @@ class ScheduleDefinition:
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
-            # pylint: disable=unused-argument
             def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
                 return check.opt_dict_param(run_config, "run_config")
 

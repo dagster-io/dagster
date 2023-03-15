@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name,unused-argument
-
 from dagster import AssetKey, IOManager, SourceAsset, asset, io_manager
 
 

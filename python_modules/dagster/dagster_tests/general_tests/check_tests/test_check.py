@@ -291,7 +291,7 @@ def test_opt_dict_param_with_type():
         value_type=(str, int),
     )
 
-    class Wrong:  # pylint: disable=redefined-outer-name
+    class Wrong:
         pass
 
     with pytest.raises(CheckError):
@@ -309,7 +309,7 @@ def test_opt_dict_param_with_type():
     with pytest.raises(CheckError):
         assert check.opt_dict_param(str_to_int, "str_to_int", value_type=Wrong)
 
-    class AlsoWrong:  # pylint: disable=redefined-outer-name
+    class AlsoWrong:
         pass
 
     with pytest.raises(CheckError):

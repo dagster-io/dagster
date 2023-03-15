@@ -116,7 +116,7 @@ def daemon_controller_from_instance(
             yield controller
     finally:
         if wait_for_processes_on_exit and grpc_server_registry:
-            grpc_server_registry.wait_for_processes()  # pylint: disable=no-member
+            grpc_server_registry.wait_for_processes()
 
 
 class DagsterDaemonController(AbstractContextManager):

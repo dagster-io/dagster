@@ -120,7 +120,6 @@ class StepOutputData(
         version: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         # graveyard
-        # pylint: disable=unused-argument
         intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
     ):
         return super(StepOutputData, cls).__new__(

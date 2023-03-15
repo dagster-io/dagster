@@ -24,7 +24,7 @@ from .version import __version__
 
 
 def create_dagit_cli():
-    return dagit  # pylint: disable=no-value-for-parameter
+    return dagit
 
 
 DEFAULT_DAGIT_HOST = "127.0.0.1"

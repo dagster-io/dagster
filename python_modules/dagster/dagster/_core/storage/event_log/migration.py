@@ -63,7 +63,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
         for (asset_key,) in to_insert:
             try:
                 conn.execute(
-                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    AssetKeyTable.insert().values(
                         asset_key=AssetKey.from_db_string(asset_key).to_string()
                     )
                 )
@@ -133,7 +133,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                 # this must be a wiped asset
                 conn.execute(
                     AssetKeyTable.update()
-                    .values(  # pylint: disable=no-value-for-parameter
+                    .values(
                         last_materialization=None,
                         last_materialization_timestamp=None,
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
@@ -147,7 +147,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
             else:
                 conn.execute(
                     AssetKeyTable.update()
-                    .values(  # pylint: disable=no-value-for-parameter
+                    .values(
                         last_materialization=serialize_value(event),
                         last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)

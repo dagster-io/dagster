@@ -7,7 +7,7 @@ from setuptools import find_packages, setup
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_gcp/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -22,7 +22,6 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Package for GCP-specific Dagster framework op and resource components.",
-    # pylint: disable=line-too-long
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-gcp",
     classifiers=[
         "Programming Language :: Python :: 3.7",

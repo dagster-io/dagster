@@ -1,5 +1,3 @@
-# pylint: disable=cell-var-from-loop
-
 import time
 
 import pytest

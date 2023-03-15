@@ -42,7 +42,7 @@ def test_event_list_hook_invocation():
             " provided."
         ),
     ):
-        basic_event_list_hook()  # pylint: disable=no-value-for-parameter
+        basic_event_list_hook()
 
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -51,7 +51,7 @@ def test_event_list_hook_invocation():
             " provided."
         ),
     ):
-        basic_event_list_hook(event_list=[])  # pylint: disable=no-value-for-parameter
+        basic_event_list_hook(event_list=[])
 
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -60,7 +60,7 @@ def test_event_list_hook_invocation():
             " provided."
         ),
     ):
-        basic_event_list_hook(context=None)  # pylint: disable=no-value-for-parameter
+        basic_event_list_hook(context=None)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -69,21 +69,17 @@ def test_event_list_hook_invocation():
             " provided."
         ),
     ):
-        basic_event_list_hook(None)  # pylint: disable=no-value-for-parameter
+        basic_event_list_hook(None)
 
     with pytest.raises(
         DagsterInvalidInvocationError, match="Could not find expected argument 'context'."
     ):
-        basic_event_list_hook(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            foo=None, event_list=[]
-        )
+        basic_event_list_hook(foo=None, event_list=[])
 
     with pytest.raises(
         DagsterInvalidInvocationError, match="Could not find expected argument 'event_list'."
     ):
-        basic_event_list_hook(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            context=None, bar=[]
-        )
+        basic_event_list_hook(context=None, bar=[])
 
 
 @pytest.mark.parametrize("hook_decorator", [success_hook, failure_hook])
@@ -109,12 +105,12 @@ def test_context_hook_invocation(hook_decorator):
         DagsterInvalidInvocationError,
         match="Decorated function expects one parameter, _, but 0 were provided.",
     ):
-        my_hook()  # pylint: disable=no-value-for-parameter
+        my_hook()
 
     with pytest.raises(
         DagsterInvalidInvocationError, match="Could not find expected argument '_'."
     ):
-        my_hook(foo=None)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+        my_hook(foo=None)
 
 
 @pytest.mark.parametrize(

@@ -297,7 +297,7 @@ def test_op_outputs_access():
     def failed_op(_):
         yield Output(1, "one")
         raise SomeUserException()
-        yield Output(3, "two")  # pylint: disable=unreachable
+        yield Output(3, "two")
 
     @op(out=DynamicOut())
     def dynamic_op(_):

@@ -19,7 +19,6 @@ from dagster_airflow.utils import (
 )
 
 
-# pylint: enable=no-name-in-module,import-error
 def _build_asset_dependencies(
     dag: DAG,
     graph: GraphDefinition,

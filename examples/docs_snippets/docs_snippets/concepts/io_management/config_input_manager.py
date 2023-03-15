@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 from dagster import In, job, op, root_input_manager
 
 

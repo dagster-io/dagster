@@ -587,7 +587,7 @@ class DependencyType(Enum):
     DYNAMIC_COLLECT = "DYNAMIC_COLLECT"
 
 
-class IDependencyDefinition(ABC):  # pylint: disable=no-init
+class IDependencyDefinition(ABC):
     @abstractmethod
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         pass

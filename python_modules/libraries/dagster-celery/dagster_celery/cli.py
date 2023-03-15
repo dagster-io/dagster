@@ -298,4 +298,4 @@ def main():
 
 if __name__ == "__main__":
     # pylint doesn't understand click
-    main()  # pylint:disable=no-value-for-parameter
+    main()

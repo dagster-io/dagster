@@ -13,7 +13,7 @@ def create_mock_client():
         client = DagsterGraphQLClient("localhost")
         yield MockClient(
             python_client=client,
-            mock_gql_client=client._client,  # pylint: disable=W0212  # noqa: SLF001
+            mock_gql_client=client._client,  # noqa: SLF001
         )
 
 

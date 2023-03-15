@@ -233,7 +233,7 @@ def asset_b():
 
 
 @asset
-def asset_c(asset_b):  # pylint: disable=unused-argument
+def asset_c(asset_b):
     return 3
 
 

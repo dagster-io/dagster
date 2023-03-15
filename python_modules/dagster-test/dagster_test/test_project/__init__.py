@@ -126,7 +126,7 @@ def get_test_project_recon_pipeline(
 
 
 class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         reconstructable_pipeline,
     ):

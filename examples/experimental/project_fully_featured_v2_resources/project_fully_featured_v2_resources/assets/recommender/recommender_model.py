@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import random
 
 from dagster import AssetIn, MetadataValue, Output, asset

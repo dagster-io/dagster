@@ -37,8 +37,6 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
 
-# pylint: disable=comparison-with-callable
-
 
 def create_single_node_job(name, called):
     called[name] = called[name] + 1
@@ -1175,7 +1173,6 @@ def test_default_executor_assets_repo():
     def the_repo():
         return [no_executor_provided, the_asset]
 
-    # pylint: disable=comparison-with-callable
     assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
 
     assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor

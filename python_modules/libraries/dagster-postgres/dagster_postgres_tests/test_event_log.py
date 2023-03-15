@@ -15,7 +15,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, conn_string):  # pylint: disable=arguments-renamed
+    def event_log_storage(self, conn_string):
         storage = PostgresEventLogStorage.create_clean_storage(conn_string)
         assert storage
         try:

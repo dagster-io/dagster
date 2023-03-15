@@ -9,7 +9,7 @@ class TestPostgresRunStorage(TestRunStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, conn_string):  # pylint: disable=arguments-renamed
+    def run_storage(self, conn_string):
         storage = PostgresRunStorage.create_clean_storage(conn_string)
         assert storage
         return storage
