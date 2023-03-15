@@ -15,7 +15,7 @@ export const RadioContainer = styled.div`
   }
 
   .bp3-control.bp3-radio {
-    padding: 8px;
+    padding: 4px 0px;
   }
 
   .bp3-control.bp3-radio.bp3-disabled {

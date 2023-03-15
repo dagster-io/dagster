@@ -508,8 +508,17 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           isInitiallyOpen={true}
         >
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
-            <Subheading>Launch as...</Subheading>
+            {target.type === 'pureAssetBackfill' ? null : (
+              <Checkbox
+                data-testid={testId('missing-only-checkbox')}
+                label="Backfill only failed and missing partitions within selection"
+                checked={missingFailedOnly}
+                disabled={launchWithRangesAsTags}
+                onChange={() => setMissingFailedOnly(!missingFailedOnly)}
+              />
+            )}
             <RadioContainer>
+              <Subheading>Launch as...</Subheading>
               <Radio
                 name="grant"
                 checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
@@ -542,15 +551,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 Multiple runs (One per selected partition)
               </Radio>
             </RadioContainer>
-            {target.type === 'pureAssetBackfill' ? null : (
-              <Checkbox
-                data-testid={testId('missing-only-checkbox')}
-                label="Missing and failed partitions only"
-                checked={missingFailedOnly}
-                disabled={launchWithRangesAsTags}
-                onChange={() => setMissingFailedOnly(!missingFailedOnly)}
-              />
-            )}
           </Box>
         </ToggleableSection>
 
