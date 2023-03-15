@@ -13,6 +13,13 @@ export type AssetPartitionDetailQuery = {
     | {
         __typename: 'AssetNode';
         id: string;
+        latestRunForPartition: {
+          __typename: 'Run';
+          id: string;
+          runId: string;
+          status: Types.RunStatus;
+          endTime: number | null;
+        } | null;
         assetMaterializations: Array<{
           __typename: 'MaterializationEvent';
           runId: string;
@@ -322,4 +329,12 @@ export type AssetPartitionDetailQuery = {
         }>;
       }
     | {__typename: 'AssetNotFoundError'};
+};
+
+export type AssetPartitionLatestRunFragment = {
+  __typename: 'Run';
+  id: string;
+  runId: string;
+  status: Types.RunStatus;
+  endTime: number | null;
 };

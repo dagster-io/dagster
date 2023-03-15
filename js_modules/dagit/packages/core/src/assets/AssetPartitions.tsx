@@ -15,8 +15,6 @@ import {testId} from '../testing/testId';
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
-import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
@@ -51,7 +49,6 @@ export const AssetPartitions: React.FC<Props> = ({
   assetPartitionDimensions,
   params,
   setParams,
-  liveData,
   dataRefreshHint,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], dataRefreshHint);
@@ -158,15 +155,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
   return (
     <>
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
-
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
       {timeDimensionIdx !== -1 && (
         <Box
           padding={{vertical: 16, horizontal: 24}}
