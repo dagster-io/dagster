@@ -16,6 +16,7 @@ import styled from 'styled-components/macro';
 import {StateDot} from '../assets/AssetPartitionList';
 import {partitionStateAtIndex, Range} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType} from '../graphql/types';
+import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {CreatePartitionDialog} from './CreatePartitionDialog';
@@ -69,7 +70,11 @@ export const DimensionRangeWizard: React.FC<{
           )}
         </Box>
         {isTimeseries && (
-          <Button small={true} onClick={() => setSelected(partitionKeys.slice(-1))}>
+          <Button
+            small={true}
+            onClick={() => setSelected(partitionKeys.slice(-1))}
+            data-testid={testId('latest-partition-button')}
+          >
             Latest
           </Button>
         )}
