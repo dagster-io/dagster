@@ -25,7 +25,11 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
+import {
+  displayNameForAssetKey,
+  isHiddenAssetGroupJob,
+  itemWithAssetKey,
+} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
@@ -213,7 +217,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
-    target.type === 'pureAssetBackfill' || (!launchWithRangesAsTags && keysFiltered.length !== 1);
+    target.type === 'pureWithAnchorAsset' || (!launchWithRangesAsTags && keysFiltered.length !== 1);
 
   React.useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
@@ -224,7 +228,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
-    target.type === 'pureAssetBackfill' && setMissingFailedOnly(false);
+    target.type === 'pureWithAnchorAsset' && setMissingFailedOnly(false);
   }, [target]);
 
   const onLaunch = async () => {
@@ -333,7 +337,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const onLaunchAsBackfill = async () => {
     const selectorIfJobPage: LaunchBackfillParams['selector'] | undefined =
-      'jobName' in target
+      'jobName' in target && !isHiddenAssetGroupJob(target.jobName)
         ? {
             partitionSetName: target.partitionSetName,
             repositorySelector: {
@@ -412,7 +416,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       <div data-testid={testId('choose-partitions-dialog')}>
         <Warnings
           launchAsBackfill={launchAsBackfill}
-          isPureAssetBackfill={target.type === 'pureAssetBackfill'}
+          isPureAssetBackfill={target.type === 'pureWithAnchorAsset'}
           upstreamAssetKeys={upstreamAssetKeys}
           selections={selections}
           setSelections={setSelections}
@@ -508,7 +512,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           isInitiallyOpen={true}
         >
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
-            {target.type === 'pureAssetBackfill' ? null : (
+            {target.type === 'pureWithAnchorAsset' ? null : (
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
                 label="Backfill only failed and missing partitions within selection"
