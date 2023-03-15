@@ -172,13 +172,6 @@ ignore = [
   "D205",  # (blank line after summary)
   "D417",  # (missing arg in docstring)
 
-  # (indent docstring rules) These rules should be enabled when ruff lands
-  # on/off style comments, which would allow turning them off for specific
-  # docstrings.
-  "D207", # (under-indented docstring)
-  "D208", # (over-indented docstring)
-  "D402", # (first line should not be the function's "signature")
-
 ]
 
 # Match black. Note that this also checks comment line length, but black does not format comments.

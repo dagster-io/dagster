@@ -100,7 +100,7 @@ def test_failure_propagation():
     A                F (skipped)
      \\             //
       D (fails) == E (skipped).
-    """
+    """  # noqa: D208
     solid_a = create_root_success_solid("solid_a")
 
     @op
