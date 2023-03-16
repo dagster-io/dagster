@@ -35,6 +35,9 @@ def construct_s3_client(
     profile_name=None,
     use_ssl=True,
     verify=None,
+    aws_access_key_id=None,
+    aws_secret_access_key=None,
+    aws_session_token=None,
 ):
     check.int_param(max_attempts, "max_attempts")
     check.opt_str_param(region_name, "region_name")
@@ -51,6 +54,9 @@ def construct_s3_client(
         use_ssl=use_ssl,
         verify=verify,
         endpoint_url=endpoint_url,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
         config=construct_boto_client_retry_config(max_attempts),
     ).meta.client
 

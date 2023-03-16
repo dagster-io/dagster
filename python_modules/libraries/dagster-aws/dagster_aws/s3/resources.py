@@ -49,6 +49,28 @@ S3_SESSION_CONFIG = {
         is_required=False,
         default_value=None,
     ),
+    "aws_access_key_id": Field(
+        str,
+        description="The access key to use when creating the client.",
+        is_required=False,
+        default_value=None,
+    ),
+    "aws_secret_access_key": Field(
+        str,
+        description=(
+            "The secret key to use when creating the client."
+        ),
+        is_required=False,
+        default_value=None,
+    ),
+    "aws_session_token": Field(
+        str,
+        description=(
+            "TThe session token to use when creating the client."
+        ),
+        is_required=False,
+        default_value=None,
+    ),
 }
 
 
@@ -124,6 +146,9 @@ def s3_resource(context):
         profile_name=context.resource_config.get("profile_name"),
         use_ssl=context.resource_config.get("use_ssl"),
         verify=context.resource_config.get("verify"),
+        aws_access_key_id=context.resource_config.get("aws_access_key_id"),
+        aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
+        aws_session_token=context.resource_config.get("aws_session_token"),
     )
 
 
@@ -150,6 +175,9 @@ def s3_file_manager(context):
             profile_name=context.resource_config.get("profile_name"),
             use_ssl=context.resource_config.get("use_ssl"),
             verify=context.resource_config.get("verify"),
+            aws_access_key_id=context.resource_config.get("aws_access_key_id"),
+            aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
+            aws_session_token=context.resource_config.get("aws_session_token"),
         ),
         s3_bucket=context.resource_config["s3_bucket"],
         s3_base_key=context.resource_config["s3_prefix"],
