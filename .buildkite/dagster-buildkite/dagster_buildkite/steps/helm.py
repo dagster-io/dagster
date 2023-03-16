@@ -21,6 +21,7 @@ def build_helm_steps() -> List[BuildkiteStep]:
             # run helm schema tests only once, on the latest python version
             AvailablePythonVersion.V3_7,
             AvailablePythonVersion.V3_8,
+            AvailablePythonVersion.V3_9,
         ],
         name="dagster-helm",
         retries=2,
