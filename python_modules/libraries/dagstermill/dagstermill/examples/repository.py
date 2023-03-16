@@ -150,7 +150,7 @@ class HelloWorldConfig(Config):
     greeting: str = "hello"
 
 
-hello_world_config_struct = test_nb_op("hello_world_config", config_schema=HelloWorldConfig)
+hello_world_config_struct = test_nb_op("hello_world_config_struct", config_schema=HelloWorldConfig)
 
 
 class GoodbyeConfig(Config):
@@ -158,7 +158,7 @@ class GoodbyeConfig(Config):
 
 
 goodbye_config_struct = test_nb_op(
-    name="goodbye_config",
+    name="goodbye_config_struct",
     path=nb_test_path("print_dagstermill_context_op_config"),
     output_notebook_name="notebook",
     config_schema=GoodbyeConfig,

@@ -88,6 +88,13 @@ def test_hello_world_with_config():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_with_struct_config() -> None:
+    with exec_for_test("hello_world_config_job_struct") as result:
+        assert result.success
+        assert result.output_for_node("hello_world_config_struct") == "hello"
+
+
+@pytest.mark.notebook_test
 def test_hello_world_with_config_escape():
     with exec_for_test(
         "hello_world_config_job",
