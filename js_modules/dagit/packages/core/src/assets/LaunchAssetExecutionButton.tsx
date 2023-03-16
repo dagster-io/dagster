@@ -42,7 +42,7 @@ import {
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
-  | {type: 'pureAssetBackfill'; anchorAssetKey: AssetKey};
+  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -230,6 +230,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             role="button"
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
+            disabled={options.slice(1).every((o) => o.assetKeys.length === 0)}
             intent={intent}
           />
         </Popover>
@@ -411,7 +412,7 @@ async function stateForLaunchingAssets(
     return {
       type: 'partitions',
       assets,
-      target: {type: 'pureAssetBackfill', anchorAssetKey: anchorAsset.assetKey},
+      target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };

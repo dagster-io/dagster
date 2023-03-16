@@ -1,5 +1,6 @@
 import itertools
 from datetime import datetime
+from functools import reduce
 from typing import (
     Dict,
     Iterable,
@@ -431,6 +432,22 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             )
             for partitions_tuple in itertools.product(*partition_sequences)
         ]
+
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
+        # In the meantime, relying on get_num_partitions to handle duplicates to display
+        # correct counts in Dagit
+        dimension_counts = [
+            dim.partitions_def.get_num_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for dim in self.partitions_defs
+        ]
+        return reduce(lambda x, y: x * y, dimension_counts, 1)
 
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):

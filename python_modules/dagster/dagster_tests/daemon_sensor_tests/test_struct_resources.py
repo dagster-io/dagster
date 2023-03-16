@@ -94,6 +94,21 @@ def sensor_context_arg_not_first_and_weird_name(
     return RunRequest(not_called_context.resources.my_resource.a_str, run_config={}, tags={})
 
 
+@resource
+def the_inner() -> str:
+    return "oo"
+
+
+@resource(required_resource_keys={"the_inner"})
+def the_outer(init_context) -> str:
+    return "f" + init_context.resources.the_inner
+
+
+@sensor(job=the_job, required_resource_keys={"the_outer"})
+def sensor_resource_deps(context):
+    return RunRequest(context.resources.the_outer, run_config={}, tags={})
+
+
 the_repo = Definitions(
     jobs=[the_job],
     sensors=[
@@ -103,10 +118,13 @@ the_repo = Definitions(
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
         sensor_context_arg_not_first_and_weird_name,
+        sensor_resource_deps,
     ],
     resources={
         "my_resource": MyResource(a_str="foo"),
         "my_cm_resource": my_cm_resource,
+        "the_inner": the_inner,
+        "the_outer": the_outer,
     },
 )
 
@@ -170,6 +188,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
         "sensor_context_arg_not_first_and_weird_name",
+        "sensor_resource_deps",
     ],
 )
 def test_resources(

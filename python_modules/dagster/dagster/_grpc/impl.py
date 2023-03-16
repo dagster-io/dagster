@@ -270,6 +270,8 @@ def get_external_schedule_execution(
     scheduled_execution_timestamp: Optional[float],
     scheduled_execution_timezone: Optional[str],
 ):
+    from dagster._core.execution.resources_init import get_transitive_required_resource_keys
+
     schedule_def = repo_def.get_schedule_def(schedule_name)
     scheduled_execution_time = (
         pendulum.from_timestamp(
@@ -280,10 +282,11 @@ def get_external_schedule_execution(
         else None
     )
 
+    required_resource_keys = get_transitive_required_resource_keys(
+        schedule_def.required_resource_keys, repo_def.get_top_level_resources()
+    )
     resources_to_build = {
-        k: v
-        for k, v in repo_def.get_top_level_resources().items()
-        if k in schedule_def.required_resource_keys
+        k: v for k, v in repo_def.get_top_level_resources().items() if k in required_resource_keys
     }
 
     with ScheduleEvaluationContext(
@@ -315,13 +318,18 @@ def get_external_sensor_execution(
     last_run_key: Optional[str],
     cursor: Optional[str],
 ):
+    from dagster._core.execution.resources_init import get_transitive_required_resource_keys
+
     sensor_def = repo_def.get_sensor_def(sensor_name)
 
     with ExitStack() as stack:
+        required_resource_keys = get_transitive_required_resource_keys(
+            sensor_def.required_resource_keys, repo_def.get_top_level_resources()
+        )
         resources_to_build = {
             k: v
             for k, v in repo_def.get_top_level_resources().items()
-            if k in sensor_def.required_resource_keys
+            if k in required_resource_keys
         }
         sensor_context = stack.enter_context(
             SensorEvaluationContext(

@@ -133,6 +133,13 @@ def asset_groups_repository():
 
 
 @repository
+def basic_assets_repository():
+    from . import basic_assets
+
+    return [load_assets_from_modules([basic_assets]), basic_assets.basic_assets_job]
+
+
+@repository
 def nothing_repository():
     from .nothing_assets import nothing_job
 

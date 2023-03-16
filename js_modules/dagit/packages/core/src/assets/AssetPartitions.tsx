@@ -1,7 +1,6 @@
 import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import without from 'lodash/without';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -16,8 +15,6 @@ import {testId} from '../testing/testId';
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
-import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
@@ -45,14 +42,17 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE];
+const DISPLAYED_STATES = [
+  PartitionState.MISSING,
+  PartitionState.SUCCESS,
+  PartitionState.FAILURE,
+].sort();
 
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
-  liveData,
   dataRefreshHint,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], dataRefreshHint);
@@ -126,23 +126,25 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {selectedRanges} = selections[idx];
     const allKeys = sortedPartitions[idx];
+    console.log({allKeys, selectedRanges});
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
-    const getKeysWithStates = (states: PartitionState[]) => {
-      const materializedInSelection = rangesClippedToSelection(
-        materializedRangesByDimension[idx],
-        selectedRanges,
-      );
-      return materializedInSelection.flatMap((r) =>
-        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
-      );
-    };
-
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
       return getSelectionKeys(); // optimization for the default case
     }
+
+    const rangesInSelection = rangesClippedToSelection(
+      materializedRangesByDimension[idx],
+      selectedRanges,
+    );
+
+    const getKeysWithStates = (states: PartitionState[]) => {
+      return rangesInSelection.flatMap((r) =>
+        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+      );
+    };
 
     const states: PartitionState[] = [];
     if (stateFilters.includes(PartitionState.SUCCESS)) {
@@ -155,11 +157,11 @@ export const AssetPartitions: React.FC<Props> = ({
 
     // We have to add in "missing" separately because it's the absence of a range
     if (stateFilters.includes(PartitionState.MISSING)) {
-      const missing = without(
-        getSelectionKeys(),
-        ...getKeysWithStates([PartitionState.SUCCESS, PartitionState.FAILURE]),
+      return allKeys.filter(
+        (a, idx) =>
+          matching.includes(a) ||
+          !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
       );
-      return uniq([...matching, ...missing]);
     } else {
       return matching;
     }
@@ -177,15 +179,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
   return (
     <>
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
-
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
       {timeDimensionIdx !== -1 && (
         <Box
           padding={{vertical: 16, horizontal: 24}}
@@ -244,6 +237,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 )}
               </div>
               <SortButton
+                data-testid={`sort-${idx}`}
                 onClick={() => {
                   setSelectionSorts((sorts) => {
                     const copy = [...sorts];

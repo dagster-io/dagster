@@ -53,6 +53,10 @@ def test_invalid_partition_key():
         StaticPartitionsDefinition(["foo", "foo...bar"])
 
 
+def test_count_unique_static_partitions():
+    return StaticPartitionsDefinition(["foo", "foo"]).get_num_partitions() == 1
+
+
 @pytest.mark.parametrize(
     argnames=["schedule_type", "start", "execution_day", "end", "error_message_regex"],
     ids=[

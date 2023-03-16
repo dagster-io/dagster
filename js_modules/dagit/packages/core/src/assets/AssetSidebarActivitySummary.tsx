@@ -8,7 +8,7 @@ import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
+import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {useGroupedEvents} from './groupByPartition';
 import {AssetKey} from './types';
@@ -57,14 +57,18 @@ export const AssetSidebarActivitySummary: React.FC<Props> = ({
   }
   return (
     <>
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      />
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
-      />
+      {!assetHasDefinedPartitions && (
+        <>
+          <FailedRunSinceMaterializationBanner
+            run={liveData?.runWhichFailedToMaterialize || null}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          />
+          <CurrentRunsBanner
+            liveData={liveData}
+            border={{side: 'top', width: 1, color: Colors.KeylineGray}}
+          />
+        </>
+      )}
 
       {liveData?.freshnessPolicy && (
         <SidebarSection title="Freshness policy">

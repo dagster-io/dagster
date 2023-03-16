@@ -1,10 +1,22 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Group, Heading, Icon, Mono, Spinner, Subheading, Tag} from '@dagster-io/ui';
+import {
+  Alert,
+  Box,
+  Colors,
+  Group,
+  Heading,
+  Icon,
+  Mono,
+  Spinner,
+  Subheading,
+  Tag,
+} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {RunStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -15,9 +27,11 @@ import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
+  AssetPartitionLatestRunFragment,
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
 } from './types/AssetPartitionDetail.types';
@@ -36,11 +50,18 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     },
   );
 
-  const {materializations, observations, hasLineage} = React.useMemo(() => {
+  const {materializations, observations, hasLineage, latestRunForPartition} = React.useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
-      return {materializations: [], observations: [], hasLineage: false};
+      return {
+        materializations: [],
+        observations: [],
+        hasLineage: false,
+        latestRunForPartition: null,
+      };
     }
     return {
+      latestRunForPartition: result.data.assetNodeOrError.latestRunForPartition,
+
       materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
         (a, b) => Number(b.timestamp) - Number(a.timestamp),
       ),
@@ -60,6 +81,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   return (
     <AssetPartitionDetail
       assetKey={props.assetKey}
+      latestRunForPartition={latestRunForPartition}
       hasLineage={hasLineage}
       group={{
         latest: materializations[0],
@@ -79,6 +101,10 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
       __typename
       ... on AssetNode {
         id
+        latestRunForPartition(partition: $partitionKey) {
+          id
+          ...AssetPartitionLatestRunFragment
+        }
         assetMaterializations(partitions: [$partitionKey]) {
           ... on MaterializationEvent {
             runId
@@ -94,6 +120,13 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
       }
     }
   }
+  fragment AssetPartitionLatestRunFragment on Run {
+    __typename
+    id
+    runId
+    status
+    endTime
+  }
 
   ${ASSET_MATERIALIZATION_FRAGMENT}
   ${ASSET_OBSERVATION_FRAGMENT}
@@ -102,12 +135,28 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
 export const AssetPartitionDetail: React.FC<{
   assetKey: AssetKey;
   group: AssetEventGroup;
+  latestRunForPartition: AssetPartitionLatestRunFragment | null;
   hasLineage: boolean;
   hasLoadingState?: boolean;
-}> = ({assetKey, group, hasLineage, hasLoadingState}) => {
+}> = ({assetKey, group, hasLineage, hasLoadingState, latestRunForPartition}) => {
   const {latest, partition, all} = group;
-  const run = latest?.runOrError?.__typename === 'Run' ? latest.runOrError : null;
-  const repositoryOrigin = run?.repositoryOrigin;
+
+  // Somewhat confusing, but we have `latestEventRun`, the run that generated the
+  // last successful materialization and we also have `currentRun`, which may have failed!
+  const latestEventRun = latest?.runOrError?.__typename === 'Run' ? latest.runOrError : null;
+
+  const currentRun =
+    latestRunForPartition?.id !== latestEventRun?.id ? latestRunForPartition : null;
+  const currentRunStatusMessage =
+    currentRun?.status === RunStatus.STARTED
+      ? 'has started and is refreshing this partition.'
+      : currentRun?.status === RunStatus.STARTING
+      ? 'is starting and will refresh this partition.'
+      : currentRun?.status === RunStatus.QUEUED
+      ? 'is queued and is refreshing this partition.'
+      : undefined;
+
+  const repositoryOrigin = latestEventRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)
     : null;
@@ -142,6 +191,26 @@ export const AssetPartitionDetail: React.FC<{
         )}
         <div style={{flex: 1}} />
       </Box>
+      {currentRun?.status === RunStatus.FAILURE && (
+        <FailedRunSinceMaterializationBanner
+          run={currentRun}
+          padding={{horizontal: 0, vertical: 16}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+        />
+      )}
+      {currentRun && currentRunStatusMessage && (
+        <Alert
+          intent="info"
+          icon={<Spinner purpose="body-text" />}
+          title={
+            <div style={{fontWeight: 400}}>
+              Run <Link to={`/runs/${currentRun.runId}`}>{titleForRun(currentRun)}</Link>{' '}
+              {currentRunStatusMessage}
+            </div>
+          }
+        />
+      )}
+
       <Box
         style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, minHeight: 76}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -172,14 +241,11 @@ export const AssetPartitionDetail: React.FC<{
         </Box>
         <Box flex={{gap: 4, direction: 'column'}}>
           <Subheading>Run</Subheading>
-          {latest?.runOrError?.__typename === 'Run' ? (
+          {latestEventRun && latest ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <RunStatusWithStats
-                runId={latest.runOrError.runId}
-                status={latest.runOrError.status}
-              />
-              <Link to={linkToRunEvent(latest.runOrError, latest)}>
-                <Mono>{titleForRun(latest.runOrError)}</Mono>
+              <RunStatusWithStats runId={latestEventRun.runId} status={latestEventRun.status} />
+              <Link to={linkToRunEvent(latestEventRun, latest)}>
+                <Mono>{titleForRun(latestEventRun)}</Mono>
               </Link>
             </Box>
           ) : (
@@ -188,20 +254,20 @@ export const AssetPartitionDetail: React.FC<{
         </Box>
         <Box flex={{gap: 4, direction: 'column'}}>
           <Subheading>Job</Subheading>
-          {latest && run && !isHiddenAssetGroupJob(run.pipelineName) ? (
+          {latest && latestEventRun && !isHiddenAssetGroupJob(latestEventRun.pipelineName) ? (
             <Box>
               <Box>
                 <PipelineReference
                   showIcon
-                  pipelineName={run.pipelineName}
+                  pipelineName={latestEventRun.pipelineName}
                   pipelineHrefContext={repoAddress || 'repo-unknown'}
-                  snapshotId={run.pipelineSnapshotId}
-                  isJob={isThisThingAJob(repo, run.pipelineName)}
+                  snapshotId={latestEventRun.pipelineSnapshotId}
+                  isJob={isThisThingAJob(repo, latestEventRun.pipelineName)}
                 />
               </Box>
               <Group direction="row" spacing={8} alignItems="center">
                 <Icon name="linear_scale" color={Colors.Gray400} />
-                <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
+                <Link to={linkToRunEvent(latestEventRun, latest)}>{latest.stepKey}</Link>
               </Group>
             </Box>
           ) : (
@@ -229,6 +295,7 @@ export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string
   <AssetPartitionDetail
     assetKey={{path: ['']}}
     group={{all: [], latest: null, timestamp: '0', partition: partitionKey}}
+    latestRunForPartition={null}
     hasLineage={false}
     hasLoadingState
   />

@@ -9,6 +9,7 @@ from dagster import (
     ScheduleEvaluationContext,
     job,
     op,
+    resource,
     schedule,
 )
 from dagster._config.structured_config import ConfigurableResource
@@ -65,15 +66,37 @@ def schedule_from_weird_name(
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@resource
+def the_inner() -> str:
+    return "oo"
+
+
+@resource(required_resource_keys={"the_inner"})
+def the_outer(init_context) -> str:
+    return "f" + init_context.resources.the_inner
+
+
+@schedule(
+    job_name="the_job",
+    required_resource_keys={"the_outer"},
+    cron_schedule="* * * * *",
+)
+def schedule_resource_deps(context):
+    return RunRequest("foo", run_config={}, tags={})
+
+
 the_repo = Definitions(
     jobs=[the_job],
     schedules=[
         schedule_from_context,
         schedule_from_arg,
         schedule_from_weird_name,
+        schedule_resource_deps,
     ],
     resources={
         "my_resource": MyResource(a_str="foo"),
+        "the_inner": the_inner,
+        "the_outer": the_outer,
     },
 )
 
@@ -120,7 +143,12 @@ def loadable_target_origin() -> LoadableTargetOrigin:
 
 @pytest.mark.parametrize(
     "schedule_name",
-    ["schedule_from_context", "schedule_from_arg", "schedule_from_weird_name"],
+    [
+        "schedule_from_context",
+        "schedule_from_arg",
+        "schedule_from_weird_name",
+        "schedule_resource_deps",
+    ],
 )
 def test_resources(
     caplog,

@@ -1,5 +1,87 @@
 # Changelog
 
+# 1.2.2 (core) / 0.18.2 (libraries)
+
+### New
+
+- Dagster is now tested on Python 3.11.
+- Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
+
+  ```python
+  @op(required_resource_keys={"foo")
+  def my_op(context)
+      print(context.foo)
+
+  @job
+  def my_job():
+    my_op()
+
+  defs = Definitions(
+      jobs=BindResourcesToJobs([my_job])
+      resources={"foo": foo_resource}
+  ```
+
+- Added `dagster asset list` and `dagster asset materialize` commands to Dagster’s command line interface, for listing and materializing software-defined assets.
+- `build_schedule_from_partitioned_job` now accepts jobs partitioned with a `MultiPartitionsDefinition` that have a time-partitioned dimension.
+- Added `SpecificPartitionsPartitionMapping`, which allows an asset, or all partitions of an asset, to depend on a specific subset of the partitions in an upstream asset.
+- `load_asset_value` now supports `SourceAsset`s.
+- [ui] Ctrl+K has been added as a keyboard shortcut to open global search.
+- [ui] Most pages with search bars now sync the search filter to the URL, so it’s easier to bookmark views of interest.
+- [ui] In the run logs table, the timestamp column has been moved to the far left, which will hopefully allow for better visual alignment with op names and tags.
+- [dagster-dbt] A new `node_info_to_definition_metadata_fn` to `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` allows custom metadata to be attached to the asset definitions generated from these methods.
+- [dagster-celery-k8s] The Kubernetes namespace that runs using the `CeleryK8sRunLauncher` are launched in can now be configured by setting the `jobNamespace` field in the Dagster Helm chart under `celeryK8sRunLauncherConfig`.
+- [dagster-gcp] The BigQuery I/O manager now accepts `timeout` configuration. Currently, this configuration will only be applied when working with Pandas DataFrames, and will set the number of seconds to wait for a request before using a retry.
+- [dagster-gcp] [dagster-snowflake] [dagster-duckdb] The BigQuery, Snowflake, and DuckDB I/O managers now support self-dependent assets. When a partitioned asset depends on a prior partition of itself, the I/O managers will now load that partition as a DataFrame. For the first partition in the dependency sequence, an empty DataFrame will be returned.
+- [dagster-k8s] `k8s_job_op` now supports running Kubernetes jobs with more than one pod (Thanks @Taadas).
+
+### Bugfixes
+
+- Fixed a bug that causes backfill tags that users set in the UI to not be included on the backfill runs, when launching an asset backfill.
+- Fixed a bug that prevented resume from failure re-execution for jobs that contained assets and dynamic graphs.
+- Fixed an issue where the asset reconciliation sensor would issue run requests for assets that were targeted by an active asset backfill, resulting in duplicate runs.
+- Fixed an issue where the asset reconciliation sensor could issue runs more frequently than necessary for assets with FreshnessPolicies having intervals longer than 12 hours.
+- Fixed an issue where `AssetValueLoader.load_asset_value()` didn’t load transitive resource dependencies correctly.
+- Fixed an issue where constructing a `RunConfig` object with optional config arguments would lead to an error.
+- Fixed the type annotation on `ScheduleEvaluationContext.scheduled_execution_time` to not be `Optional`.
+- Fixed the type annotation on `OpExecutionContext.partition_time_window` \*\*\*\*(thanks @elben10).
+- `InputContext.upstream_output.log` is no longer `None` when loading a source asset.
+- [Pydantic type constraints](https://docs.pydantic.dev/usage/types/#constrained-types) are now supported by the [Pythonic config](https://docs.dagster.io/guides/dagster/pythonic-config) API.
+- An input resolution bug that occurred in certain conditions when composing graphs with same named ops has been fixed.
+- Invoking an op with collisions between positional args and keyword args now throws an exception.
+- `async def` ops are now invoked with `asyncio.run`.
+- `TimeWindowPartitionDefinition` now throws an error at definition time when passed an invalid cron schedule instead of at runtime.
+- [ui] Previously, using dynamic partitions with assets that required config would raise an error in the launchpad. This has been fixed.
+- [ui] The lineage tab loads faster and flickers less as you navigate between connected assets in the lineage graph
+- [ui] The config YAML editor no longer offers incorrect autcompletion context when you’re beginning a new indented line.
+- [ui] When viewing the asset details page for a source asset, the button in the top right correctly reads “Observe” instead of “Materialize”
+- [dagster-dbt] Previously, setting a `cron_schedule_timezone` inside of the config for a dbt model would not result in that property being set on the generated `FreshnessPolicy`. This has been fixed.
+- [dagster-gcp] Added a fallback download url for the `GCSComputeLogManager` when the session does not have permissions to generate signed urls.
+- [dagster-snowflake] In a previous release, functionality was added for the Snowflake I/O manager to attempt to create a schema if it did not already exist. This caused an issue when the schema already existed but the account did not have permission to create the schema. We now check if a schema exists before attempting to create it so that accounts with restricted permissions do not error, but schemas can still be created if they do not exist.
+
+### Breaking Changes
+
+- `validate_run_config` no longer accepts `pipeline_def` or `mode` arguments. These arguments refer to legacy concepts that were removed in Dagster 1.0, and since then there have been no valid values for them.
+
+### Experimental
+
+- Added experimental support for resource requirements in sensors and schedules. Resources can be specified using `required_resource_keys` and accessed through the context or specified as parameters:
+
+  ```python
+  @sensor(job=my_job, required_resource_keys={"my_resource"})
+  def my_sensor(context):
+      files_to_process = context.my_resource.get_files()
+  		...
+
+  @sensor(job=my_job)
+  def my_sensor(context, my_resource: MyResource):
+      files_to_process = my_resource.get_files()
+  		...
+  ```
+
+### Documentation
+
+- Added a page on asset selection syntax to the Concepts documentation.
+
 # 1.2.1 (core) / 0.18.1 (libraries)
 
 ### Bugfixes
