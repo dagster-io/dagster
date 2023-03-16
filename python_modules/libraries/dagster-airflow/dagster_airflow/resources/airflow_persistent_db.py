@@ -1,6 +1,6 @@
 import importlib
 import os
-from typing import List, Optional
+from typing import List
 
 import airflow
 from airflow.models.connection import Connection
@@ -52,7 +52,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 
 
 def make_persistent_airflow_db_resource(
-    uri: Optional[str] = "", connections: List[Connection] = []
+    uri: str = "", connections: List[Connection] = []
 ) -> ResourceDefinition:
     """Creates a Dagster resource that provides an persistent Airflow database.
 
@@ -80,6 +80,11 @@ def make_persistent_airflow_db_resource(
         ResourceDefinition: The persistent Airflow DB resource
 
     """
+    if is_airflow_2_loaded_in_environment():
+        os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
+    else:
+        os.environ["AIRFLOW__CORE__SQL_ALCHEMY_CONN"] = uri
+
     serialized_connections = serialize_connections(connections)
     airflow_db_resource_def = ResourceDefinition(
         resource_fn=AirflowPersistentDatabase.from_resource_context,
