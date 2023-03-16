@@ -66,7 +66,7 @@ S3_SESSION_CONFIG = {
     "aws_session_token": Field(
         str,
         description=(
-            "TThe session token to use when creating the client."
+            "The session token to use when creating the client."
         ),
         is_required=False,
         default_value=None,
