@@ -69,6 +69,12 @@ def test_hello_world():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_struct_resource() -> None:
+    with exec_for_test("hello_world_job_struct_resource") as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
 def test_hello_world_job():
     with exec_for_test("hello_world_job") as result:
         assert result.success

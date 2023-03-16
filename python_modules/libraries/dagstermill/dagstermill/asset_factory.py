@@ -1,6 +1,6 @@
 import pickle
 import tempfile
-from typing import Any, Callable, Iterable, Mapping, Optional, Set, Union
+from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
 
 import dagster._check as check
 from dagster import (
@@ -15,6 +15,8 @@ from dagster import (
     RetryRequested,
     asset,
 )
+from dagster._config.structured_config import Config, infer_schema_from_config_class
+from dagster._config.structured_config.utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
@@ -184,6 +186,9 @@ def define_dagstermill_asset(
         )
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
 
     return asset(
         name=name,

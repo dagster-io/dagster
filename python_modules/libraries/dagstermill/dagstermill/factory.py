@@ -4,7 +4,9 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union, cast
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+from dagster._config.structured_config import Config, infer_schema_from_config_class
+from dagster._config.structured_config.utils import safe_is_subclass
 
 import nbformat
 import papermill
@@ -429,6 +431,9 @@ def define_dagstermill_op(
             ),
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+
+    if safe_is_subclass(config_schema, Config):
+        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
 
     return OpDefinition(
         name=name,

@@ -23,11 +23,12 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._config.structured_config import Config
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 import dagstermill
-from dagstermill.io_managers import local_output_notebook_io_manager
+from dagstermill.io_managers import LocalOutputNotebookIOManager, local_output_notebook_io_manager
 
 try:
     from dagster_pandas import DataFrame
@@ -90,6 +91,16 @@ def hello_world_job():
     hello_world()
 
 
+@job(
+    resource_defs={
+        "output_notebook_io_manager": LocalOutputNotebookIOManager.configure_at_launch(),
+        "io_manager": fs_io_manager,
+    }
+)
+def hello_world_job_struct_resource() -> None:
+    hello_world()
+
+
 def build_hello_world_job():
     @job(
         resource_defs={
@@ -134,6 +145,31 @@ goodbye_config = test_nb_op(
 def hello_world_config_job():
     hello_world_config()
     goodbye_config()
+
+
+class HelloWorldConfig(Config):
+    greeting: str = "hello"
+
+
+hello_world_config_struct = test_nb_op("hello_world_config", config_schema=HelloWorldConfig)
+
+
+class GoodbyeConfig(Config):
+    farewell: str = "goodbye"
+
+
+goodbye_config_struct = test_nb_op(
+    name="goodbye_config",
+    path=nb_test_path("print_dagstermill_context_op_config"),
+    output_notebook_name="notebook",
+    config_schema=GoodbyeConfig,
+)
+
+
+@job(resource_defs=common_resource_defs)
+def hello_world_config_job_struct() -> None:
+    hello_world_config_struct()
+    goodbye_config_struct()
 
 
 @job(resource_defs=common_resource_defs)
@@ -239,9 +275,9 @@ def double_add_job():
     add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
-@op(config_schema=Int)
-def load_constant(context):
-    return context.op_config
+@op
+def load_constant(config: int) -> int:
+    return config
 
 
 @job(resource_defs=common_resource_defs)
@@ -585,6 +621,7 @@ def notebook_repo():
         bad_kernel_job,
         error_job,
         hello_world_job,
+        hello_world_job_struct_resource,
         hello_world_with_custom_tags_and_description_job,
         hello_world_config_job,
         hello_world_explicit_yield_job,
