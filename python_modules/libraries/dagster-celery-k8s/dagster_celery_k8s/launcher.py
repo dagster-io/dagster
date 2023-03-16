@@ -345,7 +345,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_run = self._instance.get_run_by_id(run_id)
         run_config = pipeline_run.run_config
         executor_config = _get_validated_celery_k8s_executor_config(run_config)
-        return executor_config.get("job_namespace")
+        return executor_config.get("job_namespace", self.job_namespace)
 
     @property
     def supports_check_run_worker_health(self):
@@ -353,7 +353,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     def check_run_worker_health(self, run: DagsterRun):
         job_namespace = _get_validated_celery_k8s_executor_config(run.run_config).get(
-            "job_namespace"
+            "job_namespace", self.job_namespace
         )
         job_name = get_job_name_from_run_id(run.run_id)
         try:

@@ -165,7 +165,7 @@ class CeleryK8sJobExecutor(Executor):
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
         self.job_config = check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace", default="default")
+        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = check.bool_param(
             load_incluster_config, "load_incluster_config"
