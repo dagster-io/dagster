@@ -563,21 +563,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
 
-    # EXPERIMENT: handle the root data assets
-    levels = asset_graph.toposort_asset_keys()
-    for key in levels[0]:
-        """get a mapping from downstream asset key to downstream freshness policy
-
-        for each asset_key,freshness policy pair, get the execution period for that policy
-
-        do the execution period thing, keeping track of which downstream assets have freshness
-        policies that made it into the merge
-
-        * somehow we want to optimize for the minimum number of runs across all root assets
-        """
-        pass
-
-    for level in levels[1:]:
+    for level in asset_graph.toposort_asset_keys():
         for key in level:
             if asset_graph.is_source(key) or not asset_graph.get_downstream_freshness_policies(
                 asset_key=key
