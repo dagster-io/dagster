@@ -19,6 +19,7 @@ from .utils import (
     GroupStep,
     is_command_step,
     is_feature_branch,
+    message_contains,
 )
 
 _CORE_PACKAGES = [
@@ -253,6 +254,11 @@ class PackageSpec:
 
         if self._skip_reason:
             return self._skip_reason
+
+        if message_contains("NO_SKIP"):
+            logging.info(f"Building {self.name} because NO_SKIP set")
+            self._should_skip = False
+            return None
 
         if not is_feature_branch(os.getenv("BUILDKITE_BRANCH", "")):
             logging.info(f"Building {self.name} we're not on a feature branch")
