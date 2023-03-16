@@ -21,7 +21,7 @@ jest.mock('../AssetPartitionList', () => ({
   AssetPartitionList: (props: AssetPartitionListProps) => (
     <div>
       <div data-testid="focused-partition">{props.focusedDimensionKey}</div>
-      {props.partitions.slice(0, 50).map((p, index) => (
+      {props.partitions.map((p, index) => (
         <div
           key={p}
           onClick={() => props.setFocusedDimensionKey?.(p)}

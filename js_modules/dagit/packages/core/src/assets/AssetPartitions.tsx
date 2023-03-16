@@ -66,14 +66,7 @@ export const AssetPartitions: React.FC<Props> = ({
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
   const sortedPartitions = React.useMemo(() => {
     return selections.map((selection, idx) => {
-      let sort = selectionSorts[idx];
-      if (sort === undefined) {
-        sort = 1;
-        if (selection.dimension.type === PartitionDefinitionType.TIME_WINDOW) {
-          // Reverse sort for time window dimensions by default so that the latest partition shows up first
-          sort = -1;
-        }
-      }
+      const sort = selectionSorts[idx] || defaultSort(selection.dimension.type);
       if (sort === 1) {
         return selection.dimension.partitionKeys;
       }
@@ -126,9 +119,29 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {selectedRanges} = selections[idx];
     const allKeys = sortedPartitions[idx];
+    const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
+
+    function translateIndex(idx: number) {
+      if (sort === -1) {
+        return allKeys.length - idx - 1;
+      }
+      return idx;
+    }
+
+    function sliceTranslated(arr: Array<any>, start: number, end: number) {
+      const index1 = translateIndex(start);
+      const index2 = translateIndex(end);
+      const smaller = index1 > index2 ? index2 : index1;
+      const greater = index1 > index2 ? index1 : index2;
+      return arr.slice(smaller, greater + 1);
+    }
 
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
+      uniq(
+        selectedRanges.flatMap(([start, end]) => {
+          return sliceTranslated(allKeys, start.idx, end.idx);
+        }),
+      );
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
       return getSelectionKeys(); // optimization for the default case
@@ -141,7 +154,7 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const getKeysWithStates = (states: PartitionState[]) => {
       return rangesInSelection.flatMap((r) =>
-        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+        states.includes(r.value) ? sliceTranslated(allKeys, r.start.idx, r.end.idx) : [],
       );
     };
 
@@ -241,17 +254,11 @@ export const AssetPartitions: React.FC<Props> = ({
                 onClick={() => {
                   setSelectionSorts((sorts) => {
                     const copy = [...sorts];
-                    let nextSort = 1 as -1 | 1;
-                    if (copy[idx] === undefined) {
-                      if (selection.dimension.type === PartitionDefinitionType.TIME_WINDOW) {
-                        nextSort = 1;
-                      } else {
-                        nextSort = -1;
-                      }
+                    if (copy[idx]) {
+                      copy[idx] = copy[idx] === -1 ? 1 : -1;
                     } else {
-                      nextSort = copy[idx] === -1 ? 1 : -1;
+                      copy[idx] = (defaultSort(selections[idx].dimension.type) * -1) as -1 | 1;
                     }
-                    copy[idx] = nextSort;
                     return copy;
                   });
                 }}
@@ -294,3 +301,11 @@ export const AssetPartitions: React.FC<Props> = ({
     </>
   );
 };
+
+function defaultSort(definitionType: PartitionDefinitionType) {
+  if (definitionType === PartitionDefinitionType.TIME_WINDOW) {
+    return -1;
+  } else {
+    return 1;
+  }
+}
