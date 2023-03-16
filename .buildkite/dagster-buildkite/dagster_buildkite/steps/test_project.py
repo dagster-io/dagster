@@ -67,7 +67,7 @@ def build_test_project_steps() -> List[GroupStep]:
             )
             .on_python_image(
                 "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
-                    python_version=AvailablePythonVersion.V3_10,
+                    python_version=AvailablePythonVersion.V3_8,  # py version can be bumped when rebuilt
                     image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
                 ),
                 [
