@@ -6,7 +6,7 @@ import {Link, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {formatElapsedTimeWithMsec} from '../app/Util';
-import {TimezoneContext} from '../app/time/TimezoneContext';
+import {TimeContext} from '../app/time/TimeContext';
 import {browserTimezone} from '../app/time/browserTimezone';
 
 import {LogLevel} from './LogLevel';
@@ -141,7 +141,9 @@ export const TimestampColumn: React.FC<{
   const {time, runStartTime, stepStartTime} = props;
   const location = useLocation();
   const widths = React.useContext(ColumnWidthsContext);
-  const [timezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [timezone],
+  } = React.useContext(TimeContext);
   const canShowTooltip = typeof time === 'string' && typeof runStartTime === 'number';
 
   const timeString = () => {

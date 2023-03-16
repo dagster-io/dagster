@@ -1,7 +1,7 @@
 import * as React from 'react';
 
+import {TimeContext} from './TimeContext';
 import {TimeFormat} from './TimestampFormat';
-import {TimezoneContext} from './TimezoneContext';
 import {timestampToString} from './timestampToString';
 
 interface Props {
@@ -11,7 +11,10 @@ interface Props {
 
 export const Timestamp: React.FC<Props> = (props) => {
   const {timestamp, timeFormat} = props;
-  const [timezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [timezone],
+    hourCycle: [hourCycle],
+  } = React.useContext(TimeContext);
   const locale = navigator.language;
-  return <>{timestampToString({timestamp, locale, timezone, timeFormat})}</>;
+  return <>{timestampToString({timestamp, locale, timezone, timeFormat, hourCycle})}</>;
 };
