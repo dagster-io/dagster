@@ -137,6 +137,12 @@ def s3_resource(context):
               verify: None
               # Optional[str]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
               # You can also specify this argument if you want to use a different CA cert bundle than the one used by botocore."
+              aws_access_key_id: None
+              # Optional[str]: The access key to use when creating the client.
+              aws_secret_access_key: None
+              # Optional[str]: The secret key to use when creating the client.
+              aws_session_token: None
+              # Optional[str]:  The session token to use when creating the client
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
