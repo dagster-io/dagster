@@ -23,7 +23,7 @@ from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessConstraint, FreshnessPolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,

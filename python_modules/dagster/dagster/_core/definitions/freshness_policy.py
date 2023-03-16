@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, NamedTuple, Optional, Tuple
+from typing import AbstractSet, NamedTuple, Optional
 
 import pendulum
 
@@ -8,7 +8,6 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.schedules import (
-    cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
