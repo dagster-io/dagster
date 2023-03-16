@@ -48,8 +48,6 @@ def get_graph_definition_args(
 
 def _traverse_airflow_dag(dag, task, seen_tasks, dependencies, node_defs):
     check.inst_param(dag, "dag", DAG)
-    check.inst_param(task, "task", BaseOperator)
-    check.list_param(seen_tasks, "seen_tasks", BaseOperator)
     check.list_param(node_defs, "node_defs", NodeDefinition)
 
     seen_tasks.append(task)
@@ -93,7 +91,6 @@ def make_dagster_op_from_airflow_task(
     task,
 ) -> OpDefinition:
     check.inst_param(dag, "dag", DAG)
-    check.inst_param(task, "task", BaseOperator)
 
     @op(
         name=normalized_name(dag.dag_id, task.task_id),
