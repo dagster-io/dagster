@@ -18,13 +18,13 @@ from typing import (
     Union,
     cast,
 )
-from dagster._utils.cached_method import cached_method
 
 import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
