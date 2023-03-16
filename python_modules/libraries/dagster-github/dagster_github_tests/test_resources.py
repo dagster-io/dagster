@@ -1,6 +1,5 @@
 import time
 
-import requests
 import responses
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -195,27 +194,20 @@ def test_github_resource_execute():
 @responses.activate
 def test_github_resource_token_expiration():
     class GithubResourceTesting(GithubResource):
-        def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
-            GithubResource.__init__(
-                self,
-                client=client,
-                app_id=app_id,
-                app_private_rsa_key=app_private_rsa_key,
-                default_installation_id=default_installation_id,
-            )
-            self.installation_tokens = {
+        def __init__(self, *args, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+            self._installation_tokens = {
                 "123": {"value": "test", "expires": int(time.time()) - 1000}
             }
-            self.app_token = {
+            self._app_token = {
                 "value": "test",
                 "expires": int(time.time()) - 1000,
             }
 
     resource = GithubResourceTesting(
-        client=requests.Session(),
-        app_id="abc",
-        app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
-        default_installation_id="123",
+        github_app_id=456,
+        github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
+        github_installation_id=123,
     )
     with responses.RequestsMock() as rsps:
         rsps.add(
