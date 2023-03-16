@@ -7,7 +7,6 @@ from dagster import (
     AssetSelection,
     Field,
     In,
-    Int,
     List,
     Out,
     ResourceDefinition,

@@ -5,8 +5,6 @@ import sys
 import tempfile
 import uuid
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
-from dagster._config.structured_config import Config, infer_schema_from_config_class
-from dagster._config.structured_config.utils import safe_is_subclass
 
 import nbformat
 import papermill
@@ -18,6 +16,8 @@ from dagster import (
     _check as check,
     _seven,
 )
+from dagster._config.structured_config import Config, infer_schema_from_config_class
+from dagster._config.structured_config.utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline

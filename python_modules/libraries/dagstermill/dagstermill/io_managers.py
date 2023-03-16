@@ -1,19 +1,18 @@
 import os
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional
 
 import dagster._check as check
 from dagster import AssetKey, AssetMaterialization, ConfigurableIOManager
-from dagster._config import Field
 from dagster._config.structured_config import infer_schema_from_config_class
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import io_manager
 from dagster._utils import mkdir_p
+from pydantic import Field as PyField
 
 from dagstermill.factory import _clean_path_for_windows
-from pydantic import Field as PyField
 
 
 class OutputNotebookIOManager(ConfigurableIOManager):
