@@ -1,6 +1,8 @@
 import {tokenizedValueFromString} from '@dagster-io/ui';
+import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {DefaultLogLevels, LogLevel} from './LogLevel';
 import {LogFilter} from './LogsProvider';
@@ -74,10 +76,31 @@ export function encodeRunPageFilters(filter: LogFilter) {
   };
 }
 
-export function useQueryPersistedLogFilter() {
+export const EnabledRunLogLevelsKey = 'EnabledRunLogLevels';
+
+export const validateLogLevels = (json: any) => {
+  if (json === undefined || !Array.isArray(json)) {
+    return [];
+  }
+
+  const validLevels = new Set(Object.keys(LogLevel));
+  return json.filter((level) => validLevels.has(level));
+};
+
+export function useQueryPersistedLogFilter(): [LogFilter, (updates: LogFilter) => void] {
+  // We only read the stored log levels here as defaults, but we do not set them. This is
+  // because we don't want to update the persisted value unless the user interacts with the
+  // LogFilterSelect component. Navigating to a page with levels set in the URL querystring
+  // should *not* implicitly update the persisted values.
+  const [storedLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
+
+  const defaults = React.useMemo(() => {
+    return {...DefaultQuerystring, levels: levelsToQuery(storedLogLevels || DefaultLogLevels)};
+  }, [storedLogLevels]);
+
   return useQueryPersistedState<LogFilter>({
     encode: encodeRunPageFilters,
     decode: decodeRunPageFilters,
-    defaults: DefaultQuerystring,
+    defaults,
   });
 }
