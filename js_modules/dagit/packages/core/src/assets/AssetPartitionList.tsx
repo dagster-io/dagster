@@ -3,6 +3,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
 import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
+import {testId} from '../testing/testId';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
@@ -84,6 +85,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                data-testid={`asset-partition-row-${dimensionKey}-index-${index}`}
               >
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}

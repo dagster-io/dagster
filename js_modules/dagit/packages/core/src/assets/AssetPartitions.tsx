@@ -126,7 +126,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {selectedRanges} = selections[idx];
     const allKeys = sortedPartitions[idx];
-    console.log({allKeys, selectedRanges});
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
@@ -221,6 +220,7 @@ export const AssetPartitions: React.FC<Props> = ({
             flex={{direction: 'column'}}
             border={{side: 'right', color: Colors.KeylineGray, width: 1}}
             background={Colors.Gray50}
+            data-testid={testId(`partitions-${selection.dimension.name}`)}
           >
             <Box
               flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
@@ -241,7 +241,17 @@ export const AssetPartitions: React.FC<Props> = ({
                 onClick={() => {
                   setSelectionSorts((sorts) => {
                     const copy = [...sorts];
-                    copy[idx] = copy[idx] === -1 ? 1 : -1;
+                    let nextSort = 1 as -1 | 1;
+                    if (copy[idx] === undefined) {
+                      if (selection.dimension.type === PartitionDefinitionType.TIME_WINDOW) {
+                        nextSort = 1;
+                      } else {
+                        nextSort = -1;
+                      }
+                    } else {
+                      nextSort = copy[idx] === -1 ? 1 : -1;
+                    }
+                    copy[idx] = nextSort;
                     return copy;
                   });
                 }}
