@@ -1,4 +1,4 @@
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -98,15 +98,7 @@ ExecutionStepUnion = Union[
 
 
 class _PlanBuilder:
-    """_PlanBuilder. This is the state that is built up during the execution plan build process.
-
-    steps List[ExecutionStep]: a list of the execution steps that have been created.
-
-    step_output_map Dict[NodeOutput, StepOutputHandle]:  maps logical node outputs
-    (node_name, output_name) to particular step outputs. This covers the case where a node maps to
-    multiple steps and one wants to be able to attach to the logical output of a node during
-    execution.
-    """
+    """This is the state that is built up during the execution plan build process."""
 
     def __init__(
         self,
@@ -138,10 +130,10 @@ class _PlanBuilder:
             if resolved_run_config.mode is not None
             else pipeline.get_definition().get_default_mode()
         )
-        self._steps: Dict[str, IExecutionStep] = OrderedDict()
+        self._steps: Dict[str, IExecutionStep] = {}
         self.step_output_map: Dict[
             NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]
-        ] = dict()
+        ] = {}
         self.known_state = check.inst_param(known_state, "known_state", KnownExecutionState)
         self._instance_ref = instance_ref
         self._seen_handles: Set[StepHandleUnion] = set()
@@ -169,19 +161,6 @@ class _PlanBuilder:
     def get_step_by_node_handle(self, handle: NodeHandle) -> IExecutionStep:
         check.inst_param(handle, "handle", NodeHandle)
         return self._steps[handle.to_string()]
-
-    def get_output_handle(
-        self, key: NodeOutput
-    ) -> Union[StepOutputHandle, UnresolvedStepOutputHandle]:
-        check.inst_param(key, "key", NodeOutput)
-        return self.step_output_map[key]
-
-    def set_output_handle(
-        self, key: NodeOutput, val: Union[StepOutputHandle, UnresolvedStepOutputHandle]
-    ) -> None:
-        check.inst_param(key, "key", NodeOutput)
-        check.inst_param(val, "val", (StepOutputHandle, UnresolvedStepOutputHandle))
-        self.step_output_map[key] = val
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""
@@ -285,6 +264,7 @@ class _PlanBuilder:
         parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
         asset_layer = self.pipeline.get_definition().asset_layer
+        step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]] = {}
         for node in nodes:
             handle = NodeHandle(node.name, parent_handle)
 
@@ -295,12 +275,14 @@ class _PlanBuilder:
             step_inputs: List[StepInputUnion] = []
             for input_name, input_def in node.definition.input_dict.items():
                 step_input_source = get_step_input_source(
-                    self,
+                    self.pipeline.get_definition(),
                     node,
                     input_name,
                     input_def,
                     dependency_structure,
                     handle,
+                    self.resolved_run_config.ops.get(str(handle)),
+                    step_output_map,
                     parent_step_inputs,
                 )
 
@@ -428,7 +410,7 @@ class _PlanBuilder:
                 else:
                     check.failed(f"Unexpected step type {step}")
 
-                self.set_output_handle(node_output, step_output_handle)
+                step_output_map[node_output] = step_output_handle
 
 
 def get_root_graph_input_source(
@@ -464,31 +446,19 @@ def get_root_graph_input_source(
 
 
 def get_step_input_source(
-    plan_builder: _PlanBuilder,
+    job_def: PipelineDefinition,
     node: Node,
     input_name: str,
     input_def: InputDefinition,
     dependency_structure: DependencyStructure,
     handle: NodeHandle,
+    node_config: Any,
+    step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]],
     parent_step_inputs: Optional[Sequence[StepInputUnion]],
 ) -> Optional[StepInputSourceUnion]:
-    check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
-    check.inst_param(node, "node", Node)
-    check.str_param(input_name, "input_name")
-    check.inst_param(input_def, "input_def", InputDefinition)
-    check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
-    check.opt_inst_param(handle, "handle", NodeHandle)
-    check.opt_list_param(
-        parent_step_inputs,
-        "parent_step_inputs",
-        of_type=(StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput),
-    )
-
     input_handle = node.get_input(input_name)
-    node_config = plan_builder.resolved_run_config.ops.get(str(handle))
-
     input_def = node.definition.input_def_named(input_name)
-    asset_layer = plan_builder.pipeline.get_definition().asset_layer
+    asset_layer = job_def.asset_layer
 
     if (
         # input is unconnected inside the current dependency structure
@@ -505,7 +475,7 @@ def get_step_input_source(
 
     if dependency_structure.has_direct_dep(input_handle):
         node_output_handle = dependency_structure.get_direct_dep(input_handle)
-        step_output_handle = plan_builder.get_output_handle(node_output_handle)
+        step_output_handle = step_output_map[node_output_handle]
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
@@ -526,7 +496,7 @@ def get_step_input_source(
         deps = dependency_structure.get_fan_in_deps(input_handle)
         for idx, handle_or_placeholder in enumerate(deps):
             if isinstance(handle_or_placeholder, NodeOutput):
-                step_output_handle = plan_builder.get_output_handle(handle_or_placeholder)
+                step_output_handle = step_output_map[handle_or_placeholder]
                 if (
                     isinstance(step_output_handle, UnresolvedStepOutputHandle)
                     or handle_or_placeholder.output_def.is_dynamic
@@ -562,7 +532,7 @@ def get_step_input_source(
 
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
         node_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
-        step_output_handle = plan_builder.get_output_handle(node_output_handle)
+        step_output_handle = step_output_map[node_output_handle]
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromDynamicCollect(
                 source=FromUnresolvedStepOutput(
@@ -607,7 +577,7 @@ def get_step_input_source(
             "must get a value either (a) from a dependency or (b) from the "
             "inputs section of its configuration."
         ).format(
-            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            described_target=job_def.describe_target(),
             described_node=node.describe_node(),
             input_name=input_name,
         )
@@ -737,7 +707,7 @@ class ExecutionPlan(
         ]
 
     def get_all_step_deps(self) -> Mapping[str, Set[str]]:
-        deps = OrderedDict()
+        deps = {}
         for step in self.step_dict.values():
             if isinstance(step, ExecutionStep):
                 deps[step.key] = step.get_execution_dependency_keys()
@@ -883,9 +853,8 @@ class ExecutionPlan(
         instance: DagsterInstance,
         selected_step_keys: Optional[Sequence[str]],
     ) -> "ExecutionPlan":
-        """
-        Returns:
-            ExecutionPlan: Execution plan that runs only unmemoized steps.
+        """Returns:
+        ExecutionPlan: Execution plan that runs only unmemoized steps.
         """
         from ...storage.memoizable_io_manager import MemoizableIOManager
         from ..build_resources import build_resources, initialize_console_manager
@@ -1231,8 +1200,6 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
     If true, this indicates that it's OK to execute steps in their own processes, because their
     outputs will be available to other processes.
     """
-    # pylint: disable=comparison-with-callable
-
     output_defs = [
         output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
     ]
@@ -1341,13 +1308,10 @@ def _compute_artifacts_persisted(
     resolved_run_config: ResolvedRunConfig,
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> bool:
-    """
-    Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
+    """Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
 
     Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
     """
-    # pylint: disable=comparison-with-callable
-
     mode_def = pipeline_def.get_mode_definition(resolved_run_config.mode)
 
     if len(step_dict) == 0:
@@ -1397,12 +1361,11 @@ def _get_executable_step_deps(
     step_handles_to_execute: Sequence[StepHandleUnion],
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> Mapping[str, Set[str]]:
+    """Returns:
+    Dict[str, Set[str]]: Maps step keys to sets of step keys that they depend on. Includes
+        only steps that are included in step_handles_to_execute.
     """
-    Returns:
-        Dict[str, Set[str]]: Maps step keys to sets of step keys that they depend on. Includes
-            only steps that are included in step_handles_to_execute.
-    """
-    deps = OrderedDict()
+    deps = {}
 
     # for things transitively downstream of unresolved collect steps
     unresolved_set = set()

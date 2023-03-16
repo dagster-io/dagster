@@ -30,7 +30,7 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, object], Optional[Type["DagsterInstance"]]]:
+) -> Tuple[Mapping[str, Any], Optional[Type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -206,7 +206,7 @@ def retention_config_schema() -> Field:
 
 
 def get_tick_retention_settings(
-    settings: Optional[Mapping],
+    settings: Optional[Mapping[str, Any]],
     default_retention_settings: Mapping["TickStatus", int],
 ) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):

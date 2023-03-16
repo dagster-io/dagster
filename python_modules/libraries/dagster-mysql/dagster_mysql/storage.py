@@ -33,7 +33,7 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, mysql_url, inst_data=None):
+    def __init__(self, mysql_url, inst_data: Optional[ConfigurableClassData] = None):
         self.mysql_url = mysql_url
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._run_storage = MySQLRunStorage(mysql_url)
@@ -49,9 +49,9 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return mysql_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "DagsterMySQLStorage":
         return DagsterMySQLStorage(
             inst_data=inst_data,

@@ -1,19 +1,15 @@
 import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generator,
     Mapping,
     NamedTuple,
     NoReturn,
     Optional,
     Sequence,
-    Set,
-    Type,
     cast,
 )
 
@@ -24,12 +20,9 @@ from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIME
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (
-    DefaultNamedTupleSerializer,
     create_snapshot_id,
-    register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import WhitelistMap, unpack_value
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.repository_location import (
@@ -273,13 +266,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 yield location
 
 
-class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"use_ssl"}  # Maintain stable origin ID for origins without use_ssl set
-
-
-@whitelist_for_serdes(serializer=GrpcServerOriginSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"use_ssl"})
 class GrpcServerRepositoryLocationOrigin(
     NamedTuple(
         "_GrpcServerRepositoryLocationOrigin",
@@ -424,56 +411,15 @@ class ExternalPipelineOrigin(
         return self.external_repository_origin.repository_location_origin.location_name
 
 
-class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        raw_dict = {
-            key: unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            for key, value in storage_dict.items()
-        }
-        # the stored key for the instigator name should always be `job_name`, for backcompat
-        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
-        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
-        instigator_name = raw_dict.get("job_name")
-        return klass(
-            **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            instigator_name=instigator_name,
-        )
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        instigator_name = storage.get("instigator_name") or storage.get("job_name")
-        if "instigator_name" in storage:
-            del storage["instigator_name"]
-        # the stored key for the instigator name should always be `job_name`, for backcompat
-        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
-        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
-        storage["job_name"] = instigator_name
-        # persist using legacy name
-        storage["__class__"] = "ExternalJobOrigin"
-        return storage
-
-
-@whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
+@whitelist_for_serdes(
+    # ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
+    # introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
+    # need to maintain the serialized format in order to avoid changing the origin id that is stored in
+    # our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
+    # deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
+    storage_name="ExternalJobOrigin",
+    storage_field_names={"instigator_name": "job_name"},
+)
 class ExternalInstigatorOrigin(
     NamedTuple(
         "_ExternalInstigatorOrigin",
@@ -497,14 +443,6 @@ class ExternalInstigatorOrigin(
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
-
-
-# ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
-# introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
-# need to maintain the serialized format in order to avoid changing the origin id that is stored in
-# our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
-# deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
-register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
 @whitelist_for_serdes

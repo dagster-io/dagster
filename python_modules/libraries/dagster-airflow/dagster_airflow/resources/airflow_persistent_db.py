@@ -22,10 +22,7 @@ from dagster_airflow.utils import (
 
 
 class AirflowPersistentDatabase(AirflowDatabase):
-    """
-    A persistent Airflow database Dagster resource.
-
-    """
+    """A persistent Airflow database Dagster resource."""
 
     def __init__(self, dagster_run: DagsterRun, uri: str):
         self.uri = uri
@@ -57,8 +54,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 def make_persistent_airflow_db_resource(
     uri: Optional[str] = "", connections: List[Connection] = []
 ) -> ResourceDefinition:
-    """
-    Creates a Dagster resource that provides an persistent Airflow database.
+    """Creates a Dagster resource that provides an persistent Airflow database.
 
 
     Usage:

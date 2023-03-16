@@ -93,8 +93,7 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 
 
 class Partition(Generic[T_cov]):
-    """
-    A Partition represents a single slice of the entire set of a job's possible work. It consists
+    """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
     used to label the partition in a human-readable way.
 
@@ -223,8 +222,7 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T_cov]):
-    """
-    Defines a set of partitions, which can be attached to a software-defined asset or job.
+    """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
     Abstract class with implementations for different kinds of partitions.
     """
@@ -378,11 +376,8 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
             )
 
 
-class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
-):  # pylint: disable=unsubscriptable-object
-    """
-    A statically-defined set of partitions.
+class StaticPartitionsDefinition(PartitionsDefinition[str]):
+    """A statically-defined set of partitions.
 
     Example:
         .. code-block:: python
@@ -401,13 +396,14 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
+        # TODO 1.3.0 enforce that partition keys are unique
         raise_error_on_invalid_partition_key_substring(partition_keys)
 
         self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
         self,
-        current_time: Optional[datetime] = None,  # pylint: disable=unused-argument
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition[str]]:
         return self._partitions
@@ -423,9 +419,19 @@ class StaticPartitionsDefinition(
     def __repr__(self) -> str:
         return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
 
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        # We don't currently throw an error when a duplicate partition key is defined
+        # in a static partitions definition, though we will at 1.3.0.
+        # This ensures that partition counts are correct in Dagit.
+        return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
+
 
 class ScheduleTimeBasedPartitionsDefinition(
-    PartitionsDefinition[datetime],  # pylint: disable=unsubscriptable-object
+    PartitionsDefinition[datetime],
     NamedTuple(
         "_ScheduleTimeBasedPartitionsDefinition",
         [
@@ -442,7 +448,7 @@ class ScheduleTimeBasedPartitionsDefinition(
 ):
     """Computes the partitions backwards from the scheduled execution times."""
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         schedule_type: ScheduleType,
         start: datetime,
@@ -579,8 +585,7 @@ class DynamicPartitionsDefinition(
         ],
     ),
 ):
-    """
-    A partitions definition whose partition keys can be dynamically added and removed.
+    """A partitions definition whose partition keys can be dynamically added and removed.
 
     This is useful for cases where the set of partitions is not known at definition time,
     but is instead determined at runtime.
@@ -606,7 +611,7 @@ class DynamicPartitionsDefinition(
 
     """
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         partition_fn: Optional[
             Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
@@ -700,8 +705,7 @@ class DynamicPartitionsDefinition(
 
 
 class PartitionSetDefinition(Generic[T_cov]):
-    """
-    Defines a partition set, representing the set of slices making up an axis of a pipeline.
+    """Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
     Args:
         name (str): Name for this partition set
@@ -743,9 +747,7 @@ class PartitionSetDefinition(Generic[T_cov]):
         tags_fn_for_partition: Callable[
             [Partition[T_cov]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
-        partitions_def: Optional[
-            PartitionsDefinition[T_cov]  # pylint: disable=unsubscriptable-object
-        ] = None,
+        partitions_def: Optional[PartitionsDefinition[T_cov]] = None,
         job_name: Optional[str] = None,
     ):
         check.invariant(
@@ -1104,7 +1106,7 @@ class PartitionedConfig(Generic[T_cov]):
 
     def __init__(
         self,
-        partitions_def: PartitionsDefinition[T_cov],  # pylint: disable=unsubscriptable-object
+        partitions_def: PartitionsDefinition[T_cov],
         run_config_for_partition_fn: Callable[[Partition[T_cov]], Mapping[str, Any]],
         decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
         tags_for_partition_fn: Optional[Callable[[Partition[T_cov]], Mapping[str, str]]] = None,
@@ -1122,7 +1124,7 @@ class PartitionedConfig(Generic[T_cov]):
     @property
     def partitions_def(
         self,
-    ) -> PartitionsDefinition[T_cov]:  # pylint: disable=unsubscriptable-object
+    ) -> PartitionsDefinition[T_cov]:
         return self._partitions
 
     @public
@@ -1485,8 +1487,8 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, DefaultPartitionsSubset)
-            and self._partitions_def == other._partitions_def
-            and self._subset == other._subset
+            and self._partitions_def == other._partitions_def  # noqa: SLF001
+            and self._subset == other._subset  # noqa: SLF001
         )
 
     def __len__(self) -> int:

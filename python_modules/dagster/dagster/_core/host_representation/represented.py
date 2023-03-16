@@ -13,8 +13,7 @@ from .pipeline_index import PipelineIndex
 
 
 class RepresentedPipeline(ABC):
-    """
-    RepresentedPipeline is a base class for ExternalPipeline or HistoricalPipeline.
+    """RepresentedPipeline is a base class for ExternalPipeline or HistoricalPipeline.
 
     The name is "represented" because this is an in-memory representation of a pipeline.
     The representation of a pipeline could be referring to a pipeline resident in

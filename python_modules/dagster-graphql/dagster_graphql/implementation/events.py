@@ -59,7 +59,6 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
 
     check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
-        metadata_entry = cast(MetadataEntry, metadata_entry)
         if isinstance(metadata_entry.value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
                 label=metadata_entry.label,
@@ -215,7 +214,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     )
 
     # Lots of event types. Pylint thinks there are too many branches
-    # pylint: disable=too-many-branches
+
     check.inst_param(event_record, "event_record", EventLogEntry)
     check.param_invariant(event_record.is_dagster_event, "event_record")
     check.str_param(pipeline_name, "pipeline_name")

@@ -170,7 +170,7 @@ def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw) -> str:
     return f"DATETIME({MYSQL_DATE_PRECISION})"
 
 
-class get_current_timestamp(db.sql.expression.FunctionElement):  # pylint: disable=abstract-method
+class get_current_timestamp(db.sql.expression.FunctionElement):
     """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite."""
 
     type = db.types.DateTime()  # type: ignore

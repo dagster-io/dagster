@@ -4,9 +4,7 @@ import dagster._check as check
 
 
 class FivetranDestination:
-    """
-    Represents a user-defined Fivetran destination.
-    """
+    """Represents a user-defined Fivetran destination."""
 
     def __init__(
         self,

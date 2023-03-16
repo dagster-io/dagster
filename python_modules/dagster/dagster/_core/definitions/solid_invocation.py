@@ -1,5 +1,5 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -98,17 +98,19 @@ def _check_invocation_requirements(
         )
 
 
-def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"):
+def _resolve_inputs(
+    op_def: "OpDefinition", args, kwargs, context: "BoundOpExecutionContext"
+) -> Mapping[str, Any]:
     from dagster._core.execution.plan.execute_step import do_type_check
 
     nothing_input_defs = [
-        input_def for input_def in solid_def.input_defs if input_def.dagster_type.is_nothing
+        input_def for input_def in op_def.input_defs if input_def.dagster_type.is_nothing
     ]
 
     # Check kwargs for nothing inputs, and error if someone provided one.
     for input_def in nothing_input_defs:
         if input_def.name in kwargs:
-            node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
+            node_label = op_def.node_type_str  # string "solid" for solids, "op" for ops
 
             raise DagsterInvalidInvocationError(
                 f"Attempted to provide value for nothing input '{input_def.name}'. Nothing "
@@ -118,7 +120,7 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
     # Discard nothing dependencies - we ignore them during invocation.
     input_defs_by_name = {
         input_def.name: input_def
-        for input_def in solid_def.input_defs
+        for input_def in op_def.input_defs
         if not input_def.dagster_type.is_nothing
     }
 
@@ -135,40 +137,47 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
                 "but no context parameter was defined for the op."
             )
 
-        node_label = solid_def.node_type_str
+        node_label = op_def.node_type_str
         raise DagsterInvalidInvocationError(
             f"Too many input arguments were provided for {node_label} '{context.alias}'."
             f" {suggestion}"
         )
 
     # If more args were provided than the function has positional args, then fail early.
-    positional_inputs = cast("DecoratedOpFunction", solid_def.compute_fn).positional_inputs()
+    positional_inputs = cast("DecoratedOpFunction", op_def.compute_fn).positional_inputs()
     if len(args) > len(positional_inputs):
         raise DagsterInvalidInvocationError(
-            f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional"
+            f"{op_def.node_type_str} '{op_def.name}' has {len(positional_inputs)} positional"
             f" inputs, but {len(args)} positional inputs were provided."
         )
 
     input_dict = {}
 
     for position, value in enumerate(args):
-        input_dict[positional_inputs[position]] = value
-
-    for positional_input in positional_inputs[len(args) :]:
-        input_def = input_defs_by_name[positional_input]
-
-        if not input_def.has_default_value and positional_input not in kwargs:
+        input_name = positional_inputs[position]
+        input_dict[input_name] = value
+        # check for args/kwargs collisions
+        if input_name in kwargs:
             raise DagsterInvalidInvocationError(
-                f'No value provided for required input "{positional_input}".'
+                f"{op_def.node_type_str} {op_def.name} got multiple values for argument"
+                f" '{input_name}'"
             )
 
-        input_dict[positional_input] = (
-            kwargs[positional_input] if positional_input in kwargs else input_def.default_value
-        )
+    for input_name in positional_inputs[len(args) :]:
+        input_def = input_defs_by_name[input_name]
+
+        if input_name in kwargs:
+            input_dict[input_name] = kwargs[input_name]
+        elif input_def.has_default_value:
+            input_dict[input_name] = input_def.default_value
+        else:
+            raise DagsterInvalidInvocationError(
+                f'No value provided for required input "{input_name}".'
+            )
 
     unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
     # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
-    if unassigned_kwargs and cast("DecoratedOpFunction", solid_def.compute_fn).has_var_kwargs():
+    if unassigned_kwargs and cast("DecoratedOpFunction", op_def.compute_fn).has_var_kwargs():
         for k, v in unassigned_kwargs.items():
             input_dict[k] = v
 

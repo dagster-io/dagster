@@ -277,7 +277,9 @@ export const MaterializationUpstreamDataEmptyMock: MockedResponse<AssetMateriali
   },
 };
 
-export const AssetPartitionDetailMock: MockedResponse<AssetPartitionDetailQuery> = {
+export const buildAssetPartitionDetailMock = (
+  currentRunStatus?: RunStatus,
+): MockedResponse<AssetPartitionDetailQuery> => ({
   request: {
     operationName: 'AssetPartitionDetailQuery',
     variables: {assetKey: {path: ['asset_1']}, partitionKey: Partition},
@@ -291,7 +293,16 @@ export const AssetPartitionDetailMock: MockedResponse<AssetPartitionDetailQuery>
         id: 'test.py.repo.["asset_1"]',
         assetMaterializations: [MaterializationEventFull, MaterializationEventOlder],
         assetObservations: [BasicObservationEvent],
+        latestRunForPartition: currentRunStatus
+          ? {
+              __typename: 'Run',
+              id: '123456',
+              runId: '123456',
+              status: currentRunStatus,
+              endTime: null,
+            }
+          : null,
       },
     },
   },
-};
+});

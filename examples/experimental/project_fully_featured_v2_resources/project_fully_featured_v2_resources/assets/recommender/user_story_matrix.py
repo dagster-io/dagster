@@ -8,7 +8,7 @@ from scipy.sparse import coo_matrix
 
 @dataclass
 class IndexedCooMatrix:
-    """A matrix with indexes for the rows and columns"""
+    """A matrix with indexes for the rows and columns."""
 
     matrix: coo_matrix
 
@@ -23,8 +23,7 @@ class IndexedCooMatrix:
 
 @asset(key_prefix=["s3", "recommender"])
 def user_story_matrix(comment_stories: DataFrame) -> Output[IndexedCooMatrix]:
-    """
-    A sparse matrix where the rows are users, the columns are stories, and the values
+    """A sparse matrix where the rows are users, the columns are stories, and the values
     are whether the user commented on the story.
     """
     deduplicated = comment_stories[["story_id", "commenter_id"]].drop_duplicates().dropna()

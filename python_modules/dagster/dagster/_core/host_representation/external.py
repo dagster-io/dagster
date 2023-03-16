@@ -76,8 +76,7 @@ if TYPE_CHECKING:
 
 
 class ExternalRepository:
-    """
-    ExternalRepository is a object that represents a loaded repository definition that
+    """ExternalRepository is a object that represents a loaded repository definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -259,8 +258,7 @@ class ExternalRepository:
         return self.handle.get_python_origin()
 
     def get_external_origin_id(self) -> str:
-        """
-        A means of identifying the repository this ExternalRepository represents based on
+        """A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
         return self.get_external_origin().get_id()
@@ -287,8 +285,7 @@ class ExternalRepository:
 
 
 class ExternalPipeline(RepresentedPipeline):
-    """
-    ExternalPipeline is a object that represents a loaded job definition that
+    """ExternalPipeline is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -463,8 +460,7 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
-    """
-    ExternalExecution is a object that represents an execution plan that
+    """ExternalExecution is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
 
@@ -551,8 +547,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """
-    Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
     """
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):

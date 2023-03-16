@@ -62,8 +62,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
     ],
 )
 def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_data_times_index):
-    r"""
-    A = B = D = F
+    r"""A = B = D = F
      \\  //
        C = E
     B,C,D share an op.

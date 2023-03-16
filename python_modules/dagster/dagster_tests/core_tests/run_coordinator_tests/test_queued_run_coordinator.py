@@ -11,8 +11,7 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 class TestQueuedRunCoordinator:
-    """
-    You can extend this class to easily run these set of tests on any custom run coordinator
+    """You can extend this class to easily run these set of tests on any custom run coordinator
     that subclasses the QueuedRunCoordinator. When extending, you simply need to override the
     `coordinator` fixture and return your implementation of `QueuedRunCoordinator`.
 
@@ -21,7 +20,7 @@ class TestQueuedRunCoordinator:
     ```
     class TestMyRunCoordinator(TestQueuedRunCoordinator):
         @pytest.fixture(scope='function')
-        def coordinator(self, instance):  # pylint: disable=arguments-differ
+        def coordinator(self, instance):
             run_coordinator = MyRunCoordinator()
             run_coordinator.register_instance(instance)
             yield run_coordinator
@@ -37,7 +36,7 @@ class TestQueuedRunCoordinator:
             yield inst
 
     @pytest.fixture
-    def coordinator(self, instance):  # pylint: disable=redefined-outer-name
+    def coordinator(self, instance):
         run_coordinator = QueuedRunCoordinator()
         run_coordinator.register_instance(instance)
         yield run_coordinator
@@ -52,9 +51,7 @@ class TestQueuedRunCoordinator:
         location = workspace.get_repository_location("bar_repo_location")
         return location.get_repository("bar_repo").get_full_external_job("foo")
 
-    def create_run_for_test(
-        self, instance, external_pipeline, **kwargs
-    ):  # pylint: disable=redefined-outer-name
+    def create_run_for_test(self, instance, external_pipeline, **kwargs):
         pipeline_args = merge_dicts(
             {
                 "pipeline_name": "foo",
@@ -133,9 +130,7 @@ class TestQueuedRunCoordinator:
             ) as _:
                 pass
 
-    def test_submit_run(
-        self, instance, coordinator, workspace, external_pipeline
-    ):  # pylint: disable=redefined-outer-name
+    def test_submit_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )
@@ -147,9 +142,7 @@ class TestQueuedRunCoordinator:
         stored_run = instance.get_run_by_id("foo-1")
         assert stored_run.status == DagsterRunStatus.QUEUED
 
-    def test_submit_run_checks_status(
-        self, instance, coordinator, workspace, external_pipeline
-    ):  # pylint: disable=redefined-outer-name
+    def test_submit_run_checks_status(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.QUEUED
         )
@@ -165,9 +158,7 @@ class TestQueuedRunCoordinator:
             == 0
         )
 
-    def test_cancel_run(
-        self, instance, coordinator, workspace, external_pipeline
-    ):  # pylint: disable=redefined-outer-name
+    def test_cancel_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
             instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
         )

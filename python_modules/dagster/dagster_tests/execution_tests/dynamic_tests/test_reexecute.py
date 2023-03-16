@@ -2,16 +2,20 @@ from typing import List
 
 import pytest
 from dagster import (
+    AssetSelection,
     DynamicOutput,
     OpExecutionContext,
     ReexecutionOptions,
+    define_asset_job,
     execute_job,
     fs_io_manager,
+    graph_asset,
     in_process_executor,
     job,
     op,
     reconstructable,
 )
+from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError
@@ -46,7 +50,6 @@ def emit(_):
 
 @job(executor_def=in_process_executor)
 def dynamic_job():
-    # pylint: disable=no-member
     emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
 
 
@@ -402,8 +405,7 @@ def test_resume_failed_mapped():
         }
 
 
-@job(executor_def=in_process_executor)
-def branching_job():
+def _branching_graph():
     some, none, skip = some_none_skip()
     dyn_some = fan_out.alias("fan_out_some")(fail_once.alias("fail_once_some")(some))
     dyn_none = fan_out.alias("fan_out_none")(fail_once.alias("fail_once_none")(none))
@@ -417,7 +419,12 @@ def branching_job():
     col_skip = echo.alias("echo_skip")(
         dyn_skip.map(fail_once.alias("fail_once_fan_skip")).collect()
     )
-    echo.alias("final")([col_some, col_none, col_skip])
+    return echo.alias("final")([col_some, col_none, col_skip])
+
+
+@job(executor_def=in_process_executor)
+def branching_job():
+    _branching_graph()
 
 
 def test_branching():
@@ -485,9 +492,13 @@ def fail_n(context: OpExecutionContext, x):
     raise Exception(f"failed {fails} out of {map_key}")
 
 
+def _mapped_fail_graph():
+    return echo(emit_nums().map(fail_n).collect())
+
+
 @job(executor_def=in_process_executor)
 def mapped_fail_job():
-    echo(emit_nums().map(fail_n).collect())
+    _mapped_fail_graph()
 
 
 def test_many_retries():
@@ -523,3 +534,112 @@ def test_many_retries():
         assert result_4.success
         success_steps = {ev.step_key for ev in result_4.get_step_success_events()}
         assert success_steps == {"fail_n[3]", "echo"}
+
+
+@graph_asset
+def branching_asset():
+    return _branching_graph()
+
+
+@asset
+def echo_branching(branching_asset):
+    return branching_asset
+
+
+@asset
+def absent_asset(branching_asset):
+    return branching_asset
+
+
+@graph_asset
+def mapped_fail_asset():
+    return _mapped_fail_graph()
+
+
+@asset
+def echo_mapped(mapped_fail_asset):
+    return mapped_fail_asset
+
+
+def asset_job():
+    return define_asset_job(
+        "asset_job",
+        selection=AssetSelection.assets(
+            branching_asset,
+            echo_branching,
+            mapped_fail_asset,
+            echo_mapped,
+        ),
+        executor_def=in_process_executor,
+    ).resolve(
+        assets=[
+            branching_asset,
+            echo_branching,
+            absent_asset,
+            mapped_fail_asset,
+            echo_mapped,
+        ],
+        source_assets=[],
+    )
+
+
+def test_assets():
+    # ensure complex re-execution behavior works when assets & graphs are layered atop
+
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(asset_job), instance)
+        assert not result.success
+        success_steps = {ev.step_key for ev in result.get_step_success_events()}
+        assert success_steps == {
+            "branching_asset.some_none_skip",
+            "mapped_fail_asset.emit_nums",
+            "mapped_fail_asset.fail_n[0]",
+        }
+        assert {ev.step_key for ev in result.get_step_skipped_events()} == {
+            "branching_asset.fan_out_skip",
+            "branching_asset.fail_once_skip",
+            "branching_asset.echo_skip",
+        }
+
+        result_2 = execute_job(
+            reconstructable(asset_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
+        success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
+        assert success_steps == {
+            "branching_asset.fan_out_some",
+            "branching_asset.fail_once_some",
+            "branching_asset.fan_out_none",
+            "branching_asset.fail_once_none",
+            "branching_asset.echo_none",
+            "mapped_fail_asset.fail_n[1]",
+        }
+
+        result_3 = execute_job(
+            reconstructable(asset_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
+        )
+        success_steps = {ev.step_key for ev in result_3.get_step_success_events()}
+        assert success_steps == {
+            "branching_asset.fail_once_fan_some[a]",
+            "branching_asset.fail_once_fan_some[b]",
+            "branching_asset.fail_once_fan_some[c]",
+            "branching_asset.echo_some",
+            "branching_asset.final",
+            "echo_branching",
+            "mapped_fail_asset.fail_n[2]",
+        }
+
+        result_4 = execute_job(
+            reconstructable(asset_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result_3.run_id, instance),
+        )
+        success_steps = {ev.step_key for ev in result_4.get_step_success_events()}
+        assert success_steps == {
+            "mapped_fail_asset.fail_n[3]",
+            "mapped_fail_asset.echo",
+            "echo_mapped",
+        }

@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name,unused-argument
 import os
 import shutil
 import subprocess

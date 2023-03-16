@@ -62,8 +62,7 @@ class ResolvedFromDynamicStepHandle(
         [("solid_handle", NodeHandle), ("mapping_key", str), ("key", str)],
     )
 ):
-    """
-    A reference to an ExecutionStep that came from resolving an UnresolvedMappedExecutionStep
+    """A reference to an ExecutionStep that came from resolving an UnresolvedMappedExecutionStep
     (and associated UnresolvedStepHandle) downstream of a dynamic output after it has
     completed successfully.
     """

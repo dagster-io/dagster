@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 
 import glob
 import os
@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, Optional
 
-from selenium import webdriver  # pylint: disable=import-error
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT
@@ -45,9 +45,7 @@ with open(SVG_FONT_DATA_FILE, "r", encoding="utf-8") as f:
 
 
 def _add_font_info_to_svg(svg_filepath: str):
-    """
-    Adds embedded Dagster font information to an SVG file downloaded from Dagit.
-    """
+    """Adds embedded Dagster font information to an SVG file downloaded from Dagit."""
     with open(svg_filepath, "r", encoding="utf-8") as f:
         svg = f.read()
     with open(svg_filepath, "w", encoding="utf-8") as f:
@@ -55,9 +53,7 @@ def _add_font_info_to_svg(svg_filepath: str):
 
 
 def _get_latest_download(file_extension: str) -> str:
-    """
-    Returns the path to the most recently downloaded file with the given extension.
-    """
+    """Returns the path to the most recently downloaded file with the given extension."""
     # https://stackoverflow.com/a/60004701
     downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
     list_of_downloads = glob.glob(downloads_folder + f"/*.{file_extension}")
@@ -66,8 +62,7 @@ def _get_latest_download(file_extension: str) -> str:
 
 @contextmanager
 def _setup_snippet_file(code_path: str, snippet_fn: Optional[str]):
-    """
-    Creates a temporary file that contains the contents of the given code file,
+    """Creates a temporary file that contains the contents of the given code file,
     setting up the given snippet function as a repository if specified.
     """
     with TemporaryDirectory() as temp_dir:
@@ -90,8 +85,7 @@ def demo_repo():
 
 
 def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Optional[str]):
-    """
-    Generates an SVG for the given code file & entry function, saving it to the given destination path.
+    """Generates an SVG for the given code file & entry function, saving it to the given destination path.
     """
     driver = None
     dagit_process = None
@@ -132,9 +126,13 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
 
 
 def parse_params(param_str: str) -> Dict[str, str]:
-    """
-    Parses a set of params for a markdown code block, e.g. returns {"foo": "bar", "baz": "qux"} for
-    ```python foo=bar baz=qux
+    """Parses a set of params for a markdown code block.
+
+    For example, returns {"foo": "bar", "baz": "qux"} for:
+
+    ```python
+    foo=bar baz=qux.
+    ```
     """
     params = re.split(r"\s+", param_str)
     return {param.split("=")[0]: param.split("=")[1] for param in params if len(param) > 0}

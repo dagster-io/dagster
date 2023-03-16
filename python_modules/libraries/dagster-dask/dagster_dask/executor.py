@@ -121,7 +121,7 @@ def query_on_dask_worker(
     mode,
     instance_ref,
     known_state,
-):  # pylint: disable=unused-argument
+):
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """

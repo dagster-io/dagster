@@ -2,7 +2,9 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import (
+    whitelist_for_serdes,
+)
 from dagster._utils import frozenlist
 
 # ########################
@@ -19,7 +21,7 @@ class TableRecord(
     strings, integers, floats, or bools.
     """
 
-    def __new__(cls, data):
+    def __new__(cls, data: Mapping[str, Union[str, int, float, bool]]):
         check.dict_param(
             data,
             "data",
@@ -44,7 +46,9 @@ class TableSchema(
         ],
     )
 ):
-    """Representation of a schema for tabular data. Schema is composed of two parts:
+    """Representation of a schema for tabular data.
+
+    Schema is composed of two parts:
 
     - A required list of columns (`TableColumn`). Each column specifies a
       `name`, `type`, set of `constraints`, and (optional) `description`. `type`
@@ -114,12 +118,13 @@ class TableSchema(
     @public
     @staticmethod
     def from_name_type_dict(name_type_dict: Mapping[str, str]):
-        """
-        Constructs a TableSchema from a dictionary whose keys are column names and values are the
+        """Constructs a TableSchema from a dictionary whose keys are column names and values are the
         names of data types of those columns.
         """
         return TableSchema(
-            columns=[TableColumn(name=name, type=type) for name, type in name_type_dict.items()]
+            columns=[
+                TableColumn(name=name, type=type_str) for name, type_str in name_type_dict.items()
+            ]
         )
 
 
@@ -192,7 +197,7 @@ class TableColumn(
     def __new__(
         cls,
         name: str,
-        type: str = "string",  # pylint: disable=redefined-builtin
+        type: str = "string",  # noqa: A002
         description: Optional[str] = None,
         constraints: Optional["TableColumnConstraints"] = None,
     ):

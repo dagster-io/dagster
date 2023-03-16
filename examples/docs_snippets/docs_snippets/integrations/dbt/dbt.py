@@ -1,5 +1,4 @@
 # isort: skip_file
-# pylint: disable=unused-variable
 
 
 def scope_load_assets_from_dbt_project():

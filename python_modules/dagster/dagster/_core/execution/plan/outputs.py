@@ -120,7 +120,6 @@ class StepOutputData(
         version: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         # graveyard
-        # pylint: disable=unused-argument
         intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
     ):
         return super(StepOutputData, cls).__new__(
@@ -174,8 +173,7 @@ class UnresolvedStepOutputHandle(
         ],
     )
 ):
-    """
-    Placeholding that will resolve to StepOutputHandle for each mapped output once the
+    """Placeholding that will resolve to StepOutputHandle for each mapped output once the
     upstream dynamic step has completed.
     """
 

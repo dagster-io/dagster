@@ -49,9 +49,9 @@ import dagster._check as check
 import dagster._seven as seven
 
 if sys.version_info > (3,):
-    from pathlib import Path  # pylint: disable=import-error
+    from pathlib import Path
 else:
-    from pathlib2 import Path  # pylint: disable=import-error
+    from pathlib2 import Path
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
@@ -69,6 +69,9 @@ PICKLE_PROTOCOL = 4
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
+
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
+DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
 
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
@@ -138,8 +141,7 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
 
 
 def script_relative_path(file_path: str) -> str:
-    """
-    Useful for testing with local files. Use a path relative to where the
+    """Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
     ran the test.
@@ -351,7 +353,7 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
         try:
             subprocess.check_output(cli_cmd)
         except subprocess.CalledProcessError as cpe:
-            print(cpe)  # pylint: disable=print-call
+            print(cpe)  # noqa: T201
             raise cpe
 
 
@@ -639,7 +641,7 @@ def restore_sys_modules() -> Iterator[None]:
 
 def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
-        import psutil  # pylint: disable=import-error
+        import psutil
 
         return psutil.pid_exists(pid=pid)
     else:
@@ -652,9 +654,7 @@ def process_is_alive(pid: int) -> bool:
 
 
 def compose(*args):
-    """
-    Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
-    """
+    """Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x))."""  # noqa: D402
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
@@ -686,9 +686,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
 def traced(func: T_Callable) -> T_Callable:
-    """
-    A decorator that keeps track of how many times a function is called.
-    """
+    """A decorator that keeps track of how many times a function is called."""
 
     def inner(*args, **kwargs):
         counter = traced_counter.get()

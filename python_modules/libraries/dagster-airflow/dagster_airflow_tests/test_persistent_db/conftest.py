@@ -40,8 +40,7 @@ def postgres_airflow_db(
     docker_compose_cm,
     docker_compose_file,
 ) -> Generator[str, None, None]:
-    """
-    Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
+    """Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
     """
     with docker_compose_cm(
         docker_compose_yml=docker_compose_file,
@@ -67,9 +66,9 @@ def postgres_airflow_db(
                     db.initdb()
                     break
                 except OperationalError as e:
-                    print(e)
+                    print(e)  # noqa: T201
                 time.sleep(RETRY_DELAY_SEC)
-                print(
+                print(  # noqa: T201
                     "Waiting for Airflow postgres database to start and initialize"
                     + "." * (3 + (now - start_time).seconds // RETRY_DELAY_SEC)
                 )

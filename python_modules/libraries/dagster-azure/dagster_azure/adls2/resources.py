@@ -131,8 +131,7 @@ class ADLS2Resource:
 
 
 def _adls2_resource_from_config(config):
-    """
-    Args:
+    """Args:
         config: A configuration containing the fields in ADLS2_CLIENT_CONFIG.
 
     Returns: An adls2 client.

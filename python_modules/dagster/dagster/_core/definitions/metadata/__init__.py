@@ -218,18 +218,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def text(text: str) -> "TextMetadataValue":
         """Static constructor for a metadata value wrapping text as
         :py:class:`TextMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "my_text_label": MetadataValue.text("hello")
-                    },
-                )
+                @op
+                def emit_metadata(context, df):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "my_text_label": MetadataValue.text("hello")
+                        },
+                    )
 
         Args:
             text (str): The text string for a metadata entry.
@@ -241,19 +242,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def url(url: str) -> "UrlMetadataValue":
         """Static constructor for a metadata value wrapping a URL as
         :py:class:`UrlMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dashboard",
-                    metadata={
-                        "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
-                    }
-                )
-
+                @op
+                def emit_metadata(context):
+                    yield AssetMaterialization(
+                        asset_key="my_dashboard",
+                        metadata={
+                            "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
+                        }
+                    )
 
         Args:
             url (str): The URL for a metadata entry.
@@ -264,18 +265,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @staticmethod
     def path(path: Union[str, os.PathLike]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
-        :py:class:`PathMetadataValue`. For example:
+        :py:class:`PathMetadataValue`.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "filepath": MetadataValue.path("path/to/file"),
-                    }
-                )
+                @op
+                def emit_metadata(context):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "filepath": MetadataValue.path("path/to/file"),
+                        }
+                    )
 
         Args:
             path (str): The path for a metadata entry.
@@ -286,18 +288,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     @staticmethod
     def notebook(path: Union[str, os.PathLike]) -> "NotebookMetadataValue":
         """Static constructor for a metadata value wrapping a notebook path as
-        :py:class:`NotebookMetadataValue`. For example:
+        :py:class:`NotebookMetadataValue`.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "notebook_path": MetadataValue.notebook("path/to/notebook.ipynb"),
-                    }
-                )
+                @op
+                def emit_metadata(context):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "notebook_path": MetadataValue.notebook("path/to/notebook.ipynb"),
+                        }
+                    )
 
         Args:
             path (str): The path to a notebook for a metadata entry.
@@ -309,19 +312,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def json(data: Union[Sequence[Any], Mapping[str, Any]]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a json-serializable list or dict
         as :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context):
-                yield ExpectationResult(
-                    success=not missing_things,
-                    label="is_present",
-                    metadata={
-                        "about my dataset": MetadataValue.json({"missing_columns": missing_things})
-                    },
-                )
+                @op
+                def emit_metadata(context):
+                    yield ExpectationResult(
+                        success=not missing_things,
+                        label="is_present",
+                        metadata={
+                            "about my dataset": MetadataValue.json({"missing_columns": missing_things})
+                        },
+                    )
 
         Args:
             data (Union[Sequence[Any], Mapping[str, Any]]): The JSON data for a metadata entry.
@@ -333,19 +337,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def md(data: str) -> "MarkdownMetadataValue":
         """Static constructor for a metadata value wrapping markdown data as
         :py:class:`MarkdownMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, md_str):
-                yield AssetMaterialization(
-                    asset_key="info",
-                    metadata={
-                        'Details': MetadataValue.md(md_str)
-                    },
-                )
+                @op
+                def emit_metadata(context, md_str):
+                    yield AssetMaterialization(
+                        asset_key="info",
+                        metadata={
+                            'Details': MetadataValue.md(md_str)
+                        },
+                    )
 
         Args:
             md_str (str): The markdown for a metadata entry.
@@ -357,19 +362,20 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
         :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
-        `metadata` parameter for supported events. For example:
+        `metadata` parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "class": MetadataValue.python_artifact(MyClass),
-                        "function": MetadataValue.python_artifact(my_function),
-                    }
-                )
+                @op
+                def emit_metadata(context, df):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "class": MetadataValue.python_artifact(MyClass),
+                            "function": MetadataValue.python_artifact(my_function),
+                        }
+                    )
 
         Args:
             value (Callable): The python class or function for a metadata entry.
@@ -382,18 +388,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def float(value: float) -> "FloatMetadataValue":
         """Static constructor for a metadata value wrapping a float as
         :py:class:`FloatMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "size (bytes)": MetadataValue.float(calculate_bytes(df)),
-                    }
-                )
+                @op
+                def emit_metadata(context, df):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "size (bytes)": MetadataValue.float(calculate_bytes(df)),
+                        }
+                    )
 
         Args:
             value (float): The float value for a metadata entry.
@@ -405,18 +412,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def int(value: int) -> "IntMetadataValue":
         """Static constructor for a metadata value wrapping an int as
         :py:class:`IntMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "number of rows": MetadataValue.int(len(df)),
-                    },
-                )
+                @op
+                def emit_metadata(context, df):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "number of rows": MetadataValue.int(len(df)),
+                        },
+                    )
 
         Args:
             value (int): The int value for a metadata entry.
@@ -428,18 +436,19 @@ class MetadataValue(ABC, Generic[T_Packable]):
     def bool(value: bool) -> "BoolMetadataValue":
         """Static constructor for a metadata value wrapping a bool as
         :py:class:`BoolMetadataValuye`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context, df):
-                yield AssetMaterialization(
-                    asset_key="my_dataset",
-                    metadata={
-                        "num rows > 1000": MetadataValue.bool(len(df) > 1000),
-                    },
-                )
+                @op
+                def emit_metadata(context, df):
+                    yield AssetMaterialization(
+                        asset_key="my_dataset",
+                        metadata={
+                            "num rows > 1000": MetadataValue.bool(len(df) > 1000),
+                        },
+                    )
 
         Args:
             value (bool): The bool value for a metadata entry.
@@ -490,30 +499,31 @@ class MetadataValue(ABC, Generic[T_Packable]):
     ) -> "TableMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary tabular data as
         :py:class:`TableMetadataValue`. Can be used as the value type for the `metadata`
-        parameter for supported events. For example:
+        parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            @op
-            def emit_metadata(context):
-                yield ExpectationResult(
-                    success=not has_errors,
-                    label="is_valid",
-                    metadata={
-                        "errors": MetadataValue.table(
-                            records=[
-                                TableRecord(code="invalid-data-type", row=2, col="name"),
-                            ],
-                            schema=TableSchema(
-                                columns=[
-                                    TableColumn(name="code", type="string"),
-                                    TableColumn(name="row", type="int"),
-                                    TableColumn(name="col", type="string"),
-                                ]
-                            )
-                        ),
-                    },
-                )
+                @op
+                def emit_metadata(context):
+                    yield ExpectationResult(
+                        success=not has_errors,
+                        label="is_valid",
+                        metadata={
+                            "errors": MetadataValue.table(
+                                records=[
+                                    TableRecord(code="invalid-data-type", row=2, col="name"),
+                                ],
+                                schema=TableSchema(
+                                    columns=[
+                                        TableColumn(name="code", type="string"),
+                                        TableColumn(name="row", type="int"),
+                                        TableColumn(name="col", type="string"),
+                                    ]
+                                )
+                            ),
+                        },
+                    )
         """
         return TableMetadataValue(records, schema)
 
@@ -524,24 +534,25 @@ class MetadataValue(ABC, Generic[T_Packable]):
     ) -> "TableSchemaMetadataValue":
         """Static constructor for a metadata value wrapping a table schema as
         :py:class:`TableSchemaMetadataValue`. Can be used as the value type
-        for the `metadata` parameter for supported events. For example:
+        for the `metadata` parameter for supported events.
 
-        .. code-block:: python
+        Example:
+            .. code-block:: python
 
-            schema = TableSchema(
-                columns = [
-                    TableColumn(name="id", type="int"),
-                    TableColumn(name="status", type="bool"),
-                ]
-            )
+                schema = TableSchema(
+                    columns = [
+                        TableColumn(name="id", type="int"),
+                        TableColumn(name="status", type="bool"),
+                    ]
+                )
 
-            DagsterType(
-                type_check_fn=some_validation_fn,
-                name='MyTable',
-                metadata={
-                    'my_table_schema': MetadataValue.table_schema(schema),
-                }
-            )
+                DagsterType(
+                    type_check_fn=some_validation_fn,
+                    name='MyTable',
+                    metadata={
+                        'my_table_schema': MetadataValue.table_schema(schema),
+                    }
+                )
 
         Args:
             schema (TableSchema): The table schema for a metadata entry.

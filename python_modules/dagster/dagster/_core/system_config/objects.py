@@ -55,8 +55,7 @@ class OpConfig(
 
 
 class OutputsConfig(NamedTuple):
-    """
-    Outputs are configured as a dict if any of the outputs have an output manager with an
+    """Outputs are configured as a dict if any of the outputs have an output manager with an
     output_config_schema, and a list otherwise.
     """
 
@@ -178,8 +177,7 @@ class ResolvedRunConfig(
         # may be pointing to the executor for the job rather than the `execute_in_process` executor.
         if (
             len(mode_def.executor_defs) == 1
-            and mode_def.executor_defs[0]  # pylint: disable=comparison-with-callable
-            == execute_in_process_executor
+            and mode_def.executor_defs[0] == execute_in_process_executor
         ):
             config_mapped_execution_configs: Optional[Mapping[str, Any]] = {}
         else:

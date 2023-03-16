@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Type,
     Union,
     cast,
 )
@@ -18,7 +17,7 @@ from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._core.definitions.utils import validate_tags
-from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
@@ -29,15 +28,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.dependency import NodeHandle
 
 
-class StepKindSerializer(DefaultEnumSerializer):
-    @classmethod
-    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+class StepKindSerializer(EnumSerializer["StepKind"]):
+    def unpack(self, storage_str: str) -> "StepKind":
         # old name for unresolved mapped
         if storage_str == "UNRESOLVED":
-            value = "UNRESOLVED_MAPPED"
+            return StepKind.UNRESOLVED_MAPPED
         else:
-            value = storage_str
-        return super().value_from_storage_str(value, klass)
+            return StepKind[storage_str]
 
 
 @whitelist_for_serdes(serializer=StepKindSerializer)
@@ -133,9 +130,7 @@ class ExecutionStep(
     ),
     IExecutionStep,
 ):
-    """
-    A fully resolved step in the execution graph.
-    """
+    """A fully resolved step in the execution graph."""
 
     def __new__(
         cls,
@@ -234,8 +229,7 @@ class UnresolvedMappedExecutionStep(
     ),
     IExecutionStep,
 ):
-    """
-    A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
+    """A placeholder step that will become N ExecutionSteps once the upstream dynamic output resolves in to N mapping keys.
     """
 
     def __new__(
@@ -394,8 +388,7 @@ class UnresolvedCollectExecutionStep(
     ),
     IExecutionStep,
 ):
-    """
-    A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
+    """A placeholder step that will become 1 ExecutionStep that collects over a dynamic output or downstream from one once it resolves.
     """
 
     def __new__(

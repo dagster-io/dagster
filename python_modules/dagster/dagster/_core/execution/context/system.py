@@ -1,5 +1,4 @@
-"""
-This module contains the execution context objects that are internal to the system.
+"""This module contains the execution context objects that are internal to the system.
 Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module.
@@ -880,7 +879,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     # "external" refers to records for inputs generated outside of this step
     def fetch_external_input_asset_records(self) -> None:
-        # pylint: disable=protected-access
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
@@ -892,7 +890,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         all_dep_keys: List[AssetKey] = []
         for output_key in output_keys:
-            if output_key not in self.pipeline_def.asset_layer._asset_deps:
+            if output_key not in self.pipeline_def.asset_layer._asset_deps:  # noqa: SLF001
                 continue
             dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
             for key in dep_keys:

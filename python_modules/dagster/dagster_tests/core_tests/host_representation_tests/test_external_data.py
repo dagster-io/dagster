@@ -8,6 +8,7 @@ from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
     GraphOut,
+    HourlyPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     define_asset_job,
@@ -145,7 +146,7 @@ def test_input_name_matches_output_name():
     not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
     @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
-    def something(result):  # pylint: disable=unused-argument
+    def something(result):
         pass
 
     assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
@@ -374,7 +375,7 @@ def test_basic_multi_asset():
         }
     )
     def assets():
-        """Some docstring for this operation"""
+        """Some docstring for this operation."""
         pass
 
     assets_job = build_assets_job("assets_job", [assets])
@@ -412,7 +413,7 @@ def test_inter_op_dependency():
         pass
 
     @asset
-    def downstream(only_in, mixed, only_out):  # pylint: disable=unused-argument
+    def downstream(only_in, mixed, only_out):
         pass
 
     @multi_asset(
@@ -424,7 +425,7 @@ def test_inter_op_dependency():
         },
         can_subset=True,
     )
-    def assets(in1, in2):  # pylint: disable=unused-argument
+    def assets(in1, in2):
         pass
 
     assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
@@ -557,7 +558,7 @@ def test_source_asset_with_op():
     foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
-    def bar(foo):  # pylint: disable=unused-argument
+    def bar(foo):
         pass
 
     assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
@@ -1051,3 +1052,21 @@ def test_graph_multi_asset_description():
     }
     assert external_asset_nodes[AssetKey("asset1")].op_description == "bar"
     assert external_asset_nodes[AssetKey("asset2")].op_description == "baz"
+
+
+def test_external_time_window_valid_partition_key():
+    hourly_partition = HourlyPartitionsDefinition(start_date="2023-03-11-15:00")
+
+    external_partitions_def = external_time_window_partitions_definition_from_def(hourly_partition)
+    assert (
+        external_partitions_def.get_partitions_definition().is_valid_partition_key(
+            "2023-03-11-15:00"
+        )
+        is True
+    )
+    assert (
+        external_partitions_def.get_partitions_definition().start.timestamp()
+        == pendulum.instance(
+            datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
+        ).timestamp()
+    )

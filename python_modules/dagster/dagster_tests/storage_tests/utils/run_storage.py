@@ -59,8 +59,7 @@ def _get_run_by_id(storage, run_id):
 
 
 class TestRunStorage:
-    """
-    You can extend this class to easily run these set of tests on any run storage. When extending,
+    """You can extend this class to easily run these set of tests on any run storage. When extending,
     you simply need to override the `run_storage` fixture and return your implementation of
     `RunStorage`.
 
@@ -71,7 +70,7 @@ class TestRunStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def run_storage(self):  # pylint: disable=arguments-differ
+        def run_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -1557,7 +1556,7 @@ class TestRunStorage:
 
         with tempfile.TemporaryDirectory() as temp_dir:
             if storage.has_instance:
-                instance = storage._instance  # pylint: disable=protected-access
+                instance = storage._instance  # noqa: SLF001
             else:
                 instance = DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,

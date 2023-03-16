@@ -1,5 +1,7 @@
 import time
-from typing import cast
+from typing import Any, Mapping, Optional, cast
+
+from typing_extensions import Self
 
 import dagster._seven as seven
 from dagster import (
@@ -7,6 +9,7 @@ from dagster import (
     Field,
     _check as check,
 )
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -14,6 +17,7 @@ from dagster._serdes import (
     ConfigurableClass,
     deserialize_value,
 )
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
@@ -23,7 +27,9 @@ from .base import LaunchRunContext, RunLauncher
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
-    def __init__(self, inst_data=None, wait_for_processes=False):
+    def __init__(
+        self, inst_data: Optional[ConfigurableClassData] = None, wait_for_processes: bool = False
+    ):
         self._inst_data = inst_data
 
         # Whether to wait for any processes that were used to launch runs to finish
@@ -39,15 +45,17 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {"wait_for_processes": Field(Bool, is_required=False)}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return DefaultRunLauncher(
             inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
         )

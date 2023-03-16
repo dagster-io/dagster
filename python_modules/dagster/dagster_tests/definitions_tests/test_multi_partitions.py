@@ -94,7 +94,7 @@ def test_tags_multi_dimensional_partitions():
         return 1
 
     @asset(partitions_def=composite)
-    def asset2(asset1):  # pylint: disable=unused-argument
+    def asset2(asset1):
         return 2
 
     @repository
@@ -349,4 +349,64 @@ def test_asset_partition_key_is_multipartition_key():
         [my_asset, asset2],
         resources={"my_io_manager": MyIOManager()},
         partition_key="a|b",
+    )
+
+
+def test_keys_with_dimension_value():
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+
+    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+        "static", "a", current_time=datetime(year=2015, month=1, day=5)
+    ) == [
+        MultiPartitionKey({"static": val[0], "date": val[1]})
+        for val in [
+            ("a", "2015-01-01"),
+            ("a", "2015-01-02"),
+            ("a", "2015-01-03"),
+            ("a", "2015-01-04"),
+        ]
+    ]
+    assert multipartitions_def.get_multipartition_keys_with_dimension_value(
+        "date", "2015-01-01", current_time=datetime(year=2015, month=1, day=5)
+    ) == [
+        MultiPartitionKey({"static": val[0], "date": val[1]})
+        for val in [
+            ("a", "2015-01-01"),
+            ("b", "2015-01-01"),
+            ("c", "2015-01-01"),
+            ("d", "2015-01-01"),
+        ]
+    ]
+
+
+def test_get_num_partitions():
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    assert multipartitions_def.get_num_partitions() == len(
+        set(multipartitions_def.get_partition_keys())
+    )
+
+    static_keys = ["a", "a", "a"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    assert multipartitions_def.get_num_partitions() == len(
+        set(multipartitions_def.get_partition_keys())
     )

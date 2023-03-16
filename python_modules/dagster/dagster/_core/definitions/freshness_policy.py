@@ -34,8 +34,7 @@ class FreshnessPolicy(
         ],
     )
 ):
-    """
-    A FreshnessPolicy specifies how up-to-date you want a given asset to be.
+    """A FreshnessPolicy specifies how up-to-date you want a given asset to be.
 
     Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
     that you expect to be incorporated into the current state of that asset at certain points in time.
@@ -137,8 +136,7 @@ class FreshnessPolicy(
 
     @classmethod
     def _create(cls, *args):
-        """
-        Pickle requires a method with positional arguments to construct
+        """Pickle requires a method with positional arguments to construct
         instances of a class. Since the constructor for this class has
         keyword arguments only, we define this method to be used by pickle.
         """

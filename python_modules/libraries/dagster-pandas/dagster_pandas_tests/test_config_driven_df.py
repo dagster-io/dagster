@@ -113,7 +113,7 @@ def test_dataframe_csv_missing_inputs():
     called = {}
 
     @op(ins={"df": In(DataFrame)})
-    def df_as_input(_context, df):  # pylint: disable=W0613
+    def df_as_input(_context, df):
         called["yup"] = True
 
     @graph
@@ -142,7 +142,7 @@ def test_dataframe_csv_missing_input_collision():
         return pd.DataFrame()
 
     @op(ins={"df": In(DataFrame)})
-    def df_as_input(_context, df):  # pylint: disable=W0613
+    def df_as_input(_context, df):
         called["yup"] = True
 
     @graph

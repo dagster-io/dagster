@@ -25,8 +25,6 @@ from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import environ, instance_for_test
 
-# pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking
-
 
 @pytest.fixture
 def instance():

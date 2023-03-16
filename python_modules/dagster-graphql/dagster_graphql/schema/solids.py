@@ -58,9 +58,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
     def resolve_solid_definition(
         self, _graphene_info: ResolveInfo
     ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(
-            self._represented_pipeline, self._solid_def_snap.name  # pylint: disable=no-member
-        )
+        return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._input_def_snap.metadata_entries))

@@ -11,7 +11,7 @@ from marks import mark_user_code_deployment_subchart
 
 @mark_user_code_deployment_subchart
 @pytest.mark.integration
-def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-outer-name,unused-argument
+def test_execute_on_celery_k8s_subchart_disabled(
     dagster_instance_for_user_deployments_subchart_disabled,
     helm_namespace_for_user_deployments_subchart_disabled,
 ):
@@ -72,8 +72,8 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         stdout=True,
         tty=False,
     )
-    print("Response: ")  #  pylint:disable=print-call
-    print(resp)  # pylint:disable=print-call
+    print("Response: ")  # noqa: T201
+    print(resp)  # noqa: T201
 
     runmaster_job_name = None
     timeout = datetime.timedelta(0, 90)

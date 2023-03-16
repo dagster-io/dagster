@@ -56,8 +56,7 @@ def test_compute_failure_pipeline():
 
 
 def test_failure_midstream():
-    r"""
-    A
+    r"""A
      \\
        C (fails) = D (skipped)
      //
@@ -96,13 +95,12 @@ def test_failure_midstream():
 
 
 def test_failure_propagation():
-    r"""
-      B =========== C
+    r"""B =========== C
      //             \\
     A                F (skipped)
      \\             //
       D (fails) == E (skipped).
-    """
+    """  # noqa: D208
     solid_a = create_root_success_solid("solid_a")
 
     @op

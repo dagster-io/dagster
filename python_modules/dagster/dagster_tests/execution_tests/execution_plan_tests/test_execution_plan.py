@@ -398,7 +398,7 @@ def test_tag_concurrency_limits():
 
         assert next_steps[0].key == "tiny_op_pri_3"
 
-        for step_key in active_execution._in_flight.copy():  # pylint: disable=protected-access
+        for step_key in active_execution._in_flight.copy():  # noqa: SLF001
             active_execution.mark_skipped(step_key)
 
 
@@ -474,7 +474,7 @@ def test_fan_out_should_skip_step():
     @job
     def optional_outputs():
         foo_res = foo()
-        # pylint: disable=no-member
+
         bar.alias("bar_1")(input_arg=foo_res.out_1)
         bar.alias("bar_2")(input_arg=foo_res.out_2)
         bar.alias("bar_3")(input_arg=foo_res.out_3)
@@ -513,7 +513,7 @@ def test_fan_in_should_skip_step():
     @op(out=Out(is_required=False))
     def skip(_):
         return
-        yield  # pylint: disable=unreachable
+        yield
 
     @op
     def fan_in(_context, items):
@@ -587,7 +587,7 @@ def test_configured_input_should_skip_step():
         yield Output(1)
 
     @op
-    def op_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+    def op_should_not_skip(_, input_one, input_two):
         called["yup"] = True
 
     @job

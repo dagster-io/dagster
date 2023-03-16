@@ -209,8 +209,7 @@ def _checked_inferred_type(inferred: Any) -> DagsterType:
 
 
 class DynamicOutputDefinition(OutputDefinition):
-    """
-    Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
+    """Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an
     output that will dynamically alter the graph at runtime.
 
     When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
@@ -333,8 +332,7 @@ class Out(
         ],
     )
 ):
-    """
-    Defines an output from an op's compute function.
+    """Defines an output from an op's compute function.
 
     Ops can have multiple outputs, in which case outputs cannot be anonymous.
 
@@ -427,8 +425,7 @@ class Out(
 
 
 class DynamicOut(Out):
-    """
-    Variant of :py:class:`Out <dagster.Out>` for an output that will dynamically alter the graph at
+    """Variant of :py:class:`Out <dagster.Out>` for an output that will dynamically alter the graph at
     runtime.
 
     When using in a composition function such as :py:func:`@graph <dagster.graph>`,
@@ -493,8 +490,7 @@ class DynamicOut(Out):
 
 
 class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
-    """
-    Represents information about the outputs that a graph maps.
+    """Represents information about the outputs that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the output.

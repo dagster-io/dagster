@@ -10,8 +10,7 @@ from .source_asset import SourceAsset
 
 
 class ResolvedAssetDependencies:
-    """
-    An asset can depend on another asset without specifying the full asset key for the upstream
+    """An asset can depend on another asset without specifying the full asset key for the upstream
     asset, if the name and groups match.
 
     ResolvedAssetDependencies maps these flexible dependencies to precise key-based dependencies.
@@ -44,8 +43,7 @@ class ResolvedAssetDependencies:
 def resolve_assets_def_deps(
     assets_defs: Iterable[AssetsDefinition], source_assets: Iterable[SourceAsset]
 ) -> Mapping[int, Mapping[AssetKey, AssetKey]]:
-    """
-    For each AssetsDefinition, resolves its inputs to upstream asset keys. Matches based on either
+    """For each AssetsDefinition, resolves its inputs to upstream asset keys. Matches based on either
     of two criteria:
     - The input asset key exactly matches an asset key.
     - The input asset key has one component, that component matches the final component of an asset

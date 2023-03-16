@@ -9,7 +9,7 @@ from google.cloud import storage
 def test_gcs_file_manager_write():
     gcs_mock = mock.MagicMock()
     file_manager = GCSFileManager(storage.client.Client(), "some-bucket", "some-key")
-    file_manager._client = gcs_mock  # pylint:disable=protected-access
+    file_manager._client = gcs_mock  # noqa: SLF001
 
     foo_bytes = b"foo"
 

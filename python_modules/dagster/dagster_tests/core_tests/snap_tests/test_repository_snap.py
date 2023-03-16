@@ -73,7 +73,7 @@ def test_repository_snap_definitions_resources_basic():
 
 def test_repository_snap_definitions_resources_complex():
     class MyStringResource(ConfigurableResource):
-        """my description"""
+        """My description."""
 
         my_string: str = "bar"
 
@@ -98,7 +98,7 @@ def test_repository_snap_definitions_resources_complex():
     assert external_repo_data.external_resource_data[0].resource_snapshot.name == "foo"
     assert (
         external_repo_data.external_resource_data[0].resource_snapshot.description
-        == "my description"
+        == "My description."
     )
 
     # Ensure we get config snaps for the resource's fields

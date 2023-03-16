@@ -10,7 +10,7 @@ from .utils import execute_on_thread, start_celery_worker
 celery_mode_defs = [ModeDefinition(executor_defs=[*default_executors, celery_executor])]
 
 
-def test_multiqueue(rabbitmq):  # pylint: disable=unused-argument
+def test_multiqueue(rabbitmq):
     with instance_for_test() as instance:
         done = threading.Event()
         with start_celery_worker():

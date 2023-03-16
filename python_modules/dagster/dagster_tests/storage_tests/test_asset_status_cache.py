@@ -83,7 +83,7 @@ def test_get_cached_partition_status_changed_time_partitions():
     asset_job = define_asset_job("asset_job").resolve([asset1], [])
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
-        asset._partitions_def = new_partitions_def  # pylint: disable=protected-access
+        asset._partitions_def = new_partitions_def  # noqa: SLF001
         asset_job = define_asset_job("asset_job").resolve([asset], [])
         asset_graph = AssetGraph.from_assets([asset])
         return asset, asset_job, asset_graph
@@ -132,7 +132,7 @@ def test_get_cached_partition_status_by_asset():
     asset_job = define_asset_job("asset_job").resolve([asset1], [])
 
     def _swap_partitions_def(new_partitions_def, asset, asset_graph, asset_job):
-        asset._partitions_def = new_partitions_def  # pylint: disable=protected-access
+        asset._partitions_def = new_partitions_def  # noqa: SLF001
         asset_job = define_asset_job("asset_job").resolve([asset], [])
         asset_graph = AssetGraph.from_assets([asset])
         return asset, asset_job, asset_graph

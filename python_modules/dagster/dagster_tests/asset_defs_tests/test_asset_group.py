@@ -75,7 +75,8 @@ def asset_aware_io_manager():
 
 
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
-    """
+    """Get a predefined set of assets definitions for testing.
+
     Dependencies:
         "upstream": {
             "start": set(),
@@ -434,12 +435,13 @@ def test_subset_does_not_respect_context():
 
 
 def test_subset_cycle_resolution_embed_assets_in_complex_graph():
-    """
-    This represents a single large multi-asset with two assets embedded inside of it.
+    """This represents a single large multi-asset with two assets embedded inside of it.
+
     Ops:
         foo produces: a, b, c, d, e, f, g, h
         x produces: x
         y produces: y
+
     Upstream Assets:
         a: []
         b: []
@@ -450,7 +452,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
         g: [e]
         h: [g, y]
         x: [a]
-        y: [e, f]
+        y: [e, f].
     """
     io_manager_obj, io_manager_def = asset_aware_io_manager()
     for item in "abcdefghxy":
@@ -516,12 +518,14 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
 
 
 def test_subset_cycle_resolution_complex():
-    """
+    """Test cycle resolution.
+
     Ops:
         foo produces: a, b, c, d, e, f
         x produces: x
         y produces: y
         z produces: z
+
     Upstream Assets:
         a: []
         b: [x]
@@ -530,7 +534,7 @@ def test_subset_cycle_resolution_complex():
         e: [c]
         f: [d]
         x: [a]
-        y: [b, c]
+        y: [b, c].
     """
     io_manager_obj, io_manager_def = asset_aware_io_manager()
     for item in "abcdefxy":
@@ -585,12 +589,11 @@ def test_subset_cycle_resolution_complex():
 
 
 def test_subset_cycle_resolution_basic():
-    """
-    Ops:
+    """Ops:
         foo produces: a, b
         foo_prime produces: a', b'
     Assets:
-        s -> a -> a' -> b -> b'
+        s -> a -> a' -> b -> b'.
     """
     io_manager_obj, io_manager_def = asset_aware_io_manager()
     for item in "a,b,a_prime,b_prime".split(","):
@@ -842,7 +845,7 @@ def test_job_with_reserved_name():
     ):
 
         @repository
-        def the_repo():  # pylint: disable=unused-variable
+        def the_repo():
             return [the_job]
 
 

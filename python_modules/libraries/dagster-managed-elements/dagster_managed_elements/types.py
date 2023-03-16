@@ -17,17 +17,14 @@ SECRET_MASK_VALUE = "**********"
 
 
 def is_key_secret(key: str):
-    """
-    Rudamentary check to see if a config key is a secret value.
-    """
+    """Rudamentary check to see if a config key is a secret value."""
     return any(keyword in key for keyword in SANITIZE_KEY_KEYWORDS) or any(
         match == key for match in SANITIZE_KEY_EXACT_MATCHES
     )
 
 
 def _sanitize(key: str, value: str):
-    """
-    Rudamentary sanitization of values so we can avoid printing passwords
+    """Rudamentary sanitization of values so we can avoid printing passwords
     to the console.
     """
     if is_key_secret(key):
@@ -70,8 +67,7 @@ class ManagedElementDiff(
         ],
     )
 ):
-    """
-    Utility class representing the diff between configured and deployed managed element. Can be rendered to a
+    """Utility class representing the diff between configured and deployed managed element. Can be rendered to a
     color-coded, user-friendly string.
     """
 
@@ -96,25 +92,19 @@ class ManagedElementDiff(
         )
 
     def add(self, name: str, value: Any) -> "ManagedElementDiff":
-        """
-        Adds an addition entry to the diff.
-        """
+        """Adds an addition entry to the diff."""
         check.str_param(name, "name")
 
         return self._replace(additions=[*self.additions, DiffData(name, value)])
 
     def delete(self, name: str, value: Any) -> "ManagedElementDiff":
-        """
-        Adds a deletion entry to the diff.
-        """
+        """Adds a deletion entry to the diff."""
         check.str_param(name, "name")
 
         return self._replace(deletions=[*self.deletions, DiffData(name, value)])
 
     def modify(self, name: str, old_value: Any, new_value: Any) -> "ManagedElementDiff":
-        """
-        Adds a modification entry to the diff.
-        """
+        """Adds a modification entry to the diff."""
         check.str_param(name, "name")
 
         return self._replace(
@@ -122,18 +112,14 @@ class ManagedElementDiff(
         )
 
     def with_nested(self, name: str, nested: "ManagedElementDiff") -> "ManagedElementDiff":
-        """
-        Adds the nested diff as a child of the current diff.
-        """
+        """Adds the nested diff as a child of the current diff."""
         check.str_param(name, "name")
         check.inst_param(nested, "nested", ManagedElementDiff)
 
         return self._replace(nested=OrderedDict(list(self.nested.items()) + [(name, nested)]))
 
     def join(self, other: "ManagedElementDiff") -> "ManagedElementDiff":
-        """
-        Combines two diff objects into a single diff object.
-        """
+        """Combines two diff objects into a single diff object."""
         check.inst_param(other, "other", ManagedElementDiff)
 
         return self._replace(
@@ -144,9 +130,7 @@ class ManagedElementDiff(
         )
 
     def is_empty(self):
-        """
-        Returns whether the diff is a no-op.
-        """
+        """Returns whether the diff is a no-op."""
         return (
             len(self.additions) == 0
             and len(self.deletions) == 0
@@ -179,8 +163,7 @@ class ManagedElementDiff(
     def get_diff_display_entries(
         self, indent: int = 0
     ) -> Tuple[Sequence[str], Sequence[str], Sequence[str]]:
-        """
-        Returns a tuple of additions, deletions, and modification entries associated with this diff object.
+        """Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """
         # Get top-level additions/deletions/modifications
         my_additions = [
@@ -244,8 +227,7 @@ ManagedElementCheckResult = Union[ManagedElementDiff, ManagedElementError]
 
 
 class ManagedElementReconciler(ABC):
-    """
-    Base class which defines the interface for checking and reconciling a managed element.
+    """Base class which defines the interface for checking and reconciling a managed element.
 
     Typically, the constructor will take in a set of resources or user configuration. The
     implementations of the check and apply methods will then use this configuration to
@@ -255,8 +237,7 @@ class ManagedElementReconciler(ABC):
 
     @abstractmethod
     def check(self, **kwargs) -> ManagedElementCheckResult:
-        """
-        Returns whether the user provided config for the managed element is in sync with the external resource.
+        """Returns whether the user provided config for the managed element is in sync with the external resource.
 
         kwargs contains any optional user-specified arguments to the check command.
         """
@@ -264,8 +245,7 @@ class ManagedElementReconciler(ABC):
 
     @abstractmethod
     def apply(self, **kwargs) -> ManagedElementCheckResult:
-        """
-        Reconciles the managed element with the external resource, returning the applied diff.
+        """Reconciles the managed element with the external resource, returning the applied diff.
 
         kwargs contains any optional user-specified arguments to the apply command.
         """

@@ -43,8 +43,7 @@ RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
-    """
-    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
+    """The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
     Users should not instantiate this object directly. To construct an
     `OutputContext` for testing an IO Manager's `handle_output` method, use
@@ -153,7 +152,7 @@ class OutputContext:
             self._resources_cm = build_resources(
                 check.opt_mapping_param(resources, "resources", key_type=str)
             )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+            self._resources = self._resources_cm.__enter__()
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
@@ -168,7 +167,7 @@ class OutputContext:
 
     def __exit__(self, *exc):
         if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._resources_cm.__exit__(*exc)
 
     def __del__(self):
         if (
@@ -177,7 +176,7 @@ class OutputContext:
             and self._resources_contain_cm
             and not self._cm_scope_entered
         ):
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
 
     @public
     @property
@@ -715,10 +714,9 @@ def get_output_context(
     version: Optional[str],
     warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
-    """
-    Args:
-        run_id (str): The run ID of the run that produced the output, not necessarily the run that
-            the context will be used in.
+    """Args:
+    run_id (str): The run ID of the run that produced the output, not necessarily the run that
+        the context will be used in.
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config

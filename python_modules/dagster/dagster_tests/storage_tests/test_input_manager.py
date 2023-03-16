@@ -21,6 +21,7 @@ from dagster import (
     job,
     materialize,
     op,
+    repository,
     resource,
     root_input_manager,
 )
@@ -408,15 +409,12 @@ def test_input_manager_with_assets():
         resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
-    assert (
-        output._get_output_for_handle("downstream", "result")  # pylint: disable=protected-access
-        == 3
-    )
+    assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001
 
 
 def test_input_manager_with_assets_no_default_io_manager():
     """Tests loading an upstream asset with an input manager when the downstream asset also uses a
-    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided
+    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided.
     """
 
     @asset
@@ -453,7 +451,7 @@ def test_input_manager_with_assets_no_default_io_manager():
 
 def test_input_manager_with_assets_and_config():
     """Tests that the correct config is passed to the io manager when using input_manager_key.
-    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager
+    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager.
     """
 
     @asset
@@ -779,6 +777,10 @@ def test_resource_not_input_manager():
         def basic():
             op_requires_manager()
 
+        @repository
+        def _my_repo():
+            return [basic]
+
 
 def test_mode_missing_input_manager():
     @op(ins={"a": In(root_manager_key="missing_root_manager")})
@@ -790,6 +792,10 @@ def test_mode_missing_input_manager():
         @job
         def _my_job():
             my_op()
+
+        @repository
+        def _my_repo():
+            return [_my_job]
 
 
 def test_missing_input_manager():

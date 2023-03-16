@@ -1,4 +1,3 @@
-# pylint: disable=no-value-for-parameter
 import datetime
 import sys
 import uuid
@@ -53,7 +52,6 @@ def test_simple_queries():
                 # Toy example query
                 "SELECT 1 AS field1, 2 AS field2;",
                 # Test access of public BQ historical dataset (only processes ~2MB here)
-                # pylint: disable=line-too-long
                 """SELECT *
             FROM `weathersource-com.pub_weather_data_samples.sample_weather_history_anomaly_us_zipcode_daily`
             ORDER BY postal_code ASC, date_valid_std ASC
@@ -84,7 +82,6 @@ def test_simple_queries():
     }
 
 
-# pylint: disable=line-too-long
 def test_bad_config():
     configs_and_expected_errors = [
         (
@@ -222,7 +219,7 @@ def test_pd_df_load():
         ins={"success": In(Nothing)},
         out=Out(DataFrame),
     )
-    def return_df(_context):  # pylint: disable=unused-argument
+    def return_df(_context):
         return test_df
 
     @job(resource_defs={"bigquery": bigquery_resource})
@@ -294,7 +291,7 @@ def test_gcs_load():
         ins={"success": In(Nothing)},
         out=Out(List[str]),
     )
-    def return_gcs_uri(_context):  # pylint: disable=unused-argument
+    def return_gcs_uri(_context):
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
     @job(resource_defs={"bigquery": bigquery_resource})

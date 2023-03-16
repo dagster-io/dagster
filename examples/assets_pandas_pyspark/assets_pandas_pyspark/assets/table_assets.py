@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 # start_marker
 import pandas as pd
 from dagster import AssetKey, SourceAsset, asset

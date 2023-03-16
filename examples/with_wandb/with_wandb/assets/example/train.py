@@ -1,7 +1,7 @@
 #!/usr/bin/env python
+# ruff: noqa: T201
 
-"""
-Based on: https://github.com/wandb/examples/blob/master/examples/pytorch/pytorch-cnn-fashion/train.py
+"""Based on: https://github.com/wandb/examples/blob/master/examples/pytorch/pytorch-cnn-fashion/train.py
 Builds a convolutional neural network on the fashion mnist data set.
 Designed to show wandb integration with pytorch.
 """
@@ -130,11 +130,11 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
-    iter = 0
+    count = 0
     for epoch in range(config.epochs):
-        for i, (images, labels) in enumerate(train_loader):
-            images = Variable(images)
-            labels = Variable(labels)
+        for i, (training_images, training_labels) in enumerate(train_loader):
+            images = Variable(training_images)
+            labels = Variable(training_labels)
 
             # Clear gradients w.r.t. parameters
             optimizer.zero_grad()
@@ -151,9 +151,9 @@ def main():
             # Updating parameters
             optimizer.step()
 
-            iter += 1
+            count += 1
 
-            if iter % 100 == 0:
+            if count % 100 == 0:
                 # Calculate Accuracy
                 correct = 0.0
                 correct_arr = [0.0] * 10
@@ -161,8 +161,8 @@ def main():
                 total_arr = [0.0] * 10
 
                 # Iterate through test dataset
-                for images, labels in test_loader:
-                    images = Variable(images)
+                for test_images, test_labels in test_loader:
+                    images = Variable(test_images)
 
                     # Forward pass only to get logits/output
                     outputs = model(images)
@@ -170,13 +170,15 @@ def main():
                     # Get predictions from the maximum value
                     _, predicted = torch.max(outputs.data, 1)
 
-                    # Total number of labels
-                    total += labels.size(0)
-                    correct += (predicted == labels).sum()
+                    # Total number of test_labels
+                    total += test_labels.size(0)
+                    correct += (predicted == test_labels).sum()
 
                     for label in range(10):
-                        correct_arr[label] += ((predicted == labels) & (labels == label)).sum()
-                        total_arr[label] += (labels == label).sum()
+                        correct_arr[label] += (
+                            (predicted == test_labels) & (test_labels == label)
+                        ).sum()
+                        total_arr[label] += (test_labels == label).sum()
 
                 accuracy = correct / total
 
@@ -189,7 +191,9 @@ def main():
                 wandb.log(metrics)
 
                 # Print Loss
-                print("Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(iter, loss, accuracy))
+                print(
+                    "Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(count, loss, accuracy)
+                )
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

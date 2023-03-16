@@ -94,12 +94,11 @@ def chunked_run_records_iterator(
                 yield run
 
             if progress:
-                progress.update(len(chunk))  # pylint: disable=no-member
+                progress.update(len(chunk))
 
 
 def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """
-    Utility method to build an asset key index from the data in existing event log records.
+    """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     if print_fn:
@@ -115,8 +114,7 @@ def migrate_run_partition(storage: RunStorage, print_fn: Optional[PrintFn] = Non
 
 
 def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
-    """
-    Utility method that updates the start and end times of historical runs using the completed event log.
+    """Utility method that updates the start and end times of historical runs using the completed event log.
     """
     if print_fn:
         print_fn("Querying run and event log storage.")
@@ -143,12 +141,12 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
     if not isinstance(run_storage, SqlRunStorage):
         return
 
-    instance = check.inst_param(run_storage._instance, "instance", DagsterInstance)
+    instance = check.inst_param(run_storage._instance, "instance", DagsterInstance)  # noqa: SLF001
     run_stats = instance.get_run_stats(run_id)
 
     with run_storage.connect() as conn:
         conn.execute(
-            RunsTable.update()  # pylint: disable=no-value-for-parameter
+            RunsTable.update()
             .where(RunsTable.c.run_id == run_id)
             .values(
                 start_time=run_stats.start_time,
@@ -209,7 +207,7 @@ def write_repo_tag(conn: Connection, run: DagsterRun) -> None:
     repository_label = run.external_pipeline_origin.external_repository_origin.get_label()
     try:
         conn.execute(
-            RunTagsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            RunTagsTable.insert().values(
                 run_id=run.run_id,
                 key=REPOSITORY_LABEL_TAG,
                 value=repository_label,

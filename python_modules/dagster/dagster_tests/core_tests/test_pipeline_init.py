@@ -20,7 +20,7 @@ def test_generator_exit():
         try:
             yield "A"
         finally:
-            yield "EXIT"  # pylint: disable=finally-yield
+            yield "EXIT"
 
     gen = generator()
     next(gen)
@@ -106,7 +106,7 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    generator = PlanExecutionContextManager(  # pylint: disable=protected-access
+    generator = PlanExecutionContextManager(
         pipeline=InMemoryPipeline(pipeline_def),
         execution_plan=execution_plan,
         run_config={},

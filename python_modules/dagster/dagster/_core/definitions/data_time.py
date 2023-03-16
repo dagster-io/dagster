@@ -40,7 +40,7 @@ class CachingDataTimeResolver:
         cursor: int,
         partitions_def: TimeWindowPartitionsDefinition,
     ) -> Optional[datetime.datetime]:
-        """Returns the time up until which all available data has been consumed for this asset
+        """Returns the time up until which all available data has been consumed for this asset.
 
         At a high level, this algorithm works as follows:
 

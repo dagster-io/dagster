@@ -34,7 +34,7 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             # Todo: Fix BK images to use newer Node versions, remove this.
             "curl -sL https://deb.nodesource.com/setup_16.x | bash -",
             "apt-get -yqq --no-install-recommends install nodejs",
-            "tox -vv -e py39",
+            "tox -vv -e py310",
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_dagit_changes())

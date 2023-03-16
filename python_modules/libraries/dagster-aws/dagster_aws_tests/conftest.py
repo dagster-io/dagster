@@ -17,7 +17,7 @@ def mock_s3_resource():
 
 
 @pytest.fixture
-def mock_s3_bucket(mock_s3_resource):  # pylint: disable=redefined-outer-name
+def mock_s3_bucket(mock_s3_resource):
     yield mock_s3_resource.create_bucket(Bucket="test-bucket")
 
 

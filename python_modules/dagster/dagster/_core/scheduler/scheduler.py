@@ -1,6 +1,8 @@
 import abc
 import os
-from typing import NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config import Field, IntSource
@@ -14,6 +16,7 @@ from dagster._core.scheduler.instigation import (
     ScheduleInstigatorData,
 )
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import mkdir_p
 
@@ -63,8 +66,7 @@ class Scheduler(abc.ABC):
     def start_schedule(
         self, instance: DagsterInstance, external_schedule: ExternalSchedule
     ) -> InstigatorState:
-        """
-        Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
+        """Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,.
 
         This should not be overridden by subclasses.
 
@@ -110,8 +112,7 @@ class Scheduler(abc.ABC):
         schedule_selector_id: str,
         external_schedule: Optional[ExternalSchedule],
     ) -> InstigatorState:
-        """
-        Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
+        """Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,.
 
         This should not be overridden by subclasses.
 
@@ -153,11 +154,11 @@ class Scheduler(abc.ABC):
         return stopped_state
 
     @abc.abstractmethod
-    def debug_info(self):
+    def debug_info(self) -> str:
         """Returns debug information about the scheduler."""
 
     @abc.abstractmethod
-    def get_logs_path(self, instance, schedule_origin_id):
+    def get_logs_path(self, instance: DagsterInstance, schedule_origin_id: str) -> str:
         """Get path to store logs for schedule.
 
         Args:
@@ -175,7 +176,10 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     """
 
     def __init__(
-        self, max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS, max_tick_retries=0, inst_data=None
+        self,
+        max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
+        max_tick_retries: int = 0,
+        inst_data: Optional[ConfigurableClassData] = None,
     ):
         self.max_catchup_runs = check.opt_int_param(
             max_catchup_runs, "max_catchup_runs", DEFAULT_MAX_CATCHUP_RUNS
@@ -184,7 +188,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         self._inst_data = inst_data
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
@@ -216,17 +220,21 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
             ),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
 
-    def debug_info(self):
+    def debug_info(self) -> str:
         return ""
 
-    def wipe(self, instance):
+    def wipe(self, instance: DagsterInstance) -> None:
         pass
 
-    def _get_or_create_logs_directory(self, instance, schedule_origin_id):
+    def _get_or_create_logs_directory(
+        self, instance: DagsterInstance, schedule_origin_id: str
+    ) -> str:
         check.inst_param(instance, "instance", DagsterInstance)
         check.str_param(schedule_origin_id, "schedule_origin_id")
 
@@ -236,7 +244,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
 
         return logs_directory
 
-    def get_logs_path(self, instance, schedule_origin_id):
+    def get_logs_path(self, instance: DagsterInstance, schedule_origin_id: str) -> str:
         check.inst_param(instance, "instance", DagsterInstance)
         check.str_param(schedule_origin_id, "schedule_origin_id")
 

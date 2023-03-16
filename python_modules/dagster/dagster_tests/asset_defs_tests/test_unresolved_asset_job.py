@@ -65,7 +65,8 @@ def asset_aware_io_manager():
 
 
 def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
-    """
+    """Get a predefined set of assets for testing.
+
     Dependencies:
         "upstream": {
             "start": set(),
@@ -474,7 +475,7 @@ def foo():
 
 def test_executor_def():
     job = define_asset_job("with_exec", executor_def=in_process_executor).resolve([foo], [])
-    assert job.executor_def == in_process_executor  # pylint: disable=comparison-with-callable
+    assert job.executor_def == in_process_executor
 
 
 def test_tags():

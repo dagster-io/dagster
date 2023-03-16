@@ -40,9 +40,9 @@ class LocalArtifactStorage(ConfigurableClass):
     def schedules_dir(self) -> str:
         return os.path.join(self.base_dir, "schedules")
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: LocalArtifactStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: LocalArtifactStorageConfig
     ) -> "LocalArtifactStorage":
         return LocalArtifactStorage(inst_data=inst_data, **config_value)
 

@@ -100,8 +100,7 @@ class DbtCloudResource:
         return_text: bool = False,
         base_url: Optional[str] = None,
     ) -> Any:
-        """
-        Creates and sends a request to the desired dbt Cloud API endpoint.
+        """Creates and sends a request to the desired dbt Cloud API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -149,8 +148,7 @@ class DbtCloudResource:
     def list_jobs(
         self, project_id: int, order_by: Optional[str] = "-id"
     ) -> Sequence[Mapping[str, Any]]:
-        """
-        List all dbt jobs in a dbt Cloud project.
+        """List all dbt jobs in a dbt Cloud project.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -171,8 +169,7 @@ class DbtCloudResource:
         )
 
     def get_job(self, job_id: int) -> Mapping[str, Any]:
-        """
-        Gets details about a given dbt job from the dbt Cloud API.
+        """Gets details about a given dbt job from the dbt Cloud API.
 
         Args:
             job_id (int): The ID of the relevant dbt Cloud job. You can find this value by going to
@@ -184,8 +181,7 @@ class DbtCloudResource:
         return self.make_request("GET", f"{self._account_id}/jobs/{job_id}/")
 
     def update_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
-        """
-        Updates specific properties of a dbt job.
+        """Updates specific properties of a dbt job.
 
         Documentation on the full set of potential parameters can be found here:
         https://docs.getdbt.com/dbt-cloud/api-v2#operation/updateJobById.
@@ -213,8 +209,7 @@ class DbtCloudResource:
         )
 
     def run_job(self, job_id: int, **kwargs) -> Mapping[str, Any]:
-        """
-        Initializes a run for a job.
+        """Initializes a run for a job.
 
         Overrides for specific properties can be set by passing in values to the kwargs. A full list
         of overridable properties can be found here:
@@ -253,8 +248,7 @@ class DbtCloudResource:
         offset: int = 0,
         limit: int = 100,
     ) -> Sequence[Mapping[str, object]]:
-        """
-        Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
+        """Returns a list of runs from dbt Cloud. This can be optionally filtered to a specific job
         using the job_definition_id. It supports pagination using offset and limit as well and
         can be configured to load a variety of related information about the runs.
 
@@ -291,8 +285,7 @@ class DbtCloudResource:
     def get_run(
         self, run_id: int, include_related: Optional[Sequence[str]] = None
     ) -> Mapping[str, Any]:
-        """
-        Gets details about a specific job run.
+        """Gets details about a specific job run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -312,8 +305,7 @@ class DbtCloudResource:
         )
 
     def get_run_steps(self, run_id: int) -> Sequence[str]:
-        """
-        Gets the steps of an initialized dbt Cloud run.
+        """Gets the steps of an initialized dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -329,8 +321,7 @@ class DbtCloudResource:
         return steps_override or steps
 
     def cancel_run(self, run_id: int) -> Mapping[str, Any]:
-        """
-        Cancels a dbt Cloud run.
+        """Cancels a dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -345,8 +336,7 @@ class DbtCloudResource:
         return self.make_request("POST", f"{self._account_id}/runs/{run_id}/cancel/")
 
     def list_run_artifacts(self, run_id: int, step: Optional[int] = None) -> Sequence[str]:
-        """
-        Lists the paths of the available run artifacts from a completed dbt Cloud run.
+        """Lists the paths of the available run artifacts from a completed dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -370,8 +360,7 @@ class DbtCloudResource:
         )
 
     def get_run_artifact(self, run_id: int, path: str, step: Optional[int] = None) -> str:
-        """
-        The string contents of a run artifact from a dbt Cloud run.
+        """The string contents of a run artifact from a dbt Cloud run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -394,8 +383,7 @@ class DbtCloudResource:
         )["text"]
 
     def get_manifest(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        The parsed contents of a manifest.json file created by a completed run.
+        """The parsed contents of a manifest.json file created by a completed run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -411,8 +399,7 @@ class DbtCloudResource:
         return json.loads(self.get_run_artifact(run_id, "manifest.json", step=step))
 
     def get_run_results(self, run_id: int, step: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        The parsed contents of a run_results.json file created by a completed run.
+        """The parsed contents of a run_results.json file created by a completed run.
 
         Args:
             run_id (int): The ID of the relevant dbt Cloud run. You can find this value by going to
@@ -434,8 +421,7 @@ class DbtCloudResource:
         poll_timeout: Optional[float] = None,
         href: Optional[str] = None,
     ) -> Mapping[str, Any]:
-        """
-        Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
+        """Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
         run does not complete successfully.
 
         Args:
@@ -516,8 +502,7 @@ class DbtCloudResource:
         poll_timeout: Optional[float] = None,
         **kwargs,
     ) -> DbtCloudOutput:
-        """
-        Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
+        """Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception
         if the run does not complete successfully.
 
         Args:
@@ -554,8 +539,7 @@ class DbtCloudResource:
         return output
 
     def get_job_environment_variables(self, project_id: int, job_id: int) -> Mapping[str, Any]:
-        """
-        Get the dbt Cloud environment variables for a specific job.
+        """Get the dbt Cloud environment variables for a specific job.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -575,8 +559,7 @@ class DbtCloudResource:
     def set_job_environment_variable(
         self, project_id: int, job_id: int, environment_variable_id: int, name: str, value: str
     ) -> Mapping[str, Any]:
-        """
-        Set the dbt Cloud environment variables for a specific job.
+        """Set the dbt Cloud environment variables for a specific job.
 
         Args:
             project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
@@ -662,8 +645,7 @@ DbtCloudResourceV2 = DbtCloudResource
     description="This resource helps interact with dbt Cloud connectors",
 )
 def dbt_cloud_resource(context) -> DbtCloudResource:
-    """
-    This resource allows users to programatically interface with the dbt Cloud Administrative REST
+    """This resource allows users to programatically interface with the dbt Cloud Administrative REST
     API (v2) to launch jobs and monitor their progress. This currently implements only a subset of
     the functionality exposed by the API.
 

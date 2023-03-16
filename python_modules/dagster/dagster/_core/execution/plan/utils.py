@@ -36,8 +36,7 @@ def op_execution_error_boundary(
     step_context: "StepExecutionContext",
     **kwargs: Any,
 ) -> Iterator[None]:
-    """
-    A specialization of user_code_error_boundary for the steps involved in executing a solid.
+    """A specialization of user_code_error_boundary for the steps involved in executing a solid.
     This variant supports the control flow exceptions RetryRequested and Failure as well
     as respecting the RetryPolicy if present.
     """
@@ -57,7 +56,7 @@ def op_execution_error_boundary(
             # The system has thrown an error that is part of the user-framework contract
             raise de
 
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
 

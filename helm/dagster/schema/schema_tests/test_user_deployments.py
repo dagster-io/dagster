@@ -477,7 +477,7 @@ def test_startup_probe_exec(template: HelmTemplate):
     assert len(dagster_user_deployment.spec.template.spec.containers) == 1
     container = dagster_user_deployment.spec.template.spec.containers[0]
 
-    assert container.startup_probe._exec.command == [  # pylint:disable=protected-access
+    assert container.startup_probe._exec.command == [  # noqa: SLF001
         "my",
         "command",
     ]
@@ -497,7 +497,7 @@ def test_startup_probe_default_exec(template: HelmTemplate):
     assert len(dagster_user_deployment.spec.template.spec.containers) == 1
     container = dagster_user_deployment.spec.template.spec.containers[0]
 
-    assert container.startup_probe._exec.command == [  # pylint: disable=protected-access
+    assert container.startup_probe._exec.command == [  # noqa: SLF001
         "dagster",
         "api",
         "grpc-health-check",

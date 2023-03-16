@@ -1,5 +1,3 @@
-# pylint: disable=anomalous-backslash-in-string
-
 import datetime
 import itertools
 import json
@@ -22,6 +20,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
@@ -44,16 +43,15 @@ if TYPE_CHECKING:
 
 
 class AssetReconciliationCursor(NamedTuple):
-    """
-    Attributes:
-        latest_storage_id: The latest observed storage ID across all assets. Useful for
-            finding out what has happened since the last tick.
-        materialized_or_requested_root_asset_keys: Every entry is a non-partitioned asset with no
-            parents that has been requested by this sensor or has been materialized (even if not by
-            this sensor).
-        materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
-            asset. Every value is the set of that asset's partitoins that have been requested by
-            this sensor or have been materialized (even if not by this sensor).
+    """Attributes:
+    latest_storage_id: The latest observed storage ID across all assets. Useful for
+        finding out what has happened since the last tick.
+    materialized_or_requested_root_asset_keys: Every entry is a non-partitioned asset with no
+        parents that has been requested by this sensor or has been materialized (even if not by
+        this sensor).
+    materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
+        asset. Every value is the set of that asset's partitoins that have been requested by
+        this sensor or have been materialized (even if not by this sensor).
     """
 
     latest_storage_id: Optional[int]
@@ -99,8 +97,7 @@ class AssetReconciliationCursor(NamedTuple):
         newly_materialized_root_partitions_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
         asset_graph: AssetGraph,
     ) -> "AssetReconciliationCursor":
-        """
-        Returns a cursor that represents this cursor plus the updates that have happened within the
+        """Returns a cursor that represents this cursor plus the updates that have happened within the
         tick.
         """
         requested_root_partitions_by_asset_key: Dict[AssetKey, Set[str]] = defaultdict(set)
@@ -205,14 +202,42 @@ class AssetReconciliationCursor(NamedTuple):
         return serialized
 
 
+def get_active_backfill_target_asset_graph_subset(
+    instance: "DagsterInstance", asset_graph: AssetGraph
+) -> AssetGraphSubset:
+    """Returns an AssetGraphSubset representing the set of assets that are currently targeted by
+    an active asset backfill.
+    """
+    from dagster._core.execution.asset_backfill import AssetBackfillData
+    from dagster._core.execution.backfill import BulkActionStatus
+
+    asset_backfills = [
+        backfill
+        for backfill in instance.get_backfills(status=BulkActionStatus.REQUESTED)
+        if backfill.is_asset_backfill
+    ]
+
+    result = AssetGraphSubset(asset_graph)
+    for asset_backfill in asset_backfills:
+        if asset_backfill.serialized_asset_backfill_data is None:
+            check.failed("Asset backfill missing serialized_asset_backfill_data")
+
+        asset_backfill_data = AssetBackfillData.from_serialized(
+            asset_backfill.serialized_asset_backfill_data, asset_graph
+        )
+
+        result |= asset_backfill_data.target_subset
+
+    return result
+
+
 def find_parent_materialized_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     latest_storage_id: Optional[int],
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
-    """
-    Finds asset partitions in the given selection whose parents have been materialized since
+    """Finds asset partitions in the given selection whose parents have been materialized since
     latest_storage_id.
 
     Returns:
@@ -318,7 +343,7 @@ def allowable_time_window_for_partitions_def(
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> Optional[TimeWindow]:
     """Returns a time window encompassing the partitions that the reconciliation sensor is currently
-    allowed to materialize for this partitions_def
+    allowed to materialize for this partitions_def.
     """
     latest_partition_window = partitions_def.get_last_partition_window()
     if latest_partition_window is None:
@@ -401,6 +426,11 @@ def determine_asset_partitions_to_reconcile(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
+    backfill_target_asset_graph_subset = get_active_backfill_target_asset_graph_subset(
+        asset_graph=asset_graph,
+        instance=instance_queryer.instance,
+    )
+
     def parents_will_be_reconciled(
         candidate: AssetKeyPartitionKey,
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
@@ -432,7 +462,11 @@ def determine_asset_partitions_to_reconcile(
             return False
 
         if any(
+            # do not reconcile assets if the freshness system will update them
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
+            # do not reconcile assets if an active backfill will update them
+            or candidate in backfill_target_asset_graph_subset
+            # do not reconcile assets if they are not in the target selection
             or candidate.asset_key not in target_asset_keys
             for candidate in candidates_unit
         ):
@@ -617,6 +651,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # recieve the current contents of the asset
                 execution_window_start = None
             else:
+                # this key will be updated eventually
+                if constraints:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
+
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_time = data_time_resolver.get_in_progress_data_time(
@@ -630,7 +668,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # number of constraints
                 (
                     execution_window_start,
-                    execution_window_end,
+                    _,
                 ) = get_execution_time_window_for_constraints(
                     constraints=constraints,
                     current_data_time=current_data_time,
@@ -638,10 +676,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                     failed_data_time=failed_data_time,
                     expected_data_time=expected_data_time,
                 )
-
-                # this key will be updated within the plan window
-                if execution_window_end is not None and execution_window_end <= plan_window_end:
-                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
             # a key may already be in to_materialize by the time we get here if a required
             # neighbor was selected to be updated

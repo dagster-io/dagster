@@ -171,7 +171,7 @@ def submit_backfill_runs(
     backfill_job: PartitionBackfill,
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
-    """Returns the run IDs of the submitted runs"""
+    """Returns the run IDs of the submitted runs."""
     origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
 
     repository_origin = origin.external_repository_origin

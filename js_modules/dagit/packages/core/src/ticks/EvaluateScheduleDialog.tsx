@@ -22,7 +22,7 @@ import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {TimezoneContext} from '../app/time/TimezoneContext';
+import {TimeContext} from '../app/time/TimeContext';
 import {timestampToString} from '../app/time/timestampToString';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -74,7 +74,9 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
       },
     },
   });
-  const [userTimezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [userTimezone],
+  } = React.useContext(TimeContext);
   const [isTickSelectionOpen, setIsTickSelectionOpen] = React.useState<boolean>(false);
   const selectedTimestampRef = React.useRef<{ts: number; label: string} | null>(null);
   const {viewport, containerProps} = useViewport();
@@ -226,7 +228,9 @@ const EvaluateScheduleContent: React.FC<{
   timestamp: number;
   jobName: string;
 }> = ({repoAddress, name, timestamp, jobName}) => {
-  const [userTimezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [userTimezone],
+  } = React.useContext(TimeContext);
   const [scheduleDryRunMutation] = useMutation<
     ScheduleDryRunMutation,
     ScheduleDryRunMutationVariables

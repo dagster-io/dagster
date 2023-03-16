@@ -31,7 +31,6 @@ def celery_k8s_executor_config():
         "job_namespace": Field(
             StringSource,
             is_required=False,
-            default_value="default",
             description=(
                 "The namespace into which to launch new jobs. Note that any "
                 "other Kubernetes resources the Job requires (such as the service account) must be "

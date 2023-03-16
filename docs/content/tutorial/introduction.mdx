@@ -23,9 +23,9 @@ An asset is an object in persistent storage that captures some understanding of 
 
 If you have an existing data pipeline, you likely already have assets.
 
-Software-defined assets are Dagster's way of enabling data engineers to deliver value and control their data pipelines. Writing SDAs lets you focus on the contents of the data and less on other aspects like what it depends on, how it's stored, or when it needs to be refreshed.
+_Software-defined assets_ are a Dagster concept that allows you to write data pipelines in terms of the assets that they produce. How they work: you write code that describes an asset that you want to exist, along with any other assets that the asset is derived from, and a function that can be run to compute the contents of the asset.
 
-As a Dagster user, you're able to build assets in code. In the sample asset below, the DataFrame returned is an asset and Dagster recognizes that the function is an SDA.
+Here's an example. The asset is a dataset called `topstories`, and it's computed by starting with an asset called `topstory_ids` and then fetching data for each of those IDs.
 
 ```python
 @asset
@@ -42,7 +42,7 @@ def topstories(topstory_ids):
 
 ### Building a DAG of assets
 
-Defining multiple assets creates a DAG (directed acyclic graph) of what assets depend on other assets. This DAG helps you to:
+A set of assets forms a [DAG (directed acyclic graph)](https://en.wikipedia.org/wiki/Directed_acyclic_graph), where the edges correspond to data dependencies between assets. This DAG helps you to:
 
 - Understand how your assets relate to each other
 - Empower you and your teammates to act, learn, and debug your pipelines

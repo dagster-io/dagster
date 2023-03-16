@@ -103,9 +103,7 @@ def test_ops_with_dependencies():
 
     # Ensure ordering of resource args doesn't matter
     @op
-    def fourth_op(
-        context, second_op_result: str, foo: Resource[str], third_op_result: str
-    ):  # pylint: disable=unused-argument
+    def fourth_op(context, second_op_result: str, foo: Resource[str], third_op_result: str):
         assert foo == "foo"
         assert second_op_result == "hello world"
         assert third_op_result == "!"
@@ -184,7 +182,7 @@ def test_multi_assets():
 def test_resource_not_provided():
     @asset
     def consumes_nonexistent_resource(
-        not_provided: Resource[str],  # pylint: disable=unused-argument
+        not_provided: Resource[str],
     ):
         pass
 
@@ -218,7 +216,7 @@ def test_resource_class():
 
     @asset
     def consumes_nonexistent_resource_class(
-        not_provided: MyResource,  # pylint: disable=unused-argument
+        not_provided: MyResource,
     ):
         pass
 
@@ -241,7 +239,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @asset(required_resource_keys={"foo"})
-        def my_asset(bar: Resource[Any]):  # pylint: disable=unused-argument
+        def my_asset(bar: Resource[Any]):
             pass
 
     with pytest.raises(
@@ -256,7 +254,7 @@ def test_both_decorator_and_argument_error():
             outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")},
             required_resource_keys={"foo"},
         )
-        def my_assets(bar: Resource[Any]):  # pylint: disable=unused-argument
+        def my_assets(bar: Resource[Any]):
             pass
 
     with pytest.raises(
@@ -268,7 +266,7 @@ def test_both_decorator_and_argument_error():
     ):
 
         @op(required_resource_keys={"foo"})
-        def my_op(bar: Resource[Any]):  # pylint: disable=unused-argument
+        def my_op(bar: Resource[Any]):
             pass
 
 

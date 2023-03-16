@@ -121,8 +121,7 @@ class GraphenePartitionStatus1D(graphene.Union):
 
 
 class GrapheneMultiPartitionRange(graphene.ObjectType):
-    """
-    The primary dimension of a multipartitioned asset is the time-partitioned dimension.
+    """The primary dimension of a multipartitioned asset is the time-partitioned dimension.
     If both dimensions of the asset are static or time-partitioned, the primary dimension is
     the first defined dimension.
     """

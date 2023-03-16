@@ -40,8 +40,7 @@ def test_required_positional_parameters_not_missing():
 
 def test_format_docstring_for_description():
     def multiline_indented_docstring():
-        """
-        abc
+        """abc
         123.
         """
 

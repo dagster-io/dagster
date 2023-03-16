@@ -127,7 +127,7 @@ class SqlScheduleStorage(ScheduleStorage):
         selector_id = state.selector_id
         try:
             conn.execute(
-                InstigatorsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                InstigatorsTable.insert().values(
                     selector_id=selector_id,
                     repository_selector_id=state.repository_selector_id,
                     status=state.status.value,
@@ -152,7 +152,7 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             try:
                 conn.execute(
-                    JobTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    JobTable.insert().values(
                         job_origin_id=state.instigator_origin_id,
                         repository_origin_id=state.repository_origin_id,
                         status=state.status.value,
@@ -190,7 +190,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             conn.execute(
-                JobTable.update()  # pylint: disable=no-value-for-parameter
+                JobTable.update()
                 .where(JobTable.c.job_origin_id == state.instigator_origin_id)
                 .values(**values)
             )
@@ -209,16 +209,12 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         with self.connect() as conn:
-            conn.execute(
-                JobTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    JobTable.c.job_origin_id == origin_id
-                )
-            )
+            conn.execute(JobTable.delete().where(JobTable.c.job_origin_id == origin_id))
 
             if self._has_instigators_table(conn):
                 if not self._jobs_has_selector_state(conn, selector_id):
                     conn.execute(
-                        InstigatorsTable.delete().where(  # pylint: disable=no-value-for-parameter
+                        InstigatorsTable.delete().where(
                             InstigatorsTable.c.selector_id == selector_id
                         )
                     )
@@ -375,9 +371,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             try:
-                tick_insert = JobTickTable.insert().values(
-                    **values
-                )  # pylint: disable=no-value-for-parameter
+                tick_insert = JobTickTable.insert().values(**values)
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
                 return InstigatorTick(tick_id, tick_data)
@@ -401,9 +395,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         with self.connect() as conn:
             conn.execute(
-                JobTickTable.update()  # pylint: disable=no-value-for-parameter
-                .where(JobTickTable.c.id == tick.tick_id)
-                .values(**values)
+                JobTickTable.update().where(JobTickTable.c.id == tick.tick_id).values(**values)
             )
 
         return tick
@@ -421,9 +413,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         utc_before = utc_datetime_from_timestamp(before)
 
-        query = JobTickTable.delete().where(  # pylint: disable=no-value-for-parameter
-            JobTickTable.c.timestamp < utc_before
-        )
+        query = JobTickTable.delete().where(JobTickTable.c.timestamp < utc_before)
         if tick_statuses:
             query = query.where(
                 JobTickTable.c.status.in_([tick_status.value for tick_status in tick_statuses])
@@ -449,8 +439,8 @@ class SqlScheduleStorage(ScheduleStorage):
         """Clears the schedule storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(JobTable.delete())
+            conn.execute(JobTickTable.delete())
             if self._has_instigators_table(conn):
                 conn.execute(InstigatorsTable.delete())
 
@@ -476,18 +466,16 @@ class SqlScheduleStorage(ScheduleStorage):
         return len(results) > 0
 
     def mark_index_built(self, migration_name: str) -> None:
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=migration_name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=migration_name,
+            migration_completed=datetime.now(),
         )
         with self.connect() as conn:
             try:
                 conn.execute(query)
             except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)
                     .values(migration_completed=datetime.now())
                 )

@@ -15,7 +15,6 @@ def generate_big_honkin_assets() -> List[AssetsDefinition]:
             AssetKey(f"asset_{j}") for j in random.sample(range(i), min(i, random.randint(0, 3)))
         }
 
-        # pylint: disable=cell-var-from-loop; (false positive)
         @asset(name=f"asset_{i}", non_argument_deps=non_argument_deps)
         def some_asset():
             pass

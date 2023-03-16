@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {TimezoneProvider} from '../app/time/TimezoneContext';
+import {TimeProvider} from '../app/time/TimeContext';
 import {RunStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
 
@@ -80,9 +80,9 @@ describe('RunDetails', () => {
   const renderAll = (config: MockConfig) => {
     return render(
       <TestProvider apolloProps={{mocks: buildMocks(config)}}>
-        <TimezoneProvider>
+        <TimeProvider>
           <Test />
-        </TimezoneProvider>
+        </TimeProvider>
       </TestProvider>,
     );
   };

@@ -14,7 +14,7 @@ from dagster_test.test_project import get_test_project_environments_path
 
 def log_run_events(instance, run_id):
     for log in instance.all_logs(run_id):
-        print(str(log) + "\n")  # pylint: disable=print-call
+        print(str(log) + "\n")  # noqa: T201
 
 
 @pytest.mark.integration

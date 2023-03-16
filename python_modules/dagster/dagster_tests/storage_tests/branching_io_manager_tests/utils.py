@@ -17,7 +17,7 @@ from dagster._core.events import DagsterEventType
 
 class DefinitionsRunner:
     """Helper class for running asset-oriented tests. Handles threading
-    through the instance for you (this is easy to forget to do)
+    through the instance for you (this is easy to forget to do).
     """
 
     def __init__(self, defs: Definitions, instance: DagsterInstance):
@@ -31,9 +31,7 @@ class DefinitionsRunner:
             yield DefinitionsRunner(defs, instance)
 
     def materialize_all_assets(self, partition_key: Optional[str] = None) -> ExecuteInProcessResult:
-        all_keys = list(
-            self.defs.get_repository_def()._assets_defs_by_key.keys()  # pylint: disable=protected-access
-        )
+        all_keys = list(self.defs.get_repository_def().assets_defs_by_key.keys())
         job_def = self.defs.get_implicit_job_def_for_assets(all_keys)
         assert job_def
         return job_def.execute_in_process(instance=self.instance, partition_key=partition_key)

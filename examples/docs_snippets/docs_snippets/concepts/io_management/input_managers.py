@@ -156,7 +156,7 @@ def simple_table_1_manager():
 
 @op(ins={"dataframe": In(input_manager_key="simple_load_input_manager")})
 def my_op(dataframe):
-    """Do some stuff"""
+    """Do some stuff."""
     dataframe.head()
 
 
@@ -231,12 +231,12 @@ def my_subselection_input_manager():
 
 @op
 def op1():
-    """Do stuff"""
+    """Do stuff."""
 
 
 @op(ins={"dataframe": In(input_manager_key="my_input_manager")})
 def op2(dataframe):
-    """Do stuff"""
+    """Do stuff."""
     dataframe.head()
 
 

@@ -86,7 +86,7 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
     subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
@@ -206,7 +206,7 @@ def test_retain_partition_mappings():
         ins={"input_last": AssetIn(["input_last"], partition_mapping=LastPartitionMapping())},
         partitions_def=DailyPartitionsDefinition(datetime.datetime(2022, 1, 1)),
     )
-    def bar_(input_last):  # pylint: disable=unused-argument
+    def bar_(input_last):
         pass
 
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
@@ -232,7 +232,7 @@ def test_chain_replace_and_subset_for():
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
     replaced_1 = abc_.with_prefix_or_group(
@@ -298,7 +298,7 @@ def test_chain_replace_and_subset_for():
 
 def test_fail_on_subset_for_nonsubsettable():
     @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
-    def abc_(context, start):  # pylint: disable=unused-argument
+    def abc_(context, start):
         pass
 
     with pytest.raises(CheckError, match="can_subset=False"):
@@ -1175,7 +1175,7 @@ def test_graph_backed_asset_reused():
         return 1
 
     @op
-    def foo(upstream):  # pylint: disable=unused-argument
+    def foo(upstream):
         return 1
 
     @graph

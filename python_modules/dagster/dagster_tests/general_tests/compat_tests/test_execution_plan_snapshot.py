@@ -26,7 +26,7 @@ from dagster._legacy import (
     ModeDefinition,
     pipeline,
 )
-from dagster._utils import file_relative_path
+from dagster._utils import file_relative_path, len_iter
 from dagster._utils.test import copy_directory
 
 
@@ -192,7 +192,7 @@ def test_execution_plan_snapshot_backcompat():
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
     snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
     for snapshot_dir_path in snapshot_dirs:
-        print(f"Executing a saved run from {snapshot_dir_path}")  # pylint: disable=print-call
+        print(f"Executing a saved run from {snapshot_dir_path}")  # noqa: T201
 
         with copy_directory(os.path.join(src_dir, snapshot_dir_path)) as test_dir:
             with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -241,10 +241,10 @@ def test_execution_plan_snapshot_backcompat():
 if __name__ == "__main__":
     with DagsterInstance.get() as gen_instance:
         empty_runs = gen_instance.get_runs()
-        assert len(empty_runs) == 0
+        assert len_iter(empty_runs) == 0
         gen_instance.create_run_for_pipeline(
             pipeline_def=dynamic_pipeline,
             run_config={"solids": {"emit": {"inputs": {"range_input": 5}}}},
         )
 
-        print("Created run for test")  # pylint: disable=print-call
+        print("Created run for test")  # noqa: T201

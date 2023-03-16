@@ -136,7 +136,8 @@ LIMIT 1;
     reason="This test only works with a live Redshift cluster",
 )
 def test_live_redshift(s3_bucket):
-    """
+    """Test live redshift instance.
+
     This test is based on:
 
     https://aws.amazon.com/premiumsupport/knowledge-center/redshift-stl-load-errors/

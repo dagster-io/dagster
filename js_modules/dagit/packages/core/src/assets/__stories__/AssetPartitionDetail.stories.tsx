@@ -3,6 +3,7 @@ import {Box} from '@dagster-io/ui';
 import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
+import {RunStatus} from '../../graphql/types';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {
   AssetPartitionDetail,
@@ -10,7 +11,7 @@ import {
   AssetPartitionDetailLoader,
 } from '../AssetPartitionDetail';
 import {
-  AssetPartitionDetailMock,
+  buildAssetPartitionDetailMock,
   MaterializationUpstreamDataFullMock,
 } from '../__fixtures__/AssetEventDetail.mocks';
 
@@ -30,7 +31,43 @@ export const EmptyState = () => {
 export const MaterializationFollowedByObservation = () => {
   return (
     <MockedProvider
-      mocks={[AssetPartitionDetailMock, MaterializationUpstreamDataFullMock]}
+      mocks={[buildAssetPartitionDetailMock(), MaterializationUpstreamDataFullMock]}
+      cache={createAppCache()}
+    >
+      <WorkspaceProvider>
+        <Box style={{width: '950px'}}>
+          <AssetPartitionDetailLoader assetKey={{path: ['asset_1']}} partitionKey="2022-02-02" />
+        </Box>
+      </WorkspaceProvider>
+    </MockedProvider>
+  );
+};
+
+export const MaterializationWithRecentFailure = () => {
+  return (
+    <MockedProvider
+      mocks={[
+        buildAssetPartitionDetailMock(RunStatus.FAILURE),
+        MaterializationUpstreamDataFullMock,
+      ]}
+      cache={createAppCache()}
+    >
+      <WorkspaceProvider>
+        <Box style={{width: '950px'}}>
+          <AssetPartitionDetailLoader assetKey={{path: ['asset_1']}} partitionKey="2022-02-02" />
+        </Box>
+      </WorkspaceProvider>
+    </MockedProvider>
+  );
+};
+
+export const MaterializationWithInProgressRun = () => {
+  return (
+    <MockedProvider
+      mocks={[
+        buildAssetPartitionDetailMock(RunStatus.STARTING),
+        MaterializationUpstreamDataFullMock,
+      ]}
       cache={createAppCache()}
     >
       <WorkspaceProvider>

@@ -1,5 +1,6 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
@@ -78,8 +79,8 @@ describe('LaunchAssetExecutionButton', () => {
       await screen.findByTestId('choose-partitions-dialog');
     });
 
-    // expect the anchor asset label to be present, and the missing + tags options to be hidden
-    expect((await screen.findByTestId('anchor-asset-label')).textContent).toEqual('asset_daily');
+    userEvent.click(screen.getByTestId('backfill-options'));
+
     expect(await screen.queryByTestId('missing-only-checkbox')).toBeNull();
     expect(await screen.queryByTestId('ranges-as-tags-checkbox')).toBeNull();
 

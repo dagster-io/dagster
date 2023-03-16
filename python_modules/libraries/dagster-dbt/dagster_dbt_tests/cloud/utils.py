@@ -74,7 +74,7 @@ def sample_job_details():
 def sample_runs_details(include_related=None, **kwargs):
     runs = [sample_run_details(include_related, **kwargs) for i in range(100)]
     if include_related and "environment" in include_related:
-        for run in runs:
+        for i, run in enumerate(runs):
             run["environment"] = {
                 "dbt_project_subdirectory": None,
                 "project_id": 50000,
@@ -91,7 +91,7 @@ def sample_runs_details(include_related=None, **kwargs):
                 "supports_docs": False,
                 "state": 10,
             }
-            run = deep_merge_dicts(run, kwargs)
+            runs[i] = deep_merge_dicts(run, kwargs)
     return {
         "status": {
             "code": 200,

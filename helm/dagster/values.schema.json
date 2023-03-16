@@ -1915,6 +1915,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "jobNamespace": {
+                    "title": "Jobnamespace",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

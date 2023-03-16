@@ -10,9 +10,7 @@ from dagster._serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):
-    """
-    Context available within a run launcher's launch_run call.
-    """
+    """Context available within a run launcher's launch_run call."""
 
     dagster_run: DagsterRun
     workspace: Optional[IWorkspace]
@@ -23,9 +21,7 @@ class LaunchRunContext(NamedTuple):
 
 
 class ResumeRunContext(NamedTuple):
-    """
-    Context available within a run launcher's resume_run call.
-    """
+    """Context available within a run launcher's resume_run call."""
 
     dagster_run: DagsterRun
     workspace: Optional[IWorkspace]
@@ -46,9 +42,7 @@ class WorkerStatus(Enum):
 
 
 class CheckRunHealthResult(NamedTuple):
-    """
-    Result of a check_run_worker_health call.
-    """
+    """Result of a check_run_worker_health call."""
 
     status: WorkerStatus
     msg: Optional[str] = None
@@ -75,28 +69,24 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def terminate(self, run_id):
-        """
-        Terminates a process.
+    def terminate(self, run_id: str) -> bool:
+        """Terminates a process.
 
         Returns False is the process was already terminated. Returns true if
         the process was alive and was successfully terminated
         """
 
-    def dispose(self):
-        """
-        Do any resource cleanup that should happen when the DagsterInstance is
+    def dispose(self) -> None:
+        """Do any resource cleanup that should happen when the DagsterInstance is
         cleaning itself up.
         """
 
-    def join(self, timeout=30):
+    def join(self, timeout: int = 30) -> None:
         pass
 
     @property
-    def supports_check_run_worker_health(self):
-        """
-        Whether the run launcher supports check_run_worker_health.
-        """
+    def supports_check_run_worker_health(self) -> bool:
+        """Whether the run launcher supports check_run_worker_health."""
         return False
 
     def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
@@ -105,10 +95,8 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         )
 
     @property
-    def supports_resume_run(self):
-        """
-        Whether the run launcher supports resume_run.
-        """
+    def supports_resume_run(self) -> bool:
+        """Whether the run launcher supports resume_run."""
         return False
 
     def resume_run(self, context: ResumeRunContext) -> None:

@@ -89,8 +89,7 @@ class PartitionMapping(ABC):
         upstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        """
-        Returns the subset of partition keys in the upstream asset that include data necessary
+        """Returns the subset of partition keys in the upstream asset that include data necessary
         to compute the contents of the given partition key subset in the downstream asset.
 
         Args:
@@ -133,8 +132,7 @@ class PartitionMapping(ABC):
         downstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        """
-        Returns the subset of partition keys in the downstream asset that use the data in the given
+        """Returns the subset of partition keys in the downstream asset that use the data in the given
         partition key subset of the upstream asset.
 
         Args:
@@ -166,8 +164,7 @@ class PartitionMapping(ABC):
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
-    """
-    Expects that the upstream and downstream assets are partitioned in the same way, and maps
+    """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
 
@@ -193,8 +190,7 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
-    """
-    Maps every partition in the downstream asset to every partition in the upstream asset.
+    """Maps every partition in the downstream asset to every partition in the upstream asset.
 
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
     downstream asset depends on all partitions of the usptream asset.
@@ -240,8 +236,7 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
 
 @whitelist_for_serdes
 class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping", [])):
-    """
-    Maps all dependencies to the last partition in the upstream asset.
+    """Maps all dependencies to the last partition in the upstream asset.
 
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
     downstream asset depends on the last partition of the upstream asset.
@@ -287,8 +282,7 @@ class SpecificPartitionsPartitionMapping(
         "_SpecificPartitionsPartitionMapping", [("partition_keys", PublicAttr[Sequence[str]])]
     ),
 ):
-    """
-    Maps to a specific subset of partitions in the upstream asset.
+    """Maps to a specific subset of partitions in the upstream asset.
 
     Example:
     .. code-block:: python
@@ -341,8 +335,7 @@ class MultiToSingleDimensionPartitionMapping(
         "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", Optional[str])]
     ),
 ):
-    """
-    Defines a correspondence between an single-dimensional partitions definition
+    """Defines a correspondence between an single-dimensional partitions definition
     and a MultiPartitionsDefinition. The single-dimensional partitions definition must be
     a dimension of the MultiPartitionsDefinition.
 
@@ -463,7 +456,7 @@ class MultiToSingleDimensionPartitionMapping(
         for key in multipartitions_def.get_partition_keys(
             current_time=None, dynamic_partitions_store=dynamic_partitions_store
         ):
-            key = cast(MultiPartitionKey, key)
+            key = cast(MultiPartitionKey, key)  # noqa: PLW2901
             if (
                 key.keys_by_dimension[partition_dimension_name]
                 in partitions_subset.get_partition_keys()
@@ -571,8 +564,7 @@ class StaticPartitionMapping(
         ],
     ),
 ):
-    """
-    Define an explicit correspondence between two StaticPartitionsDefinitions.
+    """Define an explicit correspondence between two StaticPartitionsDefinitions.
 
     Args:
         downstream_partition_keys_by_upstream_partition_key (Dict[str, str | Collection[str]]):
@@ -609,8 +601,7 @@ class StaticPartitionMapping(
 
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: PartitionsDefinition):
-        """
-        validate that the mapping from upstream to downstream is only defined on upstream keys
+        """Validate that the mapping from upstream to downstream is only defined on upstream keys.
         """
         check.inst(
             upstream_partitions_def,
@@ -626,9 +617,7 @@ class StaticPartitionMapping(
 
     @cached_method
     def _check_downstream(self, *, downstream_partitions_def: PartitionsDefinition):
-        """
-        validate that the mapping from upstream to downstream only maps to downstream keys
-        """
+        """Validate that the mapping from upstream to downstream only maps to downstream keys."""
         check.inst(
             downstream_partitions_def,
             StaticPartitionsDefinition,

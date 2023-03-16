@@ -60,8 +60,7 @@ if TYPE_CHECKING:
 
 
 class AssetsDefinition(ResourceAddable):
-    """
-    Defines a set of assets that are produced by the same op or graph.
+    """Defines a set of assets that are produced by the same op or graph.
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
     :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
@@ -275,8 +274,7 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
     ) -> "AssetsDefinition":
-        """
-        Constructs an AssetsDefinition from a GraphDefinition.
+        """Constructs an AssetsDefinition from a GraphDefinition.
 
         Args:
             graph_def (GraphDefinition): The GraphDefinition that is an asset.
@@ -353,8 +351,7 @@ class AssetsDefinition(ResourceAddable):
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ) -> "AssetsDefinition":
-        """
-        Constructs an AssetsDefinition from an OpDefinition.
+        """Constructs an AssetsDefinition from an OpDefinition.
 
         Args:
             op_def (OpDefinition): The OpDefinition that is an asset.
@@ -663,8 +660,7 @@ class AssetsDefinition(ResourceAddable):
         check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
 
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
-        """
-        If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
+        """If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
         returns the op def within the graph that produces the given asset key.
         """
         output_name = self.get_output_name_for_asset_key(key)
@@ -804,8 +800,7 @@ class AssetsDefinition(ResourceAddable):
         self,
         selected_asset_keys: AbstractSet[AssetKey],
     ) -> "AssetsDefinition":
-        """
-        Create a subset of this AssetsDefinition that will only materialize the assets in the
+        """Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
 
         Args:
@@ -898,8 +893,7 @@ class AssetsDefinition(ResourceAddable):
 
     @public
     def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
-        """
-        Returns a representation of this asset as a :py:class:`SourceAsset`.
+        """Returns a representation of this asset as a :py:class:`SourceAsset`.
 
         If this is a multi-asset, the "key" argument allows selecting which asset to return a
         SourceAsset representation of.
@@ -1110,14 +1104,13 @@ def _build_invocation_context_with_included_resources(
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
     if isinstance(context, UnboundOpExecutionContext):
-        # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
             config=context.op_config,
-            resources_config=context._resources_config,
-            instance=context._instance,
-            partition_key=context._partition_key,
-            mapping_key=context._mapping_key,
+            resources_config=context._resources_config,  # noqa: SLF001
+            instance=context._instance,  # noqa: SLF001
+            partition_key=context._partition_key,  # noqa: SLF001
+            mapping_key=context._mapping_key,  # noqa: SLF001
         )
     else:
         # If user is mocking OpExecutionContext, send it through (we don't know

@@ -34,7 +34,7 @@ def test_compute_log_manager(gcs_bucket):
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -124,7 +124,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -256,8 +256,8 @@ def test_storage_download_url_fallback(gcs_bucket):
         time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
 
-        orig_blob_fn = manager._bucket.blob
-        with mock.patch.object(manager._bucket, "blob") as blob_fn:
+        orig_blob_fn = manager._bucket.blob  # noqa: SLF001
+        with mock.patch.object(manager._bucket, "blob") as blob_fn:  # noqa: SLF001
 
             def _return_mocked_blob(*args, **kwargs):
                 blob = orig_blob_fn(*args, **kwargs)
@@ -281,13 +281,13 @@ class TestGCSComputeLogManager(TestCapturedLogManager):
     __test__ = True
 
     @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def captured_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def write_manager(self, gcs_bucket):
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(
@@ -298,7 +298,7 @@ class TestGCSComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def read_manager(self, gcs_bucket):
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)

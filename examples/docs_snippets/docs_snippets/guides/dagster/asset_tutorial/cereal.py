@@ -37,7 +37,7 @@ def cereals():
 
 @asset
 def nabisco_cereals(cereals):
-    """Cereals manufactured by Nabisco"""
+    """Cereals manufactured by Nabisco."""
     return [row for row in cereals if row["mfr"] == "N"]
 
 

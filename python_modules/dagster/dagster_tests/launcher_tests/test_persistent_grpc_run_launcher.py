@@ -21,7 +21,7 @@ from dagster_tests.launcher_tests.test_default_run_launcher import (
 )
 
 
-def test_run_always_finishes():  # pylint: disable=redefined-outer-name
+def test_run_always_finishes():
     with instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,

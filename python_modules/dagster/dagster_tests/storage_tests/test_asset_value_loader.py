@@ -323,3 +323,44 @@ def test_io_manager_resource_with_config():
     with repo.get_asset_value_loader() as loader:
         value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5
+
+
+def test_nested_resource_deps():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert False
+
+        def load_input(self, context):
+            assert context.resources.first_order == "bar"
+            return context.asset_key.path[-1] + "_5"
+
+    @io_manager(required_resource_keys={"first_order"})
+    def the_io_manager():
+        return MyIOManager()
+
+    @resource
+    def second_order():
+        return "foo"
+
+    @resource(required_resource_keys={"second_order"})
+    def first_order(context):
+        assert context.resources.second_order == "foo"
+        return "bar"
+
+    @asset(io_manager_key="the_io_manager")
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return with_resources(
+            [asset1],
+            resource_defs={
+                "the_io_manager": the_io_manager,
+                "first_order": first_order,
+                "second_order": second_order,
+            },
+        )
+
+    with repo.get_asset_value_loader() as loader:
+        assert loader.load_asset_value(AssetKey("asset1")) == "asset1_5"

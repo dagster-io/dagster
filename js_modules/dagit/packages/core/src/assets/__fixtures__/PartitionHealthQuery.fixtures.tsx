@@ -1,5 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
+import {PartitionDefinitionType} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
@@ -24,6 +25,7 @@ export const buildPartitionHealthMock = (
           {
             name: 'default',
             partitionKeys: empty ? [] : ['test1', 'test2'],
+            type: PartitionDefinitionType.DYNAMIC,
             __typename: 'DimensionPartitionKeys',
           },
         ],

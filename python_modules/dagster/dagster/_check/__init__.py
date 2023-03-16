@@ -865,7 +865,7 @@ def two_dim_list_param(
     if not obj:
         raise CheckError("You must pass a list of lists. Received an empty list.")
     for sublist in obj:
-        sublist = list_param(
+        list_param(
             sublist, f"sublist_{param_name}", of_type=of_type, additional_message=additional_message
         )
         if len(sublist) != len(obj[0]):

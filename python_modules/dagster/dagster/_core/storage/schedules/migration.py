@@ -25,8 +25,7 @@ OPTIONAL_SCHEDULE_DATA_MIGRATIONS: Mapping[str, Callable] = {
 def add_selector_id_to_jobs_table(
     storage: ScheduleStorage, print_fn: Optional[PrintFn] = None
 ) -> None:
-    """
-    Utility method that calculates the selector_id for each stored instigator state, and writes
+    """Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
     if print_fn:
@@ -78,7 +77,7 @@ def add_selector_id_to_jobs_table(
                 )
 
             conn.execute(
-                JobTable.update()  # pylint: disable=no-value-for-parameter
+                JobTable.update()
                 .where(JobTable.c.id == row_id)
                 .where(JobTable.c.selector_id.is_(None))
                 .values(selector_id=state.selector_id)
@@ -91,8 +90,7 @@ def add_selector_id_to_jobs_table(
 def add_selector_id_to_ticks_table(
     storage: ScheduleStorage, print_fn: Optional[PrintFn] = None
 ) -> None:
-    """
-    Utility method that calculates the selector_id for each stored instigator state, and writes
+    """Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
     if print_fn:
@@ -105,7 +103,7 @@ def add_selector_id_to_ticks_table(
     for state in states:
         with storage.connect() as conn:  # type: ignore
             conn.execute(
-                JobTickTable.update()  # pylint: disable=no-value-for-parameter
+                JobTickTable.update()
                 .where(JobTickTable.c.job_origin_id == state.instigator_origin_id)
                 .where(JobTickTable.c.selector_id.is_(None))
                 .values(selector_id=state.selector_id)

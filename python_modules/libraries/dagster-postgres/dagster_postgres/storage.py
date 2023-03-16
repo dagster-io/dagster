@@ -34,7 +34,12 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
     """
 
-    def __init__(self, postgres_url, should_autocreate_tables=True, inst_data=None):
+    def __init__(
+        self,
+        postgres_url,
+        should_autocreate_tables=True,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
         self.postgres_url = postgres_url
         self.should_autocreate_tables = check.bool_param(
             should_autocreate_tables, "should_autocreate_tables"
@@ -53,9 +58,9 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ) -> "DagsterPostgresStorage":
         return DagsterPostgresStorage(
             inst_data=inst_data,

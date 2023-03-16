@@ -177,8 +177,7 @@ def _yield_compute_results(
 def execute_core_compute(
     step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
 ) -> Iterator[OpOutputUnion]:
-    """
-    Execute the user-specified compute for the op. Wrap in an error boundary and do
+    """Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)

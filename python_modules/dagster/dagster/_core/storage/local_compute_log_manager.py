@@ -82,9 +82,9 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             "polling_timeout": Field(Float, is_required=False),
         }
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value
+        cls, inst_data: Optional[ConfigurableClassData], config_value
     ) -> "LocalComputeLogManager":
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 

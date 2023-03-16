@@ -38,6 +38,7 @@ from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
+    GraphenePartitionDefinitionType,
 )
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
@@ -878,6 +879,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                         start_idx,
                         end_idx,
                     ),
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        dimension.external_partitions_def_data
+                    ),
                 )
                 for dimension in cast(
                     ExternalMultiPartitionsDefinitionData,
@@ -888,6 +892,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneDimensionPartitionKeys(
                 name="default",
+                type=GraphenePartitionDefinitionType.from_partition_def_data(
+                    self._external_asset_node.partitions_def_data
+                ),
                 partition_keys=self.get_partition_keys(start_idx=start_idx, end_idx=end_idx),
             )
         ]

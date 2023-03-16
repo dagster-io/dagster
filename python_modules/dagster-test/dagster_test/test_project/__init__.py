@@ -54,9 +54,9 @@ def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
                 name=step_output_handle.output_name,
                 version=version,
             )
-            # pylint: disable=protected-access
-            key = io_manager._get_path(output_context)
-            io_manager._rm_object(key)
+
+            key = io_manager._get_path(output_context)  # noqa: SLF001
+            io_manager._rm_object(key)  # noqa: SLF001
 
 
 def get_test_repo_path():
@@ -94,7 +94,7 @@ def find_local_test_image(docker_image):
     try:
         client = docker.from_env()
         client.images.get(docker_image)
-        print(  # pylint: disable=print-call
+        print(  # noqa: T201
             "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
             "docker rmi {image}".format(image=docker_image)
         )
@@ -126,7 +126,7 @@ def get_test_project_recon_pipeline(
 
 
 class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         reconstructable_pipeline,
     ):
@@ -139,8 +139,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         )
 
     def get_python_origin(self):
-        """
-        Hack! Inject origin that the docker-celery images will use. The BK image uses a different
+        """Hack! Inject origin that the docker-celery images will use. The BK image uses a different
         directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
         the test that creates the ReconstructablePipeline. As a result the normal origin won't
         work, we need to inject this one.
@@ -173,8 +172,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         )
 
     def get_python_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
@@ -194,8 +192,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         )
 
     def get_external_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
@@ -225,13 +222,12 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,
+            external_schedule._external_schedule_data,  # noqa: SLF001
             external_schedule.handle.repository_handle,
         )
 
     def get_external_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
+        """Hack! Inject origin that the k8s images will use. The k8s helm chart workspace uses a
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
@@ -249,9 +245,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
 
     @property
     def selector_id(self):
-        """
-        Hack! Inject a selector that matches the one that the k8s helm chart will use.
-        """
+        """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(
                 "user-code-deployment-1",
@@ -350,5 +344,5 @@ def get_test_project_docker_image():
     final_docker_image = "{repository}/{image_name}:{tag}".format(
         repository=docker_repository, image_name=image_name, tag=docker_image_tag
     )
-    print("Using Docker image: %s" % final_docker_image)  # pylint: disable=print-call
+    print("Using Docker image: %s" % final_docker_image)  # noqa: T201
     return final_docker_image

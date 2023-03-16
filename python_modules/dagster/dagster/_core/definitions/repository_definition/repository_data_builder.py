@@ -44,8 +44,7 @@ from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDe
 
 
 def _find_env_vars(config_entry: Any) -> Set[str]:
-    """
-    Given a part of a config dictionary, return a set of environment variables that are used in
+    """Given a part of a config dictionary, return a set of environment variables that are used in
     that part of the config.
     """
     # Actual env var entry
@@ -63,8 +62,7 @@ def _find_env_vars(config_entry: Any) -> Set[str]:
 
 
 def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
-    """
-    Given a resource definition, return a set of environment variables that are used in the
+    """Given a resource definition, return a set of environment variables that are used in the
     resource's default config. This is used to extract environment variables from the top-level
     resources in a Definitions object.
     """
@@ -273,6 +271,9 @@ def build_caching_repository_data_from_list(
             )
             pipelines_or_jobs[name] = resolved_job
 
+    for pipeline_or_job in pipelines_or_jobs.values():
+        pipeline_or_job.validate_resource_requirements_satisfied()
+
     pipelines: Dict[str, PipelineDefinition] = {}
     jobs: Dict[str, JobDefinition] = {}
     for name, pipeline_or_job in pipelines_or_jobs.items():
@@ -283,12 +284,12 @@ def build_caching_repository_data_from_list(
 
     if default_executor_def:
         for name, job_def in jobs.items():
-            if not job_def._executor_def_specified:  # pylint: disable=protected-access
+            if not job_def._executor_def_specified:  # noqa: SLF001
                 jobs[name] = job_def.with_executor_def(default_executor_def)
 
     if default_logger_defs:
         for name, job_def in jobs.items():
-            if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+            if not job_def._logger_defs_specified:  # noqa: SLF001
                 jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
     top_level_resources = top_level_resources or {}
@@ -367,6 +368,12 @@ def build_caching_repository_data_from_dict(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
 
+    # Late validate all jobs' resource requirements are satisfied, since
+    # they may not be applied until now
+    for pipeline_or_job in repository_definitions["jobs"].values():
+        if isinstance(pipeline_or_job, PipelineDefinition):
+            pipeline_or_job.validate_resource_requirements_satisfied()
+
     return CachingRepositoryData(
         **repository_definitions,
         source_assets_by_key={},
@@ -383,8 +390,7 @@ def _process_and_validate_target(
     pipelines_or_jobs: Dict[str, PipelineDefinition],
     target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
 ):
-    """
-    This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs
+    """This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
     """
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"

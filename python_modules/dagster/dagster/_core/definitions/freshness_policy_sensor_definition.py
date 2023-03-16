@@ -4,6 +4,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
@@ -30,7 +31,6 @@ from .sensor_definition import (
     SensorEvaluationContext,
     SensorType,
     SkipReason,
-    has_at_least_one_parameter,
 )
 
 if TYPE_CHECKING:
@@ -140,8 +140,7 @@ def build_freshness_policy_sensor_context(
     previous_minutes_late: Optional[float] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> FreshnessPolicySensorContext:
-    """
-    Builds freshness policy sensor context from provided parameters.
+    """Builds freshness policy sensor context from provided parameters.
 
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@freshness_policy_sensor`, such as when writing unit tests.
@@ -177,8 +176,7 @@ def build_freshness_policy_sensor_context(
 
 
 class FreshnessPolicySensorDefinition(SensorDefinition):
-    """
-    Define a sensor that reacts to the status of a given set of asset freshness policies,
+    """Define a sensor that reacts to the status of a given set of asset freshness policies,
     where the decorated function will be evaluated on every sensor tick.
 
     Args:
@@ -344,8 +342,7 @@ def freshness_policy_sensor(
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[Callable[[FreshnessPolicySensorContext], None]], FreshnessPolicySensorDefinition,]:
-    """
-    Define a sensor that reacts to the status of a given set of asset freshness policies, where the
+    """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.
 

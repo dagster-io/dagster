@@ -33,8 +33,7 @@ def _deep_merge_dicts(
 def deep_merge_dicts(
     onto_dict: Mapping[K, V], from_dict: Mapping[K2, V2]
 ) -> Dict[Union[K, K2], Union[V, V2, Dict[object, object]]]:
-    """
-    Returns a recursive union of two input dictionaries:
+    """Returns a recursive union of two input dictionaries:
     * The returned dictionary has an entry for any key that's in either of the inputs.
     * For any key whose value is a dictionary in both of the inputs, the returned value will
       be the result of deep-merging the two input sub-dictionaries.
@@ -47,8 +46,7 @@ def deep_merge_dicts(
 
 
 def merge_dicts(*args: Mapping[Any, Any]) -> Dict[Any, Any]:
-    """
-    Returns a dictionary with with all the keys in all of the input dictionaries.
+    """Returns a dictionary with with all the keys in all of the input dictionaries.
 
     If multiple input dictionaries have different values for the same key, the returned dictionary
     contains the value from the dictionary that comes latest in the list.

@@ -16,8 +16,7 @@ class Executor(ABC):
     def execute(
         self, plan_context: "PlanOrchestrationContext", execution_plan: "ExecutionPlan"
     ) -> Iterator["DagsterEvent"]:
-        """
-        For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
+        """For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 
         Args:
             plan_context (PlanOrchestrationContext): The plan's orchestration context.
@@ -31,8 +30,7 @@ class Executor(ABC):
     @property
     @abstractmethod
     def retries(self) -> RetryMode:
-        """
-        Whether retries are enabled or disabled for this instance of the executor.
+        """Whether retries are enabled or disabled for this instance of the executor.
 
         Executors should allow this to be controlled via configuration if possible.
 

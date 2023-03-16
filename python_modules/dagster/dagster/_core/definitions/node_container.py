@@ -10,7 +10,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -18,7 +17,6 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .dependency import (
-    DependencyDefinition,
     DependencyStructure,
     GraphNode,
     IDependencyDefinition,
@@ -158,14 +156,15 @@ def create_execution_structure(
     for solid_key, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
         # Here, we replace 'foo' with NodeInvocation('foo')
-        if not isinstance(solid_key, NodeInvocation):
-            solid_key = NodeInvocation(solid_key)
 
-        alias = solid_key.alias or solid_key.name
+        solid_key_invoc = (
+            NodeInvocation(solid_key) if not isinstance(solid_key, NodeInvocation) else solid_key
+        )
+        alias = solid_key_invoc.alias or solid_key_invoc.name
 
-        name_to_aliases[solid_key.name].add(alias)
-        alias_to_solid_instance[alias] = solid_key
-        alias_to_name[alias] = solid_key.name
+        name_to_aliases[solid_key_invoc.name].add(alias)
+        alias_to_solid_instance[alias] = solid_key_invoc
+        alias_to_name[alias] = solid_key_invoc.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
     node_dict = _build_graph_node_dict(
@@ -232,7 +231,6 @@ def _validate_dependencies(
 ) -> None:
     for from_node, dep_by_input in dependencies.items():
         for from_input, dep_def in dep_by_input.items():
-            dep_def = cast(DependencyDefinition, dep_def)
             for dep in dep_def.get_node_dependencies():
                 if from_node == dep.node:
                     raise DagsterInvalidDefinitionError(

@@ -84,7 +84,7 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
     assert result.data["allTopLevelResourceDetailsOrError"]
     assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 3
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 4
 
     snapshot.assert_match(result.data)
 
@@ -102,7 +102,7 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
     assert result.data["topLevelResourceDetailsOrError"]
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
-    assert my_resource["description"] == "my description"
+    assert my_resource["description"] == "My description."
     assert len(my_resource["configFields"]) == 2
     assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
         {
@@ -133,7 +133,7 @@ def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot)
     assert result.data["topLevelResourceDetailsOrError"]
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
-    assert my_resource["description"] == "my description"
+    assert my_resource["description"] == "My description."
     assert len(my_resource["configFields"]) == 2
     assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
         {

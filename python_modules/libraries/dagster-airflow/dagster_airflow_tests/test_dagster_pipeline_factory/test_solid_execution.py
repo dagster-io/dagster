@@ -178,7 +178,6 @@ def test_template_task_dag():
         dag=dag,
     )
 
-    # pylint: disable=pointless-statement
     t1 >> [t2, t3]
 
     with instance_for_test() as instance:
@@ -199,7 +198,7 @@ def test_template_task_dag():
 
         capture_events = [
             event
-            for event in result._event_list
+            for event in result._event_list  # noqa: SLF001
             if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
         assert len(capture_events) == 1

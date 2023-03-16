@@ -198,7 +198,7 @@ class UnboundHookContext(HookContext):
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
-    ):  # pylint: disable=super-init-not-called
+    ):
         from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
 
@@ -214,7 +214,7 @@ class UnboundHookContext(HookContext):
         # Open resource context manager
         self._resource_defs = wrap_resources_for_execution(resources)
         self._resources_cm = build_resources(self._resource_defs)
-        self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+        self._resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
         self._run_id = run_id
@@ -230,11 +230,11 @@ class UnboundHookContext(HookContext):
         return self
 
     def __exit__(self, *exc: Any):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        self._resources_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
 
     @property
     def job_name(self) -> str:
@@ -311,7 +311,7 @@ class BoundHookContext(HookContext):
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
-    ):  # pylint: disable=super-init-not-called
+    ):
         self._hook_def = hook_def
         self._resources = resources
         self._op = op

@@ -64,8 +64,7 @@ class IPCErrorMessage(
         [("serializable_error_info", SerializableErrorInfo), ("message", Optional[str])],
     )
 ):
-    """
-    This represents a user error encountered during the IPC call. This indicates a business
+    """This represents a user error encountered during the IPC call. This indicates a business
     logic error, rather than a protocol. Consider this a "task failed successfully"
     use case.
     """
@@ -87,8 +86,7 @@ class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
 
 
 class DagsterIPCProtocolError(DagsterError):
-    """
-    This indicates that something went wrong with the protocol. E.g. the
+    """This indicates that something went wrong with the protocol. E.g. the
     process being called did not emit an IPCStartMessage first.
     """
 
@@ -219,7 +217,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
 def interrupt_ipc_subprocess(proc: Popen[bytes]) -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
-        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        proc.send_signal(signal.CTRL_BREAK_EVENT)
     else:
         proc.send_signal(signal.SIGINT)
 
@@ -229,6 +227,6 @@ def interrupt_ipc_subprocess_pid(pid: int) -> None:
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
         os.kill(pid, signal.SIGINT)

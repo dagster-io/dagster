@@ -215,8 +215,8 @@ def test_table_metadata_value_schema_inference():
         "foo",
         value=MetadataValue.table(
             records=[
-                TableRecord(dict(name="foo", status=False)),
-                TableRecord(dict(name="bar", status=True)),
+                TableRecord(data=dict(name="foo", status=False)),
+                TableRecord(data=dict(name="bar", status=True)),
             ],
         ),
     )

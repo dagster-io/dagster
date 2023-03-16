@@ -14,6 +14,7 @@ from typing import (
     cast,
 )
 
+from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
 from dagster._annotations import experimental
@@ -97,13 +98,10 @@ class MakeConfigCacheable(BaseModel):
 
 @experimental
 class Config(MakeConfigCacheable):
-    """
-    Base class for Dagster configuration models.
-    """
+    """Base class for Dagster configuration models."""
 
     def __init__(self, **config_dict):
-        """
-        This constructor is overridden to handle any remapping of raw config dicts to
+        """This constructor is overridden to handle any remapping of raw config dicts to
         the appropriate config classes. For example, discriminated unions are represented
         in Dagster config as dicts with a single key, which is the discriminator value.
         """
@@ -126,11 +124,18 @@ class Config(MakeConfigCacheable):
         super().__init__(**modified_data)
 
     def _as_config_dict(self) -> Mapping[str, Any]:
-        """
-        Returns a dictionary representation of this config object,
+        """Returns a dictionary representation of this config object,
         ignoring any private fields.
         """
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+        output = {}
+        for key, value in self.__dict__.items():
+            if key.startswith("_"):
+                continue
+            field = self.__fields__.get(key)
+            if field and value is None and not _is_pydantic_field_required(field):
+                continue
+            output[key] = value
+        return output
 
 
 @experimental
@@ -206,7 +211,7 @@ def _process_config_values(
 
 
 def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
-    """Return a new config schema configured with the passed in data"""
+    """Return a new config schema configured with the passed in data."""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
@@ -219,13 +224,12 @@ ResourceId: TypeAlias = int
 def _resolve_required_resource_keys_for_resource(
     resource: ResourceDefinition, resource_id_to_key_mapping: Mapping[ResourceId, str]
 ) -> AbstractSet[str]:
-    """
-    Gets the required resource keys for the provided resource, with the assistance of the passed
+    """Gets the required resource keys for the provided resource, with the assistance of the passed
     resource-id-to-key mapping. For resources which may hold nested partial resources,
     this mapping is used to obtain the top-level resource keys to depend on.
     """
     if isinstance(resource, AllowDelayedDependencies):
-        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)  # noqa: SLF001
     return resource.required_resource_keys
 
 
@@ -270,8 +274,7 @@ class AllowDelayedDependencies:
 
 
 class InitResourceContextWithKeyMapping(InitResourceContext):
-    """
-    Passes along a mapping from ResourceDefinition id to resource key alongside the
+    """Passes along a mapping from ResourceDefinition id to resource key alongside the
     InitResourceContext. This is used to resolve the required resource keys for
     resources which may hold nested partial resources.
     """
@@ -306,8 +309,7 @@ class InitResourceContextWithKeyMapping(InitResourceContext):
 
 
 class ResourceWithKeyMapping(ResourceDefinition):
-    """
-    Wrapper around a ResourceDefinition which helps the inner resource resolve its required
+    """Wrapper around a ResourceDefinition which helps the inner resource resolve its required
     resource keys. This is useful for resources which may hold nested resources. At construction
     time, they are unaware of the resource keys of their nested resources - the resource id to
     key mapping is used to resolve this.
@@ -328,8 +330,7 @@ class ResourceWithKeyMapping(ResourceDefinition):
         )
 
     def setup_context_resources_and_call(self, context: InitResourceContext):
-        """
-        Wrapper around the wrapped resource's resource_fn which attaches its
+        """Wrapper around the wrapped resource's resource_fn which attaches its
         resource id to key mapping to the context, and then calls the nested resource's resource_fn.
         """
         context_with_key_mapping = InitResourceContextWithKeyMapping(
@@ -353,9 +354,7 @@ class ResourceWithKeyMapping(ResourceDefinition):
 
 
 class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
-    """
-    Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition.
-    """
+    """Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition."""
 
     def __init__(
         self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
@@ -387,8 +386,7 @@ class ConfigurableResource(
     AllowDelayedDependencies,
     metaclass=BaseResourceMeta,
 ):
-    """
-    Base class for Dagster resources that utilize structured config.
+    """Base class for Dagster resources that utilize structured config.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
     provides a default implementation of the resource_fn that returns the resource itself.
@@ -434,15 +432,13 @@ class ConfigurableResource(
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
-        """
-        Returns a partially initialized copy of the resource, with remaining config fields
+        """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
         return PartialResource(cls, data=kwargs)
 
     def _with_updated_values(self, values: Mapping[str, Any]) -> "ConfigurableResource[TResValue]":
-        """
-        Returns a new instance of the resource with the given values.
+        """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
         # Since Resource extends BaseModel and is a dataclass, we know that the
@@ -451,8 +447,7 @@ class ConfigurableResource(
         return self.__class__(**{**self._as_config_dict(), **values})
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
-        """
-        Processes the config dictionary to resolve any EnvVar values. This is called at runtime
+        """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
 
@@ -466,8 +461,7 @@ class ConfigurableResource(
     def _resolve_and_update_nested_resources(
         self, context: InitResourceContext
     ) -> "ConfigurableResource[TResValue]":
-        """
-        Updates any nested resources with the resource values from the context.
+        """Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
 
@@ -505,18 +499,15 @@ class ConfigurableResource(
 
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
         with_nested_resources = self._resolve_and_update_nested_resources(context)
-        with_env_vars = with_nested_resources._resolve_and_update_env_vars()
+        with_env_vars = with_nested_resources._resolve_and_update_env_vars()  # noqa: SLF001
 
-        return with_env_vars._create_object_fn(context)
+        return with_env_vars._create_object_fn(context)  # noqa: SLF001
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def create_resource(
-        self, context: InitResourceContext
-    ) -> TResValue:  # pylint: disable=unused-argument
-        """
-        Returns the object that this resource hands to user code, accessible by ops or assets
+    def create_resource(self, context: InitResourceContext) -> TResValue:
+        """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
 
@@ -594,8 +585,7 @@ class ResourceDependency(Generic[V]):
 
 @experimental
 class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
-    """
-    Adapter base class for wrapping a decorated, function-style resource
+    """Adapter base class for wrapping a decorated, function-style resource
     with structured config.
 
     To use this class, subclass it, define config schema fields using Pydantic,
@@ -636,8 +626,7 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
 
 @experimental
 class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
-    """
-    Base class for Dagster IO managers that utilize structured config. This base class
+    """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
 
@@ -660,13 +649,12 @@ class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOMana
 
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
-        """Implement as one would implement a @io_manager decorator function"""
+        """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
-        """
-        Returns a partially initialized copy of the IO manager, with remaining config fields
+        """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
         return PartialIOManager(cls, data=kwargs)
@@ -685,8 +673,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
 
 @experimental
 class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
-    """
-    Base class for Dagster IO managers that utilize structured config.
+    """Base class for Dagster IO managers that utilize structured config.
 
     This class is a subclass of both :py:class:`IOManagerDefinition`, :py:class:`Config`,
     and :py:class:`IOManager`. Implementers must provide an implementation of the
@@ -711,8 +698,7 @@ MAPPING_KEY_TYPE_TO_SCALAR = {
 def _wrap_config_type(
     shape_type: PydanticShapeType, key_type: Optional[ConfigType], config_type: ConfigType
 ) -> ConfigType:
-    """
-    Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
+    """Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
     """
     if shape_type == SHAPE_SINGLETON:
@@ -732,9 +718,7 @@ def _wrap_config_type(
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
-    """
-    Transforms a Pydantic field into a corresponding Dagster config field.
-    """
+    """Transforms a Pydantic field into a corresponding Dagster config field."""
     key_type = (
         _config_type_for_pydantic_field(pydantic_field.key_field)
         if pydantic_field.key_field
@@ -775,6 +759,15 @@ def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
 
 
 def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+    # special case pydantic constrained types to their source equivalents
+    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+        return StringSource
+    # no FloatSource, so we just return float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+        potential_dagster_type = float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+        return IntSource
+
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
         return StringSource
@@ -800,8 +793,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
 
 @experimental
 class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
-    """
-    Adapter base class for wrapping a decorated, function-style I/O manager
+    """Adapter base class for wrapping a decorated, function-style I/O manager
     with structured config.
 
     To use this class, subclass it, define config schema fields using Pydantic,
@@ -844,8 +836,7 @@ class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
 
 
 def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
-    """
-    Builds a Selector config field from a Pydantic field which is a descriminated union.
+    """Builds a Selector config field from a Pydantic field which is a descriminated union.
 
     For example:
 
@@ -896,8 +887,7 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
-    """
-    Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
+    """Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
     if safe_is_subclass(model_cls, Config):
         check.invariant(
@@ -922,9 +912,7 @@ def infer_schema_from_config_class(
     description: Optional[str] = None,
     fields_to_omit: Optional[Set[str]] = None,
 ) -> Field:
-    """
-    Parses a structured config class and returns a corresponding Dagster config Field.
-    """
+    """Parses a structured config class and returns a corresponding Dagster config Field."""
     fields_to_omit = fields_to_omit or set()
 
     check.param_invariant(
@@ -949,8 +937,7 @@ class SeparatedResourceParams(NamedTuple):
 
 
 def separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
-    """
-    Separates out the key/value inputs of fields in a structured config Resource class which
+    """Separates out the key/value inputs of fields in a structured config Resource class which
     are themselves Resources and those which are not.
     """
     return SeparatedResourceParams(

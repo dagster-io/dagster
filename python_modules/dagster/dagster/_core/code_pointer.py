@@ -53,8 +53,7 @@ class CodePointer(ABC):
 
 
 def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
-    """
-    In config files, you often put file paths that are meant to be relative
+    """In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.
     """
     check.str_param(relative_path_in_file, "relative_path_in_file")
@@ -65,9 +64,7 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
 
 
 def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
-    """
-    Takes a path to a python file and returns a loaded module.
-    """
+    """Takes a path to a python file and returns a loaded module."""
     check.str_param(python_file, "python_file")
     check.opt_str_param(working_directory, "working_directory")
 

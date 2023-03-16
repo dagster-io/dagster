@@ -64,9 +64,7 @@ def test_queued_pipeline_origin_check():
 
 
 def test_in_progress_statuses():
-    """
-    If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses.
-    """
+    """If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses."""
     for status in DagsterRunStatus:
         in_progress = status in IN_PROGRESS_RUN_STATUSES
         non_in_progress = status in NON_IN_PROGRESS_RUN_STATUSES

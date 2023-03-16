@@ -35,7 +35,7 @@ def construct_job_manifest(name, cmd):
 
 
 @pytest.mark.default
-def test_wait_for_pod(cluster_provider, namespace):  # pylint: disable=unused-argument
+def test_wait_for_pod(cluster_provider, namespace):
     api_client = DagsterKubernetesClient.production_client()
 
     # Without this sleep, we get the following error on kind:
@@ -91,7 +91,7 @@ def test_wait_for_pod(cluster_provider, namespace):  # pylint: disable=unused-ar
 
 
 @pytest.mark.default
-def test_wait_for_job(cluster_provider, namespace):  # pylint: disable=unused-argument
+def test_wait_for_job(cluster_provider, namespace):
     # Without this sleep, we get the following error on kind:
     # HTTP response body:
     # {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"No API

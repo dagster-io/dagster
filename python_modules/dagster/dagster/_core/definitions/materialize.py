@@ -25,8 +25,7 @@ def materialize(
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
 ) -> "ExecuteInProcessResult":
-    """
-    Executes a single-threaded, in-process run which materializes provided assets.
+    """Executes a single-threaded, in-process run which materializes provided assets.
 
     By default, will materialize assets to the local filesystem.
 
@@ -82,8 +81,7 @@ def materialize_to_memory(
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
 ) -> "ExecuteInProcessResult":
-    """
-    Executes a single-threaded, in-process run which materializes provided assets in memory.
+    """Executes a single-threaded, in-process run which materializes provided assets in memory.
 
     Will explicitly use :py:func:`mem_io_manager` for all required io manager
     keys. If any io managers are directly provided using the `resources`

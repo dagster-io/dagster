@@ -95,7 +95,7 @@ def test_logging_custom_log_levels():
             dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
-            dl.foo("test")  # pylint: disable=no-member
+            dl.foo("test")
 
 
 def test_logging_integer_log_levels():
@@ -104,7 +104,7 @@ def test_logging_integer_log_levels():
             loggers=[logger],
             dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
-        dl.log(3, "test")  # pylint: disable=no-member
+        dl.log(3, "test")
 
 
 def test_logging_bad_custom_log_levels():
@@ -214,7 +214,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)  # pylint: disable=print-call
+            print(self.output + record.msg)  # noqa: T201
         self.captured.append(record)
 
 
@@ -250,7 +250,7 @@ def test_default_context_logging():
     @op
     def default_context_solid(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
+        for logger in context.log._dagster_handler._loggers:  # noqa: SLF001
             assert logger.level == logging.DEBUG
 
     execute_solid(default_context_solid)

@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -35,6 +36,7 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
+    PartitionRangeStatus,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
@@ -167,8 +169,7 @@ def get_asset_node_definition_collisions(
 def get_asset_nodes_by_asset_key(
     graphene_info: "ResolveInfo",
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
-    """
-    If multiple repositories have asset nodes for the same asset key, chooses the asset node that
+    """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
     from ..schema.asset_graph import GrapheneAssetNode
@@ -350,8 +351,7 @@ def get_materialized_and_failed_partition_subsets(
     dynamic_partitions_loader: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset]]:
-    """
-    Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
+    """Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
     the second is the failed partitions.
     """
     if not partitions_def:
@@ -456,8 +456,12 @@ def build_partition_statuses(
 
     if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         ranges = fetch_flattened_time_window_ranges(
-            materialized_partitions_subset,
-            cast(TimeWindowPartitionsSubset, failed_partitions_subset),
+            {
+                PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
+                PartitionRangeStatus.FAILED: cast(
+                    TimeWindowPartitionsSubset, failed_partitions_subset
+                ),
+            },
         )
         graphene_ranges = []
         for r in ranges:
@@ -512,10 +516,11 @@ def get_2d_run_length_encoded_partitions(
     secondary_dim = materialized_partitions_subset.partitions_def.secondary_dimension
 
     dim2_materialized_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+        lambda: secondary_dim.partitions_def.empty_subset()
     )
-    for partition_key in materialized_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], materialized_partitions_subset.get_partition_keys()
+    ):
         dim2_materialized_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_materialized_partition_subset_by_dim1[
@@ -525,10 +530,11 @@ def get_2d_run_length_encoded_partitions(
         )
 
     dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+        lambda: secondary_dim.partitions_def.empty_subset()
     )
-    for partition_key in failed_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], failed_partitions_subset.get_partition_keys()
+    ):
         dim2_failed_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_failed_partition_subset_by_dim1[

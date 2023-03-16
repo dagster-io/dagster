@@ -100,13 +100,14 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
 
     return (
         version.parse(dbt.version.__version__) >= version.parse("1.4.0")
-        and dbt_resource._json_log_format
+        and dbt_resource._json_log_format  # noqa: SLF001
     )
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """By default:
+    """Get the asset key for a dbt node.
 
+    By default:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
     the model itself.
@@ -167,6 +168,7 @@ def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[Freshne
         return FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
+            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
         )
     return None
 
@@ -656,8 +658,7 @@ def load_assets_from_dbt_project(
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models from a dbt project into Dagster assets.
+    """Loads a set of dbt models from a dbt project into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` or `dbt build` command.
@@ -771,8 +772,7 @@ def load_assets_from_dbt_manifest(
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models, described in a manifest.json, into Dagster assets.
+    """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` command.

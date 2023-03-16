@@ -103,7 +103,7 @@ class ADLS2FileManager(FileManager):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(self, file_obj, mode="wb", ext=None):  # pylint: disable=unused-argument
+    def write(self, file_obj, mode="wb", ext=None):
         check_file_like_obj(file_obj)
         adls2_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         adls2_file = self._client.get_file_client(

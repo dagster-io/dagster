@@ -51,7 +51,7 @@ from dagster._core.test_utils import instance_for_test
 def get_all_assets_from_defs(defs: Definitions):
     # could not find public method on repository to do this
     repo = resolve_pending_repo_if_required(defs)
-    return list(repo._assets_defs_by_key.values())  # pylint: disable=protected-access
+    return list(repo.assets_defs_by_key.values())
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
@@ -583,9 +583,7 @@ def test_assets_with_io_manager():
     defs = Definitions(assets=[single_asset], resources={"io_manager": mem_io_manager})
 
     asset_group_underlying_job = defs.get_all_job_defs()[0]
-    assert (  # pylint: disable=comparison-with-callable
-        asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
-    )
+    assert asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
 
 
 def test_asset_missing_resources():
@@ -619,10 +617,7 @@ def test_assets_with_executor():
     defs = Definitions(assets=[the_asset], executor=in_process_executor)
 
     asset_group_underlying_job = defs.get_all_job_defs()[0]
-    assert (
-        asset_group_underlying_job.executor_def  # pylint: disable=comparison-with-callable
-        == in_process_executor
-    )
+    assert asset_group_underlying_job.executor_def == in_process_executor
 
 
 def test_asset_missing_io_manager():

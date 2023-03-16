@@ -52,8 +52,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @contextmanager
     def watch(self, pipeline_run: DagsterRun, step_key: Optional[str] = None) -> Iterator[None]:
-        """
-        Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
+        """Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
 
         Args:
             pipeline_run (PipelineRun): The pipeline run config
@@ -76,8 +75,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def _watch_logs(
         self, pipeline_run: DagsterRun, step_key: Optional[str] = None
     ) -> Iterator[None]:
-        """
-        Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
+        """Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
         blessed `watch` method, which triggers all the start/finish hooks that are necessary to
         implement the different remote implementations.
 

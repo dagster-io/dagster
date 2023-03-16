@@ -43,8 +43,7 @@ Resolvable = Callable[[], T]
 
 
 class RepositoryData(ABC):
-    """
-    Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
+    """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
     subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
@@ -60,8 +59,7 @@ class RepositoryData(ABC):
 
     @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
-        """
-        Return all top-level resources in the repository as a list,
+        """Return all top-level resources in the repository as a list,
         such as those provided to the Definitions constructor.
 
         Returns:

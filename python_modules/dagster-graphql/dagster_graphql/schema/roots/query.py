@@ -15,8 +15,10 @@ from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
+from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
 from ...implementation.external import (
     fetch_location_statuses,
@@ -219,6 +221,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneResourceDetailsListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
+    )
+
+    utilizedEnvVarsOrError = graphene.Field(
+        graphene.NonNull(GrapheneEnvVarWithConsumersListOrError),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the utilized environment variables for the given repo.",
     )
 
     sensorOrError = graphene.Field(
@@ -536,6 +544,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
+    def resolve_utilizedEnvVarsOrError(self, graphene_info: ResolveInfo, **kwargs):
+        return get_utilized_env_vars_or_error(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+        )
+
     def resolve_sensorOrError(
         self, graphene_info: ResolveInfo, sensorSelector: GrapheneRepositorySelector
     ):
@@ -569,7 +583,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_pipelineRunsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -587,7 +601,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -605,7 +619,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runGroupsOrError(
         self,
         graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):

@@ -614,7 +614,7 @@ def bar_logger(init_context):
             self.prefix = prefix
             super(BarLogger, self).__init__(name, *args, **kwargs)
 
-        def log(self, lvl, msg, *args, **kwargs):  # pylint: disable=arguments-differ
+        def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
             super(BarLogger, self).log(lvl, msg, *args, **kwargs)
 
@@ -737,7 +737,7 @@ def materialization_pipeline():
 def spew_pipeline():
     @op
     def spew(_):
-        print("HELLO WORLD")  # pylint: disable=print-call
+        print("HELLO WORLD")  # noqa: T201
 
     spew()
 
@@ -828,7 +828,7 @@ def start(context):
 
 
 @op(required_resource_keys={"b"})
-def will_fail(context, num):  # pylint: disable=unused-argument
+def will_fail(context, num):
     assert context.resources.b == "B"
     raise Exception("fail")
 
@@ -856,7 +856,7 @@ def retry_resource_pipeline():
         "start_skip": Out(str, is_required=False),
     },
 )
-def can_fail(context, inp):  # pylint: disable=unused-argument
+def can_fail(context, inp):
     if context.op_config["fail"]:
         raise Exception("blah")
 
@@ -906,11 +906,11 @@ def disable_gc(_context):
     # Workaround for termination signals being raised during GC and getting swallowed during
     # tests
     try:
-        print("Disabling GC")  # pylint: disable=print-call
+        print("Disabling GC")  # noqa: T201
         gc.disable()
         yield
     finally:
-        print("Re-enabling GC")  # pylint: disable=print-call
+        print("Re-enabling GC")  # noqa: T201
         gc.enable()
 
 
@@ -981,7 +981,6 @@ def dynamic_pipeline():
     def sum_numbers(_, nums):
         return sum(nums)
 
-    # pylint: disable=no-member
     multiply_by_two.alias("double_total")(
         sum_numbers(
             emit()
@@ -1454,15 +1453,13 @@ dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 @asset
 def first_asset(
     dummy_source_asset,
-):  # pylint: disable=redefined-outer-name,unused-argument
+):
     return 1
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
-    """
-    Asset that hangs forever, used to test in-progress ops.
-    """
+def hanging_asset(context, first_asset):
+    """Asset that hangs forever, used to test in-progress ops."""
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1473,7 +1470,7 @@ def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name
 @asset
 def never_runs_asset(
     hanging_asset,
-):  # pylint: disable=redefined-outer-name,unused-argument
+):
     pass
 
 
@@ -1494,7 +1491,7 @@ def my_op():
 
 
 @op(required_resource_keys={"hanging_asset_resource"})
-def hanging_op(context, my_op):  # pylint: disable=unused-argument
+def hanging_op(context, my_op):
     with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
@@ -1503,7 +1500,7 @@ def hanging_op(context, my_op):  # pylint: disable=unused-argument
 
 
 @op
-def never_runs_op(hanging_op):  # pylint: disable=unused-argument
+def never_runs_op(hanging_op):
     pass
 
 
@@ -1521,7 +1518,7 @@ def memoization_job():
 
 
 @asset
-def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
+def downstream_asset(hanging_graph):
     return 1
 
 
@@ -1540,7 +1537,7 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):  # pylint: disable=redefined-outer-name
+def asset_two(asset_one):
     return asset_one + 1
 
 
@@ -1558,7 +1555,7 @@ def upstream_static_partitioned_asset():
 @asset(partitions_def=static_partitions_def)
 def downstream_static_partitioned_asset(
     upstream_static_partitioned_asset,
-):  # pylint: disable=redefined-outer-name
+):
     assert upstream_static_partitioned_asset
 
 
@@ -1576,7 +1573,7 @@ def upstream_dynamic_partitioned_asset():
 @asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
 def downstream_dynamic_partitioned_asset(
     upstream_dynamic_partitioned_asset,
-):  # pylint: disable=redefined-outer-name
+):
     assert upstream_dynamic_partitioned_asset
 
 
@@ -1617,7 +1614,7 @@ def upstream_time_partitioned_asset():
 @asset(partitions_def=hourly_partition)
 def downstream_time_partitioned_asset(
     upstream_time_partitioned_asset,
-):  # pylint: disable=redefined-outer-name
+):
     return upstream_time_partitioned_asset + 1
 
 
