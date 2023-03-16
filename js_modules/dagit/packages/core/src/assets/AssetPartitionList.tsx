@@ -85,7 +85,6 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 padding={{left: 24, right: 12}}
                 flex={{direction: 'column', justifyContent: 'center', gap: 8}}
                 border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-                data-testid={`asset-partition-row-${dimensionKey}-index-${index}`}
               >
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
