@@ -229,6 +229,7 @@ def get_examples_airflow_repo_params() -> List[ParameterSet]:
         "example_trigger_controller_dag",
         # runs slow
         "example_sensors",
+        "example_dynamic_task_mapping",
     ]
     for job_name in repo.job_names:
         params.append(
