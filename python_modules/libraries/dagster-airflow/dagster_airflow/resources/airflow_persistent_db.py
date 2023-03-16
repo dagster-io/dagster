@@ -1,15 +1,13 @@
 import importlib
 import os
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 import airflow
 from airflow.models.connection import Connection
 from dagster import (
-    Array,
+    ConfigurableResource,
     DagsterRun,
-    Field,
     InitResourceContext,
-    ResourceDefinition,
     _check as check,
 )
 
@@ -53,11 +51,21 @@ class AirflowPersistentDatabase(AirflowDatabase):
         )
 
 
+class AirflowPersistentDatabaseResource(ConfigurableResource[AirflowPersistentDatabase]):
+    """Persistent Airflow DB to be used by dagster-airflow."""
+
+    uri: str
+    connections: List[Mapping[str, Optional[str]]]
+
+    def create_resource(self, context: InitResourceContext) -> AirflowPersistentDatabase:
+        return AirflowPersistentDatabase.from_resource_context(context)
+
+
 def make_persistent_airflow_db_resource(
     uri: str = "",
     connections: List[Connection] = [],
     dag_run_config: Optional[dict] = {},
-) -> ResourceDefinition:
+) -> AirflowPersistentDatabaseResource:
     """Creates a Dagster resource that provides an persistent Airflow database.
 
 
@@ -92,25 +100,4 @@ def make_persistent_airflow_db_resource(
 
     serialized_connections = serialize_connections(connections)
 
-    airflow_db_resource_def = ResourceDefinition(
-        resource_fn=AirflowPersistentDatabase.from_resource_context,
-        config_schema={
-            "uri": Field(
-                str,
-                default_value=uri,
-                is_required=False,
-            ),
-            "connections": Field(
-                Array(inner_type=dict),
-                default_value=serialized_connections,
-                is_required=False,
-            ),
-            "dag_run_config": Field(
-                dict,
-                default_value=dag_run_config,
-                is_required=False,
-            ),
-        },
-        description="Persistent Airflow DB to be used by dagster-airflow ",
-    )
-    return airflow_db_resource_def
+    return AirflowPersistentDatabaseResource(uri=uri or "", connections=serialized_connections)

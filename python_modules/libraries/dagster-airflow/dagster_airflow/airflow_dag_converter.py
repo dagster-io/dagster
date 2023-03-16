@@ -1,4 +1,5 @@
 import importlib
+from typing import TYPE_CHECKING
 
 import airflow
 from airflow.models.baseoperator import BaseOperator
@@ -11,11 +12,15 @@ from dagster import (
     OpDefinition,
     OpExecutionContext,
     Out,
+    Resource,
     RetryPolicy,
     _check as check,
     op,
 )
 from dagster._core.definitions.node_definition import NodeDefinition
+
+if TYPE_CHECKING:
+    from dagster_airflow.resources.airflow_db import AirflowDatabase
 
 from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
@@ -94,7 +99,6 @@ def make_dagster_op_from_airflow_task(
 
     @op(
         name=normalized_name(dag.dag_id, task.task_id),
-        required_resource_keys={"airflow_db"},
         ins={"airflow_task_ready": In(Nothing)},
         out={"airflow_task_complete": Out(Nothing)},
         retry_policy=RetryPolicy(
@@ -102,7 +106,7 @@ def make_dagster_op_from_airflow_task(
             delay=task.retry_delay.total_seconds() if task.retry_delay is not None else 0,
         ),
     )
-    def _op(context: OpExecutionContext):
+    def _op(context: OpExecutionContext, airflow_db: Resource["AirflowDatabase"]):
         # reloading forces picking up any config that's been set for execution
         if is_airflow_2_loaded_in_environment():
             importlib.reload(airflow.configuration)
@@ -113,8 +117,13 @@ def make_dagster_op_from_airflow_task(
         context.log.info(f"Running Airflow task: {task.task_id}")
 
         with replace_airflow_logger_handlers():
-            dagrun = context.resources.airflow_db.get_dagrun(dag=dag)
-            ti = dagrun.get_task_instance(task_id=task.task_id)
+            dagrun = airflow_db.get_dagrun(dag=dag)
+            ti = check.not_none(
+                dagrun.get_task_instance(task_id=task.task_id),
+                additional_message="task instance not found for task {task_id}".format(
+                    task_id=task.task_id
+                ),
+            )
             ti.task = dag.get_task(task_id=task.task_id)
             ti.run(ignore_ti_state=True)
 
