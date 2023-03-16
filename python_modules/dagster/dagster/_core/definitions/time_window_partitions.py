@@ -25,7 +25,6 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._utils.cached_method import cached_method
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -282,7 +281,7 @@ class TimeWindowPartitionsDefinition(
     def __hash__(self):
         return hash(tuple(self.__repr__()))
 
-    @cached_method
+    @functools.lru_cache(maxsize=100)
     def _time_window_for_partition_key(self, *, partition_key: str) -> TimeWindow:
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
@@ -385,7 +384,7 @@ class TimeWindowPartitionsDefinition(
         else:
             return prev_window
 
-    @functools.lru_cache(maxsize=3)
+    @functools.lru_cache(maxsize=5)
     def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
@@ -429,7 +428,7 @@ class TimeWindowPartitionsDefinition(
         )
         return self._get_first_partition_window(current_time=current_time)
 
-    @functools.lru_cache(maxsize=3)
+    @functools.lru_cache(maxsize=5)
     def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None

@@ -291,7 +291,7 @@ all_daily_partitioned_500_assets_20_partition_keys = InstanceSnapshot(
 hourly_partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
 all_hourly_partitioned_100_assets = RandomAssets(
     name="all_hourly_partitioned_100_assets",
-    n_assets=100,
+    n_assets=1000,
     asset_partitions_def=hourly_partitions_def,
 )
 all_hourly_partitioned_100_assets_2_partition_keys = InstanceSnapshot(
