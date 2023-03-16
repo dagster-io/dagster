@@ -61,7 +61,6 @@ class AirflowEphemeralDatabase(AirflowDatabase):
             airflow_home_path=airflow_home_path,
             connections=[Connection(**c) for c in context.resource_config["connections"]],
         )
-
         return AirflowEphemeralDatabase(
             airflow_home_path=airflow_home_path,
             dagster_run=check.not_none(context.dagster_run, "Context must have run"),
@@ -72,8 +71,7 @@ class AirflowEphemeralDatabase(AirflowDatabase):
 def make_ephemeral_airflow_db_resource(
     connections: List[Connection] = [], dag_run_config: Optional[dict] = None
 ) -> ResourceDefinition:
-    """
-    Creates a Dagster resource that provides an ephemeral Airflow database.
+    """Creates a Dagster resource that provides an ephemeral Airflow database.
 
     Args:
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB

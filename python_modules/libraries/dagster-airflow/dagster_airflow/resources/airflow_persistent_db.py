@@ -49,7 +49,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
         return AirflowPersistentDatabase(
             dagster_run=check.not_none(context.dagster_run, "Context must have run"),
             uri=uri,
-            dag_run_config=context.resource_config.get("dag_run_config"),
+            dag_run_config=context.resource_config["dag_run_config"],
         )
 
 
@@ -91,6 +91,12 @@ def make_persistent_airflow_db_resource(
         os.environ["AIRFLOW__CORE__SQL_ALCHEMY_CONN"] = uri
 
     serialized_connections = serialize_connections(connections)
+
+    if is_airflow_2_loaded_in_environment():
+        os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
+    else:
+        os.environ["AIRFLOW__CORE__SQL_ALCHEMY_CONN"] = uri
+
     airflow_db_resource_def = ResourceDefinition(
         resource_fn=AirflowPersistentDatabase.from_resource_context,
         config_schema={
