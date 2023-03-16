@@ -18,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from dagster._utils.cached_method import cached_method
 
 import pendulum
 
@@ -280,11 +281,15 @@ class TimeWindowPartitionsDefinition(
     def __hash__(self):
         return hash(tuple(self.__repr__()))
 
-    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+    @cached_method
+    def _time_window_for_partition_key(self, *, partition_key: str) -> TimeWindow:
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
         return next(iter(self._iterate_time_windows(partition_key_dt)))
+
+    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+        return self._time_window_for_partition_key(partition_key=partition_key)
 
     def time_windows_for_partition_keys(
         self,
@@ -379,8 +384,9 @@ class TimeWindowPartitionsDefinition(
         else:
             return prev_window
 
-    def get_first_partition_window(
-        self, current_time: Optional[datetime] = None
+    @cached_method
+    def _get_first_partition_window(
+        self, *, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
         current_time = cast(
             datetime,
@@ -419,8 +425,14 @@ class TimeWindowPartitionsDefinition(
                 time_window if time_window.end.timestamp() <= end_window.start.timestamp() else None
             )
 
-    def get_last_partition_window(
+    def get_first_partition_window(
         self, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        return self._get_first_partition_window(current_time=current_time)
+
+    @cached_method
+    def _get_last_partition_window(
+        self, *, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
@@ -441,6 +453,11 @@ class TimeWindowPartitionsDefinition(
                 if last_partition_key
                 else None
             )
+
+    def get_last_partition_window(
+        self, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        return self._get_last_partition_window(current_time=current_time)
 
     def get_first_partition_key(
         self,
