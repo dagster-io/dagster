@@ -280,12 +280,13 @@ name: Dagster Branch Deployments
         ...
         - name: Clone Snowflake schema upon launch
           if: github.event.action != 'closed'
-          uses: dagster-io/cloud-branch-deployments-action/run@main
+          uses: dagster-io/dagster-cloud-action/actions/utils/run@v0.1
           with:
-            location: ${{ toJson(matrix.location) }}
+            location_name: ${{ toJson(matrix.location) }}
             deployment: ${{ steps.deploy.outputs.deployment }}
             job: clone_prod
           env:
+            DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
             DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 ```
 
@@ -360,12 +361,13 @@ name: Dagster Branch Deployments
           ...
         - name: Delete schema clone upon PR close
           if: github.event.action == 'closed'
-          uses: dagster-io/cloud-branch-deployments-action/run@main
+          uses: dagster-io/dagster-cloud-action/actions/utils/run@v0.1
           with:
-            location: ${{ toJson(matrix.location) }}
+            location_name: ${{ toJson(matrix.location) }}
             deployment: ${{ steps.deploy.outputs.deployment }}
             job: drop_prod_clone
           env:
+            DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
             DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 ```
 
