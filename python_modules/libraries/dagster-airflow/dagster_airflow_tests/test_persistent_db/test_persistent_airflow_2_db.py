@@ -272,13 +272,18 @@ with models.DAG(
     dag_id="dag_run_conf_dag", default_args=default_args, schedule_interval='0 0 * * *',
 ) as dag_run_conf_dag:
     def test_function(**kwargs):
+        print("HELLO")
+        print(kwargs)
+        print("CONFIG")
+        print(kwargs['conf'])
+        print("{{dag_run.conf}}")
         Variable.set("CONFIGURATION_VALUE", kwargs['config_value'])
 
     PythonOperator(
         task_id="previous_macro_test",
         python_callable=test_function,
         provide_context=True,
-        op_kwargs={'config_value': '{{dag_run.conf.get("configuration_key")}}'}
+        op_kwargs={'config_value': "{{dag_run.conf.get('configuration_key')}}"}
     )
 """
 
