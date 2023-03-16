@@ -142,7 +142,7 @@ def s3_resource(context):
               aws_secret_access_key: None
               # Optional[str]: The secret key to use when creating the client.
               aws_session_token: None
-              # Optional[str]:  The session token to use when creating the client
+              # Optional[str]:  The session token to use when creating the client.
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
