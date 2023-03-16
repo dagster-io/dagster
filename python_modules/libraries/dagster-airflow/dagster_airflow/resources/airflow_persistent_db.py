@@ -92,11 +92,6 @@ def make_persistent_airflow_db_resource(
 
     serialized_connections = serialize_connections(connections)
 
-    if is_airflow_2_loaded_in_environment():
-        os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
-    else:
-        os.environ["AIRFLOW__CORE__SQL_ALCHEMY_CONN"] = uri
-
     airflow_db_resource_def = ResourceDefinition(
         resource_fn=AirflowPersistentDatabase.from_resource_context,
         config_schema={
