@@ -75,6 +75,7 @@ def get_examples_airflow_repo_params():
         "example_subdag_operator",
         # runs slow
         "example_sensors",
+        "example_dynamic_task_mapping",
     ]
     for job_name in repo.job_names:
         params.append(
