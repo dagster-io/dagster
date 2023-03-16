@@ -1,3 +1,4 @@
+import functools
 import hashlib
 import json
 import re
@@ -384,16 +385,8 @@ class TimeWindowPartitionsDefinition(
         else:
             return prev_window
 
-    @cached_method
-    def _get_first_partition_window(
-        self, *, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
-        current_time = cast(
-            datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
-        )
+    @functools.lru_cache(maxsize=3)
+    def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
         time_window = next(iter(self._iterate_time_windows(self.start)))
@@ -428,12 +421,16 @@ class TimeWindowPartitionsDefinition(
     def get_first_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
+        current_time = cast(
+            datetime,
+            pendulum.instance(current_time, tz=self.timezone)
+            if current_time
+            else pendulum.now(self.timezone),
+        )
         return self._get_first_partition_window(current_time=current_time)
 
-    @cached_method
-    def _get_last_partition_window(
-        self, *, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
+    @functools.lru_cache(maxsize=3)
+    def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
 
@@ -457,6 +454,12 @@ class TimeWindowPartitionsDefinition(
     def get_last_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
+        current_time = cast(
+            datetime,
+            pendulum.instance(current_time, tz=self.timezone)
+            if current_time
+            else pendulum.now(self.timezone),
+        )
         return self._get_last_partition_window(current_time=current_time)
 
     def get_first_partition_key(
