@@ -125,7 +125,7 @@ def create_dagster_pandas_dataframe_description(description, columns):
     return buildme
 
 
-def create_dagster_pandas_dataframe_metadata(
+def create_table_schema_metadata_from_dataframe(
     pandas_df: pd.DataFrame,
 ) -> Union[TypeCheck, MetadataValue]:
     """
