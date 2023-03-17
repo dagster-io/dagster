@@ -4,7 +4,6 @@ from dagster._core.definitions import (
     InputDefinition as InputDefinition,
     Materialization as Materialization,
     ModeDefinition as ModeDefinition,
-    NodeInvocation as NodeInvocation,
     OutputDefinition as OutputDefinition,
     PartitionSetDefinition as PartitionSetDefinition,
     PipelineDefinition as PipelineDefinition,
@@ -23,7 +22,6 @@ from dagster._core.execution.api import (
     execute_pipeline_iterator as execute_pipeline_iterator,
     reexecute_pipeline as reexecute_pipeline,
 )
-from dagster._core.execution.context.compute import OpExecutionContext as OpExecutionContext
 from dagster._core.execution.results import (
     CompositeSolidExecutionResult as CompositeSolidExecutionResult,
     OpExecutionResult as OpExecutionResult,

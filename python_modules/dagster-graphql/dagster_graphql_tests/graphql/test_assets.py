@@ -1862,6 +1862,62 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert set(ranges[0]["secondaryDim"]["failedPartitions"]) == set(["a", "c"])
         assert set(ranges[0]["secondaryDim"]["materializedPartitions"]) == set(["b"])
 
+    def test_dynamic_dim_in_multipartitions_def(self, graphql_context):
+        # Test that when unmaterialized, no materialized partitions are returned
+        selector = infer_pipeline_selector(
+            graphql_context, "dynamic_in_multipartitions_success_job"
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_2D_ASSET_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert result.data["assetNodes"][0]["assetPartitionStatuses"]["ranges"] == []
+
+        graphql_context.instance.add_dynamic_partitions("dynamic", ["1", "2", "3"])
+
+        # static = a, dynamic = 1
+        # succeeded in dynamic_in_multipartitions_success asset,
+        # failed in dynamic_in_multipartitions_fail asset
+        _create_partitioned_run(
+            graphql_context,
+            "dynamic_in_multipartitions_success_job",
+            MultiPartitionKey({"dynamic": "1", "static": "a"}),
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_2D_ASSET_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+
+        # success asset contains 1 materialized range
+        success_asset_result = result.data["assetNodes"][1]
+        assert "dynamic_in_multipartitions_success" in success_asset_result["id"]
+        ranges = success_asset_result["assetPartitionStatuses"]["ranges"]
+        ranges = result.data["assetNodes"][1]["assetPartitionStatuses"]["ranges"]
+        assert len(ranges) == 1
+        assert ranges[0]["primaryDimStartKey"] == "1"
+        assert ranges[0]["primaryDimEndKey"] == "1"
+        assert len(ranges[0]["secondaryDim"]["failedPartitions"]) == 0
+        assert len(ranges[0]["secondaryDim"]["materializedPartitions"]) == 1
+        assert ranges[0]["secondaryDim"]["materializedPartitions"] == ["a"]
+
+        # failed asset contains 1 failed range
+        fail_asset_result = result.data["assetNodes"][0]
+        assert "dynamic_in_multipartitions_fail" in fail_asset_result["id"]
+        ranges = fail_asset_result["assetPartitionStatuses"]["ranges"]
+        assert len(ranges) == 1
+        assert ranges[0]["primaryDimStartKey"] == "1"
+        assert ranges[0]["primaryDimEndKey"] == "1"
+        assert len(ranges[0]["secondaryDim"]["failedPartitions"]) == 1
+        assert ranges[0]["secondaryDim"]["failedPartitions"] == ["a"]
+        assert len(ranges[0]["secondaryDim"]["materializedPartitions"]) == 0
+
     def test_get_materialization_for_multipartition(self, graphql_context):
         first_run_id = _create_partitioned_run(
             graphql_context,

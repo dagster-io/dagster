@@ -412,7 +412,7 @@ const ConfigEditorConfigGeneratorPicker: React.FC<ConfigEditorConfigGeneratorPic
   },
 );
 
-const SortButton = styled.button`
+export const SortButton = styled.button`
   border: 0;
   cursor: pointer;
   padding: 4px;
@@ -421,11 +421,11 @@ const SortButton = styled.button`
   border-radius: 4px;
   transition: background-color 100ms;
 
-  :hover,
   :focus {
     background-color: ${Colors.Gray100};
     outline: none;
-
+  }
+  :hover {
     ${IconWrapper} {
       background-color: ${Colors.Gray700};
     }

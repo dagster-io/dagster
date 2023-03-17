@@ -429,7 +429,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_partition_tags(
@@ -448,7 +448,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_partition_names(
@@ -529,7 +529,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_names=partition_names,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:

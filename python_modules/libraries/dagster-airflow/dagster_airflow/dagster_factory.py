@@ -208,7 +208,9 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
             continue
         if _is_dag_is_schedule(dag):
             schedule_defs.append(
-                make_dagster_schedule_from_airflow_dag(dag=dag, tags=None, connections=connections)
+                make_dagster_schedule_from_airflow_dag(
+                    dag=dag, tags=None, connections=connections, resource_defs=resource_defs
+                )
             )
         else:
             job_defs.append(

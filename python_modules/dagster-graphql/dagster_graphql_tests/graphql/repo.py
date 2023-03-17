@@ -37,6 +37,7 @@ from dagster import (
     MetadataEntry,
     Noneable,
     Nothing,
+    OpExecutionContext,
     Output,
     Partition,
     PythonObjectDagsterType,
@@ -92,7 +93,6 @@ from dagster._legacy import (
     AssetGroup,
     Materialization,
     ModeDefinition,
-    OpExecutionContext,
     PartitionSetDefinition,
     PresetDefinition,
     build_assets_job,
@@ -1859,6 +1859,24 @@ def no_multipartitions_1():
     return 1
 
 
+dynamic_in_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+        "static": StaticPartitionsDefinition(["a", "b", "c"]),
+    }
+)
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_success():
+    return 1
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success):
+    raise Exception("oops")
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1970,6 +1988,15 @@ def define_asset_jobs():
             "multipartitions_fail_job",
             AssetSelection.assets(multipartitions_fail),
             partitions_def=multipartitions_def,
+        ),
+        dynamic_in_multipartitions_success,
+        dynamic_in_multipartitions_fail,
+        define_asset_job(
+            "dynamic_in_multipartitions_success_job",
+            AssetSelection.assets(
+                dynamic_in_multipartitions_success, dynamic_in_multipartitions_fail
+            ),
+            partitions_def=dynamic_in_multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,

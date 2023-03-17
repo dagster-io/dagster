@@ -753,7 +753,7 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
-const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
+export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
   query LaunchAssetCheckUpstreamQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
