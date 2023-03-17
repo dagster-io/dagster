@@ -1,31 +1,8 @@
-import pandas as pd
-import requests
-import numpy as np
-from dagster import (
-    MetadataValue,
-    Output,
-    asset,
-    Definitions,
-    DynamicPartitionsDefinition,
-    Output,
-    FreshnessPolicy,
-)
-import datetime
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import linear_model
-
-
-# @asset
-# def previous_item():
-#     previous_item = requests.get(
-#         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
-#     ).json()
-#     return previous_item
-
 
 ## data_ingestion_start
-
+import requests
+from dagster import asset, FreshnessPolicy
+import pandas as pd
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
 def hackernews_stories():
@@ -56,37 +33,41 @@ def hackernews_stories():
 
 ## test_train_split_start
 
+from sklearn.model_selection import train_test_split
+from dagster import multi_asset, AssetOut
 
-@asset
+@multi_asset(outs={'training_data': AssetOut(), 'test_data': AssetOut()})
 def test_train_split(hackernews_stories):
     hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-    return X_train, X_test, y_train, y_test
+    return (X_train,  y_train), (X_test, y_test)
 
 
 ## test_train_split_end
 
 
 ## vectorizer_start
-@asset
-def transform_train(test_train_split):
-    X_train, X_test, y_train, y_test = test_train_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+
+@multi_asset(outs={'Tfidf_Vectorizer': AssetOut(), 'transformed_training_data': AssetOut()})
+def transform_train(training_data):
+    X_train,  y_train = training_data
     vectorizer = TfidfVectorizer()
     transformed_X_train = vectorizer.fit_transform(X_train)
     transformed_X_train = transformed_X_train.toarray()
     y_train = y_train.fillna(0)
     transformed_y_train = np.array(y_train)
 
-    return vectorizer, transformed_X_train, transformed_y_train
+    return vectorizer, (transformed_X_train, transformed_y_train)
 
 
 @asset
-def transform_test(test_train_split, transform_train):
-    X_train, X_test, y_train, y_test = test_train_split
-    vectorizer, transformed_X_train, transformed_y_train = transform_train
-    transformed_X_test = vectorizer.transform(X_test)
+def transformed_test_data(test_data, Tfidf_Vectorizer):
+    X_test, y_test = test_data
+    transformed_X_test = Tfidf_Vectorizer.transform(X_test)
     transformed_y_test = np.array(y_test)
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
@@ -102,15 +83,18 @@ import xgboost as xg
 from sklearn.metrics import mean_absolute_error
 
 @asset
-def xgboost(transform_train, transform_test):
-    vectorizer, transformed_X_train, transformed_y_train = transform_train 
+def xgboost(transformed_training_data):
+    transformed_X_train, transformed_y_train = transformed_training_data
     xgb_r = xg.XGBRegressor(objective ='reg:squarederror', eval_metric=mean_absolute_error,
                   n_estimators = 20)
     xgb_r.fit(transformed_X_train, transformed_y_train)
-    transformed_X_test, transformed_y_test = transform_test
-    score = xgb_r.score(transformed_X_test, transformed_y_test)
-    return xgb_r, score  
+    return xgb_r
 
+@asset 
+def score_xgboost( transformed_test_data, xgboost):
+    transformed_X_test, transformed_y_test = transformed_test_data
+    score = xgboost.score(transformed_X_test, transformed_y_test)
+    return score 
 ## models_end
 
 
