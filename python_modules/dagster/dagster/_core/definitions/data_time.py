@@ -360,7 +360,9 @@ class CachingDataTimeResolver:
             return current_data_time
 
         run_id = asset_record.asset_entry.last_run_id
-        latest_run_record = self._instance_queryer._get_run_record_by_id(run_id=run_id)
+        latest_run_record = self._instance_queryer._get_run_record_by_id(  # noqa: SLF001
+            run_id=run_id
+        )
 
         # latest run did not fail
         if (
