@@ -8,17 +8,18 @@
 - Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
 
   ```python
-  @op(required_resource_keys={"foo")
-  def my_op(context)
+  @op(required_resource_keys={"foo"})
+  def my_op(context):
       print(context.foo)
 
   @job
   def my_job():
-    my_op()
+      my_op()
 
   defs = Definitions(
-      jobs=BindResourcesToJobs([my_job])
+      jobs=BindResourcesToJobs([my_job]),
       resources={"foo": foo_resource}
+      )
   ```
 
 - Added `dagster asset list` and `dagster asset materialize` commands to Dagster’s command line interface, for listing and materializing software-defined assets.
