@@ -75,8 +75,6 @@ def transformed_test_data(test_data, Tfidf_Vectorizer):
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
     return transformed_X_test, transformed_y_test
-
-
 ## vectorizer_end
 
 
@@ -103,7 +101,7 @@ def score_xgboost( transformed_test_data, xgboost):
 ## models_end
 
 
-
+## inference_start
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
 def model_inference(xgboost, Tfidf_Vectorizer):
     """Get the max ID number from hacker news"""
@@ -129,6 +127,7 @@ def model_inference(xgboost, Tfidf_Vectorizer):
     inference_x = Tfidf_Vectorizer.transform(inference_x)
     return xgboost.predict(inference_x)
 
+## inference_end
 
     
 
