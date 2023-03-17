@@ -1,3 +1,4 @@
+import datetime
 from typing import cast
 
 import pytest
@@ -5,11 +6,15 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     RunRequest,
+    StaticPartitionsDefinition,
     build_schedule_context,
+    job,
+    repository,
     schedule,
 )
 from dagster._config.structured_config import ConfigurableResource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
 
@@ -112,3 +117,25 @@ def test_schedule_invocation_resources() -> None:
             build_schedule_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}
+
+
+def test_partition_key_run_request_schedule():
+    @job(partitions_def=StaticPartitionsDefinition(["a"]))
+    def my_job():
+        pass
+
+    @schedule(cron_schedule="* * * * *", job_name="my_job")
+    def my_schedule():
+        return RunRequest(partition_key="a")
+
+    @repository
+    def my_repo():
+        return [my_job, my_schedule]
+
+    with build_schedule_context(
+        repository_def=my_repo, scheduled_execution_time=datetime.datetime(2023, 1, 1)
+    ) as context:
+        run_requests = my_schedule.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        run_request = run_requests[0]
+        assert run_request.tags.get(PARTITION_NAME_TAG) == "a"

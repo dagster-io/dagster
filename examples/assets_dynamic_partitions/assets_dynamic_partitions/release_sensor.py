@@ -50,6 +50,6 @@ def release_sensor(context):
         # first time the sensor turns on. This means that you might need to manually backfill earlier
         # releases.
         context.update_cursor(new_releases[-1])
-        return RunRequest(tags={"dagster/partition": new_releases[-1]})
+        return RunRequest(partition_key=new_releases[-1])
     else:
         return SkipReason("No new releases")

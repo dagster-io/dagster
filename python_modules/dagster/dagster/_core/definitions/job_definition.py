@@ -585,6 +585,7 @@ class JobDefinition(PipelineDefinition):
         instance: Optional["DagsterInstance"] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
+        # TODO deprecate this function?
         """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
@@ -620,13 +621,16 @@ class JobDefinition(PipelineDefinition):
             run_config
             if run_config is not None
             else self.partitioned_config.get_run_config_for_partition_key(
-                partition.name, instance=instance, current_time=current_time
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
             )
         )
         run_request_tags = {
             **(tags or {}),
             **self.partitioned_config.get_tags_for_partition_key(
-                partition_key, instance=instance, current_time=current_time, job_name=self.name
+                partition_key,
+                dynamic_partitions_store=instance,
+                current_time=current_time,
+                job_name=self.name,
             ),
         }
 
@@ -636,6 +640,7 @@ class JobDefinition(PipelineDefinition):
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     @public

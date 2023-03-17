@@ -55,6 +55,7 @@ from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 T = TypeVar("T")
 
 RunConfig: TypeAlias = Mapping[str, Any]
@@ -164,6 +165,7 @@ class ScheduleEvaluationContext:
         "_resources_cm",
         "_resources",
         "_cm_scope_entered",
+        "_repository_def",
     ]
 
     def __init__(
@@ -173,7 +175,10 @@ class ScheduleEvaluationContext:
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        repository_def: Optional["RepositoryDefinition"] = None,
     ):
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
+
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -198,6 +203,9 @@ class ScheduleEvaluationContext:
         self._resource_defs = resources
         self._resources = None
         self._cm_scope_entered = False
+        self._repository_def = check.opt_inst_param(
+            repository_def, "repository_def", RepositoryDefinition
+        )
 
     def __enter__(self) -> "ScheduleEvaluationContext":
         self._cm_scope_entered = True
@@ -291,6 +299,10 @@ class ScheduleEvaluationContext:
     def log_key(self) -> Optional[List[str]]:
         return self._log_key
 
+    @property
+    def repository_def(self) -> Optional["RepositoryDefinition"]:
+        return self._repository_def
+
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
@@ -306,6 +318,7 @@ def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
     resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    repository_def: Optional["RepositoryDefinition"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -333,6 +346,7 @@ def build_schedule_context(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
         resources=resources,
+        repository_def=repository_def,
     )
 
 
@@ -704,6 +718,10 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
+        from dagster._core.definitions.partition import DynamicPartitionsDefinition
+
+        from .job_definition import JobDefinition
+
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -745,12 +763,65 @@ class ScheduleDefinition:
             skip_message = None
 
         # clone all the run requests with the required schedule tags
-        run_requests_with_schedule_tags = [
-            request.with_replaced_attrs(
-                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
+        run_requests_with_schedule_tags = []
+
+        for run_request in run_requests:
+            if run_request.partition_key and not run_request.has_resolved_partition_run_request():
+                if context.repository_def is None:
+                    raise DagsterInvariantViolationError(
+                        "Must provide repository def to build_schedule_context when yielding"
+                        " partitioned run requests"
+                    )
+
+                scheduled_target = (
+                    self.load_target()
+                    if isinstance(self._target, DirectTarget)
+                    else context.repository_def.get_job(self._target.pipeline_name)
+                )
+
+                if isinstance(scheduled_target, GraphDefinition):
+                    raise Exception(
+                        f"Error in schedule {self._name}: Schedule returned a partitioned"
+                        " RunRequest, but the target is a graph with no partitions definition."
+                    )
+
+                if isinstance(scheduled_target, PipelineDefinition):
+                    if not scheduled_target.is_job:
+                        raise Exception("Schedule target cannot be a legacy pipeline.")
+                    else:
+                        scheduled_target = cast(JobDefinition, scheduled_target)
+
+                partitions_def = scheduled_target.partitions_def
+                if not partitions_def:
+                    raise Exception(
+                        f"Error in schedule {self._name}: Schedule returned a partitioned"
+                        " RunRequest, but the target job has no partitions definition."
+                    )
+
+                dynamic_partitions_store = None
+                if isinstance(partitions_def, DynamicPartitionsDefinition):
+                    # Instance also needs to be provided when partitions def is a multipartitions
+                    # def with dynamic dimension
+                    if context.instance_ref is None:
+                        raise DagsterInvalidInvocationError(
+                            "Instance must be provided in build_schedule_context when yielding run"
+                            " requests for dynamic partitions."
+                        )
+                    dynamic_partitions_store = context.instance
+
+                resolved_request = run_request.with_resolved_partition(
+                    target_definition=scheduled_target,
+                    current_time=context.scheduled_execution_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+            else:
+                resolved_request = run_request
+
+            run_requests_with_schedule_tags.append(
+                resolved_request.with_replaced_attrs(
+                    tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
+                )
             )
-            for request in run_requests
-        ]
 
         return ScheduleExecutionData(
             run_requests=run_requests_with_schedule_tags,
@@ -770,8 +841,9 @@ class ScheduleDefinition:
     def load_target(
         self,
     ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
+        target = self._target
+        if isinstance(target, DirectTarget):
+            return target.load()
 
         check.failed("Target is not loadable")
 
