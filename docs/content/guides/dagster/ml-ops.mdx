@@ -62,11 +62,9 @@ import pandas as pd
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
 def hackernews_stories():
     """Get the max ID number from hacker news"""
-
     latest_item = requests.get(
         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
-
     """Get items based on story ids from the HackerNews items endpoint"""
     results = []
     scope = range(latest_item-1000, latest_item)
@@ -119,14 +117,12 @@ def transformed_train(training_data):
     transformed_X_train = transformed_X_train.toarray()
     y_train = y_train.fillna(0)
     transformed_y_train = np.array(y_train)
-
     return vectorizer, (transformed_X_train, transformed_y_train)
-
 
 @asset
 def transformed_test_data(test_data, Tfidf_Vectorizer):
     X_test, y_test = test_data
-        """Use the fitted tokenizer to transform the test dataset"""
+    """Use the fitted tokenizer to transform the test dataset"""
     transformed_X_test = Tfidf_Vectorizer.transform(X_test)
     transformed_y_test = np.array(y_test)
     y_test = y_test.fillna(0)
@@ -177,7 +173,6 @@ def model_inference(xgboost, Tfidf_Vectorizer):
     latest_item = requests.get(
         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
-
     """Get items based on story ids from the HackerNews items endpoint"""
     results = []
     scope = range(latest_item-100, latest_item)
