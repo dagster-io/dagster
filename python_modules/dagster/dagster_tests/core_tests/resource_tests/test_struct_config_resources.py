@@ -41,9 +41,14 @@ from dagster._core.definitions.repository_definition.repository_data_builder imp
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+)
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.invocation import build_op_context
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
@@ -1904,3 +1909,89 @@ def test_aliased_field_structured_resource():
         {"resources": {"writer": {"config": {"prefix": "runtime: "}}}}
     ).success
     assert out_txt == ["runtime: hello, world!"]
+
+
+def test_direct_op_invocation() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(context, my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use the resource from the context
+    assert my_op(build_op_context(resources={"my_resource": MyResource(a_str="foo")})) == "foo"
+
+    # Providing both context and resource is not ok, because we don't know which one to use
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Provided in both context and kwargs: \\['my_resource'\\]",
+    ):
+        assert (
+            my_op(
+                context=build_op_context(resources={"my_resource": MyResource(a_str="foo")}),
+                my_resource=MyResource(a_str="foo"),
+            )
+            == "foo"
+        )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert my_op(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
+
+    @op
+    def my_op_no_context(my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_op_no_context(build_op_context(resources={"my_resource": MyResource(a_str="foo")}))
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert my_op_no_context(my_resource=MyResource(a_str="foo")) == "foo"
+
+
+def test_direct_asset_invocation() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset
+    def my_asset(context, my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use the resource from the context
+    assert my_asset(build_op_context(resources={"my_resource": MyResource(a_str="foo")})) == "foo"
+
+    # Providing both context and resource is not ok, because we don't know which one to use
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Provided in both context and kwargs: \\['my_resource'\\]",
+    ):
+        assert (
+            my_asset(
+                context=build_op_context(resources={"my_resource": MyResource(a_str="foo")}),
+                my_resource=MyResource(a_str="foo"),
+            )
+            == "foo"
+        )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert my_asset(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
+
+    @asset
+    def my_asset_no_context(my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_asset_no_context(build_op_context(resources={"my_resource": MyResource(a_str="foo")}))
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert my_asset_no_context(my_resource=MyResource(a_str="foo")) == "foo"

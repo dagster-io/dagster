@@ -325,7 +325,6 @@ def test_direct_op_invocation():
     class MyBasicOpConfig(Config):
         foo: str
 
-    # Limitation: for now direct invocation still requires the op to have a context argument.
     @op
     def basic_op(context, config: MyBasicOpConfig):
         assert config.foo == "bar"
@@ -337,6 +336,18 @@ def test_direct_op_invocation():
 
     with pytest.raises(DagsterInvalidConfigError):
         basic_op(build_op_context(op_config={"baz": "qux"}))
+
+    @op
+    def basic_op_no_context(config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op_no_context(build_op_context(op_config={"foo": "bar"}))
+
+    with pytest.raises(AssertionError):
+        basic_op_no_context(build_op_context(op_config={"foo": "qux"}))
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op_no_context(build_op_context(op_config={"baz": "qux"}))
 
 
 def test_validate_run_config():

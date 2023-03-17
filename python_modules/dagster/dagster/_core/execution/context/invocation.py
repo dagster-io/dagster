@@ -133,6 +133,10 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self._op_config
 
     @property
+    def resource_keys(self) -> AbstractSet[str]:
+        return self._resource_defs.keys()
+
+    @property
     def resources(self) -> Resources:
         if self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
@@ -319,6 +323,23 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def get_mapping_key(self) -> Optional[str]:
         return self._mapping_key
+
+    def with_resources(self, resources_dict: Mapping[str, Any]) -> "UnboundOpExecutionContext":
+        """Add resources to the context.
+
+        This method is intended to be used by the Dagster framework, and should not be called by user code.
+
+        Args:
+            resources (Mapping[str, Any]): The resources to add to the context.
+        """
+        return UnboundOpExecutionContext(
+            op_config=self._op_config,
+            resources_dict={**self._resource_defs, **resources_dict},
+            resources_config=self._resources_config,
+            instance=self._instance,
+            partition_key=self._partition_key,
+            mapping_key=self._mapping_key,
+        )
 
 
 def _validate_resource_requirements(
