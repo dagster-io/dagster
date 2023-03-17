@@ -2853,6 +2853,7 @@ export type Resource = {
 
 export type ResourceDetails = {
   __typename: 'ResourceDetails';
+  assetKeysUsing: Array<AssetKey>;
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
