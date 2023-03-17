@@ -25,11 +25,11 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
     static_partitioned_config,
 )
+from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import schedule_from_partitions
 
 
 def _all_asset_keys(result):
@@ -592,7 +592,7 @@ def test_partitioned_schedule():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     spd = schedule.job.partitions_def
     assert spd == partitions_def
@@ -602,7 +602,7 @@ def test_partitioned_schedule_on_repo():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     @repository
     def my_repo():
@@ -619,7 +619,7 @@ def test_intersecting_partitions_on_repo_invalid():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def)
 
-    schedule = schedule_from_partitions(job)
+    schedule = build_schedule_from_partitioned_job(job)
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
     def d(c):
@@ -643,8 +643,8 @@ def test_intersecting_partitions_on_repo_valid():
     job = define_asset_job("hourly", partitions_def=partitions_def, selection="a++")
     job2 = define_asset_job("daily", partitions_def=partitions_def2, selection="d")
 
-    schedule = schedule_from_partitions(job)
-    schedule2 = schedule_from_partitions(job2)
+    schedule = build_schedule_from_partitioned_job(job)
+    schedule2 = build_schedule_from_partitioned_job(job2)
 
     @asset(partitions_def=partitions_def2)
     def d(c):

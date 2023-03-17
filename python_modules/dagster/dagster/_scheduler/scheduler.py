@@ -345,7 +345,7 @@ def launch_scheduled_runs(
                 yield
 
             else:
-                # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
+                # evaluate the schedules in a loop, synchronously, yielding to allow the schedule daemon to
                 # heartbeat
                 yield from launch_scheduled_runs_for_schedule_iterator(
                     workspace_process_context,
