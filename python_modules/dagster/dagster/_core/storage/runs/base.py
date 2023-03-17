@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 class RunGroupInfo(TypedDict):
     count: int
-    runs: Iterable[DagsterRun]
+    runs: Sequence[DagsterRun]
 
 
 class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -67,7 +67,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[DagsterRun]:
+    ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
@@ -95,7 +95,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:

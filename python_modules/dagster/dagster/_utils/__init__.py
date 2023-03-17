@@ -26,14 +26,12 @@ from typing import (
     Dict,
     Generator,
     Generic,
-    Iterable,
     Iterator,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
-    Sized,
     Tuple,
     Type,
     TypeVar,
@@ -725,18 +723,6 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"unexpectedly exited with code {exit_code}."
 
     return prefix + " " + exit_clause
-
-
-def len_iter(iterable: Iterable[object]) -> int:
-    if isinstance(iterable, Sized):
-        return len(iterable)
-    return sum(1 for _ in iterable)
-
-
-def iter_to_list(iterable: Iterable[T]) -> List[T]:
-    if isinstance(iterable, List):
-        return iterable
-    return list(iterable)
 
 
 def last_file_comp(path: str) -> str:

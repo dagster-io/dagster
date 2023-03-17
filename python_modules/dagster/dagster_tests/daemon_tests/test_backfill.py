@@ -45,7 +45,7 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._legacy import ModeDefinition, pipeline
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
-from dagster._utils import len_iter, touch_file
+from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
@@ -703,10 +703,10 @@ def test_backfill_with_asset_selection(
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
 def test_pure_asset_backfill(
@@ -752,10 +752,10 @@ def test_pure_asset_backfill(
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
