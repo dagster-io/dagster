@@ -152,6 +152,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         return [
             GrapheneNestedResourceEntry(
                 name=attribute,
+                type=NestedResourceType.TOP_LEVEL,
                 resource=get_resource_or_error(
                     graphene_info,
                     ResourceSelector(
