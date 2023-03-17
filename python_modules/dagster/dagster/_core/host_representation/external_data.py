@@ -1131,7 +1131,6 @@ def external_repository_data_from_def(
     asset_graph = external_asset_graph_from_defs(
         pipelines,
         source_assets_by_key=repository_def.source_assets_by_key,
-        resource_key_mapping=repository_def.get_resource_key_mapping(),
     )
 
     nested_resource_map = _get_nested_resources_map(
@@ -1204,7 +1203,6 @@ def external_repository_data_from_def(
 def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
-    resource_key_mapping: Mapping[int, str],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
