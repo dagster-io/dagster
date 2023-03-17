@@ -53,6 +53,7 @@ from .pipeline_definition import PipelineDefinition
 from .run_request import (
     PipelineRunReaction,
     RunRequest,
+    SensorTickResult,
     SkipReason,
 )
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
@@ -151,6 +152,7 @@ class SensorEvaluationContext:
             else None
         )
         self._logger: Optional[InstigationLogger] = None
+        self._cursor_updated = False
 
     def __enter__(self) -> "SensorEvaluationContext":
         self._cm_scope_entered = True
@@ -247,6 +249,11 @@ class SensorEvaluationContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+        self._cursor_updated = True
+
+    @property
+    def cursor_updated(self) -> bool:
+        return self._cursor_updated
 
     @public
     @property
@@ -292,11 +299,12 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorTickResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
     PipelineRunReaction,
+    SensorTickResult,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
@@ -563,22 +571,50 @@ class SensorDefinition:
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
+        run_requests: List[RunRequest] = []
+        pipeline_run_reactions: List[PipelineRunReaction] = []
+        updated_cursor = context.cursor
 
-        run_requests: List[RunRequest]
-        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
-            run_requests = []
-            pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = (
-                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
-            )
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorTickResult))
+
+            if isinstance(item, SensorTickResult):
+                run_requests = [item] if isinstance(item, RunRequest) else []
+
+                pipeline_run_reactions = (
+                    [item.pipeline_run_reaction] if item.pipeline_run_reaction else []
+                )
+                skip_message = item.skip_reason.skip_message if item.skip_reason else None
+
+                if item.cursor and context._cursor_updated:
+                    raise DagsterInvariantViolationError(
+                        "SensorTickResult.cursor cannot be set if context.update_cursor() was"
+                        " called."
+                    )
+                updated_cursor = item.cursor
+
+            elif isinstance(item, RunRequest):
+                run_requests = [item]
+            elif isinstance(item, SkipReason):
+                skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            elif isinstance(item, PipelineRunReaction):
+                pipeline_run_reactions = (
+                    [cast(PipelineRunReaction, item)]
+                    if isinstance(item, PipelineRunReaction)
+                    else []
+                )
+            else:
+                check.failed(f"Unexpected type {type(item)} in sensor result")
         else:
+            if any(isinstance(item, SensorTickResult) for item in result):
+                check.failed(
+                    "When a SensorTickResult is returned from a sensor, it must be the only object"
+                    " returned."
+                )
+
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
@@ -607,7 +643,7 @@ class SensorDefinition:
         return SensorExecutionData(
             resolved_run_requests,
             skip_message,
-            context.cursor,
+            updated_cursor,
             pipeline_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
@@ -785,7 +821,7 @@ def wrap_sensor_evaluation(
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
                 yield item
-        elif isinstance(result, (SkipReason, RunRequest)):
+        elif isinstance(result, (SkipReason, RunRequest, SensorTickResult)):
             yield result
 
         elif result is not None:

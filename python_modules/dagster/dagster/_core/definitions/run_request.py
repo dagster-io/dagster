@@ -218,3 +218,55 @@ class PipelineRunReaction(
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             run_status=check.opt_inst_param(run_status, "run_status", DagsterRunStatus),
         )
+
+
+class SensorTickResult(
+    NamedTuple(
+        "_SensorTickResult",
+        [
+            ("run_requests", Optional[Sequence[RunRequest]]),
+            ("skip_reason", Optional[SkipReason]),
+            ("pipeline_run_reaction", Optional[PipelineRunReaction]),
+            ("cursor", Optional[str]),
+        ],
+    )
+):
+    """The result of a sensor evaluation.
+
+    Attributes:
+        run_requests (Optional[Sequence[RunRequest]]): A list
+            of run requests to be executed.
+        cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
+            context for the next sensor evaluation.
+    """
+
+    def __new__(
+        cls,
+        run_requests: Optional[Sequence[RunRequest]] = None,
+        skip_reason: Optional[SkipReason] = None,
+        pipeline_run_reaction: Optional[PipelineRunReaction] = None,
+        cursor: Optional[str] = None,
+    ):
+        if skip_reason:
+            if len(run_requests if run_requests else []) > 0:
+                check.failed(
+                    "Expected a single SkipReason or one or more RunRequests: received both "
+                    "RunRequest and SkipReason"
+                )
+            elif pipeline_run_reaction:
+                check.failed(
+                    "Expected a single SkipReason or one or more PipelineRunReaction: "
+                    "received both PipelineRunReaction and SkipReason"
+                )
+            else:
+                check.failed("Expected a single SkipReason: received multiple SkipReasons")
+
+        return super(SensorTickResult, cls).__new__(
+            cls,
+            run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
+            skip_reason=check.opt_inst_param(skip_reason, "skip_reason", SkipReason),
+            pipeline_run_reaction=check.opt_inst_param(
+                pipeline_run_reaction, "pipeline_run_reaction", PipelineRunReaction
+            ),
+            cursor=check.opt_str_param(cursor, "cursor"),
+        )

@@ -244,7 +244,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized
         # cursor.
         self._unpacked_cursor = MultiAssetSensorContextCursor(cursor, self)
-        self._cursor_has_been_updated = False
         self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
@@ -730,7 +729,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will not be updated.
         """
         self._cursor_advance_state_mutation.add_advanced_records(materialization_records_by_key)
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     def advance_all_cursors(self):
@@ -743,7 +742,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         self._cursor_advance_state_mutation.add_advanced_records(materializations_by_key)
         self._cursor_advance_state_mutation.advance_all_cursors_called = True
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     @property
@@ -1092,7 +1091,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 if (
                     runs_yielded
-                    and not multi_asset_sensor_context._cursor_has_been_updated  # noqa: SLF001
+                    and not multi_asset_sensor_context.cursor_updated  # pylint: disable=protected-access
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, but the cursor"
