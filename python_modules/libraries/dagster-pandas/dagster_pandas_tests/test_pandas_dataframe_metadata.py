@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from dagster import TypeCheck, MetadataValue, TableSchema, TableColumn
+from dagster import MetadataValue, TableSchema, TableColumn
 from dagster_pandas.data_frame import create_table_schema_metadata_from_dataframe
 
 
