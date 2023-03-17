@@ -34,7 +34,9 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
 
-    def resolve(self, asset_graph: InternalAssetGraph) -> ScheduleDefinition:
+    def resolve(
+        self, asset_graph: InternalAssetGraph, resolved_job: JobDefinition
+    ) -> ScheduleDefinition:
         selected_assets = self.job.selection.resolve(asset_graph)
         partitions_defs = {
             cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
@@ -59,9 +61,9 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
         )
 
         return ScheduleDefinition(
-            job=self.job,
+            job=resolved_job,
             name=self.name,
-            execution_fn=_get_schedule_evaluation_fn(partitions_def, self.job, self.tags),
+            execution_fn=_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags),
             execution_timezone=partitions_def.timezone,
             cron_schedule=cron_schedule,
         )

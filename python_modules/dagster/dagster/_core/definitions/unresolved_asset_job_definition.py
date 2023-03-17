@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
 from dagster._utils.backcompat import deprecation_warning
@@ -178,6 +179,7 @@ class UnresolvedAssetJobDefinition(
         public, a lot of users use them, so going to wait until a minor release to get rid of them.
         """
         from dagster._core.definitions.asset_graph import AssetGraph
+        from dagster._core.definitions.partition import PartitionsDefinition
 
         if asset_graph is not None:
             if assets is not None or source_assets is not None:
@@ -199,6 +201,36 @@ class UnresolvedAssetJobDefinition(
             )
             asset_graph = AssetGraph.from_assets([*assets, *source_assets])
 
+        selected_asset_keys = self.selection.resolve(asset_graph)
+
+        partitions_defs = {
+            cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+            for asset_key in selected_asset_keys
+            if asset_graph.get_partitions_def(asset_key) is not None
+        }
+        if len(partitions_defs) == 0 and self.partitions_def:
+            raise DagsterInvalidDefinitionError(
+                "Tried to build a partitioned job, but none of the selected assets are partitioned."
+            )
+
+        if len(partitions_defs) > 1:
+            raise DagsterInvalidDefinitionError(
+                "All assets selected in a job must have the same partitions_def or be"
+                " unpartitioned."
+            )
+
+        if (
+            len(partitions_defs) == 1
+            and self.partitions_def != next(iter(partitions_defs))
+            and self.partitions_def is not None
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"Job received a partitions_def of {self.partitions_def}, but the selected assets "
+                f"have a non-matching partitions_def of {next(iter(partitions_defs))}"
+            )
+
+        inferred_partitions_def = next(iter(partitions_defs)) if partitions_defs else None
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -206,8 +238,8 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve(asset_graph),
-            partitions_def=self.partitions_def,
+            asset_selection=selected_asset_keys,
+            partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )
 
@@ -294,7 +326,8 @@ def define_asset_job(
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition.
+            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
+            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The

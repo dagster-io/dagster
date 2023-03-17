@@ -19,7 +19,6 @@ from dagster import (
     op,
     repository,
 )
-from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
@@ -626,7 +625,7 @@ def test_intersecting_partitions_on_repo_invalid():
     def d(c):
         return c
 
-    with pytest.raises(CheckError, match="partitions_def of Daily"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions_def"):
 
         @repository
         def my_repo():
