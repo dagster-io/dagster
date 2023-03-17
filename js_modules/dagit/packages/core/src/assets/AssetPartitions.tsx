@@ -64,15 +64,6 @@ export const AssetPartitions: React.FC<Props> = ({
   });
 
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
-  const sortedPartitions = React.useMemo(() => {
-    return selections.map((selection, idx) => {
-      const sort = selectionSorts[idx] || defaultSort(selection.dimension.type);
-      if (sort === 1) {
-        return selection.dimension.partitionKeys;
-      }
-      return selection.dimension.partitionKeys.slice().reverse();
-    });
-  }, [selections, selectionSorts]);
 
   const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
     defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
@@ -117,34 +108,16 @@ export const AssetPartitions: React.FC<Props> = ({
       return [];
     }
 
-    const {selectedRanges} = selections[idx];
-    const allKeys = sortedPartitions[idx];
+    const {dimension, selectedRanges} = selections[idx];
+    const allKeys = dimension.partitionKeys;
     const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
 
-    function translateIndex(idx: number) {
-      if (sort === -1) {
-        return allKeys.length - idx - 1;
-      }
-      return idx;
-    }
-
-    function sliceTranslated(arr: Array<any>, start: number, end: number) {
-      const index1 = translateIndex(start);
-      const index2 = translateIndex(end);
-      const smaller = index1 > index2 ? index2 : index1;
-      const greater = index1 > index2 ? index1 : index2;
-      return arr.slice(smaller, greater + 1);
-    }
-
     const getSelectionKeys = () =>
-      uniq(
-        selectedRanges.flatMap(([start, end]) => {
-          return sliceTranslated(allKeys, start.idx, end.idx);
-        }),
-      );
+      uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
-      return getSelectionKeys(); // optimization for the default case
+      const result = getSelectionKeys();
+      return sort === 1 ? result : result.reverse();
     }
 
     const rangesInSelection = rangesClippedToSelection(
@@ -154,7 +127,7 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const getKeysWithStates = (states: PartitionState[]) => {
       return rangesInSelection.flatMap((r) =>
-        states.includes(r.value) ? sliceTranslated(allKeys, r.start.idx, r.end.idx) : [],
+        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
@@ -167,16 +140,19 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     const matching = uniq(getKeysWithStates(states));
 
+    let result;
     // We have to add in "missing" separately because it's the absence of a range
     if (stateFilters.includes(PartitionState.MISSING)) {
-      return allKeys.filter(
+      result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
           !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
       );
     } else {
-      return matching;
+      result = matching;
     }
+
+    return sort === 1 ? result : result.reverse();
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
@@ -250,6 +226,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 )}
               </div>
               <SortButton
+                style={{marginRight: '-16px'}}
                 data-testid={`sort-${idx}`}
                 onClick={() => {
                   setSelectionSorts((sorts) => {
