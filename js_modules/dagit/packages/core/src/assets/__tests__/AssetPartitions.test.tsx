@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, getByTestId, getByText, render, screen, waitFor} from '@testing-library/react';
+import {act, getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent, {specialChars} from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';

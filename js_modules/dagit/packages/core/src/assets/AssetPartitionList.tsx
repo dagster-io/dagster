@@ -3,7 +3,6 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
 import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
-import {testId} from '../testing/testId';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
