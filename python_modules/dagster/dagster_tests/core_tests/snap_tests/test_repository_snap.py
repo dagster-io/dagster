@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from dagster import Definitions, asset, job, op, repository
+from dagster import Definitions, asset, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import Config, ConfigurableResource
 from dagster._core.definitions.repository_definition import (
@@ -9,6 +9,7 @@ from dagster._core.definitions.repository_definition import (
 )
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
@@ -120,12 +121,52 @@ def test_repository_snap_definitions_resources_nested_top_level() -> None:
     assert len(external_repo_data.external_resource_data) == 2
 
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
 
     assert len(foo) == 1
+    assert len(inner) == 1
 
     assert len(foo[0].nested_resources) == 1
     assert "inner" in foo[0].nested_resources
     assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+
+    assert len(inner[0].parent_resources) == 1
+    assert "foo" in inner[0].parent_resources
+    assert inner[0].parent_resources["foo"] == "inner"
+
+
+def test_repository_snap_definitions_function_style_resources_nested() -> None:
+    @resource
+    def my_inner_resource() -> str:
+        return "foo"
+
+    @resource(required_resource_keys={"inner"})
+    def my_outer_resource(context: InitResourceContext) -> str:
+        return context.resources.inner + "bar"
+
+    defs = Definitions(
+        resources={"foo": my_outer_resource, "inner": my_inner_resource},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
+
+    assert len(foo) == 1
+    assert len(inner) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+
+    assert len(inner[0].parent_resources) == 1
+    assert "foo" in inner[0].parent_resources
+    assert inner[0].parent_resources["foo"] == "inner"
 
 
 def test_repository_snap_definitions_resources_nested_many() -> None:
