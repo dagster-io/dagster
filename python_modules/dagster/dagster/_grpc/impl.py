@@ -362,10 +362,20 @@ def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ):
+    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name, instance)
+
+    if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
+            partition = partition_set_def.get_partition(
+                partition_name, dynamic_partitions_store=instance
+            )
+    else:
+        partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=None)
+
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -411,11 +421,19 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ):
+    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
 
-    partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
+    if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
+            partition = partition_set_def.get_partition(
+                partition_name, dynamic_partitions_store=instance
+            )
+    else:
+        partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=None)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -463,15 +481,25 @@ def get_partition_set_execution_param_data(
     repo_definition: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
+    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=instance)
+            if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+                with DagsterInstance.from_ref(
+                    instance_ref
+                ) if instance_ref else nullcontext() as instance:
+                    all_partitions = partition_set_def.get_partitions(
+                        dynamic_partitions_store=instance
+                    )
+            else:
+                all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=None)
         partitions = [
             partition for partition in all_partitions if partition.name in partition_names
         ]
