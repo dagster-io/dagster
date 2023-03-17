@@ -49,7 +49,7 @@ from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
-    CACHEABLE_PARTITION_TYPES,
+    can_cache_partition_type,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
@@ -359,9 +359,7 @@ def get_materialized_and_failed_partition_subsets(
     if not partitions_def:
         return None, None
 
-    if instance.can_cache_asset_status_data() and isinstance(
-        partitions_def, CACHEABLE_PARTITION_TYPES
-    ):
+    if instance.can_cache_asset_status_data() and can_cache_partition_type(partitions_def):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
@@ -553,7 +551,15 @@ def get_2d_run_length_encoded_partitions(
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
-    if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+    if (
+        len(dim1_keys) == 0
+        or len(
+            secondary_dim.partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+        == 0
+    ):
         return GrapheneMultiPartitions(ranges=[], primaryDimensionName=primary_dim.name)
 
     while unevaluated_idx <= len(dim1_keys):

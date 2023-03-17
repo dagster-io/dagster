@@ -10,6 +10,8 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
@@ -358,17 +360,28 @@ def get_external_sensor_execution(
             )
 
 
+def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDefinition) -> bool:
+    if isinstance(partitions_def, DynamicPartitionsDefinition):
+        return True
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        return any(
+            _partitions_def_contains_dynamic_partitions_def(dimension.partitions_def)
+            for dimension in partitions_def.partitions_defs
+        )
+    return False
+
+
 def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
     instance_ref: Optional[InstanceRef] = None,
 ):
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
-
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
 
-    if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+    # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+    # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+    if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
         with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             partition = partition_set_def.get_partition(
                 partition_name, dynamic_partitions_store=instance
@@ -423,11 +436,11 @@ def get_partition_tags(
     partition_name: str,
     instance_ref: Optional[InstanceRef] = None,
 ):
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
-
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
 
-    if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+    # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+    # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+    if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
         with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             partition = partition_set_def.get_partition(
                 partition_name, dynamic_partitions_store=instance
@@ -483,15 +496,15 @@ def get_partition_set_execution_param_data(
     partition_names: Sequence[str],
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
-    from dagster._core.definitions.partition import DynamicPartitionsDefinition
-
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            if isinstance(partition_set_def.partitions_def, DynamicPartitionsDefinition):
+            # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+            # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+            if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
                 with DagsterInstance.from_ref(
                     instance_ref
                 ) if instance_ref else nullcontext() as instance:

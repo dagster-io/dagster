@@ -37,6 +37,17 @@ CACHEABLE_PARTITION_TYPES = (
 )
 
 
+def can_cache_partition_type(partitions_def: PartitionsDefinition) -> bool:
+    return isinstance(partitions_def, CACHEABLE_PARTITION_TYPES) and (
+        not any(
+            isinstance(dim.partitions_def, DynamicPartitionsDefinition)
+            for dim in partitions_def.partitions_defs
+        )
+        if isinstance(partitions_def, MultiPartitionsDefinition)
+        else True
+    )
+
+
 @whitelist_for_serdes
 class AssetStatusCacheValue(
     NamedTuple(
@@ -198,7 +209,7 @@ def _build_status_cache(
     """This method refreshes the asset status cache for a given asset key. It recalculates
     the materialized partition subset for the asset key and updates the cache value.
     """
-    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+    if not partitions_def or not can_cache_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     materialized_keys: Sequence[str]
@@ -371,7 +382,7 @@ def _get_updated_status_cache(
     unevaluated_event_records.extend(list(unevaluated_materialization_event_records))
 
     latest_storage_id = max([record.storage_id for record in unevaluated_event_records])
-    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
+    if not partitions_def or not can_cache_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     check.invariant(
