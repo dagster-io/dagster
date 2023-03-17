@@ -3,6 +3,7 @@ from typing import Dict, List
 from dagster import Definitions, asset, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
@@ -345,3 +346,82 @@ def test_repository_snap_definitions_env_vars() -> None:
     assert {consumer.name for consumer in env_vars["MY_CONFIG_NESTED_STRING"]} == {"quuz"}
     assert "MY_CONFIG_LIST_NESTED_STRING" in env_vars
     assert {consumer.name for consumer in env_vars["MY_CONFIG_LIST_NESTED_STRING"]} == {"quuz"}
+
+
+def test_repository_snap_definitions_resources_assets_usage() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset
+    def my_asset(foo: MyResource):
+        pass
+
+    @asset
+    def my_other_asset(foo: MyResource, bar: MyResource):
+        pass
+
+    @asset
+    def my_third_asset():
+        pass
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset, my_third_asset],
+        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert sorted(foo[0].asset_keys_using, key=lambda k: "".join(k.path)) == [
+        AssetKey("my_asset"),
+        AssetKey("my_other_asset"),
+    ]
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert bar[0].asset_keys_using == [
+        AssetKey("my_other_asset"),
+    ]
+
+
+def test_repository_snap_definitions_function_style_resources_assets_usage() -> None:
+    @resource
+    def my_resource() -> str:
+        return "foo"
+
+    @asset
+    def my_asset(foo: Resource[str]):
+        pass
+
+    @asset
+    def my_other_asset(foo: Resource[str]):
+        pass
+
+    @asset
+    def my_third_asset():
+        pass
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset, my_third_asset],
+        resources={"foo": my_resource},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 1
+
+    foo = external_repo_data.external_resource_data[0]
+
+    assert sorted(foo.asset_keys_using, key=lambda k: "".join(k.path)) == [
+        AssetKey("my_asset"),
+        AssetKey("my_other_asset"),
+    ]
