@@ -26,6 +26,7 @@ from dagster import (
     In,
     MetadataValue,
     Nothing,
+    OpExecutionContext,
     Out,
     PartitionsDefinition,
     TableColumn,
@@ -45,7 +46,6 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
