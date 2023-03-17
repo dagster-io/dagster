@@ -37,7 +37,7 @@ from sklearn.model_selection import train_test_split
 from dagster import multi_asset, AssetOut
 
 @multi_asset(outs={'training_data': AssetOut(), 'test_data': AssetOut()})
-def test_train_split(hackernews_stories):
+def training_test_data(hackernews_stories):
     hackernews_stories = hackernews_stories
     X = hackernews_stories.title
     y = hackernews_stories.descendants
@@ -53,7 +53,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
 @multi_asset(outs={'Tfidf_Vectorizer': AssetOut(), 'transformed_training_data': AssetOut()})
-def transform_train(training_data):
+def transformed_train(training_data):
     X_train,  y_train = training_data
     vectorizer = TfidfVectorizer()
     transformed_X_train = vectorizer.fit_transform(X_train)
@@ -98,4 +98,32 @@ def score_xgboost( transformed_test_data, xgboost):
 ## models_end
 
 
+
+@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
+def model_inference(xgboost, Tfidf_Vectorizer):
+    """Get the max ID number from hacker news"""
+
+    latest_item = requests.get(
+        f"https://hacker-news.firebaseio.com/v0/maxitem.json"
+    ).json()
+
+    """Get items based on story ids from the HackerNews items endpoint"""
+    results = []
+    scope = range(latest_item-100, latest_item)
+    for item_id in scope:
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
+        results.append(item)
+
+    df = pd.DataFrame(results)
+    if len(df) > 0:
+        df = df[df.type == "story"]
+        df = df[~df.title.isna()]
+    inference_x = df.title
+    inference_x = Tfidf_Vectorizer.transform(inference_x)
+    return xgboost.predict(inference_x)
+
+
+    
 
