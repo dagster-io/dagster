@@ -15,12 +15,12 @@ from dagster._cli.workspace.cli_target import (
     ClickArgMapping,
     ClickArgValue,
     ClickOption,
+    get_code_location_from_workspace,
     get_external_job_from_external_repo,
     get_external_job_from_kwargs,
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
     get_job_python_origin_from_kwargs,
-    get_repository_location_from_workspace,
     get_workspace_from_kwargs,
     job_repository_target_argument,
     job_target_argument,
@@ -449,7 +449,7 @@ def execute_launch_command(
     config = get_config_from_args(kwargs)
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
-        repo_location = get_repository_location_from_workspace(workspace, kwargs.get("location"))
+        repo_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
         external_repo = get_external_repository_from_repo_location(
             repo_location, cast(Optional[str], kwargs.get("repository"))
         )
@@ -731,7 +731,7 @@ def job_backfill_command(**kwargs):
 
 def execute_backfill_command(cli_args, print_fn, instance):
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
-        repo_location = get_repository_location_from_workspace(workspace, cli_args.get("location"))
+        repo_location = get_code_location_from_workspace(workspace, cli_args.get("location"))
         _execute_backfill_command_at_location(
             cli_args,
             print_fn,

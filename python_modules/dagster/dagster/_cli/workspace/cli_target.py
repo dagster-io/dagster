@@ -683,10 +683,10 @@ def get_repository_location_from_kwargs(
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
         location_name = check.opt_str_elem(kwargs, "location")
-        yield get_repository_location_from_workspace(workspace, location_name)
+        yield get_code_location_from_workspace(workspace, location_name)
 
 
-def get_repository_location_from_workspace(
+def get_code_location_from_workspace(
     workspace: WorkspaceRequestContext, provided_location_name: Optional[str]
 ) -> CodeLocation:
     if provided_location_name is None:
