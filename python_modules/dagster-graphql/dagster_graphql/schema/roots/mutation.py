@@ -558,7 +558,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
                 f"Location {repositoryLocationName} does not support shutting down via GraphQL"
             )
 
-        graphene_info.context.shutdown_repository_location(repositoryLocationName)
+        graphene_info.context.shutdown_code_location(repositoryLocationName)
         return GrapheneShutdownRepositoryLocationSuccess(
             repositoryLocationName=repositoryLocationName
         )

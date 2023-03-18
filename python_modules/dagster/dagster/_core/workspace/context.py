@@ -198,7 +198,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         self.process_context.reload_repository_location(name)
         return self.process_context.create_request_context()
 
-    def shutdown_repository_location(self, name: str):
+    def shutdown_code_location(self, name: str):
         self.process_context.shutdown_repository_location(name)
 
     def reload_workspace(self) -> Self:
