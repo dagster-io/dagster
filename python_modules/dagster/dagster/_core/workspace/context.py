@@ -630,7 +630,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 and self._location_entry_dict[location_name].repository_location is not None
             )
 
-    def has_repository_location_error(self, location_name: str) -> bool:
+    def has_code_location_error(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
         with self._lock:
             return (
