@@ -229,7 +229,7 @@ def submit_backfill_runs(
 
 def create_backfill_run(
     instance: DagsterInstance,
-    repo_location: CodeLocation,
+    code_location: CodeLocation,
     external_pipeline: ExternalPipeline,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
@@ -242,7 +242,7 @@ def create_backfill_run(
         BACKFILL_RUN_CREATED,
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
-            "repo_hash": hash_name(repo_location.name),
+            "repo_hash": hash_name(code_location.name),
             "pipeline_name_hash": hash_name(external_pipeline.name),
         },
     )
@@ -271,7 +271,7 @@ def create_backfill_run(
             return None
         return instance.create_reexecuted_run(
             parent_run=last_run,
-            code_location=repo_location,
+            code_location=code_location,
             external_pipeline=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
@@ -301,7 +301,7 @@ def create_backfill_run(
             solids_to_execute = frozenset(external_partition_set.solid_selection)
             solid_selection = external_partition_set.solid_selection
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         partition_data.run_config,
         check.not_none(external_partition_set.mode),
