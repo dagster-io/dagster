@@ -69,7 +69,7 @@ def pipeline_handle() -> Iterator[JobHandle]:
 
 @pytest.fixture(scope="module")
 def other_location_pipeline_handle(pipeline_handle: JobHandle) -> JobHandle:
-    repo_location_origin = pipeline_handle.repository_handle.repository_location_origin
+    repo_location_origin = pipeline_handle.repository_handle.code_location_origin
     assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
     return pipeline_handle._replace(
         repository_handle=pipeline_handle.repository_handle._replace(

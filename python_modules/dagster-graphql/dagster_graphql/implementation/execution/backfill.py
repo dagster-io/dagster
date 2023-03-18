@@ -132,7 +132,7 @@ def create_and_launch_partition_backfill(
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
         location_names = set(
-            repo_handle.repository_location_origin.location_name
+            repo_handle.code_location_origin.location_name
             for repo_handle in asset_graph.repository_handles_by_key.values()
         )
 

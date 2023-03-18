@@ -17,7 +17,7 @@ class RepositoryHandle(
         "_RepositoryHandle",
         [
             ("repository_name", str),
-            ("repository_location_origin", CodeLocationOrigin),
+            ("code_location_origin", CodeLocationOrigin),
             ("repository_python_origin", RepositoryPythonOrigin),
             ("display_metadata", Mapping[str, str]),
         ],
@@ -37,11 +37,11 @@ class RepositoryHandle(
 
     @property
     def location_name(self) -> str:
-        return self.repository_location_origin.location_name
+        return self.code_location_origin.location_name
 
     def get_external_origin(self):
         return ExternalRepositoryOrigin(
-            self.repository_location_origin,
+            self.code_location_origin,
             self.repository_name,
         )
 

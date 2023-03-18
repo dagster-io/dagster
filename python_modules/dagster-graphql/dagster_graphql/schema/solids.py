@@ -437,7 +437,7 @@ class ISolidDefinitionMixin:
         else:
             assert isinstance(self._represented_pipeline, ExternalPipeline)
             repo_handle = self._represented_pipeline.repository_handle
-            origin = repo_handle.repository_location_origin
+            origin = repo_handle.code_location_origin
             location = graphene_info.context.get_code_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
             nodes = [
