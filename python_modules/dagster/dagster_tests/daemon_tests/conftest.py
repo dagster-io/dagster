@@ -63,7 +63,7 @@ def external_repo_fixture(
         CodeLocation,
         next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location,
+        ).code_location,
     ).get_repository("the_repo")
 
 

@@ -76,20 +76,20 @@ class BaseDaemonWorkspace(IWorkspace):
                 load_error_infos=[location_entry.load_error],
             )
 
-        if not location_entry.repository_location:
+        if not location_entry.code_location:
             raise DagsterRepositoryLocationLoadError(
                 f"Location {location_name} is still loading",
                 load_error_infos=[],
             )
 
-        return location_entry.repository_location
+        return location_entry.code_location
 
     def cleanup(self, cleanup_locations: bool) -> None:
         if self._location_entries is not None:
             if cleanup_locations:
                 for location_entry in self._location_entries.values():
-                    if location_entry.repository_location:
-                        location_entry.repository_location.cleanup()
+                    if location_entry.code_location:
+                        location_entry.code_location.cleanup()
             self._location_entries = None
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -145,7 +145,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
 
         return CodeLocationEntry(
             origin=origin,
-            repository_location=location,
+            code_location=location,
             load_error=error,
             load_status=CodeLocationLoadStatus.LOADED,
             display_metadata=location.get_display_metadata()

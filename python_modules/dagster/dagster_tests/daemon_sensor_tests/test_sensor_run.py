@@ -2533,7 +2533,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
             running_sensor = external_repo.get_external_sensor("always_running_sensor")
@@ -2783,7 +2783,7 @@ def test_repository_namespacing(executor):
 
         full_location = next(
             iter(full_workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location
+        ).code_location
         external_repo = full_location.get_repository("the_repo")
         other_repo = full_location.get_repository("the_other_repo")
 

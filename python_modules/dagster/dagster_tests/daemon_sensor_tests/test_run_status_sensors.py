@@ -62,7 +62,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                             .get_workspace_snapshot()
                             .values()
                         )
-                    ).repository_location
+                    ).code_location
                 ).get_repository(attribute),
             )
 
@@ -106,7 +106,7 @@ def instance_with_multiple_code_locations(
                 workspace_context.create_request_context().get_workspace_snapshot().values()
             ):
                 repository_location: CodeLocation = check.not_none(
-                    repository_location_entry.repository_location
+                    repository_location_entry.code_location
                 )
                 location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
                     instance=instance,

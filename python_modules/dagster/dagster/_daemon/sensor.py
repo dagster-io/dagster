@@ -319,7 +319,7 @@ def execute_sensor_iteration(
 
     sensors: Dict[str, ExternalSensor] = {}
     for location_entry in workspace_snapshot.values():
-        repo_location = location_entry.repository_location
+        repo_location = location_entry.code_location
         if repo_location:
             for repo in repo_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
@@ -351,7 +351,7 @@ def execute_sensor_iteration(
             repo_name = sensor_state.origin.external_repository_origin.repository_name
             if (
                 repo_location_name not in workspace_snapshot
-                or not workspace_snapshot[repo_location_name].repository_location
+                or not workspace_snapshot[repo_location_name].code_location
             ):
                 logger.warning(
                     f"Sensor {sensor_name} was started from a location "
@@ -359,7 +359,7 @@ def execute_sensor_iteration(
                     "You can turn off this sensor in the Dagit UI from the Status tab."
                 )
             elif not check.not_none(  # checked above
-                workspace_snapshot[repo_location_name].repository_location
+                workspace_snapshot[repo_location_name].code_location
             ).has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "

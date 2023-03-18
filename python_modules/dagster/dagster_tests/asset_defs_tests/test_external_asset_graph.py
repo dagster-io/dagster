@@ -82,7 +82,7 @@ def make_location_entry(defs_attr: str):
 
     return CodeLocationEntry(
         origin=origin,
-        repository_location=repo_location,
+        code_location=repo_location,
         load_error=None,
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},

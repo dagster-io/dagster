@@ -813,7 +813,7 @@ def test_schedule_without_timezone(instance, executor):
         ) as workspace_context:
             repo_location = next(
                 iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).repository_location
+            ).code_location
             assert repo_location is not None
             external_repo = repo_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
@@ -2138,7 +2138,7 @@ def test_status_in_code_schedule(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
             running_schedule = external_repo.get_external_schedule("always_running_schedule")
@@ -2259,7 +2259,7 @@ def test_status_in_code_schedule(instance, executor):
             ] = workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
             ]._replace(
-                repository_location=None,
+                code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
@@ -2293,7 +2293,7 @@ def test_change_default_status(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
 
@@ -2380,7 +2380,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
                         .get_workspace_snapshot()
                         .values()
                     )
-                ).repository_location,
+                ).code_location,
             )
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")

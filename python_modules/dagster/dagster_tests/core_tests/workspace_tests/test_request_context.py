@@ -25,7 +25,7 @@ def test_get_repository_location():
         workspace_snapshot={
             "loading_loc": CodeLocationEntry(
                 origin=RegisteredCodeLocationOrigin("loading_loc"),
-                repository_location=None,
+                code_location=None,
                 load_error=None,
                 load_status=CodeLocationLoadStatus.LOADING,
                 display_metadata={},
@@ -33,7 +33,7 @@ def test_get_repository_location():
             ),
             "loaded_loc": CodeLocationEntry(
                 origin=RegisteredCodeLocationOrigin("loaded_loc"),
-                repository_location=mock_loc,
+                code_location=mock_loc,
                 load_error=None,
                 load_status=CodeLocationLoadStatus.LOADED,
                 display_metadata={},
@@ -41,7 +41,7 @@ def test_get_repository_location():
             ),
             "error_loc": CodeLocationEntry(
                 origin=RegisteredCodeLocationOrigin("error_loc"),
-                repository_location=None,
+                code_location=None,
                 load_error=error_info,
                 load_status=CodeLocationLoadStatus.LOADED,
                 display_metadata={},

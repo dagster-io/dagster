@@ -58,9 +58,9 @@ class ExternalAssetGraph(AssetGraph):
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
         repo_locations = (
-            location_entry.repository_location
+            location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.repository_location
+            if location_entry.code_location
         )
         repos = (
             repo

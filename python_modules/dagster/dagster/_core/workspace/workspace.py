@@ -16,7 +16,7 @@ class CodeLocationLoadStatus(Enum):
 
 class CodeLocationEntry(NamedTuple):
     origin: "CodeLocationOrigin"
-    repository_location: Optional["CodeLocation"]
+    code_location: Optional["CodeLocation"]
     load_error: Optional[SerializableErrorInfo]
     load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]

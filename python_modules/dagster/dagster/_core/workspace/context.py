@@ -139,8 +139,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
                 f"Location {location_name} does not exist in workspace"
             )
 
-        if location_entry.repository_location:
-            return location_entry.repository_location
+        if location_entry.code_location:
+            return location_entry.code_location
 
         if location_entry.load_error:
             error_info = location_entry.load_error
@@ -156,9 +156,9 @@ class BaseWorkspaceRequestContext(IWorkspace):
     @property
     def code_locations(self) -> Sequence[CodeLocation]:
         return [
-            entry.repository_location
+            entry.code_location
             for entry in self.get_workspace_snapshot().values()
-            if entry.repository_location
+            if entry.code_location
         ]
 
     @property
@@ -182,7 +182,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def has_code_location(self, name: str) -> bool:
         location_entry = self.get_location_entry(name)
-        return bool(location_entry and location_entry.repository_location is not None)
+        return bool(location_entry and location_entry.code_location is not None)
 
     def is_reload_supported(self, name: str) -> bool:
         entry = self.get_location_entry(name)
@@ -598,7 +598,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         return CodeLocationEntry(
             origin=origin,
-            repository_location=location,
+            code_location=location,
             load_error=error,
             load_status=CodeLocationLoadStatus.LOADED,
             display_metadata=location.get_display_metadata()
@@ -627,7 +627,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         with self._lock:
             return (
                 location_name in self._location_entry_dict
-                and self._location_entry_dict[location_name].repository_location is not None
+                and self._location_entry_dict[location_name].code_location is not None
             )
 
     def has_code_location_error(self, location_name: str) -> bool:
@@ -681,8 +681,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             watch_thread.join()
 
         for entry in previous_locations.values():
-            if entry.repository_location:
-                entry.repository_location.cleanup()
+            if entry.code_location:
+                entry.code_location.cleanup()
 
     def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(

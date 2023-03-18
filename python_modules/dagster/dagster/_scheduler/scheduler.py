@@ -207,7 +207,7 @@ def launch_scheduled_runs(
     error_locations = set()
 
     for location_entry in workspace_snapshot.values():
-        repo_location = location_entry.repository_location
+        repo_location = location_entry.code_location
         if repo_location:
             for repo in repo_location.get_repositories().values():
                 for schedule in repo.get_external_schedules():
@@ -260,7 +260,7 @@ def launch_scheduled_runs(
             repo_name = schedule_state.origin.external_repository_origin.repository_name
             if (
                 repo_location_origin.location_name not in workspace_snapshot
-                or not workspace_snapshot[repo_location_origin.location_name].repository_location
+                or not workspace_snapshot[repo_location_origin.location_name].code_location
             ):
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
@@ -268,7 +268,7 @@ def launch_scheduled_runs(
                     "turn off this schedule in the Dagit UI from the Status tab."
                 )
             elif not check.not_none(  # checked in case above
-                workspace_snapshot[repo_location_origin.location_name].repository_location
+                workspace_snapshot[repo_location_origin.location_name].code_location
             ).has_repository(repo_name):
                 logger.warning(
                     f"Could not find repository {repo_name} in location {repo_location_name} to "

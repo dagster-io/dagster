@@ -182,8 +182,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
         return self.name
 
     def resolve_locationOrLoadError(self, _):
-        if self._location_entry.repository_location:
-            return GrapheneRepositoryLocation(self._location_entry.repository_location)
+        if self._location_entry.code_location:
+            return GrapheneRepositoryLocation(self._location_entry.code_location)
 
         error = self._location_entry.load_error
         return GraphenePythonError(error) if error else None
