@@ -7,7 +7,7 @@ from dagster import file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.origin import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
@@ -53,7 +53,7 @@ def instance():
 
 
 def test_error_repo_in_registry(instance):
-    error_origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    error_origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="error_repo",
@@ -92,7 +92,7 @@ def test_error_repo_in_registry(instance):
 
 
 def test_server_registry(instance):
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",
@@ -157,7 +157,7 @@ def _registry_thread(origin, registry, endpoint, event):
 
 
 def test_registry_multithreading(instance):
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="repo",

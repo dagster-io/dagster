@@ -194,10 +194,11 @@ class InProcessCodeLocationOrigin(
         return InProcessRepositoryLocation(self)
 
 
-@whitelist_for_serdes
-class ManagedGrpcPythonEnvRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
+class ManagedGrpcPythonEnvCodeLocationOrigin(
     NamedTuple(
-        "_ManagedGrpcPythonEnvRepositoryLocationOrigin",
+        "_ManagedGrpcPythonEnvCodeLocationOrigin",
         [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
     ),
     CodeLocationOrigin,
@@ -209,7 +210,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
-        return super(ManagedGrpcPythonEnvRepositoryLocationOrigin, cls).__new__(
+        return super(ManagedGrpcPythonEnvCodeLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin

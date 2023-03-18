@@ -23,7 +23,7 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -63,7 +63,7 @@ class GrpcServerEndpoint(
 T_GrpcRepositoryLocationOrigin = TypeVar(
     "T_GrpcRepositoryLocationOrigin",
     GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     # default=ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 
@@ -142,15 +142,15 @@ class GrpcServerRegistry(AbstractContextManager):
 
     def supports_origin(
         self, repository_location_origin: CodeLocationOrigin
-    ) -> TypeGuard[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
-        return isinstance(repository_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+    ) -> TypeGuard[ManagedGrpcPythonEnvCodeLocationOrigin]:
+        return isinstance(repository_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
 
     @property
     def supports_reload(self) -> bool:
         return True
 
     def reload_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, repository_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
         check.inst_param(
             repository_location_origin, "repository_location_origin", CodeLocationOrigin
@@ -165,7 +165,7 @@ class GrpcServerRegistry(AbstractContextManager):
             return self._get_grpc_endpoint(repository_location_origin)
 
     def get_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, repository_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
         check.inst_param(
             repository_location_origin, "repository_location_origin", CodeLocationOrigin
@@ -175,17 +175,17 @@ class GrpcServerRegistry(AbstractContextManager):
             return self._get_grpc_endpoint(repository_location_origin)
 
     def _get_loadable_target_origin(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, repository_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> LoadableTargetOrigin:
         check.inst_param(
             repository_location_origin,
             "repository_location_origin",
-            ManagedGrpcPythonEnvRepositoryLocationOrigin,
+            ManagedGrpcPythonEnvCodeLocationOrigin,
         )
         return repository_location_origin.loadable_target_origin
 
     def _get_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, repository_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
         origin_id = repository_location_origin.get_id()
         loadable_target_origin = self._get_loadable_target_origin(repository_location_origin)

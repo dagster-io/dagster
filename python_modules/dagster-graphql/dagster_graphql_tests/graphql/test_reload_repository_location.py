@@ -5,7 +5,7 @@ from unittest import mock
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
 from dagster._core.host_representation import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
     external_repository_data_from_def,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -153,7 +153,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             # Simulate adding an origin with an error, reload
 
             original_origins.append(
-                ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
                         python_file="made_up_file.py", executable_path=sys.executable

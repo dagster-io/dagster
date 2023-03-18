@@ -46,7 +46,7 @@ from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
@@ -964,7 +964,7 @@ def test_sensors_keyed_on_selector_not_origin(
         existing_origin = external_sensor.get_external_origin()
 
         repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
-        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
         )

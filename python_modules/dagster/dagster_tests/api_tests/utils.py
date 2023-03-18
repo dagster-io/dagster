@@ -5,7 +5,7 @@ from typing import Iterator, Optional
 from dagster import file_relative_path
 from dagster._core.host_representation import (
     JobHandle,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.host_representation.repository_location import CodeLocation
@@ -45,7 +45,7 @@ def get_bar_repo_repository_location(
         )
         location_name = "bar_repo_location"
 
-        origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+        origin = ManagedGrpcPythonEnvCodeLocationOrigin(loadable_target_origin, location_name)
 
         with origin.create_single_location(instance) as location:
             yield location

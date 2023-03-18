@@ -7,7 +7,7 @@ from dagster._core.code_pointer import rebase_file
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -72,7 +72,7 @@ def location_origins_from_config(
 
 def _location_origin_from_module_config(
     python_module_config: Union[str, Mapping[str, str]]
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
         attribute,
@@ -103,8 +103,8 @@ def _get_module_config_data(
 
 def _create_python_env_location_origin(
     loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str]
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
-    return ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
+    return ManagedGrpcPythonEnvCodeLocationOrigin(loadable_target_origin, location_name)
 
 
 def location_origin_from_module_name(
@@ -113,7 +113,7 @@ def location_origin_from_module_name(
     working_directory: Optional[str],
     location_name: Optional[str] = None,
     executable_path: Optional[str] = None,
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(module_name, "module_name")
     check.opt_str_param(attribute, "attribute")
     check.opt_str_param(working_directory, "working_directory")
@@ -133,7 +133,7 @@ def location_origin_from_module_name(
 
 def _location_origin_from_package_config(
     python_package_config: Union[str, Mapping[str, str]]
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     (
         module_name,
         attribute,
@@ -168,7 +168,7 @@ def location_origin_from_package_name(
     working_directory: Optional[str],
     location_name: Optional[str] = None,
     executable_path: Optional[str] = None,
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(package_name, "package_name")
     check.opt_str_param(attribute, "attribute")
     check.opt_str_param(working_directory, "working_directory")
@@ -191,7 +191,7 @@ def location_origin_from_package_name(
 def _location_origin_from_python_file_config(
     python_file_config: Union[str, Mapping],
     yaml_path: str,
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(yaml_path, "yaml_path")
 
     (
@@ -235,7 +235,7 @@ def location_origin_from_python_file(
     working_directory: Optional[str],
     location_name: Optional[str] = None,
     executable_path: Optional[str] = None,
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(python_file, "python_file")
     check.opt_str_param(attribute, "attribute")
     check.opt_str_param(working_directory, "working_directory")
@@ -316,7 +316,7 @@ def is_target_config(potential_target_config: object) -> bool:
 
 def _location_origin_from_target_config(
     target_config: Mapping[str, object], yaml_path: str
-) -> ManagedGrpcPythonEnvRepositoryLocationOrigin:
+) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.mapping_param(target_config, "target_config", key_type=str)
     check.param_invariant(is_target_config(target_config), "target_config")
     check.str_param(yaml_path, "yaml_path")

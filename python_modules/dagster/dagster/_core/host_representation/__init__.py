@@ -49,7 +49,7 @@ from .origin import (
     ExternalRepositoryOrigin as ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin as GrpcServerRepositoryLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin as ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from .pipeline_index import PipelineIndex as PipelineIndex
 from .repository_location import (

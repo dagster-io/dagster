@@ -7,7 +7,7 @@ import tomli
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 
 from .load import (
@@ -41,7 +41,7 @@ class WorkspaceFileTarget(
         return location_origins_from_yaml_paths(self.paths)
 
 
-def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
+def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
@@ -75,7 +75,7 @@ class PythonFileTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_python_file(
                 python_file=self.python_file,
@@ -98,7 +98,7 @@ class ModuleTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_module_name(
                 self.module_name,
@@ -121,7 +121,7 @@ class PackageTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_package_name(
                 self.package_name,

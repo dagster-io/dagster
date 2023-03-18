@@ -11,7 +11,7 @@ from dagster._core.host_representation import (
     CodeLocation,
     ExternalRepository,
     GrpcServerRepositoryLocation,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
@@ -91,7 +91,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         self._location = check.inst_param(location, "location", CodeLocation)
         environment_path = (
             location.origin.loadable_target_origin.executable_path
-            if isinstance(location.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+            if isinstance(location.origin, ManagedGrpcPythonEnvCodeLocationOrigin)
             else None
         )
 

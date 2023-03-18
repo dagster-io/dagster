@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from dagster import job, op, repository
 from dagster._core.host_representation import (
     JobHandle,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
@@ -35,7 +35,7 @@ def get_bar_repo_repository_location(instance):
     )
     location_name = "cloud_daemon_test_location"
 
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(loadable_target_origin, location_name)
 
     with origin.create_single_location(instance) as location:
         yield location

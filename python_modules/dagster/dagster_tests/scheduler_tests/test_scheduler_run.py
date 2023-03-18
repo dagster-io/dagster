@@ -31,7 +31,7 @@ from dagster._core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -718,7 +718,7 @@ def test_schedule_with_different_origin(
     existing_origin = external_schedule.get_external_origin()
 
     repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
-    assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+    assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
     modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
         executable_path="/different/executable_path"
     )
@@ -1483,7 +1483,7 @@ def test_load_repository_location_not_in_workspace(
         repo_location_origin = (
             valid_schedule_origin.external_repository_origin.repository_location_origin
         )
-        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         # Swap out a new location name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(

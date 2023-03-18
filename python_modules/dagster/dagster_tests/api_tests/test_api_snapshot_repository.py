@@ -8,7 +8,7 @@ from dagster._core.definitions import op
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalPipelineData
@@ -74,7 +74,7 @@ def giant_repo():
 
 @contextmanager
 def get_giant_repo_grpc_repository_location(instance):
-    with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+    with ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="giant_repo",
