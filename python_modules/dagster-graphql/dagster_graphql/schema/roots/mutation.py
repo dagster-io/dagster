@@ -514,7 +514,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
 
-        if not graphene_info.context.has_repository_location_name(repositoryLocationName):
+        if not graphene_info.context.has_code_location_name(repositoryLocationName):
             return GrapheneRepositoryLocationNotFound(repositoryLocationName)
 
         if not graphene_info.context.is_reload_supported(repositoryLocationName):
@@ -550,7 +550,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
-        if not graphene_info.context.has_repository_location_name(repositoryLocationName):
+        if not graphene_info.context.has_code_location_name(repositoryLocationName):
             return GrapheneRepositoryLocationNotFound(repositoryLocationName)
 
         if not graphene_info.context.is_shutdown_supported(repositoryLocationName):

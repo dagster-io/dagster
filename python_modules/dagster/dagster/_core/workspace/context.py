@@ -113,7 +113,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     def has_permission_for_location(self, permission: str, location_name: str) -> bool:
-        if self.has_repository_location_name(location_name):
+        if self.has_code_location_name(location_name):
             permissions = self.permissions_for_location(location_name=location_name)
             return permissions[permission].enabled
 
@@ -177,7 +177,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         entry = self.get_location_entry(name)
         return entry.load_error if entry else None
 
-    def has_repository_location_name(self, name: str) -> bool:
+    def has_code_location_name(self, name: str) -> bool:
         return bool(self.get_location_entry(name))
 
     def has_repository_location(self, name: str) -> bool:
