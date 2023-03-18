@@ -199,7 +199,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return self.process_context.create_request_context()
 
     def shutdown_code_location(self, name: str):
-        self.process_context.shutdown_repository_location(name)
+        self.process_context.shutdown_code_location(name)
 
     def reload_workspace(self) -> Self:
         self.process_context.reload_workspace()
@@ -404,7 +404,7 @@ class IWorkspaceProcessContext(ABC):
     def reload_code_location(self, name: str) -> None:
         pass
 
-    def shutdown_repository_location(self, name: str) -> None:
+    def shutdown_code_location(self, name: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -646,7 +646,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # is referencing it
             self._location_entry_dict[name] = new
 
-    def shutdown_repository_location(self, name: str) -> None:
+    def shutdown_code_location(self, name: str) -> None:
         with self._lock:
             self._location_entry_dict[name].origin.shutdown_server()
 
