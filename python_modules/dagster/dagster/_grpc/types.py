@@ -473,18 +473,19 @@ class PipelineSubsetSnapshotArgs(
         )
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class NotebookPathArgs(
     NamedTuple(
         "_NotebookPathArgs",
-        [("repository_location_origin", CodeLocationOrigin), ("notebook_path", str)],
+        [("code_location_origin", CodeLocationOrigin), ("notebook_path", str)],
     )
 ):
-    def __new__(cls, repository_location_origin: CodeLocationOrigin, notebook_path: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, notebook_path: str):
         return super(NotebookPathArgs, cls).__new__(
             cls,
-            repository_location_origin=check.inst_param(
-                repository_location_origin, "repository_location_origin", CodeLocationOrigin
+            code_location_origin=check.inst_param(
+                code_location_origin, "code_location_origin", CodeLocationOrigin
             ),
             notebook_path=check.str_param(notebook_path, "notebook_path"),
         )
