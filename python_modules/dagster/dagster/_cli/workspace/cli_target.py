@@ -724,13 +724,13 @@ def get_code_location_from_workspace(
     return workspace.get_code_location(provided_location_name)
 
 
-def get_external_repository_from_repo_location(
-    repo_location: CodeLocation, provided_repo_name: Optional[str]
+def get_external_repository_from_code_location(
+    code_location: CodeLocation, provided_repo_name: Optional[str]
 ) -> ExternalRepository:
-    check.inst_param(repo_location, "repo_location", CodeLocation)
+    check.inst_param(code_location, "code_location", CodeLocation)
     check.opt_str_param(provided_repo_name, "provided_repo_name")
 
-    repo_dict = repo_location.get_repositories()
+    repo_dict = code_location.get_repositories()
     check.invariant(repo_dict, "There should be at least one repo.")
 
     # no name provided and there is only one repo. Automatically return
@@ -742,22 +742,22 @@ def get_external_repository_from_repo_location(
             (
                 "Must provide --repository as there is more than one repository "
                 "in {location}. Options are: {repos}."
-            ).format(location=repo_location.name, repos=_sorted_quoted(repo_dict.keys()))
+            ).format(location=code_location.name, repos=_sorted_quoted(repo_dict.keys()))
         )
 
-    if not repo_location.has_repository(provided_repo_name):
+    if not code_location.has_repository(provided_repo_name):
         raise click.UsageError(
             (
                 'Repository "{provided_repo_name}" not found in location "{location_name}". '
                 "Found {found_names} instead."
             ).format(
                 provided_repo_name=provided_repo_name,
-                location_name=repo_location.name,
+                location_name=code_location.name,
                 found_names=_sorted_quoted(repo_dict.keys()),
             )
         )
 
-    return repo_location.get_repository(provided_repo_name)
+    return code_location.get_repository(provided_repo_name)
 
 
 @contextmanager
@@ -768,7 +768,7 @@ def get_external_repository_from_kwargs(
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_repository_location_from_kwargs(instance, version, kwargs) as repo_location:
         provided_repo_name = check.opt_str_elem(kwargs, "repository")
-        yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
+        yield get_external_repository_from_code_location(repo_location, provided_repo_name)
 
 
 def get_external_job_from_external_repo(

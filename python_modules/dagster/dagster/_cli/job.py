@@ -18,8 +18,8 @@ from dagster._cli.workspace.cli_target import (
     get_code_location_from_workspace,
     get_external_job_from_external_repo,
     get_external_job_from_kwargs,
+    get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
     get_job_python_origin_from_kwargs,
     get_workspace_from_kwargs,
     job_repository_target_argument,
@@ -450,7 +450,7 @@ def execute_launch_command(
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
         repo_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
-        external_repo = get_external_repository_from_repo_location(
+        external_repo = get_external_repository_from_code_location(
             repo_location, cast(Optional[str], kwargs.get("repository"))
         )
         external_pipeline = get_external_job_from_external_repo(
@@ -748,7 +748,7 @@ def _execute_backfill_command_at_location(
     workspace,
     repo_location,
 ):
-    external_repo = get_external_repository_from_repo_location(
+    external_repo = get_external_repository_from_code_location(
         repo_location, cli_args.get("repository")
     )
 

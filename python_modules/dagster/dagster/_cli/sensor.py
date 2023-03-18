@@ -9,8 +9,8 @@ from dagster import (
     __version__ as dagster_version,
 )
 from dagster._cli.workspace.cli_target import (
+    get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
     get_repository_location_from_kwargs,
     repository_target_argument,
 )
@@ -278,7 +278,7 @@ def execute_preview_command(
             kwargs=cli_args,
         ) as repo_location:
             try:
-                external_repo = get_external_repository_from_repo_location(
+                external_repo = get_external_repository_from_code_location(
                     repo_location, cli_args.get("repository")
                 )
                 check_repo_and_scheduler(external_repo, instance)
@@ -359,7 +359,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
 
             cursor_value = cli_args.get("set")
 
-            external_repo = get_external_repository_from_repo_location(
+            external_repo = get_external_repository_from_code_location(
                 repo_location, cli_args.get("repository")
             )
             check_repo_and_scheduler(external_repo, instance)
