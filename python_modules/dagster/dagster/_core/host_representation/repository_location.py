@@ -287,7 +287,7 @@ class CodeLocation(AbstractContextManager):
         ...
 
 
-class InProcessRepositoryLocation(CodeLocation):
+class InProcessCodeLocation(CodeLocation):
     def __init__(self, origin: InProcessCodeLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
         from dagster._utils.hosted_user_process import external_repo_from_def

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.repository_location import (
         CodeLocation,
         GrpcServerRepositoryLocation,
-        InProcessRepositoryLocation,
+        InProcessCodeLocation,
     )
     from dagster._core.instance import DagsterInstance
     from dagster._grpc.client import DagsterGrpcClient
@@ -186,12 +186,12 @@ class InProcessCodeLocationOrigin(
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
-    def create_location(self) -> "InProcessRepositoryLocation":
+    def create_location(self) -> "InProcessCodeLocation":
         from dagster._core.host_representation.repository_location import (
-            InProcessRepositoryLocation,
+            InProcessCodeLocation,
         )
 
-        return InProcessRepositoryLocation(self)
+        return InProcessCodeLocation(self)
 
 
 # Different storage name for backcompat
