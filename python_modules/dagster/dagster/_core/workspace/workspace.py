@@ -46,7 +46,7 @@ class IWorkspace(ABC):
         """Return an entry for each location in the workspace."""
 
     @abstractmethod
-    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
+    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
 
 

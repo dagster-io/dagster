@@ -195,6 +195,6 @@ def fetch_location_statuses(
                 ),
                 update_timestamp=status_entry.update_timestamp,
             )
-            for status_entry in workspace_request_context.get_location_statuses()
+            for status_entry in workspace_request_context.get_code_location_statuses()
         ]
     )

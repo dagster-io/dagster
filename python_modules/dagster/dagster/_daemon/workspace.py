@@ -44,7 +44,7 @@ class BaseDaemonWorkspace(IWorkspace):
             self._location_entries = self._load_workspace()
         return dict(self._location_entries)
 
-    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
+    def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return [
