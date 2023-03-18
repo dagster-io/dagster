@@ -7,8 +7,8 @@ from dagster._core.host_representation import (
     JobHandle,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.handle import RepositoryHandle
-from dagster._core.host_representation.repository_location import CodeLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

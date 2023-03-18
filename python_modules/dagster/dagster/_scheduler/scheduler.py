@@ -18,8 +18,8 @@ from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.repository_location import CodeLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,

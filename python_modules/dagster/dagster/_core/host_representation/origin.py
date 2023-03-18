@@ -25,7 +25,7 @@ from dagster._serdes import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.repository_location import (
+    from dagster._core.host_representation.code_location import (
         CodeLocation,
         GrpcServerCodeLocation,
         InProcessCodeLocation,
@@ -187,7 +187,7 @@ class InProcessCodeLocationOrigin(
         return {}
 
     def create_location(self) -> "InProcessCodeLocation":
-        from dagster._core.host_representation.repository_location import (
+        from dagster._core.host_representation.code_location import (
             InProcessCodeLocation,
         )
 
@@ -244,8 +244,8 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     ) -> Generator["CodeLocation", None, None]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
+        from .code_location import GrpcServerCodeLocation
         from .grpc_server_registry import GrpcServerRegistry
-        from .repository_location import GrpcServerCodeLocation
 
         with GrpcServerRegistry(
             instance=instance,
@@ -318,7 +318,7 @@ class GrpcServerCodeLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def create_location(self) -> "GrpcServerCodeLocation":
-        from dagster._core.host_representation.repository_location import (
+        from dagster._core.host_representation.code_location import (
             GrpcServerCodeLocation,
         )
 

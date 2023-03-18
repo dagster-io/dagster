@@ -1,6 +1,6 @@
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
-from dagster._core.host_representation.repository_location import CodeLocation
+from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error

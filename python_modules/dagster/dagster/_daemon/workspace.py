@@ -5,12 +5,12 @@ from typing import Mapping, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterRepositoryLocationLoadError
-from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.origin import CodeLocationOrigin
-from dagster._core.host_representation.repository_location import (
+from dagster._core.host_representation.code_location import (
     CodeLocation,
     GrpcServerCodeLocation,
 )
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.host_representation.origin import CodeLocationOrigin
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,

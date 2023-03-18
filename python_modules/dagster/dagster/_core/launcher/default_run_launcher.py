@@ -101,7 +101,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.host_representation.repository_location import (
+        from dagster._core.host_representation.code_location import (
             GrpcServerCodeLocation,
         )
 
@@ -221,10 +221,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def dispose(self):
         # defer for perf
-        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-        from dagster._core.host_representation.repository_location import (
+        from dagster._core.host_representation.code_location import (
             GrpcServerCodeLocation,
         )
+        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 
         if not self._wait_for_processes:
             return
