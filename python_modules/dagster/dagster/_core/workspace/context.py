@@ -617,7 +617,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             return len(self._location_entry_dict)
 
     @property
-    def repository_location_names(self) -> Sequence[str]:
+    def code_location_names(self) -> Sequence[str]:
         with self._lock:
             return list(self._location_entry_dict)
 
