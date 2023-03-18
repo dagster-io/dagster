@@ -46,13 +46,14 @@ from .events import AssetKey
 from .pipeline_base import IJob
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
         PendingRepositoryDefinition,
         RepositoryLoadData,
     )
+    from dagster._core.definitions.source_asset import SourceAsset
 
-    from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
     from .repository_definition import RepositoryDefinition
 
@@ -615,34 +616,45 @@ LoadableDefinition: TypeAlias = Union[
     "RepositoryDefinition",
     "PendingRepositoryDefinition",
     "GraphDefinition",
-    "AssetGroup",
+    "Sequence[Union[AssetsDefinition, SourceAsset]]",
 ]
 
 T_LoadableDefinition = TypeVar("T_LoadableDefinition", bound=LoadableDefinition)
 
 
-def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from dagster._core.definitions import AssetGroup
+def _is_list_of_assets(
+    definition: LoadableDefinition,
+) -> bool:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
 
+    return isinstance(definition, list) and all(
+        isinstance(item, (AssetsDefinition, SourceAsset)) for item in definition
+    )
+
+
+def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
 
-    if not isinstance(
-        definition,
-        (
-            JobDefinition,
-            RepositoryDefinition,
-            PendingRepositoryDefinition,
-            GraphDefinition,
-            AssetGroup,
-            Definitions,
-        ),
+    if not (
+        isinstance(
+            definition,
+            (
+                JobDefinition,
+                RepositoryDefinition,
+                PendingRepositoryDefinition,
+                GraphDefinition,
+                Definitions,
+            ),
+        )
+        or _is_list_of_assets(definition)
     ):
         raise DagsterInvariantViolationError(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-            f"JobDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
+            f"or RepositoryDefinition. Got {repr(definition)}."
         )
     return definition
 
@@ -672,8 +684,6 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from dagster._core.definitions import AssetGroup
-
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
     from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
@@ -681,7 +691,6 @@ def def_from_pointer(
     if isinstance(
         target,
         (
-            AssetGroup,
             GraphDefinition,
             JobDefinition,
             PendingRepositoryDefinition,
@@ -719,9 +728,8 @@ def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
 
 
 @overload
-# NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(
-    target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition", "AssetGroup"],
+    target: Union["RepositoryDefinition", "JobDefinition", "GraphDefinition"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":
     ...
@@ -737,8 +745,7 @@ def repository_def_from_target_def(
 def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> Optional["RepositoryDefinition"]:
-    from dagster._core.definitions import AssetGroup
-
+    from .assets import AssetsDefinition
     from .definitions_class import Definitions
     from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
@@ -748,6 +755,7 @@ def repository_def_from_target_def(
         PendingRepositoryDefinition,
         RepositoryDefinition,
     )
+    from .source_asset import SourceAsset
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case
@@ -760,10 +768,12 @@ def repository_def_from_target_def(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
         )
-    elif isinstance(target, AssetGroup):
+    elif isinstance(target, list) and all(
+        isinstance(item, (AssetsDefinition, SourceAsset)) for item in target
+    ):
         return RepositoryDefinition(
             name=SINGLETON_REPOSITORY_NAME,
-            repository_data=CachingRepositoryData.from_list([target]),
+            repository_data=CachingRepositoryData.from_list(target),
         )
     elif isinstance(target, RepositoryDefinition):
         return target

@@ -33,7 +33,7 @@ from dagster import (
     with_resources,
 )
 from dagster._config import StringSource
-from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
@@ -877,7 +877,7 @@ def test_execute_graph_asset():
         keys_by_output_name={"y": AssetKey("y_asset"), "x": AssetKey("x_asset")},
     )
 
-    assert AssetGroup([assets_def]).build_job("abc").execute_in_process().success
+    assert materialize_to_memory([assets_def]).success
 
 
 def test_graph_asset_partitioned():
@@ -893,7 +893,7 @@ def test_graph_asset_partitioned():
         graph_def=my_graph, partitions_def=StaticPartitionsDefinition(["a", "b", "c"])
     )
 
-    AssetGroup([assets_def]).build_job("abc").execute_in_process(partition_key="a")
+    assert materialize_to_memory([assets_def], partition_key="a").success
 
 
 def test_all_assets_job():
@@ -1243,13 +1243,14 @@ def unconnected():
     pass
 
 
-asset_group = AssetGroup([foo, ab, bar, foo_bar, baz, unconnected])
+asset_defs = [foo, ab, bar, foo_bar, baz, unconnected]
 
 
 def test_disconnected_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance, asset_selection=[AssetKey("unconnected"), AssetKey("bar")]
         )
         materialization_events = [
@@ -1263,8 +1264,9 @@ def test_disconnected_subset():
 
 def test_connected_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
         )
@@ -1281,7 +1283,8 @@ def test_connected_subset():
 
 def test_subset_of_asset_job():
     with instance_for_test() as instance:
-        foo_job = asset_group.build_job("foo_job", selection=["*baz"])
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo", "*baz")])
+        foo_job = defs.get_job_def("foo")
         result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("bar"), AssetKey("foo_bar")],
@@ -1513,21 +1516,26 @@ def test_raise_error_on_incomplete_graph_asset_subset():
         result = foo()
         return do_something(result), do_something(result)
 
-    job = AssetGroup(
-        [
+    defs = Definitions(
+        assets=[
             AssetsDefinition.from_graph(complicated_graph),
         ],
-    ).build_job("job")
+        jobs=[define_asset_job("foo_job")],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidSubsetError, match="complicated_graph"):
-            job.execute_in_process(instance=instance, asset_selection=[AssetKey("comments_table")])
+            foo_job.execute_in_process(
+                instance=instance, asset_selection=[AssetKey("comments_table")]
+            )
 
 
 def test_multi_subset():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a")],
         )
@@ -1543,8 +1551,9 @@ def test_multi_subset():
 
 def test_multi_all():
     with instance_for_test() as instance:
-        job = asset_group.build_job("foo")
-        result = job.execute_in_process(
+        defs = Definitions(assets=asset_defs, jobs=[define_asset_job("foo")])
+        foo_job = defs.get_job_def("foo")
+        result = foo_job.execute_in_process(
             instance=instance,
             asset_selection=[AssetKey("foo"), AssetKey("a"), AssetKey("b")],
         )
@@ -1577,11 +1586,11 @@ def test_subset_with_source_asset():
     def my_derived_asset(my_source_asset):
         return my_source_asset + 4
 
-    source_asset_job = AssetGroup(
-        assets=[my_derived_asset],
-        source_assets=[my_source_asset],
-        resource_defs={"the_manager": the_manager},
-    ).build_job("source_asset_job")
+    source_asset_job = Definitions(
+        assets=[my_derived_asset, my_source_asset],
+        resources={"the_manager": the_manager},
+        jobs=[define_asset_job("source_asset_job", [my_derived_asset])],
+    ).get_job_def("source_asset_job")
 
     result = source_asset_job.execute_in_process(asset_selection=[AssetKey("my_derived_asset")])
     assert result.success
@@ -1617,11 +1626,16 @@ def test_op_outputs_with_default_asset_io_mgr():
         assert asset_1 == 25
         return asset_1
 
-    my_job = AssetGroup(
-        [AssetsDefinition.from_graph(complicated_graph), my_asset],
-    ).build_job("my_job", executor_def=in_process_executor)
+    defs = Definitions(
+        assets=[
+            AssetsDefinition.from_graph(complicated_graph),
+            my_asset,
+        ],
+        jobs=[define_asset_job("foo_job", executor_def=in_process_executor)],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
-    result = my_job.execute_in_process()
+    result = foo_job.execute_in_process()
     assert result.success
 
 
@@ -1659,11 +1673,15 @@ def test_graph_output_is_input_within_graph():
         one, two = nested()
         return one, two, transform(two)
 
-    my_job = AssetGroup(
-        [AssetsDefinition.from_graph(complicated_graph)],
-    ).build_job("my_job")
+    defs = Definitions(
+        assets=[
+            AssetsDefinition.from_graph(complicated_graph),
+        ],
+        jobs=[define_asset_job("foo_job")],
+    )
+    foo_job = defs.get_job_def("foo_job")
 
-    result = my_job.execute_in_process()
+    result = foo_job.execute_in_process()
     assert result.success
 
     assert result.output_for_node("complicated_graph.nested", "one") == 3

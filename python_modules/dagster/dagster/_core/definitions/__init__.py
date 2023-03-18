@@ -114,7 +114,6 @@ from .sensor_definition import (
 )
 
 # isort: split
-from .asset_group import AssetGroup as AssetGroup
 from .asset_in import AssetIn as AssetIn
 from .asset_out import AssetOut as AssetOut
 from .asset_selection import AssetSelection as AssetSelection

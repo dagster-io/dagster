@@ -33,7 +33,6 @@ from dagster._check import CheckError
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
 
 
@@ -235,15 +234,13 @@ def test_direct_schedule_unresolved_target():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @schedule(cron_schedule="* * * * *", job=unresolved_job)
     def direct_schedule():
         return {}
 
     @repository
     def test():
-        return [direct_schedule, foo_group]
+        return [direct_schedule, foo]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -275,15 +272,13 @@ def test_direct_sensor_unresolved_target():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
     @repository
     def test():
-        return [direct_sensor, foo_group]
+        return [direct_sensor, foo]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -317,15 +312,13 @@ def test_target_dupe_unresolved():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
     @repository
     def test():
-        return [foo_group, direct_sensor, unresolved_job]
+        return [foo, direct_sensor, unresolved_job]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
@@ -355,11 +348,9 @@ def test_unresolved_job():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @repository
     def test():
-        return [foo_group, unresolved_job]
+        return [foo, unresolved_job]
 
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
     assert isinstance(test.get_job("unresolved_job"), JobDefinition)
@@ -475,8 +466,6 @@ def test_dupe_unresolved_job_defs():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     @op
     def the_op():
         pass
@@ -494,13 +483,13 @@ def test_dupe_unresolved_job_defs():
 
         @repository
         def _pipe_collide():
-            return [foo_group, unresolved_job, bar]
+            return [foo, unresolved_job, bar]
 
     def get_collision_repo():
         @repository
         def graph_collide():
             return [
-                foo_group,
+                foo,
                 graph_bar.to_job(name="bar"),
                 unresolved_job,
             ]
@@ -655,35 +644,11 @@ def test_source_assets():
 
     @repository
     def my_repo():
-        return [AssetGroup(assets=[], source_assets=[foo, bar])]
+        return [foo, bar]
 
     assert my_repo.source_assets_by_key == {
         AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
         AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
-    }
-
-
-def test_multiple_asset_groups_one_repo():
-    @asset
-    def asset1():
-        ...
-
-    @asset
-    def asset2():
-        ...
-
-    group1 = AssetGroup(assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))])
-    group2 = AssetGroup(assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))])
-
-    @repository
-    def my_repo():
-        return [group1, group2]
-
-    assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
-    assert len(my_repo.get_all_jobs()) == 1
-    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
-        AssetKey(["asset1"]),
-        AssetKey(["asset2"]),
     }
 
 
@@ -1009,8 +974,6 @@ def test_duplicate_unresolved_job_target_invalid():
     def foo():
         return None
 
-    foo_group = AssetGroup([foo])
-
     # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1022,7 +985,7 @@ def test_duplicate_unresolved_job_target_invalid():
 
         @repository
         def the_repo_dupe_graph_invalid_sensor():
-            return [foo_group, the_job, _create_sensor_from_target(other_job)]
+            return [foo, the_job, _create_sensor_from_target(other_job)]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -1034,7 +997,7 @@ def test_duplicate_unresolved_job_target_invalid():
 
         @repository
         def the_repo_dupe_graph_invalid_schedule():
-            return [foo_group, the_job, _create_schedule_from_target(other_job)]
+            return [foo, the_job, _create_schedule_from_target(other_job)]
 
 
 def test_duplicate_job_target_valid():

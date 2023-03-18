@@ -28,7 +28,8 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
@@ -363,14 +364,13 @@ def test_fs_io_manager_partitioned_multi_asset():
             del upstream_asset_1
             return 2
 
-        group = AssetGroup(
-            [upstream_asset, downstream_asset],
-            resource_defs={"io_manager": io_manager_def},
-        )
+        foo_job = Definitions(
+            assets=[upstream_asset, downstream_asset],
+            resources={"io_manager": io_manager_def},
+            jobs=[define_asset_job("TheJob")],
+        ).get_job_def("TheJob")
 
-        job = group.build_job(name="TheJob")
-
-        result = job.execute_in_process(partition_key="A")
+        result = foo_job.execute_in_process(partition_key="A")
         assert result.success
 
         handled_output_events = list(

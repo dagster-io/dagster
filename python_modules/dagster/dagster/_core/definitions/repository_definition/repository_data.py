@@ -322,9 +322,8 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
-                Use this constructor when you have no need to lazy load jobs or other
-                definitions.
+            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, GraphDefinition]]):
+                Use this constructor when you have no need to lazy load jobs or other definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
         """

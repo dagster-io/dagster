@@ -20,7 +20,9 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.pipeline_base import InMemoryJob
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -31,7 +33,6 @@ from dagster._core.storage.pipeline_run import (
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup
 from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
@@ -195,16 +196,17 @@ def test_asset_io_manager(gcs_bucket):
         return 8
 
     fake_gcs_client = FakeGCSClient()
-    asset_group = AssetGroup(
-        [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
-        resource_defs={
+    defs = Definitions(
+        assets=[upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
+        resources={
             "io_manager": gcs_pickle_io_manager.configured(
                 {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
             ),
             "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
         },
+        jobs=[define_asset_job("my_asset_job")],
     )
-    asset_job = asset_group.build_job(name="my_asset_job")
+    asset_job = defs.get_job_def("my_asset_job")
 
     result = asset_job.execute_in_process(partition_key="apple")
     assert result.success
