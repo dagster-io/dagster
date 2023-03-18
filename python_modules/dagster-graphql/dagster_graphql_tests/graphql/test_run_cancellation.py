@@ -309,7 +309,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             graphql_context.instance.run_launcher.terminate = old_terminate
 
             # Clean up the run process on the gRPC server
-            repository_location = graphql_context.repository_locations[0]
+            repository_location = graphql_context.code_locations[0]
             repository_location.client.cancel_execution(CancelExecutionRequest(run_id=run_id))
 
             assert (

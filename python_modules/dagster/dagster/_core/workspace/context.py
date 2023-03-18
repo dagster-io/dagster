@@ -154,7 +154,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     @property
-    def repository_locations(self) -> Sequence[CodeLocation]:
+    def code_locations(self) -> Sequence[CodeLocation]:
         return [
             entry.repository_location
             for entry in self.get_workspace_snapshot().values()

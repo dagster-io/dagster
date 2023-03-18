@@ -94,9 +94,9 @@ def define_out_of_process_workspace(python_file, fn_name, instance, read_only=Fa
 
 
 def infer_repository(graphql_context):
-    if len(graphql_context.repository_locations) == 1:
+    if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
-        repository_location = graphql_context.repository_locations[0]
+        repository_location = graphql_context.code_locations[0]
         repositories = repository_location.get_repositories()
         assert len(repositories) == 1
         return next(iter(repositories.values()))
@@ -106,9 +106,9 @@ def infer_repository(graphql_context):
 
 
 def infer_repository_selector(graphql_context):
-    if len(graphql_context.repository_locations) == 1:
+    if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
-        repository_location = graphql_context.repository_locations[0]
+        repository_location = graphql_context.code_locations[0]
         repositories = repository_location.get_repositories()
         assert len(repositories) == 1
         repository = next(iter(repositories.values()))

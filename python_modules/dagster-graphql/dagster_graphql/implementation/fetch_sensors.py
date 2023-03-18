@@ -105,7 +105,7 @@ def stop_sensor(
 
     external_sensors = {
         sensor.get_external_origin_id(): sensor
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
@@ -142,7 +142,7 @@ def get_unloadable_sensor_states_or_error(
     )
     external_sensors = [
         sensor
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     ]

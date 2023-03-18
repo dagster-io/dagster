@@ -24,7 +24,7 @@ def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", inst
     )
     external_instigators = [
         instigator
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for instigator in chain(
             repository.get_external_schedules(), repository.get_external_sensors()

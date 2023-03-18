@@ -386,7 +386,7 @@ class CrossRepoAssetDependedByLoader:
         external_asset_node_by_asset_key: Dict[
             AssetKey, ExternalAssetNode
         ] = {}  # only contains derived assets
-        for location in self._context.repository_locations:
+        for location in self._context.code_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
                 asset_nodes = external_repo.get_external_asset_nodes()

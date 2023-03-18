@@ -125,7 +125,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnec
                 repository=repository,
                 repository_location=location,
             )
-            for location in graphene_info.context.repository_locations
+            for location in graphene_info.context.code_locations
             for repository in location.get_repositories().values()
         ]
     )

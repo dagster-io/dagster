@@ -125,7 +125,7 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 def asset_node_iter(
     graphene_info,
 ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.repository_locations:
+    for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
                 yield location, repository, external_asset_node

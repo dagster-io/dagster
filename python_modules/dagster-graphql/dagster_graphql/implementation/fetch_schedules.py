@@ -59,7 +59,7 @@ def stop_schedule(
 
     external_schedules = {
         job.get_external_origin_id(): job
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for job in repository.get_external_schedules()
     }
