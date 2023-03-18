@@ -52,7 +52,7 @@ def _get_external_pipeline_or_raise(
     elif ignore_subset:
         external_pipeline = ctx.get_full_external_job(selector)
     else:
-        repository_location = ctx.get_repository_location(selector.location_name)
+        repository_location = ctx.get_code_location(selector.location_name)
         try:
             external_pipeline = repository_location.get_external_pipeline(selector)
         except Exception:
@@ -141,7 +141,7 @@ def fetch_repository(
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     if graphene_info.context.has_repository_location(repository_selector.location_name):
-        repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
+        repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
                 instance=graphene_info.context.instance,

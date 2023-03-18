@@ -101,7 +101,7 @@ def infer_repository(graphql_context):
         assert len(repositories) == 1
         return next(iter(repositories.values()))
 
-    repository_location = graphql_context.get_repository_location("test")
+    repository_location = graphql_context.get_code_location("test")
     return repository_location.get_repository("test_repo")
 
 
@@ -113,7 +113,7 @@ def infer_repository_selector(graphql_context):
         assert len(repositories) == 1
         repository = next(iter(repositories.values()))
     else:
-        repository_location = graphql_context.get_repository_location("test")
+        repository_location = graphql_context.get_code_location("test")
         repository = repository_location.get_repository("test_repo")
 
     return {

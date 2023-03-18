@@ -61,7 +61,7 @@ def get_graph_or_error(graphene_info, graph_selector):
     if not graphene_info.context.has_repository_location(graph_selector.location_name):
         return GrapheneGraphNotFoundError(selector=graph_selector)
 
-    repo_loc = graphene_info.context.get_repository_location(graph_selector.location_name)
+    repo_loc = graphene_info.context.get_code_location(graph_selector.location_name)
     if not repo_loc.has_repository(graph_selector.repository_name):
         return GrapheneGraphNotFoundError(selector=graph_selector)
 

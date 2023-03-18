@@ -54,17 +54,17 @@ def test_get_repository_location():
         read_only=True,
     )
 
-    assert context.get_repository_location("loaded_loc") == mock_loc
+    assert context.get_code_location("loaded_loc") == mock_loc
     with pytest.raises(DagsterRepositoryLocationLoadError, match="oopsie"):
-        context.get_repository_location("error_loc")
+        context.get_code_location("error_loc")
 
     with pytest.raises(
         DagsterRepositoryLocationNotFoundError, match="Location loading_loc is still loading"
     ):
-        context.get_repository_location("loading_loc")
+        context.get_code_location("loading_loc")
 
     with pytest.raises(
         DagsterRepositoryLocationNotFoundError,
         match="Location missing_loc does not exist in workspace",
     ):
-        context.get_repository_location("missing_loc")
+        context.get_code_location("missing_loc")

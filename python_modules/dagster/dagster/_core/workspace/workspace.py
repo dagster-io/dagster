@@ -37,7 +37,7 @@ class IWorkspace(ABC):
     """Manages a set of RepositoryLocations."""
 
     @abstractmethod
-    def get_repository_location(self, location_name: str) -> "CodeLocation":
+    def get_code_location(self, location_name: str) -> "CodeLocation":
         """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it.
         """
 

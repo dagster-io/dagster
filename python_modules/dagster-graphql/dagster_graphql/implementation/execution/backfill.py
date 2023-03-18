@@ -52,7 +52,7 @@ def create_and_launch_partition_backfill(
         assert_permission_for_location(
             graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
         )
-        location = graphene_info.context.get_repository_location(repository_selector.location_name)
+        location = graphene_info.context.get_code_location(repository_selector.location_name)
 
         repository = location.get_repository(repository_selector.repository_name)
         matches = [

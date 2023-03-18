@@ -587,7 +587,7 @@ def _schedule_runs_at_time(
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
-    repo_location = workspace_process_context.create_request_context().get_repository_location(
+    repo_location = workspace_process_context.create_request_context().get_code_location(
         schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 

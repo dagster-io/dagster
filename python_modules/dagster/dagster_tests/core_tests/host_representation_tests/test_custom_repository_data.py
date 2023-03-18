@@ -88,7 +88,7 @@ def workspace_process_context_fixture(instance):
 
 def test_repository_data_can_reload_without_restarting(workspace_process_context):
     request_context = workspace_process_context.create_request_context()
-    repo_location = request_context.get_repository_location("test")
+    repo_location = request_context.get_code_location("test")
     repo = repo_location.get_repository("bar_repo")
     # get_all_pipelines called on server init twice, then on repository load, so starts at 3
     # this is a janky test
@@ -103,7 +103,7 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
     # to restart the server process
     workspace_process_context.reload_repository_location("test")
     request_context = workspace_process_context.create_request_context()
-    repo_location = request_context.get_repository_location("test")
+    repo_location = request_context.get_code_location("test")
     repo = repo_location.get_repository("bar_repo")
     assert repo.has_external_job("foo_4")
     assert not repo.has_external_job("foo_3")

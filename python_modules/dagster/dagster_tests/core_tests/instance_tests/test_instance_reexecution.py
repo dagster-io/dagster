@@ -69,7 +69,7 @@ def workspace_fixture(instance):
 
 @pytest.fixture(name="repo_location", scope="module")
 def repo_location_fixture(workspace):
-    return workspace.get_repository_location("repo_loc")
+    return workspace.get_code_location("repo_loc")
 
 
 @pytest.fixture(name="external_pipeline", scope="module")

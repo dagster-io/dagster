@@ -160,7 +160,7 @@ def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCo
 @contextmanager
 def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
     with get_main_workspace(instance) as workspace:
-        location = workspace.get_repository_location(main_repo_location_name())
+        location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 

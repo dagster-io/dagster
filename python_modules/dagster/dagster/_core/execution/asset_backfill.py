@@ -257,7 +257,7 @@ def submit_run_request(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
     location_name = repo_handle.repository_location_origin.location_name
-    repo_location = workspace.get_repository_location(
+    repo_location = workspace.get_code_location(
         repo_handle.repository_location_origin.location_name
     )
     job_name = _get_implicit_job_name_for_assets(

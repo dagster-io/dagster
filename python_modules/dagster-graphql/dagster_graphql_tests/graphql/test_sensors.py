@@ -688,7 +688,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
 
 def test_sensor_next_ticks(graphql_context):
-    external_repository = graphql_context.get_repository_location(
+    external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
@@ -772,7 +772,7 @@ def _create_tick(graphql_context):
 
 
 def test_sensor_tick_range(graphql_context):
-    external_repository = graphql_context.get_repository_location(
+    external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
@@ -874,7 +874,7 @@ def test_repository_batching(graphql_context):
 
 
 def test_sensor_ticks_filtered(graphql_context):
-    external_repository = graphql_context.get_repository_location(
+    external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
@@ -1023,7 +1023,7 @@ def test_unloadable_sensor(graphql_context):
 
 def test_sensor_tick_logs(graphql_context):
     instance = graphql_context.instance
-    external_repository = graphql_context.get_repository_location(
+    external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 

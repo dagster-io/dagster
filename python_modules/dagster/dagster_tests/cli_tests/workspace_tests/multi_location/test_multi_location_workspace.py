@@ -61,9 +61,7 @@ def test_multi_file_override_workspace(instance):
         assert workspace.has_repository_location("loaded_from_module")
         assert workspace.has_repository_location("loaded_from_package")
 
-        loaded_from_file = workspace.create_request_context().get_repository_location(
-            "loaded_from_file"
-        )
+        loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()
@@ -87,9 +85,7 @@ def test_multi_file_extend_and_override_workspace(instance):
         assert workspace.has_repository_location("loaded_from_package")
         assert workspace.has_repository_location("extra_location")
 
-        loaded_from_file = workspace.create_request_context().get_repository_location(
-            "loaded_from_file"
-        )
+        loaded_from_file = workspace.create_request_context().get_code_location("loaded_from_file")
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = loaded_from_file.get_repositories()

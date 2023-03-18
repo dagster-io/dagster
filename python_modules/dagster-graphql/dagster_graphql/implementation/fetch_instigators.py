@@ -52,7 +52,7 @@ def get_instigator_state_or_error(graphene_info, selector):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
     check.inst_param(selector, "selector", InstigatorSelector)
-    location = graphene_info.context.get_repository_location(selector.location_name)
+    location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
     if repository.has_external_sensor(selector.name):

@@ -94,9 +94,7 @@ def retry_run(
         return
 
     origin = failed_run.external_pipeline_origin.external_repository_origin
-    repo_location = workspace.get_repository_location(
-        origin.repository_location_origin.location_name
-    )
+    repo_location = workspace.get_code_location(origin.repository_location_origin.location_name)
     repo_name = origin.repository_name
 
     if not repo_location.has_repository(repo_name):

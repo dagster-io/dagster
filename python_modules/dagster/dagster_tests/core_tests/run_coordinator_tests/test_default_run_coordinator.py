@@ -39,7 +39,7 @@ def create_run(instance, external_pipeline, **kwargs):
 def test_submit_run(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
         external_pipeline = (
-            workspace.get_repository_location("bar_repo_location")
+            workspace.get_code_location("bar_repo_location")
             .get_repository("bar_repo")
             .get_full_external_job("foo")
         )
@@ -58,7 +58,7 @@ def test_submit_run(instance, coodinator):
 def test_submit_run_checks_status(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
         external_pipeline = (
-            workspace.get_repository_location("bar_repo_location")
+            workspace.get_code_location("bar_repo_location")
             .get_repository("bar_repo")
             .get_full_external_job("foo")
         )

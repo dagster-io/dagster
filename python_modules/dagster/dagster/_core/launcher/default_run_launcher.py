@@ -115,7 +115,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         external_pipeline_origin = check.not_none(run.external_pipeline_origin)
-        repository_location = context.workspace.get_repository_location(
+        repository_location = context.workspace.get_code_location(
             external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 

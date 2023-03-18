@@ -721,7 +721,7 @@ def get_repository_location_from_workspace(
             )
         )
 
-    return workspace.get_repository_location(provided_location_name)
+    return workspace.get_code_location(provided_location_name)
 
 
 def get_external_repository_from_repo_location(

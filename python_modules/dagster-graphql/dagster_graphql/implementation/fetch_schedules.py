@@ -39,7 +39,7 @@ def start_schedule(
     from ..schema.schedules import GrapheneScheduleStateResult
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
-    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    location = graphene_info.context.get_code_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
     schedule_state = instance.start_schedule(
@@ -105,7 +105,7 @@ def get_schedules_or_error(
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    location = graphene_info.context.get_code_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     external_schedules = repository.get_external_schedules()
@@ -135,7 +135,7 @@ def get_schedules_for_pipeline(
 
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
 
-    location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
+    location = graphene_info.context.get_code_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)
     external_schedules = repository.get_external_schedules()
 
@@ -161,7 +161,7 @@ def get_schedule_or_error(
     from ..schema.schedules import GrapheneSchedule
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
-    location = graphene_info.context.get_repository_location(schedule_selector.location_name)
+    location = graphene_info.context.get_code_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
 
     if not repository.has_external_schedule(schedule_selector.schedule_name):
@@ -190,7 +190,7 @@ def get_schedule_next_tick(
         repository_origin.repository_location_origin.location_name
     ):
         return None
-    repository_location = graphene_info.context.get_repository_location(
+    repository_location = graphene_info.context.get_code_location(
         repository_origin.repository_location_origin.location_name
     )
     if not repository_location.has_repository(repository_origin.repository_name):

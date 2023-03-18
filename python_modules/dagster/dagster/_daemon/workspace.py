@@ -58,7 +58,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def get_workspace_copy_for_iteration(self):
         return DaemonIterationWorkspace(self.get_workspace_snapshot())
 
-    def get_repository_location(self, location_name: str) -> CodeLocation:
+    def get_code_location(self, location_name: str) -> CodeLocation:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
 

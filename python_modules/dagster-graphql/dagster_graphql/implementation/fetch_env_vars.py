@@ -19,7 +19,7 @@ def get_utilized_env_vars_or_error(
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    location: CodeLocation = graphene_info.context.get_repository_location(
+    location: CodeLocation = graphene_info.context.get_code_location(
         repository_selector.location_name
     )
     repository = location.get_repository(repository_selector.repository_name)

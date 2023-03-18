@@ -65,7 +65,7 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
     def test_retry_execution_permission_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "eventually_successful")
 
-        repository_location = graphql_context.get_repository_location("test")
+        repository_location = graphql_context.get_code_location("test")
         repository = repository_location.get_repository("test_repo")
         external_pipeline_origin = repository.get_full_external_job(
             "eventually_successful"

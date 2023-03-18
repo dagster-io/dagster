@@ -159,7 +159,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if not graphene_info.context.has_repository_location(location_name):
             return None
 
-        location = graphene_info.context.get_repository_location(location_name)
+        location = graphene_info.context.get_code_location(location_name)
         if not location.has_repository(repository_name):
             return None
 

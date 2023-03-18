@@ -275,7 +275,7 @@ def get_test_project_external_pipeline_hierarchy(
     instance, pipeline_name, container_image=None, filename=None
 ):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
-        location = workspace.get_repository_location(workspace.repository_location_names[0])
+        location = workspace.get_code_location(workspace.repository_location_names[0])
         repo = location.get_repository("demo_execution_repo")
         pipeline = repo.get_full_external_job(pipeline_name)
         yield workspace, location, repo, pipeline
@@ -284,7 +284,7 @@ def get_test_project_external_pipeline_hierarchy(
 @contextmanager
 def get_test_project_external_repo(instance, container_image=None, filename=None):
     with get_test_project_workspace(instance, container_image, filename) as workspace:
-        location = workspace.get_repository_location(workspace.repository_location_names[0])
+        location = workspace.get_code_location(workspace.repository_location_names[0])
         yield location, location.get_repository("demo_execution_repo")
 
 

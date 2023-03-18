@@ -46,7 +46,7 @@ def test_run_always_finishes():
                 workspace = workspace_process_context.create_request_context()
 
                 external_pipeline = (
-                    workspace.get_repository_location("test")
+                    workspace.get_code_location("test")
                     .get_repository("nope")
                     .get_full_external_job("slow_pipeline")
                 )
@@ -105,7 +105,7 @@ def test_run_from_pending_repository():
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
 
-                repo_location = workspace.get_repository_location("test2")
+                repo_location = workspace.get_code_location("test2")
                 external_pipeline = repo_location.get_repository("pending").get_full_external_job(
                     "my_cool_asset_job"
                 )
@@ -206,7 +206,7 @@ def test_terminate_after_shutdown():
             workspace = workspace_process_context.create_request_context()
 
             external_pipeline = (
-                workspace.get_repository_location("test")
+                workspace.get_code_location("test")
                 .get_repository("nope")
                 .get_full_external_job("sleepy_pipeline")
             )
@@ -222,14 +222,14 @@ def test_terminate_after_shutdown():
 
             poll_for_step_start(instance, pipeline_run.run_id)
 
-            repository_location = workspace.get_repository_location("test")
+            repository_location = workspace.get_code_location("test")
             # Tell the server to shut down once executions finish
             repository_location.grpc_server_registry.get_grpc_endpoint(
                 repository_location.origin
             ).create_client().shutdown_server()
 
             external_pipeline = (
-                workspace.get_repository_location("test")
+                workspace.get_code_location("test")
                 .get_repository("nope")
                 .get_full_external_job("math_diamond")
             )
@@ -278,7 +278,7 @@ def test_server_down():
                 workspace = workspace_process_context.create_request_context()
 
                 external_pipeline = (
-                    workspace.get_repository_location("test")
+                    workspace.get_code_location("test")
                     .get_repository("nope")
                     .get_full_external_job("sleepy_pipeline")
                 )

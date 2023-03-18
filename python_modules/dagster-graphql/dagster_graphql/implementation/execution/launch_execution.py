@@ -100,7 +100,7 @@ def launch_reexecution_from_parent_run(
         selector.location_name,
     )
 
-    repo_location = graphene_info.context.get_repository_location(selector.location_name)
+    repo_location = graphene_info.context.get_code_location(selector.location_name)
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(

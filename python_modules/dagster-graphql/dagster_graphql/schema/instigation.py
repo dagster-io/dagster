@@ -204,9 +204,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 GrapheneRepositoryLocationNotFound(location_name=self._selector.location_name)
             )
 
-        repository_location = graphene_info.context.get_repository_location(
-            self._selector.location_name
-        )
+        repository_location = graphene_info.context.get_code_location(self._selector.location_name)
         if not repository_location.has_repository(self._selector.repository_name):
             raise UserFacingGraphQLError(
                 GrapheneRepositoryNotFoundError(

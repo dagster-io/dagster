@@ -132,7 +132,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_repository_location(self, location_name: str) -> CodeLocation:
+    def get_code_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterRepositoryLocationNotFoundError(
@@ -210,14 +210,14 @@ class BaseWorkspaceRequestContext(IWorkspace):
         if not self.has_repository_location(selector.location_name):
             return False
 
-        loc = self.get_repository_location(selector.location_name)
+        loc = self.get_code_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
         ).has_external_job(selector.pipeline_name)
 
     def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
         return (
-            self.get_repository_location(selector.location_name)
+            self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
             .get_full_external_job(selector.pipeline_name)
         )
@@ -230,7 +230,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
-        return self.get_repository_location(
+        return self.get_code_location(
             external_pipeline.handle.location_name
         ).get_external_execution_plan(
             external_pipeline=external_pipeline,
@@ -248,7 +248,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
-        return self.get_repository_location(
+        return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_config(
             repository_handle=repository_handle,
@@ -264,9 +264,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
-        return self.get_repository_location(
-            repository_handle.location_name
-        ).get_external_partition_tags(
+        return self.get_code_location(repository_handle.location_name).get_external_partition_tags(
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_name=partition_name,
@@ -276,7 +274,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def get_external_partition_names(
         self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
-        return self.get_repository_location(
+        return self.get_code_location(
             external_partition_set.repository_handle.location_name
         ).get_external_partition_names(external_partition_set, instance=instance)
 
@@ -287,7 +285,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         partition_names: Sequence[str],
         instance: DagsterInstance,
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
-        return self.get_repository_location(
+        return self.get_code_location(
             repository_handle.location_name
         ).get_external_partition_set_execution_param_data(
             repository_handle=repository_handle,
@@ -301,7 +299,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     ) -> bytes:
         check.str_param(repository_location_name, "repository_location_name")
         check.str_param(notebook_path, "notebook_path")
-        repository_location = self.get_repository_location(repository_location_name)
+        repository_location = self.get_code_location(repository_location_name)
         return repository_location.get_external_notebook_data(notebook_path=notebook_path)
 
 
