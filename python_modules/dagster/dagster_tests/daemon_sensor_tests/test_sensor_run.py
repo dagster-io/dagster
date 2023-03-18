@@ -4,6 +4,7 @@ import string
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from unittest import mock
 
@@ -43,6 +44,10 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Run
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.origin import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -53,6 +58,7 @@ from dagster._core.test_utils import (
     instance_for_test,
     wait_for_futures,
 )
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._legacy import pipeline
@@ -941,7 +947,12 @@ def test_simple_sensor(instance, workspace_context, external_repo, executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_sensors_keyed_on_selector_not_origin(instance, workspace_context, external_repo, executor):
+def test_sensors_keyed_on_selector_not_origin(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -953,6 +964,7 @@ def test_sensors_keyed_on_selector_not_origin(instance, workspace_context, exter
         existing_origin = external_sensor.get_external_origin()
 
         repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
+        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
         modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
         )
@@ -984,7 +996,13 @@ def test_sensors_keyed_on_selector_not_origin(instance, workspace_context, exter
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_bad_load_sensor_repository(caplog, executor, instance, workspace_context, external_repo):
+def test_bad_load_sensor_repository(
+    caplog: pytest.LogCaptureFixture,
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",

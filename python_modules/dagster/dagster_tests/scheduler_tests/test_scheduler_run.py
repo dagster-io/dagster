@@ -2,6 +2,7 @@ import datetime
 import random
 import string
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 from typing import cast
 
@@ -29,6 +30,8 @@ from dagster._core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -48,6 +51,7 @@ from dagster._core.test_utils import (
     mock_system_timezone,
     wait_for_futures,
 )
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
@@ -704,11 +708,17 @@ def test_simple_schedule(instance, workspace_context, external_repo, executor):
 
 # Verify that the scheduler uses selector and not origin to dedupe schedules
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_schedule_with_different_origin(instance, workspace_context, external_repo, executor):
+def test_schedule_with_different_origin(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     existing_origin = external_schedule.get_external_origin()
 
     repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
+    assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
     modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
         executable_path="/different/executable_path"
     )
@@ -1326,7 +1336,13 @@ def test_run_scheduled_on_time_boundary(instance, workspace_context, external_re
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_load_repository(instance, workspace_context, external_repo, caplog, executor):
+def test_bad_load_repository(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    caplog: pytest.LogCaptureFixture,
+    executor: ThreadPoolExecutor,
+):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1449,7 +1465,11 @@ def test_error_load_repository_location(instance, executor):
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_load_repository_location_not_in_workspace(
-    instance, workspace_context, external_repo, caplog, executor
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    caplog: pytest.LogCaptureFixture,
+    executor: ThreadPoolExecutor,
 ):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1460,12 +1480,14 @@ def test_load_repository_location_not_in_workspace(
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         valid_schedule_origin = external_schedule.get_external_origin()
 
+        repo_location_origin = (
+            valid_schedule_origin.external_repository_origin.repository_location_origin
+        )
+        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
         # Swap out a new location name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.repository_location_origin._replace(
-                    location_name="missing_location"
-                ),
+                repo_location_origin._replace(location_name="missing_location"),
                 valid_schedule_origin.external_repository_origin.repository_name,
             ),
             valid_schedule_origin.instigator_name,

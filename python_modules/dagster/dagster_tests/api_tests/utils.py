@@ -1,19 +1,23 @@
 import sys
 from contextlib import ExitStack, contextmanager
+from typing import Iterator, Optional
 
 from dagster import file_relative_path
 from dagster._core.host_representation import (
     JobHandle,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
+from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @contextmanager
-def get_bar_workspace(instance):
+def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -27,7 +31,9 @@ def get_bar_workspace(instance):
 
 
 @contextmanager
-def get_bar_repo_repository_location(instance=None):
+def get_bar_repo_repository_location(
+    instance: Optional[DagsterInstance] = None,
+) -> Iterator[RepositoryLocation]:
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())
@@ -46,7 +52,7 @@ def get_bar_repo_repository_location(instance=None):
 
 
 @contextmanager
-def get_bar_repo_handle(instance=None):
+def get_bar_repo_handle(instance: Optional[DagsterInstance] = None) -> Iterator[RepositoryHandle]:
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())
@@ -56,7 +62,7 @@ def get_bar_repo_handle(instance=None):
 
 
 @contextmanager
-def get_foo_job_handle(instance=None):
+def get_foo_job_handle(instance: Optional[DagsterInstance] = None) -> Iterator[JobHandle]:
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())

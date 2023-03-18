@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -128,7 +128,9 @@ def get_schedules_or_error(
     return GrapheneSchedules(results=results)
 
 
-def get_schedules_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
+def get_schedules_for_pipeline(
+    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+) -> Sequence["GrapheneSchedule"]:
     from ..schema.schedules import GrapheneSchedule
 
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)

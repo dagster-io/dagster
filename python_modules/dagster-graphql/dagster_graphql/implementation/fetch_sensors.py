@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Optional, Sequence
+
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
@@ -15,9 +17,19 @@ from .utils import (
     capture_error,
 )
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
+
+    from ..schema.instigation import (
+        GrapheneInstigationStates,
+    )
+    from ..schema.sensors import GrapheneSensor, GrapheneSensors, GrapheneStopSensorMutationResult
+
 
 @capture_error
-def get_sensors_or_error(graphene_info: ResolveInfo, repository_selector):
+def get_sensors_or_error(
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector
+) -> "GrapheneSensors":
     from ..schema.sensors import GrapheneSensor, GrapheneSensors
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
@@ -43,7 +55,7 @@ def get_sensors_or_error(graphene_info: ResolveInfo, repository_selector):
 
 
 @capture_error
-def get_sensor_or_error(graphene_info: ResolveInfo, selector):
+def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
@@ -63,7 +75,7 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector):
 
 
 @capture_error
-def start_sensor(graphene_info: ResolveInfo, sensor_selector):
+def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
@@ -83,7 +95,9 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector):
 
 
 @capture_error
-def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_selector_id):
+def stop_sensor(
+    graphene_info: ResolveInfo, instigator_origin_id: str, instigator_selector_id: str
+) -> "GrapheneStopSensorMutationResult":
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
     check.str_param(instigator_origin_id, "instigator_origin_id")
@@ -118,7 +132,9 @@ def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_sel
 
 
 @capture_error
-def get_unloadable_sensor_states_or_error(graphene_info):
+def get_unloadable_sensor_states_or_error(
+    graphene_info: ResolveInfo,
+) -> "GrapheneInstigationStates":
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     sensor_states = graphene_info.context.instance.all_instigator_state(
@@ -149,7 +165,9 @@ def get_unloadable_sensor_states_or_error(graphene_info):
     )
 
 
-def get_sensors_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
+def get_sensors_for_pipeline(
+    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+) -> Sequence["GrapheneSensor"]:
     from ..schema.sensors import GrapheneSensor
 
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
@@ -174,7 +192,9 @@ def get_sensors_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
     return results
 
 
-def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
+def get_sensor_next_tick(
+    graphene_info: ResolveInfo, sensor_state: InstigatorState
+) -> Optional["GrapheneDryRunInstigationTick"]:
     from ..schema.instigation import GrapheneDryRunInstigationTick
 
     check.inst_param(sensor_state, "sensor_state", InstigatorState)
@@ -215,7 +235,9 @@ def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
 
 
 @capture_error
-def set_sensor_cursor(graphene_info: ResolveInfo, selector, cursor):
+def set_sensor_cursor(
+    graphene_info: ResolveInfo, selector: SensorSelector, cursor: Optional[str]
+) -> "GrapheneSensor":
     check.inst_param(selector, "selector", SensorSelector)
     check.opt_str_param(cursor, "cursor")
 
