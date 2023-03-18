@@ -496,8 +496,7 @@ def repository_click_options() -> Sequence[ClickOption]:
             "--location",
             "-l",
             help=(
-                "CodeLocation within the workspace, necessary if more than one location is"
-                " present."
+                "CodeLocation within the workspace, necessary if more than one location is present."
             ),
         ),
     ]

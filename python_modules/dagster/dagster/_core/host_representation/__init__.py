@@ -6,11 +6,6 @@ It also contains classes that represent historical representations
 that have been persisted. e.g. HistoricalPipeline
 """
 
-from .code_location import (
-    CodeLocation as CodeLocation,
-    GrpcServerCodeLocation as GrpcServerCodeLocation,
-    InProcessCodeLocation as InProcessCodeLocation,
-)
 from .external import (
     ExternalExecutionPlan as ExternalExecutionPlan,
     ExternalPartitionSet as ExternalPartitionSet,
@@ -55,6 +50,13 @@ from .origin import (
     GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+
+# isort: split
+from .code_location import (
+    CodeLocation as CodeLocation,
+    GrpcServerCodeLocation as GrpcServerCodeLocation,
+    InProcessCodeLocation as InProcessCodeLocation,
 )
 from .pipeline_index import PipelineIndex as PipelineIndex
 from .represented import RepresentedPipeline as RepresentedPipeline

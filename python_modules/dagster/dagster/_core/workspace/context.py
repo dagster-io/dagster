@@ -294,12 +294,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
             instance=instance,
         )
 
-    def get_external_notebook_data(
-        self, repository_location_name: str, notebook_path: str
-    ) -> bytes:
-        check.str_param(repository_location_name, "repository_location_name")
+    def get_external_notebook_data(self, code_location_name: str, notebook_path: str) -> bytes:
+        check.str_param(code_location_name, "code_location_name")
         check.str_param(notebook_path, "notebook_path")
-        code_location = self.get_code_location(repository_location_name)
+        code_location = self.get_code_location(code_location_name)
         return code_location.get_external_notebook_data(notebook_path=notebook_path)
 
 
