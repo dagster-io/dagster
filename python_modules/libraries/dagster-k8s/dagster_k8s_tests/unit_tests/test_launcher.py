@@ -114,7 +114,7 @@ def test_launcher_with_container_context(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,
@@ -228,7 +228,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,
@@ -315,7 +315,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,
@@ -396,7 +396,7 @@ def test_raise_on_error(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,
@@ -457,7 +457,7 @@ def test_no_postgres(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,
@@ -523,7 +523,7 @@ def test_check_run_health(kubeconfig_file):
 
     with instance_for_test() as instance:
         with in_process_test_workspace(instance, loadable_target_origin) as workspace:
-            location = workspace.get_code_location(workspace.repository_location_names[0])
+            location = workspace.get_code_location(workspace.code_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
                 code_location=location,

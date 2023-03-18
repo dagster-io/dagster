@@ -162,7 +162,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         ]
 
     @property
-    def repository_location_names(self) -> Sequence[str]:
+    def code_location_names(self) -> Sequence[str]:
         return list(self.get_workspace_snapshot())
 
     def repository_location_errors(self) -> Sequence[SerializableErrorInfo]:

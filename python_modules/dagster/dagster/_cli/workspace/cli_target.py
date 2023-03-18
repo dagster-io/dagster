@@ -690,26 +690,26 @@ def get_code_location_from_workspace(
     workspace: WorkspaceRequestContext, provided_location_name: Optional[str]
 ) -> CodeLocation:
     if provided_location_name is None:
-        if len(workspace.repository_location_names) == 1:
-            provided_location_name = workspace.repository_location_names[0]
-        elif len(workspace.repository_location_names) == 0:
+        if len(workspace.code_location_names) == 1:
+            provided_location_name = workspace.code_location_names[0]
+        elif len(workspace.code_location_names) == 0:
             raise click.UsageError("No locations found in workspace")
         elif provided_location_name is None:
             raise click.UsageError(
                 (
                     "Must provide --location as there are multiple locations "
                     "available. Options are: {}"
-                ).format(_sorted_quoted(workspace.repository_location_names))
+                ).format(_sorted_quoted(workspace.code_location_names))
             )
 
-    if provided_location_name not in workspace.repository_location_names:
+    if provided_location_name not in workspace.code_location_names:
         raise click.UsageError(
             (
                 'Location "{provided_location_name}" not found in workspace. '
                 "Found {found_names} instead."
             ).format(
                 provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(workspace.repository_location_names),
+                found_names=_sorted_quoted(workspace.code_location_names),
             )
         )
 
