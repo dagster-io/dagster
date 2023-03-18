@@ -346,23 +346,22 @@ class GrpcServerCodeLocationOrigin(
             pass
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class ExternalRepositoryOrigin(
     NamedTuple(
         "_ExternalRepositoryOrigin",
-        [("repository_location_origin", CodeLocationOrigin), ("repository_name", str)],
+        [("code_location_origin", CodeLocationOrigin), ("repository_name", str)],
     )
 ):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_location_origin: CodeLocationOrigin, repository_name: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
         return super(ExternalRepositoryOrigin, cls).__new__(
             cls,
-            check.inst_param(
-                repository_location_origin, "repository_location_origin", CodeLocationOrigin
-            ),
+            check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
             check.str_param(repository_name, "repository_name"),
         )
 
@@ -371,11 +370,11 @@ class ExternalRepositoryOrigin(
 
     def get_selector_id(self) -> str:
         return create_snapshot_id(
-            RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
+            RepositorySelector(self.code_location_origin.location_name, self.repository_name)
         )
 
     def get_label(self) -> str:
-        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
+        return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
     def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
@@ -414,7 +413,7 @@ class ExternalPipelineOrigin(
 
     @property
     def location_name(self) -> str:
-        return self.external_repository_origin.repository_location_origin.location_name
+        return self.external_repository_origin.code_location_origin.location_name
 
 
 @whitelist_for_serdes(
@@ -479,7 +478,7 @@ class ExternalPartitionSetOrigin(
     @property
     def selector(self) -> PartitionSetSelector:
         return PartitionSetSelector(
-            self.external_repository_origin.repository_location_origin.location_name,
+            self.external_repository_origin.code_location_origin.location_name,
             self.external_repository_origin.repository_name,
             self.partition_set_name,
         )

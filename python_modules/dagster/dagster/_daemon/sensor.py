@@ -344,7 +344,7 @@ def execute_sensor_iteration(
         for sensor_state in unloadable_sensor_states.values():
             sensor_name = sensor_state.origin.instigator_name
             repo_location_origin = (
-                sensor_state.origin.external_repository_origin.repository_location_origin
+                sensor_state.origin.external_repository_origin.code_location_origin
             )
 
             repo_location_name = repo_location_origin.location_name
@@ -562,7 +562,7 @@ def _evaluate_sensor(
     sensor_origin = external_sensor.get_external_origin()
     repository_handle = external_sensor.handle.repository_handle
     repo_location = workspace_process_context.create_request_context().get_code_location(
-        sensor_origin.external_repository_origin.repository_location_origin.location_name
+        sensor_origin.external_repository_origin.code_location_origin.location_name
     )
 
     instigator_data = _sensor_instigator_data(state)

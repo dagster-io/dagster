@@ -73,9 +73,7 @@ def other_location_pipeline_handle(pipeline_handle: JobHandle) -> JobHandle:
     assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
     return pipeline_handle._replace(
         repository_handle=pipeline_handle.repository_handle._replace(
-            repository_location_origin=repo_location_origin._replace(
-                location_name="other_location_name"
-            )
+            code_location_origin=repo_location_origin._replace(location_name="other_location_name")
         )
     )
 

@@ -88,7 +88,7 @@ def launch_reexecution_from_parent_run(
     )
     origin = check.not_none(parent_run.external_pipeline_origin)
     selector = PipelineSelector(
-        location_name=origin.external_repository_origin.repository_location_origin.location_name,
+        location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
         pipeline_name=parent_run.pipeline_name,
         solid_selection=None,

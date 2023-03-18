@@ -161,7 +161,7 @@ class InstigatorState(
     @property
     def repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
-            self.origin.external_repository_origin.repository_location_origin.location_name,
+            self.origin.external_repository_origin.code_location_origin.location_name,
             self.origin.external_repository_origin.repository_name,
         )
 
@@ -177,7 +177,7 @@ class InstigatorState(
     def selector_id(self) -> str:
         return create_snapshot_id(
             InstigatorSelector(
-                self.origin.external_repository_origin.repository_location_origin.location_name,
+                self.origin.external_repository_origin.code_location_origin.location_name,
                 self.origin.external_repository_origin.repository_name,
                 self.origin.instigator_name,
             )

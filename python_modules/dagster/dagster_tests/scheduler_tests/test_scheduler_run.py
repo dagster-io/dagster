@@ -717,7 +717,7 @@ def test_schedule_with_different_origin(
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     existing_origin = external_schedule.get_external_origin()
 
-    repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
+    repo_location_origin = existing_origin.external_repository_origin.code_location_origin
     assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
     modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
         executable_path="/different/executable_path"
@@ -726,7 +726,7 @@ def test_schedule_with_different_origin(
     # Change metadata on the origin that shouldn't matter for execution
     modified_origin = existing_origin._replace(
         external_repository_origin=existing_origin.external_repository_origin._replace(
-            repository_location_origin=repo_location_origin._replace(
+            code_location_origin=repo_location_origin._replace(
                 loadable_target_origin=modified_loadable_target_origin
             )
         )
@@ -1354,7 +1354,7 @@ def test_bad_load_repository(
         # Swap out a new repository name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.repository_location_origin,
+                valid_schedule_origin.external_repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_schedule_origin.instigator_name,
@@ -1480,9 +1480,7 @@ def test_load_repository_location_not_in_workspace(
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         valid_schedule_origin = external_schedule.get_external_origin()
 
-        repo_location_origin = (
-            valid_schedule_origin.external_repository_origin.repository_location_origin
-        )
+        repo_location_origin = valid_schedule_origin.external_repository_origin.code_location_origin
         assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         # Swap out a new location name
         invalid_repo_origin = ExternalInstigatorOrigin(
@@ -2063,7 +2061,7 @@ def test_grpc_server_down(instance, executor):
     )
     schedule_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=location_origin,
+            code_location_origin=location_origin,
             repository_name="the_repo",
         ),
         instigator_name="simple_schedule",

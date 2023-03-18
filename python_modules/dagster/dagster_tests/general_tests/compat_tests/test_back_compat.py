@@ -673,7 +673,7 @@ def test_external_job_origin_instigator_origin():
     # serialize from current code, compare against old code
     instigator_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=GrpcServerCodeLocationOrigin(
+            code_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
             repository_name="the_repo",
@@ -954,9 +954,7 @@ def test_add_bulk_actions_columns():
             # check that we are writing to selector id, action types
             external_origin = ExternalPartitionSetOrigin(
                 external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location_origin=GrpcServerCodeLocationOrigin(
-                        port=1234, host="localhost"
-                    ),
+                    code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
                 ),
                 partition_set_name="fake",

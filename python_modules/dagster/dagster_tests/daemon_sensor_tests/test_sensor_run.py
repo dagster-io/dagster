@@ -963,7 +963,7 @@ def test_sensors_keyed_on_selector_not_origin(
 
         existing_origin = external_sensor.get_external_origin()
 
-        repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
+        repo_location_origin = existing_origin.external_repository_origin.code_location_origin
         assert isinstance(repo_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
@@ -972,7 +972,7 @@ def test_sensors_keyed_on_selector_not_origin(
         # Change metadata on the origin that shouldn't matter for execution
         modified_origin = existing_origin._replace(
             external_repository_origin=existing_origin.external_repository_origin._replace(
-                repository_location_origin=repo_location_origin._replace(
+                code_location_origin=repo_location_origin._replace(
                     loadable_target_origin=modified_loadable_target_origin
                 )
             )
@@ -1016,7 +1016,7 @@ def test_bad_load_sensor_repository(
         # Swap out a new repository name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_origin.external_repository_origin.repository_location_origin,
+                valid_origin.external_repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_origin.instigator_name,

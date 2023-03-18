@@ -32,7 +32,7 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
         return self._origin.get_id()
 
     def resolve_repository_location_name(self, _graphene_info: ResolveInfo) -> str:
-        return self._origin.repository_location_origin.location_name
+        return self._origin.code_location_origin.location_name
 
     def resolve_repository_name(self, _graphene_info: ResolveInfo) -> str:
         return self._origin.repository_name
@@ -40,7 +40,7 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
     def resolve_repository_location_metadata(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneRepositoryMetadata]:
-        metadata = self._origin.repository_location_origin.get_display_metadata()
+        metadata = self._origin.code_location_origin.get_display_metadata()
         return [
             GrapheneRepositoryMetadata(key=key, value=value)
             for key, value in metadata.items()

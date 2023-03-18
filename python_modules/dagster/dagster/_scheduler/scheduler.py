@@ -234,9 +234,7 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
-        location_name = (
-            state.origin.external_repository_origin.repository_location_origin.location_name
-        )
+        location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
             logger.info(
@@ -255,7 +253,7 @@ def launch_scheduled_runs(
         for schedule_state in unloadable_schedule_states.values():
             schedule_name = schedule_state.origin.instigator_name
             repo_location_origin = (
-                schedule_state.origin.external_repository_origin.repository_location_origin
+                schedule_state.origin.external_repository_origin.code_location_origin
             )
 
             repo_location_name = repo_location_origin.location_name
@@ -588,7 +586,7 @@ def _schedule_runs_at_time(
     repository_handle = external_schedule.handle.repository_handle
 
     repo_location = workspace_process_context.create_request_context().get_code_location(
-        schedule_origin.external_repository_origin.repository_location_origin.location_name
+        schedule_origin.external_repository_origin.code_location_origin.location_name
     )
 
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
@@ -630,7 +628,7 @@ def _schedule_runs_at_time(
             run_request = raw_run_request
 
         pipeline_selector = PipelineSelector(
-            location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
+            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,

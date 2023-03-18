@@ -201,12 +201,12 @@ def get_sensor_next_tick(
 
     repository_origin = sensor_state.origin.external_repository_origin
     if not graphene_info.context.has_repository_location(
-        repository_origin.repository_location_origin.location_name
+        repository_origin.code_location_origin.location_name
     ):
         return None
 
     repository_location = graphene_info.context.get_code_location(
-        repository_origin.repository_location_origin.location_name
+        repository_origin.code_location_origin.location_name
     )
     if not repository_location.has_repository(repository_origin.repository_name):
         return None

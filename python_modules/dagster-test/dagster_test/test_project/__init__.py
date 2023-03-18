@@ -199,7 +199,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         """
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=InProcessCodeLocationOrigin(
+                code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
                         python_file=f"/dagster_test/test_project/test_pipelines/{self._filename}",
@@ -233,7 +233,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         """
         return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=GrpcServerCodeLocationOrigin(
+                code_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,
                     location_name="user-code-deployment-1",

@@ -58,7 +58,7 @@ def execute_job_backfill_iteration(
 
     origin = cast(
         ExternalPartitionSetOrigin, backfill.partition_set_origin
-    ).external_repository_origin.repository_location_origin
+    ).external_repository_origin.code_location_origin
 
     repo_location = workspace.get_code_location(origin.location_name)
 
