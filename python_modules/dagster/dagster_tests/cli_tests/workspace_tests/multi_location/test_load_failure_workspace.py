@@ -26,8 +26,8 @@ def test_multi_location_error(instance):
         request_context = cli_workspace.create_request_context()
 
         assert len(request_context.code_location_errors()) == 1
-        assert not request_context.has_repository_location_error("working_location")
-        assert request_context.has_repository_location_error("broken_location")
+        assert not request_context.has_code_location_error("working_location")
+        assert request_context.has_code_location_error("broken_location")
         assert not request_context.has_repository_location("completely_unknown_location")
 
         assert (
@@ -49,7 +49,7 @@ def test_workspace_with_only_error(instance):
         request_context = cli_workspace.create_request_context()
         assert len(request_context.code_location_errors()) == 1
 
-        assert request_context.has_repository_location_error("broken_location")
+        assert request_context.has_code_location_error("broken_location")
 
         assert (
             "No module named"

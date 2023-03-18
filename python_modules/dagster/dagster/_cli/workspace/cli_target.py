@@ -713,7 +713,7 @@ def get_code_location_from_workspace(
             )
         )
 
-    if workspace.has_repository_location_error(provided_location_name):
+    if workspace.has_code_location_error(provided_location_name):
         raise click.UsageError(
             'Error loading location "{provided_location_name}": {error_str}'.format(
                 provided_location_name=provided_location_name,

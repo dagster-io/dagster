@@ -170,7 +170,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
         ]
 
-    def has_repository_location_error(self, name: str) -> bool:
+    def has_code_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) is not None
 
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
