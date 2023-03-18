@@ -167,7 +167,7 @@ def _get_partitions_chunk(
 def submit_backfill_runs(
     instance: DagsterInstance,
     workspace: IWorkspace,
-    repo_location: CodeLocation,
+    code_location: CodeLocation,
     backfill_job: PartitionBackfill,
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
@@ -181,15 +181,15 @@ def submit_backfill_runs(
         partition_names = cast(Sequence[str], backfill_job.partition_names)
 
     check.invariant(
-        repo_location.has_repository(repo_name),
+        code_location.has_repository(repo_name),
         "Could not find repository {repo_name} in location {repo_location_name}".format(
-            repo_name=repo_name, repo_location_name=repo_location.name
+            repo_name=repo_name, repo_location_name=code_location.name
         ),
     )
-    external_repo = repo_location.get_repository(repo_name)
+    external_repo = code_location.get_repository(repo_name)
     partition_set_name = origin.partition_set_name
     external_partition_set = external_repo.get_external_partition_set(partition_set_name)
-    result = repo_location.get_external_partition_set_execution_param_data(
+    result = code_location.get_external_partition_set_execution_param_data(
         external_repo.handle, partition_set_name, partition_names, instance
     )
 
@@ -198,13 +198,13 @@ def submit_backfill_runs(
         # need to make another call to the user code location to properly subset
         # for an asset selection
         pipeline_selector = PipelineSelector(
-            location_name=repo_location.name,
+            location_name=code_location.name,
             repository_name=repo_name,
             pipeline_name=external_partition_set.pipeline_name,
             solid_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
     else:
         external_pipeline = external_repo.get_full_external_job(
             external_partition_set.pipeline_name
@@ -212,7 +212,7 @@ def submit_backfill_runs(
     for partition_data in result.partition_data:
         dagster_run = create_backfill_run(
             instance,
-            repo_location,
+            code_location,
             external_pipeline,
             external_partition_set,
             backfill_job,

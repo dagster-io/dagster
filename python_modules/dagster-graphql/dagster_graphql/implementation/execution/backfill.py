@@ -108,7 +108,7 @@ def create_and_launch_partition_backfill(
                     for run_id in submit_backfill_runs(
                         graphene_info.context.instance,
                         workspace=graphene_info.context,
-                        repo_location=location,
+                        code_location=location,
                         backfill_job=backfill,
                         partition_names=chunk,
                     )
