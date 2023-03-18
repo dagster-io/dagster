@@ -125,9 +125,7 @@ def test_reload_on_request_context_2():
             repo_name = repo.name
 
             # Reload the location from the request context
-            new_request_context = request_context.reload_repository_location(
-                repository_location.name
-            )
+            new_request_context = request_context.reload_code_location(repository_location.name)
 
             repository_location = new_request_context.code_locations[0]
             repo = list(repository_location.get_repositories().values())[0]

@@ -192,7 +192,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         entry = self.get_location_entry(name)
         return entry.origin.is_shutdown_supported if entry else False
 
-    def reload_repository_location(self, name: str) -> "BaseWorkspaceRequestContext":
+    def reload_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
         # request context created from the updated process context
         self.process_context.reload_repository_location(name)
