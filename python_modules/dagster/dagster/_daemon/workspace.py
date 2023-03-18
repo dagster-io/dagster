@@ -13,9 +13,9 @@ from dagster._core.host_representation.repository_location import (
 )
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
     CodeLocationLoadStatus,
     IWorkspace,
-    WorkspaceLocationEntry,
     WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
@@ -39,7 +39,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def __enter__(self):
         return self
 
-    def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return dict(self._location_entries)
@@ -52,7 +52,7 @@ class BaseDaemonWorkspace(IWorkspace):
         ]
 
     @abstractmethod
-    def _load_workspace(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def _load_workspace(self) -> Mapping[str, CodeLocationEntry]:
         pass
 
     def get_workspace_copy_for_iteration(self):
@@ -110,7 +110,7 @@ class DaemonIterationWorkspace(BaseDaemonWorkspace):
         self._location_entries_copy = location_entries_copy
         super().__init__()
 
-    def _load_workspace(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def _load_workspace(self) -> Mapping[str, CodeLocationEntry]:
         return self._location_entries_copy
 
 
@@ -128,14 +128,14 @@ class DaemonWorkspace(BaseDaemonWorkspace):
 
         super().__init__()
 
-    def _load_workspace(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def _load_workspace(self) -> Mapping[str, CodeLocationEntry]:
         entries = {}
         origins = self._workspace_load_target.create_origins()
         for origin in origins:
             entries[origin.location_name] = self._load_location(origin)
         return entries
 
-    def _load_location(self, origin) -> WorkspaceLocationEntry:
+    def _load_location(self, origin) -> CodeLocationEntry:
         location = None
         error = None
         try:
@@ -143,7 +143,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
 
-        return WorkspaceLocationEntry(
+        return CodeLocationEntry(
             origin=origin,
             repository_location=location,
             load_error=error,

@@ -14,7 +14,7 @@ class CodeLocationLoadStatus(Enum):
     LOADED = "LOADED"  # Finished loading (may be an error)
 
 
-class WorkspaceLocationEntry(NamedTuple):
+class CodeLocationEntry(NamedTuple):
     origin: "CodeLocationOrigin"
     repository_location: Optional["CodeLocation"]
     load_error: Optional[SerializableErrorInfo]
@@ -42,7 +42,7 @@ class IWorkspace(ABC):
         """
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
         """Return an entry for each location in the workspace."""
 
     @abstractmethod
@@ -51,7 +51,7 @@ class IWorkspace(ABC):
 
 
 def location_status_from_location_entry(
-    entry: WorkspaceLocationEntry,
+    entry: CodeLocationEntry,
 ) -> WorkspaceLocationStatusEntry:
     return WorkspaceLocationStatusEntry(
         location_name=entry.origin.location_name,

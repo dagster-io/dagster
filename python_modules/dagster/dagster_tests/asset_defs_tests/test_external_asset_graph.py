@@ -9,8 +9,8 @@ from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
     CodeLocationLoadStatus,
-    WorkspaceLocationEntry,
 )
 
 
@@ -80,7 +80,7 @@ def make_location_entry(defs_attr: str):
 
     repo_location = origin.create_location()
 
-    return WorkspaceLocationEntry(
+    return CodeLocationEntry(
         origin=origin,
         repository_location=repo_location,
         load_error=None,

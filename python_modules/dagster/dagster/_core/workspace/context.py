@@ -44,9 +44,9 @@ from .permissions import (
     get_user_permissions,
 )
 from .workspace import (
+    CodeLocationEntry,
     CodeLocationLoadStatus,
     IWorkspace,
-    WorkspaceLocationEntry,
     WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
@@ -82,11 +82,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
         pass
 
     @abstractmethod
-    def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
+    def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
         pass
 
     @abstractmethod
@@ -309,7 +309,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
         self,
         instance: DagsterInstance,
-        workspace_snapshot: Mapping[str, WorkspaceLocationEntry],
+        workspace_snapshot: Mapping[str, CodeLocationEntry],
         process_context: "IWorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
@@ -327,10 +327,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def get_workspace_snapshot(self) -> Mapping[str, CodeLocationEntry]:
         return self._workspace_snapshot
 
-    def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
+    def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
         return self._workspace_snapshot.get(name)
 
     def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
@@ -485,7 +485,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        self._location_entry_dict: Dict[str, WorkspaceLocationEntry] = {}
+        self._location_entry_dict: Dict[str, CodeLocationEntry] = {}
         self._update_workspace(
             {origin.location_name: self._load_location(origin) for origin in self._origins}
         )
@@ -584,7 +584,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin: CodeLocationOrigin) -> WorkspaceLocationEntry:
+    def _load_location(self, origin: CodeLocationOrigin) -> CodeLocationEntry:
         location_name = origin.location_name
         location = None
         error = None
@@ -598,7 +598,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        return WorkspaceLocationEntry(
+        return CodeLocationEntry(
             origin=origin,
             repository_location=location,
             load_error=error,
@@ -609,7 +609,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             update_timestamp=time.time(),
         )
 
-    def create_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
+    def create_snapshot(self) -> Mapping[str, CodeLocationEntry]:
         with self._lock:
             return self._location_entry_dict.copy()
 
@@ -658,7 +658,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         }
         self._update_workspace(updated_locations)
 
-    def _update_workspace(self, new_locations: Dict[str, WorkspaceLocationEntry]):
+    def _update_workspace(self, new_locations: Dict[str, CodeLocationEntry]):
         # minimize lock time by only holding while swapping data old to new
         with self._lock:
             previous_events = self._watch_thread_shutdown_events

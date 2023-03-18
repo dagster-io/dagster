@@ -23,8 +23,8 @@ from dagster._core.workspace.context import (
     WorkspaceProcessContext,
 )
 from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
     CodeLocationLoadStatus,
-    WorkspaceLocationEntry,
 )
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
@@ -176,10 +176,8 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     class Meta:
         name = "WorkspaceLocationEntry"
 
-    def __init__(self, location_entry: WorkspaceLocationEntry):
-        self._location_entry = check.inst_param(
-            location_entry, "location_entry", WorkspaceLocationEntry
-        )
+    def __init__(self, location_entry: CodeLocationEntry):
+        self._location_entry = check.inst_param(location_entry, "location_entry", CodeLocationEntry)
         super().__init__(name=self._location_entry.origin.location_name)
 
     def resolve_id(self, _):
