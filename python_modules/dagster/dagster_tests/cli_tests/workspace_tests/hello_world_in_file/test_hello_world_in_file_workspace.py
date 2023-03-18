@@ -21,7 +21,7 @@ def test_load_in_process_location_hello_world_nested_no_def(instance):
         instance, [file_name]
     ) as workspace_process_context:
         assert isinstance(workspace_process_context, WorkspaceProcessContext)
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
         assert workspace_process_context.code_location_names[0] == "hello_world_repository.py"
 
 
@@ -31,7 +31,7 @@ def test_load_in_process_location_hello_world_nested_with_def(instance):
         instance, [file_name]
     ) as workspace_process_context:
         assert isinstance(workspace_process_context, WorkspaceProcessContext)
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
         assert (
             workspace_process_context.code_location_names[0]
             == "hello_world_repository.py:hello_world_repository"
@@ -45,5 +45,5 @@ def test_load_in_process_location_hello_world_terse(instance):
         instance, [file_name]
     ) as workspace_process_context:
         assert isinstance(workspace_process_context, WorkspaceProcessContext)
-        assert workspace_process_context.repository_locations_count == 1
+        assert workspace_process_context.code_locations_count == 1
         assert workspace_process_context.code_location_names[0] == "hello_world_repository.py"

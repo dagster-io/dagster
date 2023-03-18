@@ -81,7 +81,7 @@ def test_reload_on_process_context():
 def test_reload_on_request_context():
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
-            assert process_context.repository_locations_count == 1
+            assert process_context.code_locations_count == 1
 
             # Create a request context from the process context
             request_context = process_context.create_request_context()
@@ -115,7 +115,7 @@ def test_reload_on_request_context_2():
 
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
-            assert process_context.repository_locations_count == 1
+            assert process_context.code_locations_count == 1
 
             request_context = process_context.create_request_context()
 
@@ -158,7 +158,7 @@ def test_handle_cleaup_by_gc_without_request_context():
 
     with instance_for_test() as instance:
         with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
-            assert process_context.repository_locations_count == 1
+            assert process_context.code_locations_count == 1
 
             request_context = process_context.create_request_context()
             request_context.code_locations[0].cleanup = call_me

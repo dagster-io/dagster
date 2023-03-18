@@ -17,7 +17,7 @@ def test_multi_location_error(instance):
         [file_relative_path(__file__, "multi_location_with_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, WorkspaceProcessContext)
-        assert cli_workspace.repository_locations_count == 2
+        assert cli_workspace.code_locations_count == 2
 
         assert cli_workspace.has_code_location("working_location")
         assert not cli_workspace.has_code_location("broken_location")
@@ -42,7 +42,7 @@ def test_workspace_with_only_error(instance):
         [file_relative_path(__file__, "workspace_with_only_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, WorkspaceProcessContext)
-        assert cli_workspace.repository_locations_count == 1
+        assert cli_workspace.code_locations_count == 1
         assert not cli_workspace.has_code_location("broken_location")
 
         request_context = cli_workspace.create_request_context()

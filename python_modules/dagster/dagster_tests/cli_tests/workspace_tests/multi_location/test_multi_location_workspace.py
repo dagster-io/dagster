@@ -25,7 +25,7 @@ def test_multi_location_workspace_foo(instance):
         [file_relative_path(__file__, "multi_location.yaml")],
     ) as grpc_workspace:
         assert isinstance(grpc_workspace, WorkspaceProcessContext)
-        assert grpc_workspace.repository_locations_count == 3
+        assert grpc_workspace.code_locations_count == 3
         assert grpc_workspace.has_code_location("loaded_from_file")
         assert grpc_workspace.has_code_location("loaded_from_module")
         assert grpc_workspace.has_code_location("loaded_from_package")
@@ -40,7 +40,7 @@ def test_multi_file_extend_workspace(instance):
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
-        assert workspace.repository_locations_count == 4
+        assert workspace.code_locations_count == 4
         assert workspace.has_code_location("loaded_from_file")
         assert workspace.has_code_location("loaded_from_module")
         assert workspace.has_code_location("loaded_from_package")
@@ -56,7 +56,7 @@ def test_multi_file_override_workspace(instance):
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
-        assert workspace.repository_locations_count == 3
+        assert workspace.code_locations_count == 3
         assert workspace.has_code_location("loaded_from_file")
         assert workspace.has_code_location("loaded_from_module")
         assert workspace.has_code_location("loaded_from_package")
@@ -79,7 +79,7 @@ def test_multi_file_extend_and_override_workspace(instance):
         ],
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
-        assert workspace.repository_locations_count == 4
+        assert workspace.code_locations_count == 4
         assert workspace.has_code_location("loaded_from_file")
         assert workspace.has_code_location("loaded_from_module")
         assert workspace.has_code_location("loaded_from_package")

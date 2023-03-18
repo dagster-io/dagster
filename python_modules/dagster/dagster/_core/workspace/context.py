@@ -612,7 +612,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             return self._location_entry_dict.copy()
 
     @property
-    def repository_locations_count(self) -> int:
+    def code_locations_count(self) -> int:
         with self._lock:
             return len(self._location_entry_dict)
 
