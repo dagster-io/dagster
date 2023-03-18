@@ -15,7 +15,7 @@ from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
     GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
@@ -199,7 +199,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         """
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=InProcessRepositoryLocationOrigin(
+                repository_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
                         python_file=f"/dagster_test/test_project/test_pipelines/{self._filename}",

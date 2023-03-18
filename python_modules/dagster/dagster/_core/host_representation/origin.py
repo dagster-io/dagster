@@ -134,10 +134,11 @@ class RegisteredCodeLocationOrigin(
         )
 
 
-@whitelist_for_serdes
-class InProcessRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
+class InProcessCodeLocationOrigin(
     NamedTuple(
-        "_InProcessRepositoryLocationOrigin",
+        "_InProcessCodeLocationOrigin",
         [
             ("loadable_target_origin", LoadableTargetOrigin),
             ("container_image", Optional[str]),
@@ -161,7 +162,7 @@ class InProcessRepositoryLocationOrigin(
         container_context=None,
         location_name: Optional[str] = None,
     ):
-        return super(InProcessRepositoryLocationOrigin, cls).__new__(
+        return super(InProcessCodeLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin

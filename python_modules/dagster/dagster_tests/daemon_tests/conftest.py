@@ -7,7 +7,7 @@ from dagster import DagsterInstance
 from dagster._core.host_representation import (
     CodeLocation,
     ExternalRepository,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -40,7 +40,7 @@ def instance_fixture(instance_module_scoped) -> Iterator[DagsterInstance]:
 
 def workspace_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessRepositoryLocationOrigin(
+        InProcessCodeLocationOrigin(
             loadable_target_origin=loadable_target_origin(attribute=attribute),
             location_name="test_location",
         )

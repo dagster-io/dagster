@@ -43,7 +43,7 @@ from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.libraries import DagsterLibraryRegistry
@@ -288,11 +288,11 @@ class CodeLocation(AbstractContextManager):
 
 
 class InProcessRepositoryLocation(CodeLocation):
-    def __init__(self, origin: InProcessRepositoryLocationOrigin):
+    def __init__(self, origin: InProcessCodeLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
         from dagster._utils.hosted_user_process import external_repo_from_def
 
-        self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", InProcessCodeLocationOrigin)
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
@@ -315,7 +315,7 @@ class InProcessRepositoryLocation(CodeLocation):
         return False
 
     @property
-    def origin(self) -> InProcessRepositoryLocationOrigin:
+    def origin(self) -> InProcessCodeLocationOrigin:
         return self._origin
 
     @property

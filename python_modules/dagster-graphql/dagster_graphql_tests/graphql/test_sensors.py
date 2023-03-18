@@ -6,7 +6,7 @@ import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -970,7 +970,7 @@ def _get_unloadable_sensor_origin(name):
         working_directory=working_directory,
     )
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(loadable_target_origin), "fake_repository"
+        InProcessCodeLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 
 
