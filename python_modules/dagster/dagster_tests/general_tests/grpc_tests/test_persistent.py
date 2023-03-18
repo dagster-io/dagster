@@ -12,7 +12,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -752,7 +752,7 @@ def test_sensor_timeout():
 
         with instance_for_test() as instance:
             repo_origin = ExternalRepositoryOrigin(
-                repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                repository_location_origin=GrpcServerCodeLocationOrigin(
                     port=port, host="localhost"
                 ),
                 repository_name="bar_repo",

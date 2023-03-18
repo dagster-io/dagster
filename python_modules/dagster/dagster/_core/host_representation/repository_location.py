@@ -42,7 +42,7 @@ from dagster._core.host_representation.grpc_server_registry import GrpcServerReg
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -561,7 +561,7 @@ class GrpcServerRepositoryLocation(CodeLocation):
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
         )
 
-        if isinstance(self.origin, GrpcServerRepositoryLocationOrigin):
+        if isinstance(self.origin, GrpcServerCodeLocationOrigin):
             self._port = self.origin.port
             self._socket = self.origin.socket
             self._host = self.origin.host

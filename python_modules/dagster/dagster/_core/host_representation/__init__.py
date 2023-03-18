@@ -47,7 +47,7 @@ from .origin import (
     ExternalInstigatorOrigin as ExternalInstigatorOrigin,
     ExternalPipelineOrigin as ExternalPipelineOrigin,
     ExternalRepositoryOrigin as ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin as GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
 )

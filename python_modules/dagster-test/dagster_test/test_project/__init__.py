@@ -14,7 +14,7 @@ from dagster._core.execution.context.output import build_output_context
 from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.host_representation.origin import (
@@ -233,7 +233,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         """
         return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
-                repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                repository_location_origin=GrpcServerCodeLocationOrigin(
                     host="user-code-deployment-1",
                     port=3030,
                     location_name="user-code-deployment-1",

@@ -33,7 +33,7 @@ from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.host_representation.origin import GrpcServerRepositoryLocationOrigin
+from dagster._core.host_representation.origin import GrpcServerCodeLocationOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -552,7 +552,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         for subscriber in self._state_subscribers.values():
             subscriber.handle_event(event)
 
-    def _start_watch_thread(self, origin: GrpcServerRepositoryLocationOrigin) -> None:
+    def _start_watch_thread(self, origin: GrpcServerCodeLocationOrigin) -> None:
         from dagster._grpc.server_watcher import create_grpc_watch_thread
 
         location_name = origin.location_name
@@ -672,7 +672,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
             # start monitoring for new locations
             for entry in self._location_entry_dict.values():
-                if isinstance(entry.origin, GrpcServerRepositoryLocationOrigin):
+                if isinstance(entry.origin, GrpcServerCodeLocationOrigin):
                     self._start_watch_thread(entry.origin)
 
         # clean up previous locations

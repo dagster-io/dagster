@@ -27,8 +27,8 @@ from dagster._core.host_representation import (
     CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
+    GrpcServerCodeLocationOrigin,
     GrpcServerRepositoryLocation,
-    GrpcServerRepositoryLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
@@ -2013,7 +2013,7 @@ def _grpc_server_external_repo(port, instance):
     try:
         # shuts down server when it leaves this contextmanager
         with EphemeralDagsterGrpcClient(port=port, socket=None, server_process=server_process):
-            location_origin = GrpcServerRepositoryLocationOrigin(
+            location_origin = GrpcServerCodeLocationOrigin(
                 host="localhost", port=port, location_name="test_location"
             )
             with GrpcServerRepositoryLocation(origin=location_origin) as location:
@@ -2058,7 +2058,7 @@ def test_skip_reason_schedule(instance, workspace_context, external_repo, execut
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_grpc_server_down(instance, executor):
     port = find_free_port()
-    location_origin = GrpcServerRepositoryLocationOrigin(
+    location_origin = GrpcServerCodeLocationOrigin(
         host="localhost", port=port, location_name="test_location"
     )
     schedule_origin = ExternalInstigatorOrigin(

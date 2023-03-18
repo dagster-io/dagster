@@ -6,7 +6,7 @@ import tomli
 
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 
@@ -144,9 +144,9 @@ class GrpcServerTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self) -> Sequence[GrpcServerRepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[GrpcServerCodeLocationOrigin]:
         return [
-            GrpcServerRepositoryLocationOrigin(
+            GrpcServerCodeLocationOrigin(
                 port=self.port,
                 socket=self.socket,
                 host=self.host,

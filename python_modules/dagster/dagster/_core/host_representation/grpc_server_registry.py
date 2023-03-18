@@ -22,7 +22,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -62,7 +62,7 @@ class GrpcServerEndpoint(
 
 T_GrpcRepositoryLocationOrigin = TypeVar(
     "T_GrpcRepositoryLocationOrigin",
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
     # default=ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )

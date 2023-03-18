@@ -269,10 +269,13 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
                 yield location
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"use_ssl"})
-class GrpcServerRepositoryLocationOrigin(
+# Different storage name for backcompat
+@whitelist_for_serdes(
+    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
+)
+class GrpcServerCodeLocationOrigin(
     NamedTuple(
-        "_GrpcServerRepositoryLocationOrigin",
+        "_GrpcServerCodeLocationOrigin",
         [
             ("host", str),
             ("port", Optional[int]),
@@ -295,7 +298,7 @@ class GrpcServerRepositoryLocationOrigin(
         location_name: Optional[str] = None,
         use_ssl: Optional[bool] = None,
     ):
-        return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
+        return super(GrpcServerCodeLocationOrigin, cls).__new__(
             cls,
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),

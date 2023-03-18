@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._core.code_pointer import rebase_file
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerRepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -257,7 +257,7 @@ def location_origin_from_python_file(
 
 def _location_origin_from_grpc_server_config(
     grpc_server_config: Mapping, yaml_path: str
-) -> GrpcServerRepositoryLocationOrigin:
+) -> GrpcServerCodeLocationOrigin:
     check.mapping_param(grpc_server_config, "grpc_server_config")
     check.str_param(yaml_path, "yaml_path")
 
@@ -276,7 +276,7 @@ def _location_origin_from_grpc_server_config(
     if not host:
         host = "localhost"
 
-    return GrpcServerRepositoryLocationOrigin(
+    return GrpcServerCodeLocationOrigin(
         port=port,
         socket=socket,
         host=host,

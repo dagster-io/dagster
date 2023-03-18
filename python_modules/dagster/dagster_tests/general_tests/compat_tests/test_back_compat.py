@@ -667,13 +667,13 @@ def test_external_job_origin_instigator_origin():
     from dagster._core.host_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
 
     # serialize from current code, compare against old code
     instigator_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+            repository_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
             repository_name="the_repo",
@@ -912,7 +912,7 @@ def test_add_bulk_actions_columns():
     from dagster._core.host_representation.origin import (
         ExternalPartitionSetOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
@@ -954,7 +954,7 @@ def test_add_bulk_actions_columns():
             # check that we are writing to selector id, action types
             external_origin = ExternalPartitionSetOrigin(
                 external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                    repository_location_origin=GrpcServerCodeLocationOrigin(
                         port=1234, host="localhost"
                     ),
                     repository_name="fake_repository",

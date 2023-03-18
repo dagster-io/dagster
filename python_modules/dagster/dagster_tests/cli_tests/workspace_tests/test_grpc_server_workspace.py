@@ -5,7 +5,7 @@ import yaml
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
+from dagster._core.host_representation import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
@@ -103,13 +103,13 @@ def test_grpc_server_env_vars():
         assert len(origins) == 2
 
         port_origin = origins["my_grpc_server_port"]
-        assert isinstance(origins["my_grpc_server_port"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_port"], GrpcServerCodeLocationOrigin)
 
         assert port_origin.port == 1234
         assert port_origin.host == "barhost"
 
         socket_origin = origins["my_grpc_server_socket"]
-        assert isinstance(origins["my_grpc_server_socket"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_socket"], GrpcServerCodeLocationOrigin)
 
         assert socket_origin.socket == "barsocket"
         assert socket_origin.host == "barhost"
