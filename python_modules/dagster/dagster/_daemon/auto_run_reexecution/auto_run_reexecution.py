@@ -125,7 +125,7 @@ def retry_run(
 
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=repo_location,
         external_pipeline=external_pipeline,
         strategy=strategy,
         extra_tags=tags,

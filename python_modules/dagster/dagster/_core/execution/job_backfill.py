@@ -271,7 +271,7 @@ def create_backfill_run(
             return None
         return instance.create_reexecuted_run(
             parent_run=last_run,
-            repo_location=repo_location,
+            code_location=repo_location,
             external_pipeline=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,

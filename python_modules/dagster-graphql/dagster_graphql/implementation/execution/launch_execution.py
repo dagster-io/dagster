@@ -105,7 +105,7 @@ def launch_reexecution_from_parent_run(
 
     run = instance.create_reexecuted_run(
         parent_run=cast(DagsterRun, parent_run),
-        repo_location=repo_location,
+        code_location=repo_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy(strategy),
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time

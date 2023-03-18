@@ -1377,7 +1377,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         *,
         parent_run: DagsterRun,
-        repo_location: "CodeLocation",
+        code_location: "CodeLocation",
         external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
@@ -1392,7 +1392,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.host_representation import CodeLocation, ExternalPipeline
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
-        check.inst_param(repo_location, "repo_location", CodeLocation)
+        check.inst_param(code_location, "code_location", CodeLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
@@ -1438,7 +1438,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
-        external_execution_plan = repo_location.get_external_execution_plan(
+        external_execution_plan = code_location.get_external_execution_plan(
             external_pipeline,
             run_config,
             mode=mode,
