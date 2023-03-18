@@ -101,7 +101,7 @@ def test_repository_data_can_reload_without_restarting(workspace_process_context
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
-    workspace_process_context.reload_repository_location("test")
+    workspace_process_context.reload_code_location("test")
     request_context = workspace_process_context.create_request_context()
     repo_location = request_context.get_code_location("test")
     repo = repo_location.get_repository("bar_repo")

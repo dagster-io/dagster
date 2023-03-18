@@ -195,7 +195,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def reload_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
         # This method reloads the location on the process context, and returns a new
         # request context created from the updated process context
-        self.process_context.reload_repository_location(name)
+        self.process_context.reload_code_location(name)
         return self.process_context.create_request_context()
 
     def shutdown_code_location(self, name: str):
@@ -401,7 +401,7 @@ class IWorkspaceProcessContext(ABC):
         pass
 
     @abstractmethod
-    def reload_repository_location(self, name: str) -> None:
+    def reload_code_location(self, name: str) -> None:
         pass
 
     def shutdown_repository_location(self, name: str) -> None:
@@ -638,7 +638,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 and self._location_entry_dict[location_name].load_error is not None
             )
 
-    def reload_repository_location(self, name: str) -> None:
+    def reload_code_location(self, name: str) -> None:
         # Can be called from a background thread
         new = self._load_location(self._location_entry_dict[name].origin)
         with self._lock:
@@ -705,7 +705,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # re-attach a subscriber
             # In case of a location error, just reload the handle in order to update the workspace
             # with the correct error messages
-            self.reload_repository_location(event.location_name)
+            self.reload_code_location(event.location_name)
 
     def __enter__(self):
         return self

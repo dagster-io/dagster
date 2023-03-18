@@ -51,7 +51,7 @@ def test_can_reload_on_external_repository_error():
                 assert not workspace.has_code_location(main_repo_location_name())
                 assert workspace.has_code_location_error(main_repo_location_name())
 
-            workspace.reload_repository_location(main_repo_location_name())
+            workspace.reload_code_location(main_repo_location_name())
             assert workspace.has_code_location(main_repo_location_name())
 
 
@@ -66,7 +66,7 @@ def test_reload_on_process_context():
             repo_name = repo.name
 
             # Reload the location and save the new repository name
-            process_context.reload_repository_location(repository_location.name)
+            process_context.reload_code_location(repository_location.name)
 
             new_request_context = process_context.create_request_context()
 
@@ -92,7 +92,7 @@ def test_reload_on_request_context():
             repo_name = repo.name
 
             # Reload the location and save the new repository name
-            process_context.reload_repository_location(repository_location.name)
+            process_context.reload_code_location(repository_location.name)
 
             new_request_context = process_context.create_request_context()
             repository_location = new_request_context.code_locations[0]
@@ -165,7 +165,7 @@ def test_handle_cleaup_by_gc_without_request_context():
 
             # Reload the location from the request context
             assert not called["yup"]
-            process_context.reload_repository_location("test_location")
+            process_context.reload_code_location("test_location")
             assert not called["yup"]
 
             request_context = None
