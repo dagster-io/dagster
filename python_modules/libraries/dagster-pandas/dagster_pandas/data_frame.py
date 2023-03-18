@@ -4,16 +4,15 @@ from dagster import (
     DagsterType,
     Field,
     MetadataEntry,
+    MetadataValue,
     StringSource,
+    TableColumn,
+    TableSchema,
+    TableSchemaMetadataValue,
     TypeCheck,
     _check as check,
     dagster_type_loader,
-    MetadataValue,
-    TableSchema,
-    TableColumn,
-    TableSchemaMetadataValue,
 )
-
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector
