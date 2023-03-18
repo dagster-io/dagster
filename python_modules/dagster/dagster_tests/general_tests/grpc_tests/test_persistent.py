@@ -13,7 +13,7 @@ from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
-    RegisteredRepositoryLocationOrigin,
+    RegisteredCodeLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
@@ -626,7 +626,7 @@ def test_load_with_secrets_loader_instance_ref():
                     pipeline_name="needs_env_var_job",
                     external_repository_origin=ExternalRepositoryOrigin(
                         repository_name="needs_env_var_repo",
-                        repository_location_origin=RegisteredRepositoryLocationOrigin("not_used"),
+                        repository_location_origin=RegisteredCodeLocationOrigin("not_used"),
                     ),
                 )
 

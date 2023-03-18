@@ -110,9 +110,10 @@ class CodeLocationOrigin(ABC, tuple):
         pass
 
 
-@whitelist_for_serdes
-class RegisteredRepositoryLocationOrigin(
-    NamedTuple("RegisteredRepositoryLocationOrigin", [("location_name", str)]),
+# Different storage name for backcompat
+@whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
+class RegisteredCodeLocationOrigin(
+    NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
     CodeLocationOrigin,
 ):
     """Identifies a repository location of a handle managed using metadata stored outside of the
@@ -121,14 +122,14 @@ class RegisteredRepositoryLocationOrigin(
     """
 
     def __new__(cls, location_name: str):
-        return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
+        return super(RegisteredCodeLocationOrigin, cls).__new__(cls, location_name)
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
+            "A RegisteredCodeLocationOrigin does not have enough information to load its "
             "repository location on its own."
         )
 

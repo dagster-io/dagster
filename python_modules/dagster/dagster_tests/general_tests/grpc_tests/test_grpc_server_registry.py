@@ -8,7 +8,7 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RegisteredRepositoryLocationOrigin,
+    RegisteredCodeLocationOrigin,
 )
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
@@ -201,7 +201,7 @@ class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
         )
 
     def supports_origin(self, repository_location_origin):
-        return isinstance(repository_location_origin, RegisteredRepositoryLocationOrigin)
+        return isinstance(repository_location_origin, RegisteredCodeLocationOrigin)
 
     def _get_loadable_target_origin(self, repository_location_origin):
         return self.mocked_loadable_target_origin
@@ -222,7 +222,7 @@ def test_custom_loadable_target_origin(instance):
         python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
     )
 
-    origin = RegisteredRepositoryLocationOrigin("test_location")
+    origin = RegisteredCodeLocationOrigin("test_location")
 
     with TestMockProcessGrpcServerRegistry(instance) as registry:
         registry.mocked_loadable_target_origin = first_loadable_target_origin

@@ -6,7 +6,7 @@ from dagster._core.errors import (
     DagsterRepositoryLocationLoadError,
     DagsterRepositoryLocationNotFoundError,
 )
-from dagster._core.host_representation.origin import RegisteredRepositoryLocationOrigin
+from dagster._core.host_representation.origin import RegisteredCodeLocationOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,
@@ -24,7 +24,7 @@ def test_get_repository_location():
         instance=mock.MagicMock(),
         workspace_snapshot={
             "loading_loc": CodeLocationEntry(
-                origin=RegisteredRepositoryLocationOrigin("loading_loc"),
+                origin=RegisteredCodeLocationOrigin("loading_loc"),
                 repository_location=None,
                 load_error=None,
                 load_status=CodeLocationLoadStatus.LOADING,
@@ -32,7 +32,7 @@ def test_get_repository_location():
                 update_timestamp=time.time(),
             ),
             "loaded_loc": CodeLocationEntry(
-                origin=RegisteredRepositoryLocationOrigin("loaded_loc"),
+                origin=RegisteredCodeLocationOrigin("loaded_loc"),
                 repository_location=mock_loc,
                 load_error=None,
                 load_status=CodeLocationLoadStatus.LOADED,
@@ -40,7 +40,7 @@ def test_get_repository_location():
                 update_timestamp=time.time(),
             ),
             "error_loc": CodeLocationEntry(
-                origin=RegisteredRepositoryLocationOrigin("error_loc"),
+                origin=RegisteredCodeLocationOrigin("error_loc"),
                 repository_location=None,
                 load_error=error_info,
                 load_status=CodeLocationLoadStatus.LOADED,
