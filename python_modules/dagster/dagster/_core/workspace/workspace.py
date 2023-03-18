@@ -23,7 +23,7 @@ class CodeLocationEntry(NamedTuple):
     update_timestamp: float
 
 
-class WorkspaceLocationStatusEntry(NamedTuple):
+class CodeLocationStatusEntry(NamedTuple):
     """Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
     to know whether the workspace needs reloading.
     """
@@ -46,14 +46,14 @@ class IWorkspace(ABC):
         """Return an entry for each location in the workspace."""
 
     @abstractmethod
-    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
 
 
 def location_status_from_location_entry(
     entry: CodeLocationEntry,
-) -> WorkspaceLocationStatusEntry:
-    return WorkspaceLocationStatusEntry(
+) -> CodeLocationStatusEntry:
+    return CodeLocationStatusEntry(
         location_name=entry.origin.location_name,
         load_status=entry.load_status,
         update_timestamp=entry.update_timestamp,

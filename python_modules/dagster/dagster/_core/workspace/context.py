@@ -46,8 +46,8 @@ from .permissions import (
 from .workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
+    CodeLocationStatusEntry,
     IWorkspace,
-    WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
 
@@ -90,7 +90,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
-    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         pass
 
     @property
@@ -333,7 +333,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
         return self._workspace_snapshot.get(name)
 
-    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         return [
             location_status_from_location_entry(entry)
             for entry in self._workspace_snapshot.values()

@@ -15,8 +15,8 @@ from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
+    CodeLocationStatusEntry,
     IWorkspace,
-    WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -44,7 +44,7 @@ class BaseDaemonWorkspace(IWorkspace):
             self._location_entries = self._load_workspace()
         return dict(self._location_entries)
 
-    def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
+    def get_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
         return [
