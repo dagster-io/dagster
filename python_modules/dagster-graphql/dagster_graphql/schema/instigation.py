@@ -199,7 +199,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
         )
 
     def resolve_evaluationResult(self, graphene_info: ResolveInfo):
-        if not graphene_info.context.has_repository_location(self._selector.location_name):
+        if not graphene_info.context.has_code_location(self._selector.location_name):
             raise UserFacingGraphQLError(
                 GrapheneRepositoryLocationNotFound(location_name=self._selector.location_name)
             )

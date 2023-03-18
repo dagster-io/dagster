@@ -58,7 +58,7 @@ def get_graph_or_error(graphene_info, graph_selector):
     from ..schema.solids import build_solid_handles
 
     check.inst_param(graph_selector, "graph_selector", GraphSelector)
-    if not graphene_info.context.has_repository_location(graph_selector.location_name):
+    if not graphene_info.context.has_code_location(graph_selector.location_name):
         return GrapheneGraphNotFoundError(selector=graph_selector)
 
     repo_loc = graphene_info.context.get_code_location(graph_selector.location_name)

@@ -180,7 +180,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def has_code_location_name(self, name: str) -> bool:
         return bool(self.get_location_entry(name))
 
-    def has_repository_location(self, name: str) -> bool:
+    def has_code_location(self, name: str) -> bool:
         location_entry = self.get_location_entry(name)
         return bool(location_entry and location_entry.repository_location is not None)
 
@@ -207,7 +207,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def has_external_job(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
-        if not self.has_repository_location(selector.location_name):
+        if not self.has_code_location(selector.location_name):
             return False
 
         loc = self.get_code_location(selector.location_name)

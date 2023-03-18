@@ -140,7 +140,7 @@ def fetch_repository(
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    if graphene_info.context.has_repository_location(repository_selector.location_name):
+    if graphene_info.context.has_code_location(repository_selector.location_name):
         repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(

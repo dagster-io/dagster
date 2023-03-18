@@ -186,7 +186,7 @@ def get_schedule_next_tick(
         return None
 
     repository_origin = schedule_state.origin.external_repository_origin
-    if not graphene_info.context.has_repository_location(
+    if not graphene_info.context.has_code_location(
         repository_origin.code_location_origin.location_name
     ):
         return None

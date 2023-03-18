@@ -156,7 +156,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         origin = self._backfill_job.partition_set_origin
         location_name = origin.external_repository_origin.code_location_origin.location_name
         repository_name = origin.external_repository_origin.repository_name
-        if not graphene_info.context.has_repository_location(location_name):
+        if not graphene_info.context.has_code_location(location_name):
             return None
 
         location = graphene_info.context.get_code_location(location_name)
