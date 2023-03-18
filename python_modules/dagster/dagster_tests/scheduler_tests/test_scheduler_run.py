@@ -27,8 +27,8 @@ from dagster._core.host_representation import (
     CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
+    GrpcServerCodeLocation,
     GrpcServerCodeLocationOrigin,
-    GrpcServerRepositoryLocation,
 )
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
@@ -2016,7 +2016,7 @@ def _grpc_server_external_repo(port, instance):
             location_origin = GrpcServerCodeLocationOrigin(
                 host="localhost", port=port, location_name="test_location"
             )
-            with GrpcServerRepositoryLocation(origin=location_origin) as location:
+            with GrpcServerCodeLocation(origin=location_origin) as location:
                 yield location.get_repository("the_repo")
 
     finally:

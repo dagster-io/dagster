@@ -3,7 +3,7 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-from dagster._core.host_representation import GrpcServerRepositoryLocation
+from dagster._core.host_representation import GrpcServerCodeLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (
@@ -206,21 +206,21 @@ def test_grpc_multi_location_workspace(config_source):
         assert "loaded_from_module" in repository_locations
 
         loaded_from_file_location = repository_locations.get("loaded_from_file")
-        assert isinstance(loaded_from_file_location, GrpcServerRepositoryLocation)
+        assert isinstance(loaded_from_file_location, GrpcServerCodeLocation)
         assert loaded_from_file_location.repository_names == {"hello_world_repository"}
 
         loaded_from_module_location = repository_locations.get("loaded_from_module")
-        assert isinstance(loaded_from_module_location, GrpcServerRepositoryLocation)
+        assert isinstance(loaded_from_module_location, GrpcServerCodeLocation)
 
         assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
         named_loaded_from_file_location = repository_locations.get("named_loaded_from_file")
         assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}
-        assert isinstance(named_loaded_from_file_location, GrpcServerRepositoryLocation)
+        assert isinstance(named_loaded_from_file_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_location = repository_locations.get("named_loaded_from_module")
         assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}
-        assert isinstance(named_loaded_from_module_location, GrpcServerRepositoryLocation)
+        assert isinstance(named_loaded_from_module_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_attribute_location = repository_locations.get(
             "named_loaded_from_module_attribute"
@@ -228,7 +228,7 @@ def test_grpc_multi_location_workspace(config_source):
         assert named_loaded_from_module_attribute_location.repository_names == {
             "hello_world_repository_name"
         }
-        assert isinstance(named_loaded_from_module_attribute_location, GrpcServerRepositoryLocation)
+        assert isinstance(named_loaded_from_module_attribute_location, GrpcServerCodeLocation)
 
         named_loaded_from_file_attribute_location = repository_locations.get(
             "named_loaded_from_file_attribute"
@@ -236,4 +236,4 @@ def test_grpc_multi_location_workspace(config_source):
         assert named_loaded_from_file_attribute_location.repository_names == {
             "hello_world_repository_name"
         }
-        assert isinstance(named_loaded_from_file_attribute_location, GrpcServerRepositoryLocation)
+        assert isinstance(named_loaded_from_file_attribute_location, GrpcServerCodeLocation)

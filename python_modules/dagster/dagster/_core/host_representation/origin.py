@@ -27,7 +27,7 @@ from dagster._serdes import (
 if TYPE_CHECKING:
     from dagster._core.host_representation.repository_location import (
         CodeLocation,
-        GrpcServerRepositoryLocation,
+        GrpcServerCodeLocation,
         InProcessCodeLocation,
     )
     from dagster._core.instance import DagsterInstance
@@ -245,7 +245,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
         from .grpc_server_registry import GrpcServerRegistry
-        from .repository_location import GrpcServerRepositoryLocation
+        from .repository_location import GrpcServerCodeLocation
 
         with GrpcServerRegistry(
             instance=instance,
@@ -256,7 +256,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             else DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=self,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -317,12 +317,12 @@ class GrpcServerCodeLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_location(self) -> "GrpcServerRepositoryLocation":
+    def create_location(self) -> "GrpcServerCodeLocation":
         from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+            GrpcServerCodeLocation,
         )
 
-        return GrpcServerRepositoryLocation(self)
+        return GrpcServerCodeLocation(self)
 
     def create_client(self) -> "DagsterGrpcClient":
         from dagster._grpc.client import DagsterGrpcClient

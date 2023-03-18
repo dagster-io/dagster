@@ -10,7 +10,7 @@ from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
 )
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.host_representation.repository_location import GrpcServerCodeLocation
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._legacy import pipeline
@@ -33,7 +33,7 @@ def other_repo():
 
 def _can_connect(origin, endpoint):
     try:
-        with GrpcServerRepositoryLocation(
+        with GrpcServerCodeLocation(
             origin=origin,
             server_id=endpoint.server_id,
             port=endpoint.port,
@@ -68,7 +68,7 @@ def test_error_repo_in_registry(instance):
 
         # But using that endpoint to load a location results in an error
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=error_origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,
@@ -80,7 +80,7 @@ def test_error_repo_in_registry(instance):
 
         # that error is idempotent
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
-            with GrpcServerRepositoryLocation(
+            with GrpcServerCodeLocation(
                 origin=error_origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,

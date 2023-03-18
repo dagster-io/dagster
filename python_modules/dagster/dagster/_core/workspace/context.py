@@ -22,7 +22,7 @@ from dagster._core.host_representation import (
     ExternalExecutionPlan,
     ExternalPartitionSet,
     ExternalPipeline,
-    GrpcServerRepositoryLocation,
+    GrpcServerCodeLocation,
     RepositoryHandle,
 )
 from dagster._core.host_representation.grpc_server_registry import (
@@ -517,7 +517,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 else self._grpc_server_registry.get_grpc_endpoint(origin)
             )
 
-            return GrpcServerRepositoryLocation(
+            return GrpcServerCodeLocation(
                 origin=origin,
                 server_id=endpoint.server_id,
                 port=endpoint.port,

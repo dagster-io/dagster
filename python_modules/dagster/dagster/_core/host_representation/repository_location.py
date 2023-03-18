@@ -540,7 +540,7 @@ class InProcessCodeLocation(CodeLocation):
         return DagsterLibraryRegistry.get()
 
 
-class GrpcServerRepositoryLocation(CodeLocation):
+class GrpcServerCodeLocation(CodeLocation):
     def __init__(
         self,
         origin: CodeLocationOrigin,

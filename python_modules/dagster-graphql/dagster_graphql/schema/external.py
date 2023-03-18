@@ -10,7 +10,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import (
     CodeLocation,
     ExternalRepository,
-    GrpcServerRepositoryLocation,
+    GrpcServerCodeLocation,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -95,9 +95,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
             else None
         )
 
-        server_id = (
-            location.server_id if isinstance(location, GrpcServerRepositoryLocation) else None
-        )
+        server_id = location.server_id if isinstance(location, GrpcServerCodeLocation) else None
 
         check.invariant(location.name is not None)
 

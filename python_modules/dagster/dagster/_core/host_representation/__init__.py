@@ -54,7 +54,7 @@ from .origin import (
 from .pipeline_index import PipelineIndex as PipelineIndex
 from .repository_location import (
     CodeLocation as CodeLocation,
-    GrpcServerRepositoryLocation as GrpcServerRepositoryLocation,
+    GrpcServerCodeLocation as GrpcServerCodeLocation,
     InProcessCodeLocation as InProcessCodeLocation,
 )
 from .represented import RepresentedPipeline as RepresentedPipeline

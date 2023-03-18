@@ -6,7 +6,7 @@ import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.host_representation.handle import JobHandle
 from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.host_representation.repository_location import GrpcServerCodeLocation
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import (
@@ -598,7 +598,7 @@ def test_locations_not_created(instance, monkeypatch, workspace_context, daemon,
         run_id="queued-run-2",
     )
 
-    original_method = GrpcServerRepositoryLocation.__init__
+    original_method = GrpcServerCodeLocation.__init__
 
     method_calls = []
 
@@ -627,7 +627,7 @@ def test_locations_not_created(instance, monkeypatch, workspace_context, daemon,
         )
 
     monkeypatch.setattr(
-        GrpcServerRepositoryLocation,
+        GrpcServerCodeLocation,
         "__init__",
         mocked_location_init,
     )

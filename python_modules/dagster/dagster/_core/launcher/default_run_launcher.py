@@ -102,7 +102,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
         from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+            GrpcServerCodeLocation,
         )
 
         run = context.dagster_run
@@ -121,12 +121,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         check.inst(
             repository_location,
-            GrpcServerRepositoryLocation,
+            GrpcServerCodeLocation,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerRepositoryLocation, repository_location).client
+            self._instance, run, cast(GrpcServerCodeLocation, repository_location).client
         )
 
         self._run_ids.add(run.run_id)
@@ -223,14 +223,14 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         # defer for perf
         from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+            GrpcServerCodeLocation,
         )
 
         if not self._wait_for_processes:
             return
 
         for location in self._locations_to_wait_for:
-            if isinstance(location, GrpcServerRepositoryLocation) and isinstance(
+            if isinstance(location, GrpcServerCodeLocation) and isinstance(
                 location.grpc_server_registry, GrpcServerRegistry
             ):
                 location.grpc_server_registry.wait_for_processes()
