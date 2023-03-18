@@ -338,7 +338,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             repo_def = recon_repo.get_definition()
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -414,7 +414,7 @@ def test_raise_on_error(kubeconfig_file):
             repo_def = recon_repo.get_definition()
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,

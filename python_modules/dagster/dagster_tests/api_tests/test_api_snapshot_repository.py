@@ -131,7 +131,7 @@ def test_defer_snapshots(instance):
 
         repo = ExternalRepository(
             external_repository_data,
-            RepositoryHandle(repository_name="bar_repo", repository_location=repository_location),
+            RepositoryHandle(repository_name="bar_repo", code_location=repository_location),
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_external_jobs()

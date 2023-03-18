@@ -307,7 +307,7 @@ class InProcessCodeLocation(CodeLocation):
         for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
             self._repositories[repo_name] = external_repo_from_def(
                 repo_def,
-                RepositoryHandle(repository_name=repo_name, repository_location=self),
+                RepositoryHandle(repository_name=repo_name, code_location=self),
             )
 
     @property
@@ -639,7 +639,7 @@ class GrpcServerCodeLocation(CodeLocation):
                     repo_data,
                     RepositoryHandle(
                         repository_name=repo_name,
-                        repository_location=self,
+                        code_location=self,
                     ),
                 )
                 for repo_name, repo_data in self._external_repositories_data.items()

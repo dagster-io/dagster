@@ -786,7 +786,7 @@ def _execute_backfill_command_at_location(
 
     repo_handle = RepositoryHandle(
         repository_name=external_repo.name,
-        repository_location=repo_location,
+        code_location=repo_location,
     )
 
     try:

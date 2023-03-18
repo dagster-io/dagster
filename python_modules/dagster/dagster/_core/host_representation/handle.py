@@ -23,16 +23,16 @@ class RepositoryHandle(
         ],
     )
 ):
-    def __new__(cls, repository_name: str, repository_location: "CodeLocation"):
+    def __new__(cls, repository_name: str, code_location: "CodeLocation"):
         from dagster._core.host_representation.repository_location import CodeLocation
 
-        check.inst_param(repository_location, "repository_location", CodeLocation)
+        check.inst_param(code_location, "code_location", CodeLocation)
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, "repository_name"),
-            repository_location.origin,
-            repository_location.get_repository_python_origin(repository_name),
-            repository_location.get_display_metadata(),
+            code_location.origin,
+            code_location.get_repository_python_origin(repository_name),
+            code_location.get_display_metadata(),
         )
 
     @property

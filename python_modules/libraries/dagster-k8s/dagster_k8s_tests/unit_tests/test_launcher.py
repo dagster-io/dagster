@@ -117,7 +117,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -231,7 +231,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -318,7 +318,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -399,7 +399,7 @@ def test_raise_on_error(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -460,7 +460,7 @@ def test_no_postgres(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
@@ -526,7 +526,7 @@ def test_check_run_health(kubeconfig_file):
             location = workspace.get_code_location(workspace.repository_location_names[0])
             repo_handle = RepositoryHandle(
                 repository_name=repo_def.name,
-                repository_location=location,
+                code_location=location,
             )
             fake_external_pipeline = external_pipeline_from_recon_pipeline(
                 recon_pipeline,
