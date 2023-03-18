@@ -171,9 +171,9 @@ class BaseWorkspaceRequestContext(IWorkspace):
         ]
 
     def has_code_location_error(self, name: str) -> bool:
-        return self.get_repository_location_error(name) is not None
+        return self.get_code_location_error(name) is not None
 
-    def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
+    def get_code_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
         entry = self.get_location_entry(name)
         return entry.load_error if entry else None
 

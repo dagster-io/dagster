@@ -717,7 +717,7 @@ def get_code_location_from_workspace(
         raise click.UsageError(
             'Error loading location "{provided_location_name}": {error_str}'.format(
                 provided_location_name=provided_location_name,
-                error_str=str(workspace.get_repository_location_error(provided_location_name)),
+                error_str=str(workspace.get_code_location_error(provided_location_name)),
             )
         )
 
