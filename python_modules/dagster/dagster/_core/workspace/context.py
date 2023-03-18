@@ -44,9 +44,9 @@ from .permissions import (
     get_user_permissions,
 )
 from .workspace import (
+    CodeLocationLoadStatus,
     IWorkspace,
     WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
     WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
@@ -602,7 +602,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             origin=origin,
             repository_location=location,
             load_error=error,
-            load_status=WorkspaceLocationLoadStatus.LOADED,
+            load_status=CodeLocationLoadStatus.LOADED,
             display_metadata=location.get_display_metadata()
             if location
             else origin.get_display_metadata(),

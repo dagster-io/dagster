@@ -23,8 +23,8 @@ from dagster._core.workspace.context import (
     WorkspaceProcessContext,
 )
 from dagster._core.workspace.workspace import (
+    CodeLocationLoadStatus,
     WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
 )
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
@@ -66,10 +66,10 @@ class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
 
     @classmethod
     def from_python_status(cls, python_status):
-        check.inst_param(python_status, "python_status", WorkspaceLocationLoadStatus)
-        if python_status == WorkspaceLocationLoadStatus.LOADING:
+        check.inst_param(python_status, "python_status", CodeLocationLoadStatus)
+        if python_status == CodeLocationLoadStatus.LOADING:
             return GrapheneRepositoryLocationLoadStatus.LOADING
-        elif python_status == WorkspaceLocationLoadStatus.LOADED:
+        elif python_status == CodeLocationLoadStatus.LOADED:
             return GrapheneRepositoryLocationLoadStatus.LOADED
         else:
             check.failed(f"Invalid location load status: {python_status}")

@@ -8,7 +8,10 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationLoadStatus,
+    WorkspaceLocationEntry,
+)
 
 
 @asset
@@ -81,7 +84,7 @@ def make_location_entry(defs_attr: str):
         origin=origin,
         repository_location=repo_location,
         load_error=None,
-        load_status=WorkspaceLocationLoadStatus.LOADED,
+        load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
     )

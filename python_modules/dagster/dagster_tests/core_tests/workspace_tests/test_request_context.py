@@ -8,7 +8,10 @@ from dagster._core.errors import (
 )
 from dagster._core.host_representation.origin import RegisteredRepositoryLocationOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationLoadStatus,
+    WorkspaceLocationEntry,
+)
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -24,7 +27,7 @@ def test_get_repository_location():
                 origin=RegisteredRepositoryLocationOrigin("loading_loc"),
                 repository_location=None,
                 load_error=None,
-                load_status=WorkspaceLocationLoadStatus.LOADING,
+                load_status=CodeLocationLoadStatus.LOADING,
                 display_metadata={},
                 update_timestamp=time.time(),
             ),
@@ -32,7 +35,7 @@ def test_get_repository_location():
                 origin=RegisteredRepositoryLocationOrigin("loaded_loc"),
                 repository_location=mock_loc,
                 load_error=None,
-                load_status=WorkspaceLocationLoadStatus.LOADED,
+                load_status=CodeLocationLoadStatus.LOADED,
                 display_metadata={},
                 update_timestamp=time.time(),
             ),
@@ -40,7 +43,7 @@ def test_get_repository_location():
                 origin=RegisteredRepositoryLocationOrigin("error_loc"),
                 repository_location=None,
                 load_error=error_info,
-                load_status=WorkspaceLocationLoadStatus.LOADED,
+                load_status=CodeLocationLoadStatus.LOADED,
                 display_metadata={},
                 update_timestamp=time.time(),
             ),

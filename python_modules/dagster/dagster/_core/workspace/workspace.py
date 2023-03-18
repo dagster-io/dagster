@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 # For locations that are loaded asynchronously
-class WorkspaceLocationLoadStatus(Enum):
+class CodeLocationLoadStatus(Enum):
     LOADING = "LOADING"  # Waiting for location to load or update
     LOADED = "LOADED"  # Finished loading (may be an error)
 
@@ -18,7 +18,7 @@ class WorkspaceLocationEntry(NamedTuple):
     origin: "CodeLocationOrigin"
     repository_location: Optional["CodeLocation"]
     load_error: Optional[SerializableErrorInfo]
-    load_status: WorkspaceLocationLoadStatus
+    load_status: CodeLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
 
@@ -29,7 +29,7 @@ class WorkspaceLocationStatusEntry(NamedTuple):
     """
 
     location_name: str
-    load_status: WorkspaceLocationLoadStatus
+    load_status: CodeLocationLoadStatus
     update_timestamp: float
 
 

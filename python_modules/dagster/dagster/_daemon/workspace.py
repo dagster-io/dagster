@@ -13,9 +13,9 @@ from dagster._core.host_representation.repository_location import (
 )
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.workspace import (
+    CodeLocationLoadStatus,
     IWorkspace,
     WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
     WorkspaceLocationStatusEntry,
     location_status_from_location_entry,
 )
@@ -147,7 +147,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
             origin=origin,
             repository_location=location,
             load_error=error,
-            load_status=WorkspaceLocationLoadStatus.LOADED,
+            load_status=CodeLocationLoadStatus.LOADED,
             display_metadata=location.get_display_metadata()
             if location
             else origin.get_display_metadata(),
