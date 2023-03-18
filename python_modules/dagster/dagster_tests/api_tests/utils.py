@@ -8,7 +8,7 @@ from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster._core.host_representation.handle import RepositoryHandle
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.repository_location import CodeLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -33,7 +33,7 @@ def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCon
 @contextmanager
 def get_bar_repo_repository_location(
     instance: Optional[DagsterInstance] = None,
-) -> Iterator[RepositoryLocation]:
+) -> Iterator[CodeLocation]:
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(instance_for_test())

@@ -53,8 +53,8 @@ from .origin import (
 )
 from .pipeline_index import PipelineIndex as PipelineIndex
 from .repository_location import (
+    CodeLocation as CodeLocation,
     GrpcServerRepositoryLocation as GrpcServerRepositoryLocation,
     InProcessRepositoryLocation as InProcessRepositoryLocation,
-    RepositoryLocation as RepositoryLocation,
 )
 from .represented import RepresentedPipeline as RepresentedPipeline

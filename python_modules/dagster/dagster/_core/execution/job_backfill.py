@@ -9,9 +9,9 @@ from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalPartitionSet,
     ExternalPipeline,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionParamData,
@@ -103,7 +103,7 @@ def execute_job_backfill_iteration(
 
 
 def _check_repo_has_partition_set(
-    repo_location: RepositoryLocation, backfill_job: PartitionBackfill
+    repo_location: CodeLocation, backfill_job: PartitionBackfill
 ) -> None:
     origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
 
@@ -167,7 +167,7 @@ def _get_partitions_chunk(
 def submit_backfill_runs(
     instance: DagsterInstance,
     workspace: IWorkspace,
-    repo_location: RepositoryLocation,
+    repo_location: CodeLocation,
     backfill_job: PartitionBackfill,
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
@@ -229,7 +229,7 @@ def submit_backfill_runs(
 
 def create_backfill_run(
     instance: DagsterInstance,
-    repo_location: RepositoryLocation,
+    repo_location: CodeLocation,
     external_pipeline: ExternalPipeline,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,

@@ -19,7 +19,7 @@ from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.repository_location import CodeLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -726,7 +726,7 @@ def _get_existing_run_for_request(
 def _create_scheduler_run(
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
-    repo_location: RepositoryLocation,
+    repo_location: CodeLocation,
     external_schedule: ExternalSchedule,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,

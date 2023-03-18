@@ -8,8 +8,8 @@ from dagster._core.errors import DagsterRepositoryLocationLoadError
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.origin import CodeLocationOrigin
 from dagster._core.host_representation.repository_location import (
+    CodeLocation,
     GrpcServerRepositoryLocation,
-    RepositoryLocation,
 )
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._core.workspace.workspace import (
@@ -58,7 +58,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def get_workspace_copy_for_iteration(self):
         return DaemonIterationWorkspace(self.get_workspace_snapshot())
 
-    def get_repository_location(self, location_name: str) -> RepositoryLocation:
+    def get_repository_location(self, location_name: str) -> CodeLocation:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
 
@@ -154,7 +154,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
             update_timestamp=time.time(),
         )
 
-    def _create_location_from_origin(self, origin) -> RepositoryLocation:
+    def _create_location_from_origin(self, origin) -> CodeLocation:
         check.inst_param(origin, "origin", CodeLocationOrigin)
 
         if not self._grpc_server_registry.supports_origin(origin):

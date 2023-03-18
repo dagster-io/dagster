@@ -17,13 +17,13 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
+    CodeLocation,
     CodeLocationOrigin,
     ExternalExecutionPlan,
     ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
     RepositoryHandle,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
@@ -132,7 +132,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_repository_location(self, location_name: str) -> RepositoryLocation:
+    def get_repository_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterRepositoryLocationNotFoundError(
@@ -154,7 +154,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     @property
-    def repository_locations(self) -> Sequence[RepositoryLocation]:
+    def repository_locations(self) -> Sequence[CodeLocation]:
         return [
             entry.repository_location
             for entry in self.get_workspace_snapshot().values()
@@ -507,9 +507,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         if token in self._state_subscribers:
             del self._state_subscribers[token]
 
-    def _create_location_from_origin(
-        self, origin: CodeLocationOrigin
-    ) -> Optional[RepositoryLocation]:
+    def _create_location_from_origin(self, origin: CodeLocationOrigin) -> Optional[CodeLocation]:
         if not self._grpc_server_registry.supports_origin(origin):
             return origin.create_location()
         else:

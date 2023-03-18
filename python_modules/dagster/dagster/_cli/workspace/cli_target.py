@@ -27,7 +27,7 @@ from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.repository_location import CodeLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -496,7 +496,7 @@ def repository_click_options() -> Sequence[ClickOption]:
             "--location",
             "-l",
             help=(
-                "RepositoryLocation within the workspace, necessary if more than one location is"
+                "CodeLocation within the workspace, necessary if more than one location is"
                 " present."
             ),
         ),
@@ -678,7 +678,7 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
 @contextmanager
 def get_repository_location_from_kwargs(
     instance: DagsterInstance, version: str, kwargs: ClickArgMapping
-) -> Iterator[RepositoryLocation]:
+) -> Iterator[CodeLocation]:
     # Instance isn't strictly required to load a repository location, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
@@ -688,7 +688,7 @@ def get_repository_location_from_kwargs(
 
 def get_repository_location_from_workspace(
     workspace: WorkspaceRequestContext, provided_location_name: Optional[str]
-) -> RepositoryLocation:
+) -> CodeLocation:
     if provided_location_name is None:
         if len(workspace.repository_location_names) == 1:
             provided_location_name = workspace.repository_location_names[0]
@@ -725,9 +725,9 @@ def get_repository_location_from_workspace(
 
 
 def get_external_repository_from_repo_location(
-    repo_location: RepositoryLocation, provided_repo_name: Optional[str]
+    repo_location: CodeLocation, provided_repo_name: Optional[str]
 ) -> ExternalRepository:
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
+    check.inst_param(repo_location, "repo_location", CodeLocation)
     check.opt_str_param(provided_repo_name, "provided_repo_name")
 
     repo_dict = repo_location.get_repositories()

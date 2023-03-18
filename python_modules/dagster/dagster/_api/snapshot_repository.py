@@ -9,16 +9,16 @@ from dagster._core.host_representation.external_data import (
 from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation import RepositoryLocation
+    from dagster._core.host_representation import CodeLocation
     from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_streaming_external_repositories_data_grpc(
-    api_client: "DagsterGrpcClient", repository_location: "RepositoryLocation"
+    api_client: "DagsterGrpcClient", repository_location: "CodeLocation"
 ) -> Mapping[str, ExternalRepositoryData]:
-    from dagster._core.host_representation import ExternalRepositoryOrigin, RepositoryLocation
+    from dagster._core.host_representation import CodeLocation, ExternalRepositoryOrigin
 
-    check.inst_param(repository_location, "repository_location", RepositoryLocation)
+    check.inst_param(repository_location, "repository_location", CodeLocation)
 
     repo_datas = {}
     for repository_name in repository_location.repository_names:  # type: ignore

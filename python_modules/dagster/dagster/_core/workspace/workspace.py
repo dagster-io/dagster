@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation import CodeLocationOrigin, RepositoryLocation
+    from dagster._core.host_representation import CodeLocation, CodeLocationOrigin
 
 
 # For locations that are loaded asynchronously
@@ -16,7 +16,7 @@ class WorkspaceLocationLoadStatus(Enum):
 
 class WorkspaceLocationEntry(NamedTuple):
     origin: "CodeLocationOrigin"
-    repository_location: Optional["RepositoryLocation"]
+    repository_location: Optional["CodeLocation"]
     load_error: Optional[SerializableErrorInfo]
     load_status: WorkspaceLocationLoadStatus
     display_metadata: Mapping[str, str]
@@ -37,7 +37,7 @@ class IWorkspace(ABC):
     """Manages a set of RepositoryLocations."""
 
     @abstractmethod
-    def get_repository_location(self, location_name: str) -> "RepositoryLocation":
+    def get_repository_location(self, location_name: str) -> "CodeLocation":
         """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it.
         """
 

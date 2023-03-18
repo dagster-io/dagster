@@ -9,7 +9,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.origin import RepositoryPythonOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.repository_location import RepositoryLocation
+    from dagster._core.host_representation.repository_location import CodeLocation
 
 
 class RepositoryHandle(
@@ -23,10 +23,10 @@ class RepositoryHandle(
         ],
     )
 ):
-    def __new__(cls, repository_name: str, repository_location: "RepositoryLocation"):
-        from dagster._core.host_representation.repository_location import RepositoryLocation
+    def __new__(cls, repository_name: str, repository_location: "CodeLocation"):
+        from dagster._core.host_representation.repository_location import CodeLocation
 
-        check.inst_param(repository_location, "repository_location", RepositoryLocation)
+        check.inst_param(repository_location, "repository_location", CodeLocation)
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, "repository_name"),

@@ -8,10 +8,10 @@ from dagster import (
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalRepository,
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
@@ -87,8 +87,8 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, location: RepositoryLocation):
-        self._location = check.inst_param(location, "location", RepositoryLocation)
+    def __init__(self, location: CodeLocation):
+        self._location = check.inst_param(location, "location", CodeLocation)
         environment_path = (
             location.origin.loadable_target_origin.executable_path
             if isinstance(location.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
@@ -237,11 +237,11 @@ class GrapheneRepository(graphene.ObjectType):
         self,
         instance: DagsterInstance,
         repository: ExternalRepository,
-        repository_location: RepositoryLocation,
+        repository_location: CodeLocation,
     ):
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
-            repository_location, "repository_location", RepositoryLocation
+            repository_location, "repository_location", CodeLocation
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)

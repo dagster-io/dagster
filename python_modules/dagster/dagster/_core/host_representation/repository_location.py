@@ -74,8 +74,8 @@ if TYPE_CHECKING:
     )
 
 
-class RepositoryLocation(AbstractContextManager):
-    """A RepositoryLocation represents a target containing user code which has a set of Dagster
+class CodeLocation(AbstractContextManager):
+    """A CodeLocation represents a target containing user code which has a set of Dagster
     definition objects. A given location will contain some number of uniquely named
     RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
 
@@ -287,7 +287,7 @@ class RepositoryLocation(AbstractContextManager):
         ...
 
 
-class InProcessRepositoryLocation(RepositoryLocation):
+class InProcessRepositoryLocation(CodeLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
         from dagster._utils.hosted_user_process import external_repo_from_def
@@ -540,7 +540,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return DagsterLibraryRegistry.get()
 
 
-class GrpcServerRepositoryLocation(RepositoryLocation):
+class GrpcServerRepositoryLocation(CodeLocation):
     def __init__(
         self,
         origin: CodeLocationOrigin,

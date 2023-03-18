@@ -36,10 +36,10 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalPipeline,
     ExternalRepository,
     RepositoryHandle,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.instance import DagsterInstance
@@ -490,7 +490,7 @@ def execute_launch_command(
 
 def _create_external_pipeline_run(
     instance: DagsterInstance,
-    repo_location: RepositoryLocation,
+    repo_location: CodeLocation,
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
     run_config: Mapping[str, object],
@@ -501,7 +501,7 @@ def _create_external_pipeline_run(
     run_id: Optional[str],
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
+    check.inst_param(repo_location, "repo_location", CodeLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.opt_mapping_param(run_config, "run_config", key_type=str)

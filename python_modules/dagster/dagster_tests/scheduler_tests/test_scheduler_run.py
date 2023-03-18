@@ -24,11 +24,11 @@ from dagster import (
 )
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocation,
     GrpcServerRepositoryLocationOrigin,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
@@ -2375,7 +2375,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
     ) as full_workspace_context:
         with pendulum.test(freeze_datetime):
             full_location = cast(
-                RepositoryLocation,
+                CodeLocation,
                 next(
                     iter(
                         full_workspace_context.create_request_context()
