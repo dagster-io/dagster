@@ -21,9 +21,9 @@ from typing_extensions import TypeGuard
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -141,7 +141,7 @@ class GrpcServerRegistry(AbstractContextManager):
             self._cleanup_thread.start()
 
     def supports_origin(
-        self, repository_location_origin: RepositoryLocationOrigin
+        self, repository_location_origin: CodeLocationOrigin
     ) -> TypeGuard[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
         return isinstance(repository_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
 
@@ -153,7 +153,7 @@ class GrpcServerRegistry(AbstractContextManager):
         self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
     ) -> GrpcServerEndpoint:
         check.inst_param(
-            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            repository_location_origin, "repository_location_origin", CodeLocationOrigin
         )
         with self._lock:
             origin_id = repository_location_origin.get_id()
@@ -168,7 +168,7 @@ class GrpcServerRegistry(AbstractContextManager):
         self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
     ) -> GrpcServerEndpoint:
         check.inst_param(
-            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            repository_location_origin, "repository_location_origin", CodeLocationOrigin
         )
 
         with self._lock:

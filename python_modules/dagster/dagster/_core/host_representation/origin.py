@@ -75,7 +75,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
 
-class RepositoryLocationOrigin(ABC, tuple):
+class CodeLocationOrigin(ABC, tuple):
     """Serializable representation of a RepositoryLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
@@ -113,7 +113,7 @@ class RepositoryLocationOrigin(ABC, tuple):
 @whitelist_for_serdes
 class RegisteredRepositoryLocationOrigin(
     NamedTuple("RegisteredRepositoryLocationOrigin", [("location_name", str)]),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
@@ -145,7 +145,7 @@ class InProcessRepositoryLocationOrigin(
             ("location_name", str),
         ],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location constructed in the same process. Primarily
     used in tests, since Dagster system processes like Dagit and the daemon do not
@@ -198,7 +198,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         "_ManagedGrpcPythonEnvRepositoryLocationOrigin",
         [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
     for these repository locations on startup.
@@ -278,7 +278,7 @@ class GrpcServerRepositoryLocationOrigin(
             ("use_ssl", Optional[bool]),
         ],
     ),
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
 ):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
@@ -344,18 +344,18 @@ class GrpcServerRepositoryLocationOrigin(
 class ExternalRepositoryOrigin(
     NamedTuple(
         "_ExternalRepositoryOrigin",
-        [("repository_location_origin", RepositoryLocationOrigin), ("repository_name", str)],
+        [("repository_location_origin", CodeLocationOrigin), ("repository_name", str)],
     )
 ):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, repository_name: str):
+    def __new__(cls, repository_location_origin: CodeLocationOrigin, repository_name: str):
         return super(ExternalRepositoryOrigin, cls).__new__(
             cls,
             check.inst_param(
-                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+                repository_location_origin, "repository_location_origin", CodeLocationOrigin
             ),
             check.str_param(repository_name, "repository_name"),
         )

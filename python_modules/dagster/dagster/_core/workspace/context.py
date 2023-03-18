@@ -17,13 +17,13 @@ from dagster._core.errors import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
+    CodeLocationOrigin,
     ExternalExecutionPlan,
     ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
     RepositoryHandle,
     RepositoryLocation,
-    RepositoryLocationOrigin,
 )
 from dagster._core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
@@ -495,7 +495,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         return self._workspace_load_target
 
     @property
-    def _origins(self) -> Sequence[RepositoryLocationOrigin]:
+    def _origins(self) -> Sequence[CodeLocationOrigin]:
         return self._workspace_load_target.create_origins() if self._workspace_load_target else []
 
     def add_state_subscriber(self, subscriber: LocationStateSubscriber) -> int:
@@ -508,7 +508,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             del self._state_subscribers[token]
 
     def _create_location_from_origin(
-        self, origin: RepositoryLocationOrigin
+        self, origin: CodeLocationOrigin
     ) -> Optional[RepositoryLocation]:
         if not self._grpc_server_registry.supports_origin(origin):
             return origin.create_location()
@@ -586,7 +586,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin: RepositoryLocationOrigin) -> WorkspaceLocationEntry:
+    def _load_location(self, origin: CodeLocationOrigin) -> WorkspaceLocationEntry:
         location_name = origin.location_name
         location = None
         error = None

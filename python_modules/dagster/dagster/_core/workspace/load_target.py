@@ -5,9 +5,9 @@ from typing import NamedTuple, Optional, Sequence
 import tomli
 
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
 )
 
 from .load import (
@@ -20,7 +20,7 @@ from .load import (
 
 class WorkspaceLoadTarget(ABC):
     @abstractmethod
-    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[CodeLocationOrigin]:
         """Reloads the RepositoryLocationOrigins for this workspace."""
 
 
@@ -37,7 +37,7 @@ class CompositeTarget(
 class WorkspaceFileTarget(
     NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
 ):
-    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return location_origins_from_yaml_paths(self.paths)
 
 
@@ -59,7 +59,7 @@ def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvRepositoryL
 
 
 class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
-    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return get_origins_from_toml(self.path)
 
 
@@ -157,5 +157,5 @@ class GrpcServerTarget(
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 class EmptyWorkspaceTarget(NamedTuple("EmptyWorkspaceTarget", []), WorkspaceLoadTarget):
-    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
+    def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return []

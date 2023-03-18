@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     ExternalRepositoryOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.origin import RepositoryPythonOrigin
 
@@ -17,7 +17,7 @@ class RepositoryHandle(
         "_RepositoryHandle",
         [
             ("repository_name", str),
-            ("repository_location_origin", RepositoryLocationOrigin),
+            ("repository_location_origin", CodeLocationOrigin),
             ("repository_python_origin", RepositoryPythonOrigin),
             ("display_metadata", Mapping[str, str]),
         ],

@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Tuple, Unio
 import dagster._check as check
 from dagster._core.code_pointer import rebase_file
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -30,11 +30,11 @@ def load_workspace_process_context_from_yaml_paths(
 
 def location_origins_from_yaml_paths(
     yaml_paths: Sequence[str],
-) -> Sequence[RepositoryLocationOrigin]:
+) -> Sequence[CodeLocationOrigin]:
     check.sequence_param(yaml_paths, "yaml_paths", str)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
-    origins_by_name: Dict[str, RepositoryLocationOrigin] = OrderedDict()
+    origins_by_name: Dict[str, CodeLocationOrigin] = OrderedDict()
     for workspace_config, yaml_path in zip(workspace_configs, yaml_paths):
         check.invariant(
             workspace_config is not None,
@@ -52,10 +52,10 @@ def location_origins_from_yaml_paths(
 
 def location_origins_from_config(
     workspace_config: Mapping[str, object], yaml_path: str
-) -> Mapping[str, RepositoryLocationOrigin]:
+) -> Mapping[str, CodeLocationOrigin]:
     workspace_config = ensure_workspace_config(workspace_config, yaml_path)
     location_configs = check.list_elem(workspace_config, "load_from", of_type=dict)
-    location_origins: Dict[str, RepositoryLocationOrigin] = OrderedDict()
+    location_origins: Dict[str, CodeLocationOrigin] = OrderedDict()
     for location_config in location_configs:
         origin = _location_origin_from_location_config(location_config, yaml_path)
         check.invariant(
@@ -292,7 +292,7 @@ def _get_executable_path(executable_path: Optional[str]) -> Optional[str]:
 
 def _location_origin_from_location_config(
     location_config: Mapping, yaml_path: str
-) -> RepositoryLocationOrigin:
+) -> CodeLocationOrigin:
     check.mapping_param(location_config, "location_config")
     check.str_param(yaml_path, "yaml_path")
 

@@ -41,9 +41,9 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.libraries import DagsterLibraryRegistry
@@ -234,7 +234,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @property
     @abstractmethod
-    def origin(self) -> RepositoryLocationOrigin:
+    def origin(self) -> CodeLocationOrigin:
         pass
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -543,7 +543,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(
         self,
-        origin: RepositoryLocationOrigin,
+        origin: CodeLocationOrigin,
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -555,7 +555,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
-        self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
 
         self.grpc_server_registry = check.opt_inst_param(
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
@@ -649,7 +649,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             raise
 
     @property
-    def origin(self) -> RepositoryLocationOrigin:
+    def origin(self) -> CodeLocationOrigin:
         return self._origin
 
     @property

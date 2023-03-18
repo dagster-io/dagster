@@ -6,7 +6,7 @@ from typing import Mapping, Sequence
 import dagster._check as check
 from dagster._core.errors import DagsterRepositoryLocationLoadError
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.host_representation.origin import RepositoryLocationOrigin
+from dagster._core.host_representation.origin import CodeLocationOrigin
 from dagster._core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     RepositoryLocation,
@@ -155,7 +155,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
         )
 
     def _create_location_from_origin(self, origin) -> RepositoryLocation:
-        check.inst_param(origin, "origin", RepositoryLocationOrigin)
+        check.inst_param(origin, "origin", CodeLocationOrigin)
 
         if not self._grpc_server_registry.supports_origin(origin):
             return origin.create_location()
