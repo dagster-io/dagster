@@ -165,7 +165,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def code_location_names(self) -> Sequence[str]:
         return list(self.get_workspace_snapshot())
 
-    def repository_location_errors(self) -> Sequence[SerializableErrorInfo]:
+    def code_location_errors(self) -> Sequence[SerializableErrorInfo]:
         return [
             entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
         ]
