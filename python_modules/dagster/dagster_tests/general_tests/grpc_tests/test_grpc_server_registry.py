@@ -200,10 +200,10 @@ class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
             instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
         )
 
-    def supports_origin(self, repository_location_origin):
-        return isinstance(repository_location_origin, RegisteredCodeLocationOrigin)
+    def supports_origin(self, code_location_origin):
+        return isinstance(code_location_origin, RegisteredCodeLocationOrigin)
 
-    def _get_loadable_target_origin(self, repository_location_origin):
+    def _get_loadable_target_origin(self, code_location_origin):
         return self.mocked_loadable_target_origin
 
 

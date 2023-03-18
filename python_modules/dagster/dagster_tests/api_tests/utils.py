@@ -24,14 +24,14 @@ def get_bar_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestCon
             python_file=file_relative_path(__file__, "api_tests_repo.py"),
             attribute="bar_repo",
             working_directory=None,
-            location_name="bar_repo_location",
+            location_name="bar_code_location",
         ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 
 
 @contextmanager
-def get_bar_repo_repository_location(
+def get_bar_repo_code_location(
     instance: Optional[DagsterInstance] = None,
 ) -> Iterator[CodeLocation]:
     with ExitStack() as stack:
@@ -43,7 +43,7 @@ def get_bar_repo_repository_location(
             python_file=file_relative_path(__file__, "api_tests_repo.py"),
             attribute="bar_repo",
         )
-        location_name = "bar_repo_location"
+        location_name = "bar_code_location"
 
         origin = ManagedGrpcPythonEnvCodeLocationOrigin(loadable_target_origin, location_name)
 
@@ -57,7 +57,7 @@ def get_bar_repo_handle(instance: Optional[DagsterInstance] = None) -> Iterator[
         if not instance:
             instance = stack.enter_context(instance_for_test())
 
-        with get_bar_repo_repository_location(instance) as location:
+        with get_bar_repo_code_location(instance) as location:
             yield location.get_repository("bar_repo").handle
 
 

@@ -60,9 +60,9 @@ def execute_job_backfill_iteration(
         ExternalPartitionSetOrigin, backfill.partition_set_origin
     ).external_repository_origin.code_location_origin
 
-    repo_location = workspace.get_code_location(origin.location_name)
+    code_location = workspace.get_code_location(origin.location_name)
 
-    _check_repo_has_partition_set(repo_location, backfill)
+    _check_repo_has_partition_set(code_location, backfill)
 
     has_more = True
     while has_more:
@@ -76,7 +76,7 @@ def execute_job_backfill_iteration(
 
         if chunk:
             for _run_id in submit_backfill_runs(
-                instance, workspace, repo_location, backfill, chunk
+                instance, workspace, code_location, backfill, chunk
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
@@ -103,19 +103,19 @@ def execute_job_backfill_iteration(
 
 
 def _check_repo_has_partition_set(
-    repo_location: CodeLocation, backfill_job: PartitionBackfill
+    code_location: CodeLocation, backfill_job: PartitionBackfill
 ) -> None:
     origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
 
     repo_name = origin.external_repository_origin.repository_name
-    if not repo_location.has_repository(repo_name):
+    if not code_location.has_repository(repo_name):
         raise DagsterBackfillFailedError(
-            f"Could not find repository {repo_name} in location {repo_location.name} to "
+            f"Could not find repository {repo_name} in location {code_location.name} to "
             f"run backfill {backfill_job.backfill_id}."
         )
 
     partition_set_name = origin.partition_set_name
-    external_repo = repo_location.get_repository(repo_name)
+    external_repo = code_location.get_repository(repo_name)
     if not external_repo.has_external_partition_set(partition_set_name):
         raise DagsterBackfillFailedError(
             f"Could not find partition set {partition_set_name} in repository {repo_name}. "
@@ -182,9 +182,7 @@ def submit_backfill_runs(
 
     check.invariant(
         code_location.has_repository(repo_name),
-        "Could not find repository {repo_name} in location {repo_location_name}".format(
-            repo_name=repo_name, repo_location_name=code_location.name
-        ),
+        f"Could not find repository {repo_name} in location {code_location.name}",
     )
     external_repo = code_location.get_repository(repo_name)
     partition_set_name = origin.partition_set_name

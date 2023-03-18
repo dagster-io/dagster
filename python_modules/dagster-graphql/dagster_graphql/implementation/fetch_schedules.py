@@ -190,13 +190,13 @@ def get_schedule_next_tick(
         repository_origin.code_location_origin.location_name
     ):
         return None
-    repository_location = graphene_info.context.get_code_location(
+    code_location = graphene_info.context.get_code_location(
         repository_origin.code_location_origin.location_name
     )
-    if not repository_location.has_repository(repository_origin.repository_name):
+    if not code_location.has_repository(repository_origin.repository_name):
         return None
 
-    repository = repository_location.get_repository(repository_origin.repository_name)
+    repository = code_location.get_repository(repository_origin.repository_name)
 
     if not repository.has_external_schedule(schedule_state.name):
         return None

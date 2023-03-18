@@ -192,33 +192,33 @@ def test_grpc_multi_location_workspace(config_source):
     )
     with ExitStack() as stack:
         instance = stack.enter_context(instance_for_test())
-        repository_locations = {
+        code_locations = {
             name: stack.enter_context(origin.create_single_location(instance))
             for name, origin in origins.items()
         }
 
-        assert len(repository_locations) == 6
-        assert "loaded_from_file" in repository_locations
-        assert "loaded_from_module" in repository_locations
+        assert len(code_locations) == 6
+        assert "loaded_from_file" in code_locations
+        assert "loaded_from_module" in code_locations
 
-        loaded_from_file_location = repository_locations.get("loaded_from_file")
+        loaded_from_file_location = code_locations.get("loaded_from_file")
         assert isinstance(loaded_from_file_location, GrpcServerCodeLocation)
         assert loaded_from_file_location.repository_names == {"hello_world_repository"}
 
-        loaded_from_module_location = repository_locations.get("loaded_from_module")
+        loaded_from_module_location = code_locations.get("loaded_from_module")
         assert isinstance(loaded_from_module_location, GrpcServerCodeLocation)
 
         assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
-        named_loaded_from_file_location = repository_locations.get("named_loaded_from_file")
+        named_loaded_from_file_location = code_locations.get("named_loaded_from_file")
         assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}
         assert isinstance(named_loaded_from_file_location, GrpcServerCodeLocation)
 
-        named_loaded_from_module_location = repository_locations.get("named_loaded_from_module")
+        named_loaded_from_module_location = code_locations.get("named_loaded_from_module")
         assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}
         assert isinstance(named_loaded_from_module_location, GrpcServerCodeLocation)
 
-        named_loaded_from_module_attribute_location = repository_locations.get(
+        named_loaded_from_module_attribute_location = code_locations.get(
             "named_loaded_from_module_attribute"
         )
         assert named_loaded_from_module_attribute_location.repository_names == {
@@ -226,7 +226,7 @@ def test_grpc_multi_location_workspace(config_source):
         }
         assert isinstance(named_loaded_from_module_attribute_location, GrpcServerCodeLocation)
 
-        named_loaded_from_file_attribute_location = repository_locations.get(
+        named_loaded_from_file_attribute_location = code_locations.get(
             "named_loaded_from_file_attribute"
         )
         assert named_loaded_from_file_attribute_location.repository_names == {

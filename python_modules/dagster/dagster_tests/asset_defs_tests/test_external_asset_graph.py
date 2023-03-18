@@ -78,11 +78,11 @@ def make_location_entry(defs_attr: str):
         location_name=None,
     )
 
-    repo_location = origin.create_location()
+    code_location = origin.create_location()
 
     return CodeLocationEntry(
         origin=origin,
-        code_location=repo_location,
+        code_location=code_location,
         load_error=None,
         load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},

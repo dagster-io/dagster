@@ -27,7 +27,7 @@ def bar_repo():
 
 
 @contextmanager
-def get_bar_repo_repository_location(instance):
+def get_bar_repo_code_location(instance):
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=__file__,
@@ -43,7 +43,7 @@ def get_bar_repo_repository_location(instance):
 
 @contextmanager
 def get_bar_repo_handle(instance):
-    with get_bar_repo_repository_location(instance) as location:
+    with get_bar_repo_code_location(instance) as location:
         yield location.get_repository("bar_repo").handle
 
 

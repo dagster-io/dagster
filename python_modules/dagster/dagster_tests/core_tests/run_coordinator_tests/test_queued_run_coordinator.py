@@ -48,7 +48,7 @@ class TestQueuedRunCoordinator:
 
     @pytest.fixture(name="external_pipeline")
     def external_pipeline_fixture(self, workspace):
-        location = workspace.get_code_location("bar_repo_location")
+        location = workspace.get_code_location("bar_code_location")
         return location.get_repository("bar_repo").get_full_external_job("foo")
 
     def create_run_for_test(self, instance, external_pipeline, **kwargs):

@@ -236,7 +236,7 @@ def test_valid_multi_repo():
     )
 
 
-def test_missing_repo_name_in_multi_repo_location():
+def test_missing_repo_name_in_multi_repo_code_location():
     result = load_repository_via_cli_runner(["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE])
 
     assert result.exit_code == 2

@@ -202,7 +202,7 @@ def test_submit_run():
     ) as instance:
         with get_bar_workspace(instance) as workspace:
             external_pipeline = (
-                workspace.get_code_location("bar_repo_location")
+                workspace.get_code_location("bar_code_location")
                 .get_repository("bar_repo")
                 .get_full_external_job("foo")
             )

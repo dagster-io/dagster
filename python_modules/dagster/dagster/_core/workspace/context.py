@@ -299,8 +299,8 @@ class BaseWorkspaceRequestContext(IWorkspace):
     ) -> bytes:
         check.str_param(repository_location_name, "repository_location_name")
         check.str_param(notebook_path, "notebook_path")
-        repository_location = self.get_code_location(repository_location_name)
-        return repository_location.get_external_notebook_data(notebook_path=notebook_path)
+        code_location = self.get_code_location(repository_location_name)
+        return code_location.get_external_notebook_data(notebook_path=notebook_path)
 
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):

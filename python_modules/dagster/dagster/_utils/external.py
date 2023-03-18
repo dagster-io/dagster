@@ -20,9 +20,7 @@ def external_pipeline_from_location(
 
     check.invariant(
         code_location.has_repository(repo_name),
-        "Could not find repository {repo_name} in location {repo_location_name}".format(
-            repo_name=repo_name, repo_location_name=code_location.name
-        ),
+        f"Could not find repository {repo_name} in location {code_location.name}",
     )
     external_repo = code_location.get_repository(repo_name)
 

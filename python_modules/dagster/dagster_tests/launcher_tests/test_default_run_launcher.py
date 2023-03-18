@@ -182,11 +182,11 @@ def test_successful_run(instance, workspace, run_config):
 
 
 def test_successful_run_from_pending(instance: DagsterInstance, pending_workspace):
-    repo_location = pending_workspace.get_code_location("test2")
-    external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+    code_location = pending_workspace.get_code_location("test2")
+    external_pipeline = code_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
     )
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config={},
         mode="default",

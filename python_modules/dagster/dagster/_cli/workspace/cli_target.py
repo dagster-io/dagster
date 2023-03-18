@@ -766,9 +766,9 @@ def get_external_repository_from_kwargs(
 ) -> Iterator[ExternalRepository]:
     # Instance isn't strictly required to load an ExternalRepository, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_code_location_from_kwargs(instance, version, kwargs) as repo_location:
+    with get_code_location_from_kwargs(instance, version, kwargs) as code_location:
         provided_repo_name = check.opt_str_elem(kwargs, "repository")
-        yield get_external_repository_from_code_location(repo_location, provided_repo_name)
+        yield get_external_repository_from_code_location(code_location, provided_repo_name)
 
 
 def get_external_job_from_external_repo(

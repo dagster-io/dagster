@@ -115,24 +115,24 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         external_pipeline_origin = check.not_none(run.external_pipeline_origin)
-        repository_location = context.workspace.get_code_location(
+        code_location = context.workspace.get_code_location(
             external_pipeline_origin.external_repository_origin.code_location_origin.location_name
         )
 
         check.inst(
-            repository_location,
+            code_location,
             GrpcServerCodeLocation,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerCodeLocation, repository_location).client
+            self._instance, run, cast(GrpcServerCodeLocation, code_location).client
         )
 
         self._run_ids.add(run.run_id)
 
         if self._wait_for_processes:
-            self._locations_to_wait_for.append(repository_location)
+            self._locations_to_wait_for.append(code_location)
 
     def _get_grpc_client_for_termination(self, run_id):
         # defer for perf

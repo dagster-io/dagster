@@ -257,7 +257,7 @@ def submit_run_request(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
     location_name = repo_handle.code_location_origin.location_name
-    repo_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
+    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
     job_name = _get_implicit_job_name_for_assets(
         asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
     )
@@ -273,9 +273,9 @@ def submit_run_request(
         asset_selection=run_request.asset_selection,
         solid_selection=None,
     )
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         {},
         DEFAULT_MODE_NAME,

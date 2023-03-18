@@ -105,11 +105,11 @@ def test_run_from_pending_repository():
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
 
-                repo_location = workspace.get_code_location("test2")
-                external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+                code_location = workspace.get_code_location("test2")
+                external_pipeline = code_location.get_repository("pending").get_full_external_job(
                     "my_cool_asset_job"
                 )
-                external_execution_plan = repo_location.get_external_execution_plan(
+                external_execution_plan = code_location.get_external_execution_plan(
                     external_pipeline=external_pipeline,
                     run_config={},
                     mode="default",
@@ -222,10 +222,10 @@ def test_terminate_after_shutdown():
 
             poll_for_step_start(instance, pipeline_run.run_id)
 
-            repository_location = workspace.get_code_location("test")
+            code_location = workspace.get_code_location("test")
             # Tell the server to shut down once executions finish
-            repository_location.grpc_server_registry.get_grpc_endpoint(
-                repository_location.origin
+            code_location.grpc_server_registry.get_grpc_endpoint(
+                code_location.origin
             ).create_client().shutdown_server()
 
             external_pipeline = (

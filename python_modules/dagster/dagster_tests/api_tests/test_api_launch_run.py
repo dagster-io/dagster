@@ -10,7 +10,7 @@ from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._grpc.types import StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_repository_location
+from .utils import get_bar_repo_code_location
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):
@@ -26,9 +26,9 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 def test_launch_run_with_unloadable_pipeline_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location(instance) as repository_location:
-            job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-            api_client = repository_location.client
+        with get_bar_repo_code_location(instance) as code_location:
+            job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+            api_client = code_location.client
 
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
@@ -76,9 +76,9 @@ def test_launch_run_with_unloadable_pipeline_grpc():
 
 def test_launch_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location(instance) as repository_location:
-            job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-            api_client = repository_location.client
+        with get_bar_repo_code_location(instance) as code_location:
+            job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+            api_client = code_location.client
 
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id
@@ -121,9 +121,9 @@ def test_launch_run_grpc():
 
 def test_launch_unloadable_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location(instance) as repository_location:
-            job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-            api_client = repository_location.client
+        with get_bar_repo_code_location(instance) as code_location:
+            job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+            api_client = code_location.client
 
             run = create_run_for_test(instance, "foo")
             run_id = run.run_id

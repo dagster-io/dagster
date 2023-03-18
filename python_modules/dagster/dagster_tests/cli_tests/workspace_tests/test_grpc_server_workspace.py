@@ -45,28 +45,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
+                code_locations = {
                     name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
                 default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.socket == first_socket
                 assert local_port.host == "localhost"
                 assert local_port.port is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.socket == second_socket
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.port is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
+                assert all(map(lambda x: x.name, code_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 
@@ -175,28 +175,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
+                code_locations = {
                     name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
                 default_location_name = "grpc:localhost:{port}".format(port=first_port)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.port == first_port
                 assert local_port.host == "localhost"
                 assert local_port.socket is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.port == second_port
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.socket is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
+                assert all(map(lambda x: x.name, code_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 

@@ -52,9 +52,9 @@ def _get_external_pipeline_or_raise(
     elif ignore_subset:
         external_pipeline = ctx.get_full_external_job(selector)
     else:
-        repository_location = ctx.get_code_location(selector.location_name)
+        code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_pipeline = repository_location.get_external_pipeline(selector)
+            external_pipeline = code_location.get_external_pipeline(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(

@@ -449,9 +449,9 @@ def execute_launch_command(
     config = get_config_from_args(kwargs)
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
-        repo_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
+        code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
         external_repo = get_external_repository_from_code_location(
-            repo_location, cast(Optional[str], kwargs.get("repository"))
+            code_location, cast(Optional[str], kwargs.get("repository"))
         )
         external_pipeline = get_external_job_from_external_repo(
             external_repo,
@@ -474,7 +474,7 @@ def execute_launch_command(
 
         pipeline_run = _create_external_pipeline_run(
             instance=instance,
-            repo_location=repo_location,
+            code_location=code_location,
             external_repo=external_repo,
             external_pipeline=external_pipeline,
             run_config=config,
@@ -490,7 +490,7 @@ def execute_launch_command(
 
 def _create_external_pipeline_run(
     instance: DagsterInstance,
-    repo_location: CodeLocation,
+    code_location: CodeLocation,
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
     run_config: Mapping[str, object],
@@ -501,7 +501,7 @@ def _create_external_pipeline_run(
     run_id: Optional[str],
 ) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(repo_location, "repo_location", CodeLocation)
+    check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
@@ -523,17 +523,17 @@ def _create_external_pipeline_run(
 
     pipeline_name = external_pipeline.name
     pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
+        location_name=code_location.name,
         repository_name=external_repo.name,
         pipeline_name=pipeline_name,
         solid_selection=solid_selection,
     )
 
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
     pipeline_mode = mode or external_pipeline.get_default_mode_name()
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
         pipeline_mode,
@@ -731,13 +731,13 @@ def job_backfill_command(**kwargs):
 
 def execute_backfill_command(cli_args, print_fn, instance):
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
-        repo_location = get_code_location_from_workspace(workspace, cli_args.get("location"))
+        code_location = get_code_location_from_workspace(workspace, cli_args.get("location"))
         _execute_backfill_command_at_location(
             cli_args,
             print_fn,
             instance,
             workspace,
-            repo_location,
+            code_location,
         )
 
 
@@ -746,10 +746,10 @@ def _execute_backfill_command_at_location(
     print_fn,
     instance,
     workspace,
-    repo_location,
+    code_location,
 ):
     external_repo = get_external_repository_from_code_location(
-        repo_location, cli_args.get("repository")
+        code_location, cli_args.get("repository")
     )
 
     external_pipeline = get_external_job_from_external_repo(external_repo, cli_args.get("job_name"))
@@ -786,11 +786,11 @@ def _execute_backfill_command_at_location(
 
     repo_handle = RepositoryHandle(
         repository_name=external_repo.name,
-        code_location=repo_location,
+        code_location=code_location,
     )
 
     try:
-        partition_names_or_error = repo_location.get_external_partition_names(
+        partition_names_or_error = code_location.get_external_partition_names(
             partition_set, instance=instance
         )
     except Exception as e:
@@ -829,7 +829,7 @@ def _execute_backfill_command_at_location(
         )
         try:
             partition_execution_data = (
-                repo_location.get_external_partition_set_execution_param_data(
+                code_location.get_external_partition_set_execution_param_data(
                     repository_handle=repo_handle,
                     partition_set_name=partition_set_name,
                     partition_names=partition_names,
@@ -848,7 +848,7 @@ def _execute_backfill_command_at_location(
         for partition_data in partition_execution_data.partition_data:
             pipeline_run = create_backfill_run(
                 instance,
-                repo_location,
+                code_location,
                 external_pipeline,
                 partition_set,
                 backfill_job,

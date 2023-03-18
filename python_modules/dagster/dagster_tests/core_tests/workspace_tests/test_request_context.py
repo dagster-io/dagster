@@ -15,7 +15,7 @@ from dagster._core.workspace.workspace import (
 from dagster._utils.error import SerializableErrorInfo
 
 
-def test_get_repository_location():
+def test_get_code_location():
     mock_loc = mock.MagicMock()
 
     error_info = SerializableErrorInfo(message="oopsie", stack=[], cls_name="Exception")

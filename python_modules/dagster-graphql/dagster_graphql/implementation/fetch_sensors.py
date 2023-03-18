@@ -105,8 +105,8 @@ def stop_sensor(
 
     external_sensors = {
         sensor.get_external_origin_id(): sensor
-        for repository_location in graphene_info.context.code_locations
-        for repository in repository_location.get_repositories().values()
+        for code_location in graphene_info.context.code_locations
+        for repository in code_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
 
@@ -205,13 +205,13 @@ def get_sensor_next_tick(
     ):
         return None
 
-    repository_location = graphene_info.context.get_code_location(
+    code_location = graphene_info.context.get_code_location(
         repository_origin.code_location_origin.location_name
     )
-    if not repository_location.has_repository(repository_origin.repository_name):
+    if not code_location.has_repository(repository_origin.repository_name):
         return None
 
-    repository = repository_location.get_repository(repository_origin.repository_name)
+    repository = code_location.get_repository(repository_origin.repository_name)
 
     if not repository.has_external_sensor(sensor_state.name):
         return None

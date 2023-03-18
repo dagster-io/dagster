@@ -130,8 +130,8 @@ def _get_run_stats(partition_statuses):
 
 class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def _create_backfill(self, graphql_context):
-        repository_location = graphql_context.get_code_location("test")
-        repository = repository_location.get_repository("test_repo")
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
 
         backfill = PartitionBackfill(
             backfill_id=make_new_backfill_id(),

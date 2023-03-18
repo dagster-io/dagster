@@ -71,7 +71,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
     repositories: Dict[str, ExternalRepository]
-    repository_location: CodeLocation
+    code_location: CodeLocation
 
     def get_single_repository(self) -> ExternalRepository:
         assert len(self.repositories) == 1
@@ -102,17 +102,15 @@ def instance_with_multiple_code_locations(
         ) as workspace_context:
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
-            for repository_location_entry in (
+            for code_location_entry in (
                 workspace_context.create_request_context().get_workspace_snapshot().values()
             ):
-                repository_location: CodeLocation = check.not_none(
-                    repository_location_entry.code_location
-                )
-                location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
+                code_location: CodeLocation = check.not_none(code_location_entry.code_location)
+                location_infos[code_location.name] = CodeLocationInfoForSensorTest(
                     instance=instance,
                     context=workspace_context,
-                    repositories={**repository_location.get_repositories()},
-                    repository_location=repository_location,
+                    repositories={**code_location.get_repositories()},
+                    code_location=code_location,
                 )
 
             yield location_infos
