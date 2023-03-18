@@ -1319,7 +1319,6 @@ def test_reconciliation(scenario):
     instance = DagsterInstance.ephemeral()
     run_requests, _ = scenario.do_scenario(instance)
 
-    print(run_requests)
     assert len(run_requests) == len(scenario.expected_run_requests)
 
     def sort_run_request_key_fn(run_request):
