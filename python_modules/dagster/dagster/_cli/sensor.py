@@ -9,9 +9,9 @@ from dagster import (
     __version__ as dagster_version,
 )
 from dagster._cli.workspace.cli_target import (
+    get_code_location_from_kwargs,
     get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_repository_location_from_kwargs,
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
@@ -272,7 +272,7 @@ def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance,
             version=dagster_version,
             kwargs=cli_args,
@@ -350,7 +350,7 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as repo_location:
             if bool(cli_args.get("delete")) == bool(cli_args.get("set")):

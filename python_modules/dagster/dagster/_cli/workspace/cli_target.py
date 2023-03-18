@@ -676,7 +676,7 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
 
 
 @contextmanager
-def get_repository_location_from_kwargs(
+def get_code_location_from_kwargs(
     instance: DagsterInstance, version: str, kwargs: ClickArgMapping
 ) -> Iterator[CodeLocation]:
     # Instance isn't strictly required to load a repository location, but is included
@@ -766,7 +766,7 @@ def get_external_repository_from_kwargs(
 ) -> Iterator[ExternalRepository]:
     # Instance isn't strictly required to load an ExternalRepository, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_repository_location_from_kwargs(instance, version, kwargs) as repo_location:
+    with get_code_location_from_kwargs(instance, version, kwargs) as repo_location:
         provided_repo_name = check.opt_str_elem(kwargs, "repository")
         yield get_external_repository_from_code_location(repo_location, provided_repo_name)
 
