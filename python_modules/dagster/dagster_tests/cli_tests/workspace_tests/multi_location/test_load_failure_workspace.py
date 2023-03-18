@@ -19,9 +19,9 @@ def test_multi_location_error(instance):
         assert isinstance(cli_workspace, WorkspaceProcessContext)
         assert cli_workspace.repository_locations_count == 2
 
-        assert cli_workspace.has_repository_location("working_location")
-        assert not cli_workspace.has_repository_location("broken_location")
-        assert not cli_workspace.has_repository_location("completely_unknown_location")
+        assert cli_workspace.has_code_location("working_location")
+        assert not cli_workspace.has_code_location("broken_location")
+        assert not cli_workspace.has_code_location("completely_unknown_location")
 
         request_context = cli_workspace.create_request_context()
 
@@ -43,7 +43,7 @@ def test_workspace_with_only_error(instance):
     ) as cli_workspace:
         assert isinstance(cli_workspace, WorkspaceProcessContext)
         assert cli_workspace.repository_locations_count == 1
-        assert not cli_workspace.has_repository_location("broken_location")
+        assert not cli_workspace.has_code_location("broken_location")
 
         request_context = cli_workspace.create_request_context()
         assert len(request_context.code_location_errors()) == 1

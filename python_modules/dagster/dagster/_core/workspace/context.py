@@ -621,7 +621,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         with self._lock:
             return list(self._location_entry_dict)
 
-    def has_repository_location(self, location_name: str) -> bool:
+    def has_code_location(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
 
         with self._lock:

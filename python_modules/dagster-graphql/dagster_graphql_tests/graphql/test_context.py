@@ -48,11 +48,11 @@ def test_can_reload_on_external_repository_error():
                         define_out_of_process_workspace(__file__, "get_repo", instance)
                     )
 
-                assert not workspace.has_repository_location(main_repo_location_name())
+                assert not workspace.has_code_location(main_repo_location_name())
                 assert workspace.has_repository_location_error(main_repo_location_name())
 
             workspace.reload_repository_location(main_repo_location_name())
-            assert workspace.has_repository_location(main_repo_location_name())
+            assert workspace.has_code_location(main_repo_location_name())
 
 
 def test_reload_on_process_context():
