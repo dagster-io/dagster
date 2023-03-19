@@ -3,11 +3,13 @@ import sys
 import time
 from typing import Iterator, Optional
 
+import pendulum
+
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType
+from dagster._core.events import DagsterEventType, EngineEventData
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -15,10 +17,12 @@ from dagster._core.storage.pipeline_run import (
     RunRecord,
     RunsFilter,
 )
+from dagster._core.storage.tags import MAX_RUNTIME_TAG
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+DEFAULT_MAX_RUNTIME = 60 * 60 * 12
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
@@ -101,7 +105,7 @@ def monitor_started_run(
                     )
                 logger.info(msg)
                 instance.report_run_failed(run, msg)
-    instance.handle_started_run(run_record, logger)
+    handle_started_run(instance, run_record, logger)
 
 
 def execute_monitoring_iteration(
@@ -142,3 +146,48 @@ def execute_monitoring_iteration(
             yield error_info
         else:
             yield
+
+
+def handle_started_run(
+    instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
+) -> None:
+    max_time_str = run_record.dagster_run.tags.get(
+        MAX_RUNTIME_TAG,
+    )
+
+    max_time = float(max_time_str) if max_time_str else DEFAULT_MAX_RUNTIME
+
+    if (
+        run_record.start_time is not None
+        and pendulum.now("UTC").timestamp() - run_record.start_time > max_time
+    ):
+        logger.info(
+            f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"
+            f" {max_time} seconds: terminating run."
+        )
+
+        try:
+            instance.run_launcher.terminate(
+                run_id=run_record.dagster_run.run_id,
+                message="Run has exceeded maximum allowed runtime.",
+            )
+        except:
+            instance.report_engine_event(
+                (
+                    "Exception while attempting to force-terminate run. Run will still be marked as"
+                    " canceled."
+                ),
+                pipeline_name=run_record.dagster_run.job_name,
+                run_id=run_record.dagster_run.run_id,
+                engine_event_data=EngineEventData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
+                ),
+            )
+            instance.report_run_canceled(
+                run_record.dagster_run,
+                message=(
+                    "Attempted to terminate this run for exceeding maximum runtime, but run"
+                    " termination failed. Forcibly marked as canceled, computational resources may"
+                    " not have been cleaned up."
+                ),
+            )
