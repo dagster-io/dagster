@@ -772,6 +772,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
         bob,
         candace,
         danny,
+        earth,
         edgar,
         fiona,
         george,
@@ -785,7 +786,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
 
     @repository
     def my_repo():
-        return [alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
+        return [earth, alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
