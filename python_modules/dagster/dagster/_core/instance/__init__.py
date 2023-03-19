@@ -28,7 +28,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
@@ -63,7 +62,6 @@ from dagster._core.storage.pipeline_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
-    MAX_RUNTIME_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     RESUME_RETRY_TAG,
@@ -1543,26 +1541,6 @@ class DagsterInstance(DynamicPartitionsStore):
             return self._run_storage.add_run(pipeline_run)
         except DagsterRunAlreadyExists:
             return get_run()
-
-    def handle_started_run(self, run_record: RunRecord, logger: logging.Logger) -> None:
-        max_time_str = run_record.dagster_run.tags.get(MAX_RUNTIME_TAG)
-
-        # If MAX_RUNTIME_TAG has not been set, nothing to do
-        if not max_time_str:
-            return
-        max_time = float(max_time_str)
-        if (
-            run_record.start_time is not None
-            and pendulum.now().timestamp() - run_record.start_time > max_time
-        ):
-            logger.info(
-                f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"
-                f" {max_time} seconds: terminating run."
-            )
-            self.run_launcher.terminate(
-                run_id=run_record.dagster_run.run_id,
-                message="Run has exceeded maximum allowed runtime.",
-            )
 
     @traced
     def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
