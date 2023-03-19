@@ -1,11 +1,21 @@
 from functools import wraps
-from typing import Any, Callable, Mapping, Optional, Set
+from typing import Any, Callable, Mapping, Optional, Set, cast
 
-from dagster import AssetsDefinition, In, Nothing, Out, op
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    FreshnessPolicy,
+    In,
+    Nothing,
+    OpExecutionContext,
+    Out,
+    PartitionsDefinition,
+    op,
+)
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.decorators.op_decorator import is_context_provided
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.partition import PartitionsDefinition
 from dbt.contracts.graph.manifest import WritableManifest
 
 from dagster_dbt.asset_utils import (
@@ -31,6 +41,49 @@ def manifest_to_node_dict(manifest: WritableManifest) -> Mapping[str, Any]:
 
 def _chop(unique_id: str) -> str:
     return unique_id.split(".")[-1]
+
+
+class DbtExecutionContext(OpExecutionContext):
+    """OpExecutionContext augmented with additional context related to dbt."""
+
+    manifest: WritableManifest
+
+    def __init__(
+        self,
+        op_context: OpExecutionContext,
+        manifest: WritableManifest,
+        base_select: str,
+        base_exclude: Optional[str],
+        key_by_unique_id: Mapping[str, AssetKey],
+    ):
+        super().__init__(op_context.get_step_execution_context())
+        self.manifest = manifest
+        self._manifest_dict = manifest_to_node_dict(manifest)
+        self._base_select = base_select
+        self._base_exclude = base_exclude
+        self._key_by_unique_id = key_by_unique_id
+        self._unique_id_by_key = {v: k for k, v in key_by_unique_id.items()}
+
+    @property
+    def all_selected(self) -> bool:
+        return self.selected_output_names == len(self.op_def.output_defs)
+
+    def get_dbt_selection_kwargs(self) -> Mapping[str, Any]:
+        if self.all_selected:
+            return {"select": self._base_select, "exclude": self._base_exclude}
+        return {"select": " ".join(self.fqn_for_key(key) for key in self.selected_asset_keys)}
+
+    def key_for_unique_id(self, unique_id: str) -> AssetKey:
+        return self._key_by_unique_id[unique_id]
+
+    def unique_id_for_key(self, key: AssetKey) -> str:
+        return self._unique_id_by_key[key]
+
+    def node_info_for_key(self, key: AssetKey) -> Mapping[str, Any]:
+        return self._manifest_dict[self.unique_id_for_key(key)]
+
+    def fqn_for_key(self, key: AssetKey) -> str:
+        return ".".join(self.node_info_for_key(key)["fqn"])
 
 
 def dbt_assets(
@@ -86,7 +139,22 @@ def dbt_assets(
         )
         @wraps(fn)
         def _op(*args, **kwargs):
-            return fn(*args, **kwargs)
+            if is_context_provided(get_function_params(fn)):
+                # convert the OpExecutionContext into a DbtExecutionContext, which has
+                # additional context related to dbt
+                yield from fn(
+                    DbtExecutionContext(
+                        cast(OpExecutionContext, args[0]),
+                        manifest=manifest,
+                        base_select=select,
+                        base_exclude=exclude,
+                        key_by_unique_id=key_by_unique_id,
+                    ),
+                    *args[1:],
+                    **kwargs,
+                )
+            else:
+                yield from fn(*args, **kwargs)
 
         return AssetsDefinition.from_op(
             _op,

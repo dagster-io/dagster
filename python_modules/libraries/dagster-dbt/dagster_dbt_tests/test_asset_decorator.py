@@ -2,7 +2,9 @@ from typing import AbstractSet, Optional
 
 import pytest
 from dagster import AssetKey, file_relative_path
-from dagster_dbt.asset_decorators import dbt_assets
+from dagster._core.definitions.materialize import materialize
+from dagster_dbt.asset_decorators import DbtExecutionContext, dbt_assets
+from dagster_dbt.dbt_asset_resource import DbtAssetResource
 
 from .utils import assert_assets_match_project
 
@@ -83,15 +85,39 @@ def test_basic() -> None:
     ],
 )
 def test_selections(
-    select: Optional[str], exclude: Optional[str], expected_asset_names: AbstractSet[str]
+    dbt_build,
+    conn_string,
+    test_project_dir: str,
+    test_profiles_dir: str,
+    select: Optional[str],
+    exclude: Optional[str],
+    expected_asset_names: AbstractSet[str],
 ) -> None:
     @dbt_assets(
         manifest_path=file_relative_path(__file__, "sample_manifest.json"),
         select=select or "*",
         exclude=exclude,
     )
-    def my_dbt_assets():
-        ...
+    def my_dbt_assets(context: DbtExecutionContext, dbt: DbtAssetResource):
+        yield from dbt.cli(context, "run")
 
     expected_asset_keys = {AssetKey(key.split("/")) for key in expected_asset_names}
     assert my_dbt_assets.keys == expected_asset_keys
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtAssetResource(
+                project_dir=test_project_dir,
+                profiles_dir=test_profiles_dir,
+            )
+        },
+    )
+
+    assert result.success
+    all_keys = {
+        event.event_specific_data.materialization.asset_key  # type: ignore
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    }
+    assert all_keys == expected_asset_keys

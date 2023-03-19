@@ -16,7 +16,6 @@ from typing import (
     Union,
 )
 
-import dateutil
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -57,11 +56,11 @@ from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
     _get_input_name,
     _get_output_name,
     result_to_events,
     select_unique_ids_from_manifest,
+    structured_json_line_to_events,
 )
 
 
@@ -240,77 +239,6 @@ def _batch_event_iterator(
             )
 
 
-def _events_for_structured_json_line(
-    json_line: Mapping[str, Any],
-    context: OpExecutionContext,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ],
-    manifest_json: Mapping[str, Any],
-) -> Iterator[Union[AssetObservation, Output]]:
-    """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
-    as closely as possible.
-    """
-    runtime_node_info = json_line.get("data", {}).get("node_info", {})
-    if not runtime_node_info:
-        return
-
-    node_resource_type = runtime_node_info.get("resource_type")
-    node_status = runtime_node_info.get("node_status")
-    unique_id = runtime_node_info.get("unique_id")
-
-    if not node_resource_type or not unique_id:
-        return
-
-    compiled_node_info = manifest_json["nodes"][unique_id]
-
-    if node_resource_type in ASSET_RESOURCE_TYPES and node_status == "success":
-        metadata = dict(
-            runtime_metadata_fn(context, compiled_node_info) if runtime_metadata_fn else {}
-        )
-        started_at_str = runtime_node_info.get("node_started_at")
-        finished_at_str = runtime_node_info.get("node_finished_at")
-        if started_at_str is None or finished_at_str is None:
-            return
-
-        started_at = dateutil.parser.isoparse(started_at_str)  # type: ignore
-        completed_at = dateutil.parser.isoparse(finished_at_str)  # type: ignore
-        duration = completed_at - started_at
-        metadata.update(
-            {
-                "Execution Started At": started_at.isoformat(timespec="seconds"),
-                "Execution Completed At": completed_at.isoformat(timespec="seconds"),
-                "Execution Duration": duration.total_seconds(),
-            }
-        )
-        yield Output(
-            value=None,
-            output_name=_get_output_name(compiled_node_info),
-            metadata=metadata,
-        )
-    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at") is not None:
-        upstream_unique_ids = (
-            manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
-        )
-        # tests can apply to multiple asset keys
-        for upstream_id in upstream_unique_ids:
-            # the upstream id can reference a node or a source
-            upstream_node_info = manifest_json["nodes"].get(upstream_id) or manifest_json[
-                "sources"
-            ].get(upstream_id)
-            if upstream_node_info is None:
-                continue
-            upstream_asset_key = node_info_to_asset_key(upstream_node_info)
-            yield AssetObservation(
-                asset_key=upstream_asset_key,
-                metadata={
-                    "Test ID": unique_id,
-                    "Test Status": node_status,
-                },
-            )
-
-
 def _stream_event_iterator(
     context: OpExecutionContext,
     dbt_resource: DbtCliResource,
@@ -330,7 +258,7 @@ def _stream_event_iterator(
         command="build" if use_build_command else "run",
         **kwargs,
     ):
-        yield from _events_for_structured_json_line(
+        yield from structured_json_line_to_events(
             parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
         )
 

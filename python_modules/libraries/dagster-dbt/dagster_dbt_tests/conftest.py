@@ -10,7 +10,7 @@ from dagster._utils.test.postgres_instance import TestPostgresInstance
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"
 TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")
-DBT_CONFIG_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
+TEST_PROFILES_DIR = os.path.join(TEST_PROJECT_DIR, "dbt_config")
 TEST_DBT_TARGET_DIR = os.path.join(TEST_PROJECT_DIR, "target_test")
 
 TEST_PYTHON_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_python_test_project")
@@ -25,8 +25,14 @@ def test_project_dir():
 
 
 @pytest.fixture(scope="session")
+def test_profiles_dir():
+    return TEST_PROFILES_DIR
+
+
+@pytest.fixture(scope="session")
 def dbt_config_dir():
-    return DBT_CONFIG_DIR
+    # temporary backcompat
+    return TEST_PROFILES_DIR
 
 
 @pytest.fixture(scope="session")
