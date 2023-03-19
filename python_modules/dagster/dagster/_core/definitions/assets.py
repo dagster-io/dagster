@@ -975,7 +975,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def unique_id(self) -> str:
         """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8")).hexdigest()
+        return hashlib.md5((json.dumps(sorted(self.keys))).encode("utf-8"), usedforsecurity=False).hexdigest()
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
