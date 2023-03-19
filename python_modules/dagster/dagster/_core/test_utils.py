@@ -293,7 +293,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         """Nothing to join on since all executions are synchronous."""
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         check.not_implemented("Termination not supported")
 
 
@@ -350,7 +350,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         check.not_implemented("Termintation not supported")
 
 

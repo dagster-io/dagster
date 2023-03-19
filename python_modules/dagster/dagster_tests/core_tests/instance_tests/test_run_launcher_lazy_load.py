@@ -37,7 +37,7 @@ class InitFailRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         pass
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         raise NotImplementedError()
 
     @property

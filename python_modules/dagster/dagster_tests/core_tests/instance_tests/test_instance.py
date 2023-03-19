@@ -278,7 +278,7 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         raise NotImplementedError()
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         raise NotImplementedError()
 
     @property
@@ -514,7 +514,7 @@ class InvalidRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         pass
 
 
