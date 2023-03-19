@@ -38,15 +38,13 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
 from dbt.main import parse_args as dbt_parse_args
 
-from ..asset_defs import (
-    _get_asset_deps,
-)
 from ..asset_utils import (
     default_asset_key_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
     get_deps,
+    get_asset_deps,
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
@@ -314,7 +312,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             freshness_policies_by_key,
             fqns_by_output_name,
             metadata_by_output_name,
-        ) = _get_asset_deps(
+        ) = get_asset_deps(
             dbt_nodes=dbt_nodes,
             deps=dbt_dependencies,
             node_info_to_asset_key=self._node_info_to_asset_key,

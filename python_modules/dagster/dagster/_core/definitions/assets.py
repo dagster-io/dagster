@@ -455,6 +455,9 @@ class AssetsDefinition(ResourceAddable):
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
+
+        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
+
         transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
@@ -467,17 +470,6 @@ class AssetsDefinition(ResourceAddable):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
-
-        keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
-        key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
-        for output_name, key in keys_by_output_name.items():
-            # add key_prefix to the beginning of each asset key
-            key_with_key_prefix = AssetKey(
-                list(filter(None, [*(key_prefix_list or []), *key.path]))
-            )
-            keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
-
         check.param_invariant(
             group_name is None or group_names_by_output_name is None,
             "group_name",
@@ -486,20 +478,20 @@ class AssetsDefinition(ResourceAddable):
 
         if group_name:
             group_names_by_key = {
-                asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
+                asset_key: group_name for asset_key in keys_by_output_name.values()
             }
         elif group_names_by_output_name:
             group_names_by_key = {
-                keys_by_output_name_with_prefix[output_name]: group_name
+                keys_by_output_name[output_name]: group_name
                 for output_name, group_name in group_names_by_output_name.items()
                 if group_name is not None
             }
         else:
             group_names_by_key = None
 
-        return AssetsDefinition(
+        assets_def = AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name_with_prefix,
+            keys_by_output_name=keys_by_output_name,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
@@ -537,6 +529,17 @@ class AssetsDefinition(ResourceAddable):
             if descriptions_by_output_name
             else None,
             can_subset=can_subset,
+        )
+
+        if key_prefix is None:
+            return assets_def
+
+        key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+        return assets_def.with_prefix_or_group(
+            output_asset_key_replacements={
+                asset_key: AssetKey([*key_prefix_list, *asset_key.path])
+                for asset_key in keys_by_output_name.values()
+            }
         )
 
     @public

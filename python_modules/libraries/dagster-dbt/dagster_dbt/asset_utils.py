@@ -1,7 +1,11 @@
+import hashlib
 import textwrap
-from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, Set
+from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, Set, Tuple
 
-from dagster import AssetKey, FreshnessPolicy, MetadataValue, TableColumn, TableSchema
+from dagster import AssetKey, FreshnessPolicy, MetadataValue, TableColumn, TableSchema, In, Out
+from dagster._core.types.dagster_type import Nothing
+from dagster._utils.merger import merge_dicts
+from dagster_dbt.utils import _get_input_name, _get_output_name
 
 ###################
 # DEFAULT FUNCTIONS
@@ -140,3 +144,93 @@ def get_deps(
     }
 
     return frozen_asset_deps
+
+
+def get_asset_deps(
+    dbt_nodes,
+    deps,
+    node_info_to_asset_key,
+    node_info_to_group_fn,
+    node_info_to_freshness_policy_fn,
+    node_info_to_definition_metadata_fn,
+    io_manager_key,
+    display_raw_sql,
+) -> Tuple[
+    Dict[AssetKey, Set[AssetKey]],
+    Dict[AssetKey, Tuple[str, In]],
+    Dict[AssetKey, Tuple[str, Out]],
+    Dict[AssetKey, str],
+    Dict[AssetKey, FreshnessPolicy],
+    Dict[str, List[str]],
+    Dict[str, Dict[str, Any]],
+]:
+    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
+    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
+    asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
+
+    # These dicts could be refactored as a single dict, mapping from output name to arbitrary
+    # metadata that we need to store for reference.
+    group_names_by_key: Dict[AssetKey, str] = {}
+    freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
+    fqns_by_output_name: Dict[str, List[str]] = {}
+    metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
+
+    for unique_id, parent_unique_ids in deps.items():
+        node_info = dbt_nodes[unique_id]
+
+        output_name = _get_output_name(node_info)
+        fqns_by_output_name[output_name] = node_info["fqn"]
+
+        metadata_by_output_name[output_name] = {
+            key: node_info[key] for key in ["unique_id", "resource_type"]
+        }
+
+        asset_key = node_info_to_asset_key(node_info)
+
+        asset_deps[asset_key] = set()
+
+        metadata = default_metadata_fn(node_info)
+        if node_info_to_definition_metadata_fn != default_metadata_fn:
+            metadata = merge_dicts(metadata, node_info_to_definition_metadata_fn(node_info))
+        asset_outs[asset_key] = (
+            output_name,
+            Out(
+                io_manager_key=io_manager_key,
+                description=default_description_fn(node_info, display_raw_sql),
+                metadata=metadata,
+                is_required=False,
+                dagster_type=Nothing,
+                code_version=hashlib.sha1(
+                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
+                ).hexdigest(),
+            ),
+        )
+
+        group_name = node_info_to_group_fn(node_info)
+        if group_name is not None:
+            group_names_by_key[asset_key] = group_name
+
+        freshness_policy = node_info_to_freshness_policy_fn(node_info)
+        if freshness_policy is not None:
+            freshness_policies_by_key[asset_key] = freshness_policy
+
+        for parent_unique_id in parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_asset_key = node_info_to_asset_key(parent_node_info)
+
+            asset_deps[asset_key].add(parent_asset_key)
+
+            # if this parent is not one of the selected nodes, it's an input
+            if parent_unique_id not in deps:
+                input_name = _get_input_name(parent_node_info)
+                asset_ins[parent_asset_key] = (input_name, In(Nothing))
+
+    return (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        freshness_policies_by_key,
+        fqns_by_output_name,
+        metadata_by_output_name,
+    )

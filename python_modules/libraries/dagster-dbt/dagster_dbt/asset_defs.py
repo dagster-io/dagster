@@ -7,7 +7,6 @@ from typing import (
     Callable,
     Dict,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -20,14 +19,11 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     FreshnessPolicy,
-    In,
-    Nothing,
     OpExecutionContext,
-    Out,
     PartitionsDefinition,
     _check as check,
     get_dagster_logger,
-    op,
+    Output,
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
@@ -35,33 +31,25 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     CoercibleToAssetKeyPrefix,
-    Output,
 )
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
-from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.backcompat import experimental_arg_warning
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.merger import deep_merge_dicts
+from dagster_dbt.asset_decorators import DbtExecutionContext, dbt_assets
+from packaging import version
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
-    default_description_fn,
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
-    get_deps,
 )
 from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.dbt_asset_resource import DbtAssetResource
 from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import (
-    _get_input_name,
-    _get_output_name,
-    result_to_events,
-    select_unique_ids_from_manifest,
-    structured_json_line_to_events,
-)
+from dagster_dbt.utils import result_to_events, structured_json_line_to_events
 
 
 def _load_manifest_for_project(
@@ -106,94 +94,28 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
     )
 
 
-def _get_asset_deps(
-    dbt_nodes,
-    deps,
-    node_info_to_asset_key,
-    node_info_to_group_fn,
-    node_info_to_freshness_policy_fn,
-    node_info_to_definition_metadata_fn,
-    io_manager_key,
-    display_raw_sql,
-) -> Tuple[
-    Dict[AssetKey, Set[AssetKey]],
-    Dict[AssetKey, Tuple[str, In]],
-    Dict[AssetKey, Tuple[str, Out]],
-    Dict[AssetKey, str],
-    Dict[AssetKey, FreshnessPolicy],
-    Dict[str, List[str]],
-    Dict[str, Dict[str, Any]],
-]:
-    asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
-    asset_ins: Dict[AssetKey, Tuple[str, In]] = {}
-    asset_outs: Dict[AssetKey, Tuple[str, Out]] = {}
+def _stream_event_iterator(
+    context: OpExecutionContext,
+    dbt_resource: DbtCliResource,
+    use_build_command: bool,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+    ],
+    kwargs: Dict[str, Any],
+) -> Iterator[Union[AssetObservation, Output]]:
+    """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
+    emitted.
+    """
+    manifest_json = check.not_none(dbt_resource.get_manifest_json())
 
-    # These dicts could be refactored as a single dict, mapping from output name to arbitrary
-    # metadata that we need to store for reference.
-    group_names_by_key: Dict[AssetKey, str] = {}
-    freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
-    fqns_by_output_name: Dict[str, List[str]] = {}
-    metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
-
-    for unique_id, parent_unique_ids in deps.items():
-        node_info = dbt_nodes[unique_id]
-
-        output_name = _get_output_name(node_info)
-        fqns_by_output_name[output_name] = node_info["fqn"]
-
-        metadata_by_output_name[output_name] = {
-            key: node_info[key] for key in ["unique_id", "resource_type"]
-        }
-
-        asset_key = node_info_to_asset_key(node_info)
-
-        asset_deps[asset_key] = set()
-
-        metadata = default_metadata_fn(node_info)
-        if node_info_to_definition_metadata_fn != default_metadata_fn:
-            metadata = merge_dicts(metadata, node_info_to_definition_metadata_fn(node_info))
-        asset_outs[asset_key] = (
-            output_name,
-            Out(
-                io_manager_key=io_manager_key,
-                description=default_description_fn(node_info, display_raw_sql),
-                metadata=metadata,
-                is_required=False,
-                dagster_type=Nothing,
-                code_version=hashlib.sha1(
-                    (node_info.get("raw_sql") or node_info.get("raw_code", "")).encode("utf-8")
-                ).hexdigest(),
-            ),
+    for parsed_json_line in dbt_resource.cli_stream_json(
+        command="build" if use_build_command else "run",
+        **kwargs,
+    ):
+        yield from structured_json_line_to_events(
+            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
         )
-
-        group_name = node_info_to_group_fn(node_info)
-        if group_name is not None:
-            group_names_by_key[asset_key] = group_name
-
-        freshness_policy = node_info_to_freshness_policy_fn(node_info)
-        if freshness_policy is not None:
-            freshness_policies_by_key[asset_key] = freshness_policy
-
-        for parent_unique_id in parent_unique_ids:
-            parent_node_info = dbt_nodes[parent_unique_id]
-            parent_asset_key = node_info_to_asset_key(parent_node_info)
-
-            asset_deps[asset_key].add(parent_asset_key)
-
-            # if this parent is not one of the selected nodes, it's an input
-            if parent_unique_id not in deps:
-                input_name = _get_input_name(parent_node_info)
-                asset_ins[parent_asset_key] = (input_name, In(Nothing))
-
-    return (
-        asset_deps,
-        asset_ins,
-        asset_outs,
-        group_names_by_key,
-        freshness_policies_by_key,
-        fqns_by_output_name,
-        metadata_by_output_name,
-    )
 
 
 def _batch_event_iterator(
@@ -209,6 +131,9 @@ def _batch_event_iterator(
     """Yields events for a dbt cli invocation. Waits until the entire command has completed before
     emitting outputs.
     """
+    # clean up any existing run results json
+    dbt_resource.remove_run_results_json()
+
     dbt_output: Optional[DbtOutput] = None
     try:
         if use_build_command:
@@ -239,201 +164,6 @@ def _batch_event_iterator(
             )
 
 
-def _stream_event_iterator(
-    context: OpExecutionContext,
-    dbt_resource: DbtCliResource,
-    use_build_command: bool,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ],
-    kwargs: Dict[str, Any],
-) -> Iterator[Union[AssetObservation, Output]]:
-    """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
-    emitted.
-    """
-    manifest_json = check.not_none(dbt_resource.get_manifest_json())
-
-    for parsed_json_line in dbt_resource.cli_stream_json(
-        command="build" if use_build_command else "run",
-        **kwargs,
-    ):
-        yield from structured_json_line_to_events(
-            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
-        )
-
-
-def _get_dbt_op(
-    op_name: str,
-    ins: Mapping[str, In],
-    outs: Mapping[str, Out],
-    select: str,
-    exclude: str,
-    use_build_command: bool,
-    fqns_by_output_name: Mapping[str, List[str]],
-    dbt_resource_key: str,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ],
-):
-    @op(
-        name=op_name,
-        tags={"kind": "dbt"},
-        ins=ins,
-        out=outs,
-        required_resource_keys={dbt_resource_key},
-        config_schema=Field(
-            Permissive(
-                {
-                    "select": Field(str, is_required=False),
-                    "exclude": Field(str, is_required=False),
-                    "vars": Field(dict, is_required=False),
-                    "full_refresh": Field(bool, is_required=False),
-                }
-            ),
-            default_value={},
-            description=(
-                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
-                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
-                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
-                " being passed into the underlying execution"
-            ),
-        ),
-    )
-    def _dbt_op(context):
-        dbt_resource = getattr(context.resources, dbt_resource_key)
-        # clean up any run results from the last run
-        dbt_resource.remove_run_results_json()
-
-        kwargs: Dict[str, Any] = {}
-        # in the case that we're running everything, opt for the cleaner selection string
-        if len(context.selected_output_names) == len(outs):
-            kwargs["select"] = select
-            kwargs["exclude"] = exclude
-        else:
-            # for each output that we want to emit, translate to a dbt select string by converting
-            # the out to its corresponding fqn
-            kwargs["select"] = [
-                ".".join(fqns_by_output_name[output_name])
-                for output_name in context.selected_output_names
-            ]
-        # variables to pass into the command
-        if partition_key_to_vars_fn:
-            kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
-        # merge in any additional kwargs from the config
-        kwargs = deep_merge_dicts(kwargs, context.op_config)
-
-        if _can_stream_events(dbt_resource):
-            yield from _stream_event_iterator(
-                context,
-                dbt_resource,
-                use_build_command,
-                node_info_to_asset_key,
-                runtime_metadata_fn,
-                kwargs,
-            )
-        else:
-            yield from _batch_event_iterator(
-                context,
-                dbt_resource,
-                use_build_command,
-                node_info_to_asset_key,
-                runtime_metadata_fn,
-                kwargs,
-            )
-
-    return _dbt_op
-
-
-def _dbt_nodes_to_assets(
-    dbt_nodes: Mapping[str, Any],
-    select: str,
-    exclude: str,
-    selected_unique_ids: AbstractSet[str],
-    project_id: str,
-    dbt_resource_key: str,
-    runtime_metadata_fn: Optional[
-        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
-    ] = None,
-    io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
-    use_build_command: bool = False,
-    partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
-    node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = default_freshness_policy_fn,
-    node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = default_metadata_fn,
-    display_raw_sql: bool = True,
-) -> AssetsDefinition:
-    if use_build_command:
-        deps = get_deps(
-            dbt_nodes,
-            selected_unique_ids,
-            asset_resource_types=["model", "seed", "snapshot"],
-        )
-    else:
-        deps = get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
-
-    (
-        asset_deps,
-        asset_ins,
-        asset_outs,
-        group_names_by_key,
-        freshness_policies_by_key,
-        fqns_by_output_name,
-        _,
-    ) = _get_asset_deps(
-        dbt_nodes=dbt_nodes,
-        deps=deps,
-        node_info_to_asset_key=node_info_to_asset_key,
-        node_info_to_group_fn=node_info_to_group_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
-        io_manager_key=io_manager_key,
-        display_raw_sql=display_raw_sql,
-    )
-
-    # prevent op name collisions between multiple dbt multi-assets
-    op_name = f"run_dbt_{project_id}"
-    if select != "*" or exclude:
-        op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
-
-    dbt_op = _get_dbt_op(
-        op_name=op_name,
-        ins=dict(asset_ins.values()),
-        outs=dict(asset_outs.values()),
-        select=select,
-        exclude=exclude,
-        use_build_command=use_build_command,
-        fqns_by_output_name=fqns_by_output_name,
-        dbt_resource_key=dbt_resource_key,
-        node_info_to_asset_key=node_info_to_asset_key,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
-        runtime_metadata_fn=runtime_metadata_fn,
-    )
-
-    return AssetsDefinition(
-        keys_by_input_name={
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-        },
-        keys_by_output_name={
-            output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
-        },
-        node_def=dbt_op,
-        can_subset=True,
-        asset_deps=asset_deps,
-        group_names_by_key=group_names_by_key,
-        freshness_policies_by_key=freshness_policies_by_key,
-        partitions_def=partitions_def,
-    )
-
-
 def load_assets_from_dbt_project(
     project_dir: str,
     profiles_dir: Optional[str] = None,
@@ -455,7 +185,7 @@ def load_assets_from_dbt_project(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], MetadataUserInput
     ] = default_metadata_fn,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -569,7 +299,7 @@ def load_assets_from_dbt_manifest(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = default_freshness_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
-        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+        [Mapping[str, Any]], MetadataUserInput
     ] = default_metadata_fn,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
@@ -637,53 +367,88 @@ def load_assets_from_dbt_manifest(
         )
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
+
+    select = check.opt_str_param(select, "select", default="*")
+    exclude = check.opt_str_param(exclude, "exclude", default="")
+
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
 
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
-    dbt_nodes = {
-        **manifest_json["nodes"],
-        **manifest_json["sources"],
-        **manifest_json["metrics"],
-        **manifest_json["exposures"],
+    project_id = manifest_json["metadata"]["project_id"][:5]
+    # prevent op name collisions between multiple dbt multi-assets
+    op_name = f"run_dbt_{project_id}"
+    if select != "*" or exclude:
+        op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+
+    merged_metadata_fn = lambda node_info: {
+        **default_metadata_fn(node_info),
+        **node_info_to_definition_metadata_fn(node_info),
     }
 
-    if selected_unique_ids:
-        select = (
-            " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
-            if select is None
-            else select
-        )
-        exclude = "" if exclude is None else exclude
-    else:
-        select = select if select is not None else "*"
-        exclude = exclude if exclude is not None else ""
-
-        selected_unique_ids = select_unique_ids_from_manifest(
-            select=select, exclude=exclude, manifest_json=manifest_json
-        )
-        if len(selected_unique_ids) == 0:
-            raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
-
-    dbt_assets_def = _dbt_nodes_to_assets(
-        dbt_nodes,
-        runtime_metadata_fn=runtime_metadata_fn,
-        io_manager_key=io_manager_key,
+    @dbt_assets(
+        manifest_path=None,
+        _manifest_dict=manifest_json,
         select=select,
         exclude=exclude,
-        selected_unique_ids=selected_unique_ids,
-        dbt_resource_key=dbt_resource_key,
-        project_id=manifest_json["metadata"]["project_id"][:5],
-        node_info_to_asset_key=node_info_to_asset_key,
-        use_build_command=use_build_command,
+        key_prefix=key_prefix,
+        required_resource_keys={dbt_resource_key},
+        io_manager_key=io_manager_key,
+        asset_key_fn=node_info_to_asset_key,
+        models_only=not use_build_command,
         partitions_def=partitions_def,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
-        node_info_to_group_fn=node_info_to_group_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
-        display_raw_sql=display_raw_sql,
+        group_fn=node_info_to_group_fn,
+        freshness_policy_fn=node_info_to_freshness_policy_fn,
+        metadata_fn=merged_metadata_fn,
+        op_name=op_name,
+        config_schema=Field(
+            Permissive(
+                {
+                    "select": Field(str, is_required=False),
+                    "exclude": Field(str, is_required=False),
+                    "vars": Field(dict, is_required=False),
+                    "full_refresh": Field(bool, is_required=False),
+                }
+            ),
+            default_value={},
+            description=(
+                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
+                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
+                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
+                " being passed into the underlying execution"
+            ),
+        ),
     )
-    dbt_assets: Sequence[AssetsDefinition]
+    def dbt_assets_def(context: DbtExecutionContext):
+        dbt_resource = getattr(context.resources, dbt_resource_key)
+
+        kwargs: Dict[str, Any] = {**context.get_dbt_selection_kwargs()}
+        # variables to pass into the command
+        if partition_key_to_vars_fn:
+            kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+        # merge in any additional kwargs from the config
+        kwargs = deep_merge_dicts(kwargs, context.op_config)
+
+        if _can_stream_events(dbt_resource):
+            yield from _stream_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                node_info_to_asset_key,
+                runtime_metadata_fn,
+                kwargs,
+            )
+        else:
+            yield from _batch_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                node_info_to_asset_key,
+                runtime_metadata_fn,
+                kwargs,
+            )
+
+    dbt_assets_defs: Sequence[AssetsDefinition]
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
@@ -692,12 +457,10 @@ def load_assets_from_dbt_manifest(
             input_key: AssetKey([*source_key_prefix, *input_key.path])
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
-        dbt_assets = [
+        dbt_assets_defs = [
             dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
         ]
     else:
-        dbt_assets = [dbt_assets_def]
+        dbt_assets_defs = [dbt_assets_def]
 
-    if key_prefix:
-        dbt_assets = prefix_assets(dbt_assets, key_prefix)
-    return dbt_assets
+    return dbt_assets_defs

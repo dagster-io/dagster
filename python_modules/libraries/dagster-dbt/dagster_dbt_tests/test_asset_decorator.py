@@ -9,14 +9,16 @@ from dagster_dbt.dbt_asset_resource import DbtAssetResource
 from .utils import assert_assets_match_project
 
 
-def test_basic() -> None:
+@pytest.mark.parametrize("prefix", [None, "foo", ["foo", "bar"]])
+def test_structure(prefix) -> None:
     @dbt_assets(
         manifest_path=file_relative_path(__file__, "sample_manifest.json"),
+        key_prefix=prefix,
     )
     def my_dbt_assets():
         ...
 
-    assert_assets_match_project([my_dbt_assets], prefix=None)
+    assert_assets_match_project([my_dbt_assets], prefix=prefix)
 
 
 @pytest.mark.parametrize(
