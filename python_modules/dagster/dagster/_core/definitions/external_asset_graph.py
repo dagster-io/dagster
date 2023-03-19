@@ -108,9 +108,7 @@ class ExternalAssetGraph(AssetGraph):
             if not node.is_source
         }
         job_names_by_key = {
-            node.asset_key: node.job_names
-            for _, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            node.asset_key: node.job_names for _, node in repo_handle_external_asset_nodes
         }
         code_versions_by_key = {
             node.asset_key: node.code_version

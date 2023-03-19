@@ -769,9 +769,6 @@ def build_asset_selection_job(
                 ),
             )
 
-    # We should disallow simultaneous selection of assets and source assets (but for
-    # backcompat we will simply ignore the source asset selection if any regular assets are
-    # selected).
     if len(included_assets) > 0:
         asset_job = build_assets_job(
             name=name,
