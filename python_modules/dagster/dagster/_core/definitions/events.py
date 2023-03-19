@@ -22,7 +22,6 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import last_file_comp
 from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
@@ -422,7 +421,7 @@ class AssetObservation(
         return " ".join(self.asset_key.path)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"Materialization"})
 class AssetMaterialization(
     NamedTuple(
         "_AssetMaterialization",
@@ -546,100 +545,6 @@ class AssetMaterialization(
     @property
     def metadata(self) -> MetadataMapping:
         return {entry.label: entry.value for entry in self.metadata_entries}
-
-
-@whitelist_for_serdes
-class Materialization(
-    NamedTuple(
-        "_Materialization",
-        [
-            ("label", str),
-            ("description", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
-            ("asset_key", AssetKey),
-            ("partition", Optional[str]),
-        ],
-    )
-):
-    """Event indicating that an op has materialized a value.
-
-    Solid compute functions may yield events of this type whenever they wish to indicate to the
-    Dagster framework (and the end user) that they have produced a materialized value as a
-    side effect of computation. Unlike outputs, materializations can not be passed to other ops,
-    and their persistence is controlled by op logic, rather than by the Dagster framework.
-
-    Solid authors should use these events to organize metadata about the side effects of their
-    computations to enable downstream tooling like artifact catalogues and diff tools.
-
-    Args:
-        label (str): A short display name for the materialized value.
-        description (Optional[str]): A longer human-radable description of the materialized value.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            materialized value.
-        asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
-            across runs
-        partition (Optional[str]): The name of the partition that was materialized.
-    """
-
-    def __new__(
-        cls,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
-        asset_key: Optional[Union[str, AssetKey]] = None,
-        partition: Optional[str] = None,
-    ):
-        if asset_key and isinstance(asset_key, str):
-            asset_key = AssetKey(parse_asset_key_string(asset_key))
-        else:
-            check.opt_inst_param(asset_key, "asset_key", AssetKey)
-
-        asset_key = cast(AssetKey, asset_key)
-        if not label:
-            check.param_invariant(
-                asset_key and asset_key.path,
-                "label",
-                "Either label or asset_key with a path must be provided",
-            )
-            label = asset_key.to_string()
-
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-
-        return super(Materialization, cls).__new__(
-            cls,
-            label=check.str_param(label, "label"),
-            description=check.opt_str_param(description, "description"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
-            ),
-            asset_key=asset_key,
-            partition=check.opt_str_param(partition, "partition"),
-        )
-
-    @staticmethod
-    def file(
-        path: str,
-        description: Optional[str] = None,
-        asset_key: Optional[Union[str, AssetKey]] = None,
-    ) -> "Materialization":
-        """Static constructor for standard materializations corresponding to files on disk.
-
-        Args:
-            path (str): The path to the file.
-            description (Optional[str]): A human-readable description of the materialization.
-        """
-        return Materialization(
-            label=last_file_comp(path),
-            description=description,
-            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
-            asset_key=asset_key,
-        )
-
-    @property
-    def tags(self) -> Mapping[str, str]:
-        return {}
 
 
 @whitelist_for_serdes
@@ -923,4 +828,4 @@ class HookExecutionResult(
         )
 
 
-UserEvent = Union[Materialization, AssetMaterialization, AssetObservation, ExpectationResult]
+UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]

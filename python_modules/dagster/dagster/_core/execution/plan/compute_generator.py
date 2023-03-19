@@ -23,7 +23,6 @@ from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
     ExpectationResult,
-    Materialization,
     Output,
     OutputDefinition,
 )
@@ -193,7 +192,7 @@ def validate_and_coerce_op_result_to_iterator(
         # this happens when a user explicitly returns a generator in the solid
         for event in result:
             yield event
-    elif isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+    elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "

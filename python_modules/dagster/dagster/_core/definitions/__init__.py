@@ -17,7 +17,6 @@ from .events import (
     ExpectationResult as ExpectationResult,
     Failure as Failure,
     HookExecutionResult as HookExecutionResult,
-    Materialization as Materialization,
     Output as Output,
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,

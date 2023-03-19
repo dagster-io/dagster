@@ -28,7 +28,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, Materialization
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -1556,7 +1556,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _asset_materialization_from_json_column(
         self, json_str: str
-    ) -> Optional[Union[Materialization, AssetMaterialization]]:
+    ) -> Optional[AssetMaterialization]:
         if not json_str:
             return None
 
