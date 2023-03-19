@@ -1,13 +1,11 @@
 import hashlib
 import json
 import os
-import textwrap
 from typing import (
     AbstractSet,
     Any,
     Callable,
     Dict,
-    FrozenSet,
     Iterator,
     List,
     Mapping,
@@ -24,13 +22,10 @@ from dagster import (
     AssetsDefinition,
     FreshnessPolicy,
     In,
-    MetadataValue,
     Nothing,
     OpExecutionContext,
     Out,
     PartitionsDefinition,
-    TableColumn,
-    TableSchema,
     _check as check,
     get_dagster_logger,
     op,
@@ -49,6 +44,14 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
+from dagster_dbt.asset_utils import (
+    default_asset_key_fn,
+    default_description_fn,
+    default_freshness_policy_fn,
+    default_group_fn,
+    default_metadata_fn,
+    get_deps,
+)
 from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -104,48 +107,6 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
     )
 
 
-def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """Get the asset key for a dbt node.
-
-    By default:
-        dbt sources: a dbt source's key is the union of its source name and its table name
-        dbt models: a dbt model's key is the union of its model name and any schema configured on
-    the model itself.
-    """
-    if node_info["resource_type"] == "source":
-        components = [node_info["source_name"], node_info["name"]]
-    else:
-        configured_schema = node_info["config"].get("schema")
-        if configured_schema is not None:
-            components = [configured_schema, node_info["name"]]
-        else:
-            components = [node_info["name"]]
-
-    return AssetKey(components)
-
-
-
-
-
-def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
-    metadata: Dict[str, Any] = {}
-    columns = node_info.get("columns", {})
-    if len(columns) > 0:
-        metadata["table_schema"] = MetadataValue.table_schema(
-            TableSchema(
-                columns=[
-                    TableColumn(
-                        name=column_name,
-                        type=column_info.get("data_type") or "?",
-                        description=column_info.get("description"),
-                    )
-                    for column_name, column_info in columns.items()
-                ]
-            )
-        )
-    return metadata
-
-
 def _get_asset_deps(
     dbt_nodes,
     deps,
@@ -189,14 +150,14 @@ def _get_asset_deps(
 
         asset_deps[asset_key] = set()
 
-        metadata = _get_node_metadata(node_info)
-        if node_info_to_definition_metadata_fn != _get_node_metadata:
+        metadata = default_metadata_fn(node_info)
+        if node_info_to_definition_metadata_fn != default_metadata_fn:
             metadata = merge_dicts(metadata, node_info_to_definition_metadata_fn(node_info))
         asset_outs[asset_key] = (
             output_name,
             Out(
                 io_manager_key=io_manager_key,
-                description=_get_node_description(node_info, display_raw_sql),
+                description=default_description_fn(node_info, display_raw_sql),
                 metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
@@ -469,23 +430,80 @@ def _dbt_nodes_to_assets(
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
     io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = _get_node_freshness_policy,
+    ] = default_freshness_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = _get_node_metadata,
+    ] = default_metadata_fn,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
+    if use_build_command:
+        deps = get_deps(
+            dbt_nodes,
+            selected_unique_ids,
+            asset_resource_types=["model", "seed", "snapshot"],
+        )
+    else:
+        deps = get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
+
+    (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        freshness_policies_by_key,
+        fqns_by_output_name,
+        _,
+    ) = _get_asset_deps(
+        dbt_nodes=dbt_nodes,
+        deps=deps,
+        node_info_to_asset_key=node_info_to_asset_key,
+        node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
+        io_manager_key=io_manager_key,
+        display_raw_sql=display_raw_sql,
+    )
+
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{project_id}"
     if select != "*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
+
+    dbt_op = _get_dbt_op(
+        op_name=op_name,
+        ins=dict(asset_ins.values()),
+        outs=dict(asset_outs.values()),
+        select=select,
+        exclude=exclude,
+        use_build_command=use_build_command,
+        fqns_by_output_name=fqns_by_output_name,
+        dbt_resource_key=dbt_resource_key,
+        node_info_to_asset_key=node_info_to_asset_key,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
+        runtime_metadata_fn=runtime_metadata_fn,
+    )
+
+    return AssetsDefinition(
+        keys_by_input_name={
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        },
+        keys_by_output_name={
+            output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
+        },
+        node_def=dbt_op,
+        can_subset=True,
+        asset_deps=asset_deps,
+        group_names_by_key=group_names_by_key,
+        freshness_policies_by_key=freshness_policies_by_key,
+        partitions_def=partitions_def,
+    )
 
 
 def load_assets_from_dbt_project(
@@ -500,17 +518,17 @@ def load_assets_from_dbt_project(
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = _get_node_freshness_policy,
+    ] = default_freshness_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = _get_node_metadata,
+    ] = default_metadata_fn,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
@@ -614,17 +632,17 @@ def load_assets_from_dbt_manifest(
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = default_group_fn,
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = _get_node_freshness_policy,
+    ] = default_freshness_policy_fn,
     node_info_to_definition_metadata_fn: Callable[
         [Mapping[str, Any]], Mapping[str, MetadataUserInput]
-    ] = _get_node_metadata,
+    ] = default_metadata_fn,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:

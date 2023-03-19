@@ -266,6 +266,12 @@ class AssetsDefinition(ResourceAddable):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+<<<<<<< HEAD
+=======
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+>>>>>>> af003fa331 (wip)
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
 <<<<<<< HEAD
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -302,12 +308,25 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the graph.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+<<<<<<< HEAD
+=======
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
+            group_names_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a group name to be
+                associated with some or all of the output assets for this node. Keys are names of the
+                outputs, and values are the group name. Cannot be used with the group_name argument.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+                (Experimental) A mapping of resource keys to resource definitions. These resources
+                will be initialized during execution, and can be accessed from the
+                body of ops in the graph during execution.
+>>>>>>> af003fa331 (wip)
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
                 correponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+<<<<<<< HEAD
             resource_defs (Optional[Mapping[str, ResourceDefinition]]):
                 (Experimental) A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
@@ -319,6 +338,8 @@ class AssetsDefinition(ResourceAddable):
                 outputs, and values are the group name. Cannot be used with the group_name argument.
             descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
                 associated with each of the output asstes for this graph.
+=======
+>>>>>>> af003fa331 (wip)
             metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
@@ -327,6 +348,11 @@ class AssetsDefinition(ResourceAddable):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
+<<<<<<< HEAD
+=======
+            descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
+                associated with each of the output asstes for this graph.
+>>>>>>> af003fa331 (wip)
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -357,6 +383,11 @@ class AssetsDefinition(ResourceAddable):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+<<<<<<< HEAD
+=======
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+>>>>>>> af003fa331 (wip)
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
 <<<<<<< HEAD
         group_name: Optional[str] = None,
@@ -364,11 +395,16 @@ class AssetsDefinition(ResourceAddable):
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+<<<<<<< HEAD
         can_subset: bool = False,
 =======
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
 >>>>>>> 32fcffe614 (wip)
+=======
+        descriptions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+        can_subset: bool = False,
+>>>>>>> af003fa331 (wip)
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -391,12 +427,21 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the op.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+<<<<<<< HEAD
+=======
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
+            group_names_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a group name to be
+                associated with some or all of the output assets for this node. Keys are names of the
+                outputs, and values are the group name. Cannot be used with the group_name argument.
+>>>>>>> af003fa331 (wip)
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
                 correponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+<<<<<<< HEAD
             group_name (Optional[str]): A group name for the constructed asset. Assets without a
                 group name are assigned to a group called "default".
             group_names_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a group name to be
@@ -404,6 +449,8 @@ class AssetsDefinition(ResourceAddable):
                 outputs, and values are the group name. Cannot be used with the group_name argument.
             descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
                 associated with each of the output asstes for this graph.
+=======
+>>>>>>> af003fa331 (wip)
             metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
@@ -412,6 +459,8 @@ class AssetsDefinition(ResourceAddable):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
+            descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
+                associated with each of the output asstes for this graph.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -420,13 +469,24 @@ class AssetsDefinition(ResourceAddable):
             key_prefix=key_prefix,
             internal_asset_deps=internal_asset_deps,
             partitions_def=partitions_def,
+<<<<<<< HEAD
+=======
+            group_name=group_name,
+            group_names_by_output_name=group_names_by_output_name,
+>>>>>>> af003fa331 (wip)
             partition_mappings=partition_mappings,
             group_name=group_name,
             group_names_by_output_name=group_names_by_output_name,
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+<<<<<<< HEAD
             can_subset=can_subset,
+=======
+            descriptions_by_output_name=descriptions_by_output_name,
+            can_subset=can_subset,
+            key_prefix=key_prefix,
+>>>>>>> af003fa331 (wip)
         )
 
     @staticmethod
@@ -438,6 +498,12 @@ class AssetsDefinition(ResourceAddable):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+<<<<<<< HEAD
+=======
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+>>>>>>> af003fa331 (wip)
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
 <<<<<<< HEAD
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -446,13 +512,17 @@ class AssetsDefinition(ResourceAddable):
 =======
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        descriptions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
+<<<<<<< HEAD
 >>>>>>> 32fcffe614 (wip)
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         can_subset: bool = False,
+=======
+>>>>>>> af003fa331 (wip)
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(

@@ -96,7 +96,7 @@ def test_runtime_metadata_fn(
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json, runtime_metadata_fn=runtime_metadata_fn
     )
-    assert_assets_match_project(dbt_assets)
+    assert_assets_match_project(dbt_assets, has_non_argument_dependencies=True)
 
     assets_job = build_assets_job(
         "assets_job",

@@ -6,9 +6,9 @@ from dagster import AssetKey, AssetSelection
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph import AssetGraph
 
-from dagster_dbt.asset_defs import (
-    _get_node_asset_key,
-    _is_non_asset_node,
+from dagster_dbt.asset_utils import (
+    default_asset_key_fn,
+    is_non_asset_node,
 )
 from dagster_dbt.utils import select_unique_ids_from_manifest
 
@@ -61,7 +61,7 @@ class DbtManifestAssetSelection(AssetSelection):
         select: str = "*",
         exclude: str = "",
         resource_types: Optional[Sequence[str]] = None,
-        node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+        node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = default_asset_key_fn,
         manifest_json_path: Optional[str] = None,
         state_path: Optional[str] = None,
     ):
@@ -115,7 +115,7 @@ class DbtManifestAssetSelection(AssetSelection):
             manifest_json=self.manifest_json,
         ):
             node_info = dbt_nodes[unique_id]
-            if node_info["resource_type"] in self.resource_types and not _is_non_asset_node(
+            if node_info["resource_type"] in self.resource_types and not is_non_asset_node(
                 node_info
             ):
                 keys.add(self.node_info_to_asset_key(node_info))
