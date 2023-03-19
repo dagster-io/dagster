@@ -124,23 +124,7 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
     return AssetKey(components)
 
 
-def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in."""
-    fqn = node_info.get("fqn", [])
-    # the first component is the package name, and the last component is the model name
-    if len(fqn) < 3:
-        return None
-    return fqn[1]
 
-
-def _get_node_description(node_info, display_raw_sql):
-    code_block = textwrap.indent(node_info.get("raw_sql") or node_info.get("raw_code", ""), "    ")
-    description_sections = [
-        node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
-    ]
-    if display_raw_sql:
-        description_sections.append(f"#### Raw SQL:\n```\n{code_block}\n```")
-    return "\n\n".join(filter(None, description_sections))
 
 
 def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -160,77 +144,6 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
             )
         )
     return metadata
-
-
-def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-    freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
-    if freshness_policy_config:
-        return FreshnessPolicy(
-            maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
-            cron_schedule=freshness_policy_config.get("cron_schedule"),
-            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
-        )
-    return None
-
-
-def _is_non_asset_node(node_info):
-    # some nodes exist inside the dbt graph but are not assets
-    resource_type = node_info["resource_type"]
-    if resource_type == "metric":
-        return True
-    if resource_type == "model" and node_info.get("config", {}).get("materialized") == "ephemeral":
-        return True
-    return False
-
-
-def _get_deps(
-    dbt_nodes: Mapping[str, Any],
-    selected_unique_ids: AbstractSet[str],
-    asset_resource_types: List[str],
-) -> Mapping[str, FrozenSet[str]]:
-    def _valid_parent_node(node_info):
-        # sources are valid parents, but not assets
-        return node_info["resource_type"] in asset_resource_types + ["source"]
-
-    asset_deps: Dict[str, Set[str]] = {}
-    for unique_id in selected_unique_ids:
-        node_info = dbt_nodes[unique_id]
-        node_resource_type = node_info["resource_type"]
-
-        # skip non-assets, such as metrics, tests, and ephemeral models
-        if _is_non_asset_node(node_info) or node_resource_type not in asset_resource_types:
-            continue
-
-        asset_deps[unique_id] = set()
-        for parent_unique_id in node_info.get("depends_on", {}).get("nodes", []):
-            parent_node_info = dbt_nodes[parent_unique_id]
-            # for metrics or ephemeral dbt models, BFS to find valid parents
-            if _is_non_asset_node(parent_node_info):
-                visited = set()
-                replaced_parent_ids = set()
-                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
-                while queue:
-                    candidate_parent_id = queue.pop()
-                    if candidate_parent_id in visited:
-                        continue
-                    visited.add(candidate_parent_id)
-
-                    candidate_parent_info = dbt_nodes[candidate_parent_id]
-                    if _is_non_asset_node(candidate_parent_info):
-                        queue.extend(candidate_parent_info.get("depends_on", {}).get("nodes", []))
-                    elif _valid_parent_node(candidate_parent_info):
-                        replaced_parent_ids.add(candidate_parent_id)
-
-                asset_deps[unique_id] |= replaced_parent_ids
-            # ignore nodes which are not assets / sources
-            elif _valid_parent_node(parent_node_info):
-                asset_deps[unique_id].add(parent_unique_id)
-
-    frozen_asset_deps = {
-        unique_id: frozenset(parent_ids) for unique_id, parent_ids in asset_deps.items()
-    }
-
-    return frozen_asset_deps
 
 
 def _get_asset_deps(
@@ -569,67 +482,10 @@ def _dbt_nodes_to_assets(
     ] = _get_node_metadata,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
-    if use_build_command:
-        deps = _get_deps(
-            dbt_nodes,
-            selected_unique_ids,
-            asset_resource_types=["model", "seed", "snapshot"],
-        )
-    else:
-        deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
-
-    (
-        asset_deps,
-        asset_ins,
-        asset_outs,
-        group_names_by_key,
-        freshness_policies_by_key,
-        fqns_by_output_name,
-        _,
-    ) = _get_asset_deps(
-        dbt_nodes=dbt_nodes,
-        deps=deps,
-        node_info_to_asset_key=node_info_to_asset_key,
-        node_info_to_group_fn=node_info_to_group_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
-        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
-        io_manager_key=io_manager_key,
-        display_raw_sql=display_raw_sql,
-    )
-
     # prevent op name collisions between multiple dbt multi-assets
     op_name = f"run_dbt_{project_id}"
     if select != "*" or exclude:
         op_name += "_" + hashlib.md5(select.encode() + exclude.encode()).hexdigest()[-5:]
-
-    dbt_op = _get_dbt_op(
-        op_name=op_name,
-        ins=dict(asset_ins.values()),
-        outs=dict(asset_outs.values()),
-        select=select,
-        exclude=exclude,
-        use_build_command=use_build_command,
-        fqns_by_output_name=fqns_by_output_name,
-        dbt_resource_key=dbt_resource_key,
-        node_info_to_asset_key=node_info_to_asset_key,
-        partition_key_to_vars_fn=partition_key_to_vars_fn,
-        runtime_metadata_fn=runtime_metadata_fn,
-    )
-
-    return AssetsDefinition(
-        keys_by_input_name={
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-        },
-        keys_by_output_name={
-            output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
-        },
-        node_def=dbt_op,
-        can_subset=True,
-        asset_deps=asset_deps,
-        group_names_by_key=group_names_by_key,
-        freshness_policies_by_key=freshness_policies_by_key,
-        partitions_def=partitions_def,
-    )
 
 
 def load_assets_from_dbt_project(

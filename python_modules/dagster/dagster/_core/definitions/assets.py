@@ -267,9 +267,15 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+<<<<<<< HEAD
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+=======
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        can_subset: bool = False,
+>>>>>>> 32fcffe614 (wip)
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
@@ -352,12 +358,17 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+<<<<<<< HEAD
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         can_subset: bool = False,
+=======
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+>>>>>>> 32fcffe614 (wip)
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from an OpDefinition.
 
@@ -428,9 +439,16 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+<<<<<<< HEAD
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+=======
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        can_subset: bool = False,
+>>>>>>> 32fcffe614 (wip)
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
         metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
