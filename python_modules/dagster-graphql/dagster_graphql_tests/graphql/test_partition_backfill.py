@@ -4,10 +4,10 @@ from typing import List, Tuple
 
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
-from dagster._legacy import DagsterRun, DagsterRunStatus
 from dagster._seven import get_system_temp_directory
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
