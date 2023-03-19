@@ -30,6 +30,7 @@ from typing_extensions import Self
 class TestRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
+        self.should_fail_termination = False
         self.launch_run_calls = 0
         self.resume_run_calls = 0
         self.termination_calls = []
@@ -58,8 +59,10 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         pass
 
-    def terminate(self, run_id):
+    def terminate(self, run_id, message=None):
         self.termination_calls.append(run_id)
+        if self.should_fail_termination:
+            raise Exception("oof")
 
     @property
     def supports_resume_run(self):
@@ -269,7 +272,6 @@ def test_long_running_termination(
         monitor_started_run(instance, workspace, no_tag_record, logger)
         run = instance.get_run_by_id(okay_record.dagster_run.run_id)
         assert run
-        assert run.status == DagsterRunStatus.STARTED
         assert not run_launcher.termination_calls
 
         # Not enough time has elapsed for okay_run to hit its maximum runtime, so no
@@ -277,12 +279,46 @@ def test_long_running_termination(
         monitor_started_run(instance, workspace, okay_record, logger)
         run = instance.get_run_by_id(okay_record.dagster_run.run_id)
         assert run
-        assert run.status == DagsterRunStatus.STARTED
         assert not run_launcher.termination_calls
 
         # Enough runtime has elapsed for too_long_run to hit its maximum runtime so a
         # termination event should be triggered.
         monitor_started_run(instance, workspace, too_long_record, logger)
+        run = instance.get_run_by_id(too_long_record.dagster_run.run_id)
         assert run
-        assert run.status == DagsterRunStatus.STARTED
+        assert len(run_launcher.termination_calls) == 1
+
+
+def test_long_running_termination_failure(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    instance.run_launcher.should_fail_termination = True
+    initial = pendulum.now().subtract(1000)
+    with pendulum.test(initial):
+        too_long_run = create_run_for_test(
+            instance,
+            pipeline_name="foo",
+            status=DagsterRunStatus.STARTING,
+            tags={MAX_RUNTIME_TAG: "500"},
+        )
+    started_time = initial.add(seconds=1)
+    with pendulum.test(started_time):
+        report_started_event(instance, too_long_run, started_time.timestamp())
+
+    too_long_record = instance.get_run_record_by_id(too_long_run.run_id)
+    assert too_long_record is not None
+    assert too_long_record.dagster_run.status == DagsterRunStatus.STARTED
+    assert too_long_record.start_time == started_time.timestamp()
+
+    workspace = workspace_context.create_request_context()
+    run_launcher = cast(TestRunLauncher, instance.run_launcher)
+
+    eval_time = started_time.add(seconds=501)
+    with pendulum.test(eval_time):
+        # Enough runtime has elapsed for too_long_run to hit its maximum runtime so a
+        # termination event should be triggered.
+        monitor_started_run(instance, workspace, too_long_record, logger)
+        run = instance.get_run_by_id(too_long_record.dagster_run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.CANCELED
         assert len(run_launcher.termination_calls) == 1
