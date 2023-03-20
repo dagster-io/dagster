@@ -66,7 +66,7 @@ class DependencyStructureSnapshot(
                 check.sequence_param(
                     solid_invocation_snaps, "solid_invocation_snaps", of_type=NodeInvocationSnap
                 ),
-                key=lambda si: si.solid_name,
+                key=lambda si: si.node_name,
             ),
         )
 
@@ -96,7 +96,7 @@ class DependencyStructureIndex:
             dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
         )
         self._invocations_dict = {
-            si.solid_name: si for si in dep_structure_snapshot.solid_invocation_snaps
+            si.node_name: si for si in dep_structure_snapshot.solid_invocation_snaps
         }
         self._output_to_upstream_index = self._build_index(
             dep_structure_snapshot.solid_invocation_snaps
@@ -116,7 +116,7 @@ class DependencyStructureIndex:
                     ].append(
                         InputHandle(
                             solid_def_name=invocation.solid_def_name,
-                            solid_name=invocation.solid_name,
+                            solid_name=invocation.node_name,
                             input_name=input_dep_snap.input_name,
                         )
                     )
@@ -211,12 +211,14 @@ class InputDependencySnap(
 
 
 # Use old name as storage for backcompat
-@whitelist_for_serdes(storage_name="SolidInvocationSnap")
+@whitelist_for_serdes(
+    storage_name="SolidInvocationSnap", storage_field_names={"node_name": "solid_name"}
+)
 class NodeInvocationSnap(
     NamedTuple(
         "_NodeInvocationSnap",
         [
-            ("solid_name", str),
+            ("node_name", str),
             ("solid_def_name", str),
             ("tags", Mapping[str, str]),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
@@ -226,7 +228,7 @@ class NodeInvocationSnap(
 ):
     def __new__(
         cls,
-        solid_name: str,
+        node_name: str,
         solid_def_name: str,
         tags: Mapping[str, str],
         input_dep_snaps: Sequence[InputDependencySnap],
@@ -234,7 +236,7 @@ class NodeInvocationSnap(
     ):
         return super(NodeInvocationSnap, cls).__new__(
             cls,
-            solid_name=check.str_param(solid_name, "solid_name"),
+            node_name=check.str_param(node_name, "node_name"),
             solid_def_name=check.str_param(solid_def_name, "solid_def_name"),
             tags=check.mapping_param(tags, "tags", key_type=str, value_type=str),
             input_dep_snaps=check.sequence_param(

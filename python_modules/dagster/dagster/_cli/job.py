@@ -180,7 +180,7 @@ def print_ops(
     printer.line("Ops")
     for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
         with printer.with_indent():
-            printer.line(f"Op: {solid.solid_name}")
+            printer.line(f"Op: {solid.node_name}")
 
 
 def print_job(
@@ -224,7 +224,7 @@ def print_op(
 ) -> None:
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
     check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
-    printer.line(f"Op: {solid_invocation_snap.solid_name}")
+    printer.line(f"Op: {solid_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
         for input_dep_snap in solid_invocation_snap.input_dep_snaps:

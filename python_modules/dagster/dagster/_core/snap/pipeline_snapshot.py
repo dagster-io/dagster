@@ -207,7 +207,7 @@ class PipelineSnapshot(
     def has_solid_name(self, solid_name: str) -> bool:
         check.str_param(solid_name, "solid_name")
         for solid_snap in self.dep_structure_snapshot.solid_invocation_snaps:
-            if solid_snap.solid_name == solid_name:
+            if solid_snap.node_name == solid_name:
                 return True
         return False
 
@@ -227,14 +227,14 @@ class PipelineSnapshot(
 
     @property
     def solid_names(self) -> Sequence[str]:
-        return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
+        return [ss.node_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
 
     @property
     def solid_names_in_topological_order(self) -> Sequence[str]:
         upstream_outputs = {}
 
         for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
-            solid_name = solid_invocation_snap.solid_name
+            solid_name = solid_invocation_snap.node_name
             upstream_outputs[solid_name] = {
                 upstream_output_snap.solid_name
                 for input_dep_snap in solid_invocation_snap.input_dep_snaps
