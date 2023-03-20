@@ -2,10 +2,11 @@ import hashlib
 import textwrap
 from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, Optional, Set, Tuple
 
-from dagster import AssetKey, FreshnessPolicy, MetadataValue, TableColumn, TableSchema, In, Out
+from dagster import AssetKey, FreshnessPolicy, In, MetadataValue, Out, TableColumn, TableSchema
 from dagster._core.types.dagster_type import Nothing
 from dagster._utils.merger import merge_dicts
-from dagster_dbt.utils import _get_input_name, _get_output_name
+
+from dagster_dbt.utils import input_name_fn, output_name_fn
 
 ###################
 # DEFAULT FUNCTIONS
@@ -178,7 +179,7 @@ def get_asset_deps(
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]
 
-        output_name = _get_output_name(node_info)
+        output_name = output_name_fn(node_info)
         fqns_by_output_name[output_name] = node_info["fqn"]
 
         metadata_by_output_name[output_name] = {
@@ -222,7 +223,7 @@ def get_asset_deps(
 
             # if this parent is not one of the selected nodes, it's an input
             if parent_unique_id not in deps:
-                input_name = _get_input_name(parent_node_info)
+                input_name = input_name_fn(parent_node_info)
                 asset_ins[parent_asset_key] = (input_name, In(Nothing))
 
     return (

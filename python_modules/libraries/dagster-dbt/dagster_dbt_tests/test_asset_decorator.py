@@ -98,7 +98,7 @@ def test_selections(
     @dbt_assets(
         manifest_path=file_relative_path(__file__, "sample_manifest.json"),
         select=select or "*",
-        exclude=exclude,
+        exclude=exclude or "",
     )
     def my_dbt_assets(context: DbtExecutionContext, dbt: DbtAssetResource):
         yield from dbt.cli(context, "run")

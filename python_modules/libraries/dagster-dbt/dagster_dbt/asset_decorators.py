@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Any, Callable, Mapping, Optional, Set, cast
 
+import dagster._check as check
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -12,12 +13,11 @@ from dagster import (
     PartitionsDefinition,
     op,
 )
-import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.decorators.op_decorator import is_context_provided
-from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.errors import DagsterInvalidSubsetError
 from dbt.contracts.graph.manifest import WritableManifest
 
 from dagster_dbt.asset_utils import (
@@ -28,11 +28,7 @@ from dagster_dbt.asset_utils import (
     default_metadata_fn,
     get_deps,
 )
-from dagster_dbt.utils import select_unique_ids_from_manifest
-
-
-def _chop(unique_id: str) -> str:
-    return unique_id.split(".")[-1]
+from dagster_dbt.utils import input_name_fn, output_name_fn, select_unique_ids_from_manifest
 
 
 class DbtExecutionContext(OpExecutionContext):
@@ -44,13 +40,15 @@ class DbtExecutionContext(OpExecutionContext):
         self,
         op_context: OpExecutionContext,
         raw_manifest_dict: Mapping[str, Mapping[str, Any]],
-        node_info_by_unique_id: Mapping[str, Mapping[str, Any]],
         base_select: str,
         base_exclude: Optional[str],
     ):
         super().__init__(op_context.get_step_execution_context())
         self.manifest_dict = raw_manifest_dict
-        self._node_info_by_uniuqe_id = node_info_by_unique_id
+        self._fqn_by_output_name = {
+            output_name_fn(node_info): ".".join(node_info["fqn"])
+            for node_info in raw_manifest_dict["nodes"].values()
+        }
         self._base_select = base_select
         self._base_exclude = base_exclude
 
@@ -61,19 +59,11 @@ class DbtExecutionContext(OpExecutionContext):
     def get_dbt_selection_kwargs(self) -> Mapping[str, Any]:
         if self.all_selected:
             return {"select": self._base_select, "exclude": self._base_exclude}
-        return {"select": " ".join(self.fqn_for_key(key) for key in self.selected_asset_keys)}
-
-    def key_for_unique_id(self, unique_id: str) -> AssetKey:
-        return self._key_by_unique_id[unique_id]
-
-    def unique_id_for_key(self, key: AssetKey) -> str:
-        return self._unique_id_by_key[key]
-
-    def node_info_for_key(self, key: AssetKey) -> Mapping[str, Any]:
-        return self._node_info_by_uniuqe_id[self.unique_id_for_key(key)]
-
-    def fqn_for_key(self, key: AssetKey) -> str:
-        return ".".join(self.node_info_for_key(key)["fqn"])
+        return {
+            "select": " ".join(
+                self._fqn_by_output_name[output_name] for output_name in self.selected_output_names
+            )
+        }
 
 
 def dbt_assets(
@@ -109,6 +99,9 @@ def dbt_assets(
         )
         raw_manifest_dict = _manifest_dict
 
+    if len(unique_ids) == 0:
+        raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
+
     node_info_by_uid = {
         **raw_manifest_dict["nodes"],
         **raw_manifest_dict["sources"],
@@ -121,11 +114,8 @@ def dbt_assets(
         selected_unique_ids=unique_ids,
         asset_resource_types=["model"] if models_only else ["model", "seed", "snapshot"],
     )
-    print("DEPS", deps)
     output_unique_ids = set(deps.keys())
-    print("OUTPUTS", output_unique_ids)
     input_unique_ids = set().union(*deps.values()) - output_unique_ids
-    print("INPUTS", input_unique_ids)
 
     key_by_unique_id = {
         uid: asset_key_fn(node_info_by_uid[uid]) for uid in {*input_unique_ids, *output_unique_ids}
@@ -135,9 +125,9 @@ def dbt_assets(
         @op(
             name=op_name,
             tags={"kind": "dbt"},
-            ins={_chop(uid): In(Nothing) for uid in input_unique_ids},
+            ins={input_name_fn(node_info_by_uid[uid]): In(Nothing) for uid in input_unique_ids},
             out={
-                _chop(uid): Out(
+                output_name_fn(node_info_by_uid[uid]): Out(
                     dagster_type=Nothing,
                     io_manager_key=io_manager_key,
                     is_required=False,
@@ -156,7 +146,6 @@ def dbt_assets(
                     DbtExecutionContext(
                         cast(OpExecutionContext, args[0]),
                         raw_manifest_dict=raw_manifest_dict,
-                        node_info_by_unique_id=node_info_by_uid,
                         base_select=select,
                         base_exclude=exclude,
                     ),
@@ -168,25 +157,36 @@ def dbt_assets(
 
         return AssetsDefinition.from_op(
             _op,
-            keys_by_input_name={_chop(uid): key_by_unique_id[uid] for uid in input_unique_ids},
-            keys_by_output_name={_chop(uid): key_by_unique_id[uid] for uid in output_unique_ids},
+            keys_by_input_name={
+                input_name_fn(node_info_by_uid[uid]): key_by_unique_id[uid]
+                for uid in input_unique_ids
+            },
+            keys_by_output_name={
+                output_name_fn(node_info_by_uid[uid]): key_by_unique_id[uid]
+                for uid in output_unique_ids
+            },
             key_prefix=key_prefix,
             partitions_def=partitions_def,
             internal_asset_deps={
-                _chop(uid): {key_by_unique_id[parent_uid] for parent_uid in parent_uids}
+                output_name_fn(node_info_by_uid[uid]): {
+                    key_by_unique_id[parent_uid] for parent_uid in parent_uids
+                }
                 for uid, parent_uids in deps.items()
             },
             metadata_by_output_name={
-                _chop(uid): metadata_fn(node_info_by_uid[uid]) for uid in output_unique_ids
+                output_name_fn(node_info_by_uid[uid]): metadata_fn(node_info_by_uid[uid])
+                for uid in output_unique_ids
             },
             freshness_policies_by_output_name={
-                _chop(uid): freshness_policy_fn(node_info_by_uid[uid]) for uid in output_unique_ids
+                output_name_fn(node_info_by_uid[uid]): freshness_policy_fn(node_info_by_uid[uid])
+                for uid in output_unique_ids
             },
             group_names_by_output_name={
-                _chop(uid): group_fn(node_info_by_uid[uid]) for uid in output_unique_ids
+                output_name_fn(node_info_by_uid[uid]): group_fn(node_info_by_uid[uid])
+                for uid in output_unique_ids
             },
             descriptions_by_output_name={
-                _chop(uid): default_description_fn(
+                output_name_fn(node_info_by_uid[uid]): default_description_fn(
                     node_info_by_uid[uid], display_raw_sql=len(output_unique_ids) < 500
                 )
                 for uid in output_unique_ids

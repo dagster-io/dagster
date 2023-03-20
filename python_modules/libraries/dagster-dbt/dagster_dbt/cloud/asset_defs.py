@@ -43,8 +43,8 @@ from ..asset_utils import (
     default_freshness_policy_fn,
     default_group_fn,
     default_metadata_fn,
-    get_deps,
     get_asset_deps,
+    get_deps,
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events

@@ -23,11 +23,7 @@ def assert_assets_match_project(dbt_assets, prefix=None, has_non_argument_deps=F
         "cold_schema/sort_cold_cereals_by_calories",
     ]:
         asset_key = AssetKey(prefix + asset_name.split("/"))
-        print(asset_key)
         output_name = asset_key.path[-1]
-        print(output_name)
-        print(dbt_assets[0].keys_by_output_name)
-        print(dbt_assets[0].keys_by_output_name[output_name])
         assert dbt_assets[0].keys_by_output_name[output_name] == asset_key
         assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
 

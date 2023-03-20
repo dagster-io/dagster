@@ -20,10 +20,10 @@ from dagster import (
     AssetsDefinition,
     FreshnessPolicy,
     OpExecutionContext,
+    Output,
     PartitionsDefinition,
     _check as check,
     get_dagster_logger,
-    Output,
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
@@ -35,9 +35,8 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts
-from dagster_dbt.asset_decorators import DbtExecutionContext, dbt_assets
-from packaging import version
 
+from dagster_dbt.asset_decorators import DbtExecutionContext, dbt_assets
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_freshness_policy_fn,
@@ -47,7 +46,6 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.dbt_asset_resource import DbtAssetResource
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import result_to_events, structured_json_line_to_events
 
@@ -368,12 +366,27 @@ def load_assets_from_dbt_manifest(
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
 
-    select = check.opt_str_param(select, "select", default="*")
-    exclude = check.opt_str_param(exclude, "exclude", default="")
-
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
 
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
+
+    dbt_nodes = {
+        **manifest_json["nodes"],
+        **manifest_json["sources"],
+        **manifest_json["metrics"],
+        **manifest_json["exposures"],
+    }
+
+    if selected_unique_ids:
+        select = (
+            " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+            if select is None
+            else select
+        )
+        exclude = "" if exclude is None else exclude
+    else:
+        select = select if select is not None else "*"
+        exclude = exclude if exclude is not None else ""
 
     project_id = manifest_json["metadata"]["project_id"][:5]
     # prevent op name collisions between multiple dbt multi-assets

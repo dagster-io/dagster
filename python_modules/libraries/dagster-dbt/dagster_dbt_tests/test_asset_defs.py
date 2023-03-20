@@ -60,6 +60,10 @@ def test_load_from_manifest_json(prefix):
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
+    run_results_path = file_relative_path(__file__, "sample_run_results.json")
+    with open(run_results_path, "r", encoding="utf8") as f:
+        run_results_json = json.load(f)
+
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
     assert_assets_match_project(dbt_assets, prefix)
 
@@ -92,7 +96,7 @@ def test_runtime_metadata_fn(
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json, runtime_metadata_fn=runtime_metadata_fn
     )
-    assert_assets_match_project(dbt_assets, has_non_argument_dependencies=True)
+    assert_assets_match_project(dbt_assets)
 
     assets_job = build_assets_job(
         "assets_job",
