@@ -305,8 +305,7 @@ def test_run_monitoring(capsys):
             "run_monitoring": {"enabled": True},
         }
     ) as instance:
-        # not supported by default run launcher
-        assert not instance.run_monitoring_enabled
+        assert instance.run_monitoring_enabled
 
     settings = {"enabled": True}
     with instance_for_test(
