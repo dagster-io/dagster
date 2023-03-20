@@ -34,16 +34,19 @@ from dagster_dbt.utils import input_name_fn, output_name_fn, select_unique_ids_f
 class DbtExecutionContext(OpExecutionContext):
     """OpExecutionContext augmented with additional context related to dbt."""
 
+    asset_key_fn: Callable[[Mapping[str, Any]], AssetKey]
     manifest_dict: Mapping[str, Any]
 
     def __init__(
         self,
         op_context: OpExecutionContext,
+        asset_key_fn: Callable[[Mapping[str, Any]], AssetKey],
         raw_manifest_dict: Mapping[str, Mapping[str, Any]],
         base_select: str,
         base_exclude: Optional[str],
     ):
         super().__init__(op_context.get_step_execution_context())
+        self.asset_key_fn = asset_key_fn
         self.manifest_dict = raw_manifest_dict
         self._fqn_by_output_name = {
             output_name_fn(node_info): ".".join(node_info["fqn"])
@@ -145,6 +148,7 @@ def dbt_assets(
                 yield from fn(
                     DbtExecutionContext(
                         cast(OpExecutionContext, args[0]),
+                        asset_key_fn=asset_key_fn,
                         raw_manifest_dict=raw_manifest_dict,
                         base_select=select,
                         base_exclude=exclude,
