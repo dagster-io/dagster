@@ -34,27 +34,15 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
 
-    def resolve(
-        self, asset_graph: InternalAssetGraph, resolved_job: JobDefinition
-    ) -> ScheduleDefinition:
-        selected_assets = self.job.selection.resolve(asset_graph)
-        partitions_defs = {
-            cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-            for asset_key in selected_assets
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-        if len(partitions_defs) == 0:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but none of the assets"
-                " are partitioned."
-            )
-        if len(partitions_defs) > 1:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but some of the assets"
-                " have different PartitionsDefinitions."
+    def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
+        partitions_def = resolved_job.partitions_def
+        if partitions_def is None:
+            check.failed(
+                "A job provided to build_schedule_from_partitioned_job must contain partitioned"
+                " assets or a partitions definition."
             )
 
-        partitions_def = _check_valid_schedule_partitions_def(next(iter(partitions_defs)))
+        partitions_def = _check_valid_schedule_partitions_def(partitions_def)
 
         cron_schedule = partitions_def.get_cron_schedule(
             self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month

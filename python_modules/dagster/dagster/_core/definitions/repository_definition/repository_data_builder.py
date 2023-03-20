@@ -266,8 +266,7 @@ def build_caching_repository_data_from_list(
                 unresolved_partitioned_asset_schedule.job,
             )
 
-    # resolve all the UnresolvedAssetJobDefinitions and
-    # UnresolvedPartitionedAssetScheduleDefinitions using the full set of assets
+    # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
             resolved_job = unresolved_job_def.resolve(
@@ -275,6 +274,8 @@ def build_caching_repository_data_from_list(
             )
             pipelines_or_jobs[name] = resolved_job
 
+    # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
+    # the resolved job containing the partitions def
     if unresolved_partitioned_asset_schedules:
         for (
             name,
@@ -282,7 +283,7 @@ def build_caching_repository_data_from_list(
         ) in unresolved_partitioned_asset_schedules.items():
             resolved_job = pipelines_or_jobs[unresolved_partitioned_asset_schedule.job.name]
             schedules[name] = unresolved_partitioned_asset_schedule.resolve(
-                asset_graph, cast(JobDefinition, resolved_job)
+                cast(JobDefinition, resolved_job)
             )
 
     for pipeline_or_job in pipelines_or_jobs.values():
