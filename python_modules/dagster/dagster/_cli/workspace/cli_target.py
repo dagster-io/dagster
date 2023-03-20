@@ -26,8 +26,8 @@ import dagster._check as check
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -489,16 +489,14 @@ def repository_click_options() -> Sequence[ClickOption]:
             "--repository",
             "-r",
             help=(
-                "Repository within the workspace, necessary if more than one repository is present."
+                "Name of the repository, necessary if more than one repository is present in the"
+                " code location."
             ),
         ),
         click.option(
             "--location",
             "-l",
-            help=(
-                "RepositoryLocation within the workspace, necessary if more than one location is"
-                " present."
-            ),
+            help="Name of the code location, necessary if more than one location is present.",
         ),
     ]
 
@@ -676,61 +674,61 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
 
 
 @contextmanager
-def get_repository_location_from_kwargs(
+def get_code_location_from_kwargs(
     instance: DagsterInstance, version: str, kwargs: ClickArgMapping
-) -> Iterator[RepositoryLocation]:
+) -> Iterator[CodeLocation]:
     # Instance isn't strictly required to load a repository location, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
     with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
         location_name = check.opt_str_elem(kwargs, "location")
-        yield get_repository_location_from_workspace(workspace, location_name)
+        yield get_code_location_from_workspace(workspace, location_name)
 
 
-def get_repository_location_from_workspace(
+def get_code_location_from_workspace(
     workspace: WorkspaceRequestContext, provided_location_name: Optional[str]
-) -> RepositoryLocation:
+) -> CodeLocation:
     if provided_location_name is None:
-        if len(workspace.repository_location_names) == 1:
-            provided_location_name = workspace.repository_location_names[0]
-        elif len(workspace.repository_location_names) == 0:
+        if len(workspace.code_location_names) == 1:
+            provided_location_name = workspace.code_location_names[0]
+        elif len(workspace.code_location_names) == 0:
             raise click.UsageError("No locations found in workspace")
         elif provided_location_name is None:
             raise click.UsageError(
                 (
                     "Must provide --location as there are multiple locations "
                     "available. Options are: {}"
-                ).format(_sorted_quoted(workspace.repository_location_names))
+                ).format(_sorted_quoted(workspace.code_location_names))
             )
 
-    if provided_location_name not in workspace.repository_location_names:
+    if provided_location_name not in workspace.code_location_names:
         raise click.UsageError(
             (
                 'Location "{provided_location_name}" not found in workspace. '
                 "Found {found_names} instead."
             ).format(
                 provided_location_name=provided_location_name,
-                found_names=_sorted_quoted(workspace.repository_location_names),
+                found_names=_sorted_quoted(workspace.code_location_names),
             )
         )
 
-    if workspace.has_repository_location_error(provided_location_name):
+    if workspace.has_code_location_error(provided_location_name):
         raise click.UsageError(
             'Error loading location "{provided_location_name}": {error_str}'.format(
                 provided_location_name=provided_location_name,
-                error_str=str(workspace.get_repository_location_error(provided_location_name)),
+                error_str=str(workspace.get_code_location_error(provided_location_name)),
             )
         )
 
-    return workspace.get_repository_location(provided_location_name)
+    return workspace.get_code_location(provided_location_name)
 
 
-def get_external_repository_from_repo_location(
-    repo_location: RepositoryLocation, provided_repo_name: Optional[str]
+def get_external_repository_from_code_location(
+    code_location: CodeLocation, provided_repo_name: Optional[str]
 ) -> ExternalRepository:
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
+    check.inst_param(code_location, "code_location", CodeLocation)
     check.opt_str_param(provided_repo_name, "provided_repo_name")
 
-    repo_dict = repo_location.get_repositories()
+    repo_dict = code_location.get_repositories()
     check.invariant(repo_dict, "There should be at least one repo.")
 
     # no name provided and there is only one repo. Automatically return
@@ -742,22 +740,22 @@ def get_external_repository_from_repo_location(
             (
                 "Must provide --repository as there is more than one repository "
                 "in {location}. Options are: {repos}."
-            ).format(location=repo_location.name, repos=_sorted_quoted(repo_dict.keys()))
+            ).format(location=code_location.name, repos=_sorted_quoted(repo_dict.keys()))
         )
 
-    if not repo_location.has_repository(provided_repo_name):
+    if not code_location.has_repository(provided_repo_name):
         raise click.UsageError(
             (
                 'Repository "{provided_repo_name}" not found in location "{location_name}". '
                 "Found {found_names} instead."
             ).format(
                 provided_repo_name=provided_repo_name,
-                location_name=repo_location.name,
+                location_name=code_location.name,
                 found_names=_sorted_quoted(repo_dict.keys()),
             )
         )
 
-    return repo_location.get_repository(provided_repo_name)
+    return code_location.get_repository(provided_repo_name)
 
 
 @contextmanager
@@ -766,9 +764,9 @@ def get_external_repository_from_kwargs(
 ) -> Iterator[ExternalRepository]:
     # Instance isn't strictly required to load an ExternalRepository, but is included
     # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_repository_location_from_kwargs(instance, version, kwargs) as repo_location:
+    with get_code_location_from_kwargs(instance, version, kwargs) as code_location:
         provided_repo_name = check.opt_str_elem(kwargs, "repository")
-        yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
+        yield get_external_repository_from_code_location(code_location, provided_repo_name)
 
 
 def get_external_job_from_external_repo(

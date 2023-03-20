@@ -2105,11 +2105,11 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
-        repository_location = graphql_context.get_repository_location("cross_asset_repos")
-        repository = repository_location.get_repository("upstream_assets_repository")
+        code_location = graphql_context.get_code_location("cross_asset_repos")
+        repository = code_location.get_repository("upstream_assets_repository")
 
         selector = {
-            "repositoryLocationName": repository_location.name,
+            "repositoryLocationName": code_location.name,
             "repositoryName": repository.name,
         }
         result = execute_dagster_graphql(

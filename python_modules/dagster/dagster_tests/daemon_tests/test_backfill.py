@@ -30,7 +30,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepository,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -183,7 +183,7 @@ large_partition_set = PartitionSetDefinition(
 def _unloadable_partition_set_origin():
     working_directory = os.path.dirname(__file__)
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(
+        InProcessCodeLocationOrigin(
             LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=__file__,

@@ -46,7 +46,7 @@ from dagster._core.execution.api import execute_pipeline
 from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.origin import (
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
@@ -963,16 +963,16 @@ def test_sensors_keyed_on_selector_not_origin(
 
         existing_origin = external_sensor.get_external_origin()
 
-        repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
-        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
-        modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
+        code_location_origin = existing_origin.external_repository_origin.code_location_origin
+        assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
+        modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
             executable_path="/different/executable_path"
         )
 
         # Change metadata on the origin that shouldn't matter for execution
         modified_origin = existing_origin._replace(
             external_repository_origin=existing_origin.external_repository_origin._replace(
-                repository_location_origin=repo_location_origin._replace(
+                code_location_origin=code_location_origin._replace(
                     loadable_target_origin=modified_loadable_target_origin
                 )
             )
@@ -1016,7 +1016,7 @@ def test_bad_load_sensor_repository(
         # Swap out a new repository name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_origin.external_repository_origin.repository_location_origin,
+                valid_origin.external_repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_origin.instigator_name,
@@ -2533,7 +2533,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
             running_sensor = external_repo.get_external_sensor("always_running_sensor")
@@ -2783,7 +2783,7 @@ def test_repository_namespacing(executor):
 
         full_location = next(
             iter(full_workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location
+        ).code_location
         external_repo = full_location.get_repository("the_repo")
         other_repo = full_location.get_repository("the_other_repo")
 

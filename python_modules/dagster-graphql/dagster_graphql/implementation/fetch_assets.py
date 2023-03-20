@@ -44,9 +44,9 @@ from dagster._core.definitions.time_window_partitions import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
     can_cache_partition_type,
@@ -124,8 +124,8 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 
 def asset_node_iter(
     graphene_info,
-) -> Iterator[Tuple[RepositoryLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.repository_locations:
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
+    for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
                 yield location, repository, external_asset_node

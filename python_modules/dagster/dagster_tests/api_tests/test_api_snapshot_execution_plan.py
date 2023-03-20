@@ -6,13 +6,13 @@ from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.handle import JobHandle
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
-from .utils import get_bar_repo_repository_location
+from .utils import get_bar_repo_code_location
 
 
 def test_execution_plan_error_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         with pytest.raises(
             DagsterUserCodeProcessError,
@@ -28,9 +28,9 @@ def test_execution_plan_error_grpc(instance):
 
 
 def test_execution_plan_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -49,9 +49,9 @@ def test_execution_plan_snapshot_api_grpc(instance):
 
 
 def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
@@ -70,9 +70,9 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
 
 
 def test_execution_plan_with_subset_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,

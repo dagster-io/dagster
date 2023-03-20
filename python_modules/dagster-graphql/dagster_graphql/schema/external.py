@@ -8,10 +8,10 @@ from dagster import (
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalRepository,
-    GrpcServerRepositoryLocation,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocation,
+    GrpcServerCodeLocation,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
@@ -23,8 +23,8 @@ from dagster._core.workspace.context import (
     WorkspaceProcessContext,
 )
 from dagster._core.workspace.workspace import (
-    WorkspaceLocationEntry,
-    WorkspaceLocationLoadStatus,
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
 )
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
@@ -66,10 +66,10 @@ class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
 
     @classmethod
     def from_python_status(cls, python_status):
-        check.inst_param(python_status, "python_status", WorkspaceLocationLoadStatus)
-        if python_status == WorkspaceLocationLoadStatus.LOADING:
+        check.inst_param(python_status, "python_status", CodeLocationLoadStatus)
+        if python_status == CodeLocationLoadStatus.LOADING:
             return GrapheneRepositoryLocationLoadStatus.LOADING
-        elif python_status == WorkspaceLocationLoadStatus.LOADED:
+        elif python_status == CodeLocationLoadStatus.LOADED:
             return GrapheneRepositoryLocationLoadStatus.LOADED
         else:
             check.failed(f"Invalid location load status: {python_status}")
@@ -87,17 +87,15 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, location: RepositoryLocation):
-        self._location = check.inst_param(location, "location", RepositoryLocation)
+    def __init__(self, location: CodeLocation):
+        self._location = check.inst_param(location, "location", CodeLocation)
         environment_path = (
             location.origin.loadable_target_origin.executable_path
-            if isinstance(location.origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+            if isinstance(location.origin, ManagedGrpcPythonEnvCodeLocationOrigin)
             else None
         )
 
-        server_id = (
-            location.server_id if isinstance(location, GrpcServerRepositoryLocation) else None
-        )
+        server_id = location.server_id if isinstance(location, GrpcServerCodeLocation) else None
 
         check.invariant(location.name is not None)
 
@@ -176,18 +174,16 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     class Meta:
         name = "WorkspaceLocationEntry"
 
-    def __init__(self, location_entry: WorkspaceLocationEntry):
-        self._location_entry = check.inst_param(
-            location_entry, "location_entry", WorkspaceLocationEntry
-        )
+    def __init__(self, location_entry: CodeLocationEntry):
+        self._location_entry = check.inst_param(location_entry, "location_entry", CodeLocationEntry)
         super().__init__(name=self._location_entry.origin.location_name)
 
     def resolve_id(self, _):
         return self.name
 
     def resolve_locationOrLoadError(self, _):
-        if self._location_entry.repository_location:
-            return GrapheneRepositoryLocation(self._location_entry.repository_location)
+        if self._location_entry.code_location:
+            return GrapheneRepositoryLocation(self._location_entry.code_location)
 
         error = self._location_entry.load_error
         return GraphenePythonError(error) if error else None
@@ -237,11 +233,11 @@ class GrapheneRepository(graphene.ObjectType):
         self,
         instance: DagsterInstance,
         repository: ExternalRepository,
-        repository_location: RepositoryLocation,
+        repository_location: CodeLocation,
     ):
         self._repository = check.inst_param(repository, "repository", ExternalRepository)
         self._repository_location = check.inst_param(
-            repository_location, "repository_location", RepositoryLocation
+            repository_location, "repository_location", CodeLocation
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)

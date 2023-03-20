@@ -24,14 +24,14 @@ from dagster import (
 )
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocation,
-    GrpcServerRepositoryLocationOrigin,
-    RepositoryLocation,
+    GrpcServerCodeLocation,
+    GrpcServerCodeLocationOrigin,
 )
 from dagster._core.host_representation.external import ExternalRepository
-from dagster._core.host_representation.origin import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -717,16 +717,16 @@ def test_schedule_with_different_origin(
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     existing_origin = external_schedule.get_external_origin()
 
-    repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
-    assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
-    modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
+    code_location_origin = existing_origin.external_repository_origin.code_location_origin
+    assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
+    modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
         executable_path="/different/executable_path"
     )
 
     # Change metadata on the origin that shouldn't matter for execution
     modified_origin = existing_origin._replace(
         external_repository_origin=existing_origin.external_repository_origin._replace(
-            repository_location_origin=repo_location_origin._replace(
+            code_location_origin=code_location_origin._replace(
                 loadable_target_origin=modified_loadable_target_origin
             )
         )
@@ -811,11 +811,11 @@ def test_schedule_without_timezone(instance, executor):
             workspace_load_target=workspace_load_target(),
             instance=instance,
         ) as workspace_context:
-            repo_location = next(
+            code_location = next(
                 iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).repository_location
-            assert repo_location is not None
-            external_repo = repo_location.get_repository("the_repo")
+            ).code_location
+            assert code_location is not None
+            external_repo = code_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
                 "daily_schedule_without_timezone"
             )
@@ -1354,7 +1354,7 @@ def test_bad_load_repository(
         # Swap out a new repository name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.repository_location_origin,
+                valid_schedule_origin.external_repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_schedule_origin.instigator_name,
@@ -1423,7 +1423,7 @@ def test_bad_load_schedule(instance, workspace_context, external_repo, caplog, e
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_error_load_repository_location(instance, executor):
+def test_error_load_code_location(instance, executor):
     with create_test_daemon_workspace_context(
         _get_unloadable_workspace_load_target(), instance
     ) as workspace_context:
@@ -1464,7 +1464,7 @@ def test_error_load_repository_location(instance, executor):
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_load_repository_location_not_in_workspace(
+def test_load_code_location_not_in_workspace(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
@@ -1480,14 +1480,12 @@ def test_load_repository_location_not_in_workspace(
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         valid_schedule_origin = external_schedule.get_external_origin()
 
-        repo_location_origin = (
-            valid_schedule_origin.external_repository_origin.repository_location_origin
-        )
-        assert isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+        code_location_origin = valid_schedule_origin.external_repository_origin.code_location_origin
+        assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         # Swap out a new location name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                repo_location_origin._replace(location_name="missing_location"),
+                code_location_origin._replace(location_name="missing_location"),
                 valid_schedule_origin.external_repository_origin.repository_name,
             ),
             valid_schedule_origin.instigator_name,
@@ -2013,10 +2011,10 @@ def _grpc_server_external_repo(port, instance):
     try:
         # shuts down server when it leaves this contextmanager
         with EphemeralDagsterGrpcClient(port=port, socket=None, server_process=server_process):
-            location_origin = GrpcServerRepositoryLocationOrigin(
+            location_origin = GrpcServerCodeLocationOrigin(
                 host="localhost", port=port, location_name="test_location"
             )
-            with GrpcServerRepositoryLocation(origin=location_origin) as location:
+            with GrpcServerCodeLocation(origin=location_origin) as location:
                 yield location.get_repository("the_repo")
 
     finally:
@@ -2058,12 +2056,12 @@ def test_skip_reason_schedule(instance, workspace_context, external_repo, execut
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_grpc_server_down(instance, executor):
     port = find_free_port()
-    location_origin = GrpcServerRepositoryLocationOrigin(
+    location_origin = GrpcServerCodeLocationOrigin(
         host="localhost", port=port, location_name="test_location"
     )
     schedule_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=location_origin,
+            code_location_origin=location_origin,
             repository_name="the_repo",
         ),
         instigator_name="simple_schedule",
@@ -2140,7 +2138,7 @@ def test_status_in_code_schedule(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
             running_schedule = external_repo.get_external_schedule("always_running_schedule")
@@ -2261,7 +2259,7 @@ def test_status_in_code_schedule(instance, executor):
             ] = workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
             ]._replace(
-                repository_location=None,
+                code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
@@ -2295,7 +2293,7 @@ def test_change_default_status(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
 
@@ -2375,14 +2373,14 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
     ) as full_workspace_context:
         with pendulum.test(freeze_datetime):
             full_location = cast(
-                RepositoryLocation,
+                CodeLocation,
                 next(
                     iter(
                         full_workspace_context.create_request_context()
                         .get_workspace_snapshot()
                         .values()
                     )
-                ).repository_location,
+                ).code_location,
             )
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
