@@ -116,7 +116,6 @@ class SensorEvaluationContext:
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
-
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(

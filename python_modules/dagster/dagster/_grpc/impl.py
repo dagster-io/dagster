@@ -294,22 +294,19 @@ def get_external_schedule_execution(
             for k, v in repo_def.get_top_level_resources().items()
             if k in required_resource_keys
         }
-
-        # User code boundary includes creating the context since it may involve
-        # instantiating resources
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: "Error occurred during the execution function for schedule {schedule_name}".format(
-                schedule_name=schedule_def.name
-            ),
-        ):
-            with ScheduleEvaluationContext(
-                instance_ref,
-                scheduled_execution_time,
-                repo_def.name,
-                schedule_name,
-                resources=resources_to_build,
-            ) as schedule_context:
+        with ScheduleEvaluationContext(
+            instance_ref,
+            scheduled_execution_time,
+            repo_def.name,
+            schedule_name,
+            resources=resources_to_build,
+        ) as schedule_context:
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: "Error occurred during the execution function for schedule {schedule_name}".format(
+                    schedule_name=schedule_def.name
+                ),
+            ):
                 return schedule_def.evaluate_tick(schedule_context)
     except Exception:
         return ExternalScheduleExecutionErrorData(
@@ -339,24 +336,22 @@ def get_external_sensor_execution(
             if k in required_resource_keys
         }
 
-        # User code boundary includes creating the context since it may involve
-        # instantiating resources
-        with user_code_error_boundary(
-            SensorExecutionError,
-            lambda: "Error occurred during the execution of evaluation_fn for sensor {sensor_name}".format(
-                sensor_name=sensor_def.name
-            ),
-        ):
-            with SensorEvaluationContext(
-                instance_ref,
-                last_completion_time=last_completion_timestamp,
-                last_run_key=last_run_key,
-                cursor=cursor,
-                repository_name=repo_def.name,
-                repository_def=repo_def,
-                sensor_name=sensor_name,
-                resources=resources_to_build,
-            ) as sensor_context:
+        with SensorEvaluationContext(
+            instance_ref,
+            last_completion_time=last_completion_timestamp,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repo_def.name,
+            repository_def=repo_def,
+            sensor_name=sensor_name,
+            resources=resources_to_build,
+        ) as sensor_context:
+            with user_code_error_boundary(
+                SensorExecutionError,
+                lambda: "Error occurred during the execution of evaluation_fn for sensor {sensor_name}".format(
+                    sensor_name=sensor_def.name
+                ),
+            ):
                 return sensor_def.evaluate_tick(sensor_context)
     except Exception:
         return ExternalSensorExecutionErrorData(
