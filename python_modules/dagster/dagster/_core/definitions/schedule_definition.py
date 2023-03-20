@@ -227,8 +227,9 @@ class ScheduleEvaluationContext:
             )
             from dagster._core.execution.build_resources import build_resources
 
+            instance = self.instance if self._instance or self._instance_ref else None
             self._resources_cm = build_resources(
-                resources=self._resource_defs or {}, instance=self.instance
+                resources=self._resource_defs or {}, instance=instance
             )
 
             self._resources = self._resources_cm.__enter__()
