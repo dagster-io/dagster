@@ -28,6 +28,7 @@ from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
+from dagster._check import CheckError
 from dagster._config.snap import (
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
@@ -1177,10 +1178,17 @@ def external_repository_data_from_def(
         if is_base_asset_job_name(pipeline_name):
             continue
         for solid_name in pipeline.pipeline_snapshot.solid_names:
-            solid = pipeline.pipeline_snapshot.get_node_def_snap(solid_name)
-            if isinstance(solid, SolidDefSnap):
-                for resource_key in solid.required_resource_keys or []:
-                    resource_job_usage_map[resource_key][pipeline_name].append(solid_name)
+            try:
+                solid = pipeline.pipeline_snapshot.get_node_def_snap(solid_name)
+                if isinstance(solid, SolidDefSnap):
+                    for resource_key in solid.required_resource_keys or []:
+                        resource_job_usage_map[resource_key][pipeline_name].append(solid_name)
+            # if the solid is not found, get_node_def_snap will raise a CheckError
+            except CheckError as e:
+                if e.args == ("Failure condition: not found",):
+                    pass
+                else:
+                    raise
 
     return ExternalRepositoryData(
         name=repository_def.name,
