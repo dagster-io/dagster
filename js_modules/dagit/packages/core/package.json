@@ -124,6 +124,7 @@
     "eslint-plugin-graphql": "4.0.0",
     "eslint-plugin-storybook": "^0.5.5",
     "faker": "5.5.3",
+    "graphql-codegen-typescript-mock-data": "^3.3.0",
     "graphql-tag": "^2.10.1",
     "graphql.macro": "^1.4.2",
     "identity-obj-proxy": "^3.0.0",

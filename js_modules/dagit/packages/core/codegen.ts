@@ -26,6 +26,15 @@ const config: CodegenConfig = {
             content: `// Generated GraphQL types, do not edit manually.\n`,
           },
         },
+        {
+          'typescript-mock-data': {
+            addTypename: true,
+            prefix: 'build',
+            listElementCount: 3,
+            typesPrefix: 'Types.',
+            enumsPrefix: 'Types.',
+          },
+        },
       ],
     },
     './src/': {
