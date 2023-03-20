@@ -158,6 +158,7 @@ class ScheduleEvaluationContext:
         "_log_key",
         "_logger",
         "_repository_name",
+        "_resource_defs",
         "_schedule_name",
         "_resources_cm",
         "_resources",
@@ -173,11 +174,6 @@ class ScheduleEvaluationContext:
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
-
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -198,11 +194,11 @@ class ScheduleEvaluationContext:
         self._repository_name = repository_name
         self._schedule_name = schedule_name
 
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources_cm = None
+        self._resources = None
+        self._resources_contain_cm = None
         self._cm_scope_entered = False
 
     def __enter__(self) -> "ScheduleEvaluationContext":
@@ -210,16 +206,35 @@ class ScheduleEvaluationContext:
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        if self._resources_cm is not None:
+            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
     def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
+        if (
+            self._resources_contain_cm
+            and not self._cm_scope_entered
+            and self._resources_cm is not None
+        ):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
     def resources(self) -> Resources:
+        if not self._resources:
+            from dagster._core.definitions.scoped_resources_builder import (
+                IContainsGenerator,
+            )
+            from dagster._core.execution.build_resources import build_resources
+
+            self._resources_cm = build_resources(
+                resources=self._resource_defs or {}, instance=self.instance
+            )
+
+            self._resources = self._resources_cm.__enter__()
+
+            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+
         if self._resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
