@@ -410,7 +410,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Sequence[str]:
         if isinstance(node_def_snap, CompositeSolidDefSnap):
             constituent_node_names = [
-                inv.solid_def_name
+                inv.node_def_name
                 for inv in node_def_snap.dep_structure_snapshot.solid_invocation_snaps
             ]
             external_pipeline = self.get_external_pipeline()

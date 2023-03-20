@@ -142,7 +142,7 @@ class GrapheneInput(graphene.ObjectType):
         self._input_name = check.str_param(input_name, "input_name")
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(
-            self._solid_invocation_snap.solid_def_name
+            self._solid_invocation_snap.node_def_name
         )
         self._input_def_snap = self._solid_def_snap.get_input_snap(input_name)
 
@@ -344,7 +344,7 @@ def _build_solid_handles(
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
     all_handle: List[GrapheneSolidHandle] = []
     for solid_invocation in current_dep_index.solid_invocations:
-        solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.solid_def_name
+        solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(
             solid=GrapheneSolid(represented_pipeline, solid_name, current_dep_index),
             handle=NodeHandle(solid_name, parent.handleID if parent else None),
@@ -531,7 +531,7 @@ class GrapheneSolid(graphene.ObjectType):
         )
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(
-            self._solid_invocation_snap.solid_def_name
+            self._solid_invocation_snap.node_def_name
         )
         super().__init__(name=solid_name)
 

@@ -115,7 +115,7 @@ class DependencyStructureIndex:
                         output_dep_snap.output_name
                     ].append(
                         InputHandle(
-                            solid_def_name=invocation.solid_def_name,
+                            solid_def_name=invocation.node_def_name,
                             solid_name=invocation.node_name,
                             input_name=input_dep_snap.input_name,
                         )
@@ -210,16 +210,17 @@ class InputDependencySnap(
         )
 
 
-# Use old name as storage for backcompat
+# Use old names in storage for backcompat
 @whitelist_for_serdes(
-    storage_name="SolidInvocationSnap", storage_field_names={"node_name": "solid_name"}
+    storage_name="SolidInvocationSnap",
+    storage_field_names={"node_name": "solid_name", "node_def_name": "solid_def_name"},
 )
 class NodeInvocationSnap(
     NamedTuple(
         "_NodeInvocationSnap",
         [
             ("node_name", str),
-            ("solid_def_name", str),
+            ("node_def_name", str),
             ("tags", Mapping[str, str]),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
@@ -229,7 +230,7 @@ class NodeInvocationSnap(
     def __new__(
         cls,
         node_name: str,
-        solid_def_name: str,
+        node_def_name: str,
         tags: Mapping[str, str],
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
@@ -237,7 +238,7 @@ class NodeInvocationSnap(
         return super(NodeInvocationSnap, cls).__new__(
             cls,
             node_name=check.str_param(node_name, "node_name"),
-            solid_def_name=check.str_param(solid_def_name, "solid_def_name"),
+            node_def_name=check.str_param(node_def_name, "node_def_name"),
             tags=check.mapping_param(tags, "tags", key_type=str, value_type=str),
             input_dep_snaps=check.sequence_param(
                 input_dep_snaps, "input_dep_snaps", of_type=InputDependencySnap

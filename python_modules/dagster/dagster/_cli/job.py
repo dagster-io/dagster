@@ -233,7 +233,7 @@ def print_op(
 
         printer.line("Outputs:")
         for output_def_snap in pipeline_snapshot.get_node_def_snap(
-            solid_invocation_snap.solid_def_name
+            solid_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
 
