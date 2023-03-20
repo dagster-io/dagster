@@ -2,9 +2,8 @@ import json
 import time
 import uuid
 
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._legacy import DagsterRunStatus
 from dagster._utils import file_relative_path
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
