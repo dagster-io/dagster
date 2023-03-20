@@ -9,7 +9,7 @@ from dagster._serdes import whitelist_for_serdes
 
 def build_solid_invocation_snap(
     icontains_solids: GraphDefinition, solid: Node
-) -> "SolidInvocationSnap":
+) -> "NodeInvocationSnap":
     check.inst_param(solid, "solid", Node)
     check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     dep_structure = icontains_solids.dependency_structure
@@ -32,7 +32,7 @@ def build_solid_invocation_snap(
             )
         )
 
-    return SolidInvocationSnap(
+    return NodeInvocationSnap(
         solid_name=solid.name,
         solid_def_name=solid.definition.name,
         tags=solid.tags,
@@ -56,15 +56,15 @@ def build_dep_structure_snapshot_from_icontains_solids(
 class DependencyStructureSnapshot(
     NamedTuple(
         "_DependencyStructureSnapshot",
-        [("solid_invocation_snaps", Sequence["SolidInvocationSnap"])],
+        [("solid_invocation_snaps", Sequence["NodeInvocationSnap"])],
     )
 ):
-    def __new__(cls, solid_invocation_snaps: Sequence["SolidInvocationSnap"]):
+    def __new__(cls, solid_invocation_snaps: Sequence["NodeInvocationSnap"]):
         return super(DependencyStructureSnapshot, cls).__new__(
             cls,
             sorted(
                 check.sequence_param(
-                    solid_invocation_snaps, "solid_invocation_snaps", of_type=SolidInvocationSnap
+                    solid_invocation_snaps, "solid_invocation_snaps", of_type=NodeInvocationSnap
                 ),
                 key=lambda si: si.solid_name,
             ),
@@ -88,7 +88,7 @@ class InputHandle(
 # for a given "level" in a pipeline. So either the pipelines
 # or within a composite solid
 class DependencyStructureIndex:
-    _invocations_dict: Dict[str, "SolidInvocationSnap"]
+    _invocations_dict: Dict[str, "NodeInvocationSnap"]
     _output_to_upstream_index: Mapping[str, Mapping[str, Sequence[InputHandle]]]
 
     def __init__(self, dep_structure_snapshot: DependencyStructureSnapshot):
@@ -103,7 +103,7 @@ class DependencyStructureIndex:
         )
 
     def _build_index(
-        self, solid_invocation_snaps: Sequence["SolidInvocationSnap"]
+        self, solid_invocation_snaps: Sequence["NodeInvocationSnap"]
     ) -> Mapping[str, Mapping[str, Sequence[InputHandle]]]:
         output_to_upstream_index: DefaultDict[str, Mapping[str, List[InputHandle]]] = defaultdict(
             lambda: defaultdict(list)
@@ -128,10 +128,10 @@ class DependencyStructureIndex:
         return list(self._invocations_dict.keys())
 
     @property
-    def solid_invocations(self) -> Sequence["SolidInvocationSnap"]:
+    def solid_invocations(self) -> Sequence["NodeInvocationSnap"]:
         return list(self._invocations_dict.values())
 
-    def get_invocation(self, solid_name: str) -> "SolidInvocationSnap":
+    def get_invocation(self, solid_name: str) -> "NodeInvocationSnap":
         check.str_param(solid_name, "solid_name")
         return self._invocations_dict[solid_name]
 
@@ -210,10 +210,11 @@ class InputDependencySnap(
         )
 
 
-@whitelist_for_serdes
-class SolidInvocationSnap(
+# Use old name as storage for backcompat
+@whitelist_for_serdes(storage_name="SolidInvocationSnap")
+class NodeInvocationSnap(
     NamedTuple(
-        "_SolidInvocationSnap",
+        "_NodeInvocationSnap",
         [
             ("solid_name", str),
             ("solid_def_name", str),
@@ -231,7 +232,7 @@ class SolidInvocationSnap(
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
     ):
-        return super(SolidInvocationSnap, cls).__new__(
+        return super(NodeInvocationSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
             solid_def_name=check.str_param(solid_def_name, "solid_def_name"),

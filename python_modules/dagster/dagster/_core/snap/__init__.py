@@ -43,7 +43,7 @@ from .dagster_types import (
 )
 from .dep_snapshot import (
     DependencyStructureIndex as DependencyStructureIndex,
-    SolidInvocationSnap as SolidInvocationSnap,
+    NodeInvocationSnap as NodeInvocationSnap,
 )
 from .execution_plan_snapshot import (
     ExecutionPlanSnapshot as ExecutionPlanSnapshot,

@@ -5,8 +5,8 @@ from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, j
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
     DependencyStructureIndex,
+    NodeInvocationSnap,
     PipelineSnapshot,
-    SolidInvocationSnap,
     create_pipeline_snapshot_id,
     snap_from_config_type,
 )
@@ -91,7 +91,7 @@ def test_noop_deps_snap():
         noop_job.graph
     ).solid_invocation_snaps
     assert len(invocations) == 1
-    assert isinstance(invocations[0], SolidInvocationSnap)
+    assert isinstance(invocations[0], NodeInvocationSnap)
 
 
 def test_two_invocations_deps_snap(snapshot):

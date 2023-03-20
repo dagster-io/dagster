@@ -46,7 +46,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster._core.snap import NodeInvocationSnap, PipelineSnapshot
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
@@ -220,10 +220,10 @@ def format_description(desc: str, indent: str):
 def print_op(
     printer: IndentingPrinter,
     pipeline_snapshot: PipelineSnapshot,
-    solid_invocation_snap: SolidInvocationSnap,
+    solid_invocation_snap: NodeInvocationSnap,
 ) -> None:
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", SolidInvocationSnap)
+    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {solid_invocation_snap.solid_name}")
     with printer.with_indent():
         printer.line("Inputs:")
