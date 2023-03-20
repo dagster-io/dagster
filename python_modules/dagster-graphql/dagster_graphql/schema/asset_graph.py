@@ -25,7 +25,7 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.snap.solid import CompositeSolidDefSnap, OpDefSnap
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -168,7 +168,7 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
-    _node_definition_snap: Optional[Union[CompositeSolidDefSnap, SolidDefSnap]]
+    _node_definition_snap: Optional[Union[CompositeSolidDefSnap, OpDefSnap]]
     _external_pipeline: Optional[ExternalPipeline]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
@@ -323,7 +323,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def get_node_definition_snap(
         self,
-    ) -> Union[CompositeSolidDefSnap, SolidDefSnap]:
+    ) -> Union[CompositeSolidDefSnap, OpDefSnap]:
         if self._node_definition_snap is None and len(self._external_asset_node.job_names) > 0:
             node_key = check.not_none(
                 self._external_asset_node.node_definition_name
@@ -400,13 +400,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
     def get_required_resource_keys(
-        self, node_def_snap: Union[CompositeSolidDefSnap, SolidDefSnap]
+        self, node_def_snap: Union[CompositeSolidDefSnap, OpDefSnap]
     ) -> Sequence[str]:
         all_keys = self.get_required_resource_keys_rec(node_def_snap)
         return list(set(all_keys))
 
     def get_required_resource_keys_rec(
-        self, node_def_snap: Union[CompositeSolidDefSnap, SolidDefSnap]
+        self, node_def_snap: Union[CompositeSolidDefSnap, OpDefSnap]
     ) -> Sequence[str]:
         if isinstance(node_def_snap, CompositeSolidDefSnap):
             constituent_node_names = [
@@ -862,7 +862,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
         external_pipeline = self.get_external_pipeline()
         node_def_snap = self.get_node_definition_snap()
-        if isinstance(node_def_snap, SolidDefSnap):
+        if isinstance(node_def_snap, OpDefSnap):
             return GrapheneSolidDefinition(external_pipeline, node_def_snap.name)
 
         if isinstance(node_def_snap, CompositeSolidDefSnap):

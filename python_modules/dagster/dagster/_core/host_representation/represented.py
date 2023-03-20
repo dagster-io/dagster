@@ -7,7 +7,7 @@ from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
-from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.snap.solid import CompositeSolidDefSnap, NodeDefSnap
 
 from .pipeline_index import PipelineIndex
 
@@ -103,7 +103,7 @@ class RepresentedPipeline(ABC):
         return self._pipeline_index.dep_structure_index
 
     # Solids
-    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[NodeDefSnap, CompositeSolidDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         return self._pipeline_index.get_node_def_snap(solid_def_name)
 

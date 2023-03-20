@@ -64,6 +64,6 @@ from .pipeline_snapshot import (
 )
 from .solid import (
     CompositeSolidDefSnap as CompositeSolidDefSnap,
-    SolidDefSnap as SolidDefSnap,
+    NodeDefSnap as NodeDefSnap,
     build_composite_solid_def_snap as build_composite_solid_def_snap,
 )

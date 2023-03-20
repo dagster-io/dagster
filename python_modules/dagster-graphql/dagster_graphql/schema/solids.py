@@ -7,7 +7,7 @@ from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedPipeline
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline
-from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
+from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, NodeDefSnap
 from dagster._core.snap.solid import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.pipeline_run import RunsFilter
 
@@ -459,7 +459,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        if not isinstance(_solid_def_snap, SolidDefSnap):
+        if not isinstance(_solid_def_snap, NodeDefSnap):
             check.failed("Expected SolidDefSnap")
         self._solid_def_snap = _solid_def_snap
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
@@ -741,7 +741,7 @@ def build_solid_definition(
 
     solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
 
-    if isinstance(solid_def_snap, SolidDefSnap):
+    if isinstance(solid_def_snap, NodeDefSnap):
         return GrapheneSolidDefinition(represented_pipeline, solid_def_snap.name)
 
     if isinstance(solid_def_snap, CompositeSolidDefSnap):
