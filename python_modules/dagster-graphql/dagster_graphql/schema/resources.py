@@ -61,6 +61,14 @@ class GrapheneNestedResourceEntry(graphene.ObjectType):
         name = "NestedResourceEntry"
 
 
+class GrapheneJobWithOps(graphene.ObjectType):
+    jobName = graphene.NonNull(graphene.String)
+    ops = graphene.Field(non_null_list(graphene.String))
+
+    class Meta:
+        name = "JobWithOps"
+
+
 class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -86,6 +94,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
     )
     resourceType = graphene.NonNull(graphene.String)
     assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
+    jobsOpsUsing = graphene.Field(non_null_list(GrapheneJobWithOps))
 
     class Meta:
         name = "ResourceDetails"
@@ -112,6 +121,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._parent_resources = external_resource.parent_resources
         self.resourceType = external_resource.resource_type
         self._asset_keys_using = external_resource.asset_keys_using
+        self._job_ops_using = external_resource.job_ops_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -168,8 +178,14 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for name, attribute in self._parent_resources.items()
         ]
 
-    def resolve_assetKeysUsing(self, _graphene_info):
+    def resolve_assetKeysUsing(self, _graphene_info) -> List[GrapheneAssetKey]:
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
+
+    def resolve_jobsOpsUsing(self, _graphene_info) -> List[GrapheneJobWithOps]:
+        return [
+            GrapheneJobWithOps(jobName=job_name, ops=ops)
+            for job_name, ops in self._job_ops_using.items()
+        ]
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):

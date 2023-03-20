@@ -1746,6 +1746,12 @@ export type JobOrPipelineSelector = {
   solidSelection?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type JobWithOps = {
+  __typename: 'JobWithOps';
+  jobName: Scalars['String'];
+  ops: Array<Scalars['String']>;
+};
+
 export type JsonMetadataEntry = MetadataEntry & {
   __typename: 'JsonMetadataEntry';
   description: Maybe<Scalars['String']>;
@@ -2868,6 +2874,7 @@ export type ResourceDetails = {
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
   isTopLevel: Scalars['Boolean'];
+  jobsOpsUsing: Array<JobWithOps>;
   name: Scalars['String'];
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;

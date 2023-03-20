@@ -49,7 +49,7 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, is_base_asset_job_name
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
@@ -83,6 +83,7 @@ from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import PipelineSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
+from dagster._core.snap.solid import SolidDefSnap
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -940,6 +941,7 @@ class ExternalResourceData(
             ("resource_type", str),
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
+            ("job_ops_using", Dict[str, List[str]]),
         ],
     )
 ):
@@ -960,6 +962,7 @@ class ExternalResourceData(
         resource_type: str = UNKNOWN_RESOURCE_TYPE,
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
+        job_ops_using: Optional[Mapping[str, List[str]]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -999,6 +1002,12 @@ class ExternalResourceData(
                 check.opt_sequence_param(asset_keys_using, "asset_keys_using", of_type=AssetKey)
             )
             or [],
+            job_ops_using=dict(
+                check.opt_mapping_param(
+                    job_ops_using, "job_ops_using", key_type=str, value_type=list
+                )
+            )
+            or {},
         )
 
 
@@ -1155,11 +1164,23 @@ def external_repository_data_from_def(
             if nested_resource.type == NestedResourceType.TOP_LEVEL:
                 inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
-    resource_asset_usage_map = defaultdict(list)
+    resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
     for asset in asset_graph:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
+
+    # maps resource key to map of pipeline name to list of solids in that pipeline that use that resource
+    resource_job_usage_map: Dict[str, Dict[str, List[str]]] = defaultdict(lambda: defaultdict(list))
+    for pipeline in pipeline_datas or []:
+        pipeline_name = pipeline.name
+        if is_base_asset_job_name(pipeline_name):
+            continue
+        for solid_name in pipeline.pipeline_snapshot.solid_names:
+            solid = pipeline.pipeline_snapshot.get_node_def_snap(solid_name)
+            if isinstance(solid, SolidDefSnap):
+                for resource_key in solid.required_resource_keys or []:
+                    resource_job_usage_map[resource_key][pipeline_name].append(solid_name)
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1198,6 +1219,7 @@ def external_repository_data_from_def(
                     nested_resource_map[res_name],
                     inverted_nested_resources_map[res_name],
                     resource_asset_usage_map,
+                    resource_job_usage_map,
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1469,6 +1491,7 @@ def external_resource_data_from_def(
     nested_resources: Mapping[str, NestedResource],
     parent_resources: Mapping[str, str],
     resource_asset_usage_map: Mapping[str, List[AssetKey]],
+    resource_job_usage_map: Mapping[str, Mapping[str, List[str]]],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1514,6 +1537,7 @@ def external_resource_data_from_def(
         parent_resources=parent_resources,
         is_top_level=True,
         asset_keys_using=resource_asset_usage_map.get(name, []),
+        job_ops_using=resource_job_usage_map.get(name, {}),
         resource_type=resource_type,
     )
 

@@ -598,6 +598,10 @@ class ExternalResource:
     def asset_keys_using(self) -> List[AssetKey]:
         return self._external_resource_data.asset_keys_using
 
+    @property
+    def job_ops_using(self) -> Dict[str, List[str]]:
+        return self._external_resource_data.job_ops_using
+
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):

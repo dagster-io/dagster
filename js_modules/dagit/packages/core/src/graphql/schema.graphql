@@ -1918,6 +1918,7 @@ type ResourceDetails {
   parentResources: [NestedResourceEntry!]!
   resourceType: String!
   assetKeysUsing: [AssetKey!]!
+  jobsOpsUsing: [JobWithOps!]!
 }
 
 type ConfiguredValue {
@@ -1940,6 +1941,11 @@ type NestedResourceEntry {
 enum NestedResourceType {
   ANONYMOUS
   TOP_LEVEL
+}
+
+type JobWithOps {
+  jobName: String!
+  ops: [String!]!
 }
 
 type RepositoryConnection {
