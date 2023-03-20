@@ -51,24 +51,7 @@ def test_solid_invocation_no_arg():
     result = basic_solid()
     assert result == 5
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "Compute function of op 'basic_solid' has no context "
-            "argument, but context was provided when invoking."
-        ),
-    ):
-        basic_solid(build_op_context())
-
-    # Ensure alias is accounted for in error message
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "Compute function of op 'aliased_basic_solid' has no context "
-            "argument, but context was provided when invoking."
-        ),
-    ):
-        basic_solid.alias("aliased_basic_solid")(build_op_context())
+    basic_solid(build_op_context())
 
     with pytest.raises(
         DagsterInvalidInvocationError,

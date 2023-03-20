@@ -434,11 +434,6 @@ class OpDefinition(NodeDefinition):
                 if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     context = cast(UnboundOpExecutionContext, args[0])
                     args = args[1:]
-
-                    # raise DagsterInvalidInvocationError(
-                    #     f"Compute function of {node_label} '{self.name}' has no context argument,"
-                    #     " but context was provided when invoking."
-                    # )
                 return op_invocation_result(self, context, *args, **kwargs)
 
 

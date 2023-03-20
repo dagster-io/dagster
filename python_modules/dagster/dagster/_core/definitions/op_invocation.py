@@ -61,16 +61,12 @@ def op_invocation_result(
             resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
             del kwargs[resource_arg]
 
-    resources_provided_in_multiple_places = list(
-        set(resource_args_from_kwargs.keys()).intersection(context.resource_keys)
-    )
+    resources_provided_in_multiple_places = (resource_args_from_kwargs) and (context.resource_keys)
     if resources_provided_in_multiple_places:
-        raise DagsterInvalidInvocationError(
-            "Cannot provide resources in both context and kwargs\n  Provided in both context and"
-            f" kwargs: {resources_provided_in_multiple_places}"
-        )
+        raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
 
-    context = (context).with_resources(resource_args_from_kwargs)
+    if resource_args_from_kwargs:
+        context = context.replace_resources(resource_args_from_kwargs)
 
     bound_context = context.bind(op_def_or_invocation)
     input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
