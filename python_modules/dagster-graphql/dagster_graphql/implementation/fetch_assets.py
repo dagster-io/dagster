@@ -33,6 +33,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsSubset,
 )
 from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
@@ -49,15 +50,14 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
-    can_cache_partition_type,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
+    is_cacheable_partition_type,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from dagster_graphql.implementation.loader import (
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -359,11 +359,11 @@ def get_materialized_and_failed_partition_subsets(
     if not partitions_def:
         return None, None
 
-    if instance.can_cache_asset_status_data() and can_cache_partition_type(partitions_def):
+    if instance.can_cache_asset_status_data() and is_cacheable_partition_type(partitions_def):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def
+            instance, asset_key, partitions_def, dynamic_partitions_loader
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
