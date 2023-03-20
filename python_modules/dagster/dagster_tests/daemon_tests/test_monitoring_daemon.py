@@ -292,7 +292,7 @@ def test_long_running_termination(
 def test_long_running_termination_failure(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
-    instance.run_launcher.should_fail_termination = True # type: ignore
+    instance.run_launcher.should_fail_termination = True  # type: ignore
     initial = pendulum.now().subtract(1000)
     with pendulum.test(initial):
         too_long_run = create_run_for_test(
