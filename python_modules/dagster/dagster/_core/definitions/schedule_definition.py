@@ -24,12 +24,13 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -415,8 +416,6 @@ class ScheduleDefinition:
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
-        environment_vars (Optional[dict[str, str]]): The environment variables to set for the
-            schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -439,7 +438,6 @@ class ScheduleDefinition:
             name=self.name,
             cron_schedule=self._cron_schedule,
             job_name=self.job_name,
-            environment_vars=self.environment_vars,
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
@@ -494,6 +492,15 @@ class ScheduleDefinition:
 
         self._description = check.opt_str_param(description, "description")
 
+        if environment_vars is not None:
+            deprecation_warning(
+                "`environment_vars` parameter to `ScheduleDefinition`",
+                "2.0.0",
+                (
+                    "It is no longer necessary. Schedules will have access to all environment"
+                    " variables set in the containing environment, and can safely be deleted."
+                ),
+            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
@@ -665,6 +672,7 @@ class ScheduleDefinition:
         return self._cron_schedule  # type: ignore
 
     @public
+    @deprecated
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
