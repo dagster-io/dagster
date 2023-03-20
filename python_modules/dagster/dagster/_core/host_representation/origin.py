@@ -76,7 +76,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
 
 
 class CodeLocationOrigin(ABC, tuple):
-    """Serializable representation of a RepositoryLocation that can be used to
+    """Serializable representation of a CodeLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
 
@@ -233,7 +233,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
     def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
-            "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a DynamicWorkspace"
+            "A ManagedGrpcPythonEnvCodeLocationOrigin needs a DynamicWorkspace"
             " in order to create a handle."
         )
 
@@ -271,7 +271,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(
-    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
+    storage_name="GrpcServerCodeLocationOrigin", skip_when_empty_fields={"use_ssl"}
 )
 class GrpcServerCodeLocationOrigin(
     NamedTuple(

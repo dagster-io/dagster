@@ -28,7 +28,7 @@ class BaseDaemonWorkspace(IWorkspace):
     (thread-safe) GrpcServerRegistry so that if the process spins up its own gRPC servers, they
     the server processes can be shared across multiple daemons.
 
-    Both the list of locations and the RepositoryLocation objects are cached until the daemon
+    Both the list of locations and the CodeLocation objects are cached until the daemon
     code calls cleanup() on the DaemonWorkspace - daemons are responsible for doing this
     periodically whenever they might want to check for code updates and workspace.yaml updates.
     """

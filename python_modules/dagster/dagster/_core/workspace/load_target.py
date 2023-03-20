@@ -21,7 +21,7 @@ from .load import (
 class WorkspaceLoadTarget(ABC):
     @abstractmethod
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
-        """Reloads the RepositoryLocationOrigins for this workspace."""
+        """Reloads the CodeLocationOrigins for this workspace."""
 
 
 class CompositeTarget(

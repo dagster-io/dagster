@@ -489,15 +489,14 @@ def repository_click_options() -> Sequence[ClickOption]:
             "--repository",
             "-r",
             help=(
-                "Repository within the workspace, necessary if more than one repository is present."
+                "Name of the repository, necessary if more than one repository is present in the"
+                " code location."
             ),
         ),
         click.option(
             "--location",
             "-l",
-            help=(
-                "CodeLocation within the workspace, necessary if more than one location is present."
-            ),
+            help="Name of the code location, necessary if more than one location is present.",
         ),
     ]
 

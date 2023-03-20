@@ -34,11 +34,11 @@ class CodeLocationStatusEntry(NamedTuple):
 
 
 class IWorkspace(ABC):
-    """Manages a set of RepositoryLocations."""
+    """Manages a set of CodeLocations."""
 
     @abstractmethod
     def get_code_location(self, location_name: str) -> "CodeLocation":
-        """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it.
+        """Return the CodeLocation for the given location name, or raise an error if there is an error loading it.
         """
 
     @abstractmethod

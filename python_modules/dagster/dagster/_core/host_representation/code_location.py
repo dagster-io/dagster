@@ -79,17 +79,17 @@ class CodeLocation(AbstractContextManager):
     definition objects. A given location will contain some number of uniquely named
     RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
 
-    Dagster tools are typically "host" processes, meaning they load a RepositoryLocation and
+    Dagster tools are typically "host" processes, meaning they load a CodeLocation and
     communicate with it over an IPC/RPC layer. Currently this IPC layer is implemented by
     invoking the dagster CLI in a target python interpreter (e.g. a virtual environment) in either
       a) the current node
       b) a container
 
     In the near future, we may also make this communication channel able over an RPC layer, in
-    which case the information needed to load a RepositoryLocation will be a url that abides by
+    which case the information needed to load a CodeLocation will be a url that abides by
     some RPC contract.
 
-    We also allow for InProcessRepositoryLocation which actually loads the user-defined artifacts
+    We also allow for InProcessCodeLocation which actually loads the user-defined artifacts
     into process with the host tool. This is mostly for test scenarios.
     """
 

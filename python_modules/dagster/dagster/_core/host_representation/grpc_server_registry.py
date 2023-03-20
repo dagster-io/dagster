@@ -81,7 +81,7 @@ class ErrorRegistryEntry(NamedTuple):
     error: SerializableErrorInfo
 
 
-# Creates local gRPC python processes from ManagedGrpcPythonEnvRepositoryLocationOrigins and shares
+# Creates local gRPC python processes from ManagedGrpcPythonEnvCodeLocationOrigins and shares
 # them between threads.
 class GrpcServerRegistry(AbstractContextManager):
     def __init__(
@@ -94,7 +94,7 @@ class GrpcServerRegistry(AbstractContextManager):
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that either heartbeat_ttl is greater than reload_interval (so that the process will reload
         # before it ends due to heartbeat failure), or if reload_interval is 0, that any processes
-        # returned by this registry have at least one GrpcServerRepositoryLocation hitting the
+        # returned by this registry have at least one GrpcServerCodeLocation hitting the
         # server with a heartbeat while you want the process to stay running.
         heartbeat_ttl: int,
         # How long to wait for the server to start up and receive connections before timing out

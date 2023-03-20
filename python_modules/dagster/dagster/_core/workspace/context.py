@@ -428,7 +428,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     2. Creates a `WorkspaceRequestContext` to be the workspace for each request
     3. Runs watch thread processes that monitor repository locations
 
-    To access a RepositoryLocation, you should create a `WorkspaceRequestContext`
+    To access a CodeLocation, you should create a `WorkspaceRequestContext`
     using `create_request_context`.
     """
 
