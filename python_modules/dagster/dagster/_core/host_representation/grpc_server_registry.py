@@ -10,7 +10,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    TypeVar,
     Union,
     cast,
 )
@@ -22,7 +21,6 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -58,14 +56,6 @@ class GrpcServerEndpoint(
         from dagster._grpc.client import DagsterGrpcClient
 
         return DagsterGrpcClient(port=self.port, socket=self.socket, host=self.host)
-
-
-T_GrpcRepositoryLocationOrigin = TypeVar(
-    "T_GrpcRepositoryLocationOrigin",
-    GrpcServerCodeLocationOrigin,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-    # default=ManagedGrpcPythonEnvRepositoryLocationOrigin,
-)
 
 
 class ServerRegistryEntry(NamedTuple):
