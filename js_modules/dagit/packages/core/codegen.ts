@@ -31,8 +31,6 @@ const config: CodegenConfig = {
             addTypename: true,
             prefix: 'build',
             listElementCount: 3,
-            typesPrefix: 'Types.',
-            enumsPrefix: 'Types.',
           },
         },
       ],

@@ -3855,8 +3855,8 @@ export type WrappingDagsterType = {
 };
 
 export const buildAddDynamicPartitionSuccess = (
-  overrides?: Partial<Types.AddDynamicPartitionSuccess>,
-): {__typename: 'AddDynamicPartitionSuccess'} & Types.AddDynamicPartitionSuccess => {
+  overrides?: Partial<AddDynamicPartitionSuccess>,
+): {__typename: 'AddDynamicPartitionSuccess'} & AddDynamicPartitionSuccess => {
   return {
     __typename: 'AddDynamicPartitionSuccess',
     partitionKey:
@@ -3869,16 +3869,15 @@ export const buildAddDynamicPartitionSuccess = (
 };
 
 export const buildAlertFailureEvent = (
-  overrides?: Partial<Types.AlertFailureEvent>,
-): {__typename: 'AlertFailureEvent'} & Types.AlertFailureEvent => {
+  overrides?: Partial<AlertFailureEvent>,
+): {__typename: 'AlertFailureEvent'} & AlertFailureEvent => {
   return {
     __typename: 'AlertFailureEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'odio',
@@ -3891,16 +3890,15 @@ export const buildAlertFailureEvent = (
 };
 
 export const buildAlertStartEvent = (
-  overrides?: Partial<Types.AlertStartEvent>,
-): {__typename: 'AlertStartEvent'} & Types.AlertStartEvent => {
+  overrides?: Partial<AlertStartEvent>,
+): {__typename: 'AlertStartEvent'} & AlertStartEvent => {
   return {
     __typename: 'AlertStartEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'in',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -3915,16 +3913,15 @@ export const buildAlertStartEvent = (
 };
 
 export const buildAlertSuccessEvent = (
-  overrides?: Partial<Types.AlertSuccessEvent>,
-): {__typename: 'AlertSuccessEvent'} & Types.AlertSuccessEvent => {
+  overrides?: Partial<AlertSuccessEvent>,
+): {__typename: 'AlertSuccessEvent'} & AlertSuccessEvent => {
   return {
     __typename: 'AlertSuccessEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'labore',
@@ -3937,8 +3934,8 @@ export const buildAlertSuccessEvent = (
 };
 
 export const buildArrayConfigType = (
-  overrides?: Partial<Types.ArrayConfigType>,
-): {__typename: 'ArrayConfigType'} & Types.ArrayConfigType => {
+  overrides?: Partial<ArrayConfigType>,
+): {__typename: 'ArrayConfigType'} & ArrayConfigType => {
   return {
     __typename: 'ArrayConfigType',
     description:
@@ -3957,9 +3954,7 @@ export const buildArrayConfigType = (
   };
 };
 
-export const buildAsset = (
-  overrides?: Partial<Types.Asset>,
-): {__typename: 'Asset'} & Types.Asset => {
+export const buildAsset = (overrides?: Partial<Asset>): {__typename: 'Asset'} & Asset => {
   return {
     __typename: 'Asset',
     assetMaterializations:
@@ -3980,8 +3975,8 @@ export const buildAsset = (
 };
 
 export const buildAssetConnection = (
-  overrides?: Partial<Types.AssetConnection>,
-): {__typename: 'AssetConnection'} & Types.AssetConnection => {
+  overrides?: Partial<AssetConnection>,
+): {__typename: 'AssetConnection'} & AssetConnection => {
   return {
     __typename: 'AssetConnection',
     nodes:
@@ -3992,8 +3987,8 @@ export const buildAssetConnection = (
 };
 
 export const buildAssetDependency = (
-  overrides?: Partial<Types.AssetDependency>,
-): {__typename: 'AssetDependency'} & Types.AssetDependency => {
+  overrides?: Partial<AssetDependency>,
+): {__typename: 'AssetDependency'} & AssetDependency => {
   return {
     __typename: 'AssetDependency',
     asset: overrides && overrides.hasOwnProperty('asset') ? overrides.asset! : buildAssetNode(),
@@ -4003,8 +3998,8 @@ export const buildAssetDependency = (
 };
 
 export const buildAssetFreshnessInfo = (
-  overrides?: Partial<Types.AssetFreshnessInfo>,
-): {__typename: 'AssetFreshnessInfo'} & Types.AssetFreshnessInfo => {
+  overrides?: Partial<AssetFreshnessInfo>,
+): {__typename: 'AssetFreshnessInfo'} & AssetFreshnessInfo => {
   return {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate:
@@ -4019,8 +4014,8 @@ export const buildAssetFreshnessInfo = (
 };
 
 export const buildAssetGroup = (
-  overrides?: Partial<Types.AssetGroup>,
-): {__typename: 'AssetGroup'} & Types.AssetGroup => {
+  overrides?: Partial<AssetGroup>,
+): {__typename: 'AssetGroup'} & AssetGroup => {
   return {
     __typename: 'AssetGroup',
     assetKeys:
@@ -4032,8 +4027,8 @@ export const buildAssetGroup = (
 };
 
 export const buildAssetGroupSelector = (
-  overrides?: Partial<Types.AssetGroupSelector>,
-): Types.AssetGroupSelector => {
+  overrides?: Partial<AssetGroupSelector>,
+): AssetGroupSelector => {
   return {
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'explicabo',
@@ -4047,8 +4042,8 @@ export const buildAssetGroupSelector = (
 };
 
 export const buildAssetKey = (
-  overrides?: Partial<Types.AssetKey>,
-): {__typename: 'AssetKey'} & Types.AssetKey => {
+  overrides?: Partial<AssetKey>,
+): {__typename: 'AssetKey'} & AssetKey => {
   return {
     __typename: 'AssetKey',
     path:
@@ -4058,9 +4053,7 @@ export const buildAssetKey = (
   };
 };
 
-export const buildAssetKeyInput = (
-  overrides?: Partial<Types.AssetKeyInput>,
-): Types.AssetKeyInput => {
+export const buildAssetKeyInput = (overrides?: Partial<AssetKeyInput>): AssetKeyInput => {
   return {
     path:
       overrides && overrides.hasOwnProperty('path')
@@ -4070,8 +4063,8 @@ export const buildAssetKeyInput = (
 };
 
 export const buildAssetLatestInfo = (
-  overrides?: Partial<Types.AssetLatestInfo>,
-): {__typename: 'AssetLatestInfo'} & Types.AssetLatestInfo => {
+  overrides?: Partial<AssetLatestInfo>,
+): {__typename: 'AssetLatestInfo'} & AssetLatestInfo => {
   return {
     __typename: 'AssetLatestInfo',
     assetKey:
@@ -4094,8 +4087,8 @@ export const buildAssetLatestInfo = (
 };
 
 export const buildAssetLineageInfo = (
-  overrides?: Partial<Types.AssetLineageInfo>,
-): {__typename: 'AssetLineageInfo'} & Types.AssetLineageInfo => {
+  overrides?: Partial<AssetLineageInfo>,
+): {__typename: 'AssetLineageInfo'} & AssetLineageInfo => {
   return {
     __typename: 'AssetLineageInfo',
     assetKey:
@@ -4108,8 +4101,8 @@ export const buildAssetLineageInfo = (
 };
 
 export const buildAssetMaterializationPlannedEvent = (
-  overrides?: Partial<Types.AssetMaterializationPlannedEvent>,
-): {__typename: 'AssetMaterializationPlannedEvent'} & Types.AssetMaterializationPlannedEvent => {
+  overrides?: Partial<AssetMaterializationPlannedEvent>,
+): {__typename: 'AssetMaterializationPlannedEvent'} & AssetMaterializationPlannedEvent => {
   return {
     __typename: 'AssetMaterializationPlannedEvent',
     assetKey:
@@ -4117,9 +4110,8 @@ export const buildAssetMaterializationPlannedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'amet',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'nesciunt',
@@ -4136,8 +4128,8 @@ export const buildAssetMaterializationPlannedEvent = (
 };
 
 export const buildAssetMetadataEntry = (
-  overrides?: Partial<Types.AssetMetadataEntry>,
-): {__typename: 'AssetMetadataEntry'} & Types.AssetMetadataEntry => {
+  overrides?: Partial<AssetMetadataEntry>,
+): {__typename: 'AssetMetadataEntry'} & AssetMetadataEntry => {
   return {
     __typename: 'AssetMetadataEntry',
     assetKey:
@@ -4149,8 +4141,8 @@ export const buildAssetMetadataEntry = (
 };
 
 export const buildAssetNode = (
-  overrides?: Partial<Types.AssetNode>,
-): {__typename: 'AssetNode'} & Types.AssetNode => {
+  overrides?: Partial<AssetNode>,
+): {__typename: 'AssetNode'} & AssetNode => {
   return {
     __typename: 'AssetNode',
     assetKey:
@@ -4290,14 +4282,14 @@ export const buildAssetNode = (
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
-        : Types.StaleStatus.Fresh,
+        : StaleStatus.Fresh,
     type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : buildDagsterType(),
   };
 };
 
 export const buildAssetNodeDefinitionCollision = (
-  overrides?: Partial<Types.AssetNodeDefinitionCollision>,
-): {__typename: 'AssetNodeDefinitionCollision'} & Types.AssetNodeDefinitionCollision => {
+  overrides?: Partial<AssetNodeDefinitionCollision>,
+): {__typename: 'AssetNodeDefinitionCollision'} & AssetNodeDefinitionCollision => {
   return {
     __typename: 'AssetNodeDefinitionCollision',
     assetKey:
@@ -4310,8 +4302,8 @@ export const buildAssetNodeDefinitionCollision = (
 };
 
 export const buildAssetNotFoundError = (
-  overrides?: Partial<Types.AssetNotFoundError>,
-): {__typename: 'AssetNotFoundError'} & Types.AssetNotFoundError => {
+  overrides?: Partial<AssetNotFoundError>,
+): {__typename: 'AssetNotFoundError'} & AssetNotFoundError => {
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
@@ -4319,8 +4311,8 @@ export const buildAssetNotFoundError = (
 };
 
 export const buildAssetWipeSuccess = (
-  overrides?: Partial<Types.AssetWipeSuccess>,
-): {__typename: 'AssetWipeSuccess'} & Types.AssetWipeSuccess => {
+  overrides?: Partial<AssetWipeSuccess>,
+): {__typename: 'AssetWipeSuccess'} & AssetWipeSuccess => {
   return {
     __typename: 'AssetWipeSuccess',
     assetKeys:
@@ -4331,8 +4323,8 @@ export const buildAssetWipeSuccess = (
 };
 
 export const buildBoolMetadataEntry = (
-  overrides?: Partial<Types.BoolMetadataEntry>,
-): {__typename: 'BoolMetadataEntry'} & Types.BoolMetadataEntry => {
+  overrides?: Partial<BoolMetadataEntry>,
+): {__typename: 'BoolMetadataEntry'} & BoolMetadataEntry => {
   return {
     __typename: 'BoolMetadataEntry',
     boolValue: overrides && overrides.hasOwnProperty('boolValue') ? overrides.boolValue! : true,
@@ -4343,8 +4335,8 @@ export const buildBoolMetadataEntry = (
 };
 
 export const buildCancelBackfillSuccess = (
-  overrides?: Partial<Types.CancelBackfillSuccess>,
-): {__typename: 'CancelBackfillSuccess'} & Types.CancelBackfillSuccess => {
+  overrides?: Partial<CancelBackfillSuccess>,
+): {__typename: 'CancelBackfillSuccess'} & CancelBackfillSuccess => {
   return {
     __typename: 'CancelBackfillSuccess',
     backfillId:
@@ -4353,8 +4345,8 @@ export const buildCancelBackfillSuccess = (
 };
 
 export const buildCapturedLogs = (
-  overrides?: Partial<Types.CapturedLogs>,
-): {__typename: 'CapturedLogs'} & Types.CapturedLogs => {
+  overrides?: Partial<CapturedLogs>,
+): {__typename: 'CapturedLogs'} & CapturedLogs => {
   return {
     __typename: 'CapturedLogs',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'itaque',
@@ -4368,8 +4360,8 @@ export const buildCapturedLogs = (
 };
 
 export const buildCapturedLogsMetadata = (
-  overrides?: Partial<Types.CapturedLogsMetadata>,
-): {__typename: 'CapturedLogsMetadata'} & Types.CapturedLogsMetadata => {
+  overrides?: Partial<CapturedLogsMetadata>,
+): {__typename: 'CapturedLogsMetadata'} & CapturedLogsMetadata => {
   return {
     __typename: 'CapturedLogsMetadata',
     stderrDownloadUrl:
@@ -4392,8 +4384,8 @@ export const buildCapturedLogsMetadata = (
 };
 
 export const buildCompositeConfigType = (
-  overrides?: Partial<Types.CompositeConfigType>,
-): {__typename: 'CompositeConfigType'} & Types.CompositeConfigType => {
+  overrides?: Partial<CompositeConfigType>,
+): {__typename: 'CompositeConfigType'} & CompositeConfigType => {
   return {
     __typename: 'CompositeConfigType',
     description:
@@ -4416,8 +4408,8 @@ export const buildCompositeConfigType = (
 };
 
 export const buildCompositeSolidDefinition = (
-  overrides?: Partial<Types.CompositeSolidDefinition>,
-): {__typename: 'CompositeSolidDefinition'} & Types.CompositeSolidDefinition => {
+  overrides?: Partial<CompositeSolidDefinition>,
+): {__typename: 'CompositeSolidDefinition'} & CompositeSolidDefinition => {
   return {
     __typename: 'CompositeSolidDefinition',
     assetNodes:
@@ -4475,8 +4467,8 @@ export const buildCompositeSolidDefinition = (
 };
 
 export const buildComputeLogFile = (
-  overrides?: Partial<Types.ComputeLogFile>,
-): {__typename: 'ComputeLogFile'} & Types.ComputeLogFile => {
+  overrides?: Partial<ComputeLogFile>,
+): {__typename: 'ComputeLogFile'} & ComputeLogFile => {
   return {
     __typename: 'ComputeLogFile',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 1566,
@@ -4489,8 +4481,8 @@ export const buildComputeLogFile = (
 };
 
 export const buildComputeLogs = (
-  overrides?: Partial<Types.ComputeLogs>,
-): {__typename: 'ComputeLogs'} & Types.ComputeLogs => {
+  overrides?: Partial<ComputeLogs>,
+): {__typename: 'ComputeLogs'} & ComputeLogs => {
   return {
     __typename: 'ComputeLogs',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'est',
@@ -4503,8 +4495,8 @@ export const buildComputeLogs = (
 };
 
 export const buildConfigType = (
-  overrides?: Partial<Types.ConfigType>,
-): {__typename: 'ConfigType'} & Types.ConfigType => {
+  overrides?: Partial<ConfigType>,
+): {__typename: 'ConfigType'} & ConfigType => {
   return {
     __typename: 'ConfigType',
     description:
@@ -4523,8 +4515,8 @@ export const buildConfigType = (
 };
 
 export const buildConfigTypeField = (
-  overrides?: Partial<Types.ConfigTypeField>,
-): {__typename: 'ConfigTypeField'} & Types.ConfigTypeField => {
+  overrides?: Partial<ConfigTypeField>,
+): {__typename: 'ConfigTypeField'} & ConfigTypeField => {
   return {
     __typename: 'ConfigTypeField',
     configType:
@@ -4547,8 +4539,8 @@ export const buildConfigTypeField = (
 };
 
 export const buildConfigTypeNotFoundError = (
-  overrides?: Partial<Types.ConfigTypeNotFoundError>,
-): {__typename: 'ConfigTypeNotFoundError'} & Types.ConfigTypeNotFoundError => {
+  overrides?: Partial<ConfigTypeNotFoundError>,
+): {__typename: 'ConfigTypeNotFoundError'} & ConfigTypeNotFoundError => {
   return {
     __typename: 'ConfigTypeNotFoundError',
     configTypeName:
@@ -4560,22 +4552,20 @@ export const buildConfigTypeNotFoundError = (
 };
 
 export const buildConfiguredValue = (
-  overrides?: Partial<Types.ConfiguredValue>,
-): {__typename: 'ConfiguredValue'} & Types.ConfiguredValue => {
+  overrides?: Partial<ConfiguredValue>,
+): {__typename: 'ConfiguredValue'} & ConfiguredValue => {
   return {
     __typename: 'ConfiguredValue',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ipsam',
     type:
-      overrides && overrides.hasOwnProperty('type')
-        ? overrides.type!
-        : Types.ConfiguredValueType.EnvVar,
+      overrides && overrides.hasOwnProperty('type') ? overrides.type! : ConfiguredValueType.EnvVar,
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'distinctio',
   };
 };
 
 export const buildConflictingExecutionParamsError = (
-  overrides?: Partial<Types.ConflictingExecutionParamsError>,
-): {__typename: 'ConflictingExecutionParamsError'} & Types.ConflictingExecutionParamsError => {
+  overrides?: Partial<ConflictingExecutionParamsError>,
+): {__typename: 'ConflictingExecutionParamsError'} & ConflictingExecutionParamsError => {
   return {
     __typename: 'ConflictingExecutionParamsError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'pariatur',
@@ -4583,8 +4573,8 @@ export const buildConflictingExecutionParamsError = (
 };
 
 export const buildDaemonHealth = (
-  overrides?: Partial<Types.DaemonHealth>,
-): {__typename: 'DaemonHealth'} & Types.DaemonHealth => {
+  overrides?: Partial<DaemonHealth>,
+): {__typename: 'DaemonHealth'} & DaemonHealth => {
   return {
     __typename: 'DaemonHealth',
     allDaemonStatuses:
@@ -4600,8 +4590,8 @@ export const buildDaemonHealth = (
 };
 
 export const buildDaemonStatus = (
-  overrides?: Partial<Types.DaemonStatus>,
-): {__typename: 'DaemonStatus'} & Types.DaemonStatus => {
+  overrides?: Partial<DaemonStatus>,
+): {__typename: 'DaemonStatus'} & DaemonStatus => {
   return {
     __typename: 'DaemonStatus',
     daemonType:
@@ -4624,8 +4614,8 @@ export const buildDaemonStatus = (
 };
 
 export const buildDagitMutation = (
-  overrides?: Partial<Types.DagitMutation>,
-): {__typename: 'DagitMutation'} & Types.DagitMutation => {
+  overrides?: Partial<DagitMutation>,
+): {__typename: 'DagitMutation'} & DagitMutation => {
   return {
     __typename: 'DagitMutation',
     addDynamicPartition:
@@ -4729,8 +4719,8 @@ export const buildDagitMutation = (
 };
 
 export const buildDagitQuery = (
-  overrides?: Partial<Types.DagitQuery>,
-): {__typename: 'DagitQuery'} & Types.DagitQuery => {
+  overrides?: Partial<DagitQuery>,
+): {__typename: 'DagitQuery'} & DagitQuery => {
   return {
     __typename: 'DagitQuery',
     allTopLevelResourceDetailsOrError:
@@ -4915,8 +4905,8 @@ export const buildDagitQuery = (
 };
 
 export const buildDagitSubscription = (
-  overrides?: Partial<Types.DagitSubscription>,
-): {__typename: 'DagitSubscription'} & Types.DagitSubscription => {
+  overrides?: Partial<DagitSubscription>,
+): {__typename: 'DagitSubscription'} & DagitSubscription => {
   return {
     __typename: 'DagitSubscription',
     capturedLogs:
@@ -4939,8 +4929,8 @@ export const buildDagitSubscription = (
 };
 
 export const buildDagsterLibraryVersion = (
-  overrides?: Partial<Types.DagsterLibraryVersion>,
-): {__typename: 'DagsterLibraryVersion'} & Types.DagsterLibraryVersion => {
+  overrides?: Partial<DagsterLibraryVersion>,
+): {__typename: 'DagsterLibraryVersion'} & DagsterLibraryVersion => {
   return {
     __typename: 'DagsterLibraryVersion',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'et',
@@ -4949,8 +4939,8 @@ export const buildDagsterLibraryVersion = (
 };
 
 export const buildDagsterType = (
-  overrides?: Partial<Types.DagsterType>,
-): {__typename: 'DagsterType'} & Types.DagsterType => {
+  overrides?: Partial<DagsterType>,
+): {__typename: 'DagsterType'} & DagsterType => {
   return {
     __typename: 'DagsterType',
     description:
@@ -4983,8 +4973,8 @@ export const buildDagsterType = (
 };
 
 export const buildDagsterTypeNotFoundError = (
-  overrides?: Partial<Types.DagsterTypeNotFoundError>,
-): {__typename: 'DagsterTypeNotFoundError'} & Types.DagsterTypeNotFoundError => {
+  overrides?: Partial<DagsterTypeNotFoundError>,
+): {__typename: 'DagsterTypeNotFoundError'} & DagsterTypeNotFoundError => {
   return {
     __typename: 'DagsterTypeNotFoundError',
     dagsterTypeName:
@@ -4996,8 +4986,8 @@ export const buildDagsterTypeNotFoundError = (
 };
 
 export const buildDefaultPartitions = (
-  overrides?: Partial<Types.DefaultPartitions>,
-): {__typename: 'DefaultPartitions'} & Types.DefaultPartitions => {
+  overrides?: Partial<DefaultPartitions>,
+): {__typename: 'DefaultPartitions'} & DefaultPartitions => {
   return {
     __typename: 'DefaultPartitions',
     failedPartitions:
@@ -5016,8 +5006,8 @@ export const buildDefaultPartitions = (
 };
 
 export const buildDeletePipelineRunSuccess = (
-  overrides?: Partial<Types.DeletePipelineRunSuccess>,
-): {__typename: 'DeletePipelineRunSuccess'} & Types.DeletePipelineRunSuccess => {
+  overrides?: Partial<DeletePipelineRunSuccess>,
+): {__typename: 'DeletePipelineRunSuccess'} & DeletePipelineRunSuccess => {
   return {
     __typename: 'DeletePipelineRunSuccess',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'ipsum',
@@ -5025,8 +5015,8 @@ export const buildDeletePipelineRunSuccess = (
 };
 
 export const buildDeleteRunMutation = (
-  overrides?: Partial<Types.DeleteRunMutation>,
-): {__typename: 'DeleteRunMutation'} & Types.DeleteRunMutation => {
+  overrides?: Partial<DeleteRunMutation>,
+): {__typename: 'DeleteRunMutation'} & DeleteRunMutation => {
   return {
     __typename: 'DeleteRunMutation',
     Output:
@@ -5037,8 +5027,8 @@ export const buildDeleteRunMutation = (
 };
 
 export const buildDimensionDefinitionType = (
-  overrides?: Partial<Types.DimensionDefinitionType>,
-): {__typename: 'DimensionDefinitionType'} & Types.DimensionDefinitionType => {
+  overrides?: Partial<DimensionDefinitionType>,
+): {__typename: 'DimensionDefinitionType'} & DimensionDefinitionType => {
   return {
     __typename: 'DimensionDefinitionType',
     description:
@@ -5051,13 +5041,13 @@ export const buildDimensionDefinitionType = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : Types.PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.Dynamic,
   };
 };
 
 export const buildDimensionPartitionKeys = (
-  overrides?: Partial<Types.DimensionPartitionKeys>,
-): {__typename: 'DimensionPartitionKeys'} & Types.DimensionPartitionKeys => {
+  overrides?: Partial<DimensionPartitionKeys>,
+): {__typename: 'DimensionPartitionKeys'} & DimensionPartitionKeys => {
   return {
     __typename: 'DimensionPartitionKeys',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'id',
@@ -5068,13 +5058,13 @@ export const buildDimensionPartitionKeys = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : Types.PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.Dynamic,
   };
 };
 
 export const buildDisplayableEvent = (
-  overrides?: Partial<Types.DisplayableEvent>,
-): {__typename: 'DisplayableEvent'} & Types.DisplayableEvent => {
+  overrides?: Partial<DisplayableEvent>,
+): {__typename: 'DisplayableEvent'} & DisplayableEvent => {
   return {
     __typename: 'DisplayableEvent',
     description:
@@ -5088,8 +5078,8 @@ export const buildDisplayableEvent = (
 };
 
 export const buildDryRunInstigationTick = (
-  overrides?: Partial<Types.DryRunInstigationTick>,
-): {__typename: 'DryRunInstigationTick'} & Types.DryRunInstigationTick => {
+  overrides?: Partial<DryRunInstigationTick>,
+): {__typename: 'DryRunInstigationTick'} & DryRunInstigationTick => {
   return {
     __typename: 'DryRunInstigationTick',
     evaluationResult:
@@ -5101,8 +5091,8 @@ export const buildDryRunInstigationTick = (
 };
 
 export const buildDryRunInstigationTicks = (
-  overrides?: Partial<Types.DryRunInstigationTicks>,
-): {__typename: 'DryRunInstigationTicks'} & Types.DryRunInstigationTicks => {
+  overrides?: Partial<DryRunInstigationTicks>,
+): {__typename: 'DryRunInstigationTicks'} & DryRunInstigationTicks => {
   return {
     __typename: 'DryRunInstigationTicks',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 0.85,
@@ -5118,8 +5108,8 @@ export const buildDryRunInstigationTicks = (
 };
 
 export const buildDuplicateDynamicPartitionError = (
-  overrides?: Partial<Types.DuplicateDynamicPartitionError>,
-): {__typename: 'DuplicateDynamicPartitionError'} & Types.DuplicateDynamicPartitionError => {
+  overrides?: Partial<DuplicateDynamicPartitionError>,
+): {__typename: 'DuplicateDynamicPartitionError'} & DuplicateDynamicPartitionError => {
   return {
     __typename: 'DuplicateDynamicPartitionError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quae',
@@ -5133,8 +5123,8 @@ export const buildDuplicateDynamicPartitionError = (
 };
 
 export const buildEngineEvent = (
-  overrides?: Partial<Types.EngineEvent>,
-): {__typename: 'EngineEvent'} & Types.EngineEvent => {
+  overrides?: Partial<EngineEvent>,
+): {__typename: 'EngineEvent'} & EngineEvent => {
   return {
     __typename: 'EngineEvent',
     description:
@@ -5143,10 +5133,9 @@ export const buildEngineEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aut',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'saepe',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'unde',
@@ -5164,8 +5153,8 @@ export const buildEngineEvent = (
 };
 
 export const buildEnumConfigType = (
-  overrides?: Partial<Types.EnumConfigType>,
-): {__typename: 'EnumConfigType'} & Types.EnumConfigType => {
+  overrides?: Partial<EnumConfigType>,
+): {__typename: 'EnumConfigType'} & EnumConfigType => {
   return {
     __typename: 'EnumConfigType',
     description:
@@ -5190,8 +5179,8 @@ export const buildEnumConfigType = (
 };
 
 export const buildEnumConfigValue = (
-  overrides?: Partial<Types.EnumConfigValue>,
-): {__typename: 'EnumConfigValue'} & Types.EnumConfigValue => {
+  overrides?: Partial<EnumConfigValue>,
+): {__typename: 'EnumConfigValue'} & EnumConfigValue => {
   return {
     __typename: 'EnumConfigValue',
     description:
@@ -5201,21 +5190,19 @@ export const buildEnumConfigValue = (
 };
 
 export const buildEnvVarConsumer = (
-  overrides?: Partial<Types.EnvVarConsumer>,
-): {__typename: 'EnvVarConsumer'} & Types.EnvVarConsumer => {
+  overrides?: Partial<EnvVarConsumer>,
+): {__typename: 'EnvVarConsumer'} & EnvVarConsumer => {
   return {
     __typename: 'EnvVarConsumer',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
     type:
-      overrides && overrides.hasOwnProperty('type')
-        ? overrides.type!
-        : Types.EnvVarConsumerType.Resource,
+      overrides && overrides.hasOwnProperty('type') ? overrides.type! : EnvVarConsumerType.Resource,
   };
 };
 
 export const buildEnvVarWithConsumers = (
-  overrides?: Partial<Types.EnvVarWithConsumers>,
-): {__typename: 'EnvVarWithConsumers'} & Types.EnvVarWithConsumers => {
+  overrides?: Partial<EnvVarWithConsumers>,
+): {__typename: 'EnvVarWithConsumers'} & EnvVarWithConsumers => {
   return {
     __typename: 'EnvVarWithConsumers',
     envVarConsumers:
@@ -5228,8 +5215,8 @@ export const buildEnvVarWithConsumers = (
 };
 
 export const buildEnvVarWithConsumersList = (
-  overrides?: Partial<Types.EnvVarWithConsumersList>,
-): {__typename: 'EnvVarWithConsumersList'} & Types.EnvVarWithConsumersList => {
+  overrides?: Partial<EnvVarWithConsumersList>,
+): {__typename: 'EnvVarWithConsumersList'} & EnvVarWithConsumersList => {
   return {
     __typename: 'EnvVarWithConsumersList',
     results:
@@ -5239,9 +5226,7 @@ export const buildEnvVarWithConsumersList = (
   };
 };
 
-export const buildError = (
-  overrides?: Partial<Types.Error>,
-): {__typename: 'Error'} & Types.Error => {
+export const buildError = (overrides?: Partial<Error>): {__typename: 'Error'} & Error => {
   return {
     __typename: 'Error',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
@@ -5249,8 +5234,8 @@ export const buildError = (
 };
 
 export const buildErrorChainLink = (
-  overrides?: Partial<Types.ErrorChainLink>,
-): {__typename: 'ErrorChainLink'} & Types.ErrorChainLink => {
+  overrides?: Partial<ErrorChainLink>,
+): {__typename: 'ErrorChainLink'} & ErrorChainLink => {
   return {
     __typename: 'ErrorChainLink',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
@@ -5261,8 +5246,8 @@ export const buildErrorChainLink = (
 };
 
 export const buildErrorEvent = (
-  overrides?: Partial<Types.ErrorEvent>,
-): {__typename: 'ErrorEvent'} & Types.ErrorEvent => {
+  overrides?: Partial<ErrorEvent>,
+): {__typename: 'ErrorEvent'} & ErrorEvent => {
   return {
     __typename: 'ErrorEvent',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
@@ -5270,8 +5255,8 @@ export const buildErrorEvent = (
 };
 
 export const buildEvaluationStack = (
-  overrides?: Partial<Types.EvaluationStack>,
-): {__typename: 'EvaluationStack'} & Types.EvaluationStack => {
+  overrides?: Partial<EvaluationStack>,
+): {__typename: 'EvaluationStack'} & EvaluationStack => {
   return {
     __typename: 'EvaluationStack',
     entries:
@@ -5286,8 +5271,8 @@ export const buildEvaluationStack = (
 };
 
 export const buildEvaluationStackListItemEntry = (
-  overrides?: Partial<Types.EvaluationStackListItemEntry>,
-): {__typename: 'EvaluationStackListItemEntry'} & Types.EvaluationStackListItemEntry => {
+  overrides?: Partial<EvaluationStackListItemEntry>,
+): {__typename: 'EvaluationStackListItemEntry'} & EvaluationStackListItemEntry => {
   return {
     __typename: 'EvaluationStackListItemEntry',
     listIndex: overrides && overrides.hasOwnProperty('listIndex') ? overrides.listIndex! : 8595,
@@ -5295,8 +5280,8 @@ export const buildEvaluationStackListItemEntry = (
 };
 
 export const buildEvaluationStackMapKeyEntry = (
-  overrides?: Partial<Types.EvaluationStackMapKeyEntry>,
-): {__typename: 'EvaluationStackMapKeyEntry'} & Types.EvaluationStackMapKeyEntry => {
+  overrides?: Partial<EvaluationStackMapKeyEntry>,
+): {__typename: 'EvaluationStackMapKeyEntry'} & EvaluationStackMapKeyEntry => {
   return {
     __typename: 'EvaluationStackMapKeyEntry',
     mapKey: overrides && overrides.hasOwnProperty('mapKey') ? overrides.mapKey! : 'qui',
@@ -5304,8 +5289,8 @@ export const buildEvaluationStackMapKeyEntry = (
 };
 
 export const buildEvaluationStackMapValueEntry = (
-  overrides?: Partial<Types.EvaluationStackMapValueEntry>,
-): {__typename: 'EvaluationStackMapValueEntry'} & Types.EvaluationStackMapValueEntry => {
+  overrides?: Partial<EvaluationStackMapValueEntry>,
+): {__typename: 'EvaluationStackMapValueEntry'} & EvaluationStackMapValueEntry => {
   return {
     __typename: 'EvaluationStackMapValueEntry',
     mapKey: overrides && overrides.hasOwnProperty('mapKey') ? overrides.mapKey! : 'architecto',
@@ -5313,8 +5298,8 @@ export const buildEvaluationStackMapValueEntry = (
 };
 
 export const buildEvaluationStackPathEntry = (
-  overrides?: Partial<Types.EvaluationStackPathEntry>,
-): {__typename: 'EvaluationStackPathEntry'} & Types.EvaluationStackPathEntry => {
+  overrides?: Partial<EvaluationStackPathEntry>,
+): {__typename: 'EvaluationStackPathEntry'} & EvaluationStackPathEntry => {
   return {
     __typename: 'EvaluationStackPathEntry',
     fieldName: overrides && overrides.hasOwnProperty('fieldName') ? overrides.fieldName! : 'ipsa',
@@ -5322,8 +5307,8 @@ export const buildEvaluationStackPathEntry = (
 };
 
 export const buildEventConnection = (
-  overrides?: Partial<Types.EventConnection>,
-): {__typename: 'EventConnection'} & Types.EventConnection => {
+  overrides?: Partial<EventConnection>,
+): {__typename: 'EventConnection'} & EventConnection => {
   return {
     __typename: 'EventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'dolor',
@@ -5336,8 +5321,8 @@ export const buildEventConnection = (
 };
 
 export const buildEventTag = (
-  overrides?: Partial<Types.EventTag>,
-): {__typename: 'EventTag'} & Types.EventTag => {
+  overrides?: Partial<EventTag>,
+): {__typename: 'EventTag'} & EventTag => {
   return {
     __typename: 'EventTag',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'saepe',
@@ -5346,8 +5331,8 @@ export const buildEventTag = (
 };
 
 export const buildExecutionMetadata = (
-  overrides?: Partial<Types.ExecutionMetadata>,
-): Types.ExecutionMetadata => {
+  overrides?: Partial<ExecutionMetadata>,
+): ExecutionMetadata => {
   return {
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'autem',
@@ -5360,9 +5345,7 @@ export const buildExecutionMetadata = (
   };
 };
 
-export const buildExecutionParams = (
-  overrides?: Partial<Types.ExecutionParams>,
-): Types.ExecutionParams => {
+export const buildExecutionParams = (overrides?: Partial<ExecutionParams>): ExecutionParams => {
   return {
     executionMetadata:
       overrides && overrides.hasOwnProperty('executionMetadata')
@@ -5386,8 +5369,8 @@ export const buildExecutionParams = (
 };
 
 export const buildExecutionPlan = (
-  overrides?: Partial<Types.ExecutionPlan>,
-): {__typename: 'ExecutionPlan'} & Types.ExecutionPlan => {
+  overrides?: Partial<ExecutionPlan>,
+): {__typename: 'ExecutionPlan'} & ExecutionPlan => {
   return {
     __typename: 'ExecutionPlan',
     artifactsPersisted:
@@ -5402,8 +5385,8 @@ export const buildExecutionPlan = (
 };
 
 export const buildExecutionStep = (
-  overrides?: Partial<Types.ExecutionStep>,
-): {__typename: 'ExecutionStep'} & Types.ExecutionStep => {
+  overrides?: Partial<ExecutionStep>,
+): {__typename: 'ExecutionStep'} & ExecutionStep => {
   return {
     __typename: 'ExecutionStep',
     inputs:
@@ -5411,7 +5394,7 @@ export const buildExecutionStep = (
         ? overrides.inputs!
         : [buildExecutionStepInput(), buildExecutionStepInput(), buildExecutionStepInput()],
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
-    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : Types.StepKind.Compute,
+    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : StepKind.Compute,
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
@@ -5432,25 +5415,24 @@ export const buildExecutionStep = (
 };
 
 export const buildExecutionStepFailureEvent = (
-  overrides?: Partial<Types.ExecutionStepFailureEvent>,
-): {__typename: 'ExecutionStepFailureEvent'} & Types.ExecutionStepFailureEvent => {
+  overrides?: Partial<ExecutionStepFailureEvent>,
+): {__typename: 'ExecutionStepFailureEvent'} & ExecutionStepFailureEvent => {
   return {
     __typename: 'ExecutionStepFailureEvent',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
     errorSource:
       overrides && overrides.hasOwnProperty('errorSource')
         ? overrides.errorSource!
-        : Types.ErrorSource.FrameworkError,
+        : ErrorSource.FrameworkError,
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     failureMetadata:
       overrides && overrides.hasOwnProperty('failureMetadata')
         ? overrides.failureMetadata!
         : buildFailureMetadata(),
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eligendi',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'itaque',
     solidHandleID:
@@ -5464,8 +5446,8 @@ export const buildExecutionStepFailureEvent = (
 };
 
 export const buildExecutionStepInput = (
-  overrides?: Partial<Types.ExecutionStepInput>,
-): {__typename: 'ExecutionStepInput'} & Types.ExecutionStepInput => {
+  overrides?: Partial<ExecutionStepInput>,
+): {__typename: 'ExecutionStepInput'} & ExecutionStepInput => {
   return {
     __typename: 'ExecutionStepInput',
     dependsOn:
@@ -5477,18 +5459,17 @@ export const buildExecutionStepInput = (
 };
 
 export const buildExecutionStepInputEvent = (
-  overrides?: Partial<Types.ExecutionStepInputEvent>,
-): {__typename: 'ExecutionStepInputEvent'} & Types.ExecutionStepInputEvent => {
+  overrides?: Partial<ExecutionStepInputEvent>,
+): {__typename: 'ExecutionStepInputEvent'} & ExecutionStepInputEvent => {
   return {
     __typename: 'ExecutionStepInputEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     inputName:
       overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'inventore',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolore',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sit',
     solidHandleID:
@@ -5501,8 +5482,8 @@ export const buildExecutionStepInputEvent = (
 };
 
 export const buildExecutionStepOutput = (
-  overrides?: Partial<Types.ExecutionStepOutput>,
-): {__typename: 'ExecutionStepOutput'} & Types.ExecutionStepOutput => {
+  overrides?: Partial<ExecutionStepOutput>,
+): {__typename: 'ExecutionStepOutput'} & ExecutionStepOutput => {
   return {
     __typename: 'ExecutionStepOutput',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
@@ -5510,8 +5491,8 @@ export const buildExecutionStepOutput = (
 };
 
 export const buildExecutionStepOutputEvent = (
-  overrides?: Partial<Types.ExecutionStepOutputEvent>,
-): {__typename: 'ExecutionStepOutputEvent'} & Types.ExecutionStepOutputEvent => {
+  overrides?: Partial<ExecutionStepOutputEvent>,
+): {__typename: 'ExecutionStepOutputEvent'} & ExecutionStepOutputEvent => {
   return {
     __typename: 'ExecutionStepOutputEvent',
     description:
@@ -5519,10 +5500,9 @@ export const buildExecutionStepOutputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'quae',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quo',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -5542,16 +5522,15 @@ export const buildExecutionStepOutputEvent = (
 };
 
 export const buildExecutionStepRestartEvent = (
-  overrides?: Partial<Types.ExecutionStepRestartEvent>,
-): {__typename: 'ExecutionStepRestartEvent'} & Types.ExecutionStepRestartEvent => {
+  overrides?: Partial<ExecutionStepRestartEvent>,
+): {__typename: 'ExecutionStepRestartEvent'} & ExecutionStepRestartEvent => {
   return {
     __typename: 'ExecutionStepRestartEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'corporis',
     solidHandleID:
@@ -5564,16 +5543,15 @@ export const buildExecutionStepRestartEvent = (
 };
 
 export const buildExecutionStepSkippedEvent = (
-  overrides?: Partial<Types.ExecutionStepSkippedEvent>,
-): {__typename: 'ExecutionStepSkippedEvent'} & Types.ExecutionStepSkippedEvent => {
+  overrides?: Partial<ExecutionStepSkippedEvent>,
+): {__typename: 'ExecutionStepSkippedEvent'} & ExecutionStepSkippedEvent => {
   return {
     __typename: 'ExecutionStepSkippedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aliquid',
     solidHandleID:
@@ -5585,16 +5563,15 @@ export const buildExecutionStepSkippedEvent = (
 };
 
 export const buildExecutionStepStartEvent = (
-  overrides?: Partial<Types.ExecutionStepStartEvent>,
-): {__typename: 'ExecutionStepStartEvent'} & Types.ExecutionStepStartEvent => {
+  overrides?: Partial<ExecutionStepStartEvent>,
+): {__typename: 'ExecutionStepStartEvent'} & ExecutionStepStartEvent => {
   return {
     __typename: 'ExecutionStepStartEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aliquid',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nostrum',
     solidHandleID:
@@ -5608,16 +5585,15 @@ export const buildExecutionStepStartEvent = (
 };
 
 export const buildExecutionStepSuccessEvent = (
-  overrides?: Partial<Types.ExecutionStepSuccessEvent>,
-): {__typename: 'ExecutionStepSuccessEvent'} & Types.ExecutionStepSuccessEvent => {
+  overrides?: Partial<ExecutionStepSuccessEvent>,
+): {__typename: 'ExecutionStepSuccessEvent'} & ExecutionStepSuccessEvent => {
   return {
     __typename: 'ExecutionStepSuccessEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quam',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'non',
     solidHandleID:
@@ -5629,17 +5605,16 @@ export const buildExecutionStepSuccessEvent = (
 };
 
 export const buildExecutionStepUpForRetryEvent = (
-  overrides?: Partial<Types.ExecutionStepUpForRetryEvent>,
-): {__typename: 'ExecutionStepUpForRetryEvent'} & Types.ExecutionStepUpForRetryEvent => {
+  overrides?: Partial<ExecutionStepUpForRetryEvent>,
+): {__typename: 'ExecutionStepUpForRetryEvent'} & ExecutionStepUpForRetryEvent => {
   return {
     __typename: 'ExecutionStepUpForRetryEvent',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptas',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'maiores',
     secondsToWait:
@@ -5651,7 +5626,7 @@ export const buildExecutionStepUpForRetryEvent = (
   };
 };
 
-export const buildExecutionTag = (overrides?: Partial<Types.ExecutionTag>): Types.ExecutionTag => {
+export const buildExecutionTag = (overrides?: Partial<ExecutionTag>): ExecutionTag => {
   return {
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'quis',
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'aut',
@@ -5659,8 +5634,8 @@ export const buildExecutionTag = (overrides?: Partial<Types.ExecutionTag>): Type
 };
 
 export const buildExpectationResult = (
-  overrides?: Partial<Types.ExpectationResult>,
-): {__typename: 'ExpectationResult'} & Types.ExpectationResult => {
+  overrides?: Partial<ExpectationResult>,
+): {__typename: 'ExpectationResult'} & ExpectationResult => {
   return {
     __typename: 'ExpectationResult',
     description:
@@ -5675,8 +5650,8 @@ export const buildExpectationResult = (
 };
 
 export const buildFailureMetadata = (
-  overrides?: Partial<Types.FailureMetadata>,
-): {__typename: 'FailureMetadata'} & Types.FailureMetadata => {
+  overrides?: Partial<FailureMetadata>,
+): {__typename: 'FailureMetadata'} & FailureMetadata => {
   return {
     __typename: 'FailureMetadata',
     description:
@@ -5690,8 +5665,8 @@ export const buildFailureMetadata = (
 };
 
 export const buildFieldNotDefinedConfigError = (
-  overrides?: Partial<Types.FieldNotDefinedConfigError>,
-): {__typename: 'FieldNotDefinedConfigError'} & Types.FieldNotDefinedConfigError => {
+  overrides?: Partial<FieldNotDefinedConfigError>,
+): {__typename: 'FieldNotDefinedConfigError'} & FieldNotDefinedConfigError => {
   return {
     __typename: 'FieldNotDefinedConfigError',
     fieldName:
@@ -5702,15 +5677,15 @@ export const buildFieldNotDefinedConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
 export const buildFieldsNotDefinedConfigError = (
-  overrides?: Partial<Types.FieldsNotDefinedConfigError>,
-): {__typename: 'FieldsNotDefinedConfigError'} & Types.FieldsNotDefinedConfigError => {
+  overrides?: Partial<FieldsNotDefinedConfigError>,
+): {__typename: 'FieldsNotDefinedConfigError'} & FieldsNotDefinedConfigError => {
   return {
     __typename: 'FieldsNotDefinedConfigError',
     fieldNames:
@@ -5722,15 +5697,15 @@ export const buildFieldsNotDefinedConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
 export const buildFloatMetadataEntry = (
-  overrides?: Partial<Types.FloatMetadataEntry>,
-): {__typename: 'FloatMetadataEntry'} & Types.FloatMetadataEntry => {
+  overrides?: Partial<FloatMetadataEntry>,
+): {__typename: 'FloatMetadataEntry'} & FloatMetadataEntry => {
   return {
     __typename: 'FloatMetadataEntry',
     description:
@@ -5741,8 +5716,8 @@ export const buildFloatMetadataEntry = (
 };
 
 export const buildFreshnessPolicy = (
-  overrides?: Partial<Types.FreshnessPolicy>,
-): {__typename: 'FreshnessPolicy'} & Types.FreshnessPolicy => {
+  overrides?: Partial<FreshnessPolicy>,
+): {__typename: 'FreshnessPolicy'} & FreshnessPolicy => {
   return {
     __typename: 'FreshnessPolicy',
     cronSchedule:
@@ -5758,9 +5733,7 @@ export const buildFreshnessPolicy = (
   };
 };
 
-export const buildGraph = (
-  overrides?: Partial<Types.Graph>,
-): {__typename: 'Graph'} & Types.Graph => {
+export const buildGraph = (overrides?: Partial<Graph>): {__typename: 'Graph'} & Graph => {
   return {
     __typename: 'Graph',
     description:
@@ -5790,8 +5763,8 @@ export const buildGraph = (
 };
 
 export const buildGraphNotFoundError = (
-  overrides?: Partial<Types.GraphNotFoundError>,
-): {__typename: 'GraphNotFoundError'} & Types.GraphNotFoundError => {
+  overrides?: Partial<GraphNotFoundError>,
+): {__typename: 'GraphNotFoundError'} & GraphNotFoundError => {
   return {
     __typename: 'GraphNotFoundError',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'odio',
@@ -5805,9 +5778,7 @@ export const buildGraphNotFoundError = (
   };
 };
 
-export const buildGraphSelector = (
-  overrides?: Partial<Types.GraphSelector>,
-): Types.GraphSelector => {
+export const buildGraphSelector = (overrides?: Partial<GraphSelector>): GraphSelector => {
   return {
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'sunt',
     repositoryLocationName:
@@ -5822,8 +5793,8 @@ export const buildGraphSelector = (
 };
 
 export const buildHandledOutputEvent = (
-  overrides?: Partial<Types.HandledOutputEvent>,
-): {__typename: 'HandledOutputEvent'} & Types.HandledOutputEvent => {
+  overrides?: Partial<HandledOutputEvent>,
+): {__typename: 'HandledOutputEvent'} & HandledOutputEvent => {
   return {
     __typename: 'HandledOutputEvent',
     description:
@@ -5831,10 +5802,9 @@ export const buildHandledOutputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'ducimus',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     managerKey:
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'ipsa',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'id',
@@ -5853,16 +5823,15 @@ export const buildHandledOutputEvent = (
 };
 
 export const buildHookCompletedEvent = (
-  overrides?: Partial<Types.HookCompletedEvent>,
-): {__typename: 'HookCompletedEvent'} & Types.HookCompletedEvent => {
+  overrides?: Partial<HookCompletedEvent>,
+): {__typename: 'HookCompletedEvent'} & HookCompletedEvent => {
   return {
     __typename: 'HookCompletedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aspernatur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'iusto',
     solidHandleID:
@@ -5873,17 +5842,16 @@ export const buildHookCompletedEvent = (
 };
 
 export const buildHookErroredEvent = (
-  overrides?: Partial<Types.HookErroredEvent>,
-): {__typename: 'HookErroredEvent'} & Types.HookErroredEvent => {
+  overrides?: Partial<HookErroredEvent>,
+): {__typename: 'HookErroredEvent'} & HookErroredEvent => {
   return {
     __typename: 'HookErroredEvent',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestias',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'voluptate',
     solidHandleID:
@@ -5894,16 +5862,15 @@ export const buildHookErroredEvent = (
 };
 
 export const buildHookSkippedEvent = (
-  overrides?: Partial<Types.HookSkippedEvent>,
-): {__typename: 'HookSkippedEvent'} & Types.HookSkippedEvent => {
+  overrides?: Partial<HookSkippedEvent>,
+): {__typename: 'HookSkippedEvent'} & HookSkippedEvent => {
   return {
     __typename: 'HookSkippedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'id',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'iste',
     solidHandleID:
@@ -5914,8 +5881,8 @@ export const buildHookSkippedEvent = (
 };
 
 export const buildIPipelineSnapshot = (
-  overrides?: Partial<Types.IPipelineSnapshot>,
-): {__typename: 'IPipelineSnapshot'} & Types.IPipelineSnapshot => {
+  overrides?: Partial<IPipelineSnapshot>,
+): {__typename: 'IPipelineSnapshot'} & IPipelineSnapshot => {
   return {
     __typename: 'IPipelineSnapshot',
     dagsterTypeOrError:
@@ -5979,8 +5946,8 @@ export const buildIPipelineSnapshot = (
 };
 
 export const buildISolidDefinition = (
-  overrides?: Partial<Types.ISolidDefinition>,
-): {__typename: 'ISolidDefinition'} & Types.ISolidDefinition => {
+  overrides?: Partial<ISolidDefinition>,
+): {__typename: 'ISolidDefinition'} & ISolidDefinition => {
   return {
     __typename: 'ISolidDefinition',
     assetNodes:
@@ -6009,9 +5976,7 @@ export const buildISolidDefinition = (
   };
 };
 
-export const buildInput = (
-  overrides?: Partial<Types.Input>,
-): {__typename: 'Input'} & Types.Input => {
+export const buildInput = (overrides?: Partial<Input>): {__typename: 'Input'} & Input => {
   return {
     __typename: 'Input',
     definition:
@@ -6031,8 +5996,8 @@ export const buildInput = (
 };
 
 export const buildInputDefinition = (
-  overrides?: Partial<Types.InputDefinition>,
-): {__typename: 'InputDefinition'} & Types.InputDefinition => {
+  overrides?: Partial<InputDefinition>,
+): {__typename: 'InputDefinition'} & InputDefinition => {
   return {
     __typename: 'InputDefinition',
     description:
@@ -6051,8 +6016,8 @@ export const buildInputDefinition = (
 };
 
 export const buildInputMapping = (
-  overrides?: Partial<Types.InputMapping>,
-): {__typename: 'InputMapping'} & Types.InputMapping => {
+  overrides?: Partial<InputMapping>,
+): {__typename: 'InputMapping'} & InputMapping => {
   return {
     __typename: 'InputMapping',
     definition:
@@ -6064,7 +6029,7 @@ export const buildInputMapping = (
   };
 };
 
-export const buildInputTag = (overrides?: Partial<Types.InputTag>): Types.InputTag => {
+export const buildInputTag = (overrides?: Partial<InputTag>): InputTag => {
   return {
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'possimus',
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'quod',
@@ -6072,8 +6037,8 @@ export const buildInputTag = (overrides?: Partial<Types.InputTag>): Types.InputT
 };
 
 export const buildInstance = (
-  overrides?: Partial<Types.Instance>,
-): {__typename: 'Instance'} & Types.Instance => {
+  overrides?: Partial<Instance>,
+): {__typename: 'Instance'} & Instance => {
   return {
     __typename: 'Instance',
     daemonHealth:
@@ -6100,12 +6065,11 @@ export const buildInstance = (
 };
 
 export const buildInstigationEvent = (
-  overrides?: Partial<Types.InstigationEvent>,
-): {__typename: 'InstigationEvent'} & Types.InstigationEvent => {
+  overrides?: Partial<InstigationEvent>,
+): {__typename: 'InstigationEvent'} & InstigationEvent => {
   return {
     __typename: 'InstigationEvent',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ea',
     timestamp:
       overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'architecto',
@@ -6113,8 +6077,8 @@ export const buildInstigationEvent = (
 };
 
 export const buildInstigationEventConnection = (
-  overrides?: Partial<Types.InstigationEventConnection>,
-): {__typename: 'InstigationEventConnection'} & Types.InstigationEventConnection => {
+  overrides?: Partial<InstigationEventConnection>,
+): {__typename: 'InstigationEventConnection'} & InstigationEventConnection => {
   return {
     __typename: 'InstigationEventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'harum',
@@ -6127,8 +6091,8 @@ export const buildInstigationEventConnection = (
 };
 
 export const buildInstigationSelector = (
-  overrides?: Partial<Types.InstigationSelector>,
-): Types.InstigationSelector => {
+  overrides?: Partial<InstigationSelector>,
+): InstigationSelector => {
   return {
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'et',
     repositoryLocationName:
@@ -6143,8 +6107,8 @@ export const buildInstigationSelector = (
 };
 
 export const buildInstigationState = (
-  overrides?: Partial<Types.InstigationState>,
-): {__typename: 'InstigationState'} & Types.InstigationState => {
+  overrides?: Partial<InstigationState>,
+): {__typename: 'InstigationState'} & InstigationState => {
   return {
     __typename: 'InstigationState',
     hasStartPermission:
@@ -6162,7 +6126,7 @@ export const buildInstigationState = (
     instigationType:
       overrides && overrides.hasOwnProperty('instigationType')
         ? overrides.instigationType!
-        : Types.InstigationType.Schedule,
+        : InstigationType.Schedule,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
@@ -6189,7 +6153,7 @@ export const buildInstigationState = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : Types.InstigationStatus.Running,
+        : InstigationStatus.Running,
     tick: overrides && overrides.hasOwnProperty('tick') ? overrides.tick! : buildInstigationTick(),
     ticks:
       overrides && overrides.hasOwnProperty('ticks')
@@ -6203,8 +6167,8 @@ export const buildInstigationState = (
 };
 
 export const buildInstigationStateNotFoundError = (
-  overrides?: Partial<Types.InstigationStateNotFoundError>,
-): {__typename: 'InstigationStateNotFoundError'} & Types.InstigationStateNotFoundError => {
+  overrides?: Partial<InstigationStateNotFoundError>,
+): {__typename: 'InstigationStateNotFoundError'} & InstigationStateNotFoundError => {
   return {
     __typename: 'InstigationStateNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'nihil',
@@ -6213,8 +6177,8 @@ export const buildInstigationStateNotFoundError = (
 };
 
 export const buildInstigationStates = (
-  overrides?: Partial<Types.InstigationStates>,
-): {__typename: 'InstigationStates'} & Types.InstigationStates => {
+  overrides?: Partial<InstigationStates>,
+): {__typename: 'InstigationStates'} & InstigationStates => {
   return {
     __typename: 'InstigationStates',
     results:
@@ -6225,8 +6189,8 @@ export const buildInstigationStates = (
 };
 
 export const buildInstigationTick = (
-  overrides?: Partial<Types.InstigationTick>,
-): {__typename: 'InstigationTick'} & Types.InstigationTick => {
+  overrides?: Partial<InstigationTick>,
+): {__typename: 'InstigationTick'} & InstigationTick => {
   return {
     __typename: 'InstigationTick',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
@@ -6264,14 +6228,14 @@ export const buildInstigationTick = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : Types.InstigationTickStatus.Failure,
+        : InstigationTickStatus.Failure,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.06,
   };
 };
 
 export const buildIntMetadataEntry = (
-  overrides?: Partial<Types.IntMetadataEntry>,
-): {__typename: 'IntMetadataEntry'} & Types.IntMetadataEntry => {
+  overrides?: Partial<IntMetadataEntry>,
+): {__typename: 'IntMetadataEntry'} & IntMetadataEntry => {
   return {
     __typename: 'IntMetadataEntry',
     description:
@@ -6283,8 +6247,8 @@ export const buildIntMetadataEntry = (
 };
 
 export const buildInvalidOutputError = (
-  overrides?: Partial<Types.InvalidOutputError>,
-): {__typename: 'InvalidOutputError'} & Types.InvalidOutputError => {
+  overrides?: Partial<InvalidOutputError>,
+): {__typename: 'InvalidOutputError'} & InvalidOutputError => {
   return {
     __typename: 'InvalidOutputError',
     invalidOutputName:
@@ -6296,8 +6260,8 @@ export const buildInvalidOutputError = (
 };
 
 export const buildInvalidPipelineRunsFilterError = (
-  overrides?: Partial<Types.InvalidPipelineRunsFilterError>,
-): {__typename: 'InvalidPipelineRunsFilterError'} & Types.InvalidPipelineRunsFilterError => {
+  overrides?: Partial<InvalidPipelineRunsFilterError>,
+): {__typename: 'InvalidPipelineRunsFilterError'} & InvalidPipelineRunsFilterError => {
   return {
     __typename: 'InvalidPipelineRunsFilterError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
@@ -6305,8 +6269,8 @@ export const buildInvalidPipelineRunsFilterError = (
 };
 
 export const buildInvalidStepError = (
-  overrides?: Partial<Types.InvalidStepError>,
-): {__typename: 'InvalidStepError'} & Types.InvalidStepError => {
+  overrides?: Partial<InvalidStepError>,
+): {__typename: 'InvalidStepError'} & InvalidStepError => {
   return {
     __typename: 'InvalidStepError',
     invalidStepKey:
@@ -6317,8 +6281,8 @@ export const buildInvalidStepError = (
 };
 
 export const buildInvalidSubsetError = (
-  overrides?: Partial<Types.InvalidSubsetError>,
-): {__typename: 'InvalidSubsetError'} & Types.InvalidSubsetError => {
+  overrides?: Partial<InvalidSubsetError>,
+): {__typename: 'InvalidSubsetError'} & InvalidSubsetError => {
   return {
     __typename: 'InvalidSubsetError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aut',
@@ -6327,7 +6291,7 @@ export const buildInvalidSubsetError = (
   };
 };
 
-export const buildJob = (overrides?: Partial<Types.Job>): {__typename: 'Job'} & Types.Job => {
+export const buildJob = (overrides?: Partial<Job>): {__typename: 'Job'} & Job => {
   return {
     __typename: 'Job',
     dagsterTypeOrError:
@@ -6405,8 +6369,8 @@ export const buildJob = (overrides?: Partial<Types.Job>): {__typename: 'Job'} & 
 };
 
 export const buildJobOrPipelineSelector = (
-  overrides?: Partial<Types.JobOrPipelineSelector>,
-): Types.JobOrPipelineSelector => {
+  overrides?: Partial<JobOrPipelineSelector>,
+): JobOrPipelineSelector => {
   return {
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
@@ -6431,8 +6395,8 @@ export const buildJobOrPipelineSelector = (
 };
 
 export const buildJsonMetadataEntry = (
-  overrides?: Partial<Types.JsonMetadataEntry>,
-): {__typename: 'JsonMetadataEntry'} & Types.JsonMetadataEntry => {
+  overrides?: Partial<JsonMetadataEntry>,
+): {__typename: 'JsonMetadataEntry'} & JsonMetadataEntry => {
   return {
     __typename: 'JsonMetadataEntry',
     description:
@@ -6443,8 +6407,8 @@ export const buildJsonMetadataEntry = (
 };
 
 export const buildLaunchBackfillMutation = (
-  overrides?: Partial<Types.LaunchBackfillMutation>,
-): {__typename: 'LaunchBackfillMutation'} & Types.LaunchBackfillMutation => {
+  overrides?: Partial<LaunchBackfillMutation>,
+): {__typename: 'LaunchBackfillMutation'} & LaunchBackfillMutation => {
   return {
     __typename: 'LaunchBackfillMutation',
     Output:
@@ -6455,8 +6419,8 @@ export const buildLaunchBackfillMutation = (
 };
 
 export const buildLaunchBackfillParams = (
-  overrides?: Partial<Types.LaunchBackfillParams>,
-): Types.LaunchBackfillParams => {
+  overrides?: Partial<LaunchBackfillParams>,
+): LaunchBackfillParams => {
   return {
     allPartitions:
       overrides && overrides.hasOwnProperty('allPartitions') ? overrides.allPartitions! : false,
@@ -6490,8 +6454,8 @@ export const buildLaunchBackfillParams = (
 };
 
 export const buildLaunchBackfillSuccess = (
-  overrides?: Partial<Types.LaunchBackfillSuccess>,
-): {__typename: 'LaunchBackfillSuccess'} & Types.LaunchBackfillSuccess => {
+  overrides?: Partial<LaunchBackfillSuccess>,
+): {__typename: 'LaunchBackfillSuccess'} & LaunchBackfillSuccess => {
   return {
     __typename: 'LaunchBackfillSuccess',
     backfillId: overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sit',
@@ -6503,8 +6467,8 @@ export const buildLaunchBackfillSuccess = (
 };
 
 export const buildLaunchPipelineRunSuccess = (
-  overrides?: Partial<Types.LaunchPipelineRunSuccess>,
-): {__typename: 'LaunchPipelineRunSuccess'} & Types.LaunchPipelineRunSuccess => {
+  overrides?: Partial<LaunchPipelineRunSuccess>,
+): {__typename: 'LaunchPipelineRunSuccess'} & LaunchPipelineRunSuccess => {
   return {
     __typename: 'LaunchPipelineRunSuccess',
     run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
@@ -6512,8 +6476,8 @@ export const buildLaunchPipelineRunSuccess = (
 };
 
 export const buildLaunchRunMutation = (
-  overrides?: Partial<Types.LaunchRunMutation>,
-): {__typename: 'LaunchRunMutation'} & Types.LaunchRunMutation => {
+  overrides?: Partial<LaunchRunMutation>,
+): {__typename: 'LaunchRunMutation'} & LaunchRunMutation => {
   return {
     __typename: 'LaunchRunMutation',
     Output:
@@ -6524,8 +6488,8 @@ export const buildLaunchRunMutation = (
 };
 
 export const buildLaunchRunReexecutionMutation = (
-  overrides?: Partial<Types.LaunchRunReexecutionMutation>,
-): {__typename: 'LaunchRunReexecutionMutation'} & Types.LaunchRunReexecutionMutation => {
+  overrides?: Partial<LaunchRunReexecutionMutation>,
+): {__typename: 'LaunchRunReexecutionMutation'} & LaunchRunReexecutionMutation => {
   return {
     __typename: 'LaunchRunReexecutionMutation',
     Output:
@@ -6536,8 +6500,8 @@ export const buildLaunchRunReexecutionMutation = (
 };
 
 export const buildLaunchRunSuccess = (
-  overrides?: Partial<Types.LaunchRunSuccess>,
-): {__typename: 'LaunchRunSuccess'} & Types.LaunchRunSuccess => {
+  overrides?: Partial<LaunchRunSuccess>,
+): {__typename: 'LaunchRunSuccess'} & LaunchRunSuccess => {
   return {
     __typename: 'LaunchRunSuccess',
     run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
@@ -6545,8 +6509,8 @@ export const buildLaunchRunSuccess = (
 };
 
 export const buildListDagsterType = (
-  overrides?: Partial<Types.ListDagsterType>,
-): {__typename: 'ListDagsterType'} & Types.ListDagsterType => {
+  overrides?: Partial<ListDagsterType>,
+): {__typename: 'ListDagsterType'} & ListDagsterType => {
   return {
     __typename: 'ListDagsterType',
     description:
@@ -6581,8 +6545,8 @@ export const buildListDagsterType = (
 };
 
 export const buildLoadedInputEvent = (
-  overrides?: Partial<Types.LoadedInputEvent>,
-): {__typename: 'LoadedInputEvent'} & Types.LoadedInputEvent => {
+  overrides?: Partial<LoadedInputEvent>,
+): {__typename: 'LoadedInputEvent'} & LoadedInputEvent => {
   return {
     __typename: 'LoadedInputEvent',
     description:
@@ -6590,11 +6554,10 @@ export const buildLoadedInputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     inputName: overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'quia',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'facere',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     managerKey:
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'quae',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eveniet',
@@ -6619,14 +6582,14 @@ export const buildLoadedInputEvent = (
 };
 
 export const buildLocationStateChangeEvent = (
-  overrides?: Partial<Types.LocationStateChangeEvent>,
-): {__typename: 'LocationStateChangeEvent'} & Types.LocationStateChangeEvent => {
+  overrides?: Partial<LocationStateChangeEvent>,
+): {__typename: 'LocationStateChangeEvent'} & LocationStateChangeEvent => {
   return {
     __typename: 'LocationStateChangeEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.LocationStateChangeEventType.LocationDisconnected,
+        : LocationStateChangeEventType.LocationDisconnected,
     locationName:
       overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'tempora',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'at',
@@ -6635,8 +6598,8 @@ export const buildLocationStateChangeEvent = (
 };
 
 export const buildLocationStateChangeSubscription = (
-  overrides?: Partial<Types.LocationStateChangeSubscription>,
-): {__typename: 'LocationStateChangeSubscription'} & Types.LocationStateChangeSubscription => {
+  overrides?: Partial<LocationStateChangeSubscription>,
+): {__typename: 'LocationStateChangeSubscription'} & LocationStateChangeSubscription => {
   return {
     __typename: 'LocationStateChangeSubscription',
     event:
@@ -6647,16 +6610,15 @@ export const buildLocationStateChangeSubscription = (
 };
 
 export const buildLogMessageEvent = (
-  overrides?: Partial<Types.LogMessageEvent>,
-): {__typename: 'LogMessageEvent'} & Types.LogMessageEvent => {
+  overrides?: Partial<LogMessageEvent>,
+): {__typename: 'LogMessageEvent'} & LogMessageEvent => {
   return {
     __typename: 'LogMessageEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'officiis',
     solidHandleID:
@@ -6670,17 +6632,15 @@ export const buildLogMessageEvent = (
 };
 
 export const buildLogTelemetrySuccess = (
-  overrides?: Partial<Types.LogTelemetrySuccess>,
-): {__typename: 'LogTelemetrySuccess'} & Types.LogTelemetrySuccess => {
+  overrides?: Partial<LogTelemetrySuccess>,
+): {__typename: 'LogTelemetrySuccess'} & LogTelemetrySuccess => {
   return {
     __typename: 'LogTelemetrySuccess',
     action: overrides && overrides.hasOwnProperty('action') ? overrides.action! : 'assumenda',
   };
 };
 
-export const buildLogger = (
-  overrides?: Partial<Types.Logger>,
-): {__typename: 'Logger'} & Types.Logger => {
+export const buildLogger = (overrides?: Partial<Logger>): {__typename: 'Logger'} & Logger => {
   return {
     __typename: 'Logger',
     configField:
@@ -6694,19 +6654,18 @@ export const buildLogger = (
 };
 
 export const buildLogsCapturedEvent = (
-  overrides?: Partial<Types.LogsCapturedEvent>,
-): {__typename: 'LogsCapturedEvent'} & Types.LogsCapturedEvent => {
+  overrides?: Partial<LogsCapturedEvent>,
+): {__typename: 'LogsCapturedEvent'} & LogsCapturedEvent => {
   return {
     __typename: 'LogsCapturedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     externalUrl:
       overrides && overrides.hasOwnProperty('externalUrl') ? overrides.externalUrl! : 'qui',
     fileKey: overrides && overrides.hasOwnProperty('fileKey') ? overrides.fileKey! : 'et',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : 'fuga',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
@@ -6725,8 +6684,8 @@ export const buildLogsCapturedEvent = (
 };
 
 export const buildMapConfigType = (
-  overrides?: Partial<Types.MapConfigType>,
-): {__typename: 'MapConfigType'} & Types.MapConfigType => {
+  overrides?: Partial<MapConfigType>,
+): {__typename: 'MapConfigType'} & MapConfigType => {
   return {
     __typename: 'MapConfigType',
     description:
@@ -6751,8 +6710,8 @@ export const buildMapConfigType = (
 };
 
 export const buildMarkdownMetadataEntry = (
-  overrides?: Partial<Types.MarkdownMetadataEntry>,
-): {__typename: 'MarkdownMetadataEntry'} & Types.MarkdownMetadataEntry => {
+  overrides?: Partial<MarkdownMetadataEntry>,
+): {__typename: 'MarkdownMetadataEntry'} & MarkdownMetadataEntry => {
   return {
     __typename: 'MarkdownMetadataEntry',
     description:
@@ -6763,8 +6722,8 @@ export const buildMarkdownMetadataEntry = (
 };
 
 export const buildMarkerEvent = (
-  overrides?: Partial<Types.MarkerEvent>,
-): {__typename: 'MarkerEvent'} & Types.MarkerEvent => {
+  overrides?: Partial<MarkerEvent>,
+): {__typename: 'MarkerEvent'} & MarkerEvent => {
   return {
     __typename: 'MarkerEvent',
     markerEnd:
@@ -6774,18 +6733,14 @@ export const buildMarkerEvent = (
   };
 };
 
-export const buildMarshalledInput = (
-  overrides?: Partial<Types.MarshalledInput>,
-): Types.MarshalledInput => {
+export const buildMarshalledInput = (overrides?: Partial<MarshalledInput>): MarshalledInput => {
   return {
     inputName: overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'nobis',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'nam',
   };
 };
 
-export const buildMarshalledOutput = (
-  overrides?: Partial<Types.MarshalledOutput>,
-): Types.MarshalledOutput => {
+export const buildMarshalledOutput = (overrides?: Partial<MarshalledOutput>): MarshalledOutput => {
   return {
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'sed',
     outputName:
@@ -6794,8 +6749,8 @@ export const buildMarshalledOutput = (
 };
 
 export const buildMaterializationEvent = (
-  overrides?: Partial<Types.MaterializationEvent>,
-): {__typename: 'MaterializationEvent'} & Types.MaterializationEvent => {
+  overrides?: Partial<MaterializationEvent>,
+): {__typename: 'MaterializationEvent'} & MaterializationEvent => {
   return {
     __typename: 'MaterializationEvent',
     assetKey:
@@ -6809,10 +6764,9 @@ export const buildMaterializationEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'possimus',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptatem',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -6840,10 +6794,8 @@ export const buildMaterializationEvent = (
 };
 
 export const buildMaterializationUpstreamDataVersion = (
-  overrides?: Partial<Types.MaterializationUpstreamDataVersion>,
-): {
-  __typename: 'MaterializationUpstreamDataVersion';
-} & Types.MaterializationUpstreamDataVersion => {
+  overrides?: Partial<MaterializationUpstreamDataVersion>,
+): {__typename: 'MaterializationUpstreamDataVersion'} & MaterializationUpstreamDataVersion => {
   return {
     __typename: 'MaterializationUpstreamDataVersion',
     assetKey:
@@ -6857,8 +6809,8 @@ export const buildMaterializationUpstreamDataVersion = (
 };
 
 export const buildMaterializedPartitionRange2D = (
-  overrides?: Partial<Types.MaterializedPartitionRange2D>,
-): {__typename: 'MaterializedPartitionRange2D'} & Types.MaterializedPartitionRange2D => {
+  overrides?: Partial<MaterializedPartitionRange2D>,
+): {__typename: 'MaterializedPartitionRange2D'} & MaterializedPartitionRange2D => {
   return {
     __typename: 'MaterializedPartitionRange2D',
     primaryDimEndKey:
@@ -6885,16 +6837,15 @@ export const buildMaterializedPartitionRange2D = (
 };
 
 export const buildMessageEvent = (
-  overrides?: Partial<Types.MessageEvent>,
-): {__typename: 'MessageEvent'} & Types.MessageEvent => {
+  overrides?: Partial<MessageEvent>,
+): {__typename: 'MessageEvent'} & MessageEvent => {
   return {
     __typename: 'MessageEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tenetur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'numquam',
     solidHandleID:
@@ -6907,8 +6858,8 @@ export const buildMessageEvent = (
 };
 
 export const buildMetadataEntry = (
-  overrides?: Partial<Types.MetadataEntry>,
-): {__typename: 'MetadataEntry'} & Types.MetadataEntry => {
+  overrides?: Partial<MetadataEntry>,
+): {__typename: 'MetadataEntry'} & MetadataEntry => {
   return {
     __typename: 'MetadataEntry',
     description:
@@ -6918,8 +6869,8 @@ export const buildMetadataEntry = (
 };
 
 export const buildMetadataItemDefinition = (
-  overrides?: Partial<Types.MetadataItemDefinition>,
-): {__typename: 'MetadataItemDefinition'} & Types.MetadataItemDefinition => {
+  overrides?: Partial<MetadataItemDefinition>,
+): {__typename: 'MetadataItemDefinition'} & MetadataItemDefinition => {
   return {
     __typename: 'MetadataItemDefinition',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ex',
@@ -6928,8 +6879,8 @@ export const buildMetadataItemDefinition = (
 };
 
 export const buildMissingFieldConfigError = (
-  overrides?: Partial<Types.MissingFieldConfigError>,
-): {__typename: 'MissingFieldConfigError'} & Types.MissingFieldConfigError => {
+  overrides?: Partial<MissingFieldConfigError>,
+): {__typename: 'MissingFieldConfigError'} & MissingFieldConfigError => {
   return {
     __typename: 'MissingFieldConfigError',
     field:
@@ -6942,15 +6893,15 @@ export const buildMissingFieldConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
 export const buildMissingFieldsConfigError = (
-  overrides?: Partial<Types.MissingFieldsConfigError>,
-): {__typename: 'MissingFieldsConfigError'} & Types.MissingFieldsConfigError => {
+  overrides?: Partial<MissingFieldsConfigError>,
+): {__typename: 'MissingFieldsConfigError'} & MissingFieldsConfigError => {
   return {
     __typename: 'MissingFieldsConfigError',
     fields:
@@ -6965,15 +6916,15 @@ export const buildMissingFieldsConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
 export const buildMissingRunIdErrorEvent = (
-  overrides?: Partial<Types.MissingRunIdErrorEvent>,
-): {__typename: 'MissingRunIdErrorEvent'} & Types.MissingRunIdErrorEvent => {
+  overrides?: Partial<MissingRunIdErrorEvent>,
+): {__typename: 'MissingRunIdErrorEvent'} & MissingRunIdErrorEvent => {
   return {
     __typename: 'MissingRunIdErrorEvent',
     invalidRunId:
@@ -6981,7 +6932,7 @@ export const buildMissingRunIdErrorEvent = (
   };
 };
 
-export const buildMode = (overrides?: Partial<Types.Mode>): {__typename: 'Mode'} & Types.Mode => {
+export const buildMode = (overrides?: Partial<Mode>): {__typename: 'Mode'} & Mode => {
   return {
     __typename: 'Mode',
     description:
@@ -7000,8 +6951,8 @@ export const buildMode = (overrides?: Partial<Types.Mode>): {__typename: 'Mode'}
 };
 
 export const buildModeNotFoundError = (
-  overrides?: Partial<Types.ModeNotFoundError>,
-): {__typename: 'ModeNotFoundError'} & Types.ModeNotFoundError => {
+  overrides?: Partial<ModeNotFoundError>,
+): {__typename: 'ModeNotFoundError'} & ModeNotFoundError => {
   return {
     __typename: 'ModeNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eius',
@@ -7010,8 +6961,8 @@ export const buildModeNotFoundError = (
 };
 
 export const buildMultiPartitions = (
-  overrides?: Partial<Types.MultiPartitions>,
-): {__typename: 'MultiPartitions'} & Types.MultiPartitions => {
+  overrides?: Partial<MultiPartitions>,
+): {__typename: 'MultiPartitions'} & MultiPartitions => {
   return {
     __typename: 'MultiPartitions',
     primaryDimensionName:
@@ -7030,8 +6981,8 @@ export const buildMultiPartitions = (
 };
 
 export const buildNoModeProvidedError = (
-  overrides?: Partial<Types.NoModeProvidedError>,
-): {__typename: 'NoModeProvidedError'} & Types.NoModeProvidedError => {
+  overrides?: Partial<NoModeProvidedError>,
+): {__typename: 'NoModeProvidedError'} & NoModeProvidedError => {
   return {
     __typename: 'NoModeProvidedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'neque',
@@ -7041,8 +6992,8 @@ export const buildNoModeProvidedError = (
 };
 
 export const buildNodeInvocationSite = (
-  overrides?: Partial<Types.NodeInvocationSite>,
-): {__typename: 'NodeInvocationSite'} & Types.NodeInvocationSite => {
+  overrides?: Partial<NodeInvocationSite>,
+): {__typename: 'NodeInvocationSite'} & NodeInvocationSite => {
   return {
     __typename: 'NodeInvocationSite',
     pipeline:
@@ -7055,8 +7006,8 @@ export const buildNodeInvocationSite = (
 };
 
 export const buildNotebookMetadataEntry = (
-  overrides?: Partial<Types.NotebookMetadataEntry>,
-): {__typename: 'NotebookMetadataEntry'} & Types.NotebookMetadataEntry => {
+  overrides?: Partial<NotebookMetadataEntry>,
+): {__typename: 'NotebookMetadataEntry'} & NotebookMetadataEntry => {
   return {
     __typename: 'NotebookMetadataEntry',
     description:
@@ -7067,8 +7018,8 @@ export const buildNotebookMetadataEntry = (
 };
 
 export const buildNullMetadataEntry = (
-  overrides?: Partial<Types.NullMetadataEntry>,
-): {__typename: 'NullMetadataEntry'} & Types.NullMetadataEntry => {
+  overrides?: Partial<NullMetadataEntry>,
+): {__typename: 'NullMetadataEntry'} & NullMetadataEntry => {
   return {
     __typename: 'NullMetadataEntry',
     description:
@@ -7078,8 +7029,8 @@ export const buildNullMetadataEntry = (
 };
 
 export const buildNullableConfigType = (
-  overrides?: Partial<Types.NullableConfigType>,
-): {__typename: 'NullableConfigType'} & Types.NullableConfigType => {
+  overrides?: Partial<NullableConfigType>,
+): {__typename: 'NullableConfigType'} & NullableConfigType => {
   return {
     __typename: 'NullableConfigType',
     description:
@@ -7099,8 +7050,8 @@ export const buildNullableConfigType = (
 };
 
 export const buildNullableDagsterType = (
-  overrides?: Partial<Types.NullableDagsterType>,
-): {__typename: 'NullableDagsterType'} & Types.NullableDagsterType => {
+  overrides?: Partial<NullableDagsterType>,
+): {__typename: 'NullableDagsterType'} & NullableDagsterType => {
   return {
     __typename: 'NullableDagsterType',
     description:
@@ -7137,16 +7088,15 @@ export const buildNullableDagsterType = (
 };
 
 export const buildObjectStoreOperationEvent = (
-  overrides?: Partial<Types.ObjectStoreOperationEvent>,
-): {__typename: 'ObjectStoreOperationEvent'} & Types.ObjectStoreOperationEvent => {
+  overrides?: Partial<ObjectStoreOperationEvent>,
+): {__typename: 'ObjectStoreOperationEvent'} & ObjectStoreOperationEvent => {
   return {
     __typename: 'ObjectStoreOperationEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     operationResult:
       overrides && overrides.hasOwnProperty('operationResult')
@@ -7163,8 +7113,8 @@ export const buildObjectStoreOperationEvent = (
 };
 
 export const buildObjectStoreOperationResult = (
-  overrides?: Partial<Types.ObjectStoreOperationResult>,
-): {__typename: 'ObjectStoreOperationResult'} & Types.ObjectStoreOperationResult => {
+  overrides?: Partial<ObjectStoreOperationResult>,
+): {__typename: 'ObjectStoreOperationResult'} & ObjectStoreOperationResult => {
   return {
     __typename: 'ObjectStoreOperationResult',
     description:
@@ -7177,13 +7127,13 @@ export const buildObjectStoreOperationResult = (
     op:
       overrides && overrides.hasOwnProperty('op')
         ? overrides.op!
-        : Types.ObjectStoreOperationType.CpObject,
+        : ObjectStoreOperationType.CpObject,
   };
 };
 
 export const buildObservationEvent = (
-  overrides?: Partial<Types.ObservationEvent>,
-): {__typename: 'ObservationEvent'} & Types.ObservationEvent => {
+  overrides?: Partial<ObservationEvent>,
+): {__typename: 'ObservationEvent'} & ObservationEvent => {
   return {
     __typename: 'ObservationEvent',
     assetKey:
@@ -7193,10 +7143,9 @@ export const buildObservationEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'non',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ratione',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -7225,9 +7174,7 @@ export const buildObservationEvent = (
   };
 };
 
-export const buildOutput = (
-  overrides?: Partial<Types.Output>,
-): {__typename: 'Output'} & Types.Output => {
+export const buildOutput = (overrides?: Partial<Output>): {__typename: 'Output'} & Output => {
   return {
     __typename: 'Output',
     definition:
@@ -7243,8 +7190,8 @@ export const buildOutput = (
 };
 
 export const buildOutputDefinition = (
-  overrides?: Partial<Types.OutputDefinition>,
-): {__typename: 'OutputDefinition'} & Types.OutputDefinition => {
+  overrides?: Partial<OutputDefinition>,
+): {__typename: 'OutputDefinition'} & OutputDefinition => {
   return {
     __typename: 'OutputDefinition',
     description:
@@ -7264,8 +7211,8 @@ export const buildOutputDefinition = (
 };
 
 export const buildOutputMapping = (
-  overrides?: Partial<Types.OutputMapping>,
-): {__typename: 'OutputMapping'} & Types.OutputMapping => {
+  overrides?: Partial<OutputMapping>,
+): {__typename: 'OutputMapping'} & OutputMapping => {
   return {
     __typename: 'OutputMapping',
     definition:
@@ -7280,8 +7227,8 @@ export const buildOutputMapping = (
 };
 
 export const buildPartition = (
-  overrides?: Partial<Types.Partition>,
-): {__typename: 'Partition'} & Types.Partition => {
+  overrides?: Partial<Partition>,
+): {__typename: 'Partition'} & Partition => {
   return {
     __typename: 'Partition',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'eum',
@@ -7303,9 +7250,7 @@ export const buildPartition = (
         ? overrides.solidSelection!
         : ['et', 'soluta', 'quasi'],
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : Types.RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
     tagsOrError:
       overrides && overrides.hasOwnProperty('tagsOrError')
         ? overrides.tagsOrError!
@@ -7314,8 +7259,8 @@ export const buildPartition = (
 };
 
 export const buildPartitionBackfill = (
-  overrides?: Partial<Types.PartitionBackfill>,
-): {__typename: 'PartitionBackfill'} & Types.PartitionBackfill => {
+  overrides?: Partial<PartitionBackfill>,
+): {__typename: 'PartitionBackfill'} & PartitionBackfill => {
   return {
     __typename: 'PartitionBackfill',
     assetSelection:
@@ -7378,7 +7323,7 @@ export const buildPartitionBackfill = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : Types.BulkActionStatus.Canceled,
+        : BulkActionStatus.Canceled,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns')
@@ -7388,8 +7333,8 @@ export const buildPartitionBackfill = (
 };
 
 export const buildPartitionBackfills = (
-  overrides?: Partial<Types.PartitionBackfills>,
-): {__typename: 'PartitionBackfills'} & Types.PartitionBackfills => {
+  overrides?: Partial<PartitionBackfills>,
+): {__typename: 'PartitionBackfills'} & PartitionBackfills => {
   return {
     __typename: 'PartitionBackfills',
     results:
@@ -7400,8 +7345,8 @@ export const buildPartitionBackfills = (
 };
 
 export const buildPartitionDefinition = (
-  overrides?: Partial<Types.PartitionDefinition>,
-): {__typename: 'PartitionDefinition'} & Types.PartitionDefinition => {
+  overrides?: Partial<PartitionDefinition>,
+): {__typename: 'PartitionDefinition'} & PartitionDefinition => {
   return {
     __typename: 'PartitionDefinition',
     description:
@@ -7422,13 +7367,13 @@ export const buildPartitionDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : Types.PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.Dynamic,
   };
 };
 
 export const buildPartitionRun = (
-  overrides?: Partial<Types.PartitionRun>,
-): {__typename: 'PartitionRun'} & Types.PartitionRun => {
+  overrides?: Partial<PartitionRun>,
+): {__typename: 'PartitionRun'} & PartitionRun => {
   return {
     __typename: 'PartitionRun',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
@@ -7439,8 +7384,8 @@ export const buildPartitionRun = (
 };
 
 export const buildPartitionRunConfig = (
-  overrides?: Partial<Types.PartitionRunConfig>,
-): {__typename: 'PartitionRunConfig'} & Types.PartitionRunConfig => {
+  overrides?: Partial<PartitionRunConfig>,
+): {__typename: 'PartitionRunConfig'} & PartitionRunConfig => {
   return {
     __typename: 'PartitionRunConfig',
     yaml: overrides && overrides.hasOwnProperty('yaml') ? overrides.yaml! : 'ab',
@@ -7448,8 +7393,8 @@ export const buildPartitionRunConfig = (
 };
 
 export const buildPartitionSet = (
-  overrides?: Partial<Types.PartitionSet>,
-): {__typename: 'PartitionSet'} & Types.PartitionSet => {
+  overrides?: Partial<PartitionSet>,
+): {__typename: 'PartitionSet'} & PartitionSet => {
   return {
     __typename: 'PartitionSet',
     backfills:
@@ -7490,8 +7435,8 @@ export const buildPartitionSet = (
 };
 
 export const buildPartitionSetNotFoundError = (
-  overrides?: Partial<Types.PartitionSetNotFoundError>,
-): {__typename: 'PartitionSetNotFoundError'} & Types.PartitionSetNotFoundError => {
+  overrides?: Partial<PartitionSetNotFoundError>,
+): {__typename: 'PartitionSetNotFoundError'} & PartitionSetNotFoundError => {
   return {
     __typename: 'PartitionSetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'corrupti',
@@ -7503,8 +7448,8 @@ export const buildPartitionSetNotFoundError = (
 };
 
 export const buildPartitionSetSelector = (
-  overrides?: Partial<Types.PartitionSetSelector>,
-): Types.PartitionSetSelector => {
+  overrides?: Partial<PartitionSetSelector>,
+): PartitionSetSelector => {
   return {
     partitionSetName:
       overrides && overrides.hasOwnProperty('partitionSetName')
@@ -7518,8 +7463,8 @@ export const buildPartitionSetSelector = (
 };
 
 export const buildPartitionSets = (
-  overrides?: Partial<Types.PartitionSets>,
-): {__typename: 'PartitionSets'} & Types.PartitionSets => {
+  overrides?: Partial<PartitionSets>,
+): {__typename: 'PartitionSets'} & PartitionSets => {
   return {
     __typename: 'PartitionSets',
     results:
@@ -7530,8 +7475,8 @@ export const buildPartitionSets = (
 };
 
 export const buildPartitionStats = (
-  overrides?: Partial<Types.PartitionStats>,
-): {__typename: 'PartitionStats'} & Types.PartitionStats => {
+  overrides?: Partial<PartitionStats>,
+): {__typename: 'PartitionStats'} & PartitionStats => {
   return {
     __typename: 'PartitionStats',
     numFailed: overrides && overrides.hasOwnProperty('numFailed') ? overrides.numFailed! : 4790,
@@ -7543,8 +7488,8 @@ export const buildPartitionStats = (
 };
 
 export const buildPartitionStatus = (
-  overrides?: Partial<Types.PartitionStatus>,
-): {__typename: 'PartitionStatus'} & Types.PartitionStatus => {
+  overrides?: Partial<PartitionStatus>,
+): {__typename: 'PartitionStatus'} & PartitionStatus => {
   return {
     __typename: 'PartitionStatus',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
@@ -7558,26 +7503,26 @@ export const buildPartitionStatus = (
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
-        : Types.RunStatus.Canceled,
+        : RunStatus.Canceled,
   };
 };
 
 export const buildPartitionStatusCounts = (
-  overrides?: Partial<Types.PartitionStatusCounts>,
-): {__typename: 'PartitionStatusCounts'} & Types.PartitionStatusCounts => {
+  overrides?: Partial<PartitionStatusCounts>,
+): {__typename: 'PartitionStatusCounts'} & PartitionStatusCounts => {
   return {
     __typename: 'PartitionStatusCounts',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 5809,
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
-        : Types.RunStatus.Canceled,
+        : RunStatus.Canceled,
   };
 };
 
 export const buildPartitionStatuses = (
-  overrides?: Partial<Types.PartitionStatuses>,
-): {__typename: 'PartitionStatuses'} & Types.PartitionStatuses => {
+  overrides?: Partial<PartitionStatuses>,
+): {__typename: 'PartitionStatuses'} & PartitionStatuses => {
   return {
     __typename: 'PartitionStatuses',
     results:
@@ -7588,8 +7533,8 @@ export const buildPartitionStatuses = (
 };
 
 export const buildPartitionTags = (
-  overrides?: Partial<Types.PartitionTags>,
-): {__typename: 'PartitionTags'} & Types.PartitionTags => {
+  overrides?: Partial<PartitionTags>,
+): {__typename: 'PartitionTags'} & PartitionTags => {
   return {
     __typename: 'PartitionTags',
     results:
@@ -7600,8 +7545,8 @@ export const buildPartitionTags = (
 };
 
 export const buildPartitions = (
-  overrides?: Partial<Types.Partitions>,
-): {__typename: 'Partitions'} & Types.Partitions => {
+  overrides?: Partial<Partitions>,
+): {__typename: 'Partitions'} & Partitions => {
   return {
     __typename: 'Partitions',
     results:
@@ -7612,8 +7557,8 @@ export const buildPartitions = (
 };
 
 export const buildPathMetadataEntry = (
-  overrides?: Partial<Types.PathMetadataEntry>,
-): {__typename: 'PathMetadataEntry'} & Types.PathMetadataEntry => {
+  overrides?: Partial<PathMetadataEntry>,
+): {__typename: 'PathMetadataEntry'} & PathMetadataEntry => {
   return {
     __typename: 'PathMetadataEntry',
     description:
@@ -7624,8 +7569,8 @@ export const buildPathMetadataEntry = (
 };
 
 export const buildPermission = (
-  overrides?: Partial<Types.Permission>,
-): {__typename: 'Permission'} & Types.Permission => {
+  overrides?: Partial<Permission>,
+): {__typename: 'Permission'} & Permission => {
   return {
     __typename: 'Permission',
     disabledReason:
@@ -7637,8 +7582,8 @@ export const buildPermission = (
 };
 
 export const buildPipeline = (
-  overrides?: Partial<Types.Pipeline>,
-): {__typename: 'Pipeline'} & Types.Pipeline => {
+  overrides?: Partial<Pipeline>,
+): {__typename: 'Pipeline'} & Pipeline => {
   return {
     __typename: 'Pipeline',
     dagsterTypeOrError:
@@ -7715,8 +7660,8 @@ export const buildPipeline = (
 };
 
 export const buildPipelineConfigValidationError = (
-  overrides?: Partial<Types.PipelineConfigValidationError>,
-): {__typename: 'PipelineConfigValidationError'} & Types.PipelineConfigValidationError => {
+  overrides?: Partial<PipelineConfigValidationError>,
+): {__typename: 'PipelineConfigValidationError'} & PipelineConfigValidationError => {
   return {
     __typename: 'PipelineConfigValidationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'consequatur',
@@ -7727,15 +7672,15 @@ export const buildPipelineConfigValidationError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
 export const buildPipelineConfigValidationInvalid = (
-  overrides?: Partial<Types.PipelineConfigValidationInvalid>,
-): {__typename: 'PipelineConfigValidationInvalid'} & Types.PipelineConfigValidationInvalid => {
+  overrides?: Partial<PipelineConfigValidationInvalid>,
+): {__typename: 'PipelineConfigValidationInvalid'} & PipelineConfigValidationInvalid => {
   return {
     __typename: 'PipelineConfigValidationInvalid',
     errors:
@@ -7752,8 +7697,8 @@ export const buildPipelineConfigValidationInvalid = (
 };
 
 export const buildPipelineConfigValidationValid = (
-  overrides?: Partial<Types.PipelineConfigValidationValid>,
-): {__typename: 'PipelineConfigValidationValid'} & Types.PipelineConfigValidationValid => {
+  overrides?: Partial<PipelineConfigValidationValid>,
+): {__typename: 'PipelineConfigValidationValid'} & PipelineConfigValidationValid => {
   return {
     __typename: 'PipelineConfigValidationValid',
     pipelineName:
@@ -7762,8 +7707,8 @@ export const buildPipelineConfigValidationValid = (
 };
 
 export const buildPipelineNotFoundError = (
-  overrides?: Partial<Types.PipelineNotFoundError>,
-): {__typename: 'PipelineNotFoundError'} & Types.PipelineNotFoundError => {
+  overrides?: Partial<PipelineNotFoundError>,
+): {__typename: 'PipelineNotFoundError'} & PipelineNotFoundError => {
   return {
     __typename: 'PipelineNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'expedita',
@@ -7781,8 +7726,8 @@ export const buildPipelineNotFoundError = (
 };
 
 export const buildPipelinePreset = (
-  overrides?: Partial<Types.PipelinePreset>,
-): {__typename: 'PipelinePreset'} & Types.PipelinePreset => {
+  overrides?: Partial<PipelinePreset>,
+): {__typename: 'PipelinePreset'} & PipelinePreset => {
   return {
     __typename: 'PipelinePreset',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'aperiam',
@@ -7801,8 +7746,8 @@ export const buildPipelinePreset = (
 };
 
 export const buildPipelineReference = (
-  overrides?: Partial<Types.PipelineReference>,
-): {__typename: 'PipelineReference'} & Types.PipelineReference => {
+  overrides?: Partial<PipelineReference>,
+): {__typename: 'PipelineReference'} & PipelineReference => {
   return {
     __typename: 'PipelineReference',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
@@ -7814,8 +7759,8 @@ export const buildPipelineReference = (
 };
 
 export const buildPipelineRun = (
-  overrides?: Partial<Types.PipelineRun>,
-): {__typename: 'PipelineRun'} & Types.PipelineRun => {
+  overrides?: Partial<PipelineRun>,
+): {__typename: 'PipelineRun'} & PipelineRun => {
   return {
     __typename: 'PipelineRun',
     assets:
@@ -7874,9 +7819,7 @@ export const buildPipelineRun = (
         : ['occaecati', 'assumenda', 'neque'],
     stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : Types.RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
@@ -7893,8 +7836,8 @@ export const buildPipelineRun = (
 };
 
 export const buildPipelineRunConflict = (
-  overrides?: Partial<Types.PipelineRunConflict>,
-): {__typename: 'PipelineRunConflict'} & Types.PipelineRunConflict => {
+  overrides?: Partial<PipelineRunConflict>,
+): {__typename: 'PipelineRunConflict'} & PipelineRunConflict => {
   return {
     __typename: 'PipelineRunConflict',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'in',
@@ -7902,10 +7845,8 @@ export const buildPipelineRunConflict = (
 };
 
 export const buildPipelineRunLogsSubscriptionFailure = (
-  overrides?: Partial<Types.PipelineRunLogsSubscriptionFailure>,
-): {
-  __typename: 'PipelineRunLogsSubscriptionFailure';
-} & Types.PipelineRunLogsSubscriptionFailure => {
+  overrides?: Partial<PipelineRunLogsSubscriptionFailure>,
+): {__typename: 'PipelineRunLogsSubscriptionFailure'} & PipelineRunLogsSubscriptionFailure => {
   return {
     __typename: 'PipelineRunLogsSubscriptionFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vitae',
@@ -7915,10 +7856,8 @@ export const buildPipelineRunLogsSubscriptionFailure = (
 };
 
 export const buildPipelineRunLogsSubscriptionSuccess = (
-  overrides?: Partial<Types.PipelineRunLogsSubscriptionSuccess>,
-): {
-  __typename: 'PipelineRunLogsSubscriptionSuccess';
-} & Types.PipelineRunLogsSubscriptionSuccess => {
+  overrides?: Partial<PipelineRunLogsSubscriptionSuccess>,
+): {__typename: 'PipelineRunLogsSubscriptionSuccess'} & PipelineRunLogsSubscriptionSuccess => {
   return {
     __typename: 'PipelineRunLogsSubscriptionSuccess',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'id',
@@ -7935,8 +7874,8 @@ export const buildPipelineRunLogsSubscriptionSuccess = (
 };
 
 export const buildPipelineRunMetadataEntry = (
-  overrides?: Partial<Types.PipelineRunMetadataEntry>,
-): {__typename: 'PipelineRunMetadataEntry'} & Types.PipelineRunMetadataEntry => {
+  overrides?: Partial<PipelineRunMetadataEntry>,
+): {__typename: 'PipelineRunMetadataEntry'} & PipelineRunMetadataEntry => {
   return {
     __typename: 'PipelineRunMetadataEntry',
     description:
@@ -7947,8 +7886,8 @@ export const buildPipelineRunMetadataEntry = (
 };
 
 export const buildPipelineRunNotFoundError = (
-  overrides?: Partial<Types.PipelineRunNotFoundError>,
-): {__typename: 'PipelineRunNotFoundError'} & Types.PipelineRunNotFoundError => {
+  overrides?: Partial<PipelineRunNotFoundError>,
+): {__typename: 'PipelineRunNotFoundError'} & PipelineRunNotFoundError => {
   return {
     __typename: 'PipelineRunNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minus',
@@ -7957,8 +7896,8 @@ export const buildPipelineRunNotFoundError = (
 };
 
 export const buildPipelineRunStatsSnapshot = (
-  overrides?: Partial<Types.PipelineRunStatsSnapshot>,
-): {__typename: 'PipelineRunStatsSnapshot'} & Types.PipelineRunStatsSnapshot => {
+  overrides?: Partial<PipelineRunStatsSnapshot>,
+): {__typename: 'PipelineRunStatsSnapshot'} & PipelineRunStatsSnapshot => {
   return {
     __typename: 'PipelineRunStatsSnapshot',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 8.08,
@@ -7982,8 +7921,8 @@ export const buildPipelineRunStatsSnapshot = (
 };
 
 export const buildPipelineRunStepStats = (
-  overrides?: Partial<Types.PipelineRunStepStats>,
-): {__typename: 'PipelineRunStepStats'} & Types.PipelineRunStepStats => {
+  overrides?: Partial<PipelineRunStepStats>,
+): {__typename: 'PipelineRunStepStats'} & PipelineRunStepStats => {
   return {
     __typename: 'PipelineRunStepStats',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 3.31,
@@ -7998,16 +7937,14 @@ export const buildPipelineRunStepStats = (
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.43,
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : Types.StepEventStatus.Failure,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.Failure,
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'reiciendis',
   };
 };
 
 export const buildPipelineRuns = (
-  overrides?: Partial<Types.PipelineRuns>,
-): {__typename: 'PipelineRuns'} & Types.PipelineRuns => {
+  overrides?: Partial<PipelineRuns>,
+): {__typename: 'PipelineRuns'} & PipelineRuns => {
   return {
     __typename: 'PipelineRuns',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 1847,
@@ -8018,9 +7955,7 @@ export const buildPipelineRuns = (
   };
 };
 
-export const buildPipelineSelector = (
-  overrides?: Partial<Types.PipelineSelector>,
-): Types.PipelineSelector => {
+export const buildPipelineSelector = (overrides?: Partial<PipelineSelector>): PipelineSelector => {
   return {
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
@@ -8044,8 +7979,8 @@ export const buildPipelineSelector = (
 };
 
 export const buildPipelineSnapshot = (
-  overrides?: Partial<Types.PipelineSnapshot>,
-): {__typename: 'PipelineSnapshot'} & Types.PipelineSnapshot => {
+  overrides?: Partial<PipelineSnapshot>,
+): {__typename: 'PipelineSnapshot'} & PipelineSnapshot => {
   return {
     __typename: 'PipelineSnapshot',
     dagsterTypeOrError:
@@ -8117,8 +8052,8 @@ export const buildPipelineSnapshot = (
 };
 
 export const buildPipelineSnapshotNotFoundError = (
-  overrides?: Partial<Types.PipelineSnapshotNotFoundError>,
-): {__typename: 'PipelineSnapshotNotFoundError'} & Types.PipelineSnapshotNotFoundError => {
+  overrides?: Partial<PipelineSnapshotNotFoundError>,
+): {__typename: 'PipelineSnapshotNotFoundError'} & PipelineSnapshotNotFoundError => {
   return {
     __typename: 'PipelineSnapshotNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sit',
@@ -8128,8 +8063,8 @@ export const buildPipelineSnapshotNotFoundError = (
 };
 
 export const buildPipelineTag = (
-  overrides?: Partial<Types.PipelineTag>,
-): {__typename: 'PipelineTag'} & Types.PipelineTag => {
+  overrides?: Partial<PipelineTag>,
+): {__typename: 'PipelineTag'} & PipelineTag => {
   return {
     __typename: 'PipelineTag',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'qui',
@@ -8138,8 +8073,8 @@ export const buildPipelineTag = (
 };
 
 export const buildPipelineTagAndValues = (
-  overrides?: Partial<Types.PipelineTagAndValues>,
-): {__typename: 'PipelineTagAndValues'} & Types.PipelineTagAndValues => {
+  overrides?: Partial<PipelineTagAndValues>,
+): {__typename: 'PipelineTagAndValues'} & PipelineTagAndValues => {
   return {
     __typename: 'PipelineTagAndValues',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'repudiandae',
@@ -8151,8 +8086,8 @@ export const buildPipelineTagAndValues = (
 };
 
 export const buildPresetNotFoundError = (
-  overrides?: Partial<Types.PresetNotFoundError>,
-): {__typename: 'PresetNotFoundError'} & Types.PresetNotFoundError => {
+  overrides?: Partial<PresetNotFoundError>,
+): {__typename: 'PresetNotFoundError'} & PresetNotFoundError => {
   return {
     __typename: 'PresetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'provident',
@@ -8161,8 +8096,8 @@ export const buildPresetNotFoundError = (
 };
 
 export const buildPythonArtifactMetadataEntry = (
-  overrides?: Partial<Types.PythonArtifactMetadataEntry>,
-): {__typename: 'PythonArtifactMetadataEntry'} & Types.PythonArtifactMetadataEntry => {
+  overrides?: Partial<PythonArtifactMetadataEntry>,
+): {__typename: 'PythonArtifactMetadataEntry'} & PythonArtifactMetadataEntry => {
   return {
     __typename: 'PythonArtifactMetadataEntry',
     description:
@@ -8174,8 +8109,8 @@ export const buildPythonArtifactMetadataEntry = (
 };
 
 export const buildPythonError = (
-  overrides?: Partial<Types.PythonError>,
-): {__typename: 'PythonError'} & Types.PythonError => {
+  overrides?: Partial<PythonError>,
+): {__typename: 'PythonError'} & PythonError => {
   return {
     __typename: 'PythonError',
     cause: overrides && overrides.hasOwnProperty('cause') ? overrides.cause! : buildPythonError(),
@@ -8197,21 +8132,21 @@ export const buildPythonError = (
 };
 
 export const buildReexecutionParams = (
-  overrides?: Partial<Types.ReexecutionParams>,
-): Types.ReexecutionParams => {
+  overrides?: Partial<ReexecutionParams>,
+): ReexecutionParams => {
   return {
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'sunt',
     strategy:
       overrides && overrides.hasOwnProperty('strategy')
         ? overrides.strategy!
-        : Types.ReexecutionStrategy.AllSteps,
+        : ReexecutionStrategy.AllSteps,
   };
 };
 
 export const buildRegularConfigType = (
-  overrides?: Partial<Types.RegularConfigType>,
-): {__typename: 'RegularConfigType'} & Types.RegularConfigType => {
+  overrides?: Partial<RegularConfigType>,
+): {__typename: 'RegularConfigType'} & RegularConfigType => {
   return {
     __typename: 'RegularConfigType',
     description:
@@ -8233,8 +8168,8 @@ export const buildRegularConfigType = (
 };
 
 export const buildRegularDagsterType = (
-  overrides?: Partial<Types.RegularDagsterType>,
-): {__typename: 'RegularDagsterType'} & Types.RegularDagsterType => {
+  overrides?: Partial<RegularDagsterType>,
+): {__typename: 'RegularDagsterType'} & RegularDagsterType => {
   return {
     __typename: 'RegularDagsterType',
     description:
@@ -8269,8 +8204,8 @@ export const buildRegularDagsterType = (
 };
 
 export const buildReloadNotSupported = (
-  overrides?: Partial<Types.ReloadNotSupported>,
-): {__typename: 'ReloadNotSupported'} & Types.ReloadNotSupported => {
+  overrides?: Partial<ReloadNotSupported>,
+): {__typename: 'ReloadNotSupported'} & ReloadNotSupported => {
   return {
     __typename: 'ReloadNotSupported',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'neque',
@@ -8278,8 +8213,8 @@ export const buildReloadNotSupported = (
 };
 
 export const buildReloadRepositoryLocationMutation = (
-  overrides?: Partial<Types.ReloadRepositoryLocationMutation>,
-): {__typename: 'ReloadRepositoryLocationMutation'} & Types.ReloadRepositoryLocationMutation => {
+  overrides?: Partial<ReloadRepositoryLocationMutation>,
+): {__typename: 'ReloadRepositoryLocationMutation'} & ReloadRepositoryLocationMutation => {
   return {
     __typename: 'ReloadRepositoryLocationMutation',
     Output:
@@ -8288,8 +8223,8 @@ export const buildReloadRepositoryLocationMutation = (
 };
 
 export const buildReloadWorkspaceMutation = (
-  overrides?: Partial<Types.ReloadWorkspaceMutation>,
-): {__typename: 'ReloadWorkspaceMutation'} & Types.ReloadWorkspaceMutation => {
+  overrides?: Partial<ReloadWorkspaceMutation>,
+): {__typename: 'ReloadWorkspaceMutation'} & ReloadWorkspaceMutation => {
   return {
     __typename: 'ReloadWorkspaceMutation',
     Output:
@@ -8298,8 +8233,8 @@ export const buildReloadWorkspaceMutation = (
 };
 
 export const buildRepository = (
-  overrides?: Partial<Types.Repository>,
-): {__typename: 'Repository'} & Types.Repository => {
+  overrides?: Partial<Repository>,
+): {__typename: 'Repository'} & Repository => {
   return {
     __typename: 'Repository',
     allTopLevelResourceDetails:
@@ -8359,8 +8294,8 @@ export const buildRepository = (
 };
 
 export const buildRepositoryConnection = (
-  overrides?: Partial<Types.RepositoryConnection>,
-): {__typename: 'RepositoryConnection'} & Types.RepositoryConnection => {
+  overrides?: Partial<RepositoryConnection>,
+): {__typename: 'RepositoryConnection'} & RepositoryConnection => {
   return {
     __typename: 'RepositoryConnection',
     nodes:
@@ -8371,8 +8306,8 @@ export const buildRepositoryConnection = (
 };
 
 export const buildRepositoryLocation = (
-  overrides?: Partial<Types.RepositoryLocation>,
-): {__typename: 'RepositoryLocation'} & Types.RepositoryLocation => {
+  overrides?: Partial<RepositoryLocation>,
+): {__typename: 'RepositoryLocation'} & RepositoryLocation => {
   return {
     __typename: 'RepositoryLocation',
     dagsterLibraryVersions:
@@ -8405,8 +8340,8 @@ export const buildRepositoryLocation = (
 };
 
 export const buildRepositoryLocationNotFound = (
-  overrides?: Partial<Types.RepositoryLocationNotFound>,
-): {__typename: 'RepositoryLocationNotFound'} & Types.RepositoryLocationNotFound => {
+  overrides?: Partial<RepositoryLocationNotFound>,
+): {__typename: 'RepositoryLocationNotFound'} & RepositoryLocationNotFound => {
   return {
     __typename: 'RepositoryLocationNotFound',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sed',
@@ -8414,8 +8349,8 @@ export const buildRepositoryLocationNotFound = (
 };
 
 export const buildRepositoryMetadata = (
-  overrides?: Partial<Types.RepositoryMetadata>,
-): {__typename: 'RepositoryMetadata'} & Types.RepositoryMetadata => {
+  overrides?: Partial<RepositoryMetadata>,
+): {__typename: 'RepositoryMetadata'} & RepositoryMetadata => {
   return {
     __typename: 'RepositoryMetadata',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'reiciendis',
@@ -8424,8 +8359,8 @@ export const buildRepositoryMetadata = (
 };
 
 export const buildRepositoryNotFoundError = (
-  overrides?: Partial<Types.RepositoryNotFoundError>,
-): {__typename: 'RepositoryNotFoundError'} & Types.RepositoryNotFoundError => {
+  overrides?: Partial<RepositoryNotFoundError>,
+): {__typename: 'RepositoryNotFoundError'} & RepositoryNotFoundError => {
   return {
     __typename: 'RepositoryNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
@@ -8439,8 +8374,8 @@ export const buildRepositoryNotFoundError = (
 };
 
 export const buildRepositoryOrigin = (
-  overrides?: Partial<Types.RepositoryOrigin>,
-): {__typename: 'RepositoryOrigin'} & Types.RepositoryOrigin => {
+  overrides?: Partial<RepositoryOrigin>,
+): {__typename: 'RepositoryOrigin'} & RepositoryOrigin => {
   return {
     __typename: 'RepositoryOrigin',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'magni',
@@ -8458,8 +8393,8 @@ export const buildRepositoryOrigin = (
 };
 
 export const buildRepositorySelector = (
-  overrides?: Partial<Types.RepositorySelector>,
-): Types.RepositorySelector => {
+  overrides?: Partial<RepositorySelector>,
+): RepositorySelector => {
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -8471,8 +8406,8 @@ export const buildRepositorySelector = (
 };
 
 export const buildResource = (
-  overrides?: Partial<Types.Resource>,
-): {__typename: 'Resource'} & Types.Resource => {
+  overrides?: Partial<Resource>,
+): {__typename: 'Resource'} & Resource => {
   return {
     __typename: 'Resource',
     configField:
@@ -8486,8 +8421,8 @@ export const buildResource = (
 };
 
 export const buildResourceDetails = (
-  overrides?: Partial<Types.ResourceDetails>,
-): {__typename: 'ResourceDetails'} & Types.ResourceDetails => {
+  overrides?: Partial<ResourceDetails>,
+): {__typename: 'ResourceDetails'} & ResourceDetails => {
   return {
     __typename: 'ResourceDetails',
     configFields:
@@ -8505,8 +8440,8 @@ export const buildResourceDetails = (
 };
 
 export const buildResourceDetailsList = (
-  overrides?: Partial<Types.ResourceDetailsList>,
-): {__typename: 'ResourceDetailsList'} & Types.ResourceDetailsList => {
+  overrides?: Partial<ResourceDetailsList>,
+): {__typename: 'ResourceDetailsList'} & ResourceDetailsList => {
   return {
     __typename: 'ResourceDetailsList',
     results:
@@ -8517,8 +8452,8 @@ export const buildResourceDetailsList = (
 };
 
 export const buildResourceInitFailureEvent = (
-  overrides?: Partial<Types.ResourceInitFailureEvent>,
-): {__typename: 'ResourceInitFailureEvent'} & Types.ResourceInitFailureEvent => {
+  overrides?: Partial<ResourceInitFailureEvent>,
+): {__typename: 'ResourceInitFailureEvent'} & ResourceInitFailureEvent => {
   return {
     __typename: 'ResourceInitFailureEvent',
     description:
@@ -8527,10 +8462,9 @@ export const buildResourceInitFailureEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'mollitia',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'hic',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'dolor',
@@ -8548,8 +8482,8 @@ export const buildResourceInitFailureEvent = (
 };
 
 export const buildResourceInitStartedEvent = (
-  overrides?: Partial<Types.ResourceInitStartedEvent>,
-): {__typename: 'ResourceInitStartedEvent'} & Types.ResourceInitStartedEvent => {
+  overrides?: Partial<ResourceInitStartedEvent>,
+): {__typename: 'ResourceInitStartedEvent'} & ResourceInitStartedEvent => {
   return {
     __typename: 'ResourceInitStartedEvent',
     description:
@@ -8557,10 +8491,9 @@ export const buildResourceInitStartedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'incidunt',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd:
       overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'numquam',
     markerStart:
@@ -8580,8 +8513,8 @@ export const buildResourceInitStartedEvent = (
 };
 
 export const buildResourceInitSuccessEvent = (
-  overrides?: Partial<Types.ResourceInitSuccessEvent>,
-): {__typename: 'ResourceInitSuccessEvent'} & Types.ResourceInitSuccessEvent => {
+  overrides?: Partial<ResourceInitSuccessEvent>,
+): {__typename: 'ResourceInitSuccessEvent'} & ResourceInitSuccessEvent => {
   return {
     __typename: 'ResourceInitSuccessEvent',
     description:
@@ -8589,10 +8522,9 @@ export const buildResourceInitSuccessEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'fugiat',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'fugiat',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
@@ -8613,8 +8545,8 @@ export const buildResourceInitSuccessEvent = (
 };
 
 export const buildResourceNotFoundError = (
-  overrides?: Partial<Types.ResourceNotFoundError>,
-): {__typename: 'ResourceNotFoundError'} & Types.ResourceNotFoundError => {
+  overrides?: Partial<ResourceNotFoundError>,
+): {__typename: 'ResourceNotFoundError'} & ResourceNotFoundError => {
   return {
     __typename: 'ResourceNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quo',
@@ -8624,8 +8556,8 @@ export const buildResourceNotFoundError = (
 };
 
 export const buildResourceRequirement = (
-  overrides?: Partial<Types.ResourceRequirement>,
-): {__typename: 'ResourceRequirement'} & Types.ResourceRequirement => {
+  overrides?: Partial<ResourceRequirement>,
+): {__typename: 'ResourceRequirement'} & ResourceRequirement => {
   return {
     __typename: 'ResourceRequirement',
     resourceKey:
@@ -8633,9 +8565,7 @@ export const buildResourceRequirement = (
   };
 };
 
-export const buildResourceSelector = (
-  overrides?: Partial<Types.ResourceSelector>,
-): Types.ResourceSelector => {
+export const buildResourceSelector = (overrides?: Partial<ResourceSelector>): ResourceSelector => {
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -8649,8 +8579,8 @@ export const buildResourceSelector = (
 };
 
 export const buildResumeBackfillSuccess = (
-  overrides?: Partial<Types.ResumeBackfillSuccess>,
-): {__typename: 'ResumeBackfillSuccess'} & Types.ResumeBackfillSuccess => {
+  overrides?: Partial<ResumeBackfillSuccess>,
+): {__typename: 'ResumeBackfillSuccess'} & ResumeBackfillSuccess => {
   return {
     __typename: 'ResumeBackfillSuccess',
     backfillId:
@@ -8658,7 +8588,7 @@ export const buildResumeBackfillSuccess = (
   };
 };
 
-export const buildRun = (overrides?: Partial<Types.Run>): {__typename: 'Run'} & Types.Run => {
+export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run => {
   return {
     __typename: 'Run',
     assetMaterializations:
@@ -8746,9 +8676,7 @@ export const buildRun = (overrides?: Partial<Types.Run>): {__typename: 'Run'} & 
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
     stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : Types.RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
@@ -8766,16 +8694,15 @@ export const buildRun = (overrides?: Partial<Types.Run>): {__typename: 'Run'} & 
 };
 
 export const buildRunCanceledEvent = (
-  overrides?: Partial<Types.RunCanceledEvent>,
-): {__typename: 'RunCanceledEvent'} & Types.RunCanceledEvent => {
+  overrides?: Partial<RunCanceledEvent>,
+): {__typename: 'RunCanceledEvent'} & RunCanceledEvent => {
   return {
     __typename: 'RunCanceledEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sed',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'aliquam',
@@ -8788,16 +8715,15 @@ export const buildRunCanceledEvent = (
 };
 
 export const buildRunCancelingEvent = (
-  overrides?: Partial<Types.RunCancelingEvent>,
-): {__typename: 'RunCancelingEvent'} & Types.RunCancelingEvent => {
+  overrides?: Partial<RunCancelingEvent>,
+): {__typename: 'RunCancelingEvent'} & RunCancelingEvent => {
   return {
     __typename: 'RunCancelingEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'natus',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'ullam',
@@ -8811,8 +8737,8 @@ export const buildRunCancelingEvent = (
 };
 
 export const buildRunConfigSchema = (
-  overrides?: Partial<Types.RunConfigSchema>,
-): {__typename: 'RunConfigSchema'} & Types.RunConfigSchema => {
+  overrides?: Partial<RunConfigSchema>,
+): {__typename: 'RunConfigSchema'} & RunConfigSchema => {
   return {
     __typename: 'RunConfigSchema',
     allConfigTypes:
@@ -8831,8 +8757,8 @@ export const buildRunConfigSchema = (
 };
 
 export const buildRunConfigValidationInvalid = (
-  overrides?: Partial<Types.RunConfigValidationInvalid>,
-): {__typename: 'RunConfigValidationInvalid'} & Types.RunConfigValidationInvalid => {
+  overrides?: Partial<RunConfigValidationInvalid>,
+): {__typename: 'RunConfigValidationInvalid'} & RunConfigValidationInvalid => {
   return {
     __typename: 'RunConfigValidationInvalid',
     errors:
@@ -8851,8 +8777,8 @@ export const buildRunConfigValidationInvalid = (
 };
 
 export const buildRunConflict = (
-  overrides?: Partial<Types.RunConflict>,
-): {__typename: 'RunConflict'} & Types.RunConflict => {
+  overrides?: Partial<RunConflict>,
+): {__typename: 'RunConflict'} & RunConflict => {
   return {
     __typename: 'RunConflict',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'iste',
@@ -8860,16 +8786,15 @@ export const buildRunConflict = (
 };
 
 export const buildRunDequeuedEvent = (
-  overrides?: Partial<Types.RunDequeuedEvent>,
-): {__typename: 'RunDequeuedEvent'} & Types.RunDequeuedEvent => {
+  overrides?: Partial<RunDequeuedEvent>,
+): {__typename: 'RunDequeuedEvent'} & RunDequeuedEvent => {
   return {
     __typename: 'RunDequeuedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'laboriosam',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'quia',
@@ -8882,16 +8807,15 @@ export const buildRunDequeuedEvent = (
 };
 
 export const buildRunEnqueuedEvent = (
-  overrides?: Partial<Types.RunEnqueuedEvent>,
-): {__typename: 'RunEnqueuedEvent'} & Types.RunEnqueuedEvent => {
+  overrides?: Partial<RunEnqueuedEvent>,
+): {__typename: 'RunEnqueuedEvent'} & RunEnqueuedEvent => {
   return {
     __typename: 'RunEnqueuedEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'saepe',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'alias',
@@ -8904,8 +8828,8 @@ export const buildRunEnqueuedEvent = (
 };
 
 export const buildRunEvent = (
-  overrides?: Partial<Types.RunEvent>,
-): {__typename: 'RunEvent'} & Types.RunEvent => {
+  overrides?: Partial<RunEvent>,
+): {__typename: 'RunEvent'} & RunEvent => {
   return {
     __typename: 'RunEvent',
     pipelineName:
@@ -8916,17 +8840,16 @@ export const buildRunEvent = (
 };
 
 export const buildRunFailureEvent = (
-  overrides?: Partial<Types.RunFailureEvent>,
-): {__typename: 'RunFailureEvent'} & Types.RunFailureEvent => {
+  overrides?: Partial<RunFailureEvent>,
+): {__typename: 'RunFailureEvent'} & RunFailureEvent => {
   return {
     __typename: 'RunFailureEvent',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'porro',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -8943,8 +8866,8 @@ export const buildRunFailureEvent = (
 };
 
 export const buildRunGroup = (
-  overrides?: Partial<Types.RunGroup>,
-): {__typename: 'RunGroup'} & Types.RunGroup => {
+  overrides?: Partial<RunGroup>,
+): {__typename: 'RunGroup'} & RunGroup => {
   return {
     __typename: 'RunGroup',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'rem',
@@ -8956,8 +8879,8 @@ export const buildRunGroup = (
 };
 
 export const buildRunGroupNotFoundError = (
-  overrides?: Partial<Types.RunGroupNotFoundError>,
-): {__typename: 'RunGroupNotFoundError'} & Types.RunGroupNotFoundError => {
+  overrides?: Partial<RunGroupNotFoundError>,
+): {__typename: 'RunGroupNotFoundError'} & RunGroupNotFoundError => {
   return {
     __typename: 'RunGroupNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quasi',
@@ -8966,8 +8889,8 @@ export const buildRunGroupNotFoundError = (
 };
 
 export const buildRunGroups = (
-  overrides?: Partial<Types.RunGroups>,
-): {__typename: 'RunGroups'} & Types.RunGroups => {
+  overrides?: Partial<RunGroups>,
+): {__typename: 'RunGroups'} & RunGroups => {
   return {
     __typename: 'RunGroups',
     results:
@@ -8978,8 +8901,8 @@ export const buildRunGroups = (
 };
 
 export const buildRunGroupsOrError = (
-  overrides?: Partial<Types.RunGroupsOrError>,
-): {__typename: 'RunGroupsOrError'} & Types.RunGroupsOrError => {
+  overrides?: Partial<RunGroupsOrError>,
+): {__typename: 'RunGroupsOrError'} & RunGroupsOrError => {
   return {
     __typename: 'RunGroupsOrError',
     results:
@@ -8990,8 +8913,8 @@ export const buildRunGroupsOrError = (
 };
 
 export const buildRunLauncher = (
-  overrides?: Partial<Types.RunLauncher>,
-): {__typename: 'RunLauncher'} & Types.RunLauncher => {
+  overrides?: Partial<RunLauncher>,
+): {__typename: 'RunLauncher'} & RunLauncher => {
   return {
     __typename: 'RunLauncher',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
@@ -8999,8 +8922,8 @@ export const buildRunLauncher = (
 };
 
 export const buildRunMarker = (
-  overrides?: Partial<Types.RunMarker>,
-): {__typename: 'RunMarker'} & Types.RunMarker => {
+  overrides?: Partial<RunMarker>,
+): {__typename: 'RunMarker'} & RunMarker => {
   return {
     __typename: 'RunMarker',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 5.55,
@@ -9009,8 +8932,8 @@ export const buildRunMarker = (
 };
 
 export const buildRunNotFoundError = (
-  overrides?: Partial<Types.RunNotFoundError>,
-): {__typename: 'RunNotFoundError'} & Types.RunNotFoundError => {
+  overrides?: Partial<RunNotFoundError>,
+): {__typename: 'RunNotFoundError'} & RunNotFoundError => {
   return {
     __typename: 'RunNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'illo',
@@ -9019,8 +8942,8 @@ export const buildRunNotFoundError = (
 };
 
 export const buildRunRequest = (
-  overrides?: Partial<Types.RunRequest>,
-): {__typename: 'RunRequest'} & Types.RunRequest => {
+  overrides?: Partial<RunRequest>,
+): {__typename: 'RunRequest'} & RunRequest => {
   return {
     __typename: 'RunRequest',
     runConfigYaml:
@@ -9034,16 +8957,15 @@ export const buildRunRequest = (
 };
 
 export const buildRunStartEvent = (
-  overrides?: Partial<Types.RunStartEvent>,
-): {__typename: 'RunStartEvent'} & Types.RunStartEvent => {
+  overrides?: Partial<RunStartEvent>,
+): {__typename: 'RunStartEvent'} & RunStartEvent => {
   return {
     __typename: 'RunStartEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -9060,16 +8982,15 @@ export const buildRunStartEvent = (
 };
 
 export const buildRunStartingEvent = (
-  overrides?: Partial<Types.RunStartingEvent>,
-): {__typename: 'RunStartingEvent'} & Types.RunStartingEvent => {
+  overrides?: Partial<RunStartingEvent>,
+): {__typename: 'RunStartingEvent'} & RunStartingEvent => {
   return {
     __typename: 'RunStartingEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'commodi',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'dicta',
@@ -9082,8 +9003,8 @@ export const buildRunStartingEvent = (
 };
 
 export const buildRunStatsSnapshot = (
-  overrides?: Partial<Types.RunStatsSnapshot>,
-): {__typename: 'RunStatsSnapshot'} & Types.RunStatsSnapshot => {
+  overrides?: Partial<RunStatsSnapshot>,
+): {__typename: 'RunStatsSnapshot'} & RunStatsSnapshot => {
   return {
     __typename: 'RunStatsSnapshot',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 5.18,
@@ -9107,8 +9028,8 @@ export const buildRunStatsSnapshot = (
 };
 
 export const buildRunStepStats = (
-  overrides?: Partial<Types.RunStepStats>,
-): {__typename: 'RunStepStats'} & Types.RunStepStats => {
+  overrides?: Partial<RunStepStats>,
+): {__typename: 'RunStepStats'} & RunStepStats => {
   return {
     __typename: 'RunStepStats',
     attempts:
@@ -9131,24 +9052,21 @@ export const buildRunStepStats = (
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repudiandae',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.96,
     status:
-      overrides && overrides.hasOwnProperty('status')
-        ? overrides.status!
-        : Types.StepEventStatus.Failure,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.Failure,
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'at',
   };
 };
 
 export const buildRunSuccessEvent = (
-  overrides?: Partial<Types.RunSuccessEvent>,
-): {__typename: 'RunSuccessEvent'} & Types.RunSuccessEvent => {
+  overrides?: Partial<RunSuccessEvent>,
+): {__typename: 'RunSuccessEvent'} & RunSuccessEvent => {
   return {
     __typename: 'RunSuccessEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+        : DagsterEventType.AlertFailure,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolor',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'ex',
@@ -9163,8 +9081,8 @@ export const buildRunSuccessEvent = (
 };
 
 export const buildRunTagKeys = (
-  overrides?: Partial<Types.RunTagKeys>,
-): {__typename: 'RunTagKeys'} & Types.RunTagKeys => {
+  overrides?: Partial<RunTagKeys>,
+): {__typename: 'RunTagKeys'} & RunTagKeys => {
   return {
     __typename: 'RunTagKeys',
     keys:
@@ -9174,9 +9092,7 @@ export const buildRunTagKeys = (
   };
 };
 
-export const buildRunTags = (
-  overrides?: Partial<Types.RunTags>,
-): {__typename: 'RunTags'} & Types.RunTags => {
+export const buildRunTags = (overrides?: Partial<RunTags>): {__typename: 'RunTags'} & RunTags => {
   return {
     __typename: 'RunTags',
     tags:
@@ -9186,7 +9102,7 @@ export const buildRunTags = (
   };
 };
 
-export const buildRuns = (overrides?: Partial<Types.Runs>): {__typename: 'Runs'} & Types.Runs => {
+export const buildRuns = (overrides?: Partial<Runs>): {__typename: 'Runs'} & Runs => {
   return {
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
@@ -9197,7 +9113,7 @@ export const buildRuns = (overrides?: Partial<Types.Runs>): {__typename: 'Runs'}
   };
 };
 
-export const buildRunsFilter = (overrides?: Partial<Types.RunsFilter>): Types.RunsFilter => {
+export const buildRunsFilter = (overrides?: Partial<RunsFilter>): RunsFilter => {
   return {
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
@@ -9213,7 +9129,7 @@ export const buildRunsFilter = (overrides?: Partial<Types.RunsFilter>): Types.Ru
     statuses:
       overrides && overrides.hasOwnProperty('statuses')
         ? overrides.statuses!
-        : [Types.RunStatus.Canceled, Types.RunStatus.Canceled, Types.RunStatus.Canceled],
+        : [RunStatus.Canceled, RunStatus.Canceled, RunStatus.Canceled],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
@@ -9224,8 +9140,8 @@ export const buildRunsFilter = (overrides?: Partial<Types.RunsFilter>): Types.Ru
 };
 
 export const buildRuntimeMismatchConfigError = (
-  overrides?: Partial<Types.RuntimeMismatchConfigError>,
-): {__typename: 'RuntimeMismatchConfigError'} & Types.RuntimeMismatchConfigError => {
+  overrides?: Partial<RuntimeMismatchConfigError>,
+): {__typename: 'RuntimeMismatchConfigError'} & RuntimeMismatchConfigError => {
   return {
     __typename: 'RuntimeMismatchConfigError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
@@ -9233,7 +9149,7 @@ export const buildRuntimeMismatchConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
     valueRep: overrides && overrides.hasOwnProperty('valueRep') ? overrides.valueRep! : 'in',
@@ -9241,8 +9157,8 @@ export const buildRuntimeMismatchConfigError = (
 };
 
 export const buildScalarUnionConfigType = (
-  overrides?: Partial<Types.ScalarUnionConfigType>,
-): {__typename: 'ScalarUnionConfigType'} & Types.ScalarUnionConfigType => {
+  overrides?: Partial<ScalarUnionConfigType>,
+): {__typename: 'ScalarUnionConfigType'} & ScalarUnionConfigType => {
   return {
     __typename: 'ScalarUnionConfigType',
     description:
@@ -9275,8 +9191,8 @@ export const buildScalarUnionConfigType = (
 };
 
 export const buildSchedule = (
-  overrides?: Partial<Types.Schedule>,
-): {__typename: 'Schedule'} & Types.Schedule => {
+  overrides?: Partial<Schedule>,
+): {__typename: 'Schedule'} & Schedule => {
   return {
     __typename: 'Schedule',
     cronSchedule:
@@ -9325,8 +9241,8 @@ export const buildSchedule = (
 };
 
 export const buildScheduleData = (
-  overrides?: Partial<Types.ScheduleData>,
-): {__typename: 'ScheduleData'} & Types.ScheduleData => {
+  overrides?: Partial<ScheduleData>,
+): {__typename: 'ScheduleData'} & ScheduleData => {
   return {
     __typename: 'ScheduleData',
     cronSchedule:
@@ -9337,8 +9253,8 @@ export const buildScheduleData = (
 };
 
 export const buildScheduleNotFoundError = (
-  overrides?: Partial<Types.ScheduleNotFoundError>,
-): {__typename: 'ScheduleNotFoundError'} & Types.ScheduleNotFoundError => {
+  overrides?: Partial<ScheduleNotFoundError>,
+): {__typename: 'ScheduleNotFoundError'} & ScheduleNotFoundError => {
   return {
     __typename: 'ScheduleNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'velit',
@@ -9347,9 +9263,7 @@ export const buildScheduleNotFoundError = (
   };
 };
 
-export const buildScheduleSelector = (
-  overrides?: Partial<Types.ScheduleSelector>,
-): Types.ScheduleSelector => {
+export const buildScheduleSelector = (overrides?: Partial<ScheduleSelector>): ScheduleSelector => {
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -9363,8 +9277,8 @@ export const buildScheduleSelector = (
 };
 
 export const buildScheduleStateResult = (
-  overrides?: Partial<Types.ScheduleStateResult>,
-): {__typename: 'ScheduleStateResult'} & Types.ScheduleStateResult => {
+  overrides?: Partial<ScheduleStateResult>,
+): {__typename: 'ScheduleStateResult'} & ScheduleStateResult => {
   return {
     __typename: 'ScheduleStateResult',
     scheduleState:
@@ -9375,14 +9289,14 @@ export const buildScheduleStateResult = (
 };
 
 export const buildScheduleTick = (
-  overrides?: Partial<Types.ScheduleTick>,
-): {__typename: 'ScheduleTick'} & Types.ScheduleTick => {
+  overrides?: Partial<ScheduleTick>,
+): {__typename: 'ScheduleTick'} & ScheduleTick => {
   return {
     __typename: 'ScheduleTick',
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : Types.InstigationTickStatus.Failure,
+        : InstigationTickStatus.Failure,
     tickId: overrides && overrides.hasOwnProperty('tickId') ? overrides.tickId! : 'fugit',
     tickSpecificData:
       overrides && overrides.hasOwnProperty('tickSpecificData')
@@ -9393,8 +9307,8 @@ export const buildScheduleTick = (
 };
 
 export const buildScheduleTickFailureData = (
-  overrides?: Partial<Types.ScheduleTickFailureData>,
-): {__typename: 'ScheduleTickFailureData'} & Types.ScheduleTickFailureData => {
+  overrides?: Partial<ScheduleTickFailureData>,
+): {__typename: 'ScheduleTickFailureData'} & ScheduleTickFailureData => {
   return {
     __typename: 'ScheduleTickFailureData',
     error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
@@ -9402,8 +9316,8 @@ export const buildScheduleTickFailureData = (
 };
 
 export const buildScheduleTickSuccessData = (
-  overrides?: Partial<Types.ScheduleTickSuccessData>,
-): {__typename: 'ScheduleTickSuccessData'} & Types.ScheduleTickSuccessData => {
+  overrides?: Partial<ScheduleTickSuccessData>,
+): {__typename: 'ScheduleTickSuccessData'} & ScheduleTickSuccessData => {
   return {
     __typename: 'ScheduleTickSuccessData',
     run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
@@ -9411,8 +9325,8 @@ export const buildScheduleTickSuccessData = (
 };
 
 export const buildScheduler = (
-  overrides?: Partial<Types.Scheduler>,
-): {__typename: 'Scheduler'} & Types.Scheduler => {
+  overrides?: Partial<Scheduler>,
+): {__typename: 'Scheduler'} & Scheduler => {
   return {
     __typename: 'Scheduler',
     schedulerClass:
@@ -9421,8 +9335,8 @@ export const buildScheduler = (
 };
 
 export const buildSchedulerNotDefinedError = (
-  overrides?: Partial<Types.SchedulerNotDefinedError>,
-): {__typename: 'SchedulerNotDefinedError'} & Types.SchedulerNotDefinedError => {
+  overrides?: Partial<SchedulerNotDefinedError>,
+): {__typename: 'SchedulerNotDefinedError'} & SchedulerNotDefinedError => {
   return {
     __typename: 'SchedulerNotDefinedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
@@ -9430,8 +9344,8 @@ export const buildSchedulerNotDefinedError = (
 };
 
 export const buildSchedules = (
-  overrides?: Partial<Types.Schedules>,
-): {__typename: 'Schedules'} & Types.Schedules => {
+  overrides?: Partial<Schedules>,
+): {__typename: 'Schedules'} & Schedules => {
   return {
     __typename: 'Schedules',
     results:
@@ -9442,8 +9356,8 @@ export const buildSchedules = (
 };
 
 export const buildSelectorTypeConfigError = (
-  overrides?: Partial<Types.SelectorTypeConfigError>,
-): {__typename: 'SelectorTypeConfigError'} & Types.SelectorTypeConfigError => {
+  overrides?: Partial<SelectorTypeConfigError>,
+): {__typename: 'SelectorTypeConfigError'} & SelectorTypeConfigError => {
   return {
     __typename: 'SelectorTypeConfigError',
     incomingFields:
@@ -9456,15 +9370,13 @@ export const buildSelectorTypeConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : Types.EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FieldsNotDefined,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
 };
 
-export const buildSensor = (
-  overrides?: Partial<Types.Sensor>,
-): {__typename: 'Sensor'} & Types.Sensor => {
+export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'} & Sensor => {
   return {
     __typename: 'Sensor',
     description:
@@ -9495,7 +9407,7 @@ export const buildSensor = (
     sensorType:
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
-        : Types.SensorType.Asset,
+        : SensorType.Asset,
     targets:
       overrides && overrides.hasOwnProperty('targets')
         ? overrides.targets!
@@ -9504,8 +9416,8 @@ export const buildSensor = (
 };
 
 export const buildSensorData = (
-  overrides?: Partial<Types.SensorData>,
-): {__typename: 'SensorData'} & Types.SensorData => {
+  overrides?: Partial<SensorData>,
+): {__typename: 'SensorData'} & SensorData => {
   return {
     __typename: 'SensorData',
     lastCursor:
@@ -9520,8 +9432,8 @@ export const buildSensorData = (
 };
 
 export const buildSensorMetadata = (
-  overrides?: Partial<Types.SensorMetadata>,
-): {__typename: 'SensorMetadata'} & Types.SensorMetadata => {
+  overrides?: Partial<SensorMetadata>,
+): {__typename: 'SensorMetadata'} & SensorMetadata => {
   return {
     __typename: 'SensorMetadata',
     assetKeys:
@@ -9532,8 +9444,8 @@ export const buildSensorMetadata = (
 };
 
 export const buildSensorNotFoundError = (
-  overrides?: Partial<Types.SensorNotFoundError>,
-): {__typename: 'SensorNotFoundError'} & Types.SensorNotFoundError => {
+  overrides?: Partial<SensorNotFoundError>,
+): {__typename: 'SensorNotFoundError'} & SensorNotFoundError => {
   return {
     __typename: 'SensorNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'rerum',
@@ -9542,9 +9454,7 @@ export const buildSensorNotFoundError = (
   };
 };
 
-export const buildSensorSelector = (
-  overrides?: Partial<Types.SensorSelector>,
-): Types.SensorSelector => {
+export const buildSensorSelector = (overrides?: Partial<SensorSelector>): SensorSelector => {
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -9559,9 +9469,7 @@ export const buildSensorSelector = (
   };
 };
 
-export const buildSensors = (
-  overrides?: Partial<Types.Sensors>,
-): {__typename: 'Sensors'} & Types.Sensors => {
+export const buildSensors = (overrides?: Partial<Sensors>): {__typename: 'Sensors'} & Sensors => {
   return {
     __typename: 'Sensors',
     results:
@@ -9572,8 +9480,8 @@ export const buildSensors = (
 };
 
 export const buildSetSensorCursorMutation = (
-  overrides?: Partial<Types.SetSensorCursorMutation>,
-): {__typename: 'SetSensorCursorMutation'} & Types.SetSensorCursorMutation => {
+  overrides?: Partial<SetSensorCursorMutation>,
+): {__typename: 'SetSensorCursorMutation'} & SetSensorCursorMutation => {
   return {
     __typename: 'SetSensorCursorMutation',
     Output:
@@ -9582,10 +9490,8 @@ export const buildSetSensorCursorMutation = (
 };
 
 export const buildShutdownRepositoryLocationMutation = (
-  overrides?: Partial<Types.ShutdownRepositoryLocationMutation>,
-): {
-  __typename: 'ShutdownRepositoryLocationMutation';
-} & Types.ShutdownRepositoryLocationMutation => {
+  overrides?: Partial<ShutdownRepositoryLocationMutation>,
+): {__typename: 'ShutdownRepositoryLocationMutation'} & ShutdownRepositoryLocationMutation => {
   return {
     __typename: 'ShutdownRepositoryLocationMutation',
     Output:
@@ -9594,8 +9500,8 @@ export const buildShutdownRepositoryLocationMutation = (
 };
 
 export const buildShutdownRepositoryLocationSuccess = (
-  overrides?: Partial<Types.ShutdownRepositoryLocationSuccess>,
-): {__typename: 'ShutdownRepositoryLocationSuccess'} & Types.ShutdownRepositoryLocationSuccess => {
+  overrides?: Partial<ShutdownRepositoryLocationSuccess>,
+): {__typename: 'ShutdownRepositoryLocationSuccess'} & ShutdownRepositoryLocationSuccess => {
   return {
     __typename: 'ShutdownRepositoryLocationSuccess',
     repositoryLocationName:
@@ -9605,9 +9511,7 @@ export const buildShutdownRepositoryLocationSuccess = (
   };
 };
 
-export const buildSolid = (
-  overrides?: Partial<Types.Solid>,
-): {__typename: 'Solid'} & Types.Solid => {
+export const buildSolid = (overrides?: Partial<Solid>): {__typename: 'Solid'} & Solid => {
   return {
     __typename: 'Solid',
     definition:
@@ -9629,8 +9533,8 @@ export const buildSolid = (
 };
 
 export const buildSolidContainer = (
-  overrides?: Partial<Types.SolidContainer>,
-): {__typename: 'SolidContainer'} & Types.SolidContainer => {
+  overrides?: Partial<SolidContainer>,
+): {__typename: 'SolidContainer'} & SolidContainer => {
   return {
     __typename: 'SolidContainer',
     description:
@@ -9660,8 +9564,8 @@ export const buildSolidContainer = (
 };
 
 export const buildSolidDefinition = (
-  overrides?: Partial<Types.SolidDefinition>,
-): {__typename: 'SolidDefinition'} & Types.SolidDefinition => {
+  overrides?: Partial<SolidDefinition>,
+): {__typename: 'SolidDefinition'} & SolidDefinition => {
   return {
     __typename: 'SolidDefinition',
     assetNodes:
@@ -9699,8 +9603,8 @@ export const buildSolidDefinition = (
 };
 
 export const buildSolidHandle = (
-  overrides?: Partial<Types.SolidHandle>,
-): {__typename: 'SolidHandle'} & Types.SolidHandle => {
+  overrides?: Partial<SolidHandle>,
+): {__typename: 'SolidHandle'} & SolidHandle => {
   return {
     __typename: 'SolidHandle',
     handleID: overrides && overrides.hasOwnProperty('handleID') ? overrides.handleID! : 'iusto',
@@ -9715,8 +9619,8 @@ export const buildSolidHandle = (
 };
 
 export const buildSolidStepStatsConnection = (
-  overrides?: Partial<Types.SolidStepStatsConnection>,
-): {__typename: 'SolidStepStatsConnection'} & Types.SolidStepStatsConnection => {
+  overrides?: Partial<SolidStepStatsConnection>,
+): {__typename: 'SolidStepStatsConnection'} & SolidStepStatsConnection => {
   return {
     __typename: 'SolidStepStatsConnection',
     nodes:
@@ -9727,8 +9631,8 @@ export const buildSolidStepStatsConnection = (
 };
 
 export const buildSolidStepStatusUnavailableError = (
-  overrides?: Partial<Types.SolidStepStatusUnavailableError>,
-): {__typename: 'SolidStepStatusUnavailableError'} & Types.SolidStepStatusUnavailableError => {
+  overrides?: Partial<SolidStepStatusUnavailableError>,
+): {__typename: 'SolidStepStatusUnavailableError'} & SolidStepStatusUnavailableError => {
   return {
     __typename: 'SolidStepStatusUnavailableError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'accusantium',
@@ -9736,8 +9640,8 @@ export const buildSolidStepStatusUnavailableError = (
 };
 
 export const buildStaleCause = (
-  overrides?: Partial<Types.StaleCause>,
-): {__typename: 'StaleCause'} & Types.StaleCause => {
+  overrides?: Partial<StaleCause>,
+): {__typename: 'StaleCause'} & StaleCause => {
   return {
     __typename: 'StaleCause',
     dependency:
@@ -9748,8 +9652,8 @@ export const buildStaleCause = (
 };
 
 export const buildStartScheduleMutation = (
-  overrides?: Partial<Types.StartScheduleMutation>,
-): {__typename: 'StartScheduleMutation'} & Types.StartScheduleMutation => {
+  overrides?: Partial<StartScheduleMutation>,
+): {__typename: 'StartScheduleMutation'} & StartScheduleMutation => {
   return {
     __typename: 'StartScheduleMutation',
     Output:
@@ -9758,8 +9662,8 @@ export const buildStartScheduleMutation = (
 };
 
 export const buildStepEvent = (
-  overrides?: Partial<Types.StepEvent>,
-): {__typename: 'StepEvent'} & Types.StepEvent => {
+  overrides?: Partial<StepEvent>,
+): {__typename: 'StepEvent'} & StepEvent => {
   return {
     __typename: 'StepEvent',
     solidHandleID:
@@ -9768,9 +9672,7 @@ export const buildStepEvent = (
   };
 };
 
-export const buildStepExecution = (
-  overrides?: Partial<Types.StepExecution>,
-): Types.StepExecution => {
+export const buildStepExecution = (overrides?: Partial<StepExecution>): StepExecution => {
   return {
     marshalledInputs:
       overrides && overrides.hasOwnProperty('marshalledInputs')
@@ -9785,20 +9687,19 @@ export const buildStepExecution = (
 };
 
 export const buildStepExpectationResultEvent = (
-  overrides?: Partial<Types.StepExpectationResultEvent>,
-): {__typename: 'StepExpectationResultEvent'} & Types.StepExpectationResultEvent => {
+  overrides?: Partial<StepExpectationResultEvent>,
+): {__typename: 'StepExpectationResultEvent'} & StepExpectationResultEvent => {
   return {
     __typename: 'StepExpectationResultEvent',
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     expectationResult:
       overrides && overrides.hasOwnProperty('expectationResult')
         ? overrides.expectationResult!
         : buildExpectationResult(),
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ullam',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nisi',
     solidHandleID:
@@ -9810,9 +9711,7 @@ export const buildStepExpectationResultEvent = (
   };
 };
 
-export const buildStepOutputHandle = (
-  overrides?: Partial<Types.StepOutputHandle>,
-): Types.StepOutputHandle => {
+export const buildStepOutputHandle = (overrides?: Partial<StepOutputHandle>): StepOutputHandle => {
   return {
     outputName: overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'non',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'et',
@@ -9820,8 +9719,8 @@ export const buildStepOutputHandle = (
 };
 
 export const buildStepWorkerStartedEvent = (
-  overrides?: Partial<Types.StepWorkerStartedEvent>,
-): {__typename: 'StepWorkerStartedEvent'} & Types.StepWorkerStartedEvent => {
+  overrides?: Partial<StepWorkerStartedEvent>,
+): {__typename: 'StepWorkerStartedEvent'} & StepWorkerStartedEvent => {
   return {
     __typename: 'StepWorkerStartedEvent',
     description:
@@ -9829,10 +9728,9 @@ export const buildStepWorkerStartedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'voluptatem',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'quod',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'quis',
@@ -9850,8 +9748,8 @@ export const buildStepWorkerStartedEvent = (
 };
 
 export const buildStepWorkerStartingEvent = (
-  overrides?: Partial<Types.StepWorkerStartingEvent>,
-): {__typename: 'StepWorkerStartingEvent'} & Types.StepWorkerStartingEvent => {
+  overrides?: Partial<StepWorkerStartingEvent>,
+): {__typename: 'StepWorkerStartingEvent'} & StepWorkerStartingEvent => {
   return {
     __typename: 'StepWorkerStartingEvent',
     description:
@@ -9859,10 +9757,9 @@ export const buildStepWorkerStartingEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : Types.DagsterEventType.AlertFailure,
+        : DagsterEventType.AlertFailure,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'cupiditate',
-    level:
-      overrides && overrides.hasOwnProperty('level') ? overrides.level! : Types.LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'qui',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
@@ -9883,8 +9780,8 @@ export const buildStepWorkerStartingEvent = (
 };
 
 export const buildStopRunningScheduleMutation = (
-  overrides?: Partial<Types.StopRunningScheduleMutation>,
-): {__typename: 'StopRunningScheduleMutation'} & Types.StopRunningScheduleMutation => {
+  overrides?: Partial<StopRunningScheduleMutation>,
+): {__typename: 'StopRunningScheduleMutation'} & StopRunningScheduleMutation => {
   return {
     __typename: 'StopRunningScheduleMutation',
     Output:
@@ -9893,8 +9790,8 @@ export const buildStopRunningScheduleMutation = (
 };
 
 export const buildStopSensorMutation = (
-  overrides?: Partial<Types.StopSensorMutation>,
-): {__typename: 'StopSensorMutation'} & Types.StopSensorMutation => {
+  overrides?: Partial<StopSensorMutation>,
+): {__typename: 'StopSensorMutation'} & StopSensorMutation => {
   return {
     __typename: 'StopSensorMutation',
     Output:
@@ -9903,8 +9800,8 @@ export const buildStopSensorMutation = (
 };
 
 export const buildStopSensorMutationResult = (
-  overrides?: Partial<Types.StopSensorMutationResult>,
-): {__typename: 'StopSensorMutationResult'} & Types.StopSensorMutationResult => {
+  overrides?: Partial<StopSensorMutationResult>,
+): {__typename: 'StopSensorMutationResult'} & StopSensorMutationResult => {
   return {
     __typename: 'StopSensorMutationResult',
     instigationState:
@@ -9914,9 +9811,7 @@ export const buildStopSensorMutationResult = (
   };
 };
 
-export const buildTable = (
-  overrides?: Partial<Types.Table>,
-): {__typename: 'Table'} & Types.Table => {
+export const buildTable = (overrides?: Partial<Table>): {__typename: 'Table'} & Table => {
   return {
     __typename: 'Table',
     records:
@@ -9929,8 +9824,8 @@ export const buildTable = (
 };
 
 export const buildTableColumn = (
-  overrides?: Partial<Types.TableColumn>,
-): {__typename: 'TableColumn'} & Types.TableColumn => {
+  overrides?: Partial<TableColumn>,
+): {__typename: 'TableColumn'} & TableColumn => {
   return {
     __typename: 'TableColumn',
     constraints:
@@ -9945,8 +9840,8 @@ export const buildTableColumn = (
 };
 
 export const buildTableColumnConstraints = (
-  overrides?: Partial<Types.TableColumnConstraints>,
-): {__typename: 'TableColumnConstraints'} & Types.TableColumnConstraints => {
+  overrides?: Partial<TableColumnConstraints>,
+): {__typename: 'TableColumnConstraints'} & TableColumnConstraints => {
   return {
     __typename: 'TableColumnConstraints',
     nullable: overrides && overrides.hasOwnProperty('nullable') ? overrides.nullable! : true,
@@ -9959,8 +9854,8 @@ export const buildTableColumnConstraints = (
 };
 
 export const buildTableConstraints = (
-  overrides?: Partial<Types.TableConstraints>,
-): {__typename: 'TableConstraints'} & Types.TableConstraints => {
+  overrides?: Partial<TableConstraints>,
+): {__typename: 'TableConstraints'} & TableConstraints => {
   return {
     __typename: 'TableConstraints',
     other:
@@ -9971,8 +9866,8 @@ export const buildTableConstraints = (
 };
 
 export const buildTableMetadataEntry = (
-  overrides?: Partial<Types.TableMetadataEntry>,
-): {__typename: 'TableMetadataEntry'} & Types.TableMetadataEntry => {
+  overrides?: Partial<TableMetadataEntry>,
+): {__typename: 'TableMetadataEntry'} & TableMetadataEntry => {
   return {
     __typename: 'TableMetadataEntry',
     description:
@@ -9983,8 +9878,8 @@ export const buildTableMetadataEntry = (
 };
 
 export const buildTableSchema = (
-  overrides?: Partial<Types.TableSchema>,
-): {__typename: 'TableSchema'} & Types.TableSchema => {
+  overrides?: Partial<TableSchema>,
+): {__typename: 'TableSchema'} & TableSchema => {
   return {
     __typename: 'TableSchema',
     columns:
@@ -9999,8 +9894,8 @@ export const buildTableSchema = (
 };
 
 export const buildTableSchemaMetadataEntry = (
-  overrides?: Partial<Types.TableSchemaMetadataEntry>,
-): {__typename: 'TableSchemaMetadataEntry'} & Types.TableSchemaMetadataEntry => {
+  overrides?: Partial<TableSchemaMetadataEntry>,
+): {__typename: 'TableSchemaMetadataEntry'} & TableSchemaMetadataEntry => {
   return {
     __typename: 'TableSchemaMetadataEntry',
     description:
@@ -10011,9 +9906,7 @@ export const buildTableSchemaMetadataEntry = (
   };
 };
 
-export const buildTarget = (
-  overrides?: Partial<Types.Target>,
-): {__typename: 'Target'} & Types.Target => {
+export const buildTarget = (overrides?: Partial<Target>): {__typename: 'Target'} & Target => {
   return {
     __typename: 'Target',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'porro',
@@ -10027,8 +9920,8 @@ export const buildTarget = (
 };
 
 export const buildTerminatePipelineExecutionFailure = (
-  overrides?: Partial<Types.TerminatePipelineExecutionFailure>,
-): {__typename: 'TerminatePipelineExecutionFailure'} & Types.TerminatePipelineExecutionFailure => {
+  overrides?: Partial<TerminatePipelineExecutionFailure>,
+): {__typename: 'TerminatePipelineExecutionFailure'} & TerminatePipelineExecutionFailure => {
   return {
     __typename: 'TerminatePipelineExecutionFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vero',
@@ -10037,8 +9930,8 @@ export const buildTerminatePipelineExecutionFailure = (
 };
 
 export const buildTerminatePipelineExecutionSuccess = (
-  overrides?: Partial<Types.TerminatePipelineExecutionSuccess>,
-): {__typename: 'TerminatePipelineExecutionSuccess'} & Types.TerminatePipelineExecutionSuccess => {
+  overrides?: Partial<TerminatePipelineExecutionSuccess>,
+): {__typename: 'TerminatePipelineExecutionSuccess'} & TerminatePipelineExecutionSuccess => {
   return {
     __typename: 'TerminatePipelineExecutionSuccess',
     run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
@@ -10046,8 +9939,8 @@ export const buildTerminatePipelineExecutionSuccess = (
 };
 
 export const buildTerminateRunFailure = (
-  overrides?: Partial<Types.TerminateRunFailure>,
-): {__typename: 'TerminateRunFailure'} & Types.TerminateRunFailure => {
+  overrides?: Partial<TerminateRunFailure>,
+): {__typename: 'TerminateRunFailure'} & TerminateRunFailure => {
   return {
     __typename: 'TerminateRunFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sit',
@@ -10056,8 +9949,8 @@ export const buildTerminateRunFailure = (
 };
 
 export const buildTerminateRunMutation = (
-  overrides?: Partial<Types.TerminateRunMutation>,
-): {__typename: 'TerminateRunMutation'} & Types.TerminateRunMutation => {
+  overrides?: Partial<TerminateRunMutation>,
+): {__typename: 'TerminateRunMutation'} & TerminateRunMutation => {
   return {
     __typename: 'TerminateRunMutation',
     Output:
@@ -10066,8 +9959,8 @@ export const buildTerminateRunMutation = (
 };
 
 export const buildTerminateRunSuccess = (
-  overrides?: Partial<Types.TerminateRunSuccess>,
-): {__typename: 'TerminateRunSuccess'} & Types.TerminateRunSuccess => {
+  overrides?: Partial<TerminateRunSuccess>,
+): {__typename: 'TerminateRunSuccess'} & TerminateRunSuccess => {
   return {
     __typename: 'TerminateRunSuccess',
     run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
@@ -10075,8 +9968,8 @@ export const buildTerminateRunSuccess = (
 };
 
 export const buildTestFields = (
-  overrides?: Partial<Types.TestFields>,
-): {__typename: 'TestFields'} & Types.TestFields => {
+  overrides?: Partial<TestFields>,
+): {__typename: 'TestFields'} & TestFields => {
   return {
     __typename: 'TestFields',
     alwaysException:
@@ -10087,8 +9980,8 @@ export const buildTestFields = (
 };
 
 export const buildTextMetadataEntry = (
-  overrides?: Partial<Types.TextMetadataEntry>,
-): {__typename: 'TextMetadataEntry'} & Types.TextMetadataEntry => {
+  overrides?: Partial<TextMetadataEntry>,
+): {__typename: 'TextMetadataEntry'} & TextMetadataEntry => {
   return {
     __typename: 'TextMetadataEntry',
     description:
@@ -10099,8 +9992,8 @@ export const buildTextMetadataEntry = (
 };
 
 export const buildTickEvaluation = (
-  overrides?: Partial<Types.TickEvaluation>,
-): {__typename: 'TickEvaluation'} & Types.TickEvaluation => {
+  overrides?: Partial<TickEvaluation>,
+): {__typename: 'TickEvaluation'} & TickEvaluation => {
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
@@ -10115,8 +10008,8 @@ export const buildTickEvaluation = (
 };
 
 export const buildTimePartitionRange = (
-  overrides?: Partial<Types.TimePartitionRange>,
-): {__typename: 'TimePartitionRange'} & Types.TimePartitionRange => {
+  overrides?: Partial<TimePartitionRange>,
+): {__typename: 'TimePartitionRange'} & TimePartitionRange => {
   return {
     __typename: 'TimePartitionRange',
     endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'dolorum',
@@ -10126,13 +10019,13 @@ export const buildTimePartitionRange = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : Types.PartitionRangeStatus.Failed,
+        : PartitionRangeStatus.Failed,
   };
 };
 
 export const buildTimePartitions = (
-  overrides?: Partial<Types.TimePartitions>,
-): {__typename: 'TimePartitions'} & Types.TimePartitions => {
+  overrides?: Partial<TimePartitions>,
+): {__typename: 'TimePartitions'} & TimePartitions => {
   return {
     __typename: 'TimePartitions',
     ranges:
@@ -10143,8 +10036,8 @@ export const buildTimePartitions = (
 };
 
 export const buildTimePartitionsDefinitionMetadata = (
-  overrides?: Partial<Types.TimePartitionsDefinitionMetadata>,
-): {__typename: 'TimePartitionsDefinitionMetadata'} & Types.TimePartitionsDefinitionMetadata => {
+  overrides?: Partial<TimePartitionsDefinitionMetadata>,
+): {__typename: 'TimePartitionsDefinitionMetadata'} & TimePartitionsDefinitionMetadata => {
   return {
     __typename: 'TimePartitionsDefinitionMetadata',
     endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'nobis',
@@ -10155,8 +10048,8 @@ export const buildTimePartitionsDefinitionMetadata = (
 };
 
 export const buildTypeCheck = (
-  overrides?: Partial<Types.TypeCheck>,
-): {__typename: 'TypeCheck'} & Types.TypeCheck => {
+  overrides?: Partial<TypeCheck>,
+): {__typename: 'TypeCheck'} & TypeCheck => {
   return {
     __typename: 'TypeCheck',
     description:
@@ -10171,8 +10064,8 @@ export const buildTypeCheck = (
 };
 
 export const buildUnauthorizedError = (
-  overrides?: Partial<Types.UnauthorizedError>,
-): {__typename: 'UnauthorizedError'} & Types.UnauthorizedError => {
+  overrides?: Partial<UnauthorizedError>,
+): {__typename: 'UnauthorizedError'} & UnauthorizedError => {
   return {
     __typename: 'UnauthorizedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'porro',
@@ -10180,8 +10073,8 @@ export const buildUnauthorizedError = (
 };
 
 export const buildUnknownPipeline = (
-  overrides?: Partial<Types.UnknownPipeline>,
-): {__typename: 'UnknownPipeline'} & Types.UnknownPipeline => {
+  overrides?: Partial<UnknownPipeline>,
+): {__typename: 'UnknownPipeline'} & UnknownPipeline => {
   return {
     __typename: 'UnknownPipeline',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
@@ -10193,8 +10086,8 @@ export const buildUnknownPipeline = (
 };
 
 export const buildUrlMetadataEntry = (
-  overrides?: Partial<Types.UrlMetadataEntry>,
-): {__typename: 'UrlMetadataEntry'} & Types.UrlMetadataEntry => {
+  overrides?: Partial<UrlMetadataEntry>,
+): {__typename: 'UrlMetadataEntry'} & UrlMetadataEntry => {
   return {
     __typename: 'UrlMetadataEntry',
     description:
@@ -10205,8 +10098,8 @@ export const buildUrlMetadataEntry = (
 };
 
 export const buildUsedSolid = (
-  overrides?: Partial<Types.UsedSolid>,
-): {__typename: 'UsedSolid'} & Types.UsedSolid => {
+  overrides?: Partial<UsedSolid>,
+): {__typename: 'UsedSolid'} & UsedSolid => {
   return {
     __typename: 'UsedSolid',
     definition:
@@ -10221,8 +10114,8 @@ export const buildUsedSolid = (
 };
 
 export const buildWorkspace = (
-  overrides?: Partial<Types.Workspace>,
-): {__typename: 'Workspace'} & Types.Workspace => {
+  overrides?: Partial<Workspace>,
+): {__typename: 'Workspace'} & Workspace => {
   return {
     __typename: 'Workspace',
     locationEntries:
@@ -10237,8 +10130,8 @@ export const buildWorkspace = (
 };
 
 export const buildWorkspaceLocationEntry = (
-  overrides?: Partial<Types.WorkspaceLocationEntry>,
-): {__typename: 'WorkspaceLocationEntry'} & Types.WorkspaceLocationEntry => {
+  overrides?: Partial<WorkspaceLocationEntry>,
+): {__typename: 'WorkspaceLocationEntry'} & WorkspaceLocationEntry => {
   return {
     __typename: 'WorkspaceLocationEntry',
     displayMetadata:
@@ -10252,7 +10145,7 @@ export const buildWorkspaceLocationEntry = (
     loadStatus:
       overrides && overrides.hasOwnProperty('loadStatus')
         ? overrides.loadStatus!
-        : Types.RepositoryLocationLoadStatus.Loaded,
+        : RepositoryLocationLoadStatus.Loaded,
     locationOrLoadError:
       overrides && overrides.hasOwnProperty('locationOrLoadError')
         ? overrides.locationOrLoadError!
@@ -10270,8 +10163,8 @@ export const buildWorkspaceLocationEntry = (
 };
 
 export const buildWorkspaceLocationStatusEntries = (
-  overrides?: Partial<Types.WorkspaceLocationStatusEntries>,
-): {__typename: 'WorkspaceLocationStatusEntries'} & Types.WorkspaceLocationStatusEntries => {
+  overrides?: Partial<WorkspaceLocationStatusEntries>,
+): {__typename: 'WorkspaceLocationStatusEntries'} & WorkspaceLocationStatusEntries => {
   return {
     __typename: 'WorkspaceLocationStatusEntries',
     entries:
@@ -10286,8 +10179,8 @@ export const buildWorkspaceLocationStatusEntries = (
 };
 
 export const buildWorkspaceLocationStatusEntry = (
-  overrides?: Partial<Types.WorkspaceLocationStatusEntry>,
-): {__typename: 'WorkspaceLocationStatusEntry'} & Types.WorkspaceLocationStatusEntry => {
+  overrides?: Partial<WorkspaceLocationStatusEntry>,
+): {__typename: 'WorkspaceLocationStatusEntry'} & WorkspaceLocationStatusEntry => {
   return {
     __typename: 'WorkspaceLocationStatusEntry',
     id:
@@ -10297,7 +10190,7 @@ export const buildWorkspaceLocationStatusEntry = (
     loadStatus:
       overrides && overrides.hasOwnProperty('loadStatus')
         ? overrides.loadStatus!
-        : Types.RepositoryLocationLoadStatus.Loaded,
+        : RepositoryLocationLoadStatus.Loaded,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'corporis',
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
@@ -10305,8 +10198,8 @@ export const buildWorkspaceLocationStatusEntry = (
 };
 
 export const buildWrappingConfigType = (
-  overrides?: Partial<Types.WrappingConfigType>,
-): {__typename: 'WrappingConfigType'} & Types.WrappingConfigType => {
+  overrides?: Partial<WrappingConfigType>,
+): {__typename: 'WrappingConfigType'} & WrappingConfigType => {
   return {
     __typename: 'WrappingConfigType',
     ofType: overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildConfigType(),
@@ -10314,8 +10207,8 @@ export const buildWrappingConfigType = (
 };
 
 export const buildWrappingDagsterType = (
-  overrides?: Partial<Types.WrappingDagsterType>,
-): {__typename: 'WrappingDagsterType'} & Types.WrappingDagsterType => {
+  overrides?: Partial<WrappingDagsterType>,
+): {__typename: 'WrappingDagsterType'} & WrappingDagsterType => {
   return {
     __typename: 'WrappingDagsterType',
     ofType:
