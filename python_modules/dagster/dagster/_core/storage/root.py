@@ -1,4 +1,5 @@
 import os
+from tempfile import TemporaryDirectory
 from typing import Optional
 
 from typing_extensions import TypedDict
@@ -49,3 +50,25 @@ class LocalArtifactStorage(ConfigurableClass):
     @classmethod
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
+
+    def dispose(self):
+        pass
+
+
+class TemporaryLocalArtifactStorage(LocalArtifactStorage):
+    """Used by ephemeral DagsterInstances, defers directory creation til
+    access since many uses of ephemeral instance do not require artifact directory.
+    """
+
+    def __init__(self):
+        self._temp_dir = None
+
+    @property
+    def base_dir(self):
+        if self._temp_dir is None:
+            self._temp_dir = TemporaryDirectory()
+        return self._temp_dir.name
+
+    def dispose(self):
+        if self._temp_dir:
+            self._temp_dir.cleanup()
