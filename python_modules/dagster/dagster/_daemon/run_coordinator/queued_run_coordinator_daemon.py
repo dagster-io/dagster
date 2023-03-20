@@ -10,7 +10,7 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.errors import DagsterRepositoryLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
@@ -343,7 +343,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return False
             elif run_queue_config.max_user_code_failure_retries and isinstance(
-                e, (DagsterUserCodeUnreachableError, DagsterRepositoryLocationLoadError)
+                e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 if location_name:
                     with self._location_timeouts_lock:

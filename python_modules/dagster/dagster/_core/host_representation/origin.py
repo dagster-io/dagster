@@ -271,7 +271,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(
-    storage_name="GrpcServerCodeLocationOrigin", skip_when_empty_fields={"use_ssl"}
+    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
 )
 class GrpcServerCodeLocationOrigin(
     NamedTuple(

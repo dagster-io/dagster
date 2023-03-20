@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Mapping, Sequence
 
 import dagster._check as check
-from dagster._core.errors import DagsterRepositoryLocationLoadError
+from dagster._core.errors import DagsterCodeLocationLoadError
 from dagster._core.host_representation.code_location import (
     CodeLocation,
     GrpcServerCodeLocation,
@@ -63,7 +63,7 @@ class BaseDaemonWorkspace(IWorkspace):
             self._location_entries = self._load_workspace()
 
         if location_name not in self._location_entries:
-            raise DagsterRepositoryLocationLoadError(
+            raise DagsterCodeLocationLoadError(
                 f"Location {location_name} does not exist in workspace",
                 load_error_infos=[],
             )
@@ -71,13 +71,13 @@ class BaseDaemonWorkspace(IWorkspace):
         location_entry = self._location_entries[location_name]
 
         if location_entry.load_error:
-            raise DagsterRepositoryLocationLoadError(
+            raise DagsterCodeLocationLoadError(
                 f"Failure loading {location_name}: {location_entry.load_error}",
                 load_error_infos=[location_entry.load_error],
             )
 
         if not location_entry.code_location:
-            raise DagsterRepositoryLocationLoadError(
+            raise DagsterCodeLocationLoadError(
                 f"Location {location_name} is still loading",
                 load_error_infos=[],
             )
