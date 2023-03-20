@@ -1631,6 +1631,29 @@ fail_partition_materialization_job = build_assets_job(
 )
 
 
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    required_resource_keys={"hanging_asset_resource"},
+)
+def hanging_partition_asset(context):
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+hanging_partition_asset_job = build_assets_job(
+    "hanging_partition_asset_job",
+    assets=[hanging_partition_asset],
+    executor_def=in_process_executor,
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
+)
+
+
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
@@ -1931,6 +1954,7 @@ def define_pipelines():
         time_partitioned_assets_job,
         partition_materialization_job,
         fail_partition_materialization_job,
+        hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
         asset_group_job,

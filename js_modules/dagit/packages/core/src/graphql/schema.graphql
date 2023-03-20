@@ -716,6 +716,7 @@ type DefaultPartitions {
   materializedPartitions: [String!]!
   failedPartitions: [String!]!
   unmaterializedPartitions: [String!]!
+  materializingPartitions: [String!]!
 }
 
 type MultiPartitions {
@@ -755,6 +756,7 @@ type PartitionStats {
   numMaterialized: Int!
   numPartitions: Int!
   numFailed: Int!
+  numMaterializing: Int!
 }
 
 type PartitionDefinition {
