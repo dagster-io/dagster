@@ -3876,8 +3876,8 @@ export const buildAlertFailureEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'odio',
@@ -3897,8 +3897,8 @@ export const buildAlertStartEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'in',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -3920,8 +3920,8 @@ export const buildAlertSuccessEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'labore',
@@ -4110,8 +4110,8 @@ export const buildAssetMaterializationPlannedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'amet',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'nesciunt',
@@ -4282,7 +4282,7 @@ export const buildAssetNode = (
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
-        : StaleStatus.Fresh,
+        : StaleStatus.FRESH,
     type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : buildDagsterType(),
   };
 };
@@ -4558,7 +4558,7 @@ export const buildConfiguredValue = (
     __typename: 'ConfiguredValue',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ipsam',
     type:
-      overrides && overrides.hasOwnProperty('type') ? overrides.type! : ConfiguredValueType.EnvVar,
+      overrides && overrides.hasOwnProperty('type') ? overrides.type! : ConfiguredValueType.ENV_VAR,
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'distinctio',
   };
 };
@@ -5041,7 +5041,7 @@ export const buildDimensionDefinitionType = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.DYNAMIC,
   };
 };
 
@@ -5058,7 +5058,7 @@ export const buildDimensionPartitionKeys = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.DYNAMIC,
   };
 };
 
@@ -5133,9 +5133,9 @@ export const buildEngineEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aut',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'saepe',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'unde',
@@ -5196,7 +5196,7 @@ export const buildEnvVarConsumer = (
     __typename: 'EnvVarConsumer',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
     type:
-      overrides && overrides.hasOwnProperty('type') ? overrides.type! : EnvVarConsumerType.Resource,
+      overrides && overrides.hasOwnProperty('type') ? overrides.type! : EnvVarConsumerType.RESOURCE,
   };
 };
 
@@ -5394,7 +5394,7 @@ export const buildExecutionStep = (
         ? overrides.inputs!
         : [buildExecutionStepInput(), buildExecutionStepInput(), buildExecutionStepInput()],
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
-    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : StepKind.Compute,
+    kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : StepKind.COMPUTE,
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
@@ -5423,16 +5423,16 @@ export const buildExecutionStepFailureEvent = (
     errorSource:
       overrides && overrides.hasOwnProperty('errorSource')
         ? overrides.errorSource!
-        : ErrorSource.FrameworkError,
+        : ErrorSource.FRAMEWORK_ERROR,
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     failureMetadata:
       overrides && overrides.hasOwnProperty('failureMetadata')
         ? overrides.failureMetadata!
         : buildFailureMetadata(),
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eligendi',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'itaque',
     solidHandleID:
@@ -5466,10 +5466,10 @@ export const buildExecutionStepInputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     inputName:
       overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'inventore',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolore',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sit',
     solidHandleID:
@@ -5500,9 +5500,9 @@ export const buildExecutionStepOutputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'quae',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quo',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -5529,8 +5529,8 @@ export const buildExecutionStepRestartEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'corporis',
     solidHandleID:
@@ -5550,8 +5550,8 @@ export const buildExecutionStepSkippedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aliquid',
     solidHandleID:
@@ -5570,8 +5570,8 @@ export const buildExecutionStepStartEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aliquid',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nostrum',
     solidHandleID:
@@ -5592,8 +5592,8 @@ export const buildExecutionStepSuccessEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quam',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'non',
     solidHandleID:
@@ -5613,8 +5613,8 @@ export const buildExecutionStepUpForRetryEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptas',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'maiores',
     secondsToWait:
@@ -5677,7 +5677,7 @@ export const buildFieldNotDefinedConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -5697,7 +5697,7 @@ export const buildFieldsNotDefinedConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -5802,9 +5802,9 @@ export const buildHandledOutputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'ducimus',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     managerKey:
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'ipsa',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'id',
@@ -5830,8 +5830,8 @@ export const buildHookCompletedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aspernatur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'iusto',
     solidHandleID:
@@ -5850,8 +5850,8 @@ export const buildHookErroredEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestias',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'voluptate',
     solidHandleID:
@@ -5869,8 +5869,8 @@ export const buildHookSkippedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'id',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'iste',
     solidHandleID:
@@ -6069,7 +6069,7 @@ export const buildInstigationEvent = (
 ): {__typename: 'InstigationEvent'} & InstigationEvent => {
   return {
     __typename: 'InstigationEvent',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ea',
     timestamp:
       overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'architecto',
@@ -6126,7 +6126,7 @@ export const buildInstigationState = (
     instigationType:
       overrides && overrides.hasOwnProperty('instigationType')
         ? overrides.instigationType!
-        : InstigationType.Schedule,
+        : InstigationType.SCHEDULE,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
@@ -6153,7 +6153,7 @@ export const buildInstigationState = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : InstigationStatus.Running,
+        : InstigationStatus.RUNNING,
     tick: overrides && overrides.hasOwnProperty('tick') ? overrides.tick! : buildInstigationTick(),
     ticks:
       overrides && overrides.hasOwnProperty('ticks')
@@ -6228,7 +6228,7 @@ export const buildInstigationTick = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : InstigationTickStatus.Failure,
+        : InstigationTickStatus.FAILURE,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 6.06,
   };
 };
@@ -6554,10 +6554,10 @@ export const buildLoadedInputEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     inputName: overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'quia',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'facere',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     managerKey:
       overrides && overrides.hasOwnProperty('managerKey') ? overrides.managerKey! : 'quae',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eveniet',
@@ -6589,7 +6589,7 @@ export const buildLocationStateChangeEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : LocationStateChangeEventType.LocationDisconnected,
+        : LocationStateChangeEventType.LOCATION_DISCONNECTED,
     locationName:
       overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'tempora',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'at',
@@ -6617,8 +6617,8 @@ export const buildLogMessageEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'officiis',
     solidHandleID:
@@ -6661,11 +6661,11 @@ export const buildLogsCapturedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     externalUrl:
       overrides && overrides.hasOwnProperty('externalUrl') ? overrides.externalUrl! : 'qui',
     fileKey: overrides && overrides.hasOwnProperty('fileKey') ? overrides.fileKey! : 'et',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : 'fuga',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
@@ -6764,9 +6764,9 @@ export const buildMaterializationEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'possimus',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptatem',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -6844,8 +6844,8 @@ export const buildMessageEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'tenetur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'numquam',
     solidHandleID:
@@ -6893,7 +6893,7 @@ export const buildMissingFieldConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -6916,7 +6916,7 @@ export const buildMissingFieldsConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -7095,8 +7095,8 @@ export const buildObjectStoreOperationEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
     operationResult:
       overrides && overrides.hasOwnProperty('operationResult')
@@ -7127,7 +7127,7 @@ export const buildObjectStoreOperationResult = (
     op:
       overrides && overrides.hasOwnProperty('op')
         ? overrides.op!
-        : ObjectStoreOperationType.CpObject,
+        : ObjectStoreOperationType.CP_OBJECT,
   };
 };
 
@@ -7143,9 +7143,9 @@ export const buildObservationEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'non',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ratione',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
@@ -7250,7 +7250,7 @@ export const buildPartition = (
         ? overrides.solidSelection!
         : ['et', 'soluta', 'quasi'],
     status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     tagsOrError:
       overrides && overrides.hasOwnProperty('tagsOrError')
         ? overrides.tagsOrError!
@@ -7323,7 +7323,7 @@ export const buildPartitionBackfill = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : BulkActionStatus.Canceled,
+        : BulkActionStatus.CANCELED,
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns')
@@ -7367,7 +7367,7 @@ export const buildPartitionDefinition = (
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
-        : PartitionDefinitionType.Dynamic,
+        : PartitionDefinitionType.DYNAMIC,
   };
 };
 
@@ -7503,7 +7503,7 @@ export const buildPartitionStatus = (
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
-        : RunStatus.Canceled,
+        : RunStatus.CANCELED,
   };
 };
 
@@ -7516,7 +7516,7 @@ export const buildPartitionStatusCounts = (
     runStatus:
       overrides && overrides.hasOwnProperty('runStatus')
         ? overrides.runStatus!
-        : RunStatus.Canceled,
+        : RunStatus.CANCELED,
   };
 };
 
@@ -7672,7 +7672,7 @@ export const buildPipelineConfigValidationError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -7819,7 +7819,7 @@ export const buildPipelineRun = (
         : ['occaecati', 'assumenda', 'neque'],
     stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
     status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
@@ -7937,7 +7937,7 @@ export const buildPipelineRunStepStats = (
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.43,
     status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.Failure,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.FAILURE,
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'reiciendis',
   };
 };
@@ -8140,7 +8140,7 @@ export const buildReexecutionParams = (
     strategy:
       overrides && overrides.hasOwnProperty('strategy')
         ? overrides.strategy!
-        : ReexecutionStrategy.AllSteps,
+        : ReexecutionStrategy.ALL_STEPS,
   };
 };
 
@@ -8462,9 +8462,9 @@ export const buildResourceInitFailureEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'mollitia',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'hic',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'dolor',
@@ -8491,9 +8491,9 @@ export const buildResourceInitStartedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'incidunt',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd:
       overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'numquam',
     markerStart:
@@ -8522,9 +8522,9 @@ export const buildResourceInitSuccessEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'fugiat',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'fugiat',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
@@ -8676,7 +8676,7 @@ export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run =>
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
     stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
     status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.Canceled,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     stepKeysToExecute:
       overrides && overrides.hasOwnProperty('stepKeysToExecute')
         ? overrides.stepKeysToExecute!
@@ -8701,8 +8701,8 @@ export const buildRunCanceledEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sed',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'aliquam',
@@ -8722,8 +8722,8 @@ export const buildRunCancelingEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'natus',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'ullam',
@@ -8793,8 +8793,8 @@ export const buildRunDequeuedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'laboriosam',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'quia',
@@ -8814,8 +8814,8 @@ export const buildRunEnqueuedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'saepe',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'alias',
@@ -8848,8 +8848,8 @@ export const buildRunFailureEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'porro',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -8964,8 +8964,8 @@ export const buildRunStartEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'est',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -8989,8 +8989,8 @@ export const buildRunStartingEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'commodi',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'dicta',
@@ -9052,7 +9052,7 @@ export const buildRunStepStats = (
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repudiandae',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.96,
     status:
-      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.Failure,
+      overrides && overrides.hasOwnProperty('status') ? overrides.status! : StepEventStatus.FAILURE,
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'at',
   };
 };
@@ -9065,8 +9065,8 @@ export const buildRunSuccessEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dolor',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'ex',
@@ -9129,7 +9129,7 @@ export const buildRunsFilter = (overrides?: Partial<RunsFilter>): RunsFilter => 
     statuses:
       overrides && overrides.hasOwnProperty('statuses')
         ? overrides.statuses!
-        : [RunStatus.Canceled, RunStatus.Canceled, RunStatus.Canceled],
+        : [RunStatus.CANCELED, RunStatus.CANCELED, RunStatus.CANCELED],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
@@ -9149,7 +9149,7 @@ export const buildRuntimeMismatchConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
     valueRep: overrides && overrides.hasOwnProperty('valueRep') ? overrides.valueRep! : 'in',
@@ -9296,7 +9296,7 @@ export const buildScheduleTick = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : InstigationTickStatus.Failure,
+        : InstigationTickStatus.FAILURE,
     tickId: overrides && overrides.hasOwnProperty('tickId') ? overrides.tickId! : 'fugit',
     tickSpecificData:
       overrides && overrides.hasOwnProperty('tickSpecificData')
@@ -9370,7 +9370,7 @@ export const buildSelectorTypeConfigError = (
     reason:
       overrides && overrides.hasOwnProperty('reason')
         ? overrides.reason!
-        : EvaluationErrorReason.FieldsNotDefined,
+        : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
       overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
   };
@@ -9407,7 +9407,7 @@ export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'}
     sensorType:
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
-        : SensorType.Asset,
+        : SensorType.ASSET,
     targets:
       overrides && overrides.hasOwnProperty('targets')
         ? overrides.targets!
@@ -9694,12 +9694,12 @@ export const buildStepExpectationResultEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     expectationResult:
       overrides && overrides.hasOwnProperty('expectationResult')
         ? overrides.expectationResult!
         : buildExpectationResult(),
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ullam',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nisi',
     solidHandleID:
@@ -9728,9 +9728,9 @@ export const buildStepWorkerStartedEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'voluptatem',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'quod',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'quis',
@@ -9757,9 +9757,9 @@ export const buildStepWorkerStartingEvent = (
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
-        : DagsterEventType.AlertFailure,
+        : DagsterEventType.ALERT_FAILURE,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'cupiditate',
-    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.Critical,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     markerEnd: overrides && overrides.hasOwnProperty('markerEnd') ? overrides.markerEnd! : 'qui',
     markerStart:
       overrides && overrides.hasOwnProperty('markerStart') ? overrides.markerStart! : 'et',
@@ -10019,7 +10019,7 @@ export const buildTimePartitionRange = (
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
-        : PartitionRangeStatus.Failed,
+        : PartitionRangeStatus.FAILED,
   };
 };
 
@@ -10145,7 +10145,7 @@ export const buildWorkspaceLocationEntry = (
     loadStatus:
       overrides && overrides.hasOwnProperty('loadStatus')
         ? overrides.loadStatus!
-        : RepositoryLocationLoadStatus.Loaded,
+        : RepositoryLocationLoadStatus.LOADED,
     locationOrLoadError:
       overrides && overrides.hasOwnProperty('locationOrLoadError')
         ? overrides.locationOrLoadError!
@@ -10190,7 +10190,7 @@ export const buildWorkspaceLocationStatusEntry = (
     loadStatus:
       overrides && overrides.hasOwnProperty('loadStatus')
         ? overrides.loadStatus!
-        : RepositoryLocationLoadStatus.Loaded,
+        : RepositoryLocationLoadStatus.LOADED,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'corporis',
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
