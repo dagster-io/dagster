@@ -110,7 +110,8 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   const numUses =
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
       ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
-        queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length
+        queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -417,6 +418,81 @@ const ResourceUses: React.FC<{
           </Table>
         </Box>
       )}
+      {resourceDetails.jobsOpsUsing.length > 0 && (
+        <Box>
+          <SectionHeader>
+            <Subheading>Jobs</Subheading>
+          </SectionHeader>
+          <Table>
+            <thead>
+              <tr>
+                <th>Job name</th>
+                <th>Ops</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resourceDetails.jobsOpsUsing.map((jobOps) => {
+                return (
+                  <tr key={jobOps.jobName}>
+                    <td>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          alignItems: 'center',
+                          display: 'inline-flex',
+                          gap: 8,
+                        }}
+                        style={{maxWidth: '100%'}}
+                      >
+                        <Icon name="job" color={Colors.Gray400} />
+
+                        <Link to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.jobName}`)}>
+                          <MiddleTruncate text={jobOps.jobName} />
+                        </Link>
+                      </Box>
+                    </td>
+                    <td>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          alignItems: 'center',
+                          display: 'inline-flex',
+                          gap: 8,
+                        }}
+                        style={{maxWidth: '100%'}}
+                      >
+                        {jobOps.ops.map((op) => (
+                          <Box
+                            flex={{
+                              direction: 'row',
+                              alignItems: 'center',
+                              display: 'inline-flex',
+                              gap: 8,
+                            }}
+                            style={{maxWidth: '100%'}}
+                            key={op}
+                          >
+                            <Icon name="op" color={Colors.Gray400} />
+
+                            <Link
+                              to={workspacePathFromAddress(
+                                repoAddress,
+                                `/jobs/${jobOps.jobName}/${op}`,
+                              )}
+                            >
+                              <MiddleTruncate text={op} />
+                            </Link>
+                          </Box>
+                        ))}
+                      </Box>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </Box>
+      )}
     </>
   );
 };
@@ -497,6 +573,10 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
     }
     assetKeysUsing {
       path
+    }
+    jobsOpsUsing {
+      jobName
+      ops
     }
     resourceType
   }
