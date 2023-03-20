@@ -12,8 +12,8 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
     DagsterCodeLocationNotFoundError,
-    DagsterRepositoryLocationLoadError,
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
@@ -144,7 +144,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
         if location_entry.load_error:
             error_info = location_entry.load_error
-            raise DagsterRepositoryLocationLoadError(
+            raise DagsterCodeLocationLoadError(
                 f"Failure loading {location_name}: {error_info.to_string()}",
                 load_error_infos=[error_info],
             )
