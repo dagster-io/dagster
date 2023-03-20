@@ -611,35 +611,35 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             update_timestamp=time.time(),
         )
 
-    def create_snapshot(self):
+    def create_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
         with self._lock:
             return self._location_entry_dict.copy()
 
     @property
-    def repository_locations_count(self):
+    def repository_locations_count(self) -> int:
         with self._lock:
             return len(self._location_entry_dict)
 
     @property
-    def repository_location_names(self):
+    def repository_location_names(self) -> Sequence[str]:
         with self._lock:
             return list(self._location_entry_dict)
 
-    def has_repository_location(self, location_name):
+    def has_repository_location(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
 
         with self._lock:
             return (
                 location_name in self._location_entry_dict
-                and self._location_entry_dict[location_name].repository_location
+                and self._location_entry_dict[location_name].repository_location is not None
             )
 
-    def has_repository_location_error(self, location_name):
+    def has_repository_location_error(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
         with self._lock:
             return (
                 location_name in self._location_entry_dict
-                and self._location_entry_dict[location_name].load_error
+                and self._location_entry_dict[location_name].load_error is not None
             )
 
     def reload_repository_location(self, name: str) -> None:
@@ -650,11 +650,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             # is referencing it
             self._location_entry_dict[name] = new
 
-    def shutdown_repository_location(self, name: str):
+    def shutdown_repository_location(self, name: str) -> None:
         with self._lock:
             self._location_entry_dict[name].origin.shutdown_server()
 
-    def reload_workspace(self):
+    def reload_workspace(self) -> None:
         updated_locations = {
             origin.location_name: self._load_location(origin) for origin in self._origins
         }
