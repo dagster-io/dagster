@@ -12,7 +12,7 @@ def external_pipeline_from_location(
     external_pipeline_origin: ExternalPipelineOrigin,
     solid_selection: Optional[Sequence[str]],
 ) -> ExternalPipeline:
-    check.inst_param(code_location, "repository_location", CodeLocation)
+    check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
 
     repo_name = external_pipeline_origin.external_repository_origin.repository_name
