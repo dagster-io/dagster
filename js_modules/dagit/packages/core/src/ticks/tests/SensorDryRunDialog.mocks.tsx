@@ -176,7 +176,6 @@ export const PersistCursorValueMock: MockedResponse<SetSensorCursorMutation> = {
           status: InstigationStatus.RUNNING,
           typeSpecificData: buildSensorData({
             lastCursor: '',
-            __typename: 'SensorData',
           }),
         }),
       }),
