@@ -12,8 +12,8 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import (
+    DagsterCodeLocationNotFoundError,
     DagsterRepositoryLocationLoadError,
-    DagsterRepositoryLocationNotFoundError,
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
@@ -135,7 +135,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def get_code_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
-            raise DagsterRepositoryLocationNotFoundError(
+            raise DagsterCodeLocationNotFoundError(
                 f"Location {location_name} does not exist in workspace"
             )
 
@@ -149,7 +149,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
                 load_error_infos=[error_info],
             )
 
-        raise DagsterRepositoryLocationNotFoundError(
+        raise DagsterCodeLocationNotFoundError(
             f"Location {location_name} is still loading",
         )
 

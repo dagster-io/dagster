@@ -3,8 +3,8 @@ from unittest import mock
 
 import pytest
 from dagster._core.errors import (
+    DagsterCodeLocationNotFoundError,
     DagsterRepositoryLocationLoadError,
-    DagsterRepositoryLocationNotFoundError,
 )
 from dagster._core.host_representation.origin import RegisteredCodeLocationOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -59,12 +59,12 @@ def test_get_code_location():
         context.get_code_location("error_loc")
 
     with pytest.raises(
-        DagsterRepositoryLocationNotFoundError, match="Location loading_loc is still loading"
+        DagsterCodeLocationNotFoundError, match="Location loading_loc is still loading"
     ):
         context.get_code_location("loading_loc")
 
     with pytest.raises(
-        DagsterRepositoryLocationNotFoundError,
+        DagsterCodeLocationNotFoundError,
         match="Location missing_loc does not exist in workspace",
     ):
         context.get_code_location("missing_loc")

@@ -422,7 +422,7 @@ class DagsterMaxRetriesExceededError(DagsterError):
         )
 
 
-class DagsterRepositoryLocationNotFoundError(DagsterError):
+class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
