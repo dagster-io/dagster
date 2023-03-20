@@ -86,7 +86,7 @@ class AssetGraph:
 
     @staticmethod
     def from_assets(
-        all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
     ) -> "InternalAssetGraph":
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []

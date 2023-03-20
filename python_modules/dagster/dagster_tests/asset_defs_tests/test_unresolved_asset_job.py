@@ -441,7 +441,7 @@ def test_define_selection_job_assets_definition_selection():
     job1.execute_in_process()
 
 
-def test_source_asset_selection():
+def test_root_asset_selection():
     @asset
     def a(source):
         return source + 1
@@ -450,6 +450,7 @@ def test_source_asset_selection():
     def b(a):
         return a + 1
 
+    # Source asset should not be included in the job
     assert define_asset_job("job", selection="*b").resolve(
         assets=[a, b], source_assets=[SourceAsset("source")]
     )

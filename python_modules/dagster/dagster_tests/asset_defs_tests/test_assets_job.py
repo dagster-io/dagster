@@ -33,6 +33,7 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle
@@ -65,6 +66,7 @@ def check_experimental_warnings():
                 "resource_defs" in w.message.args[0]
                 or "io_manager_def" in w.message.args[0]
                 or "build_assets_job" in w.message.args[0]
+                or "SQLALCHEMY" in w.message.args[0]  # SqlAlchemy 2.0 deprecation warnings
             ):
                 continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
@@ -1358,11 +1360,12 @@ dbt_asset_def = AssetsDefinition(
 )
 
 my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
-    with_resources(
-        [dbt_asset_def, fivetran_asset],
-        resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
-    ),
-    [],
+    asset_graph=AssetGraph.from_assets(
+        with_resources(
+            [dbt_asset_def, fivetran_asset],
+            resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
+        ),
+    )
 )
 
 
@@ -1424,7 +1427,7 @@ def test_job_preserved_with_asset_subset():
         },
         description="my cool job",
         tags={"yay": 1},
-    ).resolve([asset_one, two, three], [])
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_one, two, three]))
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1448,7 +1451,9 @@ def test_job_default_config_preserved_with_asset_subset():
     def three(context, two):
         assert context.op_config["baz"] == 3
 
-    foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
+    foo_job = define_asset_job("foo_job").resolve(
+        asset_graph=AssetGraph.from_assets([asset_one, two, three])
+    )
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1466,7 +1471,9 @@ def test_empty_asset_job():
     empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
     assert empty_selection.resolve([a, b]) == set()
 
-    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve([a, b], [])
+    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
+        asset_graph=AssetGraph.from_assets([a, b])
+    )
     assert empty_job.all_node_defs == []
 
     result = empty_job.execute_in_process()

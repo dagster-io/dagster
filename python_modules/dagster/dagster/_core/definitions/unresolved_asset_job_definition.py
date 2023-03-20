@@ -8,6 +8,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
+from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -191,7 +192,11 @@ class UnresolvedAssetJobDefinition(
                 check.failed(
                     "If asset_graph is not provided, must provide both assets and source_assets"
                 )
-
+            deprecation_warning(
+                "`assets` and `source_assets` arguments to `resolve`",
+                "1.3.0",
+                "Please use the `asset_graph` argument instead.",
+            )
             asset_graph = AssetGraph.from_assets([*assets, *source_assets])
 
         return build_asset_selection_job(
