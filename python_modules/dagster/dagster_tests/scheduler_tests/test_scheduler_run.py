@@ -2106,7 +2106,7 @@ def test_grpc_server_down(instance, executor):
         server_up_ctx = workspace_context.copy_for_test_instance(instance)
 
         # shut down the server
-        stack.pop_all()
+        stack.close()
 
         # Server is no longer running, ticks fail but indicate it will resume once it is reachable
         for _trial in range(3):
