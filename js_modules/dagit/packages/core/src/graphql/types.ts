@@ -7441,6 +7441,19 @@ export const buildJobOrPipelineSelector = (
   };
 };
 
+export const buildJobWithOps = (
+  overrides?: Partial<JobWithOps>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'JobWithOps'} & JobWithOps => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JobWithOps');
+  return {
+    __typename: 'JobWithOps',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'nihil',
+    ops: overrides && overrides.hasOwnProperty('ops') ? overrides.ops! : ['placeat'],
+  };
+};
+
 export const buildJsonMetadataEntry = (
   overrides?: Partial<JsonMetadataEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10290,6 +10303,14 @@ export const buildResourceDetails = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
     isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
+    jobsOpsUsing:
+      overrides && overrides.hasOwnProperty('jobsOpsUsing')
+        ? overrides.jobsOpsUsing!
+        : [
+            relationshipsToOmit.has('JobWithOps')
+              ? ({} as JobWithOps)
+              : buildJobWithOps({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nestedResources:
       overrides && overrides.hasOwnProperty('nestedResources')
