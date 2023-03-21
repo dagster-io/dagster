@@ -1682,6 +1682,12 @@ class DagsterInstance(DynamicPartitionsStore):
         self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
 
     @traced
+    def wipe_asset_cached_status(self, asset_keys: Sequence[AssetKey]) -> None:
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        for asset_key in asset_keys:
+            self._event_storage.wipe_asset_cached_status(asset_key)
+
+    @traced
     def all_asset_keys(self) -> Sequence[AssetKey]:
         return self._event_storage.all_asset_keys()
 

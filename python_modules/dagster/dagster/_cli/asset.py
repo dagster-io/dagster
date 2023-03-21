@@ -158,3 +158,61 @@ def asset_wipe_command(key, **cli_args):
             click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")
+
+
+@asset_cli.command(name="wipe-partitions-status-cache")
+@click.argument("key", nargs=-1)
+@click.option("--all", is_flag=True, help="Wipe partitions status cache of all asset keys")
+@click.option("--noprompt", is_flag=True)
+def asset_wipe_cache_command(key, **cli_args):
+    r"""Clears the asset partitions status cache, which is used by Dagit to load partition
+    pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
+    if caching is enabled.
+
+    \b
+    Usage:
+      dagster asset wipe-cache --all
+      dagster asset wipe-cache <unstructured_asset_key_name>
+      dagster asset wipe-cache <json_string_of_structured_asset_key>
+    """
+    if not cli_args.get("all") and len(key) == 0:
+        raise click.UsageError(
+            "Error, you must specify an asset key or use `--all` to clear the partitions status"
+            " cache of all asset keys."
+        )
+
+    if cli_args.get("all") and len(key) > 0:
+        raise click.UsageError("Error, cannot use more than one of: asset key, `--all`.")
+
+    noprompt = cli_args.get("noprompt")
+
+    with DagsterInstance.get() as instance:
+        if instance.can_cache_asset_status_data() is False:
+            raise click.UsageError(
+                "Error, the instance does not support caching asset status. Wiping the cache is not"
+                " supported."
+            )
+
+        if len(key) > 0:
+            asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
+            prompt = (
+                "Are you sure you want to wipe the partitions status cache for these"
+                f" keys {asset_keys} from the event logs? Type DELETE"
+            )
+        else:
+            asset_keys = instance.all_asset_keys()
+            prompt = (
+                "Are you sure you want to wipe the partitions status cache for all asset keys?"
+                " Type DELETE"
+            )
+
+        if noprompt:
+            confirmation = "DELETE"
+        else:
+            confirmation = click.prompt(prompt)
+
+        if confirmation == "DELETE":
+            instance.wipe_asset_cached_status(asset_keys)
+            click.echo("Cleared the partitions status cache")
+        else:
+            click.echo("Exiting without wiping the partitions status cache")

@@ -3171,6 +3171,25 @@ class TestEventLogStorage:
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
             if self.can_wipe():
+                cache_value = AssetStatusCacheValue(
+                    latest_storage_id=1,
+                    partitions_def_id=None,
+                    serialized_materialized_partition_subset=None,
+                )
+                storage.update_asset_cached_status_data(
+                    asset_key=asset_key, cache_values=cache_value
+                )
+                assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+                record = storage.get_asset_records([asset_key])[0]
+                storage.wipe_asset_cached_status(asset_key)
+                assert _get_cached_status_for_asset(storage, asset_key) is None
+                post_wipe_record = storage.get_asset_records([asset_key])[0]
+                assert (
+                    record.asset_entry.last_materialization_record
+                    == post_wipe_record.asset_entry.last_materialization_record
+                )
+                assert record.asset_entry.last_run_id == post_wipe_record.asset_entry.last_run_id
+
                 storage.wipe_asset(asset_key)
                 assert storage.get_asset_records() == []
 

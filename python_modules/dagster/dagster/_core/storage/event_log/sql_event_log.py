@@ -1098,6 +1098,18 @@ class SqlEventLogStorage(EventLogStorage):
     def can_cache_asset_status_data(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
+    def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
+        if self.can_cache_asset_status_data():
+            check.inst_param(asset_key, "asset_key", AssetKey)
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(dict(cached_status_data=None))
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
+                )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence[AssetRecord]:
