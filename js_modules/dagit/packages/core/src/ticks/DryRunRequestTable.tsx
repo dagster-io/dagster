@@ -32,7 +32,7 @@ export const RunRequestTable: React.FC<Props> = ({
     <tbody data-testid={testId('table-body')}>
       {runRequests.map((request, index) => {
         return (
-          <tr key={index} data-testid={testId(request.runKey)}>
+          <tr key={index} data-testid={testId(request.runKey || '')}>
             <td>
               <Box flex={{alignItems: 'center', gap: 8}}>
                 <PipelineReference

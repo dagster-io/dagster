@@ -1,0 +1,20 @@
+Usage: node show.js [provider]
+
+Available provider names:
+
+  address
+  text
+  internet
+  person
+  payment
+  date
+  misc
+  color
+  number
+
+If no provider name was given, then all providers will be used for output
+
+Options:
+
+  -l, --locale   use specified locale
+  -h, --help     output this message

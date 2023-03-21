@@ -1,0 +1,31 @@
+{
+  "name": "mersenne-twister",
+  "version": "1.1.0",
+  "description": "Mersenne twister pseudorandom number generator",
+  "main": "src/mersenne-twister.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/boo1ean/mersenne-twister.git"
+  },
+  "keywords": [
+    "random",
+    "mersenne",
+    "twister",
+    "mersennetwister",
+    "generator",
+    "seed"
+  ],
+  "author": "Egor Gumenyuk <boo1ean0807@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/boo1ean/mersenne-twister/issues"
+  },
+  "homepage": "https://github.com/boo1ean/mersenne-twister",
+  "devDependencies": {
+    "should": "~3.1.2",
+    "mocha": "~1.17.1"
+  }
+}
