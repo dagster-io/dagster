@@ -160,14 +160,14 @@ def asset_wipe_command(key, **cli_args):
             click.echo("Exiting without removing asset indexes")
 
 
-@asset_cli.command(name="wipe-cache")
+@asset_cli.command(name="wipe-partitions-status-cache")
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Wipe partitions status cache of all asset keys")
 @click.option("--noprompt", is_flag=True)
 def asset_wipe_cache_command(key, **cli_args):
-    r"""Clears the asset partition status cache.
-
-    Warning: Cannot be undone.
+    r"""Clears the asset partitions status cache, which is used by Dagit to load partition
+    pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
+    if caching is enabled.
 
     \b
     Usage:
