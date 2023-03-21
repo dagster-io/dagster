@@ -9,7 +9,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import CancellationReason, DagsterEventType, EngineEventData
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -189,4 +189,5 @@ def check_run_timeout(
                     " termination failed. Forcibly marked as canceled, computational resources may"
                     " not have been cleaned up."
                 ),
+                cancellation_reason=CancellationReason.TIMED_OUT,
             )

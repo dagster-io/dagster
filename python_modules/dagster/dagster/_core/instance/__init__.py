@@ -98,7 +98,12 @@ if TYPE_CHECKING:
     )
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.event_api import EventHandlerFn
-    from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+    from dagster._core.events import (
+        CancellationReason,
+        DagsterEvent,
+        DagsterEventType,
+        EngineEventData,
+    )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -1979,8 +1984,9 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         pipeline_run: DagsterRun,
         message: Optional[str] = None,
+        cancellation_reason: Optional["CancellationReason"] = None,
     ) -> DagsterEvent:
-        from dagster._core.events import DagsterEvent, DagsterEventType
+        from dagster._core.events import DagsterEvent, DagsterEventType, PipelineCanceledData
 
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
@@ -1991,9 +1997,12 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         dagster_event = DagsterEvent(
-            event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
+            event_type_value=DagsterEventType.RUN_CANCELED.value,
             pipeline_name=pipeline_run.pipeline_name,
             message=message,
+            event_specific_data=PipelineCanceledData(
+                error=None, cancellation_reason=cancellation_reason
+            ),
         )
         self.report_dagster_event(
             dagster_event, run_id=pipeline_run.run_id, log_level=logging.ERROR

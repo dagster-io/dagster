@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.events import DagsterEventType
+from dagster._core.events import CancellationReason, DagsterEventType
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -165,7 +165,7 @@ class TestQueuedRunCoordinator:
 
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
-        coordinator.cancel_run(run.run_id)
+        coordinator.cancel_run(run.run_id, cancellation_reason=CancellationReason.UNKNOWN)
         stored_run = instance.get_run_by_id("foo-1")
         assert stored_run.status == DagsterRunStatus.CANCELED
 

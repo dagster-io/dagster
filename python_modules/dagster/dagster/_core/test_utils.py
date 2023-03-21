@@ -384,7 +384,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id, cancellation_reason):
         check.not_implemented("Cancellation not supported")
 
 

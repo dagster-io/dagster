@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import NamedTuple, Optional
 
+from dagster._core.events import CancellationReason
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
@@ -40,7 +41,7 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def cancel_run(self, run_id: str) -> bool:
+    def cancel_run(self, run_id: str, cancellation_reason: CancellationReason) -> bool:
         """Cancels a run. The run may be queued in the coordinator, or it may have been launched.
 
         Returns False is the process was already canceled. Returns true if the cancellation was
