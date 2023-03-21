@@ -33,6 +33,7 @@ const config: CodegenConfig = {
             listElementCount: 3,
             typeNames: 'keep',
             enumValues: 'keep',
+            terminateCircularRelationships: true,
           },
         },
       ],

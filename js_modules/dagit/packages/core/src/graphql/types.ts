@@ -3856,7 +3856,10 @@ export type WrappingDagsterType = {
 
 export const buildAddDynamicPartitionSuccess = (
   overrides?: Partial<AddDynamicPartitionSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AddDynamicPartitionSuccess'} & AddDynamicPartitionSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AddDynamicPartitionSuccess');
   return {
     __typename: 'AddDynamicPartitionSuccess',
     partitionKey:
@@ -3870,7 +3873,10 @@ export const buildAddDynamicPartitionSuccess = (
 
 export const buildAlertFailureEvent = (
   overrides?: Partial<AlertFailureEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AlertFailureEvent'} & AlertFailureEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AlertFailureEvent');
   return {
     __typename: 'AlertFailureEvent',
     eventType:
@@ -3891,7 +3897,10 @@ export const buildAlertFailureEvent = (
 
 export const buildAlertStartEvent = (
   overrides?: Partial<AlertStartEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AlertStartEvent'} & AlertStartEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AlertStartEvent');
   return {
     __typename: 'AlertStartEvent',
     eventType:
@@ -3914,7 +3923,10 @@ export const buildAlertStartEvent = (
 
 export const buildAlertSuccessEvent = (
   overrides?: Partial<AlertSuccessEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AlertSuccessEvent'} & AlertSuccessEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AlertSuccessEvent');
   return {
     __typename: 'AlertSuccessEvent',
     eventType:
@@ -3935,18 +3947,36 @@ export const buildAlertSuccessEvent = (
 
 export const buildArrayConfigType = (
   overrides?: Partial<ArrayConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ArrayConfigType'} & ArrayConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ArrayConfigType');
   return {
     __typename: 'ArrayConfigType',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'aliquam',
     isSelector: overrides && overrides.hasOwnProperty('isSelector') ? overrides.isSelector! : true,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'omnis',
-    ofType: overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildConfigType(),
+    ofType:
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -3954,44 +3984,91 @@ export const buildArrayConfigType = (
   };
 };
 
-export const buildAsset = (overrides?: Partial<Asset>): {__typename: 'Asset'} & Asset => {
+export const buildAsset = (
+  overrides?: Partial<Asset>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Asset'} & Asset => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Asset');
   return {
     __typename: 'Asset',
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : [buildObservationEvent(), buildObservationEvent(), buildObservationEvent()],
+        : [
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+          ],
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildAssetNode(),
+        : relationshipsToOmit.has('AssetNode')
+        ? ({} as AssetNode)
+        : buildAssetNode({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'omnis',
-    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : buildAssetKey(),
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
   };
 };
 
 export const buildAssetConnection = (
   overrides?: Partial<AssetConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetConnection'} & AssetConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetConnection');
   return {
     __typename: 'AssetConnection',
     nodes:
       overrides && overrides.hasOwnProperty('nodes')
         ? overrides.nodes!
-        : [buildAsset(), buildAsset(), buildAsset()],
+        : [
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildAssetDependency = (
   overrides?: Partial<AssetDependency>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetDependency'} & AssetDependency => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetDependency');
   return {
     __typename: 'AssetDependency',
-    asset: overrides && overrides.hasOwnProperty('asset') ? overrides.asset! : buildAssetNode(),
+    asset:
+      overrides && overrides.hasOwnProperty('asset')
+        ? overrides.asset!
+        : relationshipsToOmit.has('AssetNode')
+        ? ({} as AssetNode)
+        : buildAssetNode({}, relationshipsToOmit),
     inputName:
       overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'aspernatur',
   };
@@ -3999,7 +4076,10 @@ export const buildAssetDependency = (
 
 export const buildAssetFreshnessInfo = (
   overrides?: Partial<AssetFreshnessInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetFreshnessInfo'} & AssetFreshnessInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetFreshnessInfo');
   return {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate:
@@ -4015,20 +4095,36 @@ export const buildAssetFreshnessInfo = (
 
 export const buildAssetGroup = (
   overrides?: Partial<AssetGroup>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetGroup'} & AssetGroup => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetGroup');
   return {
     __typename: 'AssetGroup',
     assetKeys:
       overrides && overrides.hasOwnProperty('assetKeys')
         ? overrides.assetKeys!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     groupName: overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'aut',
   };
 };
 
 export const buildAssetGroupSelector = (
   overrides?: Partial<AssetGroupSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): AssetGroupSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetGroupSelector');
   return {
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'explicabo',
@@ -4043,7 +4139,10 @@ export const buildAssetGroupSelector = (
 
 export const buildAssetKey = (
   overrides?: Partial<AssetKey>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetKey'} & AssetKey => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetKey');
   return {
     __typename: 'AssetKey',
     path:
@@ -4053,7 +4152,12 @@ export const buildAssetKey = (
   };
 };
 
-export const buildAssetKeyInput = (overrides?: Partial<AssetKeyInput>): AssetKeyInput => {
+export const buildAssetKeyInput = (
+  overrides?: Partial<AssetKeyInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetKeyInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetKeyInput');
   return {
     path:
       overrides && overrides.hasOwnProperty('path')
@@ -4064,11 +4168,18 @@ export const buildAssetKeyInput = (overrides?: Partial<AssetKeyInput>): AssetKey
 
 export const buildAssetLatestInfo = (
   overrides?: Partial<AssetLatestInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetLatestInfo'} & AssetLatestInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetLatestInfo');
   return {
     __typename: 'AssetLatestInfo',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     inProgressRunIds:
       overrides && overrides.hasOwnProperty('inProgressRunIds')
         ? overrides.inProgressRunIds!
@@ -4076,9 +4187,15 @@ export const buildAssetLatestInfo = (
     latestMaterialization:
       overrides && overrides.hasOwnProperty('latestMaterialization')
         ? overrides.latestMaterialization!
-        : buildMaterializationEvent(),
+        : relationshipsToOmit.has('MaterializationEvent')
+        ? ({} as MaterializationEvent)
+        : buildMaterializationEvent({}, relationshipsToOmit),
     latestRun:
-      overrides && overrides.hasOwnProperty('latestRun') ? overrides.latestRun! : buildRun(),
+      overrides && overrides.hasOwnProperty('latestRun')
+        ? overrides.latestRun!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
     unstartedRunIds:
       overrides && overrides.hasOwnProperty('unstartedRunIds')
         ? overrides.unstartedRunIds!
@@ -4088,11 +4205,18 @@ export const buildAssetLatestInfo = (
 
 export const buildAssetLineageInfo = (
   overrides?: Partial<AssetLineageInfo>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetLineageInfo'} & AssetLineageInfo => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetLineageInfo');
   return {
     __typename: 'AssetLineageInfo',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     partitions:
       overrides && overrides.hasOwnProperty('partitions')
         ? overrides.partitions!
@@ -4102,11 +4226,18 @@ export const buildAssetLineageInfo = (
 
 export const buildAssetMaterializationPlannedEvent = (
   overrides?: Partial<AssetMaterializationPlannedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetMaterializationPlannedEvent'} & AssetMaterializationPlannedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetMaterializationPlannedEvent');
   return {
     __typename: 'AssetMaterializationPlannedEvent',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -4119,7 +4250,9 @@ export const buildAssetMaterializationPlannedEvent = (
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'dolor',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'nulla',
@@ -4129,11 +4262,18 @@ export const buildAssetMaterializationPlannedEvent = (
 
 export const buildAssetMetadataEntry = (
   overrides?: Partial<AssetMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetMetadataEntry'} & AssetMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetMetadataEntry');
   return {
     __typename: 'AssetMetadataEntry',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quasi',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'iste',
@@ -4142,37 +4282,74 @@ export const buildAssetMetadataEntry = (
 
 export const buildAssetNode = (
   overrides?: Partial<AssetNode>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetNode'} & AssetNode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetNode');
   return {
     __typename: 'AssetNode',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     assetMaterializationUsedData:
       overrides && overrides.hasOwnProperty('assetMaterializationUsedData')
         ? overrides.assetMaterializationUsedData!
         : [
-            buildMaterializationUpstreamDataVersion(),
-            buildMaterializationUpstreamDataVersion(),
-            buildMaterializationUpstreamDataVersion(),
+            relationshipsToOmit.has('MaterializationUpstreamDataVersion')
+              ? ({} as MaterializationUpstreamDataVersion)
+              : buildMaterializationUpstreamDataVersion({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationUpstreamDataVersion')
+              ? ({} as MaterializationUpstreamDataVersion)
+              : buildMaterializationUpstreamDataVersion({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationUpstreamDataVersion')
+              ? ({} as MaterializationUpstreamDataVersion)
+              : buildMaterializationUpstreamDataVersion({}, relationshipsToOmit),
           ],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : [buildObservationEvent(), buildObservationEvent(), buildObservationEvent()],
+        : [
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('ObservationEvent')
+              ? ({} as ObservationEvent)
+              : buildObservationEvent({}, relationshipsToOmit),
+          ],
     assetPartitionStatuses:
       overrides && overrides.hasOwnProperty('assetPartitionStatuses')
         ? overrides.assetPartitionStatuses!
-        : buildDefaultPartitions(),
+        : relationshipsToOmit.has('DefaultPartitions')
+        ? ({} as DefaultPartitions)
+        : buildDefaultPartitions({}, relationshipsToOmit),
     computeKind:
       overrides && overrides.hasOwnProperty('computeKind') ? overrides.computeKind! : 'quasi',
     configField:
       overrides && overrides.hasOwnProperty('configField')
         ? overrides.configField!
-        : buildConfigTypeField(),
+        : relationshipsToOmit.has('ConfigTypeField')
+        ? ({} as ConfigTypeField)
+        : buildConfigTypeField({}, relationshipsToOmit),
     currentDataVersion:
       overrides && overrides.hasOwnProperty('currentDataVersion')
         ? overrides.currentDataVersion!
@@ -4180,29 +4357,73 @@ export const buildAssetNode = (
     dependedBy:
       overrides && overrides.hasOwnProperty('dependedBy')
         ? overrides.dependedBy!
-        : [buildAssetDependency(), buildAssetDependency(), buildAssetDependency()],
+        : [
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+          ],
     dependedByKeys:
       overrides && overrides.hasOwnProperty('dependedByKeys')
         ? overrides.dependedByKeys!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     dependencies:
       overrides && overrides.hasOwnProperty('dependencies')
         ? overrides.dependencies!
-        : [buildAssetDependency(), buildAssetDependency(), buildAssetDependency()],
+        : [
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetDependency')
+              ? ({} as AssetDependency)
+              : buildAssetDependency({}, relationshipsToOmit),
+          ],
     dependencyKeys:
       overrides && overrides.hasOwnProperty('dependencyKeys')
         ? overrides.dependencyKeys!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vitae',
     freshnessInfo:
       overrides && overrides.hasOwnProperty('freshnessInfo')
         ? overrides.freshnessInfo!
-        : buildAssetFreshnessInfo(),
+        : relationshipsToOmit.has('AssetFreshnessInfo')
+        ? ({} as AssetFreshnessInfo)
+        : buildAssetFreshnessInfo({}, relationshipsToOmit),
     freshnessPolicy:
       overrides && overrides.hasOwnProperty('freshnessPolicy')
         ? overrides.freshnessPolicy!
-        : buildFreshnessPolicy(),
+        : relationshipsToOmit.has('FreshnessPolicy')
+        ? ({} as FreshnessPolicy)
+        : buildFreshnessPolicy({}, relationshipsToOmit),
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'et',
     groupName:
       overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'asperiores',
@@ -4226,20 +4447,57 @@ export const buildAssetNode = (
     jobs:
       overrides && overrides.hasOwnProperty('jobs')
         ? overrides.jobs!
-        : [buildPipeline(), buildPipeline(), buildPipeline()],
+        : [
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+          ],
     latestMaterializationByPartition:
       overrides && overrides.hasOwnProperty('latestMaterializationByPartition')
         ? overrides.latestMaterializationByPartition!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     latestRunForPartition:
       overrides && overrides.hasOwnProperty('latestRunForPartition')
         ? overrides.latestRunForPartition!
-        : buildRun(),
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
-    op: overrides && overrides.hasOwnProperty('op') ? overrides.op! : buildSolidDefinition(),
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
+    op:
+      overrides && overrides.hasOwnProperty('op')
+        ? overrides.op!
+        : relationshipsToOmit.has('SolidDefinition')
+        ? ({} as SolidDefinition)
+        : buildSolidDefinition({}, relationshipsToOmit),
     opName: overrides && overrides.hasOwnProperty('opName') ? overrides.opName! : 'veritatis',
     opNames:
       overrides && overrides.hasOwnProperty('opNames')
@@ -4250,7 +4508,9 @@ export const buildAssetNode = (
     partitionDefinition:
       overrides && overrides.hasOwnProperty('partitionDefinition')
         ? overrides.partitionDefinition!
-        : buildPartitionDefinition(),
+        : relationshipsToOmit.has('PartitionDefinition')
+        ? ({} as PartitionDefinition)
+        : buildPartitionDefinition({}, relationshipsToOmit),
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys')
         ? overrides.partitionKeys!
@@ -4259,51 +4519,106 @@ export const buildAssetNode = (
       overrides && overrides.hasOwnProperty('partitionKeysByDimension')
         ? overrides.partitionKeysByDimension!
         : [
-            buildDimensionPartitionKeys(),
-            buildDimensionPartitionKeys(),
-            buildDimensionPartitionKeys(),
+            relationshipsToOmit.has('DimensionPartitionKeys')
+              ? ({} as DimensionPartitionKeys)
+              : buildDimensionPartitionKeys({}, relationshipsToOmit),
+            relationshipsToOmit.has('DimensionPartitionKeys')
+              ? ({} as DimensionPartitionKeys)
+              : buildDimensionPartitionKeys({}, relationshipsToOmit),
+            relationshipsToOmit.has('DimensionPartitionKeys')
+              ? ({} as DimensionPartitionKeys)
+              : buildDimensionPartitionKeys({}, relationshipsToOmit),
           ],
     partitionStats:
       overrides && overrides.hasOwnProperty('partitionStats')
         ? overrides.partitionStats!
-        : buildPartitionStats(),
+        : relationshipsToOmit.has('PartitionStats')
+        ? ({} as PartitionStats)
+        : buildPartitionStats({}, relationshipsToOmit),
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
-        : buildRepository(),
+        : relationshipsToOmit.has('Repository')
+        ? ({} as Repository)
+        : buildRepository({}, relationshipsToOmit),
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
-        : [buildResourceRequirement(), buildResourceRequirement(), buildResourceRequirement()],
+        : [
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+          ],
     staleCauses:
       overrides && overrides.hasOwnProperty('staleCauses')
         ? overrides.staleCauses!
-        : [buildStaleCause(), buildStaleCause(), buildStaleCause()],
+        : [
+            relationshipsToOmit.has('StaleCause')
+              ? ({} as StaleCause)
+              : buildStaleCause({}, relationshipsToOmit),
+            relationshipsToOmit.has('StaleCause')
+              ? ({} as StaleCause)
+              : buildStaleCause({}, relationshipsToOmit),
+            relationshipsToOmit.has('StaleCause')
+              ? ({} as StaleCause)
+              : buildStaleCause({}, relationshipsToOmit),
+          ],
     staleStatus:
       overrides && overrides.hasOwnProperty('staleStatus')
         ? overrides.staleStatus!
         : StaleStatus.FRESH,
-    type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : buildDagsterType(),
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
   };
 };
 
 export const buildAssetNodeDefinitionCollision = (
   overrides?: Partial<AssetNodeDefinitionCollision>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetNodeDefinitionCollision'} & AssetNodeDefinitionCollision => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetNodeDefinitionCollision');
   return {
     __typename: 'AssetNodeDefinitionCollision',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     repositories:
       overrides && overrides.hasOwnProperty('repositories')
         ? overrides.repositories!
-        : [buildRepository(), buildRepository(), buildRepository()],
+        : [
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildAssetNotFoundError = (
   overrides?: Partial<AssetNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetNotFoundError'} & AssetNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetNotFoundError');
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
@@ -4312,19 +4627,35 @@ export const buildAssetNotFoundError = (
 
 export const buildAssetWipeSuccess = (
   overrides?: Partial<AssetWipeSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'AssetWipeSuccess'} & AssetWipeSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetWipeSuccess');
   return {
     __typename: 'AssetWipeSuccess',
     assetKeys:
       overrides && overrides.hasOwnProperty('assetKeys')
         ? overrides.assetKeys!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildBoolMetadataEntry = (
   overrides?: Partial<BoolMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'BoolMetadataEntry'} & BoolMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BoolMetadataEntry');
   return {
     __typename: 'BoolMetadataEntry',
     boolValue: overrides && overrides.hasOwnProperty('boolValue') ? overrides.boolValue! : true,
@@ -4336,7 +4667,10 @@ export const buildBoolMetadataEntry = (
 
 export const buildCancelBackfillSuccess = (
   overrides?: Partial<CancelBackfillSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'CancelBackfillSuccess'} & CancelBackfillSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CancelBackfillSuccess');
   return {
     __typename: 'CancelBackfillSuccess',
     backfillId:
@@ -4346,7 +4680,10 @@ export const buildCancelBackfillSuccess = (
 
 export const buildCapturedLogs = (
   overrides?: Partial<CapturedLogs>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'CapturedLogs'} & CapturedLogs => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CapturedLogs');
   return {
     __typename: 'CapturedLogs',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'itaque',
@@ -4361,7 +4698,10 @@ export const buildCapturedLogs = (
 
 export const buildCapturedLogsMetadata = (
   overrides?: Partial<CapturedLogsMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'CapturedLogsMetadata'} & CapturedLogsMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CapturedLogsMetadata');
   return {
     __typename: 'CapturedLogsMetadata',
     stderrDownloadUrl:
@@ -4385,7 +4725,10 @@ export const buildCapturedLogsMetadata = (
 
 export const buildCompositeConfigType = (
   overrides?: Partial<CompositeConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'CompositeConfigType'} & CompositeConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CompositeConfigType');
   return {
     __typename: 'CompositeConfigType',
     description:
@@ -4393,13 +4736,33 @@ export const buildCompositeConfigType = (
     fields:
       overrides && overrides.hasOwnProperty('fields')
         ? overrides.fields!
-        : [buildConfigTypeField(), buildConfigTypeField(), buildConfigTypeField()],
+        : [
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+          ],
     isSelector: overrides && overrides.hasOwnProperty('isSelector') ? overrides.isSelector! : false,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'nulla',
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -4409,13 +4772,26 @@ export const buildCompositeConfigType = (
 
 export const buildCompositeSolidDefinition = (
   overrides?: Partial<CompositeSolidDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'CompositeSolidDefinition'} & CompositeSolidDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('CompositeSolidDefinition');
   return {
     __typename: 'CompositeSolidDefinition',
     assetNodes:
       overrides && overrides.hasOwnProperty('assetNodes')
         ? overrides.assetNodes!
-        : [buildAssetNode(), buildAssetNode(), buildAssetNode()],
+        : [
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'at',
     id:
@@ -4425,50 +4801,119 @@ export const buildCompositeSolidDefinition = (
     inputDefinitions:
       overrides && overrides.hasOwnProperty('inputDefinitions')
         ? overrides.inputDefinitions!
-        : [buildInputDefinition(), buildInputDefinition(), buildInputDefinition()],
+        : [
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+          ],
     inputMappings:
       overrides && overrides.hasOwnProperty('inputMappings')
         ? overrides.inputMappings!
-        : [buildInputMapping(), buildInputMapping(), buildInputMapping()],
+        : [
+            relationshipsToOmit.has('InputMapping')
+              ? ({} as InputMapping)
+              : buildInputMapping({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputMapping')
+              ? ({} as InputMapping)
+              : buildInputMapping({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputMapping')
+              ? ({} as InputMapping)
+              : buildInputMapping({}, relationshipsToOmit),
+          ],
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
         : [
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
           ],
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'consequatur',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [buildOutputDefinition(), buildOutputDefinition(), buildOutputDefinition()],
+        : [
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+          ],
     outputMappings:
       overrides && overrides.hasOwnProperty('outputMappings')
         ? overrides.outputMappings!
-        : [buildOutputMapping(), buildOutputMapping(), buildOutputMapping()],
+        : [
+            relationshipsToOmit.has('OutputMapping')
+              ? ({} as OutputMapping)
+              : buildOutputMapping({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputMapping')
+              ? ({} as OutputMapping)
+              : buildOutputMapping({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputMapping')
+              ? ({} as OutputMapping)
+              : buildOutputMapping({}, relationshipsToOmit),
+          ],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildComputeLogFile = (
   overrides?: Partial<ComputeLogFile>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ComputeLogFile'} & ComputeLogFile => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComputeLogFile');
   return {
     __typename: 'ComputeLogFile',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 1566,
@@ -4482,21 +4927,35 @@ export const buildComputeLogFile = (
 
 export const buildComputeLogs = (
   overrides?: Partial<ComputeLogs>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ComputeLogs'} & ComputeLogs => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ComputeLogs');
   return {
     __typename: 'ComputeLogs',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'est',
     stderr:
-      overrides && overrides.hasOwnProperty('stderr') ? overrides.stderr! : buildComputeLogFile(),
+      overrides && overrides.hasOwnProperty('stderr')
+        ? overrides.stderr!
+        : relationshipsToOmit.has('ComputeLogFile')
+        ? ({} as ComputeLogFile)
+        : buildComputeLogFile({}, relationshipsToOmit),
     stdout:
-      overrides && overrides.hasOwnProperty('stdout') ? overrides.stdout! : buildComputeLogFile(),
+      overrides && overrides.hasOwnProperty('stdout')
+        ? overrides.stdout!
+        : relationshipsToOmit.has('ComputeLogFile')
+        ? ({} as ComputeLogFile)
+        : buildComputeLogFile({}, relationshipsToOmit),
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'cum',
   };
 };
 
 export const buildConfigType = (
   overrides?: Partial<ConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ConfigType'} & ConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConfigType');
   return {
     __typename: 'ConfigType',
     description:
@@ -4506,7 +4965,17 @@ export const buildConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -4516,13 +4985,18 @@ export const buildConfigType = (
 
 export const buildConfigTypeField = (
   overrides?: Partial<ConfigTypeField>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ConfigTypeField'} & ConfigTypeField => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConfigTypeField');
   return {
     __typename: 'ConfigTypeField',
     configType:
       overrides && overrides.hasOwnProperty('configType')
         ? overrides.configType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     configTypeKey:
       overrides && overrides.hasOwnProperty('configTypeKey')
         ? overrides.configTypeKey!
@@ -4540,20 +5014,30 @@ export const buildConfigTypeField = (
 
 export const buildConfigTypeNotFoundError = (
   overrides?: Partial<ConfigTypeNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ConfigTypeNotFoundError'} & ConfigTypeNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConfigTypeNotFoundError');
   return {
     __typename: 'ConfigTypeNotFoundError',
     configTypeName:
       overrides && overrides.hasOwnProperty('configTypeName') ? overrides.configTypeName! : 'ullam',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'suscipit',
     pipeline:
-      overrides && overrides.hasOwnProperty('pipeline') ? overrides.pipeline! : buildPipeline(),
+      overrides && overrides.hasOwnProperty('pipeline')
+        ? overrides.pipeline!
+        : relationshipsToOmit.has('Pipeline')
+        ? ({} as Pipeline)
+        : buildPipeline({}, relationshipsToOmit),
   };
 };
 
 export const buildConfiguredValue = (
   overrides?: Partial<ConfiguredValue>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ConfiguredValue'} & ConfiguredValue => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConfiguredValue');
   return {
     __typename: 'ConfiguredValue',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ipsam',
@@ -4565,7 +5049,10 @@ export const buildConfiguredValue = (
 
 export const buildConflictingExecutionParamsError = (
   overrides?: Partial<ConflictingExecutionParamsError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ConflictingExecutionParamsError'} & ConflictingExecutionParamsError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ConflictingExecutionParamsError');
   return {
     __typename: 'ConflictingExecutionParamsError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'pariatur',
@@ -4574,24 +5061,42 @@ export const buildConflictingExecutionParamsError = (
 
 export const buildDaemonHealth = (
   overrides?: Partial<DaemonHealth>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DaemonHealth'} & DaemonHealth => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DaemonHealth');
   return {
     __typename: 'DaemonHealth',
     allDaemonStatuses:
       overrides && overrides.hasOwnProperty('allDaemonStatuses')
         ? overrides.allDaemonStatuses!
-        : [buildDaemonStatus(), buildDaemonStatus(), buildDaemonStatus()],
+        : [
+            relationshipsToOmit.has('DaemonStatus')
+              ? ({} as DaemonStatus)
+              : buildDaemonStatus({}, relationshipsToOmit),
+            relationshipsToOmit.has('DaemonStatus')
+              ? ({} as DaemonStatus)
+              : buildDaemonStatus({}, relationshipsToOmit),
+            relationshipsToOmit.has('DaemonStatus')
+              ? ({} as DaemonStatus)
+              : buildDaemonStatus({}, relationshipsToOmit),
+          ],
     daemonStatus:
       overrides && overrides.hasOwnProperty('daemonStatus')
         ? overrides.daemonStatus!
-        : buildDaemonStatus(),
+        : relationshipsToOmit.has('DaemonStatus')
+        ? ({} as DaemonStatus)
+        : buildDaemonStatus({}, relationshipsToOmit),
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'omnis',
   };
 };
 
 export const buildDaemonStatus = (
   overrides?: Partial<DaemonStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DaemonStatus'} & DaemonStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DaemonStatus');
   return {
     __typename: 'DaemonStatus',
     daemonType:
@@ -4604,7 +5109,17 @@ export const buildDaemonStatus = (
     lastHeartbeatErrors:
       overrides && overrides.hasOwnProperty('lastHeartbeatErrors')
         ? overrides.lastHeartbeatErrors!
-        : [buildPythonError(), buildPythonError(), buildPythonError()],
+        : [
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+          ],
     lastHeartbeatTime:
       overrides && overrides.hasOwnProperty('lastHeartbeatTime')
         ? overrides.lastHeartbeatTime!
@@ -4615,322 +5130,511 @@ export const buildDaemonStatus = (
 
 export const buildDagitMutation = (
   overrides?: Partial<DagitMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagitMutation'} & DagitMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagitMutation');
   return {
     __typename: 'DagitMutation',
     addDynamicPartition:
       overrides && overrides.hasOwnProperty('addDynamicPartition')
         ? overrides.addDynamicPartition!
-        : buildAddDynamicPartitionSuccess(),
+        : relationshipsToOmit.has('AddDynamicPartitionSuccess')
+        ? ({} as AddDynamicPartitionSuccess)
+        : buildAddDynamicPartitionSuccess({}, relationshipsToOmit),
     cancelPartitionBackfill:
       overrides && overrides.hasOwnProperty('cancelPartitionBackfill')
         ? overrides.cancelPartitionBackfill!
-        : buildCancelBackfillSuccess(),
+        : relationshipsToOmit.has('CancelBackfillSuccess')
+        ? ({} as CancelBackfillSuccess)
+        : buildCancelBackfillSuccess({}, relationshipsToOmit),
     deletePipelineRun:
       overrides && overrides.hasOwnProperty('deletePipelineRun')
         ? overrides.deletePipelineRun!
-        : buildDeletePipelineRunSuccess(),
+        : relationshipsToOmit.has('DeletePipelineRunSuccess')
+        ? ({} as DeletePipelineRunSuccess)
+        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
     deleteRun:
       overrides && overrides.hasOwnProperty('deleteRun')
         ? overrides.deleteRun!
-        : buildDeletePipelineRunSuccess(),
+        : relationshipsToOmit.has('DeletePipelineRunSuccess')
+        ? ({} as DeletePipelineRunSuccess)
+        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
     launchPartitionBackfill:
       overrides && overrides.hasOwnProperty('launchPartitionBackfill')
         ? overrides.launchPartitionBackfill!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     launchPipelineExecution:
       overrides && overrides.hasOwnProperty('launchPipelineExecution')
         ? overrides.launchPipelineExecution!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     launchPipelineReexecution:
       overrides && overrides.hasOwnProperty('launchPipelineReexecution')
         ? overrides.launchPipelineReexecution!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     launchRun:
       overrides && overrides.hasOwnProperty('launchRun')
         ? overrides.launchRun!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     launchRunReexecution:
       overrides && overrides.hasOwnProperty('launchRunReexecution')
         ? overrides.launchRunReexecution!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
     logTelemetry:
       overrides && overrides.hasOwnProperty('logTelemetry')
         ? overrides.logTelemetry!
-        : buildLogTelemetrySuccess(),
+        : relationshipsToOmit.has('LogTelemetrySuccess')
+        ? ({} as LogTelemetrySuccess)
+        : buildLogTelemetrySuccess({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     reloadWorkspace:
       overrides && overrides.hasOwnProperty('reloadWorkspace')
         ? overrides.reloadWorkspace!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     resumePartitionBackfill:
       overrides && overrides.hasOwnProperty('resumePartitionBackfill')
         ? overrides.resumePartitionBackfill!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     scheduleDryRun:
       overrides && overrides.hasOwnProperty('scheduleDryRun')
         ? overrides.scheduleDryRun!
-        : buildDryRunInstigationTick(),
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
     sensorDryRun:
       overrides && overrides.hasOwnProperty('sensorDryRun')
         ? overrides.sensorDryRun!
-        : buildDryRunInstigationTick(),
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
     setNuxSeen: overrides && overrides.hasOwnProperty('setNuxSeen') ? overrides.setNuxSeen! : true,
     setSensorCursor:
       overrides && overrides.hasOwnProperty('setSensorCursor')
         ? overrides.setSensorCursor!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     shutdownRepositoryLocation:
       overrides && overrides.hasOwnProperty('shutdownRepositoryLocation')
         ? overrides.shutdownRepositoryLocation!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     startSchedule:
       overrides && overrides.hasOwnProperty('startSchedule')
         ? overrides.startSchedule!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     startSensor:
       overrides && overrides.hasOwnProperty('startSensor')
         ? overrides.startSensor!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     stopRunningSchedule:
       overrides && overrides.hasOwnProperty('stopRunningSchedule')
         ? overrides.stopRunningSchedule!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     stopSensor:
       overrides && overrides.hasOwnProperty('stopSensor')
         ? overrides.stopSensor!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     terminatePipelineExecution:
       overrides && overrides.hasOwnProperty('terminatePipelineExecution')
         ? overrides.terminatePipelineExecution!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     terminateRun:
       overrides && overrides.hasOwnProperty('terminateRun')
         ? overrides.terminateRun!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     wipeAssets:
       overrides && overrides.hasOwnProperty('wipeAssets')
         ? overrides.wipeAssets!
-        : buildAssetNotFoundError(),
+        : relationshipsToOmit.has('AssetNotFoundError')
+        ? ({} as AssetNotFoundError)
+        : buildAssetNotFoundError({}, relationshipsToOmit),
   };
 };
 
 export const buildDagitQuery = (
   overrides?: Partial<DagitQuery>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagitQuery'} & DagitQuery => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagitQuery');
   return {
     __typename: 'DagitQuery',
     allTopLevelResourceDetailsOrError:
       overrides && overrides.hasOwnProperty('allTopLevelResourceDetailsOrError')
         ? overrides.allTopLevelResourceDetailsOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     assetNodeDefinitionCollisions:
       overrides && overrides.hasOwnProperty('assetNodeDefinitionCollisions')
         ? overrides.assetNodeDefinitionCollisions!
         : [
-            buildAssetNodeDefinitionCollision(),
-            buildAssetNodeDefinitionCollision(),
-            buildAssetNodeDefinitionCollision(),
+            relationshipsToOmit.has('AssetNodeDefinitionCollision')
+              ? ({} as AssetNodeDefinitionCollision)
+              : buildAssetNodeDefinitionCollision({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNodeDefinitionCollision')
+              ? ({} as AssetNodeDefinitionCollision)
+              : buildAssetNodeDefinitionCollision({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNodeDefinitionCollision')
+              ? ({} as AssetNodeDefinitionCollision)
+              : buildAssetNodeDefinitionCollision({}, relationshipsToOmit),
           ],
     assetNodeOrError:
       overrides && overrides.hasOwnProperty('assetNodeOrError')
         ? overrides.assetNodeOrError!
-        : buildAssetNode(),
+        : relationshipsToOmit.has('AssetNode')
+        ? ({} as AssetNode)
+        : buildAssetNode({}, relationshipsToOmit),
     assetNodes:
       overrides && overrides.hasOwnProperty('assetNodes')
         ? overrides.assetNodes!
-        : [buildAssetNode(), buildAssetNode(), buildAssetNode()],
+        : [
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+          ],
     assetOrError:
       overrides && overrides.hasOwnProperty('assetOrError')
         ? overrides.assetOrError!
-        : buildAsset(),
+        : relationshipsToOmit.has('Asset')
+        ? ({} as Asset)
+        : buildAsset({}, relationshipsToOmit),
     assetsLatestInfo:
       overrides && overrides.hasOwnProperty('assetsLatestInfo')
         ? overrides.assetsLatestInfo!
-        : [buildAssetLatestInfo(), buildAssetLatestInfo(), buildAssetLatestInfo()],
+        : [
+            relationshipsToOmit.has('AssetLatestInfo')
+              ? ({} as AssetLatestInfo)
+              : buildAssetLatestInfo({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetLatestInfo')
+              ? ({} as AssetLatestInfo)
+              : buildAssetLatestInfo({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetLatestInfo')
+              ? ({} as AssetLatestInfo)
+              : buildAssetLatestInfo({}, relationshipsToOmit),
+          ],
     assetsOrError:
       overrides && overrides.hasOwnProperty('assetsOrError')
         ? overrides.assetsOrError!
-        : buildAssetConnection(),
+        : relationshipsToOmit.has('AssetConnection')
+        ? ({} as AssetConnection)
+        : buildAssetConnection({}, relationshipsToOmit),
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
-        : buildCapturedLogs(),
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
     capturedLogsMetadata:
       overrides && overrides.hasOwnProperty('capturedLogsMetadata')
         ? overrides.capturedLogsMetadata!
-        : buildCapturedLogsMetadata(),
+        : relationshipsToOmit.has('CapturedLogsMetadata')
+        ? ({} as CapturedLogsMetadata)
+        : buildCapturedLogsMetadata({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!
-        : buildExecutionPlan(),
+        : relationshipsToOmit.has('ExecutionPlan')
+        ? ({} as ExecutionPlan)
+        : buildExecutionPlan({}, relationshipsToOmit),
     graphOrError:
       overrides && overrides.hasOwnProperty('graphOrError')
         ? overrides.graphOrError!
-        : buildGraph(),
+        : relationshipsToOmit.has('Graph')
+        ? ({} as Graph)
+        : buildGraph({}, relationshipsToOmit),
     instance:
-      overrides && overrides.hasOwnProperty('instance') ? overrides.instance! : buildInstance(),
+      overrides && overrides.hasOwnProperty('instance')
+        ? overrides.instance!
+        : relationshipsToOmit.has('Instance')
+        ? ({} as Instance)
+        : buildInstance({}, relationshipsToOmit),
     instigationStateOrError:
       overrides && overrides.hasOwnProperty('instigationStateOrError')
         ? overrides.instigationStateOrError!
-        : buildInstigationState(),
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
     isPipelineConfigValid:
       overrides && overrides.hasOwnProperty('isPipelineConfigValid')
         ? overrides.isPipelineConfigValid!
-        : buildInvalidSubsetError(),
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
     locationStatusesOrError:
       overrides && overrides.hasOwnProperty('locationStatusesOrError')
         ? overrides.locationStatusesOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     logsForRun:
       overrides && overrides.hasOwnProperty('logsForRun')
         ? overrides.logsForRun!
-        : buildEventConnection(),
+        : relationshipsToOmit.has('EventConnection')
+        ? ({} as EventConnection)
+        : buildEventConnection({}, relationshipsToOmit),
     partitionBackfillOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillOrError')
         ? overrides.partitionBackfillOrError!
-        : buildPartitionBackfill(),
+        : relationshipsToOmit.has('PartitionBackfill')
+        ? ({} as PartitionBackfill)
+        : buildPartitionBackfill({}, relationshipsToOmit),
     partitionBackfillsOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillsOrError')
         ? overrides.partitionBackfillsOrError!
-        : buildPartitionBackfills(),
+        : relationshipsToOmit.has('PartitionBackfills')
+        ? ({} as PartitionBackfills)
+        : buildPartitionBackfills({}, relationshipsToOmit),
     partitionSetOrError:
       overrides && overrides.hasOwnProperty('partitionSetOrError')
         ? overrides.partitionSetOrError!
-        : buildPartitionSet(),
+        : relationshipsToOmit.has('PartitionSet')
+        ? ({} as PartitionSet)
+        : buildPartitionSet({}, relationshipsToOmit),
     partitionSetsOrError:
       overrides && overrides.hasOwnProperty('partitionSetsOrError')
         ? overrides.partitionSetsOrError!
-        : buildPartitionSets(),
+        : relationshipsToOmit.has('PartitionSets')
+        ? ({} as PartitionSets)
+        : buildPartitionSets({}, relationshipsToOmit),
     permissions:
       overrides && overrides.hasOwnProperty('permissions')
         ? overrides.permissions!
-        : [buildPermission(), buildPermission(), buildPermission()],
+        : [
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+          ],
     pipelineOrError:
       overrides && overrides.hasOwnProperty('pipelineOrError')
         ? overrides.pipelineOrError!
-        : buildInvalidSubsetError(),
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
     pipelineRunOrError:
       overrides && overrides.hasOwnProperty('pipelineRunOrError')
         ? overrides.pipelineRunOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     pipelineRunsOrError:
       overrides && overrides.hasOwnProperty('pipelineRunsOrError')
         ? overrides.pipelineRunsOrError!
-        : buildInvalidPipelineRunsFilterError(),
+        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
+        ? ({} as InvalidPipelineRunsFilterError)
+        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
     pipelineSnapshotOrError:
       overrides && overrides.hasOwnProperty('pipelineSnapshotOrError')
         ? overrides.pipelineSnapshotOrError!
-        : buildPipelineNotFoundError(),
+        : relationshipsToOmit.has('PipelineNotFoundError')
+        ? ({} as PipelineNotFoundError)
+        : buildPipelineNotFoundError({}, relationshipsToOmit),
     repositoriesOrError:
       overrides && overrides.hasOwnProperty('repositoriesOrError')
         ? overrides.repositoriesOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     repositoryOrError:
       overrides && overrides.hasOwnProperty('repositoryOrError')
         ? overrides.repositoryOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runConfigSchemaOrError:
       overrides && overrides.hasOwnProperty('runConfigSchemaOrError')
         ? overrides.runConfigSchemaOrError!
-        : buildInvalidSubsetError(),
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
     runGroupOrError:
       overrides && overrides.hasOwnProperty('runGroupOrError')
         ? overrides.runGroupOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runGroupsOrError:
       overrides && overrides.hasOwnProperty('runGroupsOrError')
         ? overrides.runGroupsOrError!
-        : buildRunGroupsOrError(),
+        : relationshipsToOmit.has('RunGroupsOrError')
+        ? ({} as RunGroupsOrError)
+        : buildRunGroupsOrError({}, relationshipsToOmit),
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runTagKeysOrError:
       overrides && overrides.hasOwnProperty('runTagKeysOrError')
         ? overrides.runTagKeysOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runTagsOrError:
       overrides && overrides.hasOwnProperty('runTagsOrError')
         ? overrides.runTagsOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runsOrError:
       overrides && overrides.hasOwnProperty('runsOrError')
         ? overrides.runsOrError!
-        : buildInvalidPipelineRunsFilterError(),
+        : relationshipsToOmit.has('InvalidPipelineRunsFilterError')
+        ? ({} as InvalidPipelineRunsFilterError)
+        : buildInvalidPipelineRunsFilterError({}, relationshipsToOmit),
     scheduleOrError:
       overrides && overrides.hasOwnProperty('scheduleOrError')
         ? overrides.scheduleOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     scheduler:
       overrides && overrides.hasOwnProperty('scheduler')
         ? overrides.scheduler!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     schedulesOrError:
       overrides && overrides.hasOwnProperty('schedulesOrError')
         ? overrides.schedulesOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     sensorOrError:
       overrides && overrides.hasOwnProperty('sensorOrError')
         ? overrides.sensorOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     sensorsOrError:
       overrides && overrides.hasOwnProperty('sensorsOrError')
         ? overrides.sensorsOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     shouldShowNux:
       overrides && overrides.hasOwnProperty('shouldShowNux') ? overrides.shouldShowNux! : true,
-    test: overrides && overrides.hasOwnProperty('test') ? overrides.test! : buildTestFields(),
+    test:
+      overrides && overrides.hasOwnProperty('test')
+        ? overrides.test!
+        : relationshipsToOmit.has('TestFields')
+        ? ({} as TestFields)
+        : buildTestFields({}, relationshipsToOmit),
     topLevelResourceDetailsOrError:
       overrides && overrides.hasOwnProperty('topLevelResourceDetailsOrError')
         ? overrides.topLevelResourceDetailsOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     unloadableInstigationStatesOrError:
       overrides && overrides.hasOwnProperty('unloadableInstigationStatesOrError')
         ? overrides.unloadableInstigationStatesOrError!
-        : buildInstigationStates(),
+        : relationshipsToOmit.has('InstigationStates')
+        ? ({} as InstigationStates)
+        : buildInstigationStates({}, relationshipsToOmit),
     utilizedEnvVarsOrError:
       overrides && overrides.hasOwnProperty('utilizedEnvVarsOrError')
         ? overrides.utilizedEnvVarsOrError!
-        : buildEnvVarWithConsumersList(),
+        : relationshipsToOmit.has('EnvVarWithConsumersList')
+        ? ({} as EnvVarWithConsumersList)
+        : buildEnvVarWithConsumersList({}, relationshipsToOmit),
     version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'sed',
     workspaceOrError:
       overrides && overrides.hasOwnProperty('workspaceOrError')
         ? overrides.workspaceOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildDagitSubscription = (
   overrides?: Partial<DagitSubscription>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagitSubscription'} & DagitSubscription => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagitSubscription');
   return {
     __typename: 'DagitSubscription',
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
-        : buildCapturedLogs(),
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
     computeLogs:
       overrides && overrides.hasOwnProperty('computeLogs')
         ? overrides.computeLogs!
-        : buildComputeLogFile(),
+        : relationshipsToOmit.has('ComputeLogFile')
+        ? ({} as ComputeLogFile)
+        : buildComputeLogFile({}, relationshipsToOmit),
     locationStateChangeEvents:
       overrides && overrides.hasOwnProperty('locationStateChangeEvents')
         ? overrides.locationStateChangeEvents!
-        : buildLocationStateChangeSubscription(),
+        : relationshipsToOmit.has('LocationStateChangeSubscription')
+        ? ({} as LocationStateChangeSubscription)
+        : buildLocationStateChangeSubscription({}, relationshipsToOmit),
     pipelineRunLogs:
       overrides && overrides.hasOwnProperty('pipelineRunLogs')
         ? overrides.pipelineRunLogs!
-        : buildPipelineRunLogsSubscriptionFailure(),
+        : relationshipsToOmit.has('PipelineRunLogsSubscriptionFailure')
+        ? ({} as PipelineRunLogsSubscriptionFailure)
+        : buildPipelineRunLogsSubscriptionFailure({}, relationshipsToOmit),
   };
 };
 
 export const buildDagsterLibraryVersion = (
   overrides?: Partial<DagsterLibraryVersion>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagsterLibraryVersion'} & DagsterLibraryVersion => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagsterLibraryVersion');
   return {
     __typename: 'DagsterLibraryVersion',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'et',
@@ -4940,7 +5644,10 @@ export const buildDagsterLibraryVersion = (
 
 export const buildDagsterType = (
   overrides?: Partial<DagsterType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagsterType'} & DagsterType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagsterType');
   return {
     __typename: 'DagsterType',
     description:
@@ -4950,11 +5657,23 @@ export const buildDagsterType = (
     innerTypes:
       overrides && overrides.hasOwnProperty('innerTypes')
         ? overrides.innerTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -4963,18 +5682,33 @@ export const buildDagsterType = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'eum',
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildDagsterTypeNotFoundError = (
   overrides?: Partial<DagsterTypeNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DagsterTypeNotFoundError'} & DagsterTypeNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DagsterTypeNotFoundError');
   return {
     __typename: 'DagsterTypeNotFoundError',
     dagsterTypeName:
@@ -4987,7 +5721,10 @@ export const buildDagsterTypeNotFoundError = (
 
 export const buildDefaultPartitions = (
   overrides?: Partial<DefaultPartitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DefaultPartitions'} & DefaultPartitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DefaultPartitions');
   return {
     __typename: 'DefaultPartitions',
     failedPartitions:
@@ -5007,7 +5744,10 @@ export const buildDefaultPartitions = (
 
 export const buildDeletePipelineRunSuccess = (
   overrides?: Partial<DeletePipelineRunSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DeletePipelineRunSuccess'} & DeletePipelineRunSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DeletePipelineRunSuccess');
   return {
     __typename: 'DeletePipelineRunSuccess',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'ipsum',
@@ -5016,19 +5756,27 @@ export const buildDeletePipelineRunSuccess = (
 
 export const buildDeleteRunMutation = (
   overrides?: Partial<DeleteRunMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DeleteRunMutation'} & DeleteRunMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DeleteRunMutation');
   return {
     __typename: 'DeleteRunMutation',
     Output:
       overrides && overrides.hasOwnProperty('Output')
         ? overrides.Output!
-        : buildDeletePipelineRunSuccess(),
+        : relationshipsToOmit.has('DeletePipelineRunSuccess')
+        ? ({} as DeletePipelineRunSuccess)
+        : buildDeletePipelineRunSuccess({}, relationshipsToOmit),
   };
 };
 
 export const buildDimensionDefinitionType = (
   overrides?: Partial<DimensionDefinitionType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DimensionDefinitionType'} & DimensionDefinitionType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DimensionDefinitionType');
   return {
     __typename: 'DimensionDefinitionType',
     description:
@@ -5047,7 +5795,10 @@ export const buildDimensionDefinitionType = (
 
 export const buildDimensionPartitionKeys = (
   overrides?: Partial<DimensionPartitionKeys>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DimensionPartitionKeys'} & DimensionPartitionKeys => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DimensionPartitionKeys');
   return {
     __typename: 'DimensionPartitionKeys',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'id',
@@ -5064,7 +5815,10 @@ export const buildDimensionPartitionKeys = (
 
 export const buildDisplayableEvent = (
   overrides?: Partial<DisplayableEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DisplayableEvent'} & DisplayableEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DisplayableEvent');
   return {
     __typename: 'DisplayableEvent',
     description:
@@ -5073,26 +5827,44 @@ export const buildDisplayableEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildDryRunInstigationTick = (
   overrides?: Partial<DryRunInstigationTick>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DryRunInstigationTick'} & DryRunInstigationTick => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DryRunInstigationTick');
   return {
     __typename: 'DryRunInstigationTick',
     evaluationResult:
       overrides && overrides.hasOwnProperty('evaluationResult')
         ? overrides.evaluationResult!
-        : buildTickEvaluation(),
+        : relationshipsToOmit.has('TickEvaluation')
+        ? ({} as TickEvaluation)
+        : buildTickEvaluation({}, relationshipsToOmit),
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 7.53,
   };
 };
 
 export const buildDryRunInstigationTicks = (
   overrides?: Partial<DryRunInstigationTicks>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DryRunInstigationTicks'} & DryRunInstigationTicks => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DryRunInstigationTicks');
   return {
     __typename: 'DryRunInstigationTicks',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 0.85,
@@ -5100,16 +5872,25 @@ export const buildDryRunInstigationTicks = (
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
         : [
-            buildDryRunInstigationTick(),
-            buildDryRunInstigationTick(),
-            buildDryRunInstigationTick(),
+            relationshipsToOmit.has('DryRunInstigationTick')
+              ? ({} as DryRunInstigationTick)
+              : buildDryRunInstigationTick({}, relationshipsToOmit),
+            relationshipsToOmit.has('DryRunInstigationTick')
+              ? ({} as DryRunInstigationTick)
+              : buildDryRunInstigationTick({}, relationshipsToOmit),
+            relationshipsToOmit.has('DryRunInstigationTick')
+              ? ({} as DryRunInstigationTick)
+              : buildDryRunInstigationTick({}, relationshipsToOmit),
           ],
   };
 };
 
 export const buildDuplicateDynamicPartitionError = (
   overrides?: Partial<DuplicateDynamicPartitionError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'DuplicateDynamicPartitionError'} & DuplicateDynamicPartitionError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DuplicateDynamicPartitionError');
   return {
     __typename: 'DuplicateDynamicPartitionError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quae',
@@ -5124,12 +5905,20 @@ export const buildDuplicateDynamicPartitionError = (
 
 export const buildEngineEvent = (
   overrides?: Partial<EngineEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EngineEvent'} & EngineEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EngineEvent');
   return {
     __typename: 'EngineEvent',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'a',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -5143,7 +5932,17 @@ export const buildEngineEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aut',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'quo',
@@ -5154,7 +5953,10 @@ export const buildEngineEvent = (
 
 export const buildEnumConfigType = (
   overrides?: Partial<EnumConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EnumConfigType'} & EnumConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EnumConfigType');
   return {
     __typename: 'EnumConfigType',
     description:
@@ -5166,7 +5968,17 @@ export const buildEnumConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -5174,13 +5986,26 @@ export const buildEnumConfigType = (
     values:
       overrides && overrides.hasOwnProperty('values')
         ? overrides.values!
-        : [buildEnumConfigValue(), buildEnumConfigValue(), buildEnumConfigValue()],
+        : [
+            relationshipsToOmit.has('EnumConfigValue')
+              ? ({} as EnumConfigValue)
+              : buildEnumConfigValue({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnumConfigValue')
+              ? ({} as EnumConfigValue)
+              : buildEnumConfigValue({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnumConfigValue')
+              ? ({} as EnumConfigValue)
+              : buildEnumConfigValue({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildEnumConfigValue = (
   overrides?: Partial<EnumConfigValue>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EnumConfigValue'} & EnumConfigValue => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EnumConfigValue');
   return {
     __typename: 'EnumConfigValue',
     description:
@@ -5191,7 +6016,10 @@ export const buildEnumConfigValue = (
 
 export const buildEnvVarConsumer = (
   overrides?: Partial<EnvVarConsumer>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EnvVarConsumer'} & EnvVarConsumer => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EnvVarConsumer');
   return {
     __typename: 'EnvVarConsumer',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'est',
@@ -5202,13 +6030,26 @@ export const buildEnvVarConsumer = (
 
 export const buildEnvVarWithConsumers = (
   overrides?: Partial<EnvVarWithConsumers>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EnvVarWithConsumers'} & EnvVarWithConsumers => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EnvVarWithConsumers');
   return {
     __typename: 'EnvVarWithConsumers',
     envVarConsumers:
       overrides && overrides.hasOwnProperty('envVarConsumers')
         ? overrides.envVarConsumers!
-        : [buildEnvVarConsumer(), buildEnvVarConsumer(), buildEnvVarConsumer()],
+        : [
+            relationshipsToOmit.has('EnvVarConsumer')
+              ? ({} as EnvVarConsumer)
+              : buildEnvVarConsumer({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnvVarConsumer')
+              ? ({} as EnvVarConsumer)
+              : buildEnvVarConsumer({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnvVarConsumer')
+              ? ({} as EnvVarConsumer)
+              : buildEnvVarConsumer({}, relationshipsToOmit),
+          ],
     envVarName:
       overrides && overrides.hasOwnProperty('envVarName') ? overrides.envVarName! : 'quis',
   };
@@ -5216,17 +6057,35 @@ export const buildEnvVarWithConsumers = (
 
 export const buildEnvVarWithConsumersList = (
   overrides?: Partial<EnvVarWithConsumersList>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EnvVarWithConsumersList'} & EnvVarWithConsumersList => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EnvVarWithConsumersList');
   return {
     __typename: 'EnvVarWithConsumersList',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildEnvVarWithConsumers(), buildEnvVarWithConsumers(), buildEnvVarWithConsumers()],
+        : [
+            relationshipsToOmit.has('EnvVarWithConsumers')
+              ? ({} as EnvVarWithConsumers)
+              : buildEnvVarWithConsumers({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnvVarWithConsumers')
+              ? ({} as EnvVarWithConsumers)
+              : buildEnvVarWithConsumers({}, relationshipsToOmit),
+            relationshipsToOmit.has('EnvVarWithConsumers')
+              ? ({} as EnvVarWithConsumers)
+              : buildEnvVarWithConsumers({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildError = (overrides?: Partial<Error>): {__typename: 'Error'} & Error => {
+export const buildError = (
+  overrides?: Partial<Error>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Error'} & Error => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Error');
   return {
     __typename: 'Error',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
@@ -5235,10 +6094,18 @@ export const buildError = (overrides?: Partial<Error>): {__typename: 'Error'} & 
 
 export const buildErrorChainLink = (
   overrides?: Partial<ErrorChainLink>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ErrorChainLink'} & ErrorChainLink => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ErrorChainLink');
   return {
     __typename: 'ErrorChainLink',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     isExplicitLink:
       overrides && overrides.hasOwnProperty('isExplicitLink') ? overrides.isExplicitLink! : true,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
@@ -5247,32 +6114,52 @@ export const buildErrorChainLink = (
 
 export const buildErrorEvent = (
   overrides?: Partial<ErrorEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ErrorEvent'} & ErrorEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ErrorEvent');
   return {
     __typename: 'ErrorEvent',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildEvaluationStack = (
   overrides?: Partial<EvaluationStack>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EvaluationStack'} & EvaluationStack => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EvaluationStack');
   return {
     __typename: 'EvaluationStack',
     entries:
       overrides && overrides.hasOwnProperty('entries')
         ? overrides.entries!
         : [
-            buildEvaluationStackListItemEntry(),
-            buildEvaluationStackListItemEntry(),
-            buildEvaluationStackListItemEntry(),
+            relationshipsToOmit.has('EvaluationStackListItemEntry')
+              ? ({} as EvaluationStackListItemEntry)
+              : buildEvaluationStackListItemEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('EvaluationStackListItemEntry')
+              ? ({} as EvaluationStackListItemEntry)
+              : buildEvaluationStackListItemEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('EvaluationStackListItemEntry')
+              ? ({} as EvaluationStackListItemEntry)
+              : buildEvaluationStackListItemEntry({}, relationshipsToOmit),
           ],
   };
 };
 
 export const buildEvaluationStackListItemEntry = (
   overrides?: Partial<EvaluationStackListItemEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EvaluationStackListItemEntry'} & EvaluationStackListItemEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EvaluationStackListItemEntry');
   return {
     __typename: 'EvaluationStackListItemEntry',
     listIndex: overrides && overrides.hasOwnProperty('listIndex') ? overrides.listIndex! : 8595,
@@ -5281,7 +6168,10 @@ export const buildEvaluationStackListItemEntry = (
 
 export const buildEvaluationStackMapKeyEntry = (
   overrides?: Partial<EvaluationStackMapKeyEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EvaluationStackMapKeyEntry'} & EvaluationStackMapKeyEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EvaluationStackMapKeyEntry');
   return {
     __typename: 'EvaluationStackMapKeyEntry',
     mapKey: overrides && overrides.hasOwnProperty('mapKey') ? overrides.mapKey! : 'qui',
@@ -5290,7 +6180,10 @@ export const buildEvaluationStackMapKeyEntry = (
 
 export const buildEvaluationStackMapValueEntry = (
   overrides?: Partial<EvaluationStackMapValueEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EvaluationStackMapValueEntry'} & EvaluationStackMapValueEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EvaluationStackMapValueEntry');
   return {
     __typename: 'EvaluationStackMapValueEntry',
     mapKey: overrides && overrides.hasOwnProperty('mapKey') ? overrides.mapKey! : 'architecto',
@@ -5299,7 +6192,10 @@ export const buildEvaluationStackMapValueEntry = (
 
 export const buildEvaluationStackPathEntry = (
   overrides?: Partial<EvaluationStackPathEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EvaluationStackPathEntry'} & EvaluationStackPathEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EvaluationStackPathEntry');
   return {
     __typename: 'EvaluationStackPathEntry',
     fieldName: overrides && overrides.hasOwnProperty('fieldName') ? overrides.fieldName! : 'ipsa',
@@ -5308,21 +6204,37 @@ export const buildEvaluationStackPathEntry = (
 
 export const buildEventConnection = (
   overrides?: Partial<EventConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EventConnection'} & EventConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EventConnection');
   return {
     __typename: 'EventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'dolor',
     events:
       overrides && overrides.hasOwnProperty('events')
         ? overrides.events!
-        : [buildAlertFailureEvent(), buildAlertFailureEvent(), buildAlertFailureEvent()],
+        : [
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+          ],
     hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : true,
   };
 };
 
 export const buildEventTag = (
   overrides?: Partial<EventTag>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'EventTag'} & EventTag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('EventTag');
   return {
     __typename: 'EventTag',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'saepe',
@@ -5332,7 +6244,10 @@ export const buildEventTag = (
 
 export const buildExecutionMetadata = (
   overrides?: Partial<ExecutionMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): ExecutionMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionMetadata');
   return {
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'autem',
@@ -5341,16 +6256,33 @@ export const buildExecutionMetadata = (
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildExecutionTag(), buildExecutionTag(), buildExecutionTag()],
+        : [
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildExecutionParams = (overrides?: Partial<ExecutionParams>): ExecutionParams => {
+export const buildExecutionParams = (
+  overrides?: Partial<ExecutionParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ExecutionParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionParams');
   return {
     executionMetadata:
       overrides && overrides.hasOwnProperty('executionMetadata')
         ? overrides.executionMetadata!
-        : buildExecutionMetadata(),
+        : relationshipsToOmit.has('ExecutionMetadata')
+        ? ({} as ExecutionMetadata)
+        : buildExecutionMetadata({}, relationshipsToOmit),
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'porro',
     preset: overrides && overrides.hasOwnProperty('preset') ? overrides.preset! : 'voluptates',
     runConfigData:
@@ -5360,7 +6292,9 @@ export const buildExecutionParams = (overrides?: Partial<ExecutionParams>): Exec
     selector:
       overrides && overrides.hasOwnProperty('selector')
         ? overrides.selector!
-        : buildJobOrPipelineSelector(),
+        : relationshipsToOmit.has('JobOrPipelineSelector')
+        ? ({} as JobOrPipelineSelector)
+        : buildJobOrPipelineSelector({}, relationshipsToOmit),
     stepKeys:
       overrides && overrides.hasOwnProperty('stepKeys')
         ? overrides.stepKeys!
@@ -5370,7 +6304,10 @@ export const buildExecutionParams = (overrides?: Partial<ExecutionParams>): Exec
 
 export const buildExecutionPlan = (
   overrides?: Partial<ExecutionPlan>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionPlan'} & ExecutionPlan => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionPlan');
   return {
     __typename: 'ExecutionPlan',
     artifactsPersisted:
@@ -5380,33 +6317,72 @@ export const buildExecutionPlan = (
     steps:
       overrides && overrides.hasOwnProperty('steps')
         ? overrides.steps!
-        : [buildExecutionStep(), buildExecutionStep(), buildExecutionStep()],
+        : [
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildExecutionStep = (
   overrides?: Partial<ExecutionStep>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStep'} & ExecutionStep => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStep');
   return {
     __typename: 'ExecutionStep',
     inputs:
       overrides && overrides.hasOwnProperty('inputs')
         ? overrides.inputs!
-        : [buildExecutionStepInput(), buildExecutionStepInput(), buildExecutionStepInput()],
+        : [
+            relationshipsToOmit.has('ExecutionStepInput')
+              ? ({} as ExecutionStepInput)
+              : buildExecutionStepInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStepInput')
+              ? ({} as ExecutionStepInput)
+              : buildExecutionStepInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStepInput')
+              ? ({} as ExecutionStepInput)
+              : buildExecutionStepInput({}, relationshipsToOmit),
+          ],
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ut',
     kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : StepKind.COMPUTE,
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
         : [
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
           ],
     outputs:
       overrides && overrides.hasOwnProperty('outputs')
         ? overrides.outputs!
-        : [buildExecutionStepOutput(), buildExecutionStepOutput(), buildExecutionStepOutput()],
+        : [
+            relationshipsToOmit.has('ExecutionStepOutput')
+              ? ({} as ExecutionStepOutput)
+              : buildExecutionStepOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStepOutput')
+              ? ({} as ExecutionStepOutput)
+              : buildExecutionStepOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStepOutput')
+              ? ({} as ExecutionStepOutput)
+              : buildExecutionStepOutput({}, relationshipsToOmit),
+          ],
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
@@ -5416,10 +6392,18 @@ export const buildExecutionStep = (
 
 export const buildExecutionStepFailureEvent = (
   overrides?: Partial<ExecutionStepFailureEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepFailureEvent'} & ExecutionStepFailureEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepFailureEvent');
   return {
     __typename: 'ExecutionStepFailureEvent',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     errorSource:
       overrides && overrides.hasOwnProperty('errorSource')
         ? overrides.errorSource!
@@ -5431,7 +6415,9 @@ export const buildExecutionStepFailureEvent = (
     failureMetadata:
       overrides && overrides.hasOwnProperty('failureMetadata')
         ? overrides.failureMetadata!
-        : buildFailureMetadata(),
+        : relationshipsToOmit.has('FailureMetadata')
+        ? ({} as FailureMetadata)
+        : buildFailureMetadata({}, relationshipsToOmit),
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eligendi',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'itaque',
@@ -5447,20 +6433,36 @@ export const buildExecutionStepFailureEvent = (
 
 export const buildExecutionStepInput = (
   overrides?: Partial<ExecutionStepInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepInput'} & ExecutionStepInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepInput');
   return {
     __typename: 'ExecutionStepInput',
     dependsOn:
       overrides && overrides.hasOwnProperty('dependsOn')
         ? overrides.dependsOn!
-        : [buildExecutionStep(), buildExecutionStep(), buildExecutionStep()],
+        : [
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionStep')
+              ? ({} as ExecutionStep)
+              : buildExecutionStep({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'tempore',
   };
 };
 
 export const buildExecutionStepInputEvent = (
   overrides?: Partial<ExecutionStepInputEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepInputEvent'} & ExecutionStepInputEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepInputEvent');
   return {
     __typename: 'ExecutionStepInputEvent',
     eventType:
@@ -5477,13 +6479,20 @@ export const buildExecutionStepInputEvent = (
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'dolores',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'dolor',
     typeCheck:
-      overrides && overrides.hasOwnProperty('typeCheck') ? overrides.typeCheck! : buildTypeCheck(),
+      overrides && overrides.hasOwnProperty('typeCheck')
+        ? overrides.typeCheck!
+        : relationshipsToOmit.has('TypeCheck')
+        ? ({} as TypeCheck)
+        : buildTypeCheck({}, relationshipsToOmit),
   };
 };
 
 export const buildExecutionStepOutput = (
   overrides?: Partial<ExecutionStepOutput>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepOutput'} & ExecutionStepOutput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepOutput');
   return {
     __typename: 'ExecutionStepOutput',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
@@ -5492,7 +6501,10 @@ export const buildExecutionStepOutput = (
 
 export const buildExecutionStepOutputEvent = (
   overrides?: Partial<ExecutionStepOutputEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepOutputEvent'} & ExecutionStepOutputEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepOutputEvent');
   return {
     __typename: 'ExecutionStepOutputEvent',
     description:
@@ -5507,7 +6519,17 @@ export const buildExecutionStepOutputEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     outputName:
       overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'animi',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repellat',
@@ -5517,13 +6539,20 @@ export const buildExecutionStepOutputEvent = (
     timestamp:
       overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'ducimus',
     typeCheck:
-      overrides && overrides.hasOwnProperty('typeCheck') ? overrides.typeCheck! : buildTypeCheck(),
+      overrides && overrides.hasOwnProperty('typeCheck')
+        ? overrides.typeCheck!
+        : relationshipsToOmit.has('TypeCheck')
+        ? ({} as TypeCheck)
+        : buildTypeCheck({}, relationshipsToOmit),
   };
 };
 
 export const buildExecutionStepRestartEvent = (
   overrides?: Partial<ExecutionStepRestartEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepRestartEvent'} & ExecutionStepRestartEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepRestartEvent');
   return {
     __typename: 'ExecutionStepRestartEvent',
     eventType:
@@ -5544,7 +6573,10 @@ export const buildExecutionStepRestartEvent = (
 
 export const buildExecutionStepSkippedEvent = (
   overrides?: Partial<ExecutionStepSkippedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepSkippedEvent'} & ExecutionStepSkippedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepSkippedEvent');
   return {
     __typename: 'ExecutionStepSkippedEvent',
     eventType:
@@ -5564,7 +6596,10 @@ export const buildExecutionStepSkippedEvent = (
 
 export const buildExecutionStepStartEvent = (
   overrides?: Partial<ExecutionStepStartEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepStartEvent'} & ExecutionStepStartEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepStartEvent');
   return {
     __typename: 'ExecutionStepStartEvent',
     eventType:
@@ -5586,7 +6621,10 @@ export const buildExecutionStepStartEvent = (
 
 export const buildExecutionStepSuccessEvent = (
   overrides?: Partial<ExecutionStepSuccessEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepSuccessEvent'} & ExecutionStepSuccessEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepSuccessEvent');
   return {
     __typename: 'ExecutionStepSuccessEvent',
     eventType:
@@ -5606,10 +6644,18 @@ export const buildExecutionStepSuccessEvent = (
 
 export const buildExecutionStepUpForRetryEvent = (
   overrides?: Partial<ExecutionStepUpForRetryEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExecutionStepUpForRetryEvent'} & ExecutionStepUpForRetryEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionStepUpForRetryEvent');
   return {
     __typename: 'ExecutionStepUpForRetryEvent',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -5626,7 +6672,12 @@ export const buildExecutionStepUpForRetryEvent = (
   };
 };
 
-export const buildExecutionTag = (overrides?: Partial<ExecutionTag>): ExecutionTag => {
+export const buildExecutionTag = (
+  overrides?: Partial<ExecutionTag>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ExecutionTag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExecutionTag');
   return {
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'quis',
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'aut',
@@ -5635,7 +6686,10 @@ export const buildExecutionTag = (overrides?: Partial<ExecutionTag>): ExecutionT
 
 export const buildExpectationResult = (
   overrides?: Partial<ExpectationResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ExpectationResult'} & ExpectationResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ExpectationResult');
   return {
     __typename: 'ExpectationResult',
     description:
@@ -5644,14 +6698,27 @@ export const buildExpectationResult = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : false,
   };
 };
 
 export const buildFailureMetadata = (
   overrides?: Partial<FailureMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'FailureMetadata'} & FailureMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FailureMetadata');
   return {
     __typename: 'FailureMetadata',
     description:
@@ -5660,13 +6727,26 @@ export const buildFailureMetadata = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildFieldNotDefinedConfigError = (
   overrides?: Partial<FieldNotDefinedConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'FieldNotDefinedConfigError'} & FieldNotDefinedConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FieldNotDefinedConfigError');
   return {
     __typename: 'FieldNotDefinedConfigError',
     fieldName:
@@ -5679,13 +6759,20 @@ export const buildFieldNotDefinedConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
 export const buildFieldsNotDefinedConfigError = (
   overrides?: Partial<FieldsNotDefinedConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'FieldsNotDefinedConfigError'} & FieldsNotDefinedConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FieldsNotDefinedConfigError');
   return {
     __typename: 'FieldsNotDefinedConfigError',
     fieldNames:
@@ -5699,13 +6786,20 @@ export const buildFieldsNotDefinedConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
 export const buildFloatMetadataEntry = (
   overrides?: Partial<FloatMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'FloatMetadataEntry'} & FloatMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FloatMetadataEntry');
   return {
     __typename: 'FloatMetadataEntry',
     description:
@@ -5717,7 +6811,10 @@ export const buildFloatMetadataEntry = (
 
 export const buildFreshnessPolicy = (
   overrides?: Partial<FreshnessPolicy>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'FreshnessPolicy'} & FreshnessPolicy => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FreshnessPolicy');
   return {
     __typename: 'FreshnessPolicy',
     cronSchedule:
@@ -5733,7 +6830,12 @@ export const buildFreshnessPolicy = (
   };
 };
 
-export const buildGraph = (overrides?: Partial<Graph>): {__typename: 'Graph'} & Graph => {
+export const buildGraph = (
+  overrides?: Partial<Graph>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Graph'} & Graph => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Graph');
   return {
     __typename: 'Graph',
     description:
@@ -5745,26 +6847,49 @@ export const buildGraph = (overrides?: Partial<Graph>): {__typename: 'Graph'} & 
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quidem',
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildGraphNotFoundError = (
   overrides?: Partial<GraphNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'GraphNotFoundError'} & GraphNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('GraphNotFoundError');
   return {
     __typename: 'GraphNotFoundError',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'odio',
@@ -5778,7 +6903,12 @@ export const buildGraphNotFoundError = (
   };
 };
 
-export const buildGraphSelector = (overrides?: Partial<GraphSelector>): GraphSelector => {
+export const buildGraphSelector = (
+  overrides?: Partial<GraphSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): GraphSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('GraphSelector');
   return {
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'sunt',
     repositoryLocationName:
@@ -5794,7 +6924,10 @@ export const buildGraphSelector = (overrides?: Partial<GraphSelector>): GraphSel
 
 export const buildHandledOutputEvent = (
   overrides?: Partial<HandledOutputEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'HandledOutputEvent'} & HandledOutputEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('HandledOutputEvent');
   return {
     __typename: 'HandledOutputEvent',
     description:
@@ -5811,7 +6944,17 @@ export const buildHandledOutputEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     outputName:
       overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'consequatur',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'perferendis',
@@ -5824,7 +6967,10 @@ export const buildHandledOutputEvent = (
 
 export const buildHookCompletedEvent = (
   overrides?: Partial<HookCompletedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'HookCompletedEvent'} & HookCompletedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('HookCompletedEvent');
   return {
     __typename: 'HookCompletedEvent',
     eventType:
@@ -5843,10 +6989,18 @@ export const buildHookCompletedEvent = (
 
 export const buildHookErroredEvent = (
   overrides?: Partial<HookErroredEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'HookErroredEvent'} & HookErroredEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('HookErroredEvent');
   return {
     __typename: 'HookErroredEvent',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -5863,7 +7017,10 @@ export const buildHookErroredEvent = (
 
 export const buildHookSkippedEvent = (
   overrides?: Partial<HookSkippedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'HookSkippedEvent'} & HookSkippedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('HookSkippedEvent');
   return {
     __typename: 'HookSkippedEvent',
     eventType:
@@ -5882,17 +7039,32 @@ export const buildHookSkippedEvent = (
 
 export const buildIPipelineSnapshot = (
   overrides?: Partial<IPipelineSnapshot>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'IPipelineSnapshot'} & IPipelineSnapshot => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('IPipelineSnapshot');
   return {
     __typename: 'IPipelineSnapshot',
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
-        : buildDagsterTypeNotFoundError(),
+        : relationshipsToOmit.has('DagsterTypeNotFoundError')
+        ? ({} as DagsterTypeNotFoundError)
+        : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
       overrides && overrides.hasOwnProperty('dagsterTypes')
         ? overrides.dagsterTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'velit',
     graphName:
@@ -5900,11 +7072,25 @@ export const buildIPipelineSnapshot = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'autem',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -5917,87 +7103,201 @@ export const buildIPipelineSnapshot = (
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     schedules:
       overrides && overrides.hasOwnProperty('schedules')
         ? overrides.schedules!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
     sensors:
       overrides && overrides.hasOwnProperty('sensors')
         ? overrides.sensors!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildISolidDefinition = (
   overrides?: Partial<ISolidDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ISolidDefinition'} & ISolidDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ISolidDefinition');
   return {
     __typename: 'ISolidDefinition',
     assetNodes:
       overrides && overrides.hasOwnProperty('assetNodes')
         ? overrides.assetNodes!
-        : [buildAssetNode(), buildAssetNode(), buildAssetNode()],
+        : [
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
     inputDefinitions:
       overrides && overrides.hasOwnProperty('inputDefinitions')
         ? overrides.inputDefinitions!
-        : [buildInputDefinition(), buildInputDefinition(), buildInputDefinition()],
+        : [
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+          ],
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
         : [
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
           ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [buildOutputDefinition(), buildOutputDefinition(), buildOutputDefinition()],
+        : [
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildInput = (overrides?: Partial<Input>): {__typename: 'Input'} & Input => {
+export const buildInput = (
+  overrides?: Partial<Input>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Input'} & Input => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Input');
   return {
     __typename: 'Input',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildInputDefinition(),
+        : relationshipsToOmit.has('InputDefinition')
+        ? ({} as InputDefinition)
+        : buildInputDefinition({}, relationshipsToOmit),
     dependsOn:
       overrides && overrides.hasOwnProperty('dependsOn')
         ? overrides.dependsOn!
-        : [buildOutput(), buildOutput(), buildOutput()],
+        : [
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+          ],
     isDynamicCollect:
       overrides && overrides.hasOwnProperty('isDynamicCollect')
         ? overrides.isDynamicCollect!
         : false,
-    solid: overrides && overrides.hasOwnProperty('solid') ? overrides.solid! : buildSolid(),
+    solid:
+      overrides && overrides.hasOwnProperty('solid')
+        ? overrides.solid!
+        : relationshipsToOmit.has('Solid')
+        ? ({} as Solid)
+        : buildSolid({}, relationshipsToOmit),
   };
 };
 
 export const buildInputDefinition = (
   overrides?: Partial<InputDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InputDefinition'} & InputDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InputDefinition');
   return {
     __typename: 'InputDefinition',
     description:
@@ -6005,31 +7305,62 @@ export const buildInputDefinition = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'non',
     solidDefinition:
       overrides && overrides.hasOwnProperty('solidDefinition')
         ? overrides.solidDefinition!
-        : buildSolidDefinition(),
-    type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : buildDagsterType(),
+        : relationshipsToOmit.has('SolidDefinition')
+        ? ({} as SolidDefinition)
+        : buildSolidDefinition({}, relationshipsToOmit),
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
   };
 };
 
 export const buildInputMapping = (
   overrides?: Partial<InputMapping>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InputMapping'} & InputMapping => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InputMapping');
   return {
     __typename: 'InputMapping',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildInputDefinition(),
+        : relationshipsToOmit.has('InputDefinition')
+        ? ({} as InputDefinition)
+        : buildInputDefinition({}, relationshipsToOmit),
     mappedInput:
-      overrides && overrides.hasOwnProperty('mappedInput') ? overrides.mappedInput! : buildInput(),
+      overrides && overrides.hasOwnProperty('mappedInput')
+        ? overrides.mappedInput!
+        : relationshipsToOmit.has('Input')
+        ? ({} as Input)
+        : buildInput({}, relationshipsToOmit),
   };
 };
 
-export const buildInputTag = (overrides?: Partial<InputTag>): InputTag => {
+export const buildInputTag = (
+  overrides?: Partial<InputTag>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): InputTag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InputTag');
   return {
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'possimus',
     value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'quod',
@@ -6038,13 +7369,18 @@ export const buildInputTag = (overrides?: Partial<InputTag>): InputTag => {
 
 export const buildInstance = (
   overrides?: Partial<Instance>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Instance'} & Instance => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Instance');
   return {
     __typename: 'Instance',
     daemonHealth:
       overrides && overrides.hasOwnProperty('daemonHealth')
         ? overrides.daemonHealth!
-        : buildDaemonHealth(),
+        : relationshipsToOmit.has('DaemonHealth')
+        ? ({} as DaemonHealth)
+        : buildDaemonHealth({}, relationshipsToOmit),
     executablePath:
       overrides && overrides.hasOwnProperty('executablePath') ? overrides.executablePath! : 'fuga',
     hasCapturedLogManager:
@@ -6056,7 +7392,9 @@ export const buildInstance = (
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
         ? overrides.runLauncher!
-        : buildRunLauncher(),
+        : relationshipsToOmit.has('RunLauncher')
+        ? ({} as RunLauncher)
+        : buildRunLauncher({}, relationshipsToOmit),
     runQueuingSupported:
       overrides && overrides.hasOwnProperty('runQueuingSupported')
         ? overrides.runQueuingSupported!
@@ -6066,7 +7404,10 @@ export const buildInstance = (
 
 export const buildInstigationEvent = (
   overrides?: Partial<InstigationEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationEvent'} & InstigationEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationEvent');
   return {
     __typename: 'InstigationEvent',
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
@@ -6078,21 +7419,37 @@ export const buildInstigationEvent = (
 
 export const buildInstigationEventConnection = (
   overrides?: Partial<InstigationEventConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationEventConnection'} & InstigationEventConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationEventConnection');
   return {
     __typename: 'InstigationEventConnection',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'harum',
     events:
       overrides && overrides.hasOwnProperty('events')
         ? overrides.events!
-        : [buildInstigationEvent(), buildInstigationEvent(), buildInstigationEvent()],
+        : [
+            relationshipsToOmit.has('InstigationEvent')
+              ? ({} as InstigationEvent)
+              : buildInstigationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationEvent')
+              ? ({} as InstigationEvent)
+              : buildInstigationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationEvent')
+              ? ({} as InstigationEvent)
+              : buildInstigationEvent({}, relationshipsToOmit),
+          ],
     hasMore: overrides && overrides.hasOwnProperty('hasMore') ? overrides.hasMore! : true,
   };
 };
 
 export const buildInstigationSelector = (
   overrides?: Partial<InstigationSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): InstigationSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationSelector');
   return {
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'et',
     repositoryLocationName:
@@ -6108,7 +7465,10 @@ export const buildInstigationSelector = (
 
 export const buildInstigationState = (
   overrides?: Partial<InstigationState>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationState'} & InstigationState => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationState');
   return {
     __typename: 'InstigationState',
     hasStartPermission:
@@ -6131,7 +7491,9 @@ export const buildInstigationState = (
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
         ? overrides.nextTick!
-        : buildDryRunInstigationTick(),
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
         ? overrides.repositoryLocationName!
@@ -6141,34 +7503,60 @@ export const buildInstigationState = (
     repositoryOrigin:
       overrides && overrides.hasOwnProperty('repositoryOrigin')
         ? overrides.repositoryOrigin!
-        : buildRepositoryOrigin(),
+        : relationshipsToOmit.has('RepositoryOrigin')
+        ? ({} as RepositoryOrigin)
+        : buildRepositoryOrigin({}, relationshipsToOmit),
     runningCount:
       overrides && overrides.hasOwnProperty('runningCount') ? overrides.runningCount! : 6523,
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     runsCount: overrides && overrides.hasOwnProperty('runsCount') ? overrides.runsCount! : 6663,
     selectorId: overrides && overrides.hasOwnProperty('selectorId') ? overrides.selectorId! : 'aut',
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : InstigationStatus.RUNNING,
-    tick: overrides && overrides.hasOwnProperty('tick') ? overrides.tick! : buildInstigationTick(),
+    tick:
+      overrides && overrides.hasOwnProperty('tick')
+        ? overrides.tick!
+        : relationshipsToOmit.has('InstigationTick')
+        ? ({} as InstigationTick)
+        : buildInstigationTick({}, relationshipsToOmit),
     ticks:
       overrides && overrides.hasOwnProperty('ticks')
         ? overrides.ticks!
-        : [buildInstigationTick(), buildInstigationTick(), buildInstigationTick()],
+        : [
+            relationshipsToOmit.has('InstigationTick')
+              ? ({} as InstigationTick)
+              : buildInstigationTick({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationTick')
+              ? ({} as InstigationTick)
+              : buildInstigationTick({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationTick')
+              ? ({} as InstigationTick)
+              : buildInstigationTick({}, relationshipsToOmit),
+          ],
     typeSpecificData:
       overrides && overrides.hasOwnProperty('typeSpecificData')
         ? overrides.typeSpecificData!
-        : buildScheduleData(),
+        : relationshipsToOmit.has('ScheduleData')
+        ? ({} as ScheduleData)
+        : buildScheduleData({}, relationshipsToOmit),
   };
 };
 
 export const buildInstigationStateNotFoundError = (
   overrides?: Partial<InstigationStateNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationStateNotFoundError'} & InstigationStateNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationStateNotFoundError');
   return {
     __typename: 'InstigationStateNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'nihil',
@@ -6178,23 +7566,44 @@ export const buildInstigationStateNotFoundError = (
 
 export const buildInstigationStates = (
   overrides?: Partial<InstigationStates>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationStates'} & InstigationStates => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationStates');
   return {
     __typename: 'InstigationStates',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildInstigationState(), buildInstigationState(), buildInstigationState()],
+        : [
+            relationshipsToOmit.has('InstigationState')
+              ? ({} as InstigationState)
+              : buildInstigationState({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationState')
+              ? ({} as InstigationState)
+              : buildInstigationState({}, relationshipsToOmit),
+            relationshipsToOmit.has('InstigationState')
+              ? ({} as InstigationState)
+              : buildInstigationState({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildInstigationTick = (
   overrides?: Partial<InstigationTick>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InstigationTick'} & InstigationTick => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InstigationTick');
   return {
     __typename: 'InstigationTick',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'voluptatem',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -6202,7 +7611,9 @@ export const buildInstigationTick = (
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!
-        : buildInstigationEventConnection(),
+        : relationshipsToOmit.has('InstigationEventConnection')
+        ? ({} as InstigationEventConnection)
+        : buildInstigationEventConnection({}, relationshipsToOmit),
     logKey:
       overrides && overrides.hasOwnProperty('logKey')
         ? overrides.logKey!
@@ -6222,7 +7633,11 @@ export const buildInstigationTick = (
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     skipReason:
       overrides && overrides.hasOwnProperty('skipReason') ? overrides.skipReason! : 'maxime',
     status:
@@ -6235,7 +7650,10 @@ export const buildInstigationTick = (
 
 export const buildIntMetadataEntry = (
   overrides?: Partial<IntMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'IntMetadataEntry'} & IntMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('IntMetadataEntry');
   return {
     __typename: 'IntMetadataEntry',
     description:
@@ -6248,7 +7666,10 @@ export const buildIntMetadataEntry = (
 
 export const buildInvalidOutputError = (
   overrides?: Partial<InvalidOutputError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InvalidOutputError'} & InvalidOutputError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InvalidOutputError');
   return {
     __typename: 'InvalidOutputError',
     invalidOutputName:
@@ -6261,7 +7682,10 @@ export const buildInvalidOutputError = (
 
 export const buildInvalidPipelineRunsFilterError = (
   overrides?: Partial<InvalidPipelineRunsFilterError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InvalidPipelineRunsFilterError'} & InvalidPipelineRunsFilterError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InvalidPipelineRunsFilterError');
   return {
     __typename: 'InvalidPipelineRunsFilterError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'et',
@@ -6270,7 +7694,10 @@ export const buildInvalidPipelineRunsFilterError = (
 
 export const buildInvalidStepError = (
   overrides?: Partial<InvalidStepError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InvalidStepError'} & InvalidStepError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InvalidStepError');
   return {
     __typename: 'InvalidStepError',
     invalidStepKey:
@@ -6282,26 +7709,50 @@ export const buildInvalidStepError = (
 
 export const buildInvalidSubsetError = (
   overrides?: Partial<InvalidSubsetError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'InvalidSubsetError'} & InvalidSubsetError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('InvalidSubsetError');
   return {
     __typename: 'InvalidSubsetError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'aut',
     pipeline:
-      overrides && overrides.hasOwnProperty('pipeline') ? overrides.pipeline! : buildPipeline(),
+      overrides && overrides.hasOwnProperty('pipeline')
+        ? overrides.pipeline!
+        : relationshipsToOmit.has('Pipeline')
+        ? ({} as Pipeline)
+        : buildPipeline({}, relationshipsToOmit),
   };
 };
 
-export const buildJob = (overrides?: Partial<Job>): {__typename: 'Job'} & Job => {
+export const buildJob = (
+  overrides?: Partial<Job>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Job'} & Job => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Job');
   return {
     __typename: 'Job',
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
-        : buildDagsterTypeNotFoundError(),
+        : relationshipsToOmit.has('DagsterTypeNotFoundError')
+        ? ({} as DagsterTypeNotFoundError)
+        : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
       overrides && overrides.hasOwnProperty('dagsterTypes')
         ? overrides.dagsterTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'occaecati',
     graphName:
@@ -6315,11 +7766,25 @@ export const buildJob = (overrides?: Partial<Job>): {__typename: 'Job'} & Job =>
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -6332,50 +7797,125 @@ export const buildJob = (overrides?: Partial<Job>): {__typename: 'Job'} & Job =>
     presets:
       overrides && overrides.hasOwnProperty('presets')
         ? overrides.presets!
-        : [buildPipelinePreset(), buildPipelinePreset(), buildPipelinePreset()],
+        : [
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+          ],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
-        : buildRepository(),
+        : relationshipsToOmit.has('Repository')
+        ? ({} as Repository)
+        : buildRepository({}, relationshipsToOmit),
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     schedules:
       overrides && overrides.hasOwnProperty('schedules')
         ? overrides.schedules!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
     sensors:
       overrides && overrides.hasOwnProperty('sensors')
         ? overrides.sensors!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildJobOrPipelineSelector = (
   overrides?: Partial<JobOrPipelineSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): JobOrPipelineSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JobOrPipelineSelector');
   return {
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
-        : [buildAssetKeyInput(), buildAssetKeyInput(), buildAssetKeyInput()],
+        : [
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+          ],
     jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'quia',
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -6396,7 +7936,10 @@ export const buildJobOrPipelineSelector = (
 
 export const buildJsonMetadataEntry = (
   overrides?: Partial<JsonMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'JsonMetadataEntry'} & JsonMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JsonMetadataEntry');
   return {
     __typename: 'JsonMetadataEntry',
     description:
@@ -6408,26 +7951,44 @@ export const buildJsonMetadataEntry = (
 
 export const buildLaunchBackfillMutation = (
   overrides?: Partial<LaunchBackfillMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchBackfillMutation'} & LaunchBackfillMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchBackfillMutation');
   return {
     __typename: 'LaunchBackfillMutation',
     Output:
       overrides && overrides.hasOwnProperty('Output')
         ? overrides.Output!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
   };
 };
 
 export const buildLaunchBackfillParams = (
   overrides?: Partial<LaunchBackfillParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): LaunchBackfillParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchBackfillParams');
   return {
     allPartitions:
       overrides && overrides.hasOwnProperty('allPartitions') ? overrides.allPartitions! : false,
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
-        : [buildAssetKeyInput(), buildAssetKeyInput(), buildAssetKeyInput()],
+        : [
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+          ],
     forceSynchronousSubmission:
       overrides && overrides.hasOwnProperty('forceSynchronousSubmission')
         ? overrides.forceSynchronousSubmission!
@@ -6445,17 +8006,32 @@ export const buildLaunchBackfillParams = (
     selector:
       overrides && overrides.hasOwnProperty('selector')
         ? overrides.selector!
-        : buildPartitionSetSelector(),
+        : relationshipsToOmit.has('PartitionSetSelector')
+        ? ({} as PartitionSetSelector)
+        : buildPartitionSetSelector({}, relationshipsToOmit),
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildExecutionTag(), buildExecutionTag(), buildExecutionTag()],
+        : [
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildLaunchBackfillSuccess = (
   overrides?: Partial<LaunchBackfillSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchBackfillSuccess'} & LaunchBackfillSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchBackfillSuccess');
   return {
     __typename: 'LaunchBackfillSuccess',
     backfillId: overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sit',
@@ -6468,49 +8044,78 @@ export const buildLaunchBackfillSuccess = (
 
 export const buildLaunchPipelineRunSuccess = (
   overrides?: Partial<LaunchPipelineRunSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchPipelineRunSuccess'} & LaunchPipelineRunSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchPipelineRunSuccess');
   return {
     __typename: 'LaunchPipelineRunSuccess',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildLaunchRunMutation = (
   overrides?: Partial<LaunchRunMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchRunMutation'} & LaunchRunMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchRunMutation');
   return {
     __typename: 'LaunchRunMutation',
     Output:
       overrides && overrides.hasOwnProperty('Output')
         ? overrides.Output!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
   };
 };
 
 export const buildLaunchRunReexecutionMutation = (
   overrides?: Partial<LaunchRunReexecutionMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchRunReexecutionMutation'} & LaunchRunReexecutionMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchRunReexecutionMutation');
   return {
     __typename: 'LaunchRunReexecutionMutation',
     Output:
       overrides && overrides.hasOwnProperty('Output')
         ? overrides.Output!
-        : buildConflictingExecutionParamsError(),
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+        ? ({} as ConflictingExecutionParamsError)
+        : buildConflictingExecutionParamsError({}, relationshipsToOmit),
   };
 };
 
 export const buildLaunchRunSuccess = (
   overrides?: Partial<LaunchRunSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LaunchRunSuccess'} & LaunchRunSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchRunSuccess');
   return {
     __typename: 'LaunchRunSuccess',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildListDagsterType = (
   overrides?: Partial<ListDagsterType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ListDagsterType'} & ListDagsterType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ListDagsterType');
   return {
     __typename: 'ListDagsterType',
     description:
@@ -6520,11 +8125,23 @@ export const buildListDagsterType = (
     innerTypes:
       overrides && overrides.hasOwnProperty('innerTypes')
         ? overrides.innerTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : true,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -6533,20 +8150,39 @@ export const buildListDagsterType = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'culpa',
     ofType:
-      overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildDagsterType(),
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildLoadedInputEvent = (
   overrides?: Partial<LoadedInputEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LoadedInputEvent'} & LoadedInputEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LoadedInputEvent');
   return {
     __typename: 'LoadedInputEvent',
     description:
@@ -6564,7 +8200,17 @@ export const buildLoadedInputEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'porro',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'qui',
@@ -6583,7 +8229,10 @@ export const buildLoadedInputEvent = (
 
 export const buildLocationStateChangeEvent = (
   overrides?: Partial<LocationStateChangeEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LocationStateChangeEvent'} & LocationStateChangeEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LocationStateChangeEvent');
   return {
     __typename: 'LocationStateChangeEvent',
     eventType:
@@ -6599,19 +8248,27 @@ export const buildLocationStateChangeEvent = (
 
 export const buildLocationStateChangeSubscription = (
   overrides?: Partial<LocationStateChangeSubscription>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LocationStateChangeSubscription'} & LocationStateChangeSubscription => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LocationStateChangeSubscription');
   return {
     __typename: 'LocationStateChangeSubscription',
     event:
       overrides && overrides.hasOwnProperty('event')
         ? overrides.event!
-        : buildLocationStateChangeEvent(),
+        : relationshipsToOmit.has('LocationStateChangeEvent')
+        ? ({} as LocationStateChangeEvent)
+        : buildLocationStateChangeEvent({}, relationshipsToOmit),
   };
 };
 
 export const buildLogMessageEvent = (
   overrides?: Partial<LogMessageEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LogMessageEvent'} & LogMessageEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogMessageEvent');
   return {
     __typename: 'LogMessageEvent',
     eventType:
@@ -6633,20 +8290,30 @@ export const buildLogMessageEvent = (
 
 export const buildLogTelemetrySuccess = (
   overrides?: Partial<LogTelemetrySuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LogTelemetrySuccess'} & LogTelemetrySuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogTelemetrySuccess');
   return {
     __typename: 'LogTelemetrySuccess',
     action: overrides && overrides.hasOwnProperty('action') ? overrides.action! : 'assumenda',
   };
 };
 
-export const buildLogger = (overrides?: Partial<Logger>): {__typename: 'Logger'} & Logger => {
+export const buildLogger = (
+  overrides?: Partial<Logger>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Logger'} & Logger => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Logger');
   return {
     __typename: 'Logger',
     configField:
       overrides && overrides.hasOwnProperty('configField')
         ? overrides.configField!
-        : buildConfigTypeField(),
+        : relationshipsToOmit.has('ConfigTypeField')
+        ? ({} as ConfigTypeField)
+        : buildConfigTypeField({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'non',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quas',
@@ -6655,7 +8322,10 @@ export const buildLogger = (overrides?: Partial<Logger>): {__typename: 'Logger'}
 
 export const buildLogsCapturedEvent = (
   overrides?: Partial<LogsCapturedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'LogsCapturedEvent'} & LogsCapturedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogsCapturedEvent');
   return {
     __typename: 'LogsCapturedEvent',
     eventType:
@@ -6685,7 +8355,10 @@ export const buildLogsCapturedEvent = (
 
 export const buildMapConfigType = (
   overrides?: Partial<MapConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MapConfigType'} & MapConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MapConfigType');
   return {
     __typename: 'MapConfigType',
     description:
@@ -6695,23 +8368,44 @@ export const buildMapConfigType = (
     keyLabelName:
       overrides && overrides.hasOwnProperty('keyLabelName') ? overrides.keyLabelName! : 'nostrum',
     keyType:
-      overrides && overrides.hasOwnProperty('keyType') ? overrides.keyType! : buildConfigType(),
+      overrides && overrides.hasOwnProperty('keyType')
+        ? overrides.keyType!
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
         : ['impedit', 'unde', 'natus'],
     valueType:
-      overrides && overrides.hasOwnProperty('valueType') ? overrides.valueType! : buildConfigType(),
+      overrides && overrides.hasOwnProperty('valueType')
+        ? overrides.valueType!
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildMarkdownMetadataEntry = (
   overrides?: Partial<MarkdownMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MarkdownMetadataEntry'} & MarkdownMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MarkdownMetadataEntry');
   return {
     __typename: 'MarkdownMetadataEntry',
     description:
@@ -6723,7 +8417,10 @@ export const buildMarkdownMetadataEntry = (
 
 export const buildMarkerEvent = (
   overrides?: Partial<MarkerEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MarkerEvent'} & MarkerEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MarkerEvent');
   return {
     __typename: 'MarkerEvent',
     markerEnd:
@@ -6733,14 +8430,24 @@ export const buildMarkerEvent = (
   };
 };
 
-export const buildMarshalledInput = (overrides?: Partial<MarshalledInput>): MarshalledInput => {
+export const buildMarshalledInput = (
+  overrides?: Partial<MarshalledInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): MarshalledInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MarshalledInput');
   return {
     inputName: overrides && overrides.hasOwnProperty('inputName') ? overrides.inputName! : 'nobis',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'nam',
   };
 };
 
-export const buildMarshalledOutput = (overrides?: Partial<MarshalledOutput>): MarshalledOutput => {
+export const buildMarshalledOutput = (
+  overrides?: Partial<MarshalledOutput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): MarshalledOutput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MarshalledOutput');
   return {
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'sed',
     outputName:
@@ -6750,15 +8457,32 @@ export const buildMarshalledOutput = (overrides?: Partial<MarshalledOutput>): Ma
 
 export const buildMaterializationEvent = (
   overrides?: Partial<MaterializationEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MaterializationEvent'} & MaterializationEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaterializationEvent');
   return {
     __typename: 'MaterializationEvent',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     assetLineage:
       overrides && overrides.hasOwnProperty('assetLineage')
         ? overrides.assetLineage!
-        : [buildAssetLineageInfo(), buildAssetLineageInfo(), buildAssetLineageInfo()],
+        : [
+            relationshipsToOmit.has('AssetLineageInfo')
+              ? ({} as AssetLineageInfo)
+              : buildAssetLineageInfo({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetLineageInfo')
+              ? ({} as AssetLineageInfo)
+              : buildAssetLineageInfo({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetLineageInfo')
+              ? ({} as AssetLineageInfo)
+              : buildAssetLineageInfo({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'eaque',
     eventType:
@@ -6771,46 +8495,82 @@ export const buildMaterializationEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'velit',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'velit',
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'qui',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'ratione',
     stepStats:
       overrides && overrides.hasOwnProperty('stepStats')
         ? overrides.stepStats!
-        : buildRunStepStats(),
+        : relationshipsToOmit.has('RunStepStats')
+        ? ({} as RunStepStats)
+        : buildRunStepStats({}, relationshipsToOmit),
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildEventTag(), buildEventTag(), buildEventTag()],
+        : [
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+          ],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'id',
   };
 };
 
 export const buildMaterializationUpstreamDataVersion = (
   overrides?: Partial<MaterializationUpstreamDataVersion>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MaterializationUpstreamDataVersion'} & MaterializationUpstreamDataVersion => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaterializationUpstreamDataVersion');
   return {
     __typename: 'MaterializationUpstreamDataVersion',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     downstreamAssetKey:
       overrides && overrides.hasOwnProperty('downstreamAssetKey')
         ? overrides.downstreamAssetKey!
-        : buildAssetKey(),
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'aut',
   };
 };
 
 export const buildMaterializedPartitionRange2D = (
   overrides?: Partial<MaterializedPartitionRange2D>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MaterializedPartitionRange2D'} & MaterializedPartitionRange2D => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MaterializedPartitionRange2D');
   return {
     __typename: 'MaterializedPartitionRange2D',
     primaryDimEndKey:
@@ -6832,13 +8592,18 @@ export const buildMaterializedPartitionRange2D = (
     secondaryDim:
       overrides && overrides.hasOwnProperty('secondaryDim')
         ? overrides.secondaryDim!
-        : buildDefaultPartitions(),
+        : relationshipsToOmit.has('DefaultPartitions')
+        ? ({} as DefaultPartitions)
+        : buildDefaultPartitions({}, relationshipsToOmit),
   };
 };
 
 export const buildMessageEvent = (
   overrides?: Partial<MessageEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MessageEvent'} & MessageEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MessageEvent');
   return {
     __typename: 'MessageEvent',
     eventType:
@@ -6859,7 +8624,10 @@ export const buildMessageEvent = (
 
 export const buildMetadataEntry = (
   overrides?: Partial<MetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MetadataEntry'} & MetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MetadataEntry');
   return {
     __typename: 'MetadataEntry',
     description:
@@ -6870,7 +8638,10 @@ export const buildMetadataEntry = (
 
 export const buildMetadataItemDefinition = (
   overrides?: Partial<MetadataItemDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MetadataItemDefinition'} & MetadataItemDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MetadataItemDefinition');
   return {
     __typename: 'MetadataItemDefinition',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'ex',
@@ -6880,11 +8651,18 @@ export const buildMetadataItemDefinition = (
 
 export const buildMissingFieldConfigError = (
   overrides?: Partial<MissingFieldConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MissingFieldConfigError'} & MissingFieldConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MissingFieldConfigError');
   return {
     __typename: 'MissingFieldConfigError',
     field:
-      overrides && overrides.hasOwnProperty('field') ? overrides.field! : buildConfigTypeField(),
+      overrides && overrides.hasOwnProperty('field')
+        ? overrides.field!
+        : relationshipsToOmit.has('ConfigTypeField')
+        ? ({} as ConfigTypeField)
+        : buildConfigTypeField({}, relationshipsToOmit),
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'autem',
     path:
       overrides && overrides.hasOwnProperty('path')
@@ -6895,19 +8673,36 @@ export const buildMissingFieldConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
 export const buildMissingFieldsConfigError = (
   overrides?: Partial<MissingFieldsConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MissingFieldsConfigError'} & MissingFieldsConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MissingFieldsConfigError');
   return {
     __typename: 'MissingFieldsConfigError',
     fields:
       overrides && overrides.hasOwnProperty('fields')
         ? overrides.fields!
-        : [buildConfigTypeField(), buildConfigTypeField(), buildConfigTypeField()],
+        : [
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+          ],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'voluptatibus',
     path:
       overrides && overrides.hasOwnProperty('path')
@@ -6918,13 +8713,20 @@ export const buildMissingFieldsConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
 export const buildMissingRunIdErrorEvent = (
   overrides?: Partial<MissingRunIdErrorEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MissingRunIdErrorEvent'} & MissingRunIdErrorEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MissingRunIdErrorEvent');
   return {
     __typename: 'MissingRunIdErrorEvent',
     invalidRunId:
@@ -6932,7 +8734,12 @@ export const buildMissingRunIdErrorEvent = (
   };
 };
 
-export const buildMode = (overrides?: Partial<Mode>): {__typename: 'Mode'} & Mode => {
+export const buildMode = (
+  overrides?: Partial<Mode>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Mode'} & Mode => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Mode');
   return {
     __typename: 'Mode',
     description:
@@ -6941,18 +8748,41 @@ export const buildMode = (overrides?: Partial<Mode>): {__typename: 'Mode'} & Mod
     loggers:
       overrides && overrides.hasOwnProperty('loggers')
         ? overrides.loggers!
-        : [buildLogger(), buildLogger(), buildLogger()],
+        : [
+            relationshipsToOmit.has('Logger')
+              ? ({} as Logger)
+              : buildLogger({}, relationshipsToOmit),
+            relationshipsToOmit.has('Logger')
+              ? ({} as Logger)
+              : buildLogger({}, relationshipsToOmit),
+            relationshipsToOmit.has('Logger')
+              ? ({} as Logger)
+              : buildLogger({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'aliquam',
     resources:
       overrides && overrides.hasOwnProperty('resources')
         ? overrides.resources!
-        : [buildResource(), buildResource(), buildResource()],
+        : [
+            relationshipsToOmit.has('Resource')
+              ? ({} as Resource)
+              : buildResource({}, relationshipsToOmit),
+            relationshipsToOmit.has('Resource')
+              ? ({} as Resource)
+              : buildResource({}, relationshipsToOmit),
+            relationshipsToOmit.has('Resource')
+              ? ({} as Resource)
+              : buildResource({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildModeNotFoundError = (
   overrides?: Partial<ModeNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ModeNotFoundError'} & ModeNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ModeNotFoundError');
   return {
     __typename: 'ModeNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'eius',
@@ -6962,7 +8792,10 @@ export const buildModeNotFoundError = (
 
 export const buildMultiPartitions = (
   overrides?: Partial<MultiPartitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'MultiPartitions'} & MultiPartitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('MultiPartitions');
   return {
     __typename: 'MultiPartitions',
     primaryDimensionName:
@@ -6973,16 +8806,25 @@ export const buildMultiPartitions = (
       overrides && overrides.hasOwnProperty('ranges')
         ? overrides.ranges!
         : [
-            buildMaterializedPartitionRange2D(),
-            buildMaterializedPartitionRange2D(),
-            buildMaterializedPartitionRange2D(),
+            relationshipsToOmit.has('MaterializedPartitionRange2D')
+              ? ({} as MaterializedPartitionRange2D)
+              : buildMaterializedPartitionRange2D({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializedPartitionRange2D')
+              ? ({} as MaterializedPartitionRange2D)
+              : buildMaterializedPartitionRange2D({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializedPartitionRange2D')
+              ? ({} as MaterializedPartitionRange2D)
+              : buildMaterializedPartitionRange2D({}, relationshipsToOmit),
           ],
   };
 };
 
 export const buildNoModeProvidedError = (
   overrides?: Partial<NoModeProvidedError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NoModeProvidedError'} & NoModeProvidedError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NoModeProvidedError');
   return {
     __typename: 'NoModeProvidedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'neque',
@@ -6993,21 +8835,33 @@ export const buildNoModeProvidedError = (
 
 export const buildNodeInvocationSite = (
   overrides?: Partial<NodeInvocationSite>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NodeInvocationSite'} & NodeInvocationSite => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NodeInvocationSite');
   return {
     __typename: 'NodeInvocationSite',
     pipeline:
-      overrides && overrides.hasOwnProperty('pipeline') ? overrides.pipeline! : buildPipeline(),
+      overrides && overrides.hasOwnProperty('pipeline')
+        ? overrides.pipeline!
+        : relationshipsToOmit.has('Pipeline')
+        ? ({} as Pipeline)
+        : buildPipeline({}, relationshipsToOmit),
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
   };
 };
 
 export const buildNotebookMetadataEntry = (
   overrides?: Partial<NotebookMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NotebookMetadataEntry'} & NotebookMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NotebookMetadataEntry');
   return {
     __typename: 'NotebookMetadataEntry',
     description:
@@ -7019,7 +8873,10 @@ export const buildNotebookMetadataEntry = (
 
 export const buildNullMetadataEntry = (
   overrides?: Partial<NullMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NullMetadataEntry'} & NullMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NullMetadataEntry');
   return {
     __typename: 'NullMetadataEntry',
     description:
@@ -7030,18 +8887,36 @@ export const buildNullMetadataEntry = (
 
 export const buildNullableConfigType = (
   overrides?: Partial<NullableConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NullableConfigType'} & NullableConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NullableConfigType');
   return {
     __typename: 'NullableConfigType',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'voluptas',
     isSelector: overrides && overrides.hasOwnProperty('isSelector') ? overrides.isSelector! : true,
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'consequuntur',
-    ofType: overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildConfigType(),
+    ofType:
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -7051,7 +8926,10 @@ export const buildNullableConfigType = (
 
 export const buildNullableDagsterType = (
   overrides?: Partial<NullableDagsterType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'NullableDagsterType'} & NullableDagsterType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NullableDagsterType');
   return {
     __typename: 'NullableDagsterType',
     description:
@@ -7063,11 +8941,23 @@ export const buildNullableDagsterType = (
     innerTypes:
       overrides && overrides.hasOwnProperty('innerTypes')
         ? overrides.innerTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : false,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : true,
@@ -7076,20 +8966,39 @@ export const buildNullableDagsterType = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'nulla',
     ofType:
-      overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildDagsterType(),
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildObjectStoreOperationEvent = (
   overrides?: Partial<ObjectStoreOperationEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ObjectStoreOperationEvent'} & ObjectStoreOperationEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ObjectStoreOperationEvent');
   return {
     __typename: 'ObjectStoreOperationEvent',
     eventType:
@@ -7101,7 +9010,9 @@ export const buildObjectStoreOperationEvent = (
     operationResult:
       overrides && overrides.hasOwnProperty('operationResult')
         ? overrides.operationResult!
-        : buildObjectStoreOperationResult(),
+        : relationshipsToOmit.has('ObjectStoreOperationResult')
+        ? ({} as ObjectStoreOperationResult)
+        : buildObjectStoreOperationResult({}, relationshipsToOmit),
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'vero',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
@@ -7114,7 +9025,10 @@ export const buildObjectStoreOperationEvent = (
 
 export const buildObjectStoreOperationResult = (
   overrides?: Partial<ObjectStoreOperationResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ObjectStoreOperationResult'} & ObjectStoreOperationResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ObjectStoreOperationResult');
   return {
     __typename: 'ObjectStoreOperationResult',
     description:
@@ -7123,7 +9037,17 @@ export const buildObjectStoreOperationResult = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     op:
       overrides && overrides.hasOwnProperty('op')
         ? overrides.op!
@@ -7133,11 +9057,18 @@ export const buildObjectStoreOperationResult = (
 
 export const buildObservationEvent = (
   overrides?: Partial<ObservationEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ObservationEvent'} & ObservationEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ObservationEvent');
   return {
     __typename: 'ObservationEvent',
     assetKey:
-      overrides && overrides.hasOwnProperty('assetKey') ? overrides.assetKey! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'dolorum',
     eventType:
@@ -7150,13 +9081,25 @@ export const buildObservationEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     partition: overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'esse',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'aliquid',
     runOrError:
       overrides && overrides.hasOwnProperty('runOrError')
         ? overrides.runOrError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
@@ -7165,33 +9108,64 @@ export const buildObservationEvent = (
     stepStats:
       overrides && overrides.hasOwnProperty('stepStats')
         ? overrides.stepStats!
-        : buildRunStepStats(),
+        : relationshipsToOmit.has('RunStepStats')
+        ? ({} as RunStepStats)
+        : buildRunStepStats({}, relationshipsToOmit),
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildEventTag(), buildEventTag(), buildEventTag()],
+        : [
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('EventTag')
+              ? ({} as EventTag)
+              : buildEventTag({}, relationshipsToOmit),
+          ],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'ut',
   };
 };
 
-export const buildOutput = (overrides?: Partial<Output>): {__typename: 'Output'} & Output => {
+export const buildOutput = (
+  overrides?: Partial<Output>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Output'} & Output => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Output');
   return {
     __typename: 'Output',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildOutputDefinition(),
+        : relationshipsToOmit.has('OutputDefinition')
+        ? ({} as OutputDefinition)
+        : buildOutputDefinition({}, relationshipsToOmit),
     dependedBy:
       overrides && overrides.hasOwnProperty('dependedBy')
         ? overrides.dependedBy!
-        : [buildInput(), buildInput(), buildInput()],
-    solid: overrides && overrides.hasOwnProperty('solid') ? overrides.solid! : buildSolid(),
+        : [
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+          ],
+    solid:
+      overrides && overrides.hasOwnProperty('solid')
+        ? overrides.solid!
+        : relationshipsToOmit.has('Solid')
+        ? ({} as Solid)
+        : buildSolid({}, relationshipsToOmit),
   };
 };
 
 export const buildOutputDefinition = (
   overrides?: Partial<OutputDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'OutputDefinition'} & OutputDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('OutputDefinition');
   return {
     __typename: 'OutputDefinition',
     description:
@@ -7200,35 +9174,62 @@ export const buildOutputDefinition = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'repellendus',
     solidDefinition:
       overrides && overrides.hasOwnProperty('solidDefinition')
         ? overrides.solidDefinition!
-        : buildSolidDefinition(),
-    type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : buildDagsterType(),
+        : relationshipsToOmit.has('SolidDefinition')
+        ? ({} as SolidDefinition)
+        : buildSolidDefinition({}, relationshipsToOmit),
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
   };
 };
 
 export const buildOutputMapping = (
   overrides?: Partial<OutputMapping>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'OutputMapping'} & OutputMapping => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('OutputMapping');
   return {
     __typename: 'OutputMapping',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildOutputDefinition(),
+        : relationshipsToOmit.has('OutputDefinition')
+        ? ({} as OutputDefinition)
+        : buildOutputDefinition({}, relationshipsToOmit),
     mappedOutput:
       overrides && overrides.hasOwnProperty('mappedOutput')
         ? overrides.mappedOutput!
-        : buildOutput(),
+        : relationshipsToOmit.has('Output')
+        ? ({} as Output)
+        : buildOutput({}, relationshipsToOmit),
   };
 };
 
 export const buildPartition = (
   overrides?: Partial<Partition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Partition'} & Partition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Partition');
   return {
     __typename: 'Partition',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'eum',
@@ -7240,11 +9241,17 @@ export const buildPartition = (
     runConfigOrError:
       overrides && overrides.hasOwnProperty('runConfigOrError')
         ? overrides.runConfigOrError!
-        : buildPartitionRunConfig(),
+        : relationshipsToOmit.has('PartitionRunConfig')
+        ? ({} as PartitionRunConfig)
+        : buildPartitionRunConfig({}, relationshipsToOmit),
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection')
         ? overrides.solidSelection!
@@ -7254,22 +9261,42 @@ export const buildPartition = (
     tagsOrError:
       overrides && overrides.hasOwnProperty('tagsOrError')
         ? overrides.tagsOrError!
-        : buildPartitionTags(),
+        : relationshipsToOmit.has('PartitionTags')
+        ? ({} as PartitionTags)
+        : buildPartitionTags({}, relationshipsToOmit),
   };
 };
 
 export const buildPartitionBackfill = (
   overrides?: Partial<PartitionBackfill>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionBackfill'} & PartitionBackfill => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionBackfill');
   return {
     __typename: 'PartitionBackfill',
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     backfillId:
       overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sint',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     fromFailure:
       overrides && overrides.hasOwnProperty('fromFailure') ? overrides.fromFailure! : true,
     hasCancelPermission:
@@ -7295,7 +9322,9 @@ export const buildPartitionBackfill = (
     partitionSet:
       overrides && overrides.hasOwnProperty('partitionSet')
         ? overrides.partitionSet!
-        : buildPartitionSet(),
+        : relationshipsToOmit.has('PartitionSet')
+        ? ({} as PartitionSet)
+        : buildPartitionSet({}, relationshipsToOmit),
     partitionSetName:
       overrides && overrides.hasOwnProperty('partitionSetName')
         ? overrides.partitionSetName!
@@ -7304,14 +9333,22 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('partitionStatusCounts')
         ? overrides.partitionStatusCounts!
         : [
-            buildPartitionStatusCounts(),
-            buildPartitionStatusCounts(),
-            buildPartitionStatusCounts(),
+            relationshipsToOmit.has('PartitionStatusCounts')
+              ? ({} as PartitionStatusCounts)
+              : buildPartitionStatusCounts({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionStatusCounts')
+              ? ({} as PartitionStatusCounts)
+              : buildPartitionStatusCounts({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionStatusCounts')
+              ? ({} as PartitionStatusCounts)
+              : buildPartitionStatusCounts({}, relationshipsToOmit),
           ],
     partitionStatuses:
       overrides && overrides.hasOwnProperty('partitionStatuses')
         ? overrides.partitionStatuses!
-        : buildPartitionStatuses(),
+        : relationshipsToOmit.has('PartitionStatuses')
+        ? ({} as PartitionStatuses)
+        : buildPartitionStatuses({}, relationshipsToOmit),
     reexecutionSteps:
       overrides && overrides.hasOwnProperty('reexecutionSteps')
         ? overrides.reexecutionSteps!
@@ -7319,7 +9356,11 @@ export const buildPartitionBackfill = (
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     status:
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
@@ -7328,25 +9369,45 @@ export const buildPartitionBackfill = (
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns')
         ? overrides.unfinishedRuns!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPartitionBackfills = (
   overrides?: Partial<PartitionBackfills>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionBackfills'} & PartitionBackfills => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionBackfills');
   return {
     __typename: 'PartitionBackfills',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildPartitionBackfill(), buildPartitionBackfill(), buildPartitionBackfill()],
+        : [
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPartitionDefinition = (
   overrides?: Partial<PartitionDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionDefinition'} & PartitionDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionDefinition');
   return {
     __typename: 'PartitionDefinition',
     description:
@@ -7355,15 +9416,23 @@ export const buildPartitionDefinition = (
       overrides && overrides.hasOwnProperty('dimensionTypes')
         ? overrides.dimensionTypes!
         : [
-            buildDimensionDefinitionType(),
-            buildDimensionDefinitionType(),
-            buildDimensionDefinitionType(),
+            relationshipsToOmit.has('DimensionDefinitionType')
+              ? ({} as DimensionDefinitionType)
+              : buildDimensionDefinitionType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DimensionDefinitionType')
+              ? ({} as DimensionDefinitionType)
+              : buildDimensionDefinitionType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DimensionDefinitionType')
+              ? ({} as DimensionDefinitionType)
+              : buildDimensionDefinitionType({}, relationshipsToOmit),
           ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'facilis',
     timeWindowMetadata:
       overrides && overrides.hasOwnProperty('timeWindowMetadata')
         ? overrides.timeWindowMetadata!
-        : buildTimePartitionsDefinitionMetadata(),
+        : relationshipsToOmit.has('TimePartitionsDefinitionMetadata')
+        ? ({} as TimePartitionsDefinitionMetadata)
+        : buildTimePartitionsDefinitionMetadata({}, relationshipsToOmit),
     type:
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
@@ -7373,19 +9442,30 @@ export const buildPartitionDefinition = (
 
 export const buildPartitionRun = (
   overrides?: Partial<PartitionRun>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionRun'} & PartitionRun => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionRun');
   return {
     __typename: 'PartitionRun',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
     partitionName:
       overrides && overrides.hasOwnProperty('partitionName') ? overrides.partitionName! : 'enim',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildPartitionRunConfig = (
   overrides?: Partial<PartitionRunConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionRunConfig'} & PartitionRunConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionRunConfig');
   return {
     __typename: 'PartitionRunConfig',
     yaml: overrides && overrides.hasOwnProperty('yaml') ? overrides.yaml! : 'ab',
@@ -7394,13 +9474,26 @@ export const buildPartitionRunConfig = (
 
 export const buildPartitionSet = (
   overrides?: Partial<PartitionSet>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionSet'} & PartitionSet => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionSet');
   return {
     __typename: 'PartitionSet',
     backfills:
       overrides && overrides.hasOwnProperty('backfills')
         ? overrides.backfills!
-        : [buildPartitionBackfill(), buildPartitionBackfill(), buildPartitionBackfill()],
+        : [
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionBackfill')
+              ? ({} as PartitionBackfill)
+              : buildPartitionBackfill({}, relationshipsToOmit),
+          ],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -7408,25 +9501,45 @@ export const buildPartitionSet = (
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'cupiditate',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'placeat',
     partition:
-      overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : buildPartition(),
+      overrides && overrides.hasOwnProperty('partition')
+        ? overrides.partition!
+        : relationshipsToOmit.has('Partition')
+        ? ({} as Partition)
+        : buildPartition({}, relationshipsToOmit),
     partitionRuns:
       overrides && overrides.hasOwnProperty('partitionRuns')
         ? overrides.partitionRuns!
-        : [buildPartitionRun(), buildPartitionRun(), buildPartitionRun()],
+        : [
+            relationshipsToOmit.has('PartitionRun')
+              ? ({} as PartitionRun)
+              : buildPartitionRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionRun')
+              ? ({} as PartitionRun)
+              : buildPartitionRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionRun')
+              ? ({} as PartitionRun)
+              : buildPartitionRun({}, relationshipsToOmit),
+          ],
     partitionStatusesOrError:
       overrides && overrides.hasOwnProperty('partitionStatusesOrError')
         ? overrides.partitionStatusesOrError!
-        : buildPartitionStatuses(),
+        : relationshipsToOmit.has('PartitionStatuses')
+        ? ({} as PartitionStatuses)
+        : buildPartitionStatuses({}, relationshipsToOmit),
     partitionsOrError:
       overrides && overrides.hasOwnProperty('partitionsOrError')
         ? overrides.partitionsOrError!
-        : buildPartitions(),
+        : relationshipsToOmit.has('Partitions')
+        ? ({} as Partitions)
+        : buildPartitions({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'nihil',
     repositoryOrigin:
       overrides && overrides.hasOwnProperty('repositoryOrigin')
         ? overrides.repositoryOrigin!
-        : buildRepositoryOrigin(),
+        : relationshipsToOmit.has('RepositoryOrigin')
+        ? ({} as RepositoryOrigin)
+        : buildRepositoryOrigin({}, relationshipsToOmit),
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection')
         ? overrides.solidSelection!
@@ -7436,7 +9549,10 @@ export const buildPartitionSet = (
 
 export const buildPartitionSetNotFoundError = (
   overrides?: Partial<PartitionSetNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionSetNotFoundError'} & PartitionSetNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionSetNotFoundError');
   return {
     __typename: 'PartitionSetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'corrupti',
@@ -7449,7 +9565,10 @@ export const buildPartitionSetNotFoundError = (
 
 export const buildPartitionSetSelector = (
   overrides?: Partial<PartitionSetSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): PartitionSetSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionSetSelector');
   return {
     partitionSetName:
       overrides && overrides.hasOwnProperty('partitionSetName')
@@ -7458,25 +9577,43 @@ export const buildPartitionSetSelector = (
     repositorySelector:
       overrides && overrides.hasOwnProperty('repositorySelector')
         ? overrides.repositorySelector!
-        : buildRepositorySelector(),
+        : relationshipsToOmit.has('RepositorySelector')
+        ? ({} as RepositorySelector)
+        : buildRepositorySelector({}, relationshipsToOmit),
   };
 };
 
 export const buildPartitionSets = (
   overrides?: Partial<PartitionSets>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionSets'} & PartitionSets => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionSets');
   return {
     __typename: 'PartitionSets',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildPartitionSet(), buildPartitionSet(), buildPartitionSet()],
+        : [
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPartitionStats = (
   overrides?: Partial<PartitionStats>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionStats'} & PartitionStats => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionStats');
   return {
     __typename: 'PartitionStats',
     numFailed: overrides && overrides.hasOwnProperty('numFailed') ? overrides.numFailed! : 4790,
@@ -7489,7 +9626,10 @@ export const buildPartitionStats = (
 
 export const buildPartitionStatus = (
   overrides?: Partial<PartitionStatus>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionStatus'} & PartitionStatus => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionStatus');
   return {
     __typename: 'PartitionStatus',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'ut',
@@ -7509,7 +9649,10 @@ export const buildPartitionStatus = (
 
 export const buildPartitionStatusCounts = (
   overrides?: Partial<PartitionStatusCounts>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionStatusCounts'} & PartitionStatusCounts => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionStatusCounts');
   return {
     __typename: 'PartitionStatusCounts',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 5809,
@@ -7522,43 +9665,85 @@ export const buildPartitionStatusCounts = (
 
 export const buildPartitionStatuses = (
   overrides?: Partial<PartitionStatuses>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionStatuses'} & PartitionStatuses => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionStatuses');
   return {
     __typename: 'PartitionStatuses',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildPartitionStatus(), buildPartitionStatus(), buildPartitionStatus()],
+        : [
+            relationshipsToOmit.has('PartitionStatus')
+              ? ({} as PartitionStatus)
+              : buildPartitionStatus({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionStatus')
+              ? ({} as PartitionStatus)
+              : buildPartitionStatus({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionStatus')
+              ? ({} as PartitionStatus)
+              : buildPartitionStatus({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPartitionTags = (
   overrides?: Partial<PartitionTags>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PartitionTags'} & PartitionTags => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionTags');
   return {
     __typename: 'PartitionTags',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPartitions = (
   overrides?: Partial<Partitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Partitions'} & Partitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Partitions');
   return {
     __typename: 'Partitions',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildPartition(), buildPartition(), buildPartition()],
+        : [
+            relationshipsToOmit.has('Partition')
+              ? ({} as Partition)
+              : buildPartition({}, relationshipsToOmit),
+            relationshipsToOmit.has('Partition')
+              ? ({} as Partition)
+              : buildPartition({}, relationshipsToOmit),
+            relationshipsToOmit.has('Partition')
+              ? ({} as Partition)
+              : buildPartition({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPathMetadataEntry = (
   overrides?: Partial<PathMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PathMetadataEntry'} & PathMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PathMetadataEntry');
   return {
     __typename: 'PathMetadataEntry',
     description:
@@ -7570,7 +9755,10 @@ export const buildPathMetadataEntry = (
 
 export const buildPermission = (
   overrides?: Partial<Permission>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Permission'} & Permission => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Permission');
   return {
     __typename: 'Permission',
     disabledReason:
@@ -7583,17 +9771,32 @@ export const buildPermission = (
 
 export const buildPipeline = (
   overrides?: Partial<Pipeline>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Pipeline'} & Pipeline => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Pipeline');
   return {
     __typename: 'Pipeline',
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
-        : buildDagsterTypeNotFoundError(),
+        : relationshipsToOmit.has('DagsterTypeNotFoundError')
+        ? ({} as DagsterTypeNotFoundError)
+        : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
       overrides && overrides.hasOwnProperty('dagsterTypes')
         ? overrides.dagsterTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quisquam',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'eius',
@@ -7606,11 +9809,25 @@ export const buildPipeline = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'veritatis',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -7623,45 +9840,110 @@ export const buildPipeline = (
     presets:
       overrides && overrides.hasOwnProperty('presets')
         ? overrides.presets!
-        : [buildPipelinePreset(), buildPipelinePreset(), buildPipelinePreset()],
+        : [
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelinePreset')
+              ? ({} as PipelinePreset)
+              : buildPipelinePreset({}, relationshipsToOmit),
+          ],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
-        : buildRepository(),
+        : relationshipsToOmit.has('Repository')
+        ? ({} as Repository)
+        : buildRepository({}, relationshipsToOmit),
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     schedules:
       overrides && overrides.hasOwnProperty('schedules')
         ? overrides.schedules!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
     sensors:
       overrides && overrides.hasOwnProperty('sensors')
         ? overrides.sensors!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPipelineConfigValidationError = (
   overrides?: Partial<PipelineConfigValidationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineConfigValidationError'} & PipelineConfigValidationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineConfigValidationError');
   return {
     __typename: 'PipelineConfigValidationError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'consequatur',
@@ -7674,22 +9956,35 @@ export const buildPipelineConfigValidationError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
 export const buildPipelineConfigValidationInvalid = (
   overrides?: Partial<PipelineConfigValidationInvalid>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineConfigValidationInvalid'} & PipelineConfigValidationInvalid => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineConfigValidationInvalid');
   return {
     __typename: 'PipelineConfigValidationInvalid',
     errors:
       overrides && overrides.hasOwnProperty('errors')
         ? overrides.errors!
         : [
-            buildPipelineConfigValidationError(),
-            buildPipelineConfigValidationError(),
-            buildPipelineConfigValidationError(),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
           ],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'totam',
@@ -7698,7 +9993,10 @@ export const buildPipelineConfigValidationInvalid = (
 
 export const buildPipelineConfigValidationValid = (
   overrides?: Partial<PipelineConfigValidationValid>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineConfigValidationValid'} & PipelineConfigValidationValid => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineConfigValidationValid');
   return {
     __typename: 'PipelineConfigValidationValid',
     pipelineName:
@@ -7708,7 +10006,10 @@ export const buildPipelineConfigValidationValid = (
 
 export const buildPipelineNotFoundError = (
   overrides?: Partial<PipelineNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineNotFoundError'} & PipelineNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineNotFoundError');
   return {
     __typename: 'PipelineNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'expedita',
@@ -7727,7 +10028,10 @@ export const buildPipelineNotFoundError = (
 
 export const buildPipelinePreset = (
   overrides?: Partial<PipelinePreset>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelinePreset'} & PipelinePreset => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelinePreset');
   return {
     __typename: 'PipelinePreset',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'aperiam',
@@ -7741,13 +10045,26 @@ export const buildPipelinePreset = (
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPipelineReference = (
   overrides?: Partial<PipelineReference>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineReference'} & PipelineReference => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineReference');
   return {
     __typename: 'PipelineReference',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
@@ -7760,31 +10077,46 @@ export const buildPipelineReference = (
 
 export const buildPipelineRun = (
   overrides?: Partial<PipelineRun>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRun'} & PipelineRun => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRun');
   return {
     __typename: 'PipelineRun',
     assets:
       overrides && overrides.hasOwnProperty('assets')
         ? overrides.assets!
-        : [buildAsset(), buildAsset(), buildAsset()],
+        : [
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+          ],
     canTerminate:
       overrides && overrides.hasOwnProperty('canTerminate') ? overrides.canTerminate! : false,
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
-        : buildCapturedLogs(),
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
     computeLogs:
       overrides && overrides.hasOwnProperty('computeLogs')
         ? overrides.computeLogs!
-        : buildComputeLogs(),
+        : relationshipsToOmit.has('ComputeLogs')
+        ? ({} as ComputeLogs)
+        : buildComputeLogs({}, relationshipsToOmit),
     eventConnection:
       overrides && overrides.hasOwnProperty('eventConnection')
         ? overrides.eventConnection!
-        : buildEventConnection(),
+        : relationshipsToOmit.has('EventConnection')
+        ? ({} as EventConnection)
+        : buildEventConnection({}, relationshipsToOmit),
     executionPlan:
       overrides && overrides.hasOwnProperty('executionPlan')
         ? overrides.executionPlan!
-        : buildExecutionPlan(),
+        : relationshipsToOmit.has('ExecutionPlan')
+        ? ({} as ExecutionPlan)
+        : buildExecutionPlan({}, relationshipsToOmit),
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -7796,7 +10128,9 @@ export const buildPipelineRun = (
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : buildPipelineReference(),
+        : relationshipsToOmit.has('PipelineReference')
+        ? ({} as PipelineReference)
+        : buildPipelineReference({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'animi',
     pipelineSnapshotId:
@@ -7806,7 +10140,9 @@ export const buildPipelineRun = (
     repositoryOrigin:
       overrides && overrides.hasOwnProperty('repositoryOrigin')
         ? overrides.repositoryOrigin!
-        : buildRepositoryOrigin(),
+        : relationshipsToOmit.has('RepositoryOrigin')
+        ? ({} as RepositoryOrigin)
+        : buildRepositoryOrigin({}, relationshipsToOmit),
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'quia',
     runConfig:
       overrides && overrides.hasOwnProperty('runConfig') ? overrides.runConfig! : 'aspernatur',
@@ -7817,7 +10153,12 @@ export const buildPipelineRun = (
       overrides && overrides.hasOwnProperty('solidSelection')
         ? overrides.solidSelection!
         : ['occaecati', 'assumenda', 'neque'],
-    stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
+    stats:
+      overrides && overrides.hasOwnProperty('stats')
+        ? overrides.stats!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     status:
       overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     stepKeysToExecute:
@@ -7827,17 +10168,40 @@ export const buildPipelineRun = (
     stepStats:
       overrides && overrides.hasOwnProperty('stepStats')
         ? overrides.stepStats!
-        : [buildRunStepStats(), buildRunStepStats(), buildRunStepStats()],
+        : [
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPipelineRunConflict = (
   overrides?: Partial<PipelineRunConflict>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunConflict'} & PipelineRunConflict => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunConflict');
   return {
     __typename: 'PipelineRunConflict',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'in',
@@ -7846,7 +10210,10 @@ export const buildPipelineRunConflict = (
 
 export const buildPipelineRunLogsSubscriptionFailure = (
   overrides?: Partial<PipelineRunLogsSubscriptionFailure>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunLogsSubscriptionFailure'} & PipelineRunLogsSubscriptionFailure => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunLogsSubscriptionFailure');
   return {
     __typename: 'PipelineRunLogsSubscriptionFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vitae',
@@ -7857,7 +10224,10 @@ export const buildPipelineRunLogsSubscriptionFailure = (
 
 export const buildPipelineRunLogsSubscriptionSuccess = (
   overrides?: Partial<PipelineRunLogsSubscriptionSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunLogsSubscriptionSuccess'} & PipelineRunLogsSubscriptionSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunLogsSubscriptionSuccess');
   return {
     __typename: 'PipelineRunLogsSubscriptionSuccess',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'id',
@@ -7868,14 +10238,32 @@ export const buildPipelineRunLogsSubscriptionSuccess = (
     messages:
       overrides && overrides.hasOwnProperty('messages')
         ? overrides.messages!
-        : [buildAlertFailureEvent(), buildAlertFailureEvent(), buildAlertFailureEvent()],
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+        : [
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('AlertFailureEvent')
+              ? ({} as AlertFailureEvent)
+              : buildAlertFailureEvent({}, relationshipsToOmit),
+          ],
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildPipelineRunMetadataEntry = (
   overrides?: Partial<PipelineRunMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunMetadataEntry'} & PipelineRunMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunMetadataEntry');
   return {
     __typename: 'PipelineRunMetadataEntry',
     description:
@@ -7887,7 +10275,10 @@ export const buildPipelineRunMetadataEntry = (
 
 export const buildPipelineRunNotFoundError = (
   overrides?: Partial<PipelineRunNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunNotFoundError'} & PipelineRunNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunNotFoundError');
   return {
     __typename: 'PipelineRunNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'minus',
@@ -7897,7 +10288,10 @@ export const buildPipelineRunNotFoundError = (
 
 export const buildPipelineRunStatsSnapshot = (
   overrides?: Partial<PipelineRunStatsSnapshot>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunStatsSnapshot'} & PipelineRunStatsSnapshot => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunStatsSnapshot');
   return {
     __typename: 'PipelineRunStatsSnapshot',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 8.08,
@@ -7922,18 +10316,41 @@ export const buildPipelineRunStatsSnapshot = (
 
 export const buildPipelineRunStepStats = (
   overrides?: Partial<PipelineRunStepStats>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRunStepStats'} & PipelineRunStepStats => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRunStepStats');
   return {
     __typename: 'PipelineRunStepStats',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 3.31,
     expectationResults:
       overrides && overrides.hasOwnProperty('expectationResults')
         ? overrides.expectationResults!
-        : [buildExpectationResult(), buildExpectationResult(), buildExpectationResult()],
+        : [
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+          ],
     materializations:
       overrides && overrides.hasOwnProperty('materializations')
         ? overrides.materializations!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 8.43,
     status:
@@ -7944,23 +10361,45 @@ export const buildPipelineRunStepStats = (
 
 export const buildPipelineRuns = (
   overrides?: Partial<PipelineRuns>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineRuns'} & PipelineRuns => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineRuns');
   return {
     __typename: 'PipelineRuns',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 1847,
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildPipelineSelector = (overrides?: Partial<PipelineSelector>): PipelineSelector => {
+export const buildPipelineSelector = (
+  overrides?: Partial<PipelineSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): PipelineSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineSelector');
   return {
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
-        : [buildAssetKeyInput(), buildAssetKeyInput(), buildAssetKeyInput()],
+        : [
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKeyInput')
+              ? ({} as AssetKeyInput)
+              : buildAssetKeyInput({}, relationshipsToOmit),
+          ],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'commodi',
     repositoryLocationName:
@@ -7980,17 +10419,32 @@ export const buildPipelineSelector = (overrides?: Partial<PipelineSelector>): Pi
 
 export const buildPipelineSnapshot = (
   overrides?: Partial<PipelineSnapshot>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineSnapshot'} & PipelineSnapshot => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineSnapshot');
   return {
     __typename: 'PipelineSnapshot',
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
-        : buildDagsterTypeNotFoundError(),
+        : relationshipsToOmit.has('DagsterTypeNotFoundError')
+        ? ({} as DagsterTypeNotFoundError)
+        : buildDagsterTypeNotFoundError({}, relationshipsToOmit),
     dagsterTypes:
       overrides && overrides.hasOwnProperty('dagsterTypes')
         ? overrides.dagsterTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'corporis',
     graphName:
@@ -8002,11 +10456,25 @@ export const buildPipelineSnapshot = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'beatae',
     parentSnapshotId:
       overrides && overrides.hasOwnProperty('parentSnapshotId')
@@ -8019,23 +10487,59 @@ export const buildPipelineSnapshot = (
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
     schedules:
       overrides && overrides.hasOwnProperty('schedules')
         ? overrides.schedules!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
     sensors:
       overrides && overrides.hasOwnProperty('sensors')
         ? overrides.sensors!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection')
         ? overrides.solidSelection!
@@ -8043,17 +10547,34 @@ export const buildPipelineSnapshot = (
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildPipelineSnapshotNotFoundError = (
   overrides?: Partial<PipelineSnapshotNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineSnapshotNotFoundError'} & PipelineSnapshotNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineSnapshotNotFoundError');
   return {
     __typename: 'PipelineSnapshotNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sit',
@@ -8064,7 +10585,10 @@ export const buildPipelineSnapshotNotFoundError = (
 
 export const buildPipelineTag = (
   overrides?: Partial<PipelineTag>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineTag'} & PipelineTag => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineTag');
   return {
     __typename: 'PipelineTag',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'qui',
@@ -8074,7 +10598,10 @@ export const buildPipelineTag = (
 
 export const buildPipelineTagAndValues = (
   overrides?: Partial<PipelineTagAndValues>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PipelineTagAndValues'} & PipelineTagAndValues => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PipelineTagAndValues');
   return {
     __typename: 'PipelineTagAndValues',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'repudiandae',
@@ -8087,7 +10614,10 @@ export const buildPipelineTagAndValues = (
 
 export const buildPresetNotFoundError = (
   overrides?: Partial<PresetNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PresetNotFoundError'} & PresetNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PresetNotFoundError');
   return {
     __typename: 'PresetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'provident',
@@ -8097,7 +10627,10 @@ export const buildPresetNotFoundError = (
 
 export const buildPythonArtifactMetadataEntry = (
   overrides?: Partial<PythonArtifactMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PythonArtifactMetadataEntry'} & PythonArtifactMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PythonArtifactMetadataEntry');
   return {
     __typename: 'PythonArtifactMetadataEntry',
     description:
@@ -8110,19 +10643,47 @@ export const buildPythonArtifactMetadataEntry = (
 
 export const buildPythonError = (
   overrides?: Partial<PythonError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'PythonError'} & PythonError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PythonError');
   return {
     __typename: 'PythonError',
-    cause: overrides && overrides.hasOwnProperty('cause') ? overrides.cause! : buildPythonError(),
+    cause:
+      overrides && overrides.hasOwnProperty('cause')
+        ? overrides.cause!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     causes:
       overrides && overrides.hasOwnProperty('causes')
         ? overrides.causes!
-        : [buildPythonError(), buildPythonError(), buildPythonError()],
+        : [
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PythonError')
+              ? ({} as PythonError)
+              : buildPythonError({}, relationshipsToOmit),
+          ],
     className: overrides && overrides.hasOwnProperty('className') ? overrides.className! : 'magni',
     errorChain:
       overrides && overrides.hasOwnProperty('errorChain')
         ? overrides.errorChain!
-        : [buildErrorChainLink(), buildErrorChainLink(), buildErrorChainLink()],
+        : [
+            relationshipsToOmit.has('ErrorChainLink')
+              ? ({} as ErrorChainLink)
+              : buildErrorChainLink({}, relationshipsToOmit),
+            relationshipsToOmit.has('ErrorChainLink')
+              ? ({} as ErrorChainLink)
+              : buildErrorChainLink({}, relationshipsToOmit),
+            relationshipsToOmit.has('ErrorChainLink')
+              ? ({} as ErrorChainLink)
+              : buildErrorChainLink({}, relationshipsToOmit),
+          ],
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'veritatis',
     stack:
       overrides && overrides.hasOwnProperty('stack')
@@ -8133,7 +10694,10 @@ export const buildPythonError = (
 
 export const buildReexecutionParams = (
   overrides?: Partial<ReexecutionParams>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): ReexecutionParams => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReexecutionParams');
   return {
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'sunt',
@@ -8146,7 +10710,10 @@ export const buildReexecutionParams = (
 
 export const buildRegularConfigType = (
   overrides?: Partial<RegularConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RegularConfigType'} & RegularConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RegularConfigType');
   return {
     __typename: 'RegularConfigType',
     description:
@@ -8159,7 +10726,17 @@ export const buildRegularConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     typeParamKeys:
       overrides && overrides.hasOwnProperty('typeParamKeys')
         ? overrides.typeParamKeys!
@@ -8169,7 +10746,10 @@ export const buildRegularConfigType = (
 
 export const buildRegularDagsterType = (
   overrides?: Partial<RegularDagsterType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RegularDagsterType'} & RegularDagsterType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RegularDagsterType');
   return {
     __typename: 'RegularDagsterType',
     description:
@@ -8181,11 +10761,23 @@ export const buildRegularDagsterType = (
     innerTypes:
       overrides && overrides.hasOwnProperty('innerTypes')
         ? overrides.innerTypes!
-        : [buildDagsterType(), buildDagsterType(), buildDagsterType()],
+        : [
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterType')
+              ? ({} as DagsterType)
+              : buildDagsterType({}, relationshipsToOmit),
+          ],
     inputSchemaType:
       overrides && overrides.hasOwnProperty('inputSchemaType')
         ? overrides.inputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     isBuiltin: overrides && overrides.hasOwnProperty('isBuiltin') ? overrides.isBuiltin! : true,
     isList: overrides && overrides.hasOwnProperty('isList') ? overrides.isList! : false,
     isNothing: overrides && overrides.hasOwnProperty('isNothing') ? overrides.isNothing! : false,
@@ -8194,18 +10786,33 @@ export const buildRegularDagsterType = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'velit',
     outputSchemaType:
       overrides && overrides.hasOwnProperty('outputSchemaType')
         ? overrides.outputSchemaType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildReloadNotSupported = (
   overrides?: Partial<ReloadNotSupported>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ReloadNotSupported'} & ReloadNotSupported => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReloadNotSupported');
   return {
     __typename: 'ReloadNotSupported',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'neque',
@@ -8214,45 +10821,102 @@ export const buildReloadNotSupported = (
 
 export const buildReloadRepositoryLocationMutation = (
   overrides?: Partial<ReloadRepositoryLocationMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ReloadRepositoryLocationMutation'} & ReloadRepositoryLocationMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReloadRepositoryLocationMutation');
   return {
     __typename: 'ReloadRepositoryLocationMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildReloadWorkspaceMutation = (
   overrides?: Partial<ReloadWorkspaceMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ReloadWorkspaceMutation'} & ReloadWorkspaceMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReloadWorkspaceMutation');
   return {
     __typename: 'ReloadWorkspaceMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildRepository = (
   overrides?: Partial<Repository>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Repository'} & Repository => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Repository');
   return {
     __typename: 'Repository',
     allTopLevelResourceDetails:
       overrides && overrides.hasOwnProperty('allTopLevelResourceDetails')
         ? overrides.allTopLevelResourceDetails!
-        : [buildResourceDetails(), buildResourceDetails(), buildResourceDetails()],
+        : [
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+          ],
     assetGroups:
       overrides && overrides.hasOwnProperty('assetGroups')
         ? overrides.assetGroups!
-        : [buildAssetGroup(), buildAssetGroup(), buildAssetGroup()],
+        : [
+            relationshipsToOmit.has('AssetGroup')
+              ? ({} as AssetGroup)
+              : buildAssetGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetGroup')
+              ? ({} as AssetGroup)
+              : buildAssetGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetGroup')
+              ? ({} as AssetGroup)
+              : buildAssetGroup({}, relationshipsToOmit),
+          ],
     assetNodes:
       overrides && overrides.hasOwnProperty('assetNodes')
         ? overrides.assetNodes!
-        : [buildAssetNode(), buildAssetNode(), buildAssetNode()],
+        : [
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+          ],
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata')
         ? overrides.displayMetadata!
-        : [buildRepositoryMetadata(), buildRepositoryMetadata(), buildRepositoryMetadata()],
+        : [
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+          ],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -8260,63 +10924,149 @@ export const buildRepository = (
     jobs:
       overrides && overrides.hasOwnProperty('jobs')
         ? overrides.jobs!
-        : [buildJob(), buildJob(), buildJob()],
+        : [
+            relationshipsToOmit.has('Job') ? ({} as Job) : buildJob({}, relationshipsToOmit),
+            relationshipsToOmit.has('Job') ? ({} as Job) : buildJob({}, relationshipsToOmit),
+            relationshipsToOmit.has('Job') ? ({} as Job) : buildJob({}, relationshipsToOmit),
+          ],
     location:
       overrides && overrides.hasOwnProperty('location')
         ? overrides.location!
-        : buildRepositoryLocation(),
+        : relationshipsToOmit.has('RepositoryLocation')
+        ? ({} as RepositoryLocation)
+        : buildRepositoryLocation({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dolor',
     origin:
-      overrides && overrides.hasOwnProperty('origin') ? overrides.origin! : buildRepositoryOrigin(),
+      overrides && overrides.hasOwnProperty('origin')
+        ? overrides.origin!
+        : relationshipsToOmit.has('RepositoryOrigin')
+        ? ({} as RepositoryOrigin)
+        : buildRepositoryOrigin({}, relationshipsToOmit),
     partitionSets:
       overrides && overrides.hasOwnProperty('partitionSets')
         ? overrides.partitionSets!
-        : [buildPartitionSet(), buildPartitionSet(), buildPartitionSet()],
+        : [
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+            relationshipsToOmit.has('PartitionSet')
+              ? ({} as PartitionSet)
+              : buildPartitionSet({}, relationshipsToOmit),
+          ],
     pipelines:
       overrides && overrides.hasOwnProperty('pipelines')
         ? overrides.pipelines!
-        : [buildPipeline(), buildPipeline(), buildPipeline()],
+        : [
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+            relationshipsToOmit.has('Pipeline')
+              ? ({} as Pipeline)
+              : buildPipeline({}, relationshipsToOmit),
+          ],
     schedules:
       overrides && overrides.hasOwnProperty('schedules')
         ? overrides.schedules!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
     sensors:
       overrides && overrides.hasOwnProperty('sensors')
         ? overrides.sensors!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
     usedSolid:
-      overrides && overrides.hasOwnProperty('usedSolid') ? overrides.usedSolid! : buildUsedSolid(),
+      overrides && overrides.hasOwnProperty('usedSolid')
+        ? overrides.usedSolid!
+        : relationshipsToOmit.has('UsedSolid')
+        ? ({} as UsedSolid)
+        : buildUsedSolid({}, relationshipsToOmit),
     usedSolids:
       overrides && overrides.hasOwnProperty('usedSolids')
         ? overrides.usedSolids!
-        : [buildUsedSolid(), buildUsedSolid(), buildUsedSolid()],
+        : [
+            relationshipsToOmit.has('UsedSolid')
+              ? ({} as UsedSolid)
+              : buildUsedSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('UsedSolid')
+              ? ({} as UsedSolid)
+              : buildUsedSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('UsedSolid')
+              ? ({} as UsedSolid)
+              : buildUsedSolid({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRepositoryConnection = (
   overrides?: Partial<RepositoryConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryConnection'} & RepositoryConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryConnection');
   return {
     __typename: 'RepositoryConnection',
     nodes:
       overrides && overrides.hasOwnProperty('nodes')
         ? overrides.nodes!
-        : [buildRepository(), buildRepository(), buildRepository()],
+        : [
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRepositoryLocation = (
   overrides?: Partial<RepositoryLocation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryLocation'} & RepositoryLocation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryLocation');
   return {
     __typename: 'RepositoryLocation',
     dagsterLibraryVersions:
       overrides && overrides.hasOwnProperty('dagsterLibraryVersions')
         ? overrides.dagsterLibraryVersions!
         : [
-            buildDagsterLibraryVersion(),
-            buildDagsterLibraryVersion(),
-            buildDagsterLibraryVersion(),
+            relationshipsToOmit.has('DagsterLibraryVersion')
+              ? ({} as DagsterLibraryVersion)
+              : buildDagsterLibraryVersion({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterLibraryVersion')
+              ? ({} as DagsterLibraryVersion)
+              : buildDagsterLibraryVersion({}, relationshipsToOmit),
+            relationshipsToOmit.has('DagsterLibraryVersion')
+              ? ({} as DagsterLibraryVersion)
+              : buildDagsterLibraryVersion({}, relationshipsToOmit),
           ],
     environmentPath:
       overrides && overrides.hasOwnProperty('environmentPath')
@@ -8334,14 +11084,27 @@ export const buildRepositoryLocation = (
     repositories:
       overrides && overrides.hasOwnProperty('repositories')
         ? overrides.repositories!
-        : [buildRepository(), buildRepository(), buildRepository()],
+        : [
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+            relationshipsToOmit.has('Repository')
+              ? ({} as Repository)
+              : buildRepository({}, relationshipsToOmit),
+          ],
     serverId: overrides && overrides.hasOwnProperty('serverId') ? overrides.serverId! : 'eum',
   };
 };
 
 export const buildRepositoryLocationNotFound = (
   overrides?: Partial<RepositoryLocationNotFound>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryLocationNotFound'} & RepositoryLocationNotFound => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryLocationNotFound');
   return {
     __typename: 'RepositoryLocationNotFound',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sed',
@@ -8350,7 +11113,10 @@ export const buildRepositoryLocationNotFound = (
 
 export const buildRepositoryMetadata = (
   overrides?: Partial<RepositoryMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryMetadata'} & RepositoryMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryMetadata');
   return {
     __typename: 'RepositoryMetadata',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'reiciendis',
@@ -8360,7 +11126,10 @@ export const buildRepositoryMetadata = (
 
 export const buildRepositoryNotFoundError = (
   overrides?: Partial<RepositoryNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryNotFoundError'} & RepositoryNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryNotFoundError');
   return {
     __typename: 'RepositoryNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ut',
@@ -8375,14 +11144,27 @@ export const buildRepositoryNotFoundError = (
 
 export const buildRepositoryOrigin = (
   overrides?: Partial<RepositoryOrigin>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RepositoryOrigin'} & RepositoryOrigin => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositoryOrigin');
   return {
     __typename: 'RepositoryOrigin',
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'magni',
     repositoryLocationMetadata:
       overrides && overrides.hasOwnProperty('repositoryLocationMetadata')
         ? overrides.repositoryLocationMetadata!
-        : [buildRepositoryMetadata(), buildRepositoryMetadata(), buildRepositoryMetadata()],
+        : [
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+          ],
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
         ? overrides.repositoryLocationName!
@@ -8394,7 +11176,10 @@ export const buildRepositoryOrigin = (
 
 export const buildRepositorySelector = (
   overrides?: Partial<RepositorySelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): RepositorySelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RepositorySelector');
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -8407,13 +11192,18 @@ export const buildRepositorySelector = (
 
 export const buildResource = (
   overrides?: Partial<Resource>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Resource'} & Resource => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Resource');
   return {
     __typename: 'Resource',
     configField:
       overrides && overrides.hasOwnProperty('configField')
         ? overrides.configField!
-        : buildConfigTypeField(),
+        : relationshipsToOmit.has('ConfigTypeField')
+        ? ({} as ConfigTypeField)
+        : buildConfigTypeField({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'perferendis',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'fuga',
@@ -8422,17 +11212,40 @@ export const buildResource = (
 
 export const buildResourceDetails = (
   overrides?: Partial<ResourceDetails>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceDetails'} & ResourceDetails => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceDetails');
   return {
     __typename: 'ResourceDetails',
     configFields:
       overrides && overrides.hasOwnProperty('configFields')
         ? overrides.configFields!
-        : [buildConfigTypeField(), buildConfigTypeField(), buildConfigTypeField()],
+        : [
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigTypeField')
+              ? ({} as ConfigTypeField)
+              : buildConfigTypeField({}, relationshipsToOmit),
+          ],
     configuredValues:
       overrides && overrides.hasOwnProperty('configuredValues')
         ? overrides.configuredValues!
-        : [buildConfiguredValue(), buildConfiguredValue(), buildConfiguredValue()],
+        : [
+            relationshipsToOmit.has('ConfiguredValue')
+              ? ({} as ConfiguredValue)
+              : buildConfiguredValue({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfiguredValue')
+              ? ({} as ConfiguredValue)
+              : buildConfiguredValue({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfiguredValue')
+              ? ({} as ConfiguredValue)
+              : buildConfiguredValue({}, relationshipsToOmit),
+          ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
@@ -8441,24 +11254,45 @@ export const buildResourceDetails = (
 
 export const buildResourceDetailsList = (
   overrides?: Partial<ResourceDetailsList>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceDetailsList'} & ResourceDetailsList => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceDetailsList');
   return {
     __typename: 'ResourceDetailsList',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildResourceDetails(), buildResourceDetails(), buildResourceDetails()],
+        : [
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceDetails')
+              ? ({} as ResourceDetails)
+              : buildResourceDetails({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildResourceInitFailureEvent = (
   overrides?: Partial<ResourceInitFailureEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceInitFailureEvent'} & ResourceInitFailureEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceInitFailureEvent');
   return {
     __typename: 'ResourceInitFailureEvent',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'quia',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -8472,7 +11306,17 @@ export const buildResourceInitFailureEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'minima',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'quidem',
@@ -8483,7 +11327,10 @@ export const buildResourceInitFailureEvent = (
 
 export const buildResourceInitStartedEvent = (
   overrides?: Partial<ResourceInitStartedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceInitStartedEvent'} & ResourceInitStartedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceInitStartedEvent');
   return {
     __typename: 'ResourceInitStartedEvent',
     description:
@@ -8502,7 +11349,17 @@ export const buildResourceInitStartedEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'sapiente',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'magni',
@@ -8514,7 +11371,10 @@ export const buildResourceInitStartedEvent = (
 
 export const buildResourceInitSuccessEvent = (
   overrides?: Partial<ResourceInitSuccessEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceInitSuccessEvent'} & ResourceInitSuccessEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceInitSuccessEvent');
   return {
     __typename: 'ResourceInitSuccessEvent',
     description:
@@ -8532,7 +11392,17 @@ export const buildResourceInitSuccessEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'fuga',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
@@ -8546,7 +11416,10 @@ export const buildResourceInitSuccessEvent = (
 
 export const buildResourceNotFoundError = (
   overrides?: Partial<ResourceNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceNotFoundError'} & ResourceNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceNotFoundError');
   return {
     __typename: 'ResourceNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quo',
@@ -8557,7 +11430,10 @@ export const buildResourceNotFoundError = (
 
 export const buildResourceRequirement = (
   overrides?: Partial<ResourceRequirement>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResourceRequirement'} & ResourceRequirement => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceRequirement');
   return {
     __typename: 'ResourceRequirement',
     resourceKey:
@@ -8565,7 +11441,12 @@ export const buildResourceRequirement = (
   };
 };
 
-export const buildResourceSelector = (overrides?: Partial<ResourceSelector>): ResourceSelector => {
+export const buildResourceSelector = (
+  overrides?: Partial<ResourceSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ResourceSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResourceSelector');
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -8580,7 +11461,10 @@ export const buildResourceSelector = (overrides?: Partial<ResourceSelector>): Re
 
 export const buildResumeBackfillSuccess = (
   overrides?: Partial<ResumeBackfillSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ResumeBackfillSuccess'} & ResumeBackfillSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ResumeBackfillSuccess');
   return {
     __typename: 'ResumeBackfillSuccess',
     backfillId:
@@ -8588,40 +11472,77 @@ export const buildResumeBackfillSuccess = (
   };
 };
 
-export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run => {
+export const buildRun = (
+  overrides?: Partial<Run>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Run'} & Run => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     assets:
       overrides && overrides.hasOwnProperty('assets')
         ? overrides.assets!
-        : [buildAsset(), buildAsset(), buildAsset()],
+        : [
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+            relationshipsToOmit.has('Asset') ? ({} as Asset) : buildAsset({}, relationshipsToOmit),
+          ],
     canTerminate:
       overrides && overrides.hasOwnProperty('canTerminate') ? overrides.canTerminate! : false,
     capturedLogs:
       overrides && overrides.hasOwnProperty('capturedLogs')
         ? overrides.capturedLogs!
-        : buildCapturedLogs(),
+        : relationshipsToOmit.has('CapturedLogs')
+        ? ({} as CapturedLogs)
+        : buildCapturedLogs({}, relationshipsToOmit),
     computeLogs:
       overrides && overrides.hasOwnProperty('computeLogs')
         ? overrides.computeLogs!
-        : buildComputeLogs(),
+        : relationshipsToOmit.has('ComputeLogs')
+        ? ({} as ComputeLogs)
+        : buildComputeLogs({}, relationshipsToOmit),
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 7.08,
     eventConnection:
       overrides && overrides.hasOwnProperty('eventConnection')
         ? overrides.eventConnection!
-        : buildEventConnection(),
+        : relationshipsToOmit.has('EventConnection')
+        ? ({} as EventConnection)
+        : buildEventConnection({}, relationshipsToOmit),
     executionPlan:
       overrides && overrides.hasOwnProperty('executionPlan')
         ? overrides.executionPlan!
-        : buildExecutionPlan(),
+        : relationshipsToOmit.has('ExecutionPlan')
+        ? ({} as ExecutionPlan)
+        : buildExecutionPlan({}, relationshipsToOmit),
     hasDeletePermission:
       overrides && overrides.hasOwnProperty('hasDeletePermission')
         ? overrides.hasDeletePermission!
@@ -8649,7 +11570,9 @@ export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run =>
     pipeline:
       overrides && overrides.hasOwnProperty('pipeline')
         ? overrides.pipeline!
-        : buildPipelineReference(),
+        : relationshipsToOmit.has('PipelineReference')
+        ? ({} as PipelineReference)
+        : buildPipelineReference({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'enim',
     pipelineSnapshotId:
@@ -8659,7 +11582,9 @@ export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run =>
     repositoryOrigin:
       overrides && overrides.hasOwnProperty('repositoryOrigin')
         ? overrides.repositoryOrigin!
-        : buildRepositoryOrigin(),
+        : relationshipsToOmit.has('RepositoryOrigin')
+        ? ({} as RepositoryOrigin)
+        : buildRepositoryOrigin({}, relationshipsToOmit),
     resolvedOpSelection:
       overrides && overrides.hasOwnProperty('resolvedOpSelection')
         ? overrides.resolvedOpSelection!
@@ -8674,7 +11599,12 @@ export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run =>
         ? overrides.solidSelection!
         : ['dolore', 'odio', 'consectetur'],
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 2.52,
-    stats: overrides && overrides.hasOwnProperty('stats') ? overrides.stats! : buildPythonError(),
+    stats:
+      overrides && overrides.hasOwnProperty('stats')
+        ? overrides.stats!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     status:
       overrides && overrides.hasOwnProperty('status') ? overrides.status! : RunStatus.CANCELED,
     stepKeysToExecute:
@@ -8684,18 +11614,41 @@ export const buildRun = (overrides?: Partial<Run>): {__typename: 'Run'} & Run =>
     stepStats:
       overrides && overrides.hasOwnProperty('stepStats')
         ? overrides.stepStats!
-        : [buildRunStepStats(), buildRunStepStats(), buildRunStepStats()],
+        : [
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+          ],
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
     updateTime: overrides && overrides.hasOwnProperty('updateTime') ? overrides.updateTime! : 0,
   };
 };
 
 export const buildRunCanceledEvent = (
   overrides?: Partial<RunCanceledEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunCanceledEvent'} & RunCanceledEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunCanceledEvent');
   return {
     __typename: 'RunCanceledEvent',
     eventType:
@@ -8716,7 +11669,10 @@ export const buildRunCanceledEvent = (
 
 export const buildRunCancelingEvent = (
   overrides?: Partial<RunCancelingEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunCancelingEvent'} & RunCancelingEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunCancelingEvent');
   return {
     __typename: 'RunCancelingEvent',
     eventType:
@@ -8738,36 +11694,62 @@ export const buildRunCancelingEvent = (
 
 export const buildRunConfigSchema = (
   overrides?: Partial<RunConfigSchema>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunConfigSchema'} & RunConfigSchema => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunConfigSchema');
   return {
     __typename: 'RunConfigSchema',
     allConfigTypes:
       overrides && overrides.hasOwnProperty('allConfigTypes')
         ? overrides.allConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     isRunConfigValid:
       overrides && overrides.hasOwnProperty('isRunConfigValid')
         ? overrides.isRunConfigValid!
-        : buildInvalidSubsetError(),
+        : relationshipsToOmit.has('InvalidSubsetError')
+        ? ({} as InvalidSubsetError)
+        : buildInvalidSubsetError({}, relationshipsToOmit),
     rootConfigType:
       overrides && overrides.hasOwnProperty('rootConfigType')
         ? overrides.rootConfigType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildRunConfigValidationInvalid = (
   overrides?: Partial<RunConfigValidationInvalid>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunConfigValidationInvalid'} & RunConfigValidationInvalid => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunConfigValidationInvalid');
   return {
     __typename: 'RunConfigValidationInvalid',
     errors:
       overrides && overrides.hasOwnProperty('errors')
         ? overrides.errors!
         : [
-            buildPipelineConfigValidationError(),
-            buildPipelineConfigValidationError(),
-            buildPipelineConfigValidationError(),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineConfigValidationError')
+              ? ({} as PipelineConfigValidationError)
+              : buildPipelineConfigValidationError({}, relationshipsToOmit),
           ],
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
@@ -8778,7 +11760,10 @@ export const buildRunConfigValidationInvalid = (
 
 export const buildRunConflict = (
   overrides?: Partial<RunConflict>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunConflict'} & RunConflict => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunConflict');
   return {
     __typename: 'RunConflict',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'iste',
@@ -8787,7 +11772,10 @@ export const buildRunConflict = (
 
 export const buildRunDequeuedEvent = (
   overrides?: Partial<RunDequeuedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunDequeuedEvent'} & RunDequeuedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunDequeuedEvent');
   return {
     __typename: 'RunDequeuedEvent',
     eventType:
@@ -8808,7 +11796,10 @@ export const buildRunDequeuedEvent = (
 
 export const buildRunEnqueuedEvent = (
   overrides?: Partial<RunEnqueuedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunEnqueuedEvent'} & RunEnqueuedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunEnqueuedEvent');
   return {
     __typename: 'RunEnqueuedEvent',
     eventType:
@@ -8829,7 +11820,10 @@ export const buildRunEnqueuedEvent = (
 
 export const buildRunEvent = (
   overrides?: Partial<RunEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunEvent'} & RunEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunEvent');
   return {
     __typename: 'RunEvent',
     pipelineName:
@@ -8841,10 +11835,18 @@ export const buildRunEvent = (
 
 export const buildRunFailureEvent = (
   overrides?: Partial<RunFailureEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunFailureEvent'} & RunFailureEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunFailureEvent');
   return {
     __typename: 'RunFailureEvent',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
@@ -8867,20 +11869,30 @@ export const buildRunFailureEvent = (
 
 export const buildRunGroup = (
   overrides?: Partial<RunGroup>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunGroup'} & RunGroup => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunGroup');
   return {
     __typename: 'RunGroup',
     rootRunId: overrides && overrides.hasOwnProperty('rootRunId') ? overrides.rootRunId! : 'rem',
     runs:
       overrides && overrides.hasOwnProperty('runs')
         ? overrides.runs!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRunGroupNotFoundError = (
   overrides?: Partial<RunGroupNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunGroupNotFoundError'} & RunGroupNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunGroupNotFoundError');
   return {
     __typename: 'RunGroupNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quasi',
@@ -8890,31 +11902,60 @@ export const buildRunGroupNotFoundError = (
 
 export const buildRunGroups = (
   overrides?: Partial<RunGroups>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunGroups'} & RunGroups => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunGroups');
   return {
     __typename: 'RunGroups',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildRunGroup(), buildRunGroup(), buildRunGroup()],
+        : [
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRunGroupsOrError = (
   overrides?: Partial<RunGroupsOrError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunGroupsOrError'} & RunGroupsOrError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunGroupsOrError');
   return {
     __typename: 'RunGroupsOrError',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildRunGroup(), buildRunGroup(), buildRunGroup()],
+        : [
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunGroup')
+              ? ({} as RunGroup)
+              : buildRunGroup({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRunLauncher = (
   overrides?: Partial<RunLauncher>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunLauncher'} & RunLauncher => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunLauncher');
   return {
     __typename: 'RunLauncher',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'iure',
@@ -8923,7 +11964,10 @@ export const buildRunLauncher = (
 
 export const buildRunMarker = (
   overrides?: Partial<RunMarker>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunMarker'} & RunMarker => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunMarker');
   return {
     __typename: 'RunMarker',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 5.55,
@@ -8933,7 +11977,10 @@ export const buildRunMarker = (
 
 export const buildRunNotFoundError = (
   overrides?: Partial<RunNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunNotFoundError'} & RunNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunNotFoundError');
   return {
     __typename: 'RunNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'illo',
@@ -8943,7 +11990,10 @@ export const buildRunNotFoundError = (
 
 export const buildRunRequest = (
   overrides?: Partial<RunRequest>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunRequest'} & RunRequest => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunRequest');
   return {
     __typename: 'RunRequest',
     runConfigYaml:
@@ -8952,13 +12002,26 @@ export const buildRunRequest = (
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTag(), buildPipelineTag(), buildPipelineTag()],
+        : [
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTag')
+              ? ({} as PipelineTag)
+              : buildPipelineTag({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildRunStartEvent = (
   overrides?: Partial<RunStartEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunStartEvent'} & RunStartEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunStartEvent');
   return {
     __typename: 'RunStartEvent',
     eventType:
@@ -8983,7 +12046,10 @@ export const buildRunStartEvent = (
 
 export const buildRunStartingEvent = (
   overrides?: Partial<RunStartingEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunStartingEvent'} & RunStartingEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunStartingEvent');
   return {
     __typename: 'RunStartingEvent',
     eventType:
@@ -9004,7 +12070,10 @@ export const buildRunStartingEvent = (
 
 export const buildRunStatsSnapshot = (
   overrides?: Partial<RunStatsSnapshot>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunStatsSnapshot'} & RunStatsSnapshot => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunStatsSnapshot');
   return {
     __typename: 'RunStatsSnapshot',
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 5.18,
@@ -9029,26 +12098,69 @@ export const buildRunStatsSnapshot = (
 
 export const buildRunStepStats = (
   overrides?: Partial<RunStepStats>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunStepStats'} & RunStepStats => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunStepStats');
   return {
     __typename: 'RunStepStats',
     attempts:
       overrides && overrides.hasOwnProperty('attempts')
         ? overrides.attempts!
-        : [buildRunMarker(), buildRunMarker(), buildRunMarker()],
+        : [
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+          ],
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 0.92,
     expectationResults:
       overrides && overrides.hasOwnProperty('expectationResults')
         ? overrides.expectationResults!
-        : [buildExpectationResult(), buildExpectationResult(), buildExpectationResult()],
+        : [
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExpectationResult')
+              ? ({} as ExpectationResult)
+              : buildExpectationResult({}, relationshipsToOmit),
+          ],
     markers:
       overrides && overrides.hasOwnProperty('markers')
         ? overrides.markers!
-        : [buildRunMarker(), buildRunMarker(), buildRunMarker()],
+        : [
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunMarker')
+              ? ({} as RunMarker)
+              : buildRunMarker({}, relationshipsToOmit),
+          ],
     materializations:
       overrides && overrides.hasOwnProperty('materializations')
         ? overrides.materializations!
-        : [buildMaterializationEvent(), buildMaterializationEvent(), buildMaterializationEvent()],
+        : [
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+            relationshipsToOmit.has('MaterializationEvent')
+              ? ({} as MaterializationEvent)
+              : buildMaterializationEvent({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'repudiandae',
     startTime: overrides && overrides.hasOwnProperty('startTime') ? overrides.startTime! : 7.96,
     status:
@@ -9059,7 +12171,10 @@ export const buildRunStepStats = (
 
 export const buildRunSuccessEvent = (
   overrides?: Partial<RunSuccessEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunSuccessEvent'} & RunSuccessEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunSuccessEvent');
   return {
     __typename: 'RunSuccessEvent',
     eventType:
@@ -9082,7 +12197,10 @@ export const buildRunSuccessEvent = (
 
 export const buildRunTagKeys = (
   overrides?: Partial<RunTagKeys>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RunTagKeys'} & RunTagKeys => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunTagKeys');
   return {
     __typename: 'RunTagKeys',
     keys:
@@ -9092,28 +12210,57 @@ export const buildRunTagKeys = (
   };
 };
 
-export const buildRunTags = (overrides?: Partial<RunTags>): {__typename: 'RunTags'} & RunTags => {
+export const buildRunTags = (
+  overrides?: Partial<RunTags>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunTags'} & RunTags => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunTags');
   return {
     __typename: 'RunTags',
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildPipelineTagAndValues(), buildPipelineTagAndValues(), buildPipelineTagAndValues()],
+        : [
+            relationshipsToOmit.has('PipelineTagAndValues')
+              ? ({} as PipelineTagAndValues)
+              : buildPipelineTagAndValues({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTagAndValues')
+              ? ({} as PipelineTagAndValues)
+              : buildPipelineTagAndValues({}, relationshipsToOmit),
+            relationshipsToOmit.has('PipelineTagAndValues')
+              ? ({} as PipelineTagAndValues)
+              : buildPipelineTagAndValues({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildRuns = (overrides?: Partial<Runs>): {__typename: 'Runs'} & Runs => {
+export const buildRuns = (
+  overrides?: Partial<Runs>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Runs'} & Runs => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Runs');
   return {
     __typename: 'Runs',
     count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 319,
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildRun(), buildRun(), buildRun()],
+        : [
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+            relationshipsToOmit.has('Run') ? ({} as Run) : buildRun({}, relationshipsToOmit),
+          ],
   };
 };
 
-export const buildRunsFilter = (overrides?: Partial<RunsFilter>): RunsFilter => {
+export const buildRunsFilter = (
+  overrides?: Partial<RunsFilter>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): RunsFilter => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunsFilter');
   return {
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
@@ -9133,7 +12280,17 @@ export const buildRunsFilter = (overrides?: Partial<RunsFilter>): RunsFilter => 
     tags:
       overrides && overrides.hasOwnProperty('tags')
         ? overrides.tags!
-        : [buildExecutionTag(), buildExecutionTag(), buildExecutionTag()],
+        : [
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+            relationshipsToOmit.has('ExecutionTag')
+              ? ({} as ExecutionTag)
+              : buildExecutionTag({}, relationshipsToOmit),
+          ],
     updatedAfter:
       overrides && overrides.hasOwnProperty('updatedAfter') ? overrides.updatedAfter! : 6.85,
   };
@@ -9141,7 +12298,10 @@ export const buildRunsFilter = (overrides?: Partial<RunsFilter>): RunsFilter => 
 
 export const buildRuntimeMismatchConfigError = (
   overrides?: Partial<RuntimeMismatchConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'RuntimeMismatchConfigError'} & RuntimeMismatchConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RuntimeMismatchConfigError');
   return {
     __typename: 'RuntimeMismatchConfigError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'molestiae',
@@ -9151,14 +12311,21 @@ export const buildRuntimeMismatchConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
     valueRep: overrides && overrides.hasOwnProperty('valueRep') ? overrides.valueRep! : 'in',
   };
 };
 
 export const buildScalarUnionConfigType = (
   overrides?: Partial<ScalarUnionConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScalarUnionConfigType'} & ScalarUnionConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScalarUnionConfigType');
   return {
     __typename: 'ScalarUnionConfigType',
     description:
@@ -9168,7 +12335,9 @@ export const buildScalarUnionConfigType = (
     nonScalarType:
       overrides && overrides.hasOwnProperty('nonScalarType')
         ? overrides.nonScalarType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     nonScalarTypeKey:
       overrides && overrides.hasOwnProperty('nonScalarTypeKey')
         ? overrides.nonScalarTypeKey!
@@ -9176,11 +12345,23 @@ export const buildScalarUnionConfigType = (
     recursiveConfigTypes:
       overrides && overrides.hasOwnProperty('recursiveConfigTypes')
         ? overrides.recursiveConfigTypes!
-        : [buildConfigType(), buildConfigType(), buildConfigType()],
+        : [
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+            relationshipsToOmit.has('ConfigType')
+              ? ({} as ConfigType)
+              : buildConfigType({}, relationshipsToOmit),
+          ],
     scalarType:
       overrides && overrides.hasOwnProperty('scalarType')
         ? overrides.scalarType!
-        : buildConfigType(),
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
     scalarTypeKey:
       overrides && overrides.hasOwnProperty('scalarTypeKey') ? overrides.scalarTypeKey! : 'esse',
     typeParamKeys:
@@ -9192,7 +12373,10 @@ export const buildScalarUnionConfigType = (
 
 export const buildSchedule = (
   overrides?: Partial<Schedule>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Schedule'} & Schedule => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Schedule');
   return {
     __typename: 'Schedule',
     cronSchedule:
@@ -9206,11 +12390,15 @@ export const buildSchedule = (
     futureTick:
       overrides && overrides.hasOwnProperty('futureTick')
         ? overrides.futureTick!
-        : buildDryRunInstigationTick(),
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
     futureTicks:
       overrides && overrides.hasOwnProperty('futureTicks')
         ? overrides.futureTicks!
-        : buildDryRunInstigationTicks(),
+        : relationshipsToOmit.has('DryRunInstigationTicks')
+        ? ({} as DryRunInstigationTicks)
+        : buildDryRunInstigationTicks({}, relationshipsToOmit),
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -9220,7 +12408,9 @@ export const buildSchedule = (
     partitionSet:
       overrides && overrides.hasOwnProperty('partitionSet')
         ? overrides.partitionSet!
-        : buildPartitionSet(),
+        : relationshipsToOmit.has('PartitionSet')
+        ? ({} as PartitionSet)
+        : buildPartitionSet({}, relationshipsToOmit),
     pipelineName:
       overrides && overrides.hasOwnProperty('pipelineName')
         ? overrides.pipelineName!
@@ -9232,7 +12422,9 @@ export const buildSchedule = (
     scheduleState:
       overrides && overrides.hasOwnProperty('scheduleState')
         ? overrides.scheduleState!
-        : buildInstigationState(),
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
     solidSelection:
       overrides && overrides.hasOwnProperty('solidSelection')
         ? overrides.solidSelection!
@@ -9242,7 +12434,10 @@ export const buildSchedule = (
 
 export const buildScheduleData = (
   overrides?: Partial<ScheduleData>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleData'} & ScheduleData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleData');
   return {
     __typename: 'ScheduleData',
     cronSchedule:
@@ -9254,7 +12449,10 @@ export const buildScheduleData = (
 
 export const buildScheduleNotFoundError = (
   overrides?: Partial<ScheduleNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleNotFoundError'} & ScheduleNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleNotFoundError');
   return {
     __typename: 'ScheduleNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'velit',
@@ -9263,7 +12461,12 @@ export const buildScheduleNotFoundError = (
   };
 };
 
-export const buildScheduleSelector = (overrides?: Partial<ScheduleSelector>): ScheduleSelector => {
+export const buildScheduleSelector = (
+  overrides?: Partial<ScheduleSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): ScheduleSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleSelector');
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -9278,19 +12481,27 @@ export const buildScheduleSelector = (overrides?: Partial<ScheduleSelector>): Sc
 
 export const buildScheduleStateResult = (
   overrides?: Partial<ScheduleStateResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleStateResult'} & ScheduleStateResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleStateResult');
   return {
     __typename: 'ScheduleStateResult',
     scheduleState:
       overrides && overrides.hasOwnProperty('scheduleState')
         ? overrides.scheduleState!
-        : buildInstigationState(),
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
   };
 };
 
 export const buildScheduleTick = (
   overrides?: Partial<ScheduleTick>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleTick'} & ScheduleTick => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleTick');
   return {
     __typename: 'ScheduleTick',
     status:
@@ -9301,32 +12512,53 @@ export const buildScheduleTick = (
     tickSpecificData:
       overrides && overrides.hasOwnProperty('tickSpecificData')
         ? overrides.tickSpecificData!
-        : buildScheduleTickFailureData(),
+        : relationshipsToOmit.has('ScheduleTickFailureData')
+        ? ({} as ScheduleTickFailureData)
+        : buildScheduleTickFailureData({}, relationshipsToOmit),
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 2.14,
   };
 };
 
 export const buildScheduleTickFailureData = (
   overrides?: Partial<ScheduleTickFailureData>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleTickFailureData'} & ScheduleTickFailureData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleTickFailureData');
   return {
     __typename: 'ScheduleTickFailureData',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildScheduleTickSuccessData = (
   overrides?: Partial<ScheduleTickSuccessData>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ScheduleTickSuccessData'} & ScheduleTickSuccessData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ScheduleTickSuccessData');
   return {
     __typename: 'ScheduleTickSuccessData',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildScheduler = (
   overrides?: Partial<Scheduler>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Scheduler'} & Scheduler => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Scheduler');
   return {
     __typename: 'Scheduler',
     schedulerClass:
@@ -9336,7 +12568,10 @@ export const buildScheduler = (
 
 export const buildSchedulerNotDefinedError = (
   overrides?: Partial<SchedulerNotDefinedError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SchedulerNotDefinedError'} & SchedulerNotDefinedError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SchedulerNotDefinedError');
   return {
     __typename: 'SchedulerNotDefinedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'quia',
@@ -9345,19 +12580,35 @@ export const buildSchedulerNotDefinedError = (
 
 export const buildSchedules = (
   overrides?: Partial<Schedules>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Schedules'} & Schedules => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Schedules');
   return {
     __typename: 'Schedules',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildSchedule(), buildSchedule(), buildSchedule()],
+        : [
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+            relationshipsToOmit.has('Schedule')
+              ? ({} as Schedule)
+              : buildSchedule({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSelectorTypeConfigError = (
   overrides?: Partial<SelectorTypeConfigError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SelectorTypeConfigError'} & SelectorTypeConfigError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SelectorTypeConfigError');
   return {
     __typename: 'SelectorTypeConfigError',
     incomingFields:
@@ -9372,11 +12623,20 @@ export const buildSelectorTypeConfigError = (
         ? overrides.reason!
         : EvaluationErrorReason.FIELDS_NOT_DEFINED,
     stack:
-      overrides && overrides.hasOwnProperty('stack') ? overrides.stack! : buildEvaluationStack(),
+      overrides && overrides.hasOwnProperty('stack')
+        ? overrides.stack!
+        : relationshipsToOmit.has('EvaluationStack')
+        ? ({} as EvaluationStack)
+        : buildEvaluationStack({}, relationshipsToOmit),
   };
 };
 
-export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'} & Sensor => {
+export const buildSensor = (
+  overrides?: Partial<Sensor>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Sensor'} & Sensor => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Sensor');
   return {
     __typename: 'Sensor',
     description:
@@ -9390,7 +12650,9 @@ export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'}
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
-        : buildSensorMetadata(),
+        : relationshipsToOmit.has('SensorMetadata')
+        ? ({} as SensorMetadata)
+        : buildSensorMetadata({}, relationshipsToOmit),
     minIntervalSeconds:
       overrides && overrides.hasOwnProperty('minIntervalSeconds')
         ? overrides.minIntervalSeconds!
@@ -9399,11 +12661,15 @@ export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'}
     nextTick:
       overrides && overrides.hasOwnProperty('nextTick')
         ? overrides.nextTick!
-        : buildDryRunInstigationTick(),
+        : relationshipsToOmit.has('DryRunInstigationTick')
+        ? ({} as DryRunInstigationTick)
+        : buildDryRunInstigationTick({}, relationshipsToOmit),
     sensorState:
       overrides && overrides.hasOwnProperty('sensorState')
         ? overrides.sensorState!
-        : buildInstigationState(),
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
     sensorType:
       overrides && overrides.hasOwnProperty('sensorType')
         ? overrides.sensorType!
@@ -9411,13 +12677,26 @@ export const buildSensor = (overrides?: Partial<Sensor>): {__typename: 'Sensor'}
     targets:
       overrides && overrides.hasOwnProperty('targets')
         ? overrides.targets!
-        : [buildTarget(), buildTarget(), buildTarget()],
+        : [
+            relationshipsToOmit.has('Target')
+              ? ({} as Target)
+              : buildTarget({}, relationshipsToOmit),
+            relationshipsToOmit.has('Target')
+              ? ({} as Target)
+              : buildTarget({}, relationshipsToOmit),
+            relationshipsToOmit.has('Target')
+              ? ({} as Target)
+              : buildTarget({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSensorData = (
   overrides?: Partial<SensorData>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SensorData'} & SensorData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SensorData');
   return {
     __typename: 'SensorData',
     lastCursor:
@@ -9433,19 +12712,35 @@ export const buildSensorData = (
 
 export const buildSensorMetadata = (
   overrides?: Partial<SensorMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SensorMetadata'} & SensorMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SensorMetadata');
   return {
     __typename: 'SensorMetadata',
     assetKeys:
       overrides && overrides.hasOwnProperty('assetKeys')
         ? overrides.assetKeys!
-        : [buildAssetKey(), buildAssetKey(), buildAssetKey()],
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSensorNotFoundError = (
   overrides?: Partial<SensorNotFoundError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SensorNotFoundError'} & SensorNotFoundError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SensorNotFoundError');
   return {
     __typename: 'SensorNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'rerum',
@@ -9454,7 +12749,12 @@ export const buildSensorNotFoundError = (
   };
 };
 
-export const buildSensorSelector = (overrides?: Partial<SensorSelector>): SensorSelector => {
+export const buildSensorSelector = (
+  overrides?: Partial<SensorSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): SensorSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SensorSelector');
   return {
     repositoryLocationName:
       overrides && overrides.hasOwnProperty('repositoryLocationName')
@@ -9469,39 +12769,71 @@ export const buildSensorSelector = (overrides?: Partial<SensorSelector>): Sensor
   };
 };
 
-export const buildSensors = (overrides?: Partial<Sensors>): {__typename: 'Sensors'} & Sensors => {
+export const buildSensors = (
+  overrides?: Partial<Sensors>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Sensors'} & Sensors => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Sensors');
   return {
     __typename: 'Sensors',
     results:
       overrides && overrides.hasOwnProperty('results')
         ? overrides.results!
-        : [buildSensor(), buildSensor(), buildSensor()],
+        : [
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+            relationshipsToOmit.has('Sensor')
+              ? ({} as Sensor)
+              : buildSensor({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSetSensorCursorMutation = (
   overrides?: Partial<SetSensorCursorMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SetSensorCursorMutation'} & SetSensorCursorMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SetSensorCursorMutation');
   return {
     __typename: 'SetSensorCursorMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildShutdownRepositoryLocationMutation = (
   overrides?: Partial<ShutdownRepositoryLocationMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ShutdownRepositoryLocationMutation'} & ShutdownRepositoryLocationMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ShutdownRepositoryLocationMutation');
   return {
     __typename: 'ShutdownRepositoryLocationMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildShutdownRepositoryLocationSuccess = (
   overrides?: Partial<ShutdownRepositoryLocationSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'ShutdownRepositoryLocationSuccess'} & ShutdownRepositoryLocationSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ShutdownRepositoryLocationSuccess');
   return {
     __typename: 'ShutdownRepositoryLocationSuccess',
     repositoryLocationName:
@@ -9511,30 +12843,54 @@ export const buildShutdownRepositoryLocationSuccess = (
   };
 };
 
-export const buildSolid = (overrides?: Partial<Solid>): {__typename: 'Solid'} & Solid => {
+export const buildSolid = (
+  overrides?: Partial<Solid>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Solid'} & Solid => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Solid');
   return {
     __typename: 'Solid',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildISolidDefinition(),
+        : relationshipsToOmit.has('ISolidDefinition')
+        ? ({} as ISolidDefinition)
+        : buildISolidDefinition({}, relationshipsToOmit),
     inputs:
       overrides && overrides.hasOwnProperty('inputs')
         ? overrides.inputs!
-        : [buildInput(), buildInput(), buildInput()],
+        : [
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Input') ? ({} as Input) : buildInput({}, relationshipsToOmit),
+          ],
     isDynamicMapped:
       overrides && overrides.hasOwnProperty('isDynamicMapped') ? overrides.isDynamicMapped! : true,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'rerum',
     outputs:
       overrides && overrides.hasOwnProperty('outputs')
         ? overrides.outputs!
-        : [buildOutput(), buildOutput(), buildOutput()],
+        : [
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('Output')
+              ? ({} as Output)
+              : buildOutput({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSolidContainer = (
   overrides?: Partial<SolidContainer>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SolidContainer'} & SolidContainer => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SolidContainer');
   return {
     __typename: 'SolidContainer',
     description:
@@ -9546,93 +12902,194 @@ export const buildSolidContainer = (
     modes:
       overrides && overrides.hasOwnProperty('modes')
         ? overrides.modes!
-        : [buildMode(), buildMode(), buildMode()],
+        : [
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+            relationshipsToOmit.has('Mode') ? ({} as Mode) : buildMode({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'nobis',
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
-        : buildSolidHandle(),
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
     solidHandles:
       overrides && overrides.hasOwnProperty('solidHandles')
         ? overrides.solidHandles!
-        : [buildSolidHandle(), buildSolidHandle(), buildSolidHandle()],
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
     solids:
       overrides && overrides.hasOwnProperty('solids')
         ? overrides.solids!
-        : [buildSolid(), buildSolid(), buildSolid()],
+        : [
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+            relationshipsToOmit.has('Solid') ? ({} as Solid) : buildSolid({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSolidDefinition = (
   overrides?: Partial<SolidDefinition>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SolidDefinition'} & SolidDefinition => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SolidDefinition');
   return {
     __typename: 'SolidDefinition',
     assetNodes:
       overrides && overrides.hasOwnProperty('assetNodes')
         ? overrides.assetNodes!
-        : [buildAssetNode(), buildAssetNode(), buildAssetNode()],
+        : [
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+            relationshipsToOmit.has('AssetNode')
+              ? ({} as AssetNode)
+              : buildAssetNode({}, relationshipsToOmit),
+          ],
     configField:
       overrides && overrides.hasOwnProperty('configField')
         ? overrides.configField!
-        : buildConfigTypeField(),
+        : relationshipsToOmit.has('ConfigTypeField')
+        ? ({} as ConfigTypeField)
+        : buildConfigTypeField({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'qui',
     inputDefinitions:
       overrides && overrides.hasOwnProperty('inputDefinitions')
         ? overrides.inputDefinitions!
-        : [buildInputDefinition(), buildInputDefinition(), buildInputDefinition()],
+        : [
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('InputDefinition')
+              ? ({} as InputDefinition)
+              : buildInputDefinition({}, relationshipsToOmit),
+          ],
     metadata:
       overrides && overrides.hasOwnProperty('metadata')
         ? overrides.metadata!
         : [
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
-            buildMetadataItemDefinition(),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataItemDefinition')
+              ? ({} as MetadataItemDefinition)
+              : buildMetadataItemDefinition({}, relationshipsToOmit),
           ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'in',
     outputDefinitions:
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
-        : [buildOutputDefinition(), buildOutputDefinition(), buildOutputDefinition()],
+        : [
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+            relationshipsToOmit.has('OutputDefinition')
+              ? ({} as OutputDefinition)
+              : buildOutputDefinition({}, relationshipsToOmit),
+          ],
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
-        : [buildResourceRequirement(), buildResourceRequirement(), buildResourceRequirement()],
+        : [
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+            relationshipsToOmit.has('ResourceRequirement')
+              ? ({} as ResourceRequirement)
+              : buildResourceRequirement({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSolidHandle = (
   overrides?: Partial<SolidHandle>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SolidHandle'} & SolidHandle => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SolidHandle');
   return {
     __typename: 'SolidHandle',
     handleID: overrides && overrides.hasOwnProperty('handleID') ? overrides.handleID! : 'iusto',
     parent:
-      overrides && overrides.hasOwnProperty('parent') ? overrides.parent! : buildSolidHandle(),
-    solid: overrides && overrides.hasOwnProperty('solid') ? overrides.solid! : buildSolid(),
+      overrides && overrides.hasOwnProperty('parent')
+        ? overrides.parent!
+        : relationshipsToOmit.has('SolidHandle')
+        ? ({} as SolidHandle)
+        : buildSolidHandle({}, relationshipsToOmit),
+    solid:
+      overrides && overrides.hasOwnProperty('solid')
+        ? overrides.solid!
+        : relationshipsToOmit.has('Solid')
+        ? ({} as Solid)
+        : buildSolid({}, relationshipsToOmit),
     stepStats:
       overrides && overrides.hasOwnProperty('stepStats')
         ? overrides.stepStats!
-        : buildSolidStepStatsConnection(),
+        : relationshipsToOmit.has('SolidStepStatsConnection')
+        ? ({} as SolidStepStatsConnection)
+        : buildSolidStepStatsConnection({}, relationshipsToOmit),
   };
 };
 
 export const buildSolidStepStatsConnection = (
   overrides?: Partial<SolidStepStatsConnection>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SolidStepStatsConnection'} & SolidStepStatsConnection => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SolidStepStatsConnection');
   return {
     __typename: 'SolidStepStatsConnection',
     nodes:
       overrides && overrides.hasOwnProperty('nodes')
         ? overrides.nodes!
-        : [buildRunStepStats(), buildRunStepStats(), buildRunStepStats()],
+        : [
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunStepStats')
+              ? ({} as RunStepStats)
+              : buildRunStepStats({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildSolidStepStatusUnavailableError = (
   overrides?: Partial<SolidStepStatusUnavailableError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'SolidStepStatusUnavailableError'} & SolidStepStatusUnavailableError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('SolidStepStatusUnavailableError');
   return {
     __typename: 'SolidStepStatusUnavailableError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'accusantium',
@@ -9641,29 +13098,51 @@ export const buildSolidStepStatusUnavailableError = (
 
 export const buildStaleCause = (
   overrides?: Partial<StaleCause>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StaleCause'} & StaleCause => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StaleCause');
   return {
     __typename: 'StaleCause',
     dependency:
-      overrides && overrides.hasOwnProperty('dependency') ? overrides.dependency! : buildAssetKey(),
-    key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : buildAssetKey(),
+      overrides && overrides.hasOwnProperty('dependency')
+        ? overrides.dependency!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
     reason: overrides && overrides.hasOwnProperty('reason') ? overrides.reason! : 'et',
   };
 };
 
 export const buildStartScheduleMutation = (
   overrides?: Partial<StartScheduleMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StartScheduleMutation'} & StartScheduleMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StartScheduleMutation');
   return {
     __typename: 'StartScheduleMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildStepEvent = (
   overrides?: Partial<StepEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StepEvent'} & StepEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepEvent');
   return {
     __typename: 'StepEvent',
     solidHandleID:
@@ -9672,23 +13151,51 @@ export const buildStepEvent = (
   };
 };
 
-export const buildStepExecution = (overrides?: Partial<StepExecution>): StepExecution => {
+export const buildStepExecution = (
+  overrides?: Partial<StepExecution>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): StepExecution => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepExecution');
   return {
     marshalledInputs:
       overrides && overrides.hasOwnProperty('marshalledInputs')
         ? overrides.marshalledInputs!
-        : [buildMarshalledInput(), buildMarshalledInput(), buildMarshalledInput()],
+        : [
+            relationshipsToOmit.has('MarshalledInput')
+              ? ({} as MarshalledInput)
+              : buildMarshalledInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('MarshalledInput')
+              ? ({} as MarshalledInput)
+              : buildMarshalledInput({}, relationshipsToOmit),
+            relationshipsToOmit.has('MarshalledInput')
+              ? ({} as MarshalledInput)
+              : buildMarshalledInput({}, relationshipsToOmit),
+          ],
     marshalledOutputs:
       overrides && overrides.hasOwnProperty('marshalledOutputs')
         ? overrides.marshalledOutputs!
-        : [buildMarshalledOutput(), buildMarshalledOutput(), buildMarshalledOutput()],
+        : [
+            relationshipsToOmit.has('MarshalledOutput')
+              ? ({} as MarshalledOutput)
+              : buildMarshalledOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('MarshalledOutput')
+              ? ({} as MarshalledOutput)
+              : buildMarshalledOutput({}, relationshipsToOmit),
+            relationshipsToOmit.has('MarshalledOutput')
+              ? ({} as MarshalledOutput)
+              : buildMarshalledOutput({}, relationshipsToOmit),
+          ],
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'nihil',
   };
 };
 
 export const buildStepExpectationResultEvent = (
   overrides?: Partial<StepExpectationResultEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StepExpectationResultEvent'} & StepExpectationResultEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepExpectationResultEvent');
   return {
     __typename: 'StepExpectationResultEvent',
     eventType:
@@ -9698,7 +13205,9 @@ export const buildStepExpectationResultEvent = (
     expectationResult:
       overrides && overrides.hasOwnProperty('expectationResult')
         ? overrides.expectationResult!
-        : buildExpectationResult(),
+        : relationshipsToOmit.has('ExpectationResult')
+        ? ({} as ExpectationResult)
+        : buildExpectationResult({}, relationshipsToOmit),
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ullam',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nisi',
@@ -9711,7 +13220,12 @@ export const buildStepExpectationResultEvent = (
   };
 };
 
-export const buildStepOutputHandle = (overrides?: Partial<StepOutputHandle>): StepOutputHandle => {
+export const buildStepOutputHandle = (
+  overrides?: Partial<StepOutputHandle>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): StepOutputHandle => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepOutputHandle');
   return {
     outputName: overrides && overrides.hasOwnProperty('outputName') ? overrides.outputName! : 'non',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'et',
@@ -9720,7 +13234,10 @@ export const buildStepOutputHandle = (overrides?: Partial<StepOutputHandle>): St
 
 export const buildStepWorkerStartedEvent = (
   overrides?: Partial<StepWorkerStartedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StepWorkerStartedEvent'} & StepWorkerStartedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepWorkerStartedEvent');
   return {
     __typename: 'StepWorkerStartedEvent',
     description:
@@ -9738,7 +13255,17 @@ export const buildStepWorkerStartedEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'nobis',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'placeat',
@@ -9749,7 +13276,10 @@ export const buildStepWorkerStartedEvent = (
 
 export const buildStepWorkerStartingEvent = (
   overrides?: Partial<StepWorkerStartingEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StepWorkerStartingEvent'} & StepWorkerStartingEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StepWorkerStartingEvent');
   return {
     __typename: 'StepWorkerStartingEvent',
     description:
@@ -9767,7 +13297,17 @@ export const buildStepWorkerStartingEvent = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'adipisci',
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
@@ -9781,37 +13321,61 @@ export const buildStepWorkerStartingEvent = (
 
 export const buildStopRunningScheduleMutation = (
   overrides?: Partial<StopRunningScheduleMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StopRunningScheduleMutation'} & StopRunningScheduleMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StopRunningScheduleMutation');
   return {
     __typename: 'StopRunningScheduleMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildStopSensorMutation = (
   overrides?: Partial<StopSensorMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StopSensorMutation'} & StopSensorMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StopSensorMutation');
   return {
     __typename: 'StopSensorMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildStopSensorMutationResult = (
   overrides?: Partial<StopSensorMutationResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'StopSensorMutationResult'} & StopSensorMutationResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('StopSensorMutationResult');
   return {
     __typename: 'StopSensorMutationResult',
     instigationState:
       overrides && overrides.hasOwnProperty('instigationState')
         ? overrides.instigationState!
-        : buildInstigationState(),
+        : relationshipsToOmit.has('InstigationState')
+        ? ({} as InstigationState)
+        : buildInstigationState({}, relationshipsToOmit),
   };
 };
 
-export const buildTable = (overrides?: Partial<Table>): {__typename: 'Table'} & Table => {
+export const buildTable = (
+  overrides?: Partial<Table>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Table'} & Table => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Table');
   return {
     __typename: 'Table',
     records:
@@ -9819,19 +13383,28 @@ export const buildTable = (overrides?: Partial<Table>): {__typename: 'Table'} & 
         ? overrides.records!
         : ['sed', 'autem', 'laudantium'],
     schema:
-      overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : buildTableSchema(),
+      overrides && overrides.hasOwnProperty('schema')
+        ? overrides.schema!
+        : relationshipsToOmit.has('TableSchema')
+        ? ({} as TableSchema)
+        : buildTableSchema({}, relationshipsToOmit),
   };
 };
 
 export const buildTableColumn = (
   overrides?: Partial<TableColumn>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableColumn'} & TableColumn => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumn');
   return {
     __typename: 'TableColumn',
     constraints:
       overrides && overrides.hasOwnProperty('constraints')
         ? overrides.constraints!
-        : buildTableColumnConstraints(),
+        : relationshipsToOmit.has('TableColumnConstraints')
+        ? ({} as TableColumnConstraints)
+        : buildTableColumnConstraints({}, relationshipsToOmit),
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'illum',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'explicabo',
@@ -9841,7 +13414,10 @@ export const buildTableColumn = (
 
 export const buildTableColumnConstraints = (
   overrides?: Partial<TableColumnConstraints>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableColumnConstraints'} & TableColumnConstraints => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableColumnConstraints');
   return {
     __typename: 'TableColumnConstraints',
     nullable: overrides && overrides.hasOwnProperty('nullable') ? overrides.nullable! : true,
@@ -9855,7 +13431,10 @@ export const buildTableColumnConstraints = (
 
 export const buildTableConstraints = (
   overrides?: Partial<TableConstraints>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableConstraints'} & TableConstraints => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableConstraints');
   return {
     __typename: 'TableConstraints',
     other:
@@ -9867,46 +13446,81 @@ export const buildTableConstraints = (
 
 export const buildTableMetadataEntry = (
   overrides?: Partial<TableMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableMetadataEntry'} & TableMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableMetadataEntry');
   return {
     __typename: 'TableMetadataEntry',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'sed',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'quia',
-    table: overrides && overrides.hasOwnProperty('table') ? overrides.table! : buildTable(),
+    table:
+      overrides && overrides.hasOwnProperty('table')
+        ? overrides.table!
+        : relationshipsToOmit.has('Table')
+        ? ({} as Table)
+        : buildTable({}, relationshipsToOmit),
   };
 };
 
 export const buildTableSchema = (
   overrides?: Partial<TableSchema>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableSchema'} & TableSchema => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableSchema');
   return {
     __typename: 'TableSchema',
     columns:
       overrides && overrides.hasOwnProperty('columns')
         ? overrides.columns!
-        : [buildTableColumn(), buildTableColumn(), buildTableColumn()],
+        : [
+            relationshipsToOmit.has('TableColumn')
+              ? ({} as TableColumn)
+              : buildTableColumn({}, relationshipsToOmit),
+            relationshipsToOmit.has('TableColumn')
+              ? ({} as TableColumn)
+              : buildTableColumn({}, relationshipsToOmit),
+            relationshipsToOmit.has('TableColumn')
+              ? ({} as TableColumn)
+              : buildTableColumn({}, relationshipsToOmit),
+          ],
     constraints:
       overrides && overrides.hasOwnProperty('constraints')
         ? overrides.constraints!
-        : buildTableConstraints(),
+        : relationshipsToOmit.has('TableConstraints')
+        ? ({} as TableConstraints)
+        : buildTableConstraints({}, relationshipsToOmit),
   };
 };
 
 export const buildTableSchemaMetadataEntry = (
   overrides?: Partial<TableSchemaMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TableSchemaMetadataEntry'} & TableSchemaMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TableSchemaMetadataEntry');
   return {
     __typename: 'TableSchemaMetadataEntry',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'itaque',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'libero',
     schema:
-      overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : buildTableSchema(),
+      overrides && overrides.hasOwnProperty('schema')
+        ? overrides.schema!
+        : relationshipsToOmit.has('TableSchema')
+        ? ({} as TableSchema)
+        : buildTableSchema({}, relationshipsToOmit),
   };
 };
 
-export const buildTarget = (overrides?: Partial<Target>): {__typename: 'Target'} & Target => {
+export const buildTarget = (
+  overrides?: Partial<Target>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Target'} & Target => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Target');
   return {
     __typename: 'Target',
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'porro',
@@ -9921,55 +13535,97 @@ export const buildTarget = (overrides?: Partial<Target>): {__typename: 'Target'}
 
 export const buildTerminatePipelineExecutionFailure = (
   overrides?: Partial<TerminatePipelineExecutionFailure>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TerminatePipelineExecutionFailure'} & TerminatePipelineExecutionFailure => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminatePipelineExecutionFailure');
   return {
     __typename: 'TerminatePipelineExecutionFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vero',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildTerminatePipelineExecutionSuccess = (
   overrides?: Partial<TerminatePipelineExecutionSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TerminatePipelineExecutionSuccess'} & TerminatePipelineExecutionSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminatePipelineExecutionSuccess');
   return {
     __typename: 'TerminatePipelineExecutionSuccess',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildTerminateRunFailure = (
   overrides?: Partial<TerminateRunFailure>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TerminateRunFailure'} & TerminateRunFailure => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunFailure');
   return {
     __typename: 'TerminateRunFailure',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sit',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildTerminateRunMutation = (
   overrides?: Partial<TerminateRunMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TerminateRunMutation'} & TerminateRunMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunMutation');
   return {
     __typename: 'TerminateRunMutation',
     Output:
-      overrides && overrides.hasOwnProperty('Output') ? overrides.Output! : buildPythonError(),
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
   };
 };
 
 export const buildTerminateRunSuccess = (
   overrides?: Partial<TerminateRunSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TerminateRunSuccess'} & TerminateRunSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TerminateRunSuccess');
   return {
     __typename: 'TerminateRunSuccess',
-    run: overrides && overrides.hasOwnProperty('run') ? overrides.run! : buildRun(),
+    run:
+      overrides && overrides.hasOwnProperty('run')
+        ? overrides.run!
+        : relationshipsToOmit.has('Run')
+        ? ({} as Run)
+        : buildRun({}, relationshipsToOmit),
   };
 };
 
 export const buildTestFields = (
   overrides?: Partial<TestFields>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TestFields'} & TestFields => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TestFields');
   return {
     __typename: 'TestFields',
     alwaysException:
@@ -9981,7 +13637,10 @@ export const buildTestFields = (
 
 export const buildTextMetadataEntry = (
   overrides?: Partial<TextMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TextMetadataEntry'} & TextMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TextMetadataEntry');
   return {
     __typename: 'TextMetadataEntry',
     description:
@@ -9993,15 +13652,33 @@ export const buildTextMetadataEntry = (
 
 export const buildTickEvaluation = (
   overrides?: Partial<TickEvaluation>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TickEvaluation'} & TickEvaluation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TickEvaluation');
   return {
     __typename: 'TickEvaluation',
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'est',
-    error: overrides && overrides.hasOwnProperty('error') ? overrides.error! : buildPythonError(),
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     runRequests:
       overrides && overrides.hasOwnProperty('runRequests')
         ? overrides.runRequests!
-        : [buildRunRequest(), buildRunRequest(), buildRunRequest()],
+        : [
+            relationshipsToOmit.has('RunRequest')
+              ? ({} as RunRequest)
+              : buildRunRequest({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunRequest')
+              ? ({} as RunRequest)
+              : buildRunRequest({}, relationshipsToOmit),
+            relationshipsToOmit.has('RunRequest')
+              ? ({} as RunRequest)
+              : buildRunRequest({}, relationshipsToOmit),
+          ],
     skipReason:
       overrides && overrides.hasOwnProperty('skipReason') ? overrides.skipReason! : 'dicta',
   };
@@ -10009,7 +13686,10 @@ export const buildTickEvaluation = (
 
 export const buildTimePartitionRange = (
   overrides?: Partial<TimePartitionRange>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TimePartitionRange'} & TimePartitionRange => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimePartitionRange');
   return {
     __typename: 'TimePartitionRange',
     endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'dolorum',
@@ -10025,19 +13705,35 @@ export const buildTimePartitionRange = (
 
 export const buildTimePartitions = (
   overrides?: Partial<TimePartitions>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TimePartitions'} & TimePartitions => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimePartitions');
   return {
     __typename: 'TimePartitions',
     ranges:
       overrides && overrides.hasOwnProperty('ranges')
         ? overrides.ranges!
-        : [buildTimePartitionRange(), buildTimePartitionRange(), buildTimePartitionRange()],
+        : [
+            relationshipsToOmit.has('TimePartitionRange')
+              ? ({} as TimePartitionRange)
+              : buildTimePartitionRange({}, relationshipsToOmit),
+            relationshipsToOmit.has('TimePartitionRange')
+              ? ({} as TimePartitionRange)
+              : buildTimePartitionRange({}, relationshipsToOmit),
+            relationshipsToOmit.has('TimePartitionRange')
+              ? ({} as TimePartitionRange)
+              : buildTimePartitionRange({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildTimePartitionsDefinitionMetadata = (
   overrides?: Partial<TimePartitionsDefinitionMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TimePartitionsDefinitionMetadata'} & TimePartitionsDefinitionMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TimePartitionsDefinitionMetadata');
   return {
     __typename: 'TimePartitionsDefinitionMetadata',
     endKey: overrides && overrides.hasOwnProperty('endKey') ? overrides.endKey! : 'nobis',
@@ -10049,7 +13745,10 @@ export const buildTimePartitionsDefinitionMetadata = (
 
 export const buildTypeCheck = (
   overrides?: Partial<TypeCheck>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'TypeCheck'} & TypeCheck => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('TypeCheck');
   return {
     __typename: 'TypeCheck',
     description:
@@ -10058,14 +13757,27 @@ export const buildTypeCheck = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries')
         ? overrides.metadataEntries!
-        : [buildMetadataEntry(), buildMetadataEntry(), buildMetadataEntry()],
+        : [
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('MetadataEntry')
+              ? ({} as MetadataEntry)
+              : buildMetadataEntry({}, relationshipsToOmit),
+          ],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : true,
   };
 };
 
 export const buildUnauthorizedError = (
   overrides?: Partial<UnauthorizedError>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'UnauthorizedError'} & UnauthorizedError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnauthorizedError');
   return {
     __typename: 'UnauthorizedError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'porro',
@@ -10074,7 +13786,10 @@ export const buildUnauthorizedError = (
 
 export const buildUnknownPipeline = (
   overrides?: Partial<UnknownPipeline>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'UnknownPipeline'} & UnknownPipeline => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UnknownPipeline');
   return {
     __typename: 'UnknownPipeline',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'dicta',
@@ -10087,7 +13802,10 @@ export const buildUnknownPipeline = (
 
 export const buildUrlMetadataEntry = (
   overrides?: Partial<UrlMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'UrlMetadataEntry'} & UrlMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UrlMetadataEntry');
   return {
     __typename: 'UrlMetadataEntry',
     description:
@@ -10099,45 +13817,82 @@ export const buildUrlMetadataEntry = (
 
 export const buildUsedSolid = (
   overrides?: Partial<UsedSolid>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'UsedSolid'} & UsedSolid => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UsedSolid');
   return {
     __typename: 'UsedSolid',
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
-        : buildISolidDefinition(),
+        : relationshipsToOmit.has('ISolidDefinition')
+        ? ({} as ISolidDefinition)
+        : buildISolidDefinition({}, relationshipsToOmit),
     invocations:
       overrides && overrides.hasOwnProperty('invocations')
         ? overrides.invocations!
-        : [buildNodeInvocationSite(), buildNodeInvocationSite(), buildNodeInvocationSite()],
+        : [
+            relationshipsToOmit.has('NodeInvocationSite')
+              ? ({} as NodeInvocationSite)
+              : buildNodeInvocationSite({}, relationshipsToOmit),
+            relationshipsToOmit.has('NodeInvocationSite')
+              ? ({} as NodeInvocationSite)
+              : buildNodeInvocationSite({}, relationshipsToOmit),
+            relationshipsToOmit.has('NodeInvocationSite')
+              ? ({} as NodeInvocationSite)
+              : buildNodeInvocationSite({}, relationshipsToOmit),
+          ],
   };
 };
 
 export const buildWorkspace = (
   overrides?: Partial<Workspace>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'Workspace'} & Workspace => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Workspace');
   return {
     __typename: 'Workspace',
     locationEntries:
       overrides && overrides.hasOwnProperty('locationEntries')
         ? overrides.locationEntries!
         : [
-            buildWorkspaceLocationEntry(),
-            buildWorkspaceLocationEntry(),
-            buildWorkspaceLocationEntry(),
+            relationshipsToOmit.has('WorkspaceLocationEntry')
+              ? ({} as WorkspaceLocationEntry)
+              : buildWorkspaceLocationEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('WorkspaceLocationEntry')
+              ? ({} as WorkspaceLocationEntry)
+              : buildWorkspaceLocationEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('WorkspaceLocationEntry')
+              ? ({} as WorkspaceLocationEntry)
+              : buildWorkspaceLocationEntry({}, relationshipsToOmit),
           ],
   };
 };
 
 export const buildWorkspaceLocationEntry = (
   overrides?: Partial<WorkspaceLocationEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'WorkspaceLocationEntry'} & WorkspaceLocationEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WorkspaceLocationEntry');
   return {
     __typename: 'WorkspaceLocationEntry',
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata')
         ? overrides.displayMetadata!
-        : [buildRepositoryMetadata(), buildRepositoryMetadata(), buildRepositoryMetadata()],
+        : [
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+            relationshipsToOmit.has('RepositoryMetadata')
+              ? ({} as RepositoryMetadata)
+              : buildRepositoryMetadata({}, relationshipsToOmit),
+          ],
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
@@ -10149,12 +13904,24 @@ export const buildWorkspaceLocationEntry = (
     locationOrLoadError:
       overrides && overrides.hasOwnProperty('locationOrLoadError')
         ? overrides.locationOrLoadError!
-        : buildPythonError(),
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'sint',
     permissions:
       overrides && overrides.hasOwnProperty('permissions')
         ? overrides.permissions!
-        : [buildPermission(), buildPermission(), buildPermission()],
+        : [
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+            relationshipsToOmit.has('Permission')
+              ? ({} as Permission)
+              : buildPermission({}, relationshipsToOmit),
+          ],
     updatedTimestamp:
       overrides && overrides.hasOwnProperty('updatedTimestamp')
         ? overrides.updatedTimestamp!
@@ -10164,23 +13931,35 @@ export const buildWorkspaceLocationEntry = (
 
 export const buildWorkspaceLocationStatusEntries = (
   overrides?: Partial<WorkspaceLocationStatusEntries>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'WorkspaceLocationStatusEntries'} & WorkspaceLocationStatusEntries => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WorkspaceLocationStatusEntries');
   return {
     __typename: 'WorkspaceLocationStatusEntries',
     entries:
       overrides && overrides.hasOwnProperty('entries')
         ? overrides.entries!
         : [
-            buildWorkspaceLocationStatusEntry(),
-            buildWorkspaceLocationStatusEntry(),
-            buildWorkspaceLocationStatusEntry(),
+            relationshipsToOmit.has('WorkspaceLocationStatusEntry')
+              ? ({} as WorkspaceLocationStatusEntry)
+              : buildWorkspaceLocationStatusEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('WorkspaceLocationStatusEntry')
+              ? ({} as WorkspaceLocationStatusEntry)
+              : buildWorkspaceLocationStatusEntry({}, relationshipsToOmit),
+            relationshipsToOmit.has('WorkspaceLocationStatusEntry')
+              ? ({} as WorkspaceLocationStatusEntry)
+              : buildWorkspaceLocationStatusEntry({}, relationshipsToOmit),
           ],
   };
 };
 
 export const buildWorkspaceLocationStatusEntry = (
   overrides?: Partial<WorkspaceLocationStatusEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'WorkspaceLocationStatusEntry'} & WorkspaceLocationStatusEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WorkspaceLocationStatusEntry');
   return {
     __typename: 'WorkspaceLocationStatusEntry',
     id:
@@ -10199,19 +13978,34 @@ export const buildWorkspaceLocationStatusEntry = (
 
 export const buildWrappingConfigType = (
   overrides?: Partial<WrappingConfigType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'WrappingConfigType'} & WrappingConfigType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WrappingConfigType');
   return {
     __typename: 'WrappingConfigType',
-    ofType: overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildConfigType(),
+    ofType:
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('ConfigType')
+        ? ({} as ConfigType)
+        : buildConfigType({}, relationshipsToOmit),
   };
 };
 
 export const buildWrappingDagsterType = (
   overrides?: Partial<WrappingDagsterType>,
+  _relationshipsToOmit: Set<string> = new Set(),
 ): {__typename: 'WrappingDagsterType'} & WrappingDagsterType => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('WrappingDagsterType');
   return {
     __typename: 'WrappingDagsterType',
     ofType:
-      overrides && overrides.hasOwnProperty('ofType') ? overrides.ofType! : buildDagsterType(),
+      overrides && overrides.hasOwnProperty('ofType')
+        ? overrides.ofType!
+        : relationshipsToOmit.has('DagsterType')
+        ? ({} as DagsterType)
+        : buildDagsterType({}, relationshipsToOmit),
   };
 };
