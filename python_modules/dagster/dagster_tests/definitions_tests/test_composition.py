@@ -147,7 +147,6 @@ def test_arg_fails():
 
         @graph
         def _fail_3():
-            # pylint: disable=too-many-function-args
             adder(return_one(), return_two(), return_one.alias("three")())
 
 
@@ -678,7 +677,7 @@ def test_compose_nothing():
 
     @graph(ins={"start": GraphIn()})
     def _compose(start: Nothing):  # type: ignore
-        go(start)  # pylint: disable=too-many-function-args
+        go(start)
 
 
 def test_multimap():
@@ -802,7 +801,7 @@ def test_alias_on_invoked_solid_fails():
 
         @job
         def alias_on_invoked_solid_job():
-            return_one().alias("something")  # pylint: disable=no-member
+            return_one().alias("something")
 
         alias_on_invoked_solid_job.execute_in_process()
 
@@ -887,7 +886,7 @@ def test_fan_in_scalars_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Lists can only contain the output from previous solid invocations or input mappings",
+        match="Lists can only contain the output from previous op invocations or input mappings",
     ):
 
         @job

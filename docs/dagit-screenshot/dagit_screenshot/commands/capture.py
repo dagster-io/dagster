@@ -1,11 +1,11 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 
 import os
 import signal
 import subprocess
 from time import sleep
 
-from selenium import webdriver  # pylint: disable=import-error
+from selenium import webdriver
 
 from dagit_screenshot.utils import ScreenshotSpec
 

@@ -4,10 +4,10 @@ from typing import List, Tuple
 
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_backfill_id
-from dagster._legacy import DagsterRun, DagsterRunStatus
 from dagster._seven import get_system_temp_directory
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
@@ -130,8 +130,8 @@ def _get_run_stats(partition_statuses):
 
 class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def _create_backfill(self, graphql_context):
-        repository_location = graphql_context.get_repository_location("test")
-        repository = repository_location.get_repository("test_repo")
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
 
         backfill = PartitionBackfill(
             backfill_id=make_new_backfill_id(),

@@ -7,6 +7,7 @@ from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import StructType
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
@@ -30,8 +31,7 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
 
 
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
-    """
-    Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
+    """Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
 
     Examples:
         .. code-block:: python
@@ -88,13 +88,15 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return spark.createDataFrame([], StructType([]))
+
         df = (
             spark.read.format(SNOWFLAKE_CONNECTOR)
             .options(**options)
             .option("query", SnowflakeDbClient.get_select_statement(table_slice))
             .load()
         )
-
         return df.toDF(*[c.lower() for c in df.columns])
 
     @property

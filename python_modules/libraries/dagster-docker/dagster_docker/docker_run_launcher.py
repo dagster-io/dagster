@@ -1,3 +1,5 @@
+from typing import Any, Mapping, Optional
+
 import dagster._check as check
 import docker
 from dagster._core.launcher.base import (
@@ -12,6 +14,8 @@ from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
@@ -25,7 +29,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(
         self,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         image=None,
         registry=None,
         env_vars=None,
@@ -61,8 +65,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return DOCKER_CONFIG_SCHEMA
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
     def get_container_context(self, pipeline_run: DagsterRun) -> DockerContainerContext:

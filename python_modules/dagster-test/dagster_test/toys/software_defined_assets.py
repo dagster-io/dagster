@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import time
 
 from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
@@ -31,8 +30,10 @@ def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
 
 @asset
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
-    """Computes the 10 hottest dates. In a more advanced demo, this might perform a complex
-    SQL query to aggregate the data. For now, just imagine that this implements something like:
+    """Computes the 10 hottest dates.
+
+    In a more advanced demo, this might perform a complex SQL query to aggregate the data. For now,
+    just imagine that this implements something like:
 
     ```sql
     SELECT temp, date_part('day', date) FROM daily_temperature_highs ORDER BY date DESC;

@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
+# ruff: noqa: T201
 
 
 def new_resource_testing() -> None:

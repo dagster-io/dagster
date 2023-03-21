@@ -31,7 +31,7 @@ export type TagType = {
   value: string;
 };
 
-type TagAction = {
+export type TagAction = {
   label: React.ReactNode;
   onClick: (tag: TagType) => void;
 };

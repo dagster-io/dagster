@@ -1,17 +1,31 @@
-from dagster import DagsterInstance, load_assets_from_modules, materialize_to_memory
-from dagster_test.toys.partitioned_assets import dynamic_asset_partitions
+from dagster import (
+    DagsterInstance,
+    MultiPartitionKey,
+    materialize_to_memory,
+)
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
     customers_partitions_def,
     defs,
+    dynamic_partitions_asset1,
+    dynamic_partitions_asset2,
+    multipartitioned_with_dynamic_dimension,
 )
 
 
 def test_assets():
-    assets = load_assets_from_modules([dynamic_asset_partitions])
-
     with DagsterInstance.ephemeral() as instance:
         instance.add_dynamic_partitions(customers_partitions_def.name, ["pepsi", "coca_cola"])
-        assert materialize_to_memory(assets, partition_key="pepsi", instance=instance).success
+
+        assert materialize_to_memory(
+            [dynamic_partitions_asset1, dynamic_partitions_asset2],
+            partition_key="pepsi",
+            instance=instance,
+        ).success
+        assert materialize_to_memory(
+            [multipartitioned_with_dynamic_dimension],
+            partition_key=MultiPartitionKey({"customers": "pepsi", "daily": "2023-01-01"}),
+            instance=instance,
+        ).success
 
 
 def test_job():

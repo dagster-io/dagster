@@ -215,8 +215,7 @@ class AssetGroup:
         )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
-        """
-        Returns a list of source assets corresponding to all the non-source assets in this group.
+        """Returns a list of source assets corresponding to all the non-source assets in this group.
         """
         return [
             source_asset
@@ -231,8 +230,7 @@ class AssetGroup:
         executor_def: Optional[ExecutorDefinition] = None,
         extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
-        """
-        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        """Constructs an AssetGroup that includes all asset definitions and source assets in all
         sub-modules of the given package module.
 
         A package module is the result of importing a package.
@@ -264,8 +262,7 @@ class AssetGroup:
         executor_def: Optional[ExecutorDefinition] = None,
         extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
-        """
-        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        """Constructs an AssetGroup that includes all asset definitions and source assets in all
         sub-modules of the given package.
 
         Args:
@@ -295,8 +292,7 @@ class AssetGroup:
         executor_def: Optional[ExecutorDefinition] = None,
         extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
-        """
-        Constructs an AssetGroup that includes all asset definitions and source assets in the given
+        """Constructs an AssetGroup that includes all asset definitions and source assets in the given
         modules.
 
         Args:
@@ -326,8 +322,7 @@ class AssetGroup:
         executor_def: Optional[ExecutorDefinition] = None,
         extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
-        """
-        Constructs an AssetGroup that includes all asset definitions and source assets in the module
+        """Constructs an AssetGroup that includes all asset definitions and source assets in the module
         where this is called from.
 
         Args:
@@ -354,8 +349,7 @@ class AssetGroup:
         selection: Optional[Union[str, Sequence[str]]] = "*",
         run_config: Optional[Any] = None,
     ) -> "ExecuteInProcessResult":
-        """
-        Executes an in-process run that materializes all assets in the group.
+        """Executes an in-process run that materializes all assets in the group.
 
         The execution proceeds serially, in a single thread. Only supported by AssetGroups that have
         no executor_def or that that use the in-process executor.
@@ -385,8 +379,7 @@ class AssetGroup:
         ).execute_in_process(run_config=run_config)
 
     def prefixed(self, key_prefix: CoercibleToAssetKeyPrefix):
-        """
-        Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
+        """Returns an AssetGroup that's identical to this AssetGroup, but with prefixes on all the
         asset keys. The prefix is not added to source assets.
 
         Input asset keys that reference other assets within the group are "brought along" -

@@ -10,7 +10,6 @@ from typing import (
     List,
     NamedTuple,
     Optional,
-    TypeVar,
     Union,
     cast,
 )
@@ -21,9 +20,8 @@ from typing_extensions import TypeGuard
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
-    GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -60,14 +58,6 @@ class GrpcServerEndpoint(
         return DagsterGrpcClient(port=self.port, socket=self.socket, host=self.host)
 
 
-T_GrpcRepositoryLocationOrigin = TypeVar(
-    "T_GrpcRepositoryLocationOrigin",
-    GrpcServerRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    # default=ManagedGrpcPythonEnvRepositoryLocationOrigin,
-)
-
-
 class ServerRegistryEntry(NamedTuple):
     loadable_target_origin: LoadableTargetOrigin
     creation_timestamp: float
@@ -81,7 +71,7 @@ class ErrorRegistryEntry(NamedTuple):
     error: SerializableErrorInfo
 
 
-# Creates local gRPC python processes from ManagedGrpcPythonEnvRepositoryLocationOrigins and shares
+# Creates local gRPC python processes from ManagedGrpcPythonEnvCodeLocationOrigins and shares
 # them between threads.
 class GrpcServerRegistry(AbstractContextManager):
     def __init__(
@@ -94,7 +84,7 @@ class GrpcServerRegistry(AbstractContextManager):
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that either heartbeat_ttl is greater than reload_interval (so that the process will reload
         # before it ends due to heartbeat failure), or if reload_interval is 0, that any processes
-        # returned by this registry have at least one GrpcServerRepositoryLocation hitting the
+        # returned by this registry have at least one GrpcServerCodeLocation hitting the
         # server with a heartbeat while you want the process to stay running.
         heartbeat_ttl: int,
         # How long to wait for the server to start up and receive connections before timing out
@@ -141,58 +131,54 @@ class GrpcServerRegistry(AbstractContextManager):
             self._cleanup_thread.start()
 
     def supports_origin(
-        self, repository_location_origin: RepositoryLocationOrigin
-    ) -> TypeGuard[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
-        return isinstance(repository_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
+        self, code_location_origin: CodeLocationOrigin
+    ) -> TypeGuard[ManagedGrpcPythonEnvCodeLocationOrigin]:
+        return isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
 
     @property
     def supports_reload(self) -> bool:
         return True
 
     def reload_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
-        check.inst_param(
-            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
-        )
+        check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
         with self._lock:
-            origin_id = repository_location_origin.get_id()
+            origin_id = code_location_origin.get_id()
             if origin_id in self._active_entries:
                 # Free the map entry for this origin so that _get_grpc_endpoint will create
                 # a new process
                 del self._active_entries[origin_id]
 
-            return self._get_grpc_endpoint(repository_location_origin)
+            return self._get_grpc_endpoint(code_location_origin)
 
     def get_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
-        check.inst_param(
-            repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
-        )
+        check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
 
         with self._lock:
-            return self._get_grpc_endpoint(repository_location_origin)
+            return self._get_grpc_endpoint(code_location_origin)
 
     def _get_loadable_target_origin(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> LoadableTargetOrigin:
         check.inst_param(
-            repository_location_origin,
-            "repository_location_origin",
-            ManagedGrpcPythonEnvRepositoryLocationOrigin,
+            code_location_origin,
+            "code_location_origin",
+            ManagedGrpcPythonEnvCodeLocationOrigin,
         )
-        return repository_location_origin.loadable_target_origin
+        return code_location_origin.loadable_target_origin
 
     def _get_grpc_endpoint(
-        self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> GrpcServerEndpoint:
-        origin_id = repository_location_origin.get_id()
-        loadable_target_origin = self._get_loadable_target_origin(repository_location_origin)
+        origin_id = code_location_origin.get_id()
+        loadable_target_origin = self._get_loadable_target_origin(code_location_origin)
         if not loadable_target_origin:
             raise Exception(
                 "No Python file/module information available for location"
-                f" {repository_location_origin.location_name}"
+                f" {code_location_origin.location_name}"
             )
 
         if origin_id not in self._active_entries:
@@ -207,7 +193,7 @@ class GrpcServerRegistry(AbstractContextManager):
                 new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
                     instance_ref=self.instance.get_ref(),
-                    location_name=repository_location_origin.location_name,
+                    location_name=code_location_origin.location_name,
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
-from .utils import CommandStep, message_contains, safe_getenv
+from .utils import CommandStep, safe_getenv
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 
@@ -133,8 +133,6 @@ class CommandStepBuilder:
         return self
 
     def with_skip(self, skip_reason: Optional[str]) -> "CommandStepBuilder":
-        if message_contains("NO_SKIP"):
-            return self
         if skip_reason:
             self._step["skip"] = skip_reason
         return self

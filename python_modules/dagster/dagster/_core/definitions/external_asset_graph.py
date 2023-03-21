@@ -39,6 +39,7 @@ class ExternalAssetGraph(AssetGraph):
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
+        is_observable_by_key: Mapping[AssetKey, bool],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -49,21 +50,22 @@ class ExternalAssetGraph(AssetGraph):
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._job_names_by_key = job_names_by_key
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
-        repo_locations = (
-            location_entry.repository_location
+        code_locations = (
+            location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.repository_location
+            if location_entry.code_location
         )
         repos = (
             repo
-            for repo_location in repo_locations
-            for repo in repo_location.get_repositories().values()
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
         )
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]] = [
             (repo.handle, external_asset_node)
@@ -106,9 +108,7 @@ class ExternalAssetGraph(AssetGraph):
             if not node.is_source
         }
         job_names_by_key = {
-            node.asset_key: node.job_names
-            for _, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            node.asset_key: node.job_names for _, node in repo_handle_external_asset_nodes
         }
         code_versions_by_key = {
             node.asset_key: node.code_version
@@ -120,10 +120,15 @@ class ExternalAssetGraph(AssetGraph):
             node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
         }
 
+        is_observable_by_key = {key: False for key in all_non_source_keys}
+
         for repo_handle, node in repo_handle_external_asset_nodes:
             if node.is_source:
+                # We need to set this even if the node is a regular asset in another code location.
+                # `is_observable` will only ever be consulted in the source asset context.
+                is_observable_by_key[node.asset_key] = node.is_observable
                 if node.asset_key in all_non_source_keys:
-                    # one repo's source is another repo's non-source
+                    # one location's source is another location's non-source
                     continue
 
                 source_asset_keys.add(node.asset_key)
@@ -169,6 +174,7 @@ class ExternalAssetGraph(AssetGraph):
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
             code_versions_by_key=code_versions_by_key,
+            is_observable_by_key=is_observable_by_key,
         )
 
     @property

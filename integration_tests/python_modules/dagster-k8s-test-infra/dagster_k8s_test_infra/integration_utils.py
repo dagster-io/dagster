@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import json
 import os
 import random
@@ -31,7 +31,7 @@ def check_output(*args, **kwargs):
 
 def which_(exe):
     """Uses distutils to look for an executable, mimicking unix which."""
-    from distutils import spawn  # pylint: disable=deprecated-module
+    from distutils import spawn
 
     # https://github.com/PyCQA/pylint/issues/73
     return spawn.find_executable(exe)
@@ -144,7 +144,7 @@ def launch_run_over_graphql(
     run_config,
     pipeline_name,
     repository_name="demo_execution_repo",
-    repository_location_name="user-code-deployment-1",
+    code_location_name="user-code-deployment-1",
     mode="default",
     solid_selection=None,
 ):
@@ -152,7 +152,7 @@ def launch_run_over_graphql(
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": repository_location_name,
+                    "repositoryLocationName": code_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
                     "solidSelection": solid_selection,

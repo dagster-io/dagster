@@ -829,10 +829,10 @@ def test_filtered_runs_multiple_filters():
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
+        instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
         ).run_id
-        instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
+        instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:

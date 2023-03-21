@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -25,37 +26,38 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsSubset,
 )
 from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
+    PartitionRangeStatus,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
-    CACHEABLE_PARTITION_TYPES,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
+    is_cacheable_partition_type,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -122,8 +124,8 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 
 def asset_node_iter(
     graphene_info,
-) -> Iterator[Tuple[RepositoryLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.repository_locations:
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
+    for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
                 yield location, repository, external_asset_node
@@ -169,8 +171,7 @@ def get_asset_node_definition_collisions(
 def get_asset_nodes_by_asset_key(
     graphene_info: "ResolveInfo",
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
-    """
-    If multiple repositories have asset nodes for the same asset key, chooses the asset node that
+    """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
     from ..schema.asset_graph import GrapheneAssetNode
@@ -352,20 +353,17 @@ def get_materialized_and_failed_partition_subsets(
     dynamic_partitions_loader: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset]]:
-    """
-    Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
+    """Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
     the second is the failed partitions.
     """
     if not partitions_def:
         return None, None
 
-    if instance.can_cache_asset_status_data() and isinstance(
-        partitions_def, CACHEABLE_PARTITION_TYPES
-    ):
+    if instance.can_cache_asset_status_data() and is_cacheable_partition_type(partitions_def):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def
+            instance, asset_key, partitions_def, dynamic_partitions_loader
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -458,8 +456,12 @@ def build_partition_statuses(
 
     if isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         ranges = fetch_flattened_time_window_ranges(
-            materialized_partitions_subset,
-            cast(TimeWindowPartitionsSubset, failed_partitions_subset),
+            {
+                PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
+                PartitionRangeStatus.FAILED: cast(
+                    TimeWindowPartitionsSubset, failed_partitions_subset
+                ),
+            },
         )
         graphene_ranges = []
         for r in ranges:
@@ -514,10 +516,11 @@ def get_2d_run_length_encoded_partitions(
     secondary_dim = materialized_partitions_subset.partitions_def.secondary_dimension
 
     dim2_materialized_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+        lambda: secondary_dim.partitions_def.empty_subset()
     )
-    for partition_key in materialized_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], materialized_partitions_subset.get_partition_keys()
+    ):
         dim2_materialized_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_materialized_partition_subset_by_dim1[
@@ -527,10 +530,11 @@ def get_2d_run_length_encoded_partitions(
         )
 
     dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
-        lambda: secondary_dim.partitions_def.empty_subset()  # pylint: disable=unnecessary-lambda
+        lambda: secondary_dim.partitions_def.empty_subset()
     )
-    for partition_key in failed_partitions_subset.get_partition_keys():
-        partition_key = cast(MultiPartitionKey, partition_key)
+    for partition_key in cast(
+        Sequence[MultiPartitionKey], failed_partitions_subset.get_partition_keys()
+    ):
         dim2_failed_partition_subset_by_dim1[
             partition_key.keys_by_dimension[primary_dim.name]
         ] = dim2_failed_partition_subset_by_dim1[
@@ -547,7 +551,15 @@ def get_2d_run_length_encoded_partitions(
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
-    if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+    if (
+        len(dim1_keys) == 0
+        or len(
+            secondary_dim.partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+        == 0
+    ):
         return GrapheneMultiPartitions(ranges=[], primaryDimensionName=primary_dim.name)
 
     while unevaluated_idx <= len(dim1_keys):
@@ -603,14 +615,14 @@ def get_2d_run_length_encoded_partitions(
 def get_freshness_info(
     asset_key: AssetKey,
     freshness_policy: FreshnessPolicy,
-    data_time_queryer: CachingInstanceQueryer,
+    data_time_resolver: CachingDataTimeResolver,
     asset_graph: AssetGraph,
 ) -> "GrapheneAssetFreshnessInfo":
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
 
     current_time = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    latest_record = data_time_queryer.get_latest_materialization_record(asset_key)
+    latest_record = data_time_resolver.instance_queryer.get_latest_materialization_record(asset_key)
     if latest_record is None:
         return GrapheneAssetFreshnessInfo(
             currentMinutesLate=None,
@@ -621,7 +633,7 @@ def get_freshness_info(
         tz=datetime.timezone.utc,
     )
 
-    used_data_times = data_time_queryer.get_used_data_times_for_record(
+    used_data_times = data_time_resolver.get_used_data_times_for_record(
         asset_graph=asset_graph, record=latest_record
     )
 

@@ -28,7 +28,9 @@ def flatten_dict(d):
 
 
 def parse_spark_config(spark_conf):
-    """For each key-value pair in spark conf, we need to pass to CLI in format:
+    """Convert spark conf dict to list of CLI arguments.
+
+    For each key-value pair in spark conf, we need to pass to CLI in format:
 
     --conf "key=value"
     """

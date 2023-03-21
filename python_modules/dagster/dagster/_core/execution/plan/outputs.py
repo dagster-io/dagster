@@ -1,9 +1,8 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import (
     AssetMaterialization,
-    Materialization,
     MetadataEntry,
     NodeHandle,
 )
@@ -120,8 +119,7 @@ class StepOutputData(
         version: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         # graveyard
-        # pylint: disable=unused-argument
-        intermediate_materialization: Optional[Union[AssetMaterialization, Materialization]] = None,
+        intermediate_materialization: Optional[AssetMaterialization] = None,
     ):
         return super(StepOutputData, cls).__new__(
             cls,
@@ -174,8 +172,7 @@ class UnresolvedStepOutputHandle(
         ],
     )
 ):
-    """
-    Placeholding that will resolve to StepOutputHandle for each mapped output once the
+    """Placeholding that will resolve to StepOutputHandle for each mapped output once the
     upstream dynamic step has completed.
     """
 

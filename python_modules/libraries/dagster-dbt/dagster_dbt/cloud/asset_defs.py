@@ -44,6 +44,7 @@ from ..asset_defs import (
     _get_node_asset_key,
     _get_node_freshness_policy,
     _get_node_group_name,
+    _get_node_metadata,
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
@@ -217,8 +218,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_dbt_nodes_and_dependencies(
         self,
     ) -> Tuple[Mapping[str, Any], Mapping[str, FrozenSet[str]]]:
-        """
-        For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
+        """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
         """
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
@@ -301,8 +301,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_dbt_cloud_assets_cacheable_data(
         self, dbt_nodes: Mapping[str, Any], dbt_dependencies: Mapping[str, FrozenSet[str]]
     ) -> AssetsDefinitionCacheableData:
-        """
-        Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
+        """Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
         representation that generate the asset definition for the job.
         """
         (
@@ -319,6 +318,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             node_info_to_asset_key=self._node_info_to_asset_key,
             node_info_to_group_fn=self._node_info_to_group_fn,
             node_info_to_freshness_policy_fn=self._node_info_to_freshness_policy_fn,
+            # TODO: In the future, allow this function to be specified
+            node_info_to_definition_metadata_fn=_get_node_metadata,
             # TODO: In the future, allow the IO manager to be specified.
             io_manager_key=None,
             # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
@@ -529,8 +530,7 @@ def load_assets_from_dbt_cloud_job(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> CacheableAssetsDefinition:
-    """
-    Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
+    """Loads a set of dbt models, managed by a dbt Cloud job, into Dagster assets. In order to
     determine the set of dbt models, the project is compiled to generate the necessary artifacts
     that define the dbt models and their dependencies.
 
@@ -552,6 +552,10 @@ def load_assets_from_dbt_cloud_job(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given

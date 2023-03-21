@@ -55,6 +55,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Topic :: System :: Monitoring",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -73,9 +74,11 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
         # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-        "grpcio>=1.44.0,<1.48.1",
+        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
+        # (except on python 3.11, where newer versions are required just to install the grpcio package)
+        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
+        "grpcio>=1.44.0; python_version>='3.11'",
         "grpcio-health-checking>=1.44.0",
         "packaging>=20.9",
         "pendulum",
@@ -126,7 +129,7 @@ setup(
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.293",
+            "pyright==1.1.298",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -150,7 +153,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.241",
+            "ruff==0.0.255",
         ],
     },
     entry_points={

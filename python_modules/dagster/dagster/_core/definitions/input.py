@@ -288,8 +288,7 @@ class InputDefinition:
         )
 
     def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
-        """
-        Return a new InputDefinition that merges this ones properties with those inferred from type signature.
+        """Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
         """
         check.invariant(
@@ -472,8 +471,7 @@ class In(
         ],
     )
 ):
-    """
-    Defines an argument to an op's compute function.
+    """Defines an argument to an op's compute function.
 
     Inputs may flow from previous op's outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
@@ -539,11 +537,11 @@ class In(
         return In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
-            default_value=input_def._default_value,  # pylint: disable=protected-access
+            default_value=input_def._default_value,  # noqa: SLF001
             root_manager_key=input_def.root_manager_key,
             metadata=input_def.metadata,
-            asset_key=input_def._asset_key,  # pylint: disable=protected-access
-            asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+            asset_key=input_def._asset_key,  # noqa: SLF001
+            asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
             input_manager_key=input_def.input_manager_key,
         )
 
@@ -563,8 +561,7 @@ class In(
 
 
 class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
-    """
-    Represents information about an input that a graph maps.
+    """Represents information about an input that a graph maps.
 
     Args:
         description (Optional[str]): Human-readable description of the input.

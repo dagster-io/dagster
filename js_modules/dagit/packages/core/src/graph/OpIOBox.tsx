@@ -72,7 +72,9 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
         <>
           <div className="circle" />
           {name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
-          {type.displayName && <div className="type">{type.displayName}</div>}
+          {type.displayName && type.displayName !== 'Nothing' && (
+            <div className="type">{type.displayName}</div>
+          )}
         </>
       )}
       {layoutInfo.collapsed.length > 0 && (

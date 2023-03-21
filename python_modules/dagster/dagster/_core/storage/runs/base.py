@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster._core.storage.pipeline_run import (
     DagsterRun,
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
 
 class RunGroupInfo(TypedDict):
     count: int
-    runs: Iterable[DagsterRun]
+    runs: Sequence[DagsterRun]
 
 
-class RunStorage(ABC, MayHaveInstanceWeakref):
+class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement
@@ -67,7 +67,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[DagsterRun]:
+    ) -> Sequence[DagsterRun]:
         """Return all the runs present in the storage that match the given filters.
 
         Args:
@@ -95,7 +95,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
         """Get the run group to which a given run belongs.
 
         Args:

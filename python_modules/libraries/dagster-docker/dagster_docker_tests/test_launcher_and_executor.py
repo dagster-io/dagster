@@ -105,7 +105,7 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
             for log in instance.all_logs(run.run_id):
-                print(log)  # pylint: disable=print-call
+                print(log)  # noqa: T201
 
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
@@ -179,7 +179,7 @@ def test_container_context_on_pipeline(aws_env):
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
             for log in instance.all_logs(run.run_id):
-                print(log)  # pylint: disable=print-call
+                print(log)  # noqa: T201
 
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS
 
@@ -254,12 +254,12 @@ def test_recovery(aws_env):
 
             time.sleep(3)
 
-            instance.run_launcher._get_container(  # pylint:disable=protected-access
+            instance.run_launcher._get_container(  # noqa: SLF001
                 instance.get_run_by_id(run.run_id)
             ).stop()
             instance.resume_run(run.run_id, workspace, attempt_number=1)
             poll_for_finished_run(instance, run.run_id, timeout=60)
 
             for log in instance.all_logs(run.run_id):
-                print(str(log) + "\n")  # pylint: disable=print-call
+                print(str(log) + "\n")  # noqa: T201
             assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.SUCCESS

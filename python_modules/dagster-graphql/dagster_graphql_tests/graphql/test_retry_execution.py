@@ -65,8 +65,8 @@ class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
     def test_retry_execution_permission_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "eventually_successful")
 
-        repository_location = graphql_context.get_repository_location("test")
-        repository = repository_location.get_repository("test_repo")
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
         external_pipeline_origin = repository.get_full_external_job(
             "eventually_successful"
         ).get_external_origin()
@@ -523,9 +523,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "increment")
 
     def test_retry_failure_all_steps_with_reexecution_params(self, graphql_context):
-        """
-        Test with providng reexecutionParams rather than executionParams.
-        """
+        """Test with providng reexecutionParams rather than executionParams."""
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
         # trigger failure in the conditionally_fail solid
@@ -569,9 +567,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "after_failure")
 
     def test_retry_hard_failure_with_reexecution_params_run_config_changed(self, graphql_context):
-        """
-        Test that reexecution fails if the run config changes.
-        """
+        """Test that reexecution fails if the run config changes."""
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
         # trigger failure in the conditionally_fail solid
@@ -613,9 +609,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_retry_failure_with_reexecution_params(self, graphql_context):
-        """
-        Test with providng reexecutionParams rather than executionParams.
-        """
+        """Test with providng reexecutionParams rather than executionParams."""
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
         # trigger failure in the conditionally_fail solid

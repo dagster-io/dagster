@@ -202,9 +202,11 @@ const MoreActionsDropdown: React.FC<{
   requery?: RefetchQueriesFunction;
 }> = React.memo(({selected, clearSelection, requery}) => {
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
-  const {canWipeAssets} = useUnscopedPermissions();
+  const {
+    permissions: {canWipeAssets},
+  } = useUnscopedPermissions();
 
-  if (!canWipeAssets.enabled) {
+  if (!canWipeAssets) {
     return null;
   }
 

@@ -77,7 +77,7 @@ class Config(TypedDict):
 
 
 class WandbArtifactsIOManagerError(Exception):
-    """Represents an execution error of the W&B Artifacts IO Manager"""
+    """Represents an execution error of the W&B Artifacts IO Manager."""
 
     def __init__(self, message="A W&B Artifacts IO Manager error occurred."):
         self.message = message
@@ -600,7 +600,7 @@ class ArtifactsIOManager(IOManager):
                 "Unique ID for this run, used for resuming. It must be unique in the project, and"
                 " if you delete a run you can't reuse the ID. Use the name field for a short"
                 " descriptive name, or config for saving hyperparameters to compare across runs."
-                " The ID cannot contain the following special characters: /\#?%:.. You need to set"
+                r" The ID cannot contain the following special characters: /\#?%:.. You need to set"
                 " the Run ID when you are doing experiment tracking inside Dagster to allow the IO"
                 " Manager to resume the run. By default it`s set to the Dagster Run ID e.g "
                 " 7e4df022-1bf2-44b5-a383-bb852df4077e."
@@ -641,8 +641,7 @@ class ArtifactsIOManager(IOManager):
     },
 )
 def wandb_artifacts_io_manager(context: InitResourceContext):
-    """
-    Dagster IO Manager to create and consume W&B Artifacts.
+    """Dagster IO Manager to create and consume W&B Artifacts.
 
     It allows any Dagster @op or @asset to create and consume W&B Artifacts natively.
 

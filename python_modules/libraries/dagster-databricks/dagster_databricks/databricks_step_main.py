@@ -38,8 +38,7 @@ DONE = object()
 
 
 def event_writing_loop(events_queue: Queue, put_events_fn):
-    """
-    Periodically check whether the instance has posted any new events to the queue.  If they have,
+    """Periodically check whether the instance has posted any new events to the queue.  If they have,
     write ALL events (not just the new events) to DBFS.
     """
     all_events = []
@@ -91,11 +90,11 @@ def main(
                 databricks_config = pickle.load(handle)
 
             # sc and dbutils are globally defined in the Databricks runtime.
-            databricks_config.setup(dbutils, sc)  # noqa pylint: disable=undefined-variable
+            databricks_config.setup(dbutils, sc)  # noqa: F821
 
             with open(step_run_ref_filepath, "rb") as handle:
                 step_run_ref = pickle.load(handle)
-            print("Running dagster job")
+            print("Running dagster job")  # noqa: T201
 
             step_run_dir = os.path.dirname(step_run_ref_filepath)
             if step_run_ref.known_state is not None:

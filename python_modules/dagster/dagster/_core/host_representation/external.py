@@ -42,16 +42,17 @@ from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
-from dagster._utils import iter_to_list
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    EnvVarConsumer,
     ExternalAssetNode,
     ExternalJobRef,
     ExternalPartitionSetData,
@@ -59,6 +60,7 @@ from .external_data import (
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalResourceData,
+    ExternalResourceValue,
     ExternalScheduleData,
     ExternalSensorData,
     ExternalSensorMetadata,
@@ -73,8 +75,7 @@ if TYPE_CHECKING:
 
 
 class ExternalRepository:
-    """
-    ExternalRepository is a object that represents a loaded repository definition that
+    """ExternalRepository is a object that represents a loaded repository definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -141,7 +142,7 @@ class ExternalRepository:
         return self._external_schedules[schedule_name]
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
-        return iter_to_list(self._external_schedules.values())
+        return list(self._external_schedules.values())
 
     @property
     @cached_method
@@ -163,6 +164,13 @@ class ExternalRepository:
         return self._external_resources.values()
 
     @property
+    def _utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self.external_repository_data.utilized_env_vars or {}
+
+    def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self._utilized_env_vars
+
+    @property
     @cached_method
     def _external_sensors(self) -> Dict[str, ExternalSensor]:
         return {
@@ -177,7 +185,7 @@ class ExternalRepository:
         return self._external_sensors[sensor_name]
 
     def get_external_sensors(self) -> Sequence[ExternalSensor]:
-        return iter_to_list(self._external_sensors.values())
+        return list(self._external_sensors.values())
 
     @property
     @cached_method
@@ -196,7 +204,7 @@ class ExternalRepository:
         return self._external_partition_sets[partition_set_name]
 
     def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
-        return iter_to_list(self._external_partition_sets.values())
+        return list(self._external_partition_sets.values())
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
@@ -249,8 +257,7 @@ class ExternalRepository:
         return self.handle.get_python_origin()
 
     def get_external_origin_id(self) -> str:
-        """
-        A means of identifying the repository this ExternalRepository represents based on
+        """A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
         return self.get_external_origin().get_id()
@@ -277,8 +284,7 @@ class ExternalRepository:
 
 
 class ExternalPipeline(RepresentedPipeline):
-    """
-    ExternalPipeline is a object that represents a loaded job definition that
+    """ExternalPipeline is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -453,8 +459,7 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
-    """
-    ExternalExecution is a object that represents an execution plan that
+    """ExternalExecution is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
 
@@ -541,8 +546,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """
-    Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
     """
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
@@ -566,7 +570,7 @@ class ExternalResource:
         return self._external_resource_data.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, str]:
+    def configured_values(self) -> Dict[str, ExternalResourceValue]:
         return self._external_resource_data.configured_values
 
     @property
@@ -879,9 +883,9 @@ class ExternalPartitionSet:
         # names
         return self._external_partition_set_data.external_partitions_data is not None
 
-    def get_partition_names(self) -> Sequence[str]:
+    def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())
         partitions = (
             self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
         )
-        return partitions.get_partition_keys()
+        return partitions.get_partition_keys(dynamic_partitions_store=instance)

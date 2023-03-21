@@ -34,11 +34,13 @@ def spark(gcs_jar_path):
     )
 
     # required config for the gcs connector
-    spark._jsc.hadoopConfiguration().set(
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
         "fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
     )
-    spark._jsc.hadoopConfiguration().set("fs.gs.auth.service.account.enable", "true")
-    spark._jsc.hadoopConfiguration().set(
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
+        "fs.gs.auth.service.account.enable", "true"
+    )
+    spark._jsc.hadoopConfiguration().set(  # noqa: SLF001
         "google.cloud.auth.service.account.json.keyfile",
         os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
     )

@@ -1,7 +1,7 @@
 import datetime
 from typing import Mapping, Optional
 
-import pytz
+import pendulum
 from airflow.models.dag import DAG
 from airflow.models.dagrun import DagRun
 from dagster import (
@@ -10,30 +10,24 @@ from dagster import (
     _check as check,
 )
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
-from dateutil.parser import parse
 
 from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
 )
 
-# pylint: disable=no-name-in-module,import-error
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
     from airflow.utils.state import State
 
-    # pylint: enable=no-name-in-module,import-error
-
 
 class AirflowDatabase:
-    """
-    Airflow database Dagster resource.
+    """Airflow database Dagster resource."""
 
-    """
-
-    def __init__(self, dagster_run: DagsterRun):
+    def __init__(self, dagster_run: DagsterRun, dag_run_config: Optional[dict] = None):
         self.dagster_run = dagster_run
+        self.dag_run_config = dag_run_config
 
     def _parse_execution_date_for_job(
         self, dag: DAG, run_tags: Mapping[str, str]
@@ -45,8 +39,9 @@ class AirflowDatabase:
             )
         check.str_param(execution_date_str, "execution_date_str")
         try:
-            execution_date = parse(execution_date_str)
-            execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
+            execution_date = pendulum.parse(
+                execution_date_str, tz=pendulum.timezone(dag.timezone.name)
+            )
         except ValueError:
             raise DagsterInvariantViolationError(
                 'Could not parse execution_date "{execution_date_str}". Please use datetime'
@@ -69,8 +64,7 @@ class AirflowDatabase:
         execution_date_str = run_tags.get("dagster/partition")
         if not execution_date_str:
             raise DagsterInvariantViolationError("dagster/partition is not set")
-        execution_date = parse(execution_date_str)
-        execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
+        execution_date = pendulum.parse(execution_date_str, tz=pendulum.timezone(dag.timezone.name))
         return execution_date
 
     def get_dagrun(self, dag: DAG) -> DagRun:
@@ -94,11 +88,13 @@ class AirflowDatabase:
                     state=DagRunState.RUNNING,
                     execution_date=execution_date,
                     run_type=DagRunType.MANUAL,
+                    conf=self.dag_run_config,
                 )
             else:
                 dagrun = dag.create_dagrun(
                     run_id=f"dagster_airflow_run_{execution_date}",
                     state=State.RUNNING,
                     execution_date=execution_date,
+                    conf=self.dag_run_config,
                 )
         return dagrun

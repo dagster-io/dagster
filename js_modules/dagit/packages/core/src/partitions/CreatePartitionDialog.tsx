@@ -17,6 +17,7 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {invalidatePartitions} from '../assets/PartitionSubscribers';
 import {testId} from '../testing/testId';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -70,16 +71,14 @@ export const CreatePartitionDialog = ({
   close,
   repoAddress,
   refetch,
-  selected,
-  setSelected,
+  onCreated,
 }: {
   isOpen: boolean;
   partitionDefinitionName?: string | null;
   close: () => void;
   repoAddress: RepoAddress;
   refetch?: () => Promise<void>;
-  selected: string[];
-  setSelected: (selected: string[]) => void;
+  onCreated: (partitionName: string) => void;
 }) => {
   const [partitionName, setPartitionName] = React.useState('');
 
@@ -155,8 +154,9 @@ export const CreatePartitionDialog = ({
       }
       case 'AddDynamicPartitionSuccess': {
         refetch?.();
-        setSelected([...selected, partitionName]);
+        onCreated(partitionName);
         close();
+        invalidatePartitions();
         break;
       }
       default: {

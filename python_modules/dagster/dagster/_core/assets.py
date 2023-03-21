@@ -1,13 +1,14 @@
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 
 
 @whitelist_for_serdes
 class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional[float])])):
-    """
-    Set of asset fields that do not change with every materialization.  These are generally updated
+    """Set of asset fields that do not change with every materialization.  These are generally updated
     on some non-materialization action (e.g. wipe).
     """
 
@@ -20,8 +21,9 @@ class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional
         if not db_string:
             return None
 
-        details = deserialize_json_to_dagster_namedtuple(db_string)
-        if not isinstance(details, AssetDetails):
+        try:
+            details = deserialize_value(db_string, AssetDetails)
+        except DeserializationError:
             return None
 
         return details

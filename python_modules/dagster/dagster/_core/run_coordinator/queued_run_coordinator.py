@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
+from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
@@ -43,9 +44,8 @@ class RunQueueConfig(
         )
 
 
-class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
-    """
-    Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
+class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass):
+    """Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
     the Dagster Daemon process to be alive in order for runs to be launched.
     """
 
@@ -58,7 +58,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         dequeue_num_workers=None,
         max_user_code_failure_retries=None,
         user_code_failure_retry_delay=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._max_concurrent_runs = check.opt_int_param(

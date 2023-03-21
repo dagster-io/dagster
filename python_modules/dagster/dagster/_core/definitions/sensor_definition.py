@@ -4,21 +4,31 @@ from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
+    Dict,
+    Iterable,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
 )
 
 import pendulum
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import (
+    Resources,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -29,7 +39,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params, has_at_least_one_parameter
+from ..decorator_utils import (
+    get_function_params,  # pylint: disable=unused-import
+)
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -40,6 +52,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster import ResourceDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
@@ -81,14 +94,13 @@ class SensorEvaluationContext:
             directly (primarily useful in testing contexts).
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import sensor, SensorEvaluationContext
 
-        from dagster import sensor, SensorEvaluationContext
-
-        @sensor
-        def the_sensor(context: SensorEvaluationContext):
-            ...
+            @sensor
+            def the_sensor(context: SensorEvaluationContext):
+                ...
 
     """
 
@@ -102,7 +114,13 @@ class SensorEvaluationContext:
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
+        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
@@ -114,6 +132,29 @@ class SensorEvaluationContext:
         self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
+
+        """
+        This is similar to what we do in e.g. the op context - we set up a resource
+        building context manager, and immediately enter it. This is so that in cases
+        where a user is not using any context-manager based resources, they don't
+        need to enter this SensorEvaluationContext themselves.
+        
+        For example:
+        
+        my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
+        
+        will work ok, but for a CM resource we must do
+
+        with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+            my_sensor(context)
+        """
+
+        self._resources_cm = build_resources(resources or {})
+
+        self._resources = self._resources_cm.__enter__()
+        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        self._cm_scope_entered = False
+
         self._log_key = (
             [
                 repository_name,
@@ -125,12 +166,28 @@ class SensorEvaluationContext:
         )
         self._logger: Optional[InstigationLogger] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "SensorEvaluationContext":
+        self._cm_scope_entered = True
         return self
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
+    def __exit__(self, *exc) -> None:
+        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
+
+    def __del__(self) -> None:
+        if self._resources_contain_cm and not self._cm_scope_entered:
+            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+
+    @property
+    def resources(self) -> Resources:
+        if self._resources_contain_cm and not self._cm_scope_entered:
+            raise DagsterInvariantViolationError(
+                "At least one provided resource is a generator, but attempting to access "
+                "resources outside of context manager scope. You can use the following syntax to "
+                "open a context manager: `with build_sensor_context(...) as context:`"
+            )
+        return self._resources
 
     @public
     @property
@@ -231,13 +288,71 @@ RawSensorEvaluationFunctionReturn = Union[
     RunRequest,
     PipelineRunReaction,
 ]
-RawSensorEvaluationFunction = Union[
-    Callable[[], RawSensorEvaluationFunctionReturn],
-    Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
-]
-SensorEvaluationFunction = Callable[
-    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
-]
+RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
+
+SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, RunRequest]]]
+
+
+def get_context_param_name(fn: Callable) -> Optional[str]:
+    """Determines the sensor's context parameter name by excluding all resource parameters."""
+    resource_params = {param.name for param in get_resource_args(fn)}
+
+    return next(
+        (param.name for param in get_function_params(fn) if param.name not in resource_params), None
+    )
+
+
+def _validate_and_get_resource_dict(
+    context: SensorEvaluationContext, sensor_name: str, required_resource_keys: Set[str]
+) -> Dict[str, Any]:
+    """Validates that the context has all the required resources and returns a dictionary of
+    resource key to resource object.
+    """
+    for k in required_resource_keys:
+        if not hasattr(context.resources, k):
+            raise DagsterInvalidDefinitionError(
+                f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
+            )
+
+    return {k: getattr(context.resources, k) for k in required_resource_keys}
+
+
+def get_or_create_sensor_context(
+    fn: Callable, *args: Any, **kwargs: Any
+) -> SensorEvaluationContext:
+    """Based on the passed resource function and the arguments passed to it, returns the
+    user-passed SensorEvaluationContext or creates one if it is not passed.
+
+    Raises an exception if the user passes more than one argument or if the user-provided
+    function requires a context parameter but none is passed.
+    """
+    context_param_name_if_present = get_context_param_name(fn)
+
+    if len(args) + len(kwargs) > 1:
+        raise DagsterInvalidInvocationError(
+            "Sensor invocation received multiple arguments. Only a first "
+            "positional context parameter should be provided when invoking."
+        )
+
+    context: Optional[SensorEvaluationContext] = None
+
+    if len(args) > 0:
+        context = check.opt_inst(args[0], SensorEvaluationContext)
+    elif len(kwargs) > 0:
+        if context_param_name_if_present and context_param_name_if_present not in kwargs:
+            raise DagsterInvalidInvocationError(
+                f"Sensor invocation expected argument '{context_param_name_if_present}'."
+            )
+        context_param_name_if_present = context_param_name_if_present or list(kwargs.keys())[0]
+        context = check.opt_inst(kwargs.get(context_param_name_if_present), SensorEvaluationContext)
+    elif context_param_name_if_present:
+        # If the context parameter is present but no value was provided, we error
+        raise DagsterInvalidInvocationError(
+            "Sensor evaluation function expected context argument, but no context argument "
+            "was provided when invoking."
+        )
+
+    return context or build_sensor_context()
 
 
 class SensorDefinition:
@@ -262,6 +377,23 @@ class SensorDefinition:
             the sensor condition is met. This can be provided instead of specifying a job.
     """
 
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
+        """Returns a copy of this schedule with the job replaced.
+
+        Args:
+            job (ExecutableDefinition): The job that should execute when this
+                schedule runs.
+        """
+        return SensorDefinition(
+            name=self.name,
+            evaluation_fn=self._evaluation_fn,
+            minimum_interval_seconds=self.minimum_interval_seconds,
+            description=self.description,
+            job=new_job,
+            default_status=self.default_status,
+            asset_selection=self.asset_selection,
+        )
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -274,6 +406,7 @@ class SensorDefinition:
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[AssetSelection] = None,
+        required_resource_keys: Optional[Set[str]] = None,
     ):
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
@@ -338,45 +471,37 @@ class SensorDefinition:
         self._asset_selection = check.opt_inst_param(
             asset_selection, "asset_selection", AssetSelection
         )
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
-    def __call__(self, *args, **kwargs):
-        if has_at_least_one_parameter(self._raw_fn):
-            if len(args) + len(kwargs) == 0:
-                raise DagsterInvalidInvocationError(
-                    "Sensor evaluation function expected context argument, but no context argument "
-                    "was provided when invoking."
-                )
-            if len(args) + len(kwargs) > 1:
-                raise DagsterInvalidInvocationError(
-                    "Sensor invocation received multiple arguments. Only a first "
-                    "positional context parameter should be provided when invoking."
-                )
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
+            (
+                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+                " the decorated function"
+            ),
+        )
+        self._required_resource_keys = (
+            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
+            or resource_arg_names
+        )
 
-            context_param_name = get_function_params(self._raw_fn)[0].name
+    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+        context_param_name_if_present = get_context_param_name(self._raw_fn)
+        context = get_or_create_sensor_context(self._raw_fn, *args, **kwargs)
 
-            if args:
-                context = check.opt_inst_param(args[0], context_param_name, SensorEvaluationContext)
-            else:
-                if context_param_name not in kwargs:
-                    raise DagsterInvalidInvocationError(
-                        f"Sensor invocation expected argument '{context_param_name}'."
-                    )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, SensorEvaluationContext
-                )
+        context_param = (
+            {context_param_name_if_present: context} if context_param_name_if_present else {}
+        )
 
-            context = context if context else build_sensor_context()
+        resources = _validate_and_get_resource_dict(
+            context, self.name, self._required_resource_keys
+        )
+        return self._raw_fn(**context_param, **resources)
 
-            return self._raw_fn(context)
-
-        else:
-            if len(args) + len(kwargs) > 0:
-                raise DagsterInvalidInvocationError(
-                    "Sensor decorated function has no arguments, but arguments were provided to "
-                    "invocation."
-                )
-
-            return self._raw_fn()
+    @public
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        return self._required_resource_keys
 
     @public
     @property
@@ -588,11 +713,18 @@ def wrap_sensor_evaluation(
     sensor_name: str,
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
+    resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+
     def _wrapped_fn(context: SensorEvaluationContext):
-        if has_at_least_one_parameter(fn):
-            result = fn(context)
-        else:
-            result = fn()  # type: ignore
+        resource_args_populated = _validate_and_get_resource_dict(
+            context, sensor_name, resource_arg_names
+        )
+
+        context_param_name_if_present = get_context_param_name(fn)
+        context_param = (
+            {context_param_name_if_present: context} if context_param_name_if_present else {}
+        )
+        result = fn(**context_param, **resource_args_populated)
 
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
@@ -618,6 +750,7 @@ def build_sensor_context(
     repository_name: Optional[str] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
+    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -630,6 +763,10 @@ def build_sensor_context(
         cursor (Optional[str]): A cursor value to provide to the evaluation of the sensor.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
+            If needed by the sensor top-level resource definitions will be pulled from this repository.
+        resources (Optional[Mapping[str, ResourceDefinition]]): A set of resource definitions
+            to provide to the sensor. If passed, these will override any resource definitions
+            provided by the repository.
 
     Examples:
         .. code-block:: python
@@ -641,6 +778,7 @@ def build_sensor_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
+
     return SensorEvaluationContext(
         instance_ref=None,
         last_completion_time=None,
@@ -650,17 +788,19 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
         sensor_name=sensor_name,
+        resources=resources,
     )
 
 
 def _run_requests_with_base_asset_jobs(
-    run_requests, context, outer_asset_selection
+    run_requests: Iterable[RunRequest],
+    context: SensorEvaluationContext,
+    outer_asset_selection: AssetSelection,
 ) -> Sequence[RunRequest]:
-    """
-    For sensors that target asset selections instead of jobs, finds the corresponding base asset
+    """For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.
     """
-    asset_graph = context.repository_def.asset_graph
+    asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []
     for run_request in run_requests:
         if run_request.asset_selection:
@@ -677,10 +817,10 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)  # type: ignore  # (possible none)
         result.append(
             run_request.with_replaced_attrs(
-                job_name=base_job.name, asset_selection=list(asset_keys)
+                job_name=base_job.name, asset_selection=list(asset_keys)  # type: ignore  # (possible none)
             )
         )
 

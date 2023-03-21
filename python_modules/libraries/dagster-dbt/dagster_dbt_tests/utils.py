@@ -45,7 +45,9 @@ def assert_assets_match_project(dbt_assets, prefix=None, has_non_argument_deps=F
             maximum_lag_minutes=123
         ),
         AssetKey(prefix + ["cold_schema", "sort_cold_cereals_by_calories"]): FreshnessPolicy(
-            maximum_lag_minutes=123, cron_schedule="0 9 * * *"
+            maximum_lag_minutes=123,
+            cron_schedule="0 9 * * *",
+            cron_schedule_timezone="America/New_York",
         ),
     }
     actual_policies = dbt_assets[0].freshness_policies_by_key

@@ -1,4 +1,3 @@
-# pylint:disable=no-member
 from time import sleep
 from typing import List, Tuple
 

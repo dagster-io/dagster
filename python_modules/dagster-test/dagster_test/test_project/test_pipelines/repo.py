@@ -1,4 +1,3 @@
-# pylint:disable=no-member
 import datetime
 import math
 import os
@@ -273,7 +272,7 @@ def define_docker_celery_pipeline():
 
     @resource
     def resource_with_output():
-        print("writing to stdout")  # pylint: disable=print-call
+        print("writing to stdout")  # noqa: T201
         return 42
 
     @op(required_resource_keys={"resource_with_output"})

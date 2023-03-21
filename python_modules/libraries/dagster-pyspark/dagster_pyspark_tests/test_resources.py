@@ -27,12 +27,10 @@ def assert_pipeline_runs_with_lazy_resource(resource_def):
 
     @op(required_resource_keys={"some_name"})
     def a_op(context):
-        assert (
-            context.resources.some_name._spark_session is None  # pylint: disable=protected-access
-        )
+        assert context.resources.some_name._spark_session is None  # noqa: SLF001
         assert isinstance(context.resources.some_name.spark_session, SparkSession)
         assert isinstance(
-            context.resources.some_name._spark_session,  # pylint: disable=protected-access
+            context.resources.some_name._spark_session,  # noqa: SLF001
             SparkSession,
         )
         called["yup"] = True

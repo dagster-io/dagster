@@ -698,7 +698,7 @@ def test_resource_init_failure_with_teardown():
         try:
             called.append("B")
             raise Exception("uh oh")
-            yield "B"  # pylint: disable=unreachable
+            yield "B"
         finally:
             cleaned.append("B")
 
@@ -833,7 +833,7 @@ def test_resource_teardown_failure():
             yield "B"
         finally:
             raise Exception("uh oh")
-            cleaned.append("B")  # pylint: disable=unreachable
+            cleaned.append("B")
 
     @op(required_resource_keys={"a", "b"})
     def resource_op(_):

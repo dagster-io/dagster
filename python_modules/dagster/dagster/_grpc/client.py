@@ -18,7 +18,7 @@ from dagster._core.events import EngineEventData
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -223,9 +223,7 @@ class DagsterGrpcClient:
         res = self._query(
             "ExecutionPlanSnapshot",
             api_pb2.ExecutionPlanSnapshotRequest,  # type: ignore
-            serialized_execution_plan_snapshot_args=serialize_dagster_namedtuple(
-                execution_plan_snapshot_args
-            ),
+            serialized_execution_plan_snapshot_args=serialize_value(execution_plan_snapshot_args),
         )
         return res.serialized_execution_plan_snapshot
 
@@ -239,7 +237,7 @@ class DagsterGrpcClient:
         res = self._query(
             "ExternalPartitionNames",
             api_pb2.ExternalPartitionNamesRequest,
-            serialized_partition_names_args=serialize_dagster_namedtuple(partition_names_args),
+            serialized_partition_names_args=serialize_value(partition_names_args),
         )
 
         return res.serialized_external_partition_names_or_external_partition_execution_error
@@ -250,7 +248,7 @@ class DagsterGrpcClient:
         res = self._query(
             "ExternalPartitionConfig",
             api_pb2.ExternalPartitionConfigRequest,
-            serialized_partition_args=serialize_dagster_namedtuple(partition_args),
+            serialized_partition_args=serialize_value(partition_args),
         )
 
         return res.serialized_external_partition_config_or_external_partition_execution_error
@@ -261,7 +259,7 @@ class DagsterGrpcClient:
         res = self._query(
             "ExternalPartitionTags",
             api_pb2.ExternalPartitionTagsRequest,
-            serialized_partition_args=serialize_dagster_namedtuple(partition_args),
+            serialized_partition_args=serialize_value(partition_args),
         )
 
         return res.serialized_external_partition_tags_or_external_partition_execution_error
@@ -277,7 +275,7 @@ class DagsterGrpcClient:
             self._streaming_query(
                 "ExternalPartitionSetExecutionParams",
                 api_pb2.ExternalPartitionSetExecutionParamsRequest,
-                serialized_partition_set_execution_param_args=serialize_dagster_namedtuple(
+                serialized_partition_set_execution_param_args=serialize_value(
                     partition_set_execution_param_args
                 ),
             )
@@ -295,9 +293,7 @@ class DagsterGrpcClient:
         res = self._query(
             "ExternalPipelineSubsetSnapshot",
             api_pb2.ExternalPipelineSubsetSnapshotRequest,
-            serialized_pipeline_subset_snapshot_args=serialize_dagster_namedtuple(
-                pipeline_subset_snapshot_args
-            ),
+            serialized_pipeline_subset_snapshot_args=serialize_value(pipeline_subset_snapshot_args),
         )
 
         return res.serialized_external_pipeline_subset_result
@@ -317,9 +313,7 @@ class DagsterGrpcClient:
             "ExternalRepository",
             api_pb2.ExternalRepositoryRequest,  # type: ignore
             # rename this param name
-            serialized_repository_python_origin=serialize_dagster_namedtuple(
-                external_repository_origin
-            ),
+            serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
         )
 
@@ -339,7 +333,7 @@ class DagsterGrpcClient:
         return self._query(
             "ExternalJob",
             api_pb2.ExternalJobRequest,  # type: ignore
-            serialized_repository_origin=serialize_dagster_namedtuple(external_repository_origin),
+            serialized_repository_origin=serialize_value(external_repository_origin),
             job_name=job_name,
         )
 
@@ -352,9 +346,7 @@ class DagsterGrpcClient:
             "StreamingExternalRepository",
             api_pb2.ExternalRepositoryRequest,  # type: ignore
             # Rename parameter
-            serialized_repository_python_origin=serialize_dagster_namedtuple(
-                external_repository_origin
-            ),
+            serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
         ):
             yield {
@@ -373,7 +365,7 @@ class DagsterGrpcClient:
             self._streaming_query(
                 "ExternalScheduleExecution",
                 api_pb2.ExternalScheduleExecutionRequest,
-                serialized_external_schedule_execution_args=serialize_dagster_namedtuple(
+                serialized_external_schedule_execution_args=serialize_value(
                     external_schedule_execution_args
                 ),
             )
@@ -400,9 +392,7 @@ class DagsterGrpcClient:
                 "ExternalSensorExecution",
                 api_pb2.ExternalSensorExecutionRequest,
                 timeout=timeout,
-                serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
-                    sensor_execution_args
-                ),
+                serialized_external_sensor_execution_args=serialize_value(sensor_execution_args),
                 custom_timeout_message=custom_timeout_message,
             )
         )
@@ -432,9 +422,7 @@ class DagsterGrpcClient:
         res = self._query(
             "CancelExecution",
             api_pb2.CancelExecutionRequest,
-            serialized_cancel_execution_request=serialize_dagster_namedtuple(
-                cancel_execution_request
-            ),
+            serialized_cancel_execution_request=serialize_value(cancel_execution_request),
         )
 
         return res.serialized_cancel_execution_result
@@ -454,22 +442,20 @@ class DagsterGrpcClient:
             "CanCancelExecution",
             api_pb2.CanCancelExecutionRequest,  # type: ignore
             timeout=timeout,
-            serialized_can_cancel_execution_request=serialize_dagster_namedtuple(
-                can_cancel_execution_request
-            ),
+            serialized_can_cancel_execution_request=serialize_value(can_cancel_execution_request),
         )
 
         return res.serialized_can_cancel_execution_result
 
-    def start_run(self, execute_run_args) -> ExecuteExternalPipelineArgs:
+    def start_run(self, execute_run_args: ExecuteExternalPipelineArgs):
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
-        with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:
+        with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:  # type: ignore  # (possible none)
             try:
                 res = self._query(
                     "StartRun",
                     api_pb2.StartRunRequest,  # type: ignore
-                    serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
+                    serialized_execute_run_args=serialize_value(execute_run_args),
                 )
                 return res.serialized_start_run_result
 
@@ -499,11 +485,11 @@ class DagsterGrpcClient:
                     health_pb2.HealthCheckRequest(service="DagsterApi")
                 )
         except grpc.RpcError as e:
-            print(e)  # pylint: disable=print-call
-            return health_pb2.HealthCheckResponse.UNKNOWN  # pylint: disable=no-member
+            print(e)  # noqa: T201
+            return health_pb2.HealthCheckResponse.UNKNOWN
 
         status_number = response.status
-        # pylint: disable=no-member
+
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
 
@@ -512,9 +498,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     context manager.
     """
 
-    def __init__(
-        self, server_process=None, *args, **kwargs
-    ):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, server_process=None, *args, **kwargs):
         self._server_process = check.inst_param(server_process, "server_process", subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 

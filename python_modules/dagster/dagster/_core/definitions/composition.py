@@ -133,8 +133,7 @@ class InputMappingNode(NamedTuple):
 
 
 class DynamicFanIn(NamedTuple):
-    """
-    Type to signify collecting over a dynamic output, output by collect() on a
+    """Type to signify collecting over a dynamic output, output by collect() on a
     InvokedNodeDynamicOutputWrapper.
     """
 
@@ -561,6 +560,13 @@ class PendingNodeInvocation:
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
         from .source_asset import SourceAsset
 
+        # already set - conflict between kwargs and args
+        if input_bindings.get(input_name):
+            raise DagsterInvalidInvocationError(
+                f"{self.node_def.node_type_str} {node_name} got multiple values for"
+                f" argument '{input_name}'"
+            )
+
         if isinstance(
             output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn, SourceAsset)
         ):
@@ -576,7 +582,7 @@ class PendingNodeInvocation:
                         "In {source} {name}, received a list containing an invalid type "
                         'at index {idx} for input "{input_name}" {arg_desc} in '
                         "{node_type} invocation {node_name}. Lists can only contain the "
-                        "output from previous solid invocations or input mappings, "
+                        "output from previous op invocations or input mappings, "
                         "received {type}".format(
                             source=current_context().source,
                             name=current_context().name,
@@ -772,7 +778,7 @@ class PendingNodeInvocation:
 
 
 class InvokedNode(NamedTuple):
-    """The metadata about a solid invocation saved by the current composition context."""
+    """The metadata about a node invocation saved by the current composition context."""
 
     node_name: str
     node_def: NodeDefinition
@@ -783,8 +789,7 @@ class InvokedNode(NamedTuple):
 
 
 class InvokedNodeDynamicOutputWrapper:
-    """
-    The return value for a dynamic output when invoking a solid in a composition function.
+    """The return value for a dynamic output when invoking a node in a composition function.
     Must be unwrapped by invoking map or collect.
     """
 
@@ -885,13 +890,9 @@ class InvokedNodeDynamicOutputWrapper:
 def composite_mapping_from_output(
     output: Any,
     output_defs: Sequence[OutputDefinition],
-    solid_name: str,
+    node_name: str,
     decorator_name: str,
 ) -> Optional[Mapping[str, OutputMapping]]:
-    # output can be different types
-    check.sequence_param(output_defs, "output_defs", OutputDefinition)
-    check.str_param(solid_name, "solid_name")
-
     # single output
     if isinstance(output, InvokedNodeOutputHandle):
         if len(output_defs) == 1:
@@ -899,15 +900,9 @@ def composite_mapping_from_output(
             return {defn.name: defn.mapping_from(output.solid_name, output.output_name)}
         else:
             raise DagsterInvalidDefinitionError(
-                "Returned a single output ({solid_name}.{output_name}) in "
-                "{decorator_name} '{name}' but {num} outputs are defined. "
-                "Return a dict to map defined outputs.".format(
-                    solid_name=output.solid_name,
-                    output_name=output.output_name,
-                    decorator_name=decorator_name,
-                    name=solid_name,
-                    num=len(output_defs),
-                )
+                f"Returned a single output ({output.solid_name}.{output.output_name}) in "
+                f"{decorator_name} '{node_name}' but {len(output_defs)} outputs are defined. "
+                "Return a dict to map defined outputs."
             )
 
     elif isinstance(output, InvokedNodeDynamicOutputWrapper):
@@ -920,15 +915,9 @@ def composite_mapping_from_output(
             }
         else:
             raise DagsterInvalidDefinitionError(
-                "Returned a single output ({solid_name}.{output_name}) in "
-                "{decorator_name} '{name}' but {num} outputs are defined. "
-                "Return a dict to map defined outputs.".format(
-                    solid_name=output.solid_name,
-                    output_name=output.output_name,
-                    decorator_name=decorator_name,
-                    name=solid_name,
-                    num=len(output_defs),
-                )
+                f"Returned a single output ({output.solid_name}.{output.output_name}) in "
+                f"{decorator_name} '{node_name}' but {len(output_defs)} outputs are defined. "
+                "Return a dict to map defined outputs."
             )
 
     output_mapping_dict = {}
@@ -938,30 +927,12 @@ def composite_mapping_from_output(
     if isinstance(output, tuple) and all(
         map(lambda item: isinstance(item, InvokedNodeOutputHandle), output)
     ):
-        if decorator_name == "@composite_solid":
-            for handle in output:
-                if handle.output_name not in output_def_dict:
-                    raise DagsterInvalidDefinitionError(
-                        "Output name mismatch returning output tuple in {decorator_name} '{name}'."
-                        " No matching OutputDefinition named {output_name} for"
-                        " {solid_name}.{output_name}.Return a dict to map to the desired"
-                        " OutputDefinition".format(
-                            decorator_name=decorator_name,
-                            name=solid_name,
-                            output_name=handle.output_name,
-                            solid_name=handle.solid_name,
-                        )
-                    )
-                output_mapping_dict[handle.output_name] = output_def_dict[
-                    handle.output_name
-                ].mapping_from(handle.solid_name, handle.output_name)
-        else:
-            for i, output_name in enumerate(output_def_dict.keys()):
-                handle = output[i]
-                # map output defined on graph to the actual output defined on the op
-                output_mapping_dict[output_name] = output_def_dict[output_name].mapping_from(
-                    handle.solid_name, handle.output_name
-                )
+        for i, output_name in enumerate(output_def_dict.keys()):
+            handle = output[i]
+            # map output defined on graph to the actual output defined on the op
+            output_mapping_dict[output_name] = output_def_dict[output_name].mapping_from(
+                handle.solid_name, handle.output_name
+            )
 
         return output_mapping_dict
 
@@ -970,13 +941,8 @@ def composite_mapping_from_output(
         for name, handle in output.items():
             if name not in output_def_dict:
                 raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{name}' referenced key {key} which does not match any "
-                    "OutputDefinitions. Valid options are: {options}".format(
-                        decorator_name=decorator_name,
-                        name=solid_name,
-                        key=name,
-                        options=list(output_def_dict.keys()),
-                    )
+                    f"{decorator_name} '{node_name}' referenced key {name} which does not match any"
+                    f" defined outputs. Valid options are: {list(output_def_dict.keys())}"
                 )
 
             if isinstance(handle, InvokedNodeOutputHandle):
@@ -989,11 +955,9 @@ def composite_mapping_from_output(
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    "{decorator_name} '{name}' returned problematic dict entry under "
-                    "key {key} of type {type}. Dict values must be outputs of "
-                    "invoked solids".format(
-                        decorator_name=decorator_name, name=solid_name, key=name, type=type(handle)
-                    )
+                    f"{decorator_name} '{node_name}' returned problematic dict entry under "
+                    f"key {name} of type {type(handle)}. Dict values must be outputs of "
+                    "invoked nodes"
                 )
 
         return output_mapping_dict
@@ -1001,11 +965,9 @@ def composite_mapping_from_output(
     # error
     if output is not None:
         raise DagsterInvalidDefinitionError(
-            "{decorator_name} '{name}' returned problematic value "
-            "of type {type}. Expected return value from invoked solid or dict mapping "
-            "output name to return values from invoked solids".format(
-                decorator_name=decorator_name, name=solid_name, type=type(output)
-            )
+            f"{decorator_name} '{node_name}' returned problematic value "
+            f"of type {type(output)}. Expected return value from invoked node or dict mapping "
+            "output name to return values from invoked nodes"
         )
 
     return None
@@ -1028,8 +990,7 @@ def do_composition(
     Sequence[str],
     Mapping[str, Mapping[str, "SourceAsset"]],
 ]:
-    """
-    This a function used by both @job and @graph to implement their composition
+    """This a function used by both @job and @graph to implement their composition
     function which is our DSL for constructing a dependency graph.
 
     Args:
@@ -1082,18 +1043,6 @@ def do_composition(
     try:
         output = fn(**kwargs)
         if ignore_output_from_composition_fn:
-            if output is not None:
-                warnings.warn(
-                    (
-                        "You have returned a value out of a @pipeline-decorated function. "
-                        "This currently has no effect on behavior, but will after 0.11.0 is "
-                        "released. In order to preserve existing behavior to do not return "
-                        "anything out of this function. Pipelines (and its successor, graphs) "
-                        "will have meaningful outputs just like composite solids do today, "
-                        "and the return value will be meaningful."
-                    ),
-                    stacklevel=3,
-                )
             output = None
 
         returned_mapping = composite_mapping_from_output(

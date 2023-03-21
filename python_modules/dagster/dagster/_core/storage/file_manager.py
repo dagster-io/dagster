@@ -60,7 +60,7 @@ class LocalFileHandle(FileHandle):
         return self._path
 
 
-class FileManager(ABC):  # pylint: disable=no-init
+class FileManager(ABC):
     """Base class for all file managers in dagster.
 
     The file manager is an interface that can be implemented by resources to provide abstract

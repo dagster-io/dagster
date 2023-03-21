@@ -13,8 +13,8 @@ from typing import Iterator, NamedTuple, Optional, Sequence, Tuple
 import dagster._check as check
 from dagster._core.errors import DagsterError
 from dagster._serdes.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+    deserialize_value,
+    serialize_value,
     whitelist_for_serdes,
 )
 from dagster._utils.error import (
@@ -28,13 +28,13 @@ def write_unary_input(input_file: str, obj: NamedTuple) -> None:
     check.str_param(input_file, "input_file")
     check.not_none_param(obj, "obj")
     with open(os.path.abspath(input_file), "w", encoding="utf8") as fp:
-        fp.write(serialize_dagster_namedtuple(obj))
+        fp.write(serialize_value(obj))
 
 
 def read_unary_input(input_file: str) -> Tuple[object, ...]:
     check.str_param(input_file, "input_file")
     with open(os.path.abspath(input_file), "r", encoding="utf8") as fp:
-        return deserialize_json_to_dagster_namedtuple(fp.read())
+        return deserialize_value(fp.read(), NamedTuple)
 
 
 def ipc_write_unary_response(output_file: str, obj: NamedTuple) -> None:
@@ -64,8 +64,7 @@ class IPCErrorMessage(
         [("serializable_error_info", SerializableErrorInfo), ("message", Optional[str])],
     )
 ):
-    """
-    This represents a user error encountered during the IPC call. This indicates a business
+    """This represents a user error encountered during the IPC call. This indicates a business
     logic error, rather than a protocol. Consider this a "task failed successfully"
     use case.
     """
@@ -87,8 +86,7 @@ class IPCEndMessage(NamedTuple("_IPCEndMessage", [])):
 
 
 class DagsterIPCProtocolError(DagsterError):
-    """
-    This indicates that something went wrong with the protocol. E.g. the
+    """This indicates that something went wrong with the protocol. E.g. the
     process being called did not emit an IPCStartMessage first.
     """
 
@@ -111,7 +109,7 @@ class FileBasedWriteStream:
 
 def _send(file_path: str, obj: NamedTuple) -> None:
     with open(os.path.abspath(file_path), "a+", encoding="utf8") as fp:
-        fp.write(serialize_dagster_namedtuple(obj) + "\n")
+        fp.write(serialize_value(obj) + "\n")
 
 
 def _send_error(file_path: str, exc_info: ExceptionInfo, message: Optional[str]) -> None:
@@ -139,7 +137,7 @@ def _process_line(file_pointer: TextIOWrapper, sleep_interval: float = 0.1) -> O
     while True:
         line = file_pointer.readline()
         if line:
-            return deserialize_json_to_dagster_namedtuple(line.rstrip())
+            return deserialize_value(line.rstrip(), NamedTuple)
         sleep(sleep_interval)
 
 
@@ -219,7 +217,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
 def interrupt_ipc_subprocess(proc: Popen[bytes]) -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
-        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        proc.send_signal(signal.CTRL_BREAK_EVENT)
     else:
         proc.send_signal(signal.SIGINT)
 
@@ -229,6 +227,6 @@ def interrupt_ipc_subprocess_pid(pid: int) -> None:
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
         os.kill(pid, signal.SIGINT)

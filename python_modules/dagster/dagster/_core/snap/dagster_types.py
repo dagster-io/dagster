@@ -1,10 +1,10 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Set
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 def build_dagster_type_namespace_snapshot(
@@ -54,13 +54,7 @@ class DagsterTypeNamespaceSnapshot(
         return self.all_dagster_type_snaps_by_key[key]
 
 
-class DagsterTypeSnapSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=DagsterTypeSnapSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"metadata_entries"})
 class DagsterTypeSnap(
     NamedTuple(
         "_DagsterTypeSnap",

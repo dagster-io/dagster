@@ -10,7 +10,7 @@ from .utils.captured_log_manager import TestCapturedLogManager
 def test_compute_log_manager_instance():
     with instance_for_test() as instance:
         assert instance.compute_log_manager
-        assert instance.compute_log_manager._instance  # pylint: disable=protected-access
+        assert instance.compute_log_manager._instance  # noqa: SLF001
 
 
 class TestLocalCapturedLogManager(TestCapturedLogManager):

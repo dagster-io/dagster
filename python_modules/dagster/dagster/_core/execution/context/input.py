@@ -36,8 +36,7 @@ if TYPE_CHECKING:
 
 
 class InputContext:
-    """
-    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    """The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
 
     Users should not instantiate this object directly. In order to construct
     an `InputContext` for testing an IO Manager's `load_input` method, use
@@ -68,7 +67,6 @@ class InputContext:
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
 
     Example:
-
     .. code-block:: python
 
         from dagster import IOManager, InputContext
@@ -128,7 +126,7 @@ class InputContext:
             self._resources_cm = build_resources(
                 check.opt_mapping_param(resources, "resources", key_type=str)
             )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+            self._resources = self._resources_cm.__enter__()
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
@@ -144,11 +142,11 @@ class InputContext:
 
     def __exit__(self, *exc):
         if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._resources_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
 
     @property
     def instance(self) -> DagsterInstance:
@@ -638,7 +636,7 @@ def build_input_context(
 
 
 class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
-    """For build_input_context when no PartitionsDefinition has been provided"""
+    """For build_input_context when no PartitionsDefinition has been provided."""
 
     def __init__(self, key_range: PartitionKeyRange):
         self._key_range = key_range

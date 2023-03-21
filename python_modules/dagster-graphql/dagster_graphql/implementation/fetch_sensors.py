@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Optional, Sequence
+
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
@@ -15,14 +17,24 @@ from .utils import (
     capture_error,
 )
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
+
+    from ..schema.instigation import (
+        GrapheneInstigationStates,
+    )
+    from ..schema.sensors import GrapheneSensor, GrapheneSensors, GrapheneStopSensorMutationResult
+
 
 @capture_error
-def get_sensors_or_error(graphene_info: ResolveInfo, repository_selector):
+def get_sensors_or_error(
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector
+) -> "GrapheneSensors":
     from ..schema.sensors import GrapheneSensor, GrapheneSensors
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    location = graphene_info.context.get_repository_location(repository_selector.location_name)
+    location = graphene_info.context.get_code_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     sensors = repository.get_external_sensors()
@@ -43,12 +55,12 @@ def get_sensors_or_error(graphene_info: ResolveInfo, repository_selector):
 
 
 @capture_error
-def get_sensor_or_error(graphene_info: ResolveInfo, selector):
+def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
     check.inst_param(selector, "selector", SensorSelector)
-    location = graphene_info.context.get_repository_location(selector.location_name)
+    location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
     if not repository.has_external_sensor(selector.sensor_name):
@@ -63,13 +75,13 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector):
 
 
 @capture_error
-def start_sensor(graphene_info: ResolveInfo, sensor_selector):
+def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
     check.inst_param(sensor_selector, "sensor_selector", SensorSelector)
 
-    location = graphene_info.context.get_repository_location(sensor_selector.location_name)
+    location = graphene_info.context.get_code_location(sensor_selector.location_name)
     repository = location.get_repository(sensor_selector.repository_name)
     if not repository.has_external_sensor(sensor_selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
@@ -83,7 +95,9 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector):
 
 
 @capture_error
-def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_selector_id):
+def stop_sensor(
+    graphene_info: ResolveInfo, instigator_origin_id: str, instigator_selector_id: str
+) -> "GrapheneStopSensorMutationResult":
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
     check.str_param(instigator_origin_id, "instigator_origin_id")
@@ -91,8 +105,8 @@ def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_sel
 
     external_sensors = {
         sensor.get_external_origin_id(): sensor
-        for repository_location in graphene_info.context.repository_locations
-        for repository in repository_location.get_repositories().values()
+        for code_location in graphene_info.context.code_locations
+        for repository in code_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
 
@@ -118,7 +132,9 @@ def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_sel
 
 
 @capture_error
-def get_unloadable_sensor_states_or_error(graphene_info):
+def get_unloadable_sensor_states_or_error(
+    graphene_info: ResolveInfo,
+) -> "GrapheneInstigationStates":
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     sensor_states = graphene_info.context.instance.all_instigator_state(
@@ -126,7 +142,7 @@ def get_unloadable_sensor_states_or_error(graphene_info):
     )
     external_sensors = [
         sensor
-        for repository_location in graphene_info.context.repository_locations
+        for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     ]
@@ -149,12 +165,14 @@ def get_unloadable_sensor_states_or_error(graphene_info):
     )
 
 
-def get_sensors_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
+def get_sensors_for_pipeline(
+    graphene_info: ResolveInfo, pipeline_selector: PipelineSelector
+) -> Sequence["GrapheneSensor"]:
     from ..schema.sensors import GrapheneSensor
 
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
 
-    location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
+    location = graphene_info.context.get_code_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)
     external_sensors = repository.get_external_sensors()
 
@@ -174,24 +192,26 @@ def get_sensors_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
     return results
 
 
-def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
+def get_sensor_next_tick(
+    graphene_info: ResolveInfo, sensor_state: InstigatorState
+) -> Optional["GrapheneDryRunInstigationTick"]:
     from ..schema.instigation import GrapheneDryRunInstigationTick
 
     check.inst_param(sensor_state, "sensor_state", InstigatorState)
 
     repository_origin = sensor_state.origin.external_repository_origin
-    if not graphene_info.context.has_repository_location(
-        repository_origin.repository_location_origin.location_name
+    if not graphene_info.context.has_code_location(
+        repository_origin.code_location_origin.location_name
     ):
         return None
 
-    repository_location = graphene_info.context.get_repository_location(
-        repository_origin.repository_location_origin.location_name
+    code_location = graphene_info.context.get_code_location(
+        repository_origin.code_location_origin.location_name
     )
-    if not repository_location.has_repository(repository_origin.repository_name):
+    if not code_location.has_repository(repository_origin.repository_name):
         return None
 
-    repository = repository_location.get_repository(repository_origin.repository_name)
+    repository = code_location.get_repository(repository_origin.repository_name)
 
     if not repository.has_external_sensor(sensor_state.name):
         return None
@@ -215,14 +235,16 @@ def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
 
 
 @capture_error
-def set_sensor_cursor(graphene_info: ResolveInfo, selector, cursor):
+def set_sensor_cursor(
+    graphene_info: ResolveInfo, selector: SensorSelector, cursor: Optional[str]
+) -> "GrapheneSensor":
     check.inst_param(selector, "selector", SensorSelector)
     check.opt_str_param(cursor, "cursor")
 
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
-    location = graphene_info.context.get_repository_location(selector.location_name)
+    location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
     if not repository.has_external_sensor(selector.sensor_name):

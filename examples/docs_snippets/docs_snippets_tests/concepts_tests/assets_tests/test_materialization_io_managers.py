@@ -9,7 +9,7 @@ from docs_snippets.concepts.assets.materialization_io_managers import (
 
 
 class DummyClass(pd.DataFrame):
-    def to_csv(self, _path):  # pylint: disable=arguments-differ
+    def to_csv(self, _path):
         return
 
 

@@ -376,12 +376,12 @@ def test_dynamic_memoization_error():
 
     @graph
     def dynamic_graph():
-        x = emit().map(return_input)  # pylint: disable=no-member
+        x = emit().map(return_input)
         return_input(x.collect())
 
     @graph
     def just_mapping_graph():
-        emit().map(return_input)  # pylint: disable=no-member
+        emit().map(return_input)
 
     with instance_for_test() as instance:
         for cur_graph in [dynamic_graph, just_mapping_graph]:

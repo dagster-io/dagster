@@ -1,4 +1,3 @@
-# pylint: disable=unused-argument
 from dagster import In, job, op, root_input_manager
 
 
@@ -8,7 +7,7 @@ def read_dataframe_from_table(**_kwargs):
 
 @op(ins={"dataframe": In(root_manager_key="my_root_manager")})
 def my_op(dataframe):
-    """Do some stuff"""
+    """Do some stuff."""
 
 
 # def_start_marker

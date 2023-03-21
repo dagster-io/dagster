@@ -26,7 +26,7 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
                 DagsterRunStatus.CANCELING,
                 DagsterRunStatus.CANCELED,
             ]:
-                print(  # pylint: disable=print-call
+                print(  # noqa: T201
                     f"Detected run status {run.status}, sending interrupt to main thread"
                 )
                 send_interrupt()
@@ -36,7 +36,7 @@ def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):
 def start_run_cancellation_thread(
     instance: DagsterInstance, run_id
 ) -> Tuple[threading.Thread, threading.Event]:
-    print("Starting run cancellation thread")  # pylint: disable=print-call
+    print("Starting run cancellation thread")  # noqa: T201
     shutdown_event = threading.Event()
     thread = threading.Thread(
         target=_kill_on_cancel,

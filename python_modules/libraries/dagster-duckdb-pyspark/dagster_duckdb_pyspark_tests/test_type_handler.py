@@ -4,12 +4,15 @@ import duckdb
 import pandas as pd
 import pytest
 from dagster import (
+    AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     graph,
     instance_for_test,
@@ -33,7 +36,7 @@ def a_df() -> SparkDF:
 
 @op(out=Out(metadata={"schema": "add_one"}))
 def add_one(df: SparkDF) -> SparkDF:
-    return df.withColumn("_1", df._1 + 1)  # pylint: disable=protected-access
+    return df.withColumn("_1", df._1 + 1)  # noqa: SLF001
 
 
 @graph
@@ -75,7 +78,7 @@ def b_df() -> SparkDF:
 
 @asset(key_prefix=["my_schema"])
 def b_plus_one(b_df: SparkDF) -> SparkDF:
-    return b_df.withColumn("_1", b_df._1 + 1)  # pylint: disable=protected-access
+    return b_df.withColumn("_1", b_df._1 + 1)  # noqa: SLF001
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):
@@ -409,3 +412,84 @@ def test_dynamic_partition(tmp_path):
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
         assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
         duckdb_conn.close()
+
+
+def test_self_dependent_asset(tmp_path):
+    daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+    @asset(
+        partitions_def=daily_partitions,
+        key_prefix=["my_schema"],
+        ins={
+            "self_dependent_asset": AssetIn(
+                key=AssetKey(["my_schema", "self_dependent_asset"]),
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        },
+        metadata={
+            "partition_expr": "strptime(key, '%Y-%m-%d')",
+        },
+        config_schema={"value": str, "last_partition_key": str},
+    )
+    def self_dependent_asset(context, self_dependent_asset: SparkDF) -> SparkDF:
+        key = context.asset_partition_key_for_output()
+
+        if not self_dependent_asset.isEmpty():
+            pd_df = self_dependent_asset.toPandas()
+            assert len(pd_df.index) == 3
+            assert (pd_df["key"] == context.op_config["last_partition_key"]).all()
+        else:
+            assert context.op_config["last_partition_key"] == "NA"
+        value = context.op_config["value"]
+        pd_df = pd.DataFrame(
+            {
+                "key": [key, key, key],
+                "a": [value, value, value],
+            }
+        )
+
+        spark = SparkSession.builder.getOrCreate()
+        return spark.createDataFrame(pd_df)
+
+    duckdb_io_manager = duckdb_pyspark_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    materialize(
+        [self_dependent_asset],
+        partition_key="2023-01-01",
+        resources=resource_defs,
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "1", "last_partition_key": "NA"}
+                }
+            }
+        },
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [self_dependent_asset],
+        partition_key="2023-01-02",
+        resources=resource_defs,
+        run_config={
+            "ops": {
+                "my_schema__self_dependent_asset": {
+                    "config": {"value": "2", "last_partition_key": "2023-01-01"}
+                }
+            }
+        },
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+
+    assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()

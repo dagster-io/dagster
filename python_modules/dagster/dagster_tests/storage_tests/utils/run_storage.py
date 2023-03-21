@@ -16,7 +16,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -59,8 +59,7 @@ def _get_run_by_id(storage, run_id):
 
 
 class TestRunStorage:
-    """
-    You can extend this class to easily run these set of tests on any run storage. When extending,
+    """You can extend this class to easily run these set of tests on any run storage. When extending,
     you simply need to override the `run_storage` fixture and return your implementation of
     `RunStorage`.
 
@@ -71,7 +70,7 @@ class TestRunStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def run_storage(self):  # pylint: disable=arguments-differ
+        def run_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -91,7 +90,7 @@ class TestRunStorage:
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),
@@ -1556,8 +1555,8 @@ class TestRunStorage:
             a()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            if storage._instance:  # pylint: disable=protected-access
-                instance = storage._instance  # pylint: disable=protected-access
+            if storage.has_instance:
+                instance = storage._instance  # noqa: SLF001
             else:
                 instance = DagsterInstance(
                     instance_type=InstanceType.EPHEMERAL,

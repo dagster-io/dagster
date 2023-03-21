@@ -17,7 +17,7 @@ def test_python_error():
     python_error = None
     try:
         func()
-    except:  # pylint: disable=W0702
+    except:
         python_error = GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     assert python_error
@@ -38,7 +38,7 @@ def test_error_capture(graphql_context):
     ErrorCapture.on_exception = _new_on_exc
 
     with mock.patch(
-        "dagster._core.workspace.context.BaseWorkspaceRequestContext.repository_locations",
+        "dagster._core.workspace.context.BaseWorkspaceRequestContext.code_locations",
         new_callable=mock.PropertyMock,
     ) as repo_locs_mock:
         repo_locs_mock.side_effect = Exception("oops all berries")

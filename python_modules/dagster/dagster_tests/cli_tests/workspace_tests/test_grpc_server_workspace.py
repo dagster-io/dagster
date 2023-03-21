@@ -5,7 +5,7 @@ import yaml
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
+from dagster._core.host_representation import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
@@ -45,28 +45,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
+                code_locations = {
                     name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
                 default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.socket == first_socket
                 assert local_port.host == "localhost"
                 assert local_port.port is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.socket == second_socket
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.port is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
+                assert all(map(lambda x: x.name, code_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 
@@ -103,13 +103,13 @@ def test_grpc_server_env_vars():
         assert len(origins) == 2
 
         port_origin = origins["my_grpc_server_port"]
-        assert isinstance(origins["my_grpc_server_port"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_port"], GrpcServerCodeLocationOrigin)
 
         assert port_origin.port == 1234
         assert port_origin.host == "barhost"
 
         socket_origin = origins["my_grpc_server_socket"]
-        assert isinstance(origins["my_grpc_server_socket"], GrpcServerRepositoryLocationOrigin)
+        assert isinstance(origins["my_grpc_server_socket"], GrpcServerCodeLocationOrigin)
 
         assert socket_origin.socket == "barsocket"
         assert socket_origin.host == "barhost"
@@ -175,28 +175,28 @@ load_from:
             )
 
             with ExitStack() as stack:
-                repository_locations = {
+                code_locations = {
                     name: stack.enter_context(origin.create_location())
                     for name, origin in origins.items()
                 }
-                assert len(repository_locations) == 2
+                assert len(code_locations) == 2
 
                 default_location_name = "grpc:localhost:{port}".format(port=first_port)
-                assert repository_locations.get(default_location_name)
-                local_port = repository_locations.get(default_location_name)
+                assert code_locations.get(default_location_name)
+                local_port = code_locations.get(default_location_name)
 
                 assert local_port.port == first_port
                 assert local_port.host == "localhost"
                 assert local_port.socket is None
 
-                assert repository_locations.get("local_port_default_host")
-                local_port_default_host = repository_locations.get("local_port_default_host")
+                assert code_locations.get("local_port_default_host")
+                local_port_default_host = code_locations.get("local_port_default_host")
 
                 assert local_port_default_host.port == second_port
                 assert local_port_default_host.host == "localhost"
                 assert local_port_default_host.socket is None
 
-                assert all(map(lambda x: x.name, repository_locations.values()))
+                assert all(map(lambda x: x.name, code_locations.values()))
         second_server_process.wait()
     first_server_process.wait()
 

@@ -10,6 +10,7 @@ from typing import IO, Iterator, Optional, Sequence, Union
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.captured_log_manager import (
     CapturedLogContext,
     CapturedLogData,
@@ -34,7 +35,7 @@ SUBSCRIPTION_POLLING_INTERVAL = 5
 LogSubscription: TypeAlias = Union[CapturedLogSubscription, ComputeLogSubscription]
 
 
-class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
+class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_DagsterInstance]):
     """Abstract class that uses the local compute log manager to capture logs and stores them in
     remote cloud storage.
     """
@@ -42,59 +43,43 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     @property
     @abstractmethod
     def local_manager(self) -> LocalComputeLogManager:
-        """
-        Returns a LocalComputeLogManager.
-        """
+        """Returns a LocalComputeLogManager."""
 
     @property
     @abstractmethod
     def upload_interval(self) -> Optional[int]:
-        """
-        Returns the interval in which partial compute logs are uploaded to cloud storage.
-        """
+        """Returns the interval in which partial compute logs are uploaded to cloud storage."""
 
     @abstractmethod
     def delete_logs(
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
     ) -> None:
-        """
-        Deletes logs for a given log_key or prefix.
-        """
+        """Deletes logs for a given log_key or prefix."""
 
     @abstractmethod
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
-        """
-        Calculates a download url given a log key and compute io type.
-        """
+        """Calculates a download url given a log key and compute io type."""
 
     @abstractmethod
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
-        """
-        Returns a display path given a log key and compute io type.
-        """
+        """Returns a display path given a log key and compute io type."""
 
     @abstractmethod
     def cloud_storage_has_logs(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> bool:
-        """
-        Returns whether the cloud storage contains logs for a given log key.
-        """
+        """Returns whether the cloud storage contains logs for a given log key."""
 
     @abstractmethod
     def upload_to_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> None:
-        """
-        Uploads the logs for a given log key from local storage to cloud storage.
-        """
+        """Uploads the logs for a given log key from local storage to cloud storage."""
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> None:
-        """
-        Downloads the logs for a given log key from cloud storage to local storage.
-        """
+        """Downloads the logs for a given log key from cloud storage to local storage."""
 
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
@@ -124,7 +109,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def log_data_for_type(
         self, log_key: Sequence[str], io_type: ComputeIOType, offset: int, max_bytes: Optional[int]
     ):
-        if self._has_local_file(log_key, io_type):
+        if self.has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]
             )
@@ -190,12 +175,12 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def unsubscribe(self, subscription):
         self.on_unsubscribe(subscription)
 
-    def _has_local_file(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def has_local_file(self, log_key: Sequence[str], io_type: ComputeIOType):
         local_path = self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
         return os.path.exists(local_path)
 
     def _should_download(self, log_key: Sequence[str], io_type: ComputeIOType):
-        return not self._has_local_file(log_key, io_type) and self.cloud_storage_has_logs(
+        return not self.has_local_file(log_key, io_type) and self.cloud_storage_has_logs(
             log_key, io_type
         )
 
@@ -256,7 +241,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         log_key = self.local_manager.build_log_key_for_run(run_id, key)
 
-        if self._has_local_file(log_key, io_type):
+        if self.has_local_file(log_key, io_type):
             data = self.local_manager.read_logs_file(run_id, key, io_type, cursor, max_bytes)
             return self._from_local_file_data(run_id, key, io_type, data)
         elif self.cloud_storage_has_logs(log_key, io_type):

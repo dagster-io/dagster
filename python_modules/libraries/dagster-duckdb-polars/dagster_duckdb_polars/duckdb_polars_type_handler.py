@@ -64,6 +64,8 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pl.DataFrame:
         """Loads the input as a Polars DataFrame."""
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return pl.DataFrame()
         select_statement = connection.execute(
             DuckDbClient.get_select_statement(table_slice=table_slice)
         )

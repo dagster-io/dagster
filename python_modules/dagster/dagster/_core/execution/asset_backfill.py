@@ -4,6 +4,7 @@ from typing import (
     AbstractSet,
     Iterable,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -68,8 +69,7 @@ class AssetBackfillData(NamedTuple):
         )
 
     def get_num_partitions(self) -> Optional[int]:
-        """
-        Only valid when the same number of partitions are targeted in every asset.
+        """Only valid when the same number of partitions are targeted in every asset.
 
         When not valid, returns None.
         """
@@ -84,8 +84,7 @@ class AssetBackfillData(NamedTuple):
             return None
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
-        """
-        Only valid when the same number of partitions are targeted in every asset.
+        """Only valid when the same number of partitions are targeted in every asset.
 
         When not valid, returns None.
         """
@@ -187,14 +186,22 @@ class AssetBackfillData(NamedTuple):
 
         return cls.empty(target_subset)
 
-    def serialize(self) -> str:
+    def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         storage_dict = {
             "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
-            "serialized_target_subset": self.target_subset.to_storage_dict(),
+            "serialized_target_subset": self.target_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
             "latest_storage_id": self.latest_storage_id,
-            "serialized_requested_subset": self.requested_subset.to_storage_dict(),
-            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(),
-            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(),
+            "serialized_requested_subset": self.requested_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
         }
         return json.dumps(storage_dict)
 
@@ -202,8 +209,7 @@ class AssetBackfillData(NamedTuple):
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill", workspace: BaseWorkspaceRequestContext, instance: DagsterInstance
 ) -> Iterable[None]:
-    """
-    Runs an iteration of the backfill, including submitting runs and updating the backfill object
+    """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
 
     This is a generator so that we can return control to the daemon and let it heartbeat during
@@ -225,6 +231,7 @@ def execute_asset_backfill_iteration(
         asset_backfill_data=asset_backfill_data,
         instance=instance,
         asset_graph=asset_graph,
+        run_tags=backfill.tags,
     ):
         yield None
 
@@ -234,7 +241,9 @@ def execute_asset_backfill_iteration(
             " AssetBackfillIterationResult"
         )
 
-    updated_backfill = backfill.with_asset_backfill_data(result.backfill_data)
+    updated_backfill = backfill.with_asset_backfill_data(
+        result.backfill_data, dynamic_partitions_store=instance
+    )
     if result.backfill_data.is_complete():
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
@@ -253,16 +262,12 @@ def submit_run_request(
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
 ) -> None:
-    """
-    Creates and submits a run for the given run request
-    """
+    """Creates and submits a run for the given run request."""
     repo_handle = asset_graph.get_repository_handle(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
-    location_name = repo_handle.repository_location_origin.location_name
-    repo_location = workspace.get_repository_location(
-        repo_handle.repository_location_origin.location_name
-    )
+    location_name = repo_handle.code_location_origin.location_name
+    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
     job_name = _get_implicit_job_name_for_assets(
         asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
     )
@@ -278,9 +283,9 @@ def submit_run_request(
         asset_selection=run_request.asset_selection,
         solid_selection=None,
     )
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         {},
         DEFAULT_MODE_NAME,
@@ -335,9 +340,9 @@ def execute_asset_backfill_iteration_inner(
     asset_backfill_data: AssetBackfillData,
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
+    run_tags: Mapping[str, str],
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
-    """
-    Core logic of a backfill iteration. Has no side effects.
+    """Core logic of a backfill iteration. Has no side effects.
 
     Computes which runs should be requested, if any, as well as updated bookkeeping about the status
     of asset partitions targeted by the backfill.
@@ -425,7 +430,7 @@ def execute_asset_backfill_iteration_inner(
     )
 
     run_requests = build_run_requests(
-        asset_partitions_to_request, asset_graph, {BACKFILL_ID_TAG: backfill_id}
+        asset_partitions_to_request, asset_graph, {**run_tags, BACKFILL_ID_TAG: backfill_id}
     )
 
     if request_roots:
@@ -455,10 +460,9 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> bool:
-    """
-    Args:
-        candidates_unit: A set of asset partitions that must all be materialized if any is
-            materialized.
+    """Args:
+    candidates_unit: A set of asset partitions that must all be materialized if any is
+        materialized.
     """
     for candidate in candidates_unit:
         if (
@@ -490,8 +494,7 @@ def should_backfill_atomic_asset_partitions_unit(
 def _get_failed_asset_partitions(
     instance_queryer: CachingInstanceQueryer, backfill_id: str
 ) -> Sequence[AssetKeyPartitionKey]:
-    """
-    Returns asset partitions that materializations were requested for as part of the backfill, but
+    """Returns asset partitions that materializations were requested for as part of the backfill, but
     will not be materialized.
 
     Includes canceled asset partitions. Implementation assumes that successful runs won't have any

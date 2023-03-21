@@ -65,6 +65,7 @@ import {
 } from './types/LaunchpadRoot.types';
 import {
   PipelineExecutionConfigSchemaQuery,
+  PipelineExecutionConfigSchemaQueryVariables,
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
 } from './types/LaunchpadSession.types';
@@ -176,7 +177,9 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const mounted = React.useRef<boolean>(false);
   const editor = React.useRef<ConfigEditor | null>(null);
@@ -193,13 +196,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
-  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
-    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
-    {
-      variables: {selector: pipelineSelector, mode: currentSession?.mode},
-      partialRefetch: true,
-    },
-  );
+  const configResult = useQuery<
+    PipelineExecutionConfigSchemaQuery,
+    PipelineExecutionConfigSchemaQueryVariables
+  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+    variables: {selector: pipelineSelector, mode: currentSession?.mode},
+    partialRefetch: true,
+  });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 
@@ -579,6 +582,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 onSelectPreset={onSelectPreset}
                 onSelectPartition={onSelectPartition}
                 repoAddress={repoAddress}
+                assetSelection={currentSession.assetSelection}
               />
               <SessionSettingsSpacer />
               {launchpadType === 'asset' ? (
@@ -730,7 +734,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         <LaunchRootExecutionButton
           title={launchButtonTitle}
           warning={launchButtonWarning}
-          hasLaunchPermission={canLaunchPipelineExecution.enabled}
+          hasLaunchPermission={canLaunchPipelineExecution}
           pipelineName={pipeline.name}
           getVariables={buildExecutionVariables}
           disabled={preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'}

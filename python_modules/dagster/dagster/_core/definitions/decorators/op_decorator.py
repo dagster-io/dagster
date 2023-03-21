@@ -169,8 +169,7 @@ def op(
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
-    """
-    Create an op with the specified parameters from the decorated function.
+    """Create an op with the specified parameters from the decorated function.
 
     Ins and outs will be inferred from the type signature of the decorated function
     if not explicitly provided.
@@ -337,8 +336,7 @@ def resolve_checked_solid_fn_inputs(
     explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
 ) -> Sequence[InputDefinition]:
-    """
-    Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
+    """Validate provided input definitions and infer the remaining from the type signature of the compute_fn.
     Returns the resolved set of InputDefinitions.
 
     Args:

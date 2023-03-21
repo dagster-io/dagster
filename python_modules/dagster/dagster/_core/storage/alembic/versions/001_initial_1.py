@@ -6,7 +6,7 @@ Create Date: 2019-11-21 09:59:57.028730
 
 """
 
-# pylint: disable=no-member
+
 # alembic dynamically populates the alembic.context module
 
 import sqlalchemy as sa

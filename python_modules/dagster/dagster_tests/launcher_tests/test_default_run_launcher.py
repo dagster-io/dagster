@@ -48,7 +48,7 @@ def noop_pipeline():
 
 @op
 def crashy_solid(_):
-    os._exit(1)  # pylint: disable=W0212
+    os._exit(1)  # noqa: SLF001
 
 
 @pipeline(mode_defs=[default_mode_def])
@@ -58,7 +58,7 @@ def crashy_pipeline():
 
 @op
 def exity_solid(_):
-    sys.exit(1)  # pylint: disable=W0212
+    sys.exit(1)
 
 
 @pipeline(mode_defs=[default_mode_def])
@@ -154,9 +154,9 @@ def _check_event_log_contains(event_log, expected_type_and_message):
     "run_config",
     run_configs(),
 )
-def test_successful_run(instance, workspace, run_config):  # pylint: disable=redefined-outer-name
+def test_successful_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("noop_pipeline")
     )
@@ -181,14 +181,12 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
     assert pipeline_run.status == DagsterRunStatus.SUCCESS
 
 
-def test_successful_run_from_pending(
-    instance: DagsterInstance, pending_workspace
-):  # pylint: disable=redefined-outer-name
-    repo_location = pending_workspace.get_repository_location("test2")
-    external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+def test_successful_run_from_pending(instance: DagsterInstance, pending_workspace):
+    code_location = pending_workspace.get_code_location("test2")
+    external_pipeline = code_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
     )
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config={},
         mode="default",
@@ -296,7 +294,7 @@ def test_invalid_instance_run():
                     ) as workspace_process_context:
                         workspace = workspace_process_context.create_request_context()
                         external_pipeline = (
-                            workspace.get_repository_location("test")
+                            workspace.get_code_location("test")
                             .get_repository("nope")
                             .get_full_external_job("noop_pipeline")
                         )
@@ -327,9 +325,9 @@ def test_invalid_instance_run():
     _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
-def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefined-outer-name
+def test_crashy_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("crashy_pipeline")
     )
@@ -370,9 +368,9 @@ def test_crashy_run(instance, workspace, run_config):  # pylint: disable=redefin
     _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
-def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefined-outer-name
+def test_exity_run(run_config, instance, workspace):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("exity_pipeline")
     )
@@ -411,9 +409,9 @@ def test_exity_run(run_config, instance, workspace):  # pylint: disable=redefine
     "run_config",
     run_configs(),
 )
-def test_terminated_run(instance, workspace, run_config):  # pylint: disable=redefined-outer-name
+def test_terminated_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("sleepy_pipeline")
     )
@@ -490,7 +488,7 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
 @pytest.mark.parametrize("run_config", run_configs())
 def test_cleanup_after_force_terminate(run_config, instance, workspace):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("sleepy_pipeline")
     )
@@ -587,9 +585,9 @@ def test_single_solid_selection_execution(
     instance,
     workspace,
     run_config,
-):  # pylint: disable=redefined-outer-name
+):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
@@ -624,9 +622,9 @@ def test_multi_solid_selection_execution(
     instance,
     workspace,
     run_config,
-):  # pylint: disable=redefined-outer-name
+):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
@@ -661,9 +659,9 @@ def test_multi_solid_selection_execution(
     "run_config",
     run_configs(),
 )
-def test_engine_events(instance, workspace, run_config):  # pylint: disable=redefined-outer-name
+def test_engine_events(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
@@ -736,7 +734,7 @@ def test_engine_events(instance, workspace, run_config):  # pylint: disable=rede
         assert message in next_log.message
 
 
-def test_not_initialized():  # pylint: disable=redefined-outer-name
+def test_not_initialized():
     run_launcher = DefaultRunLauncher()
     run_id = "dummy"
 

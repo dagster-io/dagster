@@ -1,7 +1,6 @@
+"""Unit testing the Mlflow class.
 """
-Unit testing the Mlflow class.
-"""
-# pylint: disable=redefined-outer-name
+
 import logging
 import random
 import string
@@ -91,7 +90,7 @@ def child_context(basic_context, mlflow_run_config):
 def cleanup_mlflow_runs():
     yield
     while mlflow.active_run():
-        mlflow.end_run()  # pylint: disable=no-member
+        mlflow.end_run()
 
 
 @patch("os.environ.update")
@@ -153,9 +152,7 @@ def test_mlflow_meta_not_overloading():
     over_list = ["log_params"]
     for methods in over_list:
         # then: the function signature is not the same as the mlflow one
-        assert getattr(MlFlow, methods) != getattr(  # pylint: disable=comparison-with-callable
-            mlflow, methods
-        )  # pylint: disable=comparison-with-callable
+        assert getattr(MlFlow, methods) != getattr(mlflow, methods)
 
 
 def test_mlflow_meta_overloading():
@@ -178,12 +175,12 @@ def test_start_run(mock_start_run, context):
 
     # When: a run is started
     run_id_1 = str(uuid.uuid4())
-    mlf._start_run(run_id=run_id_1)  # pylint: disable=protected-access
+    mlf._start_run(run_id=run_id_1)  # noqa: SLF001
     # Then mlflow start_run is called
     mock_start_run.assert_called_once_with(run_id=run_id_1)
 
     # And when start run is called with the same run_id no excpetion is raised
-    mlf._start_run(run_id=run_id_1)  # pylint: disable=protected-access
+    mlf._start_run(run_id=run_id_1)  # noqa: SLF001
 
 
 @patch("mlflow.end_run")
@@ -192,13 +189,13 @@ def test_cleanup_on_error(
     mock_mlflow_end_run,
     any_error,
     context,
-    cleanup_mlflow_runs,  # pylint: disable=unused-argument
+    cleanup_mlflow_runs,
 ):
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
     # When: a run is started
-    mlf.start_run()  # pylint: disable=no-member
+    mlf.start_run()
 
     with patch("sys.exc_info", return_value=[0, any_error]):
         # When: cleanup_on_error is called
@@ -223,7 +220,7 @@ def test_set_all_tags(mock_mlflow_set_tags, context):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
     # When all the tags are set
-    mlf._set_all_tags()  # pylint: disable=protected-access
+    mlf._set_all_tags()  # noqa: SLF001
 
     # Given: the tags that should be set in mlflow
     tags = {
@@ -246,7 +243,7 @@ def test_get_current_run_id(context, experiment, run_df):
 
     with patch("mlflow.search_runs", return_value=run_df):
         # when: _get_current_run_id is called
-        run_id = mlf._get_current_run_id(experiment=experiment)  # pylint: disable=protected-access
+        run_id = mlf._get_current_run_id(experiment=experiment)  # noqa: SLF001
     # Then: the run_id id provided is the same as what was provided
     if not run_df.empty:
         assert run_id == run_df.run_id.values[0]
@@ -268,7 +265,7 @@ def test_setup(mock_atexit, context):
         MlFlow, "_set_all_tags"
     ) as mock_set_all_tags:
         # When _setup is called
-        mlf._setup()  # pylint: disable=protected-access
+        mlf._setup()  # noqa: SLF001
         # Then
         # - _get_current_run_id is called once with the experiment object
         mock_get_current_run_id.assert_called()
@@ -277,7 +274,7 @@ def test_setup(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)  # pylint: disable=no-member
+    mock_atexit.assert_called_once_with(mlf.end_run)
 
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
@@ -288,7 +285,7 @@ def test_set_active_run(context, run_id):
 
     with patch.object(MlFlow, "_start_run") as mock_start_run:
         # When _set_active_run is called
-        mlf._set_active_run(run_id=run_id)  # pylint: disable=protected-access
+        mlf._set_active_run(run_id=run_id)  # noqa: SLF001
 
     # And: the run is nested
     if mlf.parent_run_id is not None:
@@ -313,7 +310,7 @@ def test_set_active_run_parent_zero(child_context):
 
     with patch.object(MlFlow, "_start_run") as mock_start_run:
         # And _set_active_run is called with run_id
-        mlf._set_active_run(run_id="what-is-an-edge-case")  # pylint: disable=protected-access
+        mlf._set_active_run(run_id="what-is-an-edge-case")  # noqa: SLF001
         # Then: _start_run_by_id is called with the parent_id
         mock_start_run.assert_any_call(run_id=mlf.parent_run_id, run_name=mlf.run_name)
         # And: mlflow.start_run is called with the run_name and nested=True

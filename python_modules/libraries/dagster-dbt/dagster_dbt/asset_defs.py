@@ -26,6 +26,7 @@ from dagster import (
     In,
     MetadataValue,
     Nothing,
+    OpExecutionContext,
     Out,
     PartitionsDefinition,
     TableColumn,
@@ -43,11 +44,10 @@ from dagster._core.definitions.events import (
     Output,
 )
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
-from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
 from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
@@ -100,13 +100,14 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
 
     return (
         version.parse(dbt.version.__version__) >= version.parse("1.4.0")
-        and dbt_resource._json_log_format
+        and dbt_resource._json_log_format  # noqa: SLF001
     )
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
-    """By default:
+    """Get the asset key for a dbt node.
 
+    By default:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
     the model itself.
@@ -167,6 +168,7 @@ def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[Freshne
         return FreshnessPolicy(
             maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
             cron_schedule=freshness_policy_config.get("cron_schedule"),
+            cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
         )
     return None
 
@@ -237,6 +239,7 @@ def _get_asset_deps(
     node_info_to_asset_key,
     node_info_to_group_fn,
     node_info_to_freshness_policy_fn,
+    node_info_to_definition_metadata_fn,
     io_manager_key,
     display_raw_sql,
 ) -> Tuple[
@@ -273,12 +276,15 @@ def _get_asset_deps(
 
         asset_deps[asset_key] = set()
 
+        metadata = _get_node_metadata(node_info)
+        if node_info_to_definition_metadata_fn != _get_node_metadata:
+            metadata = merge_dicts(metadata, node_info_to_definition_metadata_fn(node_info))
         asset_outs[asset_key] = (
             output_name,
             Out(
                 io_manager_key=io_manager_key,
                 description=_get_node_description(node_info, display_raw_sql),
-                metadata=_get_node_metadata(node_info),
+                metadata=metadata,
                 is_required=False,
                 dagster_type=Nothing,
                 code_version=hashlib.sha1(
@@ -558,6 +564,9 @@ def _dbt_nodes_to_assets(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+    ] = _get_node_metadata,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
     if use_build_command:
@@ -583,6 +592,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         io_manager_key=io_manager_key,
         display_raw_sql=display_raw_sql,
     )
@@ -642,11 +652,13 @@ def load_assets_from_dbt_project(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+    ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models from a dbt project into Dagster assets.
+    """Loads a set of dbt models from a dbt project into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` or `dbt build` command.
@@ -692,6 +704,10 @@ def load_assets_from_dbt_project(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -725,6 +741,7 @@ def load_assets_from_dbt_project(
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
         dbt_resource_key=dbt_resource_key,
     )
@@ -749,11 +766,13 @@ def load_assets_from_dbt_manifest(
     node_info_to_freshness_policy_fn: Callable[
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
+    node_info_to_definition_metadata_fn: Callable[
+        [Mapping[str, Any]], Mapping[str, MetadataUserInput]
+    ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
-    """
-    Loads a set of dbt models, described in a manifest.json, into Dagster assets.
+    """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
     Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
     `dbt run` command.
@@ -797,6 +816,10 @@ def load_assets_from_dbt_manifest(
             `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
             will result in that model being assigned
             `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
+        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, MetadataUserInput]]):
+            A function that takes a dictionary of dbt node info and optionally returns a dictionary
+            of metadata to be attached to the corresponding definition. This is added to the default
+            metadata assigned to the node, which consists of the node's schema (if present).
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -855,6 +878,7 @@ def load_assets_from_dbt_manifest(
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
+        node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
     )
     dbt_assets: Sequence[AssetsDefinition]

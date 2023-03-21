@@ -237,7 +237,9 @@ class PartitionBackfill(
         )
 
     def with_asset_backfill_data(
-        self, asset_backfill_data: AssetBackfillData
+        self,
+        asset_backfill_data: AssetBackfillData,
+        dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "PartitionBackfill":
         return PartitionBackfill(
             status=self.status,
@@ -251,7 +253,9 @@ class PartitionBackfill(
             last_submitted_partition_name=self.last_submitted_partition_name,
             error=self.error,
             asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=asset_backfill_data.serialize(),
+            serialized_asset_backfill_data=asset_backfill_data.serialize(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
         )
 
     @classmethod
@@ -265,8 +269,7 @@ class PartitionBackfill(
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "PartitionBackfill":
-        """
-        If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
 
         Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other
@@ -286,5 +289,5 @@ class PartitionBackfill(
                 partition_names=partition_names,
                 asset_selection=asset_selection,
                 dynamic_partitions_store=dynamic_partitions_store,
-            ).serialize(),
+            ).serialize(dynamic_partitions_store=dynamic_partitions_store),
         )

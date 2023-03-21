@@ -7,7 +7,7 @@ from tqdm import tqdm
 from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 
 
 def _recent_failed_runs_text(instance):
@@ -32,8 +32,7 @@ def export_run(instance, run, output_file):
 
 @click.group(name="debug")
 def debug_cli():
-    """
-    Commands for helping debug Dagster issues by dumping or loading artifacts from specific runs.
+    """Commands for helping debug Dagster issues by dumping or loading artifacts from specific runs.
 
     This can be used to send a file to someone like the Dagster team who doesn't have direct access
     to your instance to allow them to view the events and details of a specific run.
@@ -71,7 +70,7 @@ def import_command(input_files: Tuple[str, ...]):
     for input_file in input_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_as(blob, DebugRunPayload)
+            debug_payload = deserialize_value(blob, DebugRunPayload)
             debug_payloads.append(debug_payload)
 
     with DagsterInstance.get() as instance:

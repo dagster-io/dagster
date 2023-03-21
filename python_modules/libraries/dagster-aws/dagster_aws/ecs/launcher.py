@@ -18,6 +18,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.events import EngineEventData, MetadataEntry
+from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
@@ -27,7 +28,9 @@ from dagster._core.launcher.base import (
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
+from typing_extensions import Self
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
@@ -58,12 +61,12 @@ DEFAULT_WINDOWS_RESOURCES = {"cpu": "1024", "memory": "2048"}
 DEFAULT_LINUX_RESOURCES = {"cpu": "256", "memory": "512"}
 
 
-class EcsRunLauncher(RunLauncher, ConfigurableClass):
+class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
 
     def __init__(
         self,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         task_definition=None,
         container_name="run",
         secrets=None,
@@ -310,8 +313,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             **SHARED_ECS_SCHEMA,
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return EcsRunLauncher(inst_data=inst_data, **config_value)
 
     def _set_run_tags(self, run_id: str, cluster: str, task_arn: str):
@@ -335,9 +340,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return Tags(arn, cluster, cpu, memory)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        """
-        Launch a run in an ECS task.
-        """
+        """Launch a run in an ECS task."""
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
@@ -351,12 +354,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # the container context off of our pipeline origin because we don't actually need
         # it to launch the run; we only needed it to create the task definition.
         repository_origin = pipeline_origin.repository_origin
-        # pylint: disable=protected-access
+
         stripped_repository_origin = repository_origin._replace(container_context={})
         stripped_pipeline_origin = pipeline_origin._replace(
             repository_origin=stripped_repository_origin
         )
-        # pylint: enable=protected-access
 
         args = ExecuteRunArgs(
             pipeline_origin=stripped_pipeline_origin,
@@ -485,17 +487,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         return self._current_task
 
-    def _get_run_task_definition_family(self, run) -> str:
+    def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+            run.external_pipeline_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
         )
 
     def _get_container_name(self, container_context) -> str:
         return container_context.container_name or self.container_name
 
     def _run_task_kwargs(self, run, image, container_context) -> Dict[str, Any]:
-        """
-        Return a dictionary of args to launch the ECS task, registering a new task
+        """Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
         environment = self._environment(container_context)

@@ -417,24 +417,29 @@ export const AssetNodeMinimal: React.FC<{
   const {isSource, assetKey} = definition;
   const {border, background} = buildAssetNodeStatusRow({definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
-
   return (
     <AssetInsetForHoverEffect>
       <MinimalAssetNodeContainer $selected={selected}>
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isSource={isSource}
-          $background={background}
-          $border={border}
+        <TooltipStyled
+          content={displayName}
+          canShow={displayName.length > 14}
+          targetTagName="div"
+          position="top"
         >
-          <div style={{position: 'absolute', bottom: 6, left: 6}}>
-            <AssetLatestRunSpinner liveData={liveData} purpose="section" />
-          </div>
-
-          <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 14})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
+          <MinimalAssetNodeBox
+            $selected={selected}
+            $isSource={isSource}
+            $background={background}
+            $border={border}
+          >
+            <div style={{position: 'absolute', bottom: 6, left: 6}}>
+              <AssetLatestRunSpinner liveData={liveData} purpose="section" />
+            </div>
+            <MinimalName style={{fontSize: 30}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 14})}
+            </MinimalName>
+          </MinimalAssetNodeBox>
+        </TooltipStyled>
       </MinimalAssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
@@ -625,4 +630,8 @@ const Description = styled.div<{$color: string}>`
   border-top: 1px solid ${Colors.Blue50};
   background: ${Colors.White};
   font-size: 12px;
+`;
+
+const TooltipStyled = styled(Tooltip)`
+  height: 100%;
 `;

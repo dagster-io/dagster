@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -38,7 +39,6 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
-    has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name
@@ -196,15 +196,13 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             directly (primarily useful in testing contexts).
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
 
-        from dagster import multi_asset_sensor, MultiAssetSensorEvaluationContext
-
-        @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
-        def the_sensor(context: MultiAssetSensorEvaluationContext):
-            ...
-
+            @multi_asset_sensor(monitored_assets=[AssetKey("asset_1), AssetKey("asset_2)])
+            def the_sensor(context: MultiAssetSensorEvaluationContext):
+                ...
     """
 
     def __init__(
@@ -223,7 +221,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._repository_def = repository_def
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
-            repo_assets = self._repository_def._assets_defs_by_key.values()
+            repo_assets = self._repository_def.assets_defs_by_key.values()
             repo_source_assets = self._repository_def.source_assets_by_key.values()
             self._monitored_asset_keys = list(
                 monitored_assets.resolve([*repo_assets, *repo_source_assets])
@@ -233,11 +231,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         self._assets_by_key: Dict[AssetKey, Optional[AssetsDefinition]] = {}
         for asset_key in self._monitored_asset_keys:
-            assets_def = (
-                self._repository_def._assets_defs_by_key.get(  # pylint:disable=protected-access
-                    asset_key
-                )
-            )
+            assets_def = self._repository_def.assets_defs_by_key.get(asset_key)
             self._assets_by_key[asset_key] = assets_def
 
         self._partitions_def_by_asset_key = {
@@ -404,8 +398,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def materialization_records_for_key(
         self, asset_key: AssetKey, limit: int
     ) -> Iterable["EventLogRecord"]:
-        """
-        Fetches asset materialization event records for asset_key, with the earliest event first.
+        """Fetches asset materialization event records for asset_key, with the earliest event first.
 
         Only fetches events after the latest consumed event ID for the given asset key.
 
@@ -435,8 +428,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return events
 
     def _get_cursor(self, asset_key: AssetKey) -> MultiAssetSensorAssetCursorComponent:
-        """
-        Returns the MultiAssetSensorAssetCursorComponent for the asset key.
+        """Returns the MultiAssetSensorAssetCursorComponent for the asset key.
 
         For more information, view the docstring for the MultiAssetSensorAssetCursorComponent class.
         """
@@ -450,8 +442,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         asset_key: AssetKey,
         after_cursor_partition: Optional[bool] = False,
     ) -> Mapping[str, "EventLogRecord"]:
-        """
-        Given an asset, returns a mapping of partition key to the latest materialization event
+        """Given an asset, returns a mapping of partition key to the latest materialization event
         for that partition. Fetches only materializations that have not been marked as "consumed"
         via a call to `advance_cursor`.
 
@@ -548,8 +539,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def latest_materialization_records_by_partition_and_asset(
         self,
     ) -> Mapping[str, Mapping[AssetKey, "EventLogRecord"]]:
-        """
-        Finds the most recent unconsumed materialization for each partition for each asset
+        """Finds the most recent unconsumed materialization for each partition for each asset
         monitored by the sensor. Aggregates all materializations into a mapping of partition key
         to a mapping of asset key to the materialization event for that partition.
 
@@ -609,8 +599,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def all_partitions_materialized(
         self, asset_key: AssetKey, partitions: Optional[Sequence[str]] = None
     ) -> bool:
-        """
-        A utility method to check if a provided list of partitions have been materialized
+        """A utility method to check if a provided list of partitions have been materialized
         for a particular asset. This method ignores the cursor and checks all materializations
         for the asset.
 
@@ -654,7 +643,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         repo_def = cast(RepositoryDefinition, self._repository_def)
-        repository_assets = repo_def._assets_defs_by_key  # pylint:disable=protected-access
+        repository_assets = repo_def.assets_defs_by_key
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -676,8 +665,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def get_downstream_partition_keys(
         self, partition_key: str, from_asset_key: AssetKey, to_asset_key: AssetKey
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition key in a downstream
+        """Converts a partition key from one asset to the corresponding partition key in a downstream
         asset. Uses the existing partition mapping between the upstream asset and the downstream
         asset if it exists, otherwise, uses the default partition mapping.
 
@@ -725,8 +713,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     def advance_cursor(
         self, materialization_records_by_key: Mapping[AssetKey, Optional["EventLogRecord"]]
     ):
-        """
-        Marks the provided materialization records as having been consumed by the sensor.
+        """Marks the provided materialization records as having been consumed by the sensor.
 
         At the end of the tick, the cursor will be updated to advance past all materializations
         records provided via `advance_cursor`. In the next tick, records that have been consumed
@@ -747,8 +734,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
     @public
     def advance_all_cursors(self):
-        """
-        Updates the cursor to the most recent materialization event for all assets monitored by
+        """Updates the cursor to the most recent materialization event for all assets monitored by
         the multi_asset_sensor.
 
         Marks all materialization events as consumed by the sensor, including unconsumed events.
@@ -796,8 +782,7 @@ class MultiAssetSensorCursorAdvances:
         context: MultiAssetSensorEvaluationContext,
         initial_cursor: MultiAssetSensorContextCursor,
     ) -> Optional[str]:
-        """
-        Given the multi asset sensor context and the cursor at the start of the tick,
+        """Given the multi asset sensor context and the cursor at the start of the tick,
         returns the cursor that should be used in the next tick.
 
         If the cursor has not been updated, returns None
@@ -994,13 +979,7 @@ def build_multi_asset_sensor_context(
             asset_keys = cast(
                 List[AssetKey],
                 list(
-                    monitored_assets.resolve(
-                        list(
-                            set(
-                                repository_def._assets_defs_by_key.values()  # pylint: disable=protected-access
-                            )
-                        )
-                    )
+                    monitored_assets.resolve(list(set(repository_def.assets_defs_by_key.values())))
                 ),
             )
         else:
@@ -1113,7 +1092,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 if (
                     runs_yielded
-                    and not multi_asset_sensor_context._cursor_has_been_updated  # pylint: disable=protected-access
+                    and not multi_asset_sensor_context._cursor_has_been_updated  # noqa: SLF001
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, but the cursor"

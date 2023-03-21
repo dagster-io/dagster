@@ -1,4 +1,6 @@
-# pylint: disable=protected-access
+# ruff: noqa: SLF001
+
+import datetime
 import os
 import re
 import sqlite3
@@ -22,8 +24,10 @@ from dagster import (
 )
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance, InstanceRef
@@ -33,16 +37,17 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._legacy import execute_pipeline, pipeline
-from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
+from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
-    _deserialize_json,
     _whitelist_for_serdes,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+    deserialize_value,
+    pack_value,
     serialize_value,
 )
+from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 
@@ -271,9 +276,7 @@ def instance_from_debug_payloads(payload_files):
     for input_file in payload_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
-
-            check.invariant(isinstance(debug_payload, DebugRunPayload))
+            debug_payload = deserialize_value(blob, DebugRunPayload)
 
             debug_payloads.append(debug_payload)
 
@@ -453,8 +456,7 @@ def test_0_11_0_add_asset_columns():
 
 def test_rename_event_log_entry():
     old_event_record = """{"__class__":"EventRecord","dagster_event":{"__class__":"DagsterEvent","event_specific_data":null,"event_type_value":"PIPELINE_SUCCESS","logging_tags":{},"message":"Finished execution of pipeline.","pid":71356,"pipeline_name":"error_monster","solid_handle":null,"step_handle":null,"step_key":null,"step_kind_value":null},"error_info":null,"level":10,"message":"error_monster - 4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7 - 71356 - PIPELINE_SUCCESS - Finished execution of pipeline.","pipeline_name":"error_monster","run_id":"4be295b5-fcf2-47cc-8e90-cb14d3cf3ac7","step_key":null,"timestamp":1622659924.037028,"user_message":"Finished execution of pipeline."}"""
-    event_log_entry = deserialize_json_to_dagster_namedtuple(old_event_record)
-    assert isinstance(event_log_entry, EventLogEntry)
+    event_log_entry = deserialize_value(old_event_record, EventLogEntry)
     dagster_event = event_log_entry.dagster_event
     assert isinstance(dagster_event, DagsterEvent)
     assert dagster_event.event_type_value == "PIPELINE_SUCCESS"
@@ -528,7 +530,7 @@ def test_0_12_0_extract_asset_index_cols():
 def test_solid_handle_node_handle():
     # serialize in current code
     test_handle = NodeHandle("test", None)
-    test_str = serialize_dagster_namedtuple(test_handle)
+    test_str = serialize_value(test_handle)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -537,7 +539,7 @@ def test_solid_handle_node_handle():
     class SolidHandle(namedtuple("_SolidHandle", "name parent")):
         pass
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, SolidHandle)
     assert result.name == test_handle.name
 
@@ -545,7 +547,7 @@ def test_solid_handle_node_handle():
 def test_pipeline_run_dagster_run():
     # serialize in current code
     test_run = DagsterRun(pipeline_name="test")
-    test_str = serialize_dagster_namedtuple(test_run)
+    test_str = serialize_value(test_run)
 
     # deserialize in "legacy" code
     legacy_env = WhitelistMap.create()
@@ -565,11 +567,11 @@ def test_pipeline_run_dagster_run():
         pass
 
     @_whitelist_for_serdes(legacy_env)
-    class PipelineRunStatus(Enum):  # pylint: disable=unused-variable
+    class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRun)
     assert result.pipeline_name == test_run.pipeline_name
 
@@ -586,7 +588,7 @@ def test_pipeline_run_status_dagster_run_status():
     class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
 
-    result = _deserialize_json(test_str, legacy_env)
+    result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRunStatus)
     assert result.value == test_status.value
 
@@ -645,12 +647,7 @@ def test_external_job_origin_instigator_origin():
             def get_id(self):
                 return create_snapshot_id(self)
 
-        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
-            @classmethod
-            def skip_when_empty(cls):
-                return {"use_ssl"}
-
-        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        @_whitelist_for_serdes(whitelist_map=legacy_env, skip_when_empty_fields={"use_ssl"})
         class GrpcServerRepositoryLocationOrigin(
             namedtuple(
                 "_GrpcServerRepositoryLocationOrigin",
@@ -674,21 +671,21 @@ def test_external_job_origin_instigator_origin():
     from dagster._core.host_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
 
     # serialize from current code, compare against old code
     instigator_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+            code_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
             repository_name="the_repo",
         ),
         instigator_name="simple_schedule",
     )
-    instigator_origin_str = serialize_dagster_namedtuple(instigator_origin)
-    instigator_to_job = _deserialize_json(instigator_origin_str, legacy_env)
+    instigator_origin_str = serialize_value(instigator_origin)
+    instigator_to_job = deserialize_value(instigator_origin_str, whitelist_map=legacy_env)
     assert isinstance(instigator_to_job, klass)
     # ensure that the origin id is stable
     assert instigator_to_job.get_id() == instigator_origin.get_id()
@@ -705,8 +702,7 @@ def test_external_job_origin_instigator_origin():
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
 
-    job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
-    assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
+    job_to_instigator = deserialize_value(job_origin_str, ExternalInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
 
@@ -739,7 +735,7 @@ def test_legacy_event_log_load():
         whitelist_map=legacy_env,
         storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
     )
-    class OldEventLogEntry(  # pylint: disable=unused-variable
+    class OldEventLogEntry(
         NamedTuple(
             "_OldEventLogEntry",
             [
@@ -791,9 +787,9 @@ def test_legacy_event_log_load():
         timestamp=time.time(),
     )
 
-    storage_str = serialize_dagster_namedtuple(new_event)
+    storage_str = serialize_value(new_event)
 
-    result = _deserialize_json(storage_str, legacy_env)
+    result = deserialize_value(storage_str, OldEventLogEntry, whitelist_map=legacy_env)
     assert result.message is not None
 
 
@@ -920,7 +916,7 @@ def test_add_bulk_actions_columns():
     from dagster._core.host_representation.origin import (
         ExternalPartitionSetOrigin,
         ExternalRepositoryOrigin,
-        GrpcServerRepositoryLocationOrigin,
+        GrpcServerCodeLocationOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
@@ -962,9 +958,7 @@ def test_add_bulk_actions_columns():
             # check that we are writing to selector id, action types
             external_origin = ExternalPartitionSetOrigin(
                 external_repository_origin=ExternalRepositoryOrigin(
-                    repository_location_origin=GrpcServerRepositoryLocationOrigin(
-                        port=1234, host="localhost"
-                    ),
+                    code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
                 ),
                 partition_set_name="fake",
@@ -1128,6 +1122,9 @@ def test_add_primary_keys():
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "id" not in set(get_sqlite3_columns(db_path, "kvs"))
+            # trigger insert, and update
+            instance.run_storage.kvs_set({"a": "A"})
+            instance.run_storage.kvs_set({"a": "A"})
             kvs_row_count = _get_table_row_count(instance.run_storage, KeyValueStoreTable)
             assert kvs_row_count > 0
 
@@ -1136,6 +1133,11 @@ def test_add_primary_keys():
             assert instance_info_row_count > 0
 
             assert "id" not in set(get_sqlite3_columns(db_path, "daemon_heartbeats"))
+            heartbeat = DaemonHeartbeat(
+                timestamp=datetime.datetime.now().timestamp(), daemon_type="test", daemon_id="test"
+            )
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
+            instance.run_storage.add_daemon_heartbeat(heartbeat)
             daemon_heartbeats_row_count = _get_table_row_count(
                 instance.run_storage, DaemonHeartbeatsTable
             )
@@ -1163,3 +1165,58 @@ def test_add_primary_keys():
                     instance.run_storage, DaemonHeartbeatsTable, with_non_null_id=True
                 )
             assert daemon_heartbeats_id_count == daemon_heartbeats_row_count
+
+
+# Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
+# `AssetMaterialization` is _supposed_ to runtime-check for null `AssetKey`, but it doesn't, so we
+# can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
+# In the future, we will need to enable the runtime null check on `AssetMaterialization` and
+# introduce a dummy asset key when deserializing old `Materialization` events.
+@pytest.mark.parametrize("asset_key", [AssetKey(["foo", "bar"]), None], ids=("defined", "none"))
+def test_load_old_materialization(asset_key: Optional[AssetKey]):
+    packed_asset_key = pack_value(asset_key) if asset_key else None
+    old_materialization = json.dumps(
+        {
+            "__class__": "StepMaterializationData",
+            "materialization": {
+                "__class__": "Materialization",
+                "label": "foo",
+                "description": "bar",
+                "metadata_entries": [
+                    {
+                        "__class__": "EventMetadataEntry",
+                        "label": "baz",
+                        "description": "qux",
+                        "entry_data": {
+                            "__class__": "TextMetadataEntryData",
+                            "text": "quux",
+                        },
+                    }
+                ],
+                "partition": "alpha",
+                "asset_key": packed_asset_key,
+            },
+            "asset_lineage": [
+                {
+                    "__class__": "AssetLineageInfo",
+                    "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
+                    "partitions": {"__set__": ["alpha"]},
+                }
+            ],
+        }
+    )
+
+    deserialized_asset_key = asset_key
+    assert deserialize_value(
+        old_materialization, StepMaterializationData
+    ) == StepMaterializationData(
+        materialization=AssetMaterialization(
+            description="bar",
+            metadata_entries=[
+                MetadataEntry("baz", description="qux", entry_data=MetadataValue.text("quux"))
+            ],
+            partition="alpha",
+            asset_key=deserialized_asset_key,  # type: ignore
+        ),
+        asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
+    )

@@ -669,6 +669,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
+  latestRunForPartition(partition: String!): Run
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
@@ -745,6 +746,7 @@ type TimePartitionRange {
 }
 
 enum PartitionRangeStatus {
+  MATERIALIZING
   MATERIALIZED
   FAILED
 }
@@ -787,6 +789,7 @@ type TimePartitionsDefinitionMetadata {
 type DimensionPartitionKeys {
   name: String!
   partitionKeys: [String!]!
+  type: PartitionDefinitionType!
 }
 
 enum StaleStatus {
@@ -1912,6 +1915,12 @@ type ResourceDetails {
 type ConfiguredValue {
   key: String!
   value: String!
+  type: ConfiguredValueType!
+}
+
+enum ConfiguredValueType {
+  VALUE
+  ENV_VAR
 }
 
 type RepositoryConnection {
@@ -2731,6 +2740,7 @@ type DagitQuery {
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
   allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
@@ -2834,6 +2844,26 @@ union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonE
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
+}
+
+union EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError
+
+type EnvVarWithConsumersList {
+  results: [EnvVarWithConsumers!]!
+}
+
+type EnvVarWithConsumers {
+  envVarName: String!
+  envVarConsumers: [EnvVarConsumer!]!
+}
+
+type EnvVarConsumer {
+  type: EnvVarConsumerType!
+  name: String!
+}
+
+enum EnvVarConsumerType {
+  RESOURCE
 }
 
 union RunTagKeysOrError = PythonError | RunTagKeys

@@ -117,7 +117,7 @@ def main() -> None:
         os.path.join(os.path.dirname(__file__), "../next/public/objects.inv"),
     )
 
-    print("Successfully packed JSON for NextJS.")  # pylint: disable=print-call
+    print("Successfully packed JSON for NextJS.")  # noqa: T201
 
 
 if __name__ == "__main__":

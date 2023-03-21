@@ -20,6 +20,7 @@ from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 
 
@@ -140,7 +141,7 @@ def test_hook_with_resource():
 
 def test_hook_resource_error():
     @event_list_hook(required_resource_keys={"resource_b"})
-    def a_hook(context, event_list):  # pylint: disable=unused-argument
+    def a_hook(context, event_list):
         return HookExecutionResult(hook_name="a_hook")
 
     @op
@@ -219,6 +220,7 @@ def test_failure_hook():
 
     @failure_hook
     def a_failure_hook(context):
+        assert isinstance(context.instance, DagsterInstance)
         called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @failure_hook(name="a_named_failure_hook")

@@ -29,8 +29,7 @@ if TYPE_CHECKING:
 
 
 class DagsterExecutionInterruptedError(BaseException):
-    """
-    Pipeline execution was interrupted during the execution process.
+    """Pipeline execution was interrupted during the execution process.
 
     Just like KeyboardInterrupt this inherits from BaseException
     as to not be accidentally caught by code that catches Exception
@@ -176,8 +175,7 @@ def user_code_error_boundary(
     log_manager: Optional[DagsterLogManager] = None,
     **kwargs: object,
 ) -> Iterator[None]:
-    """
-    Wraps the execution of user-space code in an error boundary. This places a uniform
+    """Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around any user code invoked by the framework. This ensures that all user
     errors are wrapped in an exception derived from DagsterUserCodeExecutionError,
     and that the original stack trace of the user error is preserved, so that it
@@ -207,7 +205,7 @@ def user_code_error_boundary(
         except DagsterError as de:
             # The system has thrown an error that is part of the user-framework contract
             raise de
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
             raise error_cls(
@@ -219,8 +217,7 @@ def user_code_error_boundary(
 
 
 class DagsterUserCodeExecutionError(DagsterError):
-    """
-    This is the base class for any exception that is meant to wrap an
+    """This is the base class for any exception that is meant to wrap an
     :py:class:`~python:Exception` thrown by user code. It wraps that existing user code.
     The ``original_exc_info`` argument to the constructor is meant to be a tuple of the type
     returned by :py:func:`sys.exc_info <python:sys.exc_info>` at the call site of the constructor.
@@ -284,23 +281,20 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
-    """
-    Indicates an error occurred while executing the body of the ``resource_fn`` in a
+    """Indicates an error occurred while executing the body of the ``resource_fn`` in a
     :py:class:`~dagster.ResourceDefinition` during resource initialization.
     """
 
 
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of a config mapping
+    """Indicates that an unexpected error occurred while executing the body of a config mapping
     function defined in a :py:class:`~dagster.JobDefinition` or `~dagster.GraphDefinition` during
     config parsing.
     """
 
 
 class DagsterTypeLoadingError(DagsterUserCodeExecutionError):
-    """
-    Indicates that an unexpected error occurred while executing the body of an type load
+    """Indicates that an unexpected error occurred while executing the body of an type load
     function defined in a :py:class:`~dagster.DagsterTypeLoader` during loading of a custom type.
     """
 
@@ -323,8 +317,7 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
 
 
 class DagsterInvalidInvocationError(DagsterError):
-    """
-    Indicates that an error has occurred when an op has been invoked, but before the actual
+    """Indicates that an error has occurred when an op has been invoked, but before the actual
     core compute has been reached.
     """
 
@@ -429,11 +422,11 @@ class DagsterMaxRetriesExceededError(DagsterError):
         )
 
 
-class DagsterRepositoryLocationNotFoundError(DagsterError):
+class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
-class DagsterRepositoryLocationLoadError(DagsterError):
+class DagsterCodeLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
 
@@ -442,7 +435,7 @@ class DagsterRepositoryLocationLoadError(DagsterError):
             "load_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
+        super(DagsterCodeLocationLoadError, self).__init__(*args, **kwargs)
 
 
 class DagsterLaunchFailedError(DagsterError):
@@ -570,26 +563,21 @@ class DagsterInvalidPropertyError(DagsterError):
 
 
 class DagsterHomeNotSetError(DagsterError):
-    """
-    The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
+    """The user has tried to use a command that requires an instance or invoke DagsterInstance.get()
     without setting DAGSTER_HOME env var.
     """
 
 
 class DagsterUnknownPartitionError(DagsterError):
-    """
-    The user has tried to access run config for a partition name that does not exist.
-    """
+    """The user has tried to access run config for a partition name that does not exist."""
 
 
 class DagsterUndefinedDataVersionError(DagsterError):
-    """
-    The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
     """
 
 
 class DagsterDefinitionChangedDeserializationError(DagsterError):
-    """
-    Indicates that a stored value can't be deserialized because the definition needed to interpret
+    """Indicates that a stored value can't be deserialized because the definition needed to interpret
     it has changed.
     """

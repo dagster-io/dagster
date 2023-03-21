@@ -12,6 +12,7 @@ from dagster import (
     resource,
 )
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
+from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from dagster._core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
@@ -19,10 +20,9 @@ from dagster._core.snap import (
 )
 from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
     deserialize_value,
-    serialize_dagster_namedtuple,
     serialize_pp,
+    serialize_value,
 )
 
 
@@ -218,9 +218,7 @@ def test_kitchen_sink():
 
     kitchen_sink_snap = snap_from_dagster_type(kitchen_sink)
 
-    rehydrated_snap = deserialize_json_to_dagster_namedtuple(
-        serialize_dagster_namedtuple(kitchen_sink_snap)
-    )
+    rehydrated_snap = deserialize_value(serialize_value(kitchen_sink_snap), ConfigTypeSnap)
     assert kitchen_sink_snap == rehydrated_snap
 
 
@@ -236,8 +234,8 @@ def test_simple_pipeline_smoke_test():
     config_schema_snapshot = build_config_schema_snapshot(single_solid_job)
     assert config_schema_snapshot.all_config_snaps_by_key
 
-    serialized = serialize_dagster_namedtuple(config_schema_snapshot)
-    rehydrated_config_schema_snapshot = deserialize_json_to_dagster_namedtuple(serialized)
+    serialized = serialize_value(config_schema_snapshot)
+    rehydrated_config_schema_snapshot = deserialize_value(serialized, ConfigSchemaSnapshot)
     assert config_schema_snapshot == rehydrated_config_schema_snapshot
 
 
@@ -419,6 +417,6 @@ def test_scalar_union():
 def test_historical_config_type_snap(snapshot):
     old_snap_json = """{"__class__": "ConfigTypeSnap", "description": "", "enum_values": [], "fields": [], "given_name": "kjdkfjdkfjdkj", "key": "ksjdkfjdkfjd", "kind": {"__enum__": "ConfigTypeKind.STRICT_SHAPE"}, "type_param_keys": []}"""
 
-    old_snap = deserialize_json_to_dagster_namedtuple(old_snap_json)
+    old_snap = deserialize_value(old_snap_json, ConfigTypeSnap)
 
     snapshot.assert_match(serialize_pp(old_snap))

@@ -91,7 +91,6 @@ def bar(_, input_arg):
 
 @pipeline(mode_defs=celery_mode_defs)
 def test_optional_outputs():
-    # pylint: disable=no-member
     foo_res = foo()
     bar.alias("first_consumer")(input_arg=foo_res.out_1)
     bar.alias("second_consumer")(input_arg=foo_res.out_2)
@@ -104,7 +103,7 @@ def fails():
 
 
 @op
-def should_never_execute(foo):  # pylint: disable=unused-argument
+def should_never_execute(foo):
     assert False  # should never execute
 
 

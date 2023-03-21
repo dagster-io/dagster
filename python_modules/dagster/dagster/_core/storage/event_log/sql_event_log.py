@@ -10,6 +10,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -27,7 +28,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, Materialization
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -38,9 +39,8 @@ from dagster._core.events import ASSET_EVENTS, MARKER_EVENTS, DagsterEventType
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._serdes import (
-    deserialize_as,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
+    deserialize_value,
+    serialize_value,
 )
 from dagster._serdes.errors import DeserializationError
 from dagster._utils import (
@@ -132,9 +132,9 @@ class SqlEventLogStorage(EventLogStorage):
                 partition = event.dagster_event.partition
 
         # https://stackoverflow.com/a/54386260/324449
-        return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+        return SqlEventLogStorageTable.insert().values(
             run_id=event.run_id,
-            event=serialize_dagster_namedtuple(event),
+            event=serialize_value(event),
             dagster_event_type=dagster_event_type,
             # Postgres requires a datetime that is in UTC but has no timezone info set
             # in order to be stored correctly
@@ -208,7 +208,7 @@ class SqlEventLogStorage(EventLogStorage):
         if dagster_event.is_step_materialization:
             entry_values.update(
                 {
-                    "last_materialization": serialize_dagster_namedtuple(
+                    "last_materialization": serialize_value(
                         EventLogRecord(
                             storage_id=event_id,
                             event_log_entry=event,
@@ -291,7 +291,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             for tag in existing_tags:
                 conn.execute(
-                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.update()
                     .where(
                         db.and_(
                             AssetEventTagsTable.c.event_id == event_id,
@@ -304,7 +304,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             if added_tags:
                 conn.execute(
-                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.insert(),
                     [
                         dict(
                             event_id=event_id,
@@ -452,7 +452,7 @@ class SqlEventLogStorage(EventLogStorage):
                 records.append(
                     EventLogRecord(
                         storage_id=record_id,
-                        event_log_entry=deserialize_as(json_str, EventLogEntry),
+                        event_log_entry=deserialize_value(json_str, EventLogEntry),
                     )
                 )
                 last_record_id = record_id
@@ -580,13 +580,8 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(raw_event_query).fetchall()
 
         try:
-            records = [
-                check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventLogEntry
-                )
-                for (json_str,) in results
-            ]
-            return build_run_step_stats_from_events(run_id, records)  # type: ignore
+            records = [deserialize_value(json_str, EventLogEntry) for (json_str,) in results]
+            return build_run_step_stats_from_events(run_id, records)
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
@@ -620,28 +615,24 @@ class SqlEventLogStorage(EventLogStorage):
 
         # https://stackoverflow.com/a/54386260/324449
         with self.run_connection(run_id=None) as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
         with self.index_connection() as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
@@ -652,10 +643,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
 
-        delete_statement = (
-            SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                SqlEventLogStorageTable.c.run_id == run_id
-            )
+        delete_statement = SqlEventLogStorageTable.delete().where(
+            SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
@@ -685,9 +674,7 @@ class SqlEventLogStorage(EventLogStorage):
                 keys_to_remove = []
                 keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
                 conn.execute(
-                    AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-                        AssetKeyTable.c.asset_key.in_(keys_to_remove)
-                    )
+                    AssetKeyTable.delete().where(AssetKeyTable.c.asset_key.in_(keys_to_remove))
                 )
 
     @property
@@ -708,10 +695,10 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.run_connection(run_id=event.run_id) as conn:
             conn.execute(
-                SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.update()
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .values(
-                    event=serialize_dagster_namedtuple(event),
+                    event=serialize_value(event),
                     dagster_event_type=dagster_event_type,
                     timestamp=datetime.utcfromtimestamp(event.timestamp),
                     step_key=event.step_key,
@@ -752,18 +739,16 @@ class SqlEventLogStorage(EventLogStorage):
         """This method marks an event_log data migration as complete, to indicate that a summary
         data migration is complete.
         """
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=name,
+            migration_completed=datetime.now(),
         )
         with self.index_connection() as conn:
             try:
                 conn.execute(query)
             except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
@@ -885,7 +870,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -930,7 +915,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records = []
         for row_id, json_str in results:
             try:
-                event_record = deserialize_json_to_dagster_namedtuple(json_str)
+                event_record = deserialize_value(json_str, NamedTuple)
                 if not isinstance(event_record, EventLogEntry):
                     logging.warning(
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
@@ -1011,8 +996,8 @@ class SqlEventLogStorage(EventLogStorage):
                 record_id,
                 json_str,
             ) in results:
-                events[record_id] = deserialize_as(json_str, EventLogEntry)
-        except (seven.JSONDecodeError, check.CheckError):
+                events[record_id] = deserialize_value(json_str, EventLogEntry)
+        except (seven.JSONDecodeError, DeserializationError):
             logging.warning("Could not parse event record id `%s`.", record_id)
 
         return events
@@ -1059,9 +1044,7 @@ class SqlEventLogStorage(EventLogStorage):
             asset_key = AssetKey.from_db_string(row[1])
             if not asset_key:
                 continue
-            event_or_materialization = (
-                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
-            )
+            event_or_materialization = deserialize_value(row[2], NamedTuple) if row[2] else None
             if isinstance(event_or_materialization, EventLogRecord):
                 results[asset_key] = event_or_materialization
             else:
@@ -1108,19 +1091,28 @@ class SqlEventLogStorage(EventLogStorage):
             asset_key = AssetKey.from_db_string(row[0])
             if asset_key:
                 results[asset_key] = EventLogRecord(
-                    storage_id=row[1],
-                    event_log_entry=cast(
-                        EventLogEntry, deserialize_json_to_dagster_namedtuple(row[2])
-                    ),
+                    storage_id=row[1], event_log_entry=deserialize_value(row[2], EventLogEntry)
                 )
         return results
 
     def can_cache_asset_status_data(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
+    def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
+        if self.can_cache_asset_status_data():
+            check.inst_param(asset_key, "asset_key", AssetKey)
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(dict(cached_status_data=None))
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
+                )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Iterable[AssetRecord]:
+    ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
         can_cache_asset_status_data = self.can_cache_asset_status_data()
@@ -1154,7 +1146,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Iterable[AssetKey]:
+    ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
         asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
         return [asset_key for asset_key in asset_keys if asset_key]
@@ -1272,7 +1264,7 @@ class SqlEventLogStorage(EventLogStorage):
                 row_by_asset_key[asset_key] = row
                 continue
             materialization_or_event_or_record = (
-                deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
+                deserialize_value(row[2], NamedTuple) if row[2] else None
             )
             if isinstance(materialization_or_event_or_record, (EventLogRecord, EventLogEntry)):
                 if isinstance(materialization_or_event_or_record, EventLogRecord):
@@ -1313,11 +1305,11 @@ class SqlEventLogStorage(EventLogStorage):
         if self.can_cache_asset_status_data():
             with self.index_connection() as conn:
                 conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetKeyTable.update()
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
-                    .values(cached_status_data=serialize_dagster_namedtuple(cache_values))
+                    .values(cached_status_data=serialize_value(cache_values))
                 )
 
     def _fetch_backcompat_materialization_times(
@@ -1400,7 +1392,8 @@ class SqlEventLogStorage(EventLogStorage):
             ).fetchall()
 
             asset_key_to_details = {
-                row[0]: (deserialize_as(row[1], AssetDetails) if row[1] else None) for row in rows
+                row[0]: (deserialize_value(row[1], AssetDetails) if row[1] else None)
+                for row in rows
             }
 
             # returns a list of the corresponding asset_details to provided asset_keys
@@ -1443,8 +1436,7 @@ class SqlEventLogStorage(EventLogStorage):
         filter_tags: Optional[Mapping[str, str]] = None,
         filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
-        """
-        Fetches asset event tags for the given asset key.
+        """Fetches asset event tags for the given asset key.
 
         If filter_tags is provided, searches for events containing all of the filter tags. Then,
         returns all tags for those events. This enables searching for multipartitioned asset
@@ -1576,7 +1568,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _asset_materialization_from_json_column(
         self, json_str: str
-    ) -> Optional[Union[Materialization, AssetMaterialization]]:
+    ) -> Optional[AssetMaterialization]:
         if not json_str:
             return None
 
@@ -1592,7 +1584,7 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        event_or_materialization = deserialize_json_to_dagster_namedtuple(json_str)
+        event_or_materialization = deserialize_value(json_str, NamedTuple)
         if isinstance(event_or_materialization, AssetMaterialization):
             return event_or_materialization
 
@@ -1608,9 +1600,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
         wipe_timestamp = pendulum.now("UTC").timestamp()
         values = {
-            "asset_details": serialize_dagster_namedtuple(
-                AssetDetails(last_wipe_timestamp=wipe_timestamp)
-            ),
+            "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,
         }
         if self.has_asset_key_index_cols():
@@ -1629,7 +1619,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_connection() as conn:
             conn.execute(
-                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                AssetKeyTable.update()
                 .values(**wiped_values)
                 .where(
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -1684,8 +1674,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
     ) -> Mapping[str, Tuple[str, int]]:
-        """
-        Fetch the latest materialzation and materialization planned events for each partition of the given asset.
+        """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
         These materializations could be in progress, or they could have failed. A separate query checking the run status
         is required to know.

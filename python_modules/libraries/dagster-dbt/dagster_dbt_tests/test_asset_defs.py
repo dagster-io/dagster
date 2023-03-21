@@ -28,9 +28,7 @@ from dagster_dbt.types import DbtOutput
 from .utils import assert_assets_match_project
 
 
-def test_custom_resource_key_asset_load(
-    dbt_seed, test_project_dir, dbt_config_dir, conn_string
-):  # pylint: disable=unused-argument
+def test_custom_resource_key_asset_load(dbt_seed, test_project_dir, dbt_config_dir, conn_string):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, dbt_resource_key="my_custom_dbt"
     )
@@ -128,9 +126,7 @@ def test_runtime_metadata_fn(
         assert entry in materializations[0].metadata_entries
 
 
-def test_fail_immediately(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_fail_immediately(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     from dagster import build_init_resource_context
 
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
@@ -185,7 +181,7 @@ def test_basic(
     use_build,
     fail_test,
     json_log_format,
-):  # pylint: disable=unused-argument
+):
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
@@ -250,9 +246,7 @@ def test_basic(
             assert "{" not in line
 
 
-def test_custom_groups(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_custom_groups(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     def _node_info_to_group(node_info):
         return node_info["tags"][0]
 
@@ -285,9 +279,34 @@ def test_custom_freshness_policy():
     }
 
 
-def test_partitions(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_custom_definition_metadata():
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets_default = load_assets_from_dbt_manifest(manifest_json=manifest_json)
+
+    dbt_assets_custom = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json,
+        node_info_to_definition_metadata_fn=lambda node_info: {
+            "foo_key": node_info["name"],
+            "bar_key": 1.0,
+        },
+    )
+
+    has_some_schema = False
+    for asset_key, custom_metadata in dbt_assets_custom[0].metadata_by_key.items():
+        default_metadata = dbt_assets_default[0].metadata_by_key[asset_key]
+        if custom_metadata.get("table_schema") is not None:
+            has_some_schema = True
+        assert custom_metadata.get("table_schema") == default_metadata.get("table_schema")
+        assert custom_metadata["foo_key"] == asset_key.path[-1]
+        assert custom_metadata["bar_key"] == 1.0
+
+    assert has_some_schema
+
+
+def test_partitions(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -338,7 +357,7 @@ def test_partitions(
 @pytest.mark.parametrize("use_build", [True, False])
 def test_select_from_project(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, prefix
-):  # pylint: disable=unused-argument
+):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -386,9 +405,7 @@ def test_select_from_project(
         assert len(observations) == 0
 
 
-def test_multiple_select_from_project(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir
-):  # pylint: disable=unused-argument
+def test_multiple_select_from_project(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
     dbt_assets_a = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
@@ -413,9 +430,7 @@ def test_dbt_ls_fail_fast():
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_select_from_manifest(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
-):  # pylint: disable=unused-argument
+def test_select_from_manifest(dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
@@ -457,9 +472,7 @@ def test_select_from_manifest(
 
 
 @pytest.mark.parametrize("use_build", [True, False])
-def test_node_info_to_asset_key(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
-):  # pylint: disable=unused-argument
+def test_node_info_to_asset_key(dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build):
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -534,7 +547,7 @@ def test_subsetting(
     dbt_config_dir,
     job_selection,
     expected_asset_names,
-):  # pylint: disable=unused-argument
+):
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
     @asset(non_argument_deps={AssetKey("sort_by_calories")})
@@ -687,7 +700,7 @@ def test_dbt_selections(
     select,
     exclude,
     expected_asset_names,
-):  # pylint: disable=unused-argument
+):
     if load_from_manifest:
         manifest_path = file_relative_path(__file__, "sample_manifest.json")
         with open(manifest_path, "r", encoding="utf8") as f:
@@ -743,9 +756,7 @@ def test_static_select_invalid_selection(select, error_match):
         load_assets_from_dbt_manifest(manifest_json, select=select)
 
 
-def test_source_key_prefix(
-    conn_string, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+def test_source_key_prefix(conn_string, test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir,
         dbt_python_config_dir,
@@ -767,9 +778,7 @@ def test_source_key_prefix(
     assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
 
 
-def test_source_tag_selection(
-    conn_string, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+def test_source_tag_selection(conn_string, test_python_project_dir, dbt_python_config_dir):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, select="tag:events"
     )
@@ -787,7 +796,7 @@ def test_source_tag_selection(
 
 def test_python_interleaving(
     conn_string, dbt_python_sources, test_python_project_dir, dbt_python_config_dir
-):  # pylint: disable=unused-argument
+):
     dbt_assets = load_assets_from_dbt_project(
         test_python_project_dir, dbt_python_config_dir, key_prefix="dbt"
     )

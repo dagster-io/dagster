@@ -15,7 +15,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
@@ -37,7 +36,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
+class AbstractComputeExecutionContext(ABC):
     """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
     """
 
@@ -294,7 +293,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
-    def partition_time_window(self) -> str:
+    def partition_time_window(self) -> TimeWindow:
         """The partition time window for the current run.
 
         Raises an error if the current run is not a partitioned run, or if the job's partition
@@ -496,7 +495,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation, ExpectationResult]): The event to log.
 
         **Examples:**
 
@@ -508,7 +507,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, AssetMaterialization):
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
             )
@@ -584,8 +583,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """
-        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
         """
         return self._step_execution_context.previous_attempt_count
 
@@ -594,16 +592,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """
-        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
 
     @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        """
-        Return the provenance information for the most recent materialization of an asset.
+        """Return the provenance information for the most recent materialization of an asset.
 
         Args:
             asset_key (AssetKey): Key of the asset for which to retrieve provenance.

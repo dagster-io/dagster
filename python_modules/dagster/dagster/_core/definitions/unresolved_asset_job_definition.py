@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 from datetime import datetime
 from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
@@ -6,8 +7,10 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
+from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -111,8 +114,7 @@ class UnresolvedAssetJobDefinition(
         instance: Optional[DagsterInstance] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
-        """
-        Creates a RunRequest object for a run that processes the given partition.
+        """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
             partition_key: The key of the partition to request a run for.
@@ -172,8 +174,7 @@ class UnresolvedAssetJobDefinition(
         default_executor_def: Optional["ExecutorDefinition"] = None,
         asset_graph: Optional["InternalAssetGraph"] = None,
     ) -> "JobDefinition":
-        """
-        Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
+        """Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
 
         The assets and source_assets arguments are deprecated. Although they were never technically
         public, a lot of users use them, so going to wait until a minor release to get rid of them.
@@ -193,8 +194,52 @@ class UnresolvedAssetJobDefinition(
                 check.failed(
                     "If asset_graph is not provided, must provide both assets and source_assets"
                 )
-
+            deprecation_warning(
+                "`assets` and `source_assets` arguments to `resolve`",
+                "1.3.0",
+                "Please use the `asset_graph` argument instead.",
+            )
             asset_graph = AssetGraph.from_assets([*assets, *source_assets])
+
+        selected_asset_keys = self.selection.resolve(asset_graph)
+
+        asset_keys_by_partitions_def = defaultdict(set)
+        for asset_key in selected_asset_keys:
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def is not None:
+                asset_keys_by_partitions_def[partitions_def].add(asset_key)
+
+        if len(asset_keys_by_partitions_def) == 0 and self.partitions_def:
+            raise DagsterInvalidDefinitionError(
+                "Tried to build a partitioned job, but none of the selected assets are partitioned."
+            )
+
+        if len(asset_keys_by_partitions_def) > 1:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in asset_keys_by_partitions_def.items()
+            )
+            raise DagsterInvalidDefinitionError(
+                f"Multiple partitioned assets exist in assets job '{self.name}'. Selected assets"
+                " must have the same partitions definitions, but the selected assets have"
+                f" different partitions definitions: \n{keys_by_partitions_def_str}"
+            )
+
+        inferred_partitions_def = (
+            next(iter(asset_keys_by_partitions_def.keys()))
+            if asset_keys_by_partitions_def
+            else None
+        )
+        if (
+            inferred_partitions_def
+            and self.partitions_def != inferred_partitions_def
+            and self.partitions_def is not None
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"Job '{self.name}' received a partitions_def of {self.partitions_def}, but the"
+                f" selected assets {next(iter(asset_keys_by_partitions_def.values()))} have a"
+                f" non-matching partitions_def of {inferred_partitions_def}"
+            )
 
         return build_asset_selection_job(
             name=self.name,
@@ -203,8 +248,8 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve(asset_graph),
-            partitions_def=self.partitions_def,
+            asset_selection=selected_asset_keys,
+            partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )
 
@@ -232,7 +277,11 @@ def define_asset_job(
     name: str,
     selection: Optional[
         Union[
-            str, Sequence[str], Sequence[AssetKey], Sequence["AssetsDefinition"], "AssetSelection"
+            str,
+            Sequence[str],
+            Sequence[AssetKey],
+            Sequence[Union["AssetsDefinition", "SourceAsset"]],
+            "AssetSelection",
         ]
     ] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
@@ -241,14 +290,15 @@ def define_asset_job(
     partitions_def: Optional["PartitionsDefinition[Any]"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
-    """Creates a definition of a job which will materialize a selection of assets. This will only be
-    resolved to a JobDefinition once placed in a code location.
+    """Creates a definition of a job which will either materialize a selection of assets or observe
+    a selection of source assets. This will only be resolved to a JobDefinition once placed in a
+    code location.
 
     Args:
         name (str):
             The name for the job.
-        selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[AssetsDefinition], AssetSelection]):
-            The assets that will be materialized when the job is run.
+        selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
+            The assets that will be materialized or observed when the job is run.
 
             The selected assets must all be included in the assets that are passed to the assets
             argument of the Definitions object that this job is included on.
@@ -257,7 +307,12 @@ def define_asset_job(
             location. A list of strings represents the union of all assets selected by strings
             within the list.
 
-            The selection will be resolved to a set of assets once the when location is loaded.
+            The selection will be resolved to a set of assets when the location is loaded. If the
+            selection resolves to all source assets, the created job will perform source asset
+            observations. If the selection resolves to all regular assets, the created job will
+            materialize assets. If the selection resolves to a mixed set of source assets and
+            regular assets, an error will be thrown.
+
         config:
             Describes how the Job is parameterized at runtime.
 
@@ -281,7 +336,8 @@ def define_asset_job(
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition.
+            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
+            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The
@@ -320,6 +376,16 @@ def define_asset_job(
                 jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
             )
 
+            @observable_source_asset
+            def source_asset():
+                ...
+
+            # A job that observes a source asset:
+            defs = Definitions(
+                assets=assets,
+                jobs=[define_asset_job("observation_job", selection=[source_asset])],
+            )
+
             # Resources are supplied to the assets, not the job:
             @asset(required_resource_keys={"slack_client"})
             def asset1():
@@ -330,8 +396,9 @@ def define_asset_job(
                 jobs=[define_asset_job("all_assets")],
                 resources={"slack_client": prod_slack_client},
             )
+
     """
-    from dagster._core.definitions import AssetsDefinition, AssetSelection
+    from dagster._core.definitions import AssetsDefinition, AssetSelection, SourceAsset
 
     # convert string-based selections to AssetSelection objects
     resolved_selection: AssetSelection
@@ -345,14 +412,19 @@ def define_asset_job(
         resolved_selection = reduce(
             operator.or_, [_selection_from_string(cast(str, s)) for s in selection]
         )
-    elif isinstance(selection, list) and all(isinstance(el, AssetsDefinition) for el in selection):
-        resolved_selection = AssetSelection.assets(*cast(Sequence[AssetsDefinition], selection))
+    elif isinstance(selection, list) and all(
+        isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
+    ):
+        resolved_selection = AssetSelection.keys(
+            *(el.key for el in cast(Sequence[Union[AssetsDefinition, SourceAsset]], selection))
+        )
     elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
         resolved_selection = AssetSelection.keys(*cast(Sequence[AssetKey], selection))
     else:
         check.failed(
             "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
-            f" Sequence[AssetsDefinition], AssetSelection. Was {type(selection)}."
+            " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
+            f" {type(selection)}."
         )
 
     return UnresolvedAssetJobDefinition(

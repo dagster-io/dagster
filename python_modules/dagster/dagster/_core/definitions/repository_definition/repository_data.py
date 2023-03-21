@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -42,8 +43,7 @@ Resolvable = Callable[[], T]
 
 
 class RepositoryData(ABC):
-    """
-    Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
+    """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
     subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
@@ -59,13 +59,16 @@ class RepositoryData(ABC):
 
     @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
-        """
-        Return all top-level resources in the repository as a list,
+        """Return all top-level resources in the repository as a list,
         such as those provided to the Definitions constructor.
 
         Returns:
             List[ResourceDefinition]: All top-level resources in the repository.
         """
+
+    @abstractmethod
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        pass
 
     @public
     def get_all_jobs(self) -> Sequence[JobDefinition]:
@@ -218,7 +221,7 @@ class RepositoryData(ABC):
     def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
         """Get a schedule by name.
 
-        args:
+        Args:
             schedule_name (str): name of the schedule to retrieve.
 
         Returns:
@@ -296,6 +299,7 @@ class CachingRepositoryData(RepositoryData):
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
+        utilized_env_vars: Mapping[str, AbstractSet[str]],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -352,6 +356,11 @@ class CachingRepositoryData(RepositoryData):
         check.mapping_param(
             top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
         )
+        check.mapping_param(
+            utilized_env_vars,
+            "utilized_resources",
+            key_type=str,
+        )
 
         self._pipelines = CacheingDefinitionIndex(
             PipelineDefinition,
@@ -386,6 +395,7 @@ class CachingRepositoryData(RepositoryData):
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
         self._top_level_resources = top_level_resources
+        self._utilized_env_vars = utilized_env_vars
 
         def load_partition_sets_from_pipelines() -> Sequence[PartitionSetDefinition]:
             job_partition_sets = []
@@ -471,6 +481,9 @@ class CachingRepositoryData(RepositoryData):
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
         )
+
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        return self._utilized_env_vars
 
     def get_pipeline_names(self) -> Sequence[str]:
         """Get the names of all pipelines/jobs in the repository.
@@ -661,7 +674,7 @@ class CachingRepositoryData(RepositoryData):
         if this schedule has not yet been constructed, only this schedule is constructed, and will
         be cached for future calls.
 
-        args:
+        Args:
             schedule_name (str): name of the schedule to retrieve.
 
         Returns:

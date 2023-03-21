@@ -54,7 +54,7 @@ def test_string_missing_inputs():
     called = {}
 
     @op(ins={"string_input": In(String)})
-    def str_as_input(_context, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):
         called["yup"] = True
 
     pipeline = PipelineDefinition(name="missing_inputs", solid_defs=[str_as_input])
@@ -80,7 +80,7 @@ def test_string_missing_input_collision():
         return "bar"
 
     @op(ins={"string_input": In(String)})
-    def str_as_input(_context, string_input):  # pylint: disable=W0613
+    def str_as_input(_context, string_input):
         called["yup"] = True
 
     pipeline = PipelineDefinition(

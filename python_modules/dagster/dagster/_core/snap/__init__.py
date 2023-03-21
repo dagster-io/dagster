@@ -1,5 +1,4 @@
-"""
-This module contains serializable classes that contain all the meta information
+"""This module contains serializable classes that contain all the meta information
 in our definitions and type systems. The purpose is to be able to represent
 user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
 so that they can be persisted and manipulated in remote processes.

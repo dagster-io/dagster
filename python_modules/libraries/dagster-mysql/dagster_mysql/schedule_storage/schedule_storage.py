@@ -16,7 +16,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from sqlalchemy.engine import Connection
 
 from ..utils import (
@@ -97,9 +97,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return mysql_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLScheduleStorage":
         return MySQLScheduleStorage(
             inst_data=inst_data, mysql_url=mysql_url_from_config(config_value)
@@ -150,12 +150,12 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 repository_selector_id=state.repository_selector_id,
                 status=state.status.value,
                 instigator_type=state.instigator_type.value,
-                instigator_body=serialize_dagster_namedtuple(state),
+                instigator_body=serialize_value(state),
             )
             .on_duplicate_key_update(
                 status=state.status.value,
                 instigator_type=state.instigator_type.value,
-                instigator_body=serialize_dagster_namedtuple(state),
+                instigator_body=serialize_value(state),
                 update_timestamp=pendulum.now("UTC"),
             )
         )

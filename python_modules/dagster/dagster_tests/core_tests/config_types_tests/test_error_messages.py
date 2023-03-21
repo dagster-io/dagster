@@ -20,7 +20,7 @@ def test_invalid_dict_call():
     # prior to 0.7.0 dicts in config contexts were callable
     with pytest.raises(TypeError, match=re.escape("'DagsterDictApi' object is not callable")):
 
-        @op(config_schema=Dict({"foo": int}))  # pylint: disable=not-callable
+        @op(config_schema=Dict({"foo": int}))
         def _op(_):
             pass
 

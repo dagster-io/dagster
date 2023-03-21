@@ -2,12 +2,12 @@ import {gql, useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {TimezoneProvider} from '../app/time/TimezoneContext';
+import {TimeProvider} from '../app/time/TimeContext';
 import {RunStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
 
 import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
-import {RunDetailsTestQuery} from './types/RunDetails.test.types';
+import {RunDetailsTestQuery, RunDetailsTestQueryVariables} from './types/RunDetails.test.types';
 
 jest.mock('../app/time/browserTimezone.ts', () => ({
   browserTimezone: () => 'America/Los_Angeles',
@@ -28,9 +28,12 @@ describe('RunDetails', () => {
   `;
 
   const Test = () => {
-    const {data, loading} = useQuery<RunDetailsTestQuery>(RUN_DETAILS_TEST_QUERY, {
-      fetchPolicy: 'no-cache',
-    });
+    const {data, loading} = useQuery<RunDetailsTestQuery, RunDetailsTestQueryVariables>(
+      RUN_DETAILS_TEST_QUERY,
+      {
+        fetchPolicy: 'no-cache',
+      },
+    );
 
     if (!data || !data?.pipelineRunOrError || data?.pipelineRunOrError.__typename !== 'Run') {
       return null;
@@ -77,9 +80,9 @@ describe('RunDetails', () => {
   const renderAll = (config: MockConfig) => {
     return render(
       <TestProvider apolloProps={{mocks: buildMocks(config)}}>
-        <TimezoneProvider>
+        <TimeProvider>
           <Test />
-        </TimezoneProvider>
+        </TimeProvider>
       </TestProvider>,
     );
   };

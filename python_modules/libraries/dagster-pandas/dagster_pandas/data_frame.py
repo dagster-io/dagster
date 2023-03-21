@@ -4,7 +4,11 @@ from dagster import (
     DagsterType,
     Field,
     MetadataEntry,
+    MetadataValue,
     StringSource,
+    TableColumn,
+    TableSchema,
+    TableSchemaMetadataValue,
     TypeCheck,
     _check as check,
     dagster_type_loader,
@@ -120,6 +124,28 @@ def create_dagster_pandas_dataframe_description(description, columns):
     return buildme
 
 
+def create_table_schema_metadata_from_dataframe(
+    pandas_df: pd.DataFrame,
+) -> TableSchemaMetadataValue:
+    """This function takes a pandas DataFrame and returns its metadata as a Dagster TableSchema.
+
+    Args:
+        pandas_df (pandas.DataFrame): A pandas DataFrame for which to create metadata.
+
+    Returns:
+        TableSchemaMetadataValue: returns an object with the TableSchema for the DataFrame.
+    """
+    check.inst(pandas_df, pd.DataFrame, "Input must be a pandas DataFrame object")
+    return MetadataValue.table_schema(
+        TableSchema(
+            columns=[
+                TableColumn(name=str(name), type=str(dtype))
+                for name, dtype in pandas_df.dtypes.items()
+            ]
+        )
+    )
+
+
 def create_dagster_pandas_dataframe_type(
     name,
     description=None,
@@ -128,8 +154,7 @@ def create_dagster_pandas_dataframe_type(
     dataframe_constraints=None,
     loader=None,
 ):
-    """
-    Constructs a custom pandas dataframe dagster type.
+    """Constructs a custom pandas dataframe dagster type.
 
     Args:
         name (str): Name of the dagster pandas type.
@@ -198,9 +223,7 @@ def create_structured_dataframe_type(
     dataframe_validator=None,
     loader=None,
 ):
-    """
-
-    Args:
+    """Args:
         name (str): the name of the new type
         description (Optional[str]): the description of the new type
         columns_validator (Optional[Union[ColumnConstraintWithMetadata, MultiColumnConstraintWithMetadata]]):

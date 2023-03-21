@@ -549,8 +549,7 @@ class GraphDefinition(NodeDefinition):
         _asset_selection_data: Optional[AssetSelectionData] = None,
         _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "JobDefinition":
-        """
-        Make this graph in to an executable Job by providing remaining components required for execution.
+        """Make this graph in to an executable Job by providing remaining components required for execution.
 
         Args:
             name (Optional[str]):
@@ -651,8 +650,7 @@ class GraphDefinition(NodeDefinition):
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
-        """
-        Execute this graph in-process, collecting results in-memory.
+        """Execute this graph in-process, collecting results in-memory.
 
         Args:
             run_config (Optional[Mapping[str, Any]]):

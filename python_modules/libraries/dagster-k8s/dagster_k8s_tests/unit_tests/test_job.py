@@ -706,7 +706,7 @@ def test_sanitize_labels():
         [],
         "job456",
         labels={
-            "dagster/op": "-get_f\o.o[bar-0]-",  # pylint: disable=anomalous-backslash-in-string
+            "dagster/op": r"-get_f\o.o[bar-0]-",
             "my_label": "_WhatsUP",
         },
     ).to_dict()

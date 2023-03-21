@@ -17,8 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""
-Example Airflow DAG that shows the complex DAG structure.
+"""Example Airflow DAG that shows the complex DAG structure.
 """
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
@@ -158,7 +157,7 @@ with models.DAG(
     # Search
     search_catalog = PythonOperator(
         task_id="search_catalog",
-        python_callable=lambda: print("search_catalog"),  # pylint: disable=print-call
+        python_callable=lambda: print("search_catalog"),  # noqa: T201
     )
 
     search_catalog_result = BashOperator(

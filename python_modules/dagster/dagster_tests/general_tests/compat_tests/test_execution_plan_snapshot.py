@@ -192,7 +192,7 @@ def test_execution_plan_snapshot_backcompat():
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
     snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
     for snapshot_dir_path in snapshot_dirs:
-        print(f"Executing a saved run from {snapshot_dir_path}")  # pylint: disable=print-call
+        print(f"Executing a saved run from {snapshot_dir_path}")  # noqa: T201
 
         with copy_directory(os.path.join(src_dir, snapshot_dir_path)) as test_dir:
             with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -247,4 +247,4 @@ if __name__ == "__main__":
             run_config={"solids": {"emit": {"inputs": {"range_input": 5}}}},
         )
 
-        print("Created run for test")  # pylint: disable=print-call
+        print("Created run for test")  # noqa: T201

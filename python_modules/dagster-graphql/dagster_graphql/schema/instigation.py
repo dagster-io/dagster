@@ -199,15 +199,13 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
         )
 
     def resolve_evaluationResult(self, graphene_info: ResolveInfo):
-        if not graphene_info.context.has_repository_location(self._selector.location_name):
+        if not graphene_info.context.has_code_location(self._selector.location_name):
             raise UserFacingGraphQLError(
                 GrapheneRepositoryLocationNotFound(location_name=self._selector.location_name)
             )
 
-        repository_location = graphene_info.context.get_repository_location(
-            self._selector.location_name
-        )
-        if not repository_location.has_repository(self._selector.repository_name):
+        code_location = graphene_info.context.get_code_location(self._selector.location_name)
+        if not code_location.has_repository(self._selector.repository_name):
             raise UserFacingGraphQLError(
                 GrapheneRepositoryNotFoundError(
                     repository_location_name=self._selector.location_name,
@@ -215,7 +213,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 )
             )
 
-        repository = repository_location.get_repository(self._selector.repository_name)
+        repository = code_location.get_repository(self._selector.repository_name)
 
         if isinstance(self._selector, SensorSelector):
             if not repository.has_external_sensor(self._selector.sensor_name):
@@ -224,7 +222,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 )
             sensor_data: Union[SensorExecutionData, SerializableErrorInfo]
             try:
-                sensor_data = repository_location.get_external_sensor_execution_data(
+                sensor_data = code_location.get_external_sensor_execution_data(
                     name=self._selector.sensor_name,
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
@@ -254,7 +252,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
             schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)
             schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
             try:
-                schedule_data = repository_location.get_external_schedule_execution_data(
+                schedule_data = code_location.get_external_schedule_execution_data(
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     schedule_name=external_schedule.name,

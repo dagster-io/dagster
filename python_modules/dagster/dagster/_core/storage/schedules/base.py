@@ -1,8 +1,8 @@
 import abc
-from typing import Iterable, Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
@@ -13,7 +13,7 @@ from dagster._core.storage.sql import AlembicVersion
 from dagster._utils import PrintFn
 
 
-class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
+class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract class for managing persistance of scheduler artifacts."""
 
     @abc.abstractmethod
@@ -26,7 +26,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-    ) -> Iterable[InstigatorState]:
+    ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 
         Args:
@@ -78,7 +78,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Mapping[str, Iterable[InstigatorTick]]:
+    ) -> Mapping[str, Sequence[InstigatorTick]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -90,7 +90,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         after: Optional[float] = None,
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Iterable[InstigatorTick]:
+    ) -> Sequence[InstigatorTick]:
         """Get the ticks for a given instigator.
 
         Args:

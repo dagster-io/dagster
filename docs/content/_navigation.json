@@ -228,6 +228,10 @@
           {
             "title": "Multi-Assets",
             "path": "/concepts/assets/multi-assets"
+          },
+          {
+            "title": "Asset Selection Syntax",
+            "path": "/concepts/assets/asset-selection-syntax"
           }
         ]
       },

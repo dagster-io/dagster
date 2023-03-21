@@ -19,6 +19,7 @@ from dagster import (
     Output,
     PartitionsDefinition,
     SourceAsset,
+    SpecificPartitionsPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -60,10 +61,8 @@ def test_filter_mapping_partitions_dep():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partition_key_range is not None
             return PartitionKeyRange(
@@ -74,10 +73,8 @@ def test_filter_mapping_partitions_dep():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
                 upstream_partition_key_range.start.split("|")[-1],
@@ -119,8 +116,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
     downstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 
@@ -191,8 +187,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
     downstream_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 
@@ -253,8 +248,7 @@ def test_multi_asset_non_identity_partition_mapping():
     downstream_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     class TrailingWindowPartitionMapping(PartitionMapping):
-        """
-        Maps each downstream partition to two partitions in the upstream asset: itself and the
+        """Maps each downstream partition to two partitions in the upstream asset: itself and the
         preceding partition.
         """
 
@@ -352,10 +346,8 @@ def test_from_graph():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partition_key_range is not None
             self.upstream_calls += 1
@@ -364,10 +356,8 @@ def test_from_graph():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: Optional[
-                PartitionsDefinition
-            ],  # pylint: disable=unused-argument
-            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[PartitionsDefinition],
+            upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             self.downstream_calls += 1
             return upstream_partition_key_range
@@ -457,6 +447,46 @@ def test_non_partitioned_depends_on_last_partition():
     )
 
 
+def test_non_partitioned_depends_on_specific_partitions():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
+
+    @asset(
+        ins={"upstream": AssetIn(partition_mapping=SpecificPartitionsPartitionMapping(["a", "b"]))}
+    )
+    def downstream_a_b(upstream):
+        assert upstream is None
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_key == "b"
+            else:
+                assert not context.has_asset_partitions
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert set(context.asset_partition_keys) == {"a", "b"}
+
+    result = materialize(
+        [upstream, downstream_a_b],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("upstream"),
+        [AssetMaterialization(AssetKey(["upstream"]), partition="b")],
+        exclude_fields=["tags"],
+    )
+    assert_namedtuple_lists_equal(
+        result.asset_materializations_for_node("downstream"),
+        [AssetMaterialization(AssetKey(["downstream_a_b"]))],
+        exclude_fields=["tags"],
+    )
+
+
 def test_non_partitioned_depends_on_all_partitions():
     @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
     def upstream():
@@ -513,14 +543,14 @@ def test_partition_keys_in_range():
         assert context.asset_partition_keys_for_output() == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
-    def downstream(context, upstream):  # pylint: disable=unused-argument
+    def downstream(context, upstream):
         assert (
             context.asset_partition_keys_for_input("upstream")
             == daily_partition_keys_for_week_2022_09_11
         )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["2022-09-11"]
@@ -658,7 +688,7 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
     )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             if context.asset_key == AssetKey("upstream"):
                 assert context.has_asset_partitions
                 assert context.asset_partition_keys == ["a"]
@@ -713,7 +743,7 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
     )
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+        def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):

@@ -4,17 +4,19 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import click
 
 import dagster._check as check
-from dagster._serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
 
 from .job import apply_click_params
 from .utils import get_instance_for_service
 from .workspace.cli_target import (
+    ClickArgValue,
     get_workspace_load_target,
     python_file_option,
     python_module_option,
@@ -55,7 +57,12 @@ def dev_command_options(f):
 )
 @click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
 @click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
-def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
+def dev_command(
+    code_server_log_level: str,
+    dagit_port: Optional[str],
+    dagit_host: Optional[str],
+    **kwargs: ClickArgValue,
+) -> None:
     # check if dagit installed, crash if not
     try:
         import dagit  #  # noqa: F401
@@ -91,7 +98,7 @@ def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
 
         args = [
             "--instance-ref",
-            serialize_dagster_namedtuple(instance.get_ref()),
+            serialize_value(instance.get_ref()),
             "--code-server-log-level",
             code_server_log_level,
         ]

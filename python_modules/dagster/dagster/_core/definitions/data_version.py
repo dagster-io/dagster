@@ -28,7 +28,6 @@ if TYPE_CHECKING:
         AssetKey,
         AssetMaterialization,
         AssetObservation,
-        Materialization,
     )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
@@ -225,7 +224,7 @@ def _extract_event_data_from_entry(
     from dagster._core.events import AssetObservationData, StepMaterializationData
 
     data = check.not_none(entry.dagster_event).event_specific_data
-    event_data: Union[Materialization, AssetMaterialization, AssetObservation]
+    event_data: Union[AssetMaterialization, AssetObservation]
     if isinstance(data, StepMaterializationData):
         event_data = data.materialization
     elif isinstance(data, AssetObservationData):
@@ -255,17 +254,8 @@ class StaleCause(NamedTuple):
     children: Optional[Sequence["StaleCause"]] = None
 
 
-# Root reasons for staleness. Thes differ from `StaleStatusCause`in that there is no status
-# associated with them-- rather they are causes for the staleness of some downstream node.
-class StaleStatusRootCause(NamedTuple):
-    key: AssetKey
-    reason: str
-    dependency: Optional[AssetKey] = None
-
-
 class CachingStaleStatusResolver:
-    """
-    Used to resolve data version information. Avoids redundant database
+    """Used to resolve data version information. Avoids redundant database
     calls that would otherwise occur. Intended for use within the scope of a
     single "request" (e.g. GQL request, RunRequest resolution).
     """
@@ -458,3 +448,15 @@ class CachingStaleStatusResolver:
                 self._is_partitioned_or_downstream(key=dep_key)
                 for dep_key in self.asset_graph.get_parents(key)
             )
+
+    # Volatility means that an asset is assumed to be constantly changing. We assume that observable
+    # source assets are non-volatile, since the primary purpose of the observation function is to
+    # determine if a source asset has changed. We assume that regular assets are volatile if they
+    # are at the root of the graph (have no dependencies) or are downstream of a volatile asset.
+    @cached_method
+    def _is_volatile(self, *, key: AssetKey) -> bool:
+        if self.asset_graph.is_source(key):
+            return self.asset_graph.is_observable(key)
+        else:
+            deps = self.asset_graph.get_parents(key)
+            return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)

@@ -1,4 +1,3 @@
-# pylint: disable=super-init-not-called
 from typing import (
     AbstractSet,
     Any,
@@ -21,7 +20,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -72,7 +70,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         mapping_key: Optional[str],
-    ):  # pylint: disable=super-init-not-called
+    ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_pipeline import initialize_console_manager
 
@@ -86,7 +84,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._instance_cm = ephemeral_instance_if_missing(instance)
         # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
         # so ignore lint error
-        self._instance = self._instance_cm.__enter__()  # pylint: disable=no-member
+        self._instance = self._instance_cm.__enter__()
 
         self._resources_config = resources_config
         # Open resource context manager
@@ -97,7 +95,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             instance=instance,
             resource_config=resources_config,
         )
-        self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+        self._resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
         self._log = initialize_console_manager(None)
@@ -112,15 +110,15 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self
 
     def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        self._resources_cm.__exit__(*exc)
         if self._instance_provided:
-            self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
         if self._instance_provided and not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._instance_cm.__exit__(None, None, None)
 
     @property
     def op_config(self) -> Any:
@@ -471,7 +469,10 @@ class BoundOpExecutionContext(OpExecutionContext):
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         resources = cast(NamedTuple, self.resources)
         return TypeCheckContext(
-            self.run_id, self.log, ScopedResourcesBuilder(resources._asdict()), dagster_type
+            self.run_id,
+            self.log,
+            ScopedResourcesBuilder(resources._asdict()),
+            dagster_type,
         )
 
     def get_mapping_key(self) -> Optional[str]:
@@ -487,7 +488,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         check.inst_param(
             event,
             "event",
-            (AssetMaterialization, AssetObservation, ExpectationResult, Materialization),
+            (AssetMaterialization, AssetObservation, ExpectationResult),
         )
         self._user_events.append(event)
 

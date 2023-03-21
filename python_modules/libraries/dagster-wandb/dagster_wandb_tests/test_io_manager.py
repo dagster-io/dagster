@@ -1,5 +1,3 @@
-# pylint: disable=unused-argument
-
 import os
 from unittest.mock import ANY, MagicMock, patch
 

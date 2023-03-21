@@ -4,6 +4,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
@@ -15,8 +16,10 @@ from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
+from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
 from ...implementation.external import (
     fetch_location_statuses,
@@ -62,7 +65,6 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -219,6 +221,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneResourceDetailsListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
+    )
+
+    utilizedEnvVarsOrError = graphene.Field(
+        graphene.NonNull(GrapheneEnvVarWithConsumersListOrError),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the utilized environment variables for the given repo.",
     )
 
     sensorOrError = graphene.Field(
@@ -536,6 +544,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
+    def resolve_utilizedEnvVarsOrError(self, graphene_info: ResolveInfo, **kwargs):
+        return get_utilized_env_vars_or_error(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+        )
+
     def resolve_sensorOrError(
         self, graphene_info: ResolveInfo, sensorSelector: GrapheneRepositorySelector
     ):
@@ -569,7 +583,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_pipelineRunsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -587,7 +601,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runsOrError(
         self,
         _graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -605,7 +619,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runGroupsOrError(
         self,
         graphene_info: ResolveInfo,
-        filter: Optional[GrapheneRunsFilter] = None,
+        filter: Optional[GrapheneRunsFilter] = None,  # noqa: A002
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
@@ -714,7 +728,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         if group is not None:
             group_name = group.groupName
             repo_sel = RepositorySelector.from_graphql_input(group)
-            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
             results = (
@@ -734,7 +748,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         elif pipeline is not None:
             pipeline_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
-            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
             results = (

@@ -8,13 +8,13 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
-from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils import frozenlist
 from dagster._utils.error import SerializableErrorInfo
 
@@ -119,7 +119,7 @@ class ExecuteRunArgs(
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "execute_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
@@ -164,7 +164,7 @@ class ResumeRunArgs(
         return _get_entry_point(self.pipeline_origin) + [
             "api",
             "resume_run",
-            serialize_dagster_namedtuple(self),
+            serialize_value(self),
         ]
 
 
@@ -242,11 +242,10 @@ class ExecuteStepArgs(
 
     def _get_compressed_args(self) -> str:
         # Compress, then base64 encode so we can pass it around as a str
-        return base64.b64encode(zlib.compress(serialize_dagster_namedtuple(self).encode())).decode()
+        return base64.b64encode(zlib.compress(serialize_value(self).encode())).decode()
 
     def get_command_args(self, skip_serialized_namedtuple: bool = False) -> Sequence[str]:
-        """
-        Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
+        """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
         return (
@@ -260,8 +259,7 @@ class ExecuteStepArgs(
         )
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
-        """
-        Get the env vars for overriding the Click args of this step. Used in conjuction with
+        """Get the env vars for overriding the Click args of this step. Used in conjuction with
         get_command_args(skip_serialized_namedtuple=True).
         """
         return [
@@ -475,18 +473,19 @@ class PipelineSubsetSnapshotArgs(
         )
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class NotebookPathArgs(
     NamedTuple(
         "_NotebookPathArgs",
-        [("repository_location_origin", RepositoryLocationOrigin), ("notebook_path", str)],
+        [("code_location_origin", CodeLocationOrigin), ("notebook_path", str)],
     )
 ):
-    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, notebook_path: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, notebook_path: str):
         return super(NotebookPathArgs, cls).__new__(
             cls,
-            repository_location_origin=check.inst_param(
-                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            code_location_origin=check.inst_param(
+                code_location_origin, "code_location_origin", CodeLocationOrigin
             ),
             notebook_path=check.str_param(notebook_path, "notebook_path"),
         )

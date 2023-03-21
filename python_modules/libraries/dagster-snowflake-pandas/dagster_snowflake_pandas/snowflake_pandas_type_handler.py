@@ -11,8 +11,7 @@ from snowflake.connector.pandas_tools import pd_writer
 
 
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
-    """
-    Converts columns of data of type pd.Timestamp to string so that it can be stored in
+    """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
@@ -22,8 +21,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
 
 
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
-    """
-    Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
+    """Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
     _convert_timestamp_to_string.
 
     This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
@@ -39,8 +37,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
-    """
-    Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
+    """Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
     Examples:
         .. code-block:: python
@@ -58,7 +55,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ) -> Mapping[str, RawMetadataValue]:
-        from snowflake import connector  # pylint: disable=no-name-in-module
+        from snowflake import connector
 
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
@@ -86,6 +83,8 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pd.DataFrame:
+        if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
+            return pd.DataFrame()
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )

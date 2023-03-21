@@ -57,7 +57,7 @@ class TimeWindow(NamedTuple):
 
 
 class TimeWindowPartitionsDefinition(
-    PartitionsDefinition[TimeWindow],  # pylint: disable=unsubscriptable-object
+    PartitionsDefinition[TimeWindow],
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
@@ -69,8 +69,7 @@ class TimeWindowPartitionsDefinition(
         ],
     ),
 ):
-    r"""
-    A set of partitions where each partitions corresponds to a time window.
+    r"""A set of partitions where each partitions corresponds to a time window.
 
     The provided cron_schedule determines the bounds of the time windows. E.g. a cron_schedule of
     "0 0 \\* \\* \\*" will result in daily partitions that start at midnight and end at midnight of the
@@ -97,7 +96,7 @@ class TimeWindowPartitionsDefinition(
             and so on.
     """
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         start: Union[datetime, str],
         fmt: str,
@@ -109,10 +108,13 @@ class TimeWindowPartitionsDefinition(
         day_offset: Optional[int] = None,
         cron_schedule: Optional[str] = None,
     ):
+        check.opt_str_param(timezone, "timezone")
+        timezone = timezone or "UTC"
+
         if isinstance(start, datetime):
-            start_dt = start
+            start_dt = pendulum.instance(start, tz=timezone)
         else:
-            start_dt = datetime.strptime(start, fmt)
+            start_dt = pendulum.instance(datetime.strptime(start, fmt), tz=timezone)
 
         if cron_schedule is not None:
             check.invariant(
@@ -139,7 +141,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
+            cls, start_dt, timezone, fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -607,9 +609,7 @@ class TimeWindowPartitionsDefinition(
         )
 
     def _iterate_time_windows(self, start: datetime) -> Iterable[TimeWindow]:
-        """
-        Returns an infinite generator of time windows that start after the given start time.
-        """
+        """Returns an infinite generator of time windows that start after the given start time."""
         start_timestamp = pendulum.instance(start, tz=self.timezone).timestamp()
         iterator = cron_string_iterator(
             start_timestamp=start_timestamp,
@@ -626,9 +626,7 @@ class TimeWindowPartitionsDefinition(
             prev_time = next_time
 
     def _reverse_iterate_time_windows(self, end: datetime) -> Iterable[TimeWindow]:
-        """
-        Returns an infinite generator of time windows that end before the given end time.
-        """
+        """Returns an infinite generator of time windows that end before the given end time."""
         end_timestamp = pendulum.instance(end, tz=self.timezone).timestamp()
         iterator = reverse_cron_string_iterator(
             end_timestamp=end_timestamp,
@@ -646,10 +644,9 @@ class TimeWindowPartitionsDefinition(
             prev_time = next_time
 
     def get_partition_key_for_timestamp(self, timestamp: float, end_closed: bool = False) -> str:
-        """
-        Args:
-            timestamp (float): Timestamp from the unix epoch, UTC.
-            end_closed (bool): Whether the interval is closed at the end or at the beginning.
+        """Args:
+        timestamp (float): Timestamp from the unix epoch, UTC.
+        end_closed (bool): Whether the interval is closed at the end or at the beginning.
         """
         iterator = cron_string_iterator(
             timestamp, self.cron_schedule, self.timezone, start_offset=-1
@@ -679,13 +676,16 @@ class TimeWindowPartitionsDefinition(
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
-            time_obj = datetime.strptime(partition_key, self.fmt)
-            return time_obj.timestamp() >= self.start.timestamp()
+            partition_time = pendulum.instance(
+                datetime.strptime(partition_key, self.fmt), tz=self.timezone
+            )
+            return partition_time >= self.start
         except ValueError:
             return False
 
-    @property
-    def serializable_unique_identifier(self) -> str:
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
@@ -721,7 +721,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
 
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         start_date: Union[datetime, str],
         minute_offset: int = 0,
@@ -857,7 +857,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
 
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         start_date: Union[datetime, str],
         minute_offset: int = 0,
@@ -981,7 +981,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         start_date: Union[datetime, str],
         minute_offset: int = 0,
@@ -1118,7 +1118,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
-    def __new__(  # pylint: disable=signature-differs
+    def __new__(
         cls,
         start_date: Union[datetime, str],
         minute_offset: int = 0,
@@ -1264,8 +1264,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         self,
         current_time: Optional[datetime] = None,
     ) -> Sequence[TimeWindow]:
-        """
-        Returns a list of partition time windows that are not in the subset.
+        """Returns a list of partition time windows that are not in the subset.
         Each time window is a single partition.
         """
         first_tw = self._partitions_def.get_first_partition_window(current_time=current_time)
@@ -1463,7 +1462,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         if serialized_partitions_def_unique_id:
             return (
-                partitions_def.serializable_unique_identifier == serialized_partitions_def_unique_id
+                partitions_def.get_serializable_unique_identifier()
+                == serialized_partitions_def_unique_id
             )
 
         data = json.loads(serialized)
@@ -1499,12 +1499,13 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def __eq__(self, other):
         return (
             isinstance(other, TimeWindowPartitionsSubset)
-            and self._partitions_def == other._partitions_def
+            and self._partitions_def == other._partitions_def  # noqa: SLF001
             and (
                 # faster comparison, but will not catch all cases
                 (
-                    self._included_time_windows == other._included_time_windows
-                    and self._included_partition_keys == other._included_partition_keys
+                    self._included_time_windows == other._included_time_windows  # noqa: SLF001
+                    and self._included_partition_keys
+                    == other._included_partition_keys  # noqa: SLF001
                 )
                 # slower comparison, catches all cases
                 or self.included_time_windows == other.included_time_windows
@@ -1531,8 +1532,16 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
 
 class PartitionRangeStatus(Enum):
+    MATERIALIZING = "MATERIALIZING"
     MATERIALIZED = "MATERIALIZED"
     FAILED = "FAILED"
+
+
+PARTITION_RANGE_STATUS_PRIORITY = [
+    PartitionRangeStatus.MATERIALIZING,
+    PartitionRangeStatus.FAILED,
+    PartitionRangeStatus.MATERIALIZED,
+]
 
 
 class PartitionTimeWindowStatus:
@@ -1551,93 +1560,104 @@ class PartitionTimeWindowStatus:
         )
 
 
-def fetch_flattened_time_window_ranges(
-    materialized_subset: TimeWindowPartitionsSubset, failed_subset: TimeWindowPartitionsSubset
-) -> Sequence[PartitionTimeWindowStatus]:
-    """
-    Given a materialized subset and a failed subset, flatten to a list of timewindows where the
-    failed subsets are as they were, and the materialized subset is filtered to not overlap with
-    failed.
-    """
-    materialized_time_windows = sorted(
-        materialized_subset.included_time_windows, key=lambda t: t.start
-    )
-    failed_time_windows = sorted(failed_subset.included_time_windows, key=lambda t: t.start)
+def _flatten(
+    high_pri_time_windows: List[PartitionTimeWindowStatus],
+    low_pri_time_windows: List[PartitionTimeWindowStatus],
+) -> List[PartitionTimeWindowStatus]:
+    high_pri_time_windows = sorted(high_pri_time_windows, key=lambda t: t.time_window.start)
+    low_pri_time_windows = sorted(low_pri_time_windows, key=lambda t: t.time_window.start)
 
-    materilized_idx = 0
-    failed_idx = 0
+    high_pri_idx = 0
+    low_pri_idx = 0
 
-    filtered_materialized_time_windows = []
+    filtered_low_pri: List[PartitionTimeWindowStatus] = []
 
-    # slice and dice the materialized time windows so there's no overlap with failed
+    # slice and dice the low pri time windows so there's no overlap with high pri
     while True:
-        if materilized_idx >= len(materialized_time_windows):
+        if low_pri_idx >= len(low_pri_time_windows):
             # reached end of materialized
             break
-        if failed_idx >= len(failed_time_windows):
+        if high_pri_idx >= len(high_pri_time_windows):
             # reached end of failed, add all remaining materialized bc there's no overlap
-            filtered_materialized_time_windows.extend(
-                [
-                    PartitionTimeWindowStatus(w, PartitionRangeStatus.MATERIALIZED)
-                    for w in materialized_time_windows[materilized_idx:]
-                ]
-            )
+            filtered_low_pri.extend(low_pri_time_windows[low_pri_idx:])
             break
 
-        materialized_tw = materialized_time_windows[materilized_idx]
-        failed_tw = failed_time_windows[failed_idx]
+        low_pri_tw = low_pri_time_windows[low_pri_idx]
+        high_pri_tw = high_pri_time_windows[high_pri_idx]
 
-        if materialized_tw.start < failed_tw.start:
-            if materialized_tw.end <= failed_tw.start:
-                # materialized is entirely before failed
-                filtered_materialized_time_windows.append(
-                    PartitionTimeWindowStatus(materialized_tw, PartitionRangeStatus.MATERIALIZED)
-                )
-                materilized_idx += 1
+        if low_pri_tw.time_window.start < high_pri_tw.time_window.start:
+            if low_pri_tw.time_window.end <= high_pri_tw.time_window.start:
+                # low_pri_tw is entirely before high pri
+                filtered_low_pri.append(low_pri_tw)
+                low_pri_idx += 1
             else:
-                # failed cuts the materialized short
-                filtered_materialized_time_windows.append(
+                # high pri cuts the low pri short
+                filtered_low_pri.append(
                     PartitionTimeWindowStatus(
                         TimeWindow(
-                            materialized_tw.start,
-                            failed_tw.start,
+                            low_pri_tw.time_window.start,
+                            high_pri_tw.time_window.start,
                         ),
-                        PartitionRangeStatus.MATERIALIZED,
+                        low_pri_tw.status,
                     )
                 )
 
-                if materialized_tw.end > failed_tw.end:
-                    # the materialized time window will continue on the other end of the failed
-                    # and get split in two. Modify materialized_time_windows[materilized_idx] to be
-                    # the second half of the materialized time window. It will be added in the next iteration.
-                    # (don't add it now, because we need to check if it overlaps with the next failed)
-                    materialized_time_windows[materilized_idx] = TimeWindow(
-                        failed_tw.end, materialized_tw.end
+                if low_pri_tw.time_window.end > high_pri_tw.time_window.end:
+                    # the low pri time window will continue on the other end of the high pri
+                    # and get split in two. Modify low_pri[low_pri_idx] to be
+                    # the second half of the low pri time window. It will be added in the next iteration.
+                    # (don't add it now, because we need to check if it overlaps with the next high pri)
+                    low_pri_time_windows[low_pri_idx] = PartitionTimeWindowStatus(
+                        TimeWindow(high_pri_tw.time_window.end, low_pri_tw.time_window.end),
+                        low_pri_tw.status,
                     )
-                    failed_idx += 1
+                    high_pri_idx += 1
                 else:
-                    # the rest of the materialized time window is inside the failed time window
-                    materilized_idx += 1
+                    # the rest of the low pri time window is inside the high pri time window
+                    low_pri_idx += 1
         else:
-            if materialized_tw.start >= failed_tw.end:
-                # failed is entirely before materialized. The next failed may overlap
-                failed_idx += 1
-            elif materialized_tw.end <= failed_tw.end:
-                # materialized is entirely within failed, skip it
-                materilized_idx += 1
+            if low_pri_tw.time_window.start >= high_pri_tw.time_window.end:
+                # high pri is entirely before low pri. The next high pri may overlap
+                high_pri_idx += 1
+            elif low_pri_tw.time_window.end <= high_pri_tw.time_window.end:
+                # low pri is entirely within high pri, skip it
+                low_pri_idx += 1
             else:
-                # failed cuts out the start of the materialized. It will continue on the other end.
-                # Modify materialized_time_windows[materilized_idx] to shorten the start. It will be added
-                # in the next iteration. (don't add it now, because we need to check if it overlaps with the next failed)
-                materialized_time_windows[materilized_idx] = TimeWindow(
-                    failed_tw.end, materialized_tw.end
+                # high pri cuts out the start of the low pri. It will continue on the other end.
+                # Modify low_pri[low_pri_idx] to shorten the start. It will be added
+                # in the next iteration. (don't add it now, because we need to check if it overlaps with the next high pri)
+                low_pri_time_windows[low_pri_idx] = PartitionTimeWindowStatus(
+                    TimeWindow(high_pri_tw.time_window.end, low_pri_tw.time_window.end),
+                    low_pri_tw.status,
                 )
-                failed_idx += 1
+                high_pri_idx += 1
 
-    # combine the failed windwos with the filtered materialized windows
-    flattened_time_windows = [
-        PartitionTimeWindowStatus(w, PartitionRangeStatus.FAILED) for w in failed_time_windows
-    ]
-    flattened_time_windows.extend(filtered_materialized_time_windows)
+    # combine the high pri windwos with the filtered low pri windows
+    flattened_time_windows = high_pri_time_windows
+    flattened_time_windows.extend(filtered_low_pri)
     flattened_time_windows.sort(key=lambda t: t.time_window.start)
     return flattened_time_windows
+
+
+def fetch_flattened_time_window_ranges(
+    subsets: Mapping[PartitionRangeStatus, TimeWindowPartitionsSubset]
+) -> Sequence[PartitionTimeWindowStatus]:
+    """Given potentially overlapping subsets, return a flattened list of timewindows where the highest priority status wins
+    on overlaps.
+    """
+    prioritized_subsets = sorted(
+        [(status, subset) for status, subset in subsets.items()],
+        key=lambda t: PARTITION_RANGE_STATUS_PRIORITY.index(t[0]),
+    )
+
+    # progressively add lower priority time windows to the list of higher priority time windows
+    flattened_time_window_statuses = []
+    for status, subset in prioritized_subsets:
+        subset_time_window_statuses = [
+            PartitionTimeWindowStatus(tw, status) for tw in subset.included_time_windows
+        ]
+        flattened_time_window_statuses = _flatten(
+            flattened_time_window_statuses, subset_time_window_statuses
+        )
+
+    return flattened_time_window_statuses

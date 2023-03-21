@@ -1,7 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
+import {
+  PermissionFragment,
+  PermissionsQuery,
+  PermissionsQueryVariables,
+} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -93,6 +97,14 @@ export const extractPermissions = (
 
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
+export type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
+export type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
+export type PermissionsState = {
+  permissions: PermissionBooleans;
+  disabledReasons: PermissionDisabledReasons;
+  loading: boolean;
+};
+
 type PermissionsContextType = {
   unscopedPermissions: PermissionsMap;
   locationPermissions: Record<string, PermissionsMap>;
@@ -109,7 +121,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
+  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
@@ -139,12 +151,49 @@ export const PermissionsProvider: React.FC = (props) => {
   return <PermissionsContext.Provider value={value}>{props.children}</PermissionsContext.Provider>;
 };
 
+export const permissionResultForKey = (
+  permissionsState: PermissionsState,
+  key: keyof PermissionsMap,
+): PermissionResult => {
+  const {permissions, disabledReasons} = permissionsState;
+  return {
+    enabled: permissions[key],
+    disabledReason: disabledReasons[key],
+  };
+};
+
+const unpackPermissions = (
+  permissions: PermissionsMap,
+): {booleans: PermissionBooleans; disabledReasons: PermissionDisabledReasons} => {
+  const booleans = {};
+  const disabledReasons = {};
+  Object.keys(permissions).forEach((key) => {
+    const {enabled, disabledReason} = permissions[key] as PermissionResult;
+    booleans[key] = enabled;
+    disabledReasons[key] = disabledReason;
+  });
+  return {
+    booleans: booleans as PermissionBooleans,
+    disabledReasons: disabledReasons as PermissionDisabledReasons,
+  };
+};
+
 /**
  * Retrieve a permission that is intentionally unscoped.
  */
-export const useUnscopedPermissions = () => {
+export const useUnscopedPermissions = (): PermissionsState => {
   const {unscopedPermissions, loading} = React.useContext(PermissionsContext);
-  return {...unscopedPermissions, loading};
+  const unpacked = React.useMemo(() => unpackPermissions(unscopedPermissions), [
+    unscopedPermissions,
+  ]);
+
+  return React.useMemo(() => {
+    return {
+      permissions: unpacked.booleans,
+      disabledReasons: unpacked.disabledReasons,
+      loading,
+    };
+  }, [unpacked, loading]);
 };
 
 /**
@@ -152,13 +201,23 @@ export const useUnscopedPermissions = () => {
  * will be used as a fallback, so that if the permission is not defined for that location, we still
  * have a valid value.
  */
-export const usePermissionsForLocation = (locationName: string | null | undefined) => {
+export const usePermissionsForLocation = (
+  locationName: string | null | undefined,
+): PermissionsState => {
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
   let permissionsForLocation = unscopedPermissions;
   if (locationName && locationPermissions.hasOwnProperty(locationName)) {
     permissionsForLocation = locationPermissions[locationName];
   }
-  return {...permissionsForLocation, loading};
+
+  const unpacked = unpackPermissions(permissionsForLocation);
+  return React.useMemo(() => {
+    return {
+      permissions: unpacked.booleans,
+      disabledReasons: unpacked.disabledReasons,
+      loading,
+    };
+  }, [unpacked, loading]);
 };
 
 export const PERMISSIONS_QUERY = gql`

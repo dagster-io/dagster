@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ListRepositoriesResponse
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ def sync_list_repositories_grpc(api_client: "DagsterGrpcClient") -> ListReposito
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    result = deserialize_as(
+    result = deserialize_value(
         api_client.list_repositories(),
         (ListRepositoriesResponse, SerializableErrorInfo),
     )

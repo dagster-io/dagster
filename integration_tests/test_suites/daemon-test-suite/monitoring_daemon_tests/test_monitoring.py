@@ -50,7 +50,7 @@ def log_run_events(instance, run_id):
         yield
     finally:
         for log in instance.all_logs(run_id):
-            print(str(log) + "\n")  # pylint: disable=print-call
+            print(str(log) + "\n")  # noqa: T201
 
 
 def test_monitoring():
@@ -145,7 +145,7 @@ def test_docker_monitoring():
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # pylint:disable=protected-access
+                    instance.run_launcher._get_container(  # noqa: SLF001
                         instance.get_run_by_id(run.run_id)
                     ).stop()
 
@@ -233,7 +233,7 @@ def test_docker_monitoring_run_out_of_attempts():
 
                     time.sleep(3)
 
-                    instance.run_launcher._get_container(  # pylint:disable=protected-access
+                    instance.run_launcher._get_container(  # noqa: SLF001
                         instance.get_run_by_id(run.run_id)
                     ).stop(timeout=0)
 

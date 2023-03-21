@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generator,
     Iterator,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -22,7 +23,6 @@ from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
     ExpectationResult,
-    Materialization,
     Output,
     OutputDefinition,
 )
@@ -97,12 +97,12 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
 def invoke_compute_fn(
     fn: Callable,
     context: OpExecutionContext,
-    kwargs: Dict[str, Any],
+    kwargs: Mapping[str, Any],
     context_arg_provided: bool,
     config_arg_cls: Optional[Type[Config]],
     resource_args: Optional[Dict[str, str]] = None,
 ) -> Any:
-    args_to_pass = kwargs
+    args_to_pass = {**kwargs}
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):
@@ -192,7 +192,7 @@ def validate_and_coerce_op_result_to_iterator(
         # this happens when a user explicitly returns a generator in the solid
         for event in result:
             yield event
-    elif isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+    elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "

@@ -6,7 +6,7 @@ from typing import Callable, Iterator, NamedTuple, Optional
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
@@ -45,15 +45,14 @@ class ComputeLogFileData(
         )
 
 
-class ComputeLogManager(ABC, MayHaveInstanceWeakref):
+class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
     steps of pipeline solids.
     """
 
     @contextmanager
     def watch(self, pipeline_run: DagsterRun, step_key: Optional[str] = None) -> Iterator[None]:
-        """
-        Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
+        """Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
 
         Args:
             pipeline_run (PipelineRun): The pipeline run config
@@ -76,8 +75,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     def _watch_logs(
         self, pipeline_run: DagsterRun, step_key: Optional[str] = None
     ) -> Iterator[None]:
-        """
-        Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
+        """Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
         blessed `watch` method, which triggers all the start/finish hooks that are necessary to
         implement the different remote implementations.
 

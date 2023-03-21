@@ -94,9 +94,7 @@ class StepFailureData(
 
     @property
     def error_display_string(self) -> str:
-        """
-        Creates a display string that hides framework frames if the error arose in user code.
-        """
+        """Creates a display string that hides framework frames if the error arose in user code."""
         if not self.error:
             return ""
         if self.error_source == ErrorSource.USER_CODE_ERROR:

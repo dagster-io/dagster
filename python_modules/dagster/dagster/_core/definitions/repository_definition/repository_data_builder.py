@@ -1,3 +1,5 @@
+import json
+from collections import defaultdict
 from inspect import isfunction
 from typing import (
     Any,
@@ -8,9 +10,16 @@ from typing import (
     Sequence,
     Set,
     Union,
+    cast,
 )
 
 import dagster._check as check
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    PartialResource,
+    ResourceWithKeyMapping,
+    separate_resource_params,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
@@ -22,6 +31,9 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partition import PartitionSetDefinition
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -32,6 +44,48 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .repository_data import CachingRepositoryData, _get_partition_set_from_schedule
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
+
+
+def _find_env_vars(config_entry: Any) -> Set[str]:
+    """Given a part of a config dictionary, return a set of environment variables that are used in
+    that part of the config.
+    """
+    # Actual env var entry
+    if isinstance(config_entry, Mapping) and set(config_entry.keys()) == {"env"}:
+        return {config_entry["env"]}
+    # Recurse into dictionary of config items
+    elif isinstance(config_entry, Mapping):
+        return set().union(*[_find_env_vars(v) for v in config_entry.values()])
+    # Recurse into list of config items
+    elif isinstance(config_entry, List):
+        return set().union(*[_find_env_vars(v) for v in config_entry])
+
+    # Otherwise, raw config value which is not an env var, so return empty set
+    return set()
+
+
+def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
+    """Given a resource definition, return a set of environment variables that are used in the
+    resource's default config. This is used to extract environment variables from the top-level
+    resources in a Definitions object.
+    """
+    config_schema_default = cast(
+        Mapping[str, Any],
+        json.loads(resource_def.config_schema.default_value_as_json_str)
+        if resource_def.config_schema.default_provided
+        else {},
+    )
+
+    env_vars = _find_env_vars(config_schema_default)
+
+    if isinstance(resource_def, ResourceWithKeyMapping) and isinstance(
+        resource_def.inner_resource, (ConfigurableResource, PartialResource)
+    ):
+        nested_resources = separate_resource_params(resource_def.inner_resource.__dict__).resources
+        for nested_resource in nested_resources.values():
+            env_vars = env_vars.union(_env_vars_from_resource_defaults(nested_resource))
+
+    return env_vars
 
 
 def build_caching_repository_data_from_list(
@@ -178,26 +232,6 @@ def build_caching_repository_data_from_list(
         source_assets_by_key = {}
         assets_defs_by_key = {}
 
-    asset_graph = AssetGraph.from_assets(
-        [*combined_asset_group.assets, *combined_asset_group.source_assets]
-        if combined_asset_group
-        else []
-    )
-
-    # resolve all the UnresolvedAssetJobDefinitions and
-    # UnresolvedPartitionedAssetScheduleDefinitions using the full set of assets
-    if unresolved_partitioned_asset_schedules:
-        for (
-            name,
-            unresolved_partitioned_asset_schedule,
-        ) in unresolved_partitioned_asset_schedules.items():
-            schedules[name] = unresolved_partitioned_asset_schedule.resolve(asset_graph)
-            if schedules[name].has_loadable_target():
-                target = schedules[name].load_target()
-                _process_and_validate_target(
-                    schedules[name], coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
-                )
-
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
             targets = sensor_def.load_targets()
@@ -213,12 +247,47 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
             )
 
+    asset_graph = AssetGraph.from_assets(
+        [*combined_asset_group.assets, *combined_asset_group.source_assets]
+        if combined_asset_group
+        else []
+    )
+
+    if unresolved_partitioned_asset_schedules:
+        for (
+            name,
+            unresolved_partitioned_asset_schedule,
+        ) in unresolved_partitioned_asset_schedules.items():
+            _process_and_validate_target(
+                unresolved_partitioned_asset_schedule,
+                coerced_graphs,
+                unresolved_jobs,
+                pipelines_or_jobs,
+                unresolved_partitioned_asset_schedule.job,
+            )
+
+    # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
             resolved_job = unresolved_job_def.resolve(
                 asset_graph=asset_graph, default_executor_def=default_executor_def
             )
             pipelines_or_jobs[name] = resolved_job
+
+    # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
+    # the resolved job containing the partitions def
+    if unresolved_partitioned_asset_schedules:
+        for (
+            name,
+            unresolved_partitioned_asset_schedule,
+        ) in unresolved_partitioned_asset_schedules.items():
+            resolved_job = pipelines_or_jobs[unresolved_partitioned_asset_schedule.job.name]
+            schedules[name] = unresolved_partitioned_asset_schedule.resolve(
+                cast(JobDefinition, resolved_job)
+            )
+
+    for pipeline_or_job in pipelines_or_jobs.values():
+        pipeline_or_job.validate_resource_requirements_satisfied()
 
     pipelines: Dict[str, PipelineDefinition] = {}
     jobs: Dict[str, JobDefinition] = {}
@@ -230,13 +299,22 @@ def build_caching_repository_data_from_list(
 
     if default_executor_def:
         for name, job_def in jobs.items():
-            if not job_def._executor_def_specified:  # pylint: disable=protected-access
+            if not job_def._executor_def_specified:  # noqa: SLF001
                 jobs[name] = job_def.with_executor_def(default_executor_def)
 
     if default_logger_defs:
         for name, job_def in jobs.items():
-            if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+            if not job_def._logger_defs_specified:  # noqa: SLF001
                 jobs[name] = job_def.with_logger_defs(default_logger_defs)
+
+    top_level_resources = top_level_resources or {}
+
+    utilized_env_vars: Dict[str, Set[str]] = defaultdict(set)
+
+    for resource_key, resource_def in top_level_resources.items():
+        used_env_vars = _env_vars_from_resource_defaults(resource_def)
+        for env_var in used_env_vars:
+            utilized_env_vars[env_var].add(resource_key)
 
     return CachingRepositoryData(
         pipelines=pipelines,
@@ -247,6 +325,7 @@ def build_caching_repository_data_from_list(
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
         top_level_resources=top_level_resources or {},
+        utilized_env_vars=utilized_env_vars,
     )
 
 
@@ -304,23 +383,31 @@ def build_caching_repository_data_from_dict(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
 
+    # Late validate all jobs' resource requirements are satisfied, since
+    # they may not be applied until now
+    for pipeline_or_job in repository_definitions["jobs"].values():
+        if isinstance(pipeline_or_job, PipelineDefinition):
+            pipeline_or_job.validate_resource_requirements_satisfied()
+
     return CachingRepositoryData(
         **repository_definitions,
         source_assets_by_key={},
         assets_defs_by_key={},
         top_level_resources={},
+        utilized_env_vars={},
     )
 
 
 def _process_and_validate_target(
-    schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
+    schedule_or_sensor_def: Union[
+        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
+    ],
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
     target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
 ):
-    """
-    This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs
+    """This function modifies the state of coerced_graphs, unresolved_jobs, and pipelines_or_jobs.
     """
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"

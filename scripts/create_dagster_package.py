@@ -1,3 +1,4 @@
+# ruff: noqa: T201
 import os
 
 import click
@@ -94,14 +95,14 @@ def _make_dagster_package(package_name: str):
 
     has_todos = []
 
-    for to_create, vars in files_to_create.items():
+    for to_create, variables in files_to_create.items():
         print(f"Writing {to_create}")
         template = jinja_env.get_template(f"{to_create}.tmpl")
-        with open(vars["path"], "w") as f:
-            template.stream(**vars["kwargs"]).dump(f)
+        with open(variables["path"], "w") as f:
+            template.stream(**variables["kwargs"]).dump(f)
 
-        if vars["has_todos"]:
-            has_todos.append(vars["path"])
+        if variables["has_todos"]:
+            has_todos.append(variables["path"])
 
     # test __init__.py
     path = os.path.join(tests_path, "__init__.py")

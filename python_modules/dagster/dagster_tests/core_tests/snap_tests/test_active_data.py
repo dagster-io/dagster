@@ -112,7 +112,7 @@ def test_external_repo_shared_index(snapshot_mock):
         ) as workspace:
 
             def _fetch_snap_id():
-                location = workspace.repository_locations[0]
+                location = workspace.code_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
                 return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
 
@@ -134,7 +134,7 @@ def test_external_repo_shared_index_threaded(snapshot_mock):
         ) as workspace:
 
             def _fetch_snap_id():
-                location = workspace.repository_locations[0]
+                location = workspace.code_locations[0]
                 ex_repo = list(location.get_repositories().values())[0]
                 return ex_repo.get_all_external_jobs()[0].identifying_pipeline_snapshot_id
 

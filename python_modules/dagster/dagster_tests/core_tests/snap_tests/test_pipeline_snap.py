@@ -11,20 +11,21 @@ from dagster._core.snap import (
     snap_from_config_type,
 )
 from dagster._core.snap.dep_snapshot import (
+    DependencyStructureSnapshot,
     InputHandle,
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
 from dagster._legacy import pipeline
 from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
     serialize_pp,
+    serialize_value,
 )
+from dagster._serdes.serdes import deserialize_value
 
 
-def serialize_rt(value):
-    return deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(value))
+def serialize_rt(value: PipelineSnapshot) -> PipelineSnapshot:
+    return deserialize_value(serialize_value(value), PipelineSnapshot)
 
 
 def get_noop_pipeline():
@@ -177,7 +178,7 @@ def test_basic_dep_fan_out(snapshot):
     )
 
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(dep_structure_snapshot))
+        deserialize_value(serialize_value(dep_structure_snapshot), DependencyStructureSnapshot)
         == dep_structure_snapshot
     )
 
@@ -218,7 +219,7 @@ def test_basic_fan_in(snapshot):
     ]
 
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(dep_structure_snapshot))
+        deserialize_value(serialize_value(dep_structure_snapshot), DependencyStructureSnapshot)
         == dep_structure_snapshot
     )
 

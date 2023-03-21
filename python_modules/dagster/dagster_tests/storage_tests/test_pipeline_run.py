@@ -7,7 +7,7 @@ from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -22,14 +22,14 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_value, serialize_value
 
 
 def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
-            InProcessRepositoryLocationOrigin(
+            InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable,
                     module_name="fake",
@@ -64,9 +64,7 @@ def test_queued_pipeline_origin_check():
 
 
 def test_in_progress_statuses():
-    """
-    If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses.
-    """
+    """If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses."""
     for status in DagsterRunStatus:
         in_progress = status in IN_PROGRESS_RUN_STATUSES
         non_in_progress = status in NON_IN_PROGRESS_RUN_STATUSES
@@ -86,4 +84,4 @@ def test_runs_filter_supports_nonempty_run_ids():
 
 
 def test_serialize_runs_filter():
-    deserialize_as(serialize_dagster_namedtuple(RunsFilter()), RunsFilter)
+    deserialize_value(serialize_value(RunsFilter()), RunsFilter)

@@ -170,6 +170,9 @@ class RepositoryDefinition:
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
 
+    def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
+        return self._repository_data.get_env_vars_by_top_level_resource()
+
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -249,7 +252,7 @@ class RepositoryDefinition:
         return self._repository_data.get_source_assets_by_key()
 
     @property
-    def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
@@ -279,8 +282,7 @@ class RepositoryDefinition:
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        """
-        Returns the asset base job that contains all the given assets, or None if there is no such
+        """Returns the asset base job that contains all the given assets, or None if there is no such
         job.
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
@@ -330,8 +332,7 @@ class RepositoryDefinition:
         partition_key: Optional[str] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
-        """
-        Load the contents of an asset as a Python object.
+        """Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -352,7 +353,9 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
+        with AssetValueLoader(
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
+        ) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -364,8 +367,7 @@ class RepositoryDefinition:
     def get_asset_value_loader(
         self, instance: Optional[DagsterInstance] = None
     ) -> "AssetValueLoader":
-        """
-        Returns an object that can load the contents of assets as Python objects.
+        """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
         spinning up resources separately for each asset.
@@ -381,12 +383,14 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+        return AssetValueLoader(
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
+        )
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
         return AssetGraph.from_assets(
-            [*set(self._assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be

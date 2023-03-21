@@ -14,6 +14,7 @@ from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
     MetadataUserInput,
+    RawMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
@@ -150,6 +151,13 @@ class SourceAsset(ResourceAddable):
     @property
     def metadata(self) -> MetadataMapping:
         return {entry.label: entry.value for entry in self.metadata_entries}
+
+    @property
+    def raw_metadata(self) -> Dict[str, RawMetadataValue]:
+        return {
+            entry.label: cast(RawMetadataValue, entry.value.value)
+            for entry in self.metadata_entries
+        }
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY

@@ -60,8 +60,7 @@ if TYPE_CHECKING:
 
 
 class AssetsDefinition(ResourceAddable):
-    """
-    Defines a set of assets that are produced by the same op or graph.
+    """Defines a set of assets that are produced by the same op or graph.
 
     AssetsDefinitions are typically not instantiated directly, but rather produced using the
     :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
@@ -267,16 +266,16 @@ class AssetsDefinition(ResourceAddable):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
-        can_subset: bool = False,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
-        """
-        Constructs an AssetsDefinition from a GraphDefinition.
+        """Constructs an AssetsDefinition from a GraphDefinition.
 
         Args:
             graph_def (GraphDefinition): The GraphDefinition that is an asset.
@@ -297,28 +296,31 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the graph.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
-            group_name (Optional[str]): A group name for the constructed asset. Assets without a
-                group name are assigned to a group called "default".
-            resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-                (Experimental) A mapping of resource keys to resource definitions. These resources
-                will be initialized during execution, and can be accessed from the
-                body of ops in the graph during execution.
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
                 correponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
-            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+                (Experimental) A mapping of resource keys to resource definitions. These resources
+                will be initialized during execution, and can be accessed from the
+                body of ops in the graph during execution.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
+            group_names_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a group name to be
+                associated with some or all of the output assets for this node. Keys are names of the
+                outputs, and values are the group name. Cannot be used with the group_name argument.
+            descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
+                associated with each of the output asstes for this graph.
+            metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
-            descriptions_by_output_name (Optional[Mapping[str, str]]): Defines a description to be
-                associated with each of the output asstes for this graph.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -326,16 +328,17 @@ class AssetsDefinition(ResourceAddable):
             node_def=graph_def,
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
+            key_prefix=key_prefix,
             internal_asset_deps=internal_asset_deps,
             partitions_def=partitions_def,
-            group_name=group_name,
-            resource_defs=resource_defs,
             partition_mappings=partition_mappings,
+            resource_defs=resource_defs,
+            group_name=group_name,
+            group_names_by_output_name=group_names_by_output_name,
+            descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
-            key_prefix=key_prefix,
             can_subset=can_subset,
-            descriptions_by_output_name=descriptions_by_output_name,
         )
 
     @public
@@ -348,13 +351,15 @@ class AssetsDefinition(ResourceAddable):
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
+        descriptions_by_output_name: Optional[Mapping[str, str]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
-        """
-        Constructs an AssetsDefinition from an OpDefinition.
+        """Constructs an AssetsDefinition from an OpDefinition.
 
         Args:
             op_def (OpDefinition): The OpDefinition that is an asset.
@@ -375,19 +380,24 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the op.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
-            group_name (Optional[str]): A group name for the constructed asset. Assets without a
-                group name are assigned to a group called "default".
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
                 keys for this asset to partition keys of upstream assets. Each key in the dictionary
                 correponds to one of the input assets, and each value is a PartitionMapping.
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
-            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
+            group_names_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a group name to be
+                associated with some or all of the output assets for this node. Keys are names of the
+                outputs, and values are the group name. Cannot be used with the group_name argument.
+            descriptions_by_output_name (Optional[Mapping[str, Optional[str]]]): Defines a description to be
+                associated with each of the output asstes for this graph.
+            metadata_by_output_name (Optional[Mapping[str, Optional[MetadataUserInput]]]): Defines metadata to
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -396,13 +406,16 @@ class AssetsDefinition(ResourceAddable):
             node_def=op_def,
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
+            key_prefix=key_prefix,
             internal_asset_deps=internal_asset_deps,
             partitions_def=partitions_def,
-            group_name=group_name,
             partition_mappings=partition_mappings,
+            group_name=group_name,
+            group_names_by_output_name=group_names_by_output_name,
+            descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
-            key_prefix=key_prefix,
+            can_subset=can_subset,
         )
 
     @staticmethod
@@ -411,16 +424,17 @@ class AssetsDefinition(ResourceAddable):
         *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
-        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        can_subset: bool = False,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        group_name: Optional[str] = None,
+        group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        can_subset: bool = False,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
@@ -441,7 +455,6 @@ class AssetsDefinition(ResourceAddable):
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
-
         transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
@@ -465,13 +478,24 @@ class AssetsDefinition(ResourceAddable):
             )
             keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
 
-        # For graph backed assets, we assign all assets to the same group_name, if specified.
-        # To assign to different groups, use .with_prefix_or_groups.
-        group_names_by_key = (
-            {asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()}
-            if group_name
-            else None
+        check.param_invariant(
+            group_name is None or group_names_by_output_name is None,
+            "group_name",
+            "Cannot use both group_name and group_names_by_output_name",
         )
+
+        if group_name:
+            group_names_by_key = {
+                asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
+            }
+        elif group_names_by_output_name:
+            group_names_by_key = {
+                keys_by_output_name_with_prefix[output_name]: group_name
+                for output_name, group_name in group_names_by_output_name.items()
+                if group_name is not None
+            }
+        else:
+            group_names_by_key = None
 
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -494,22 +518,25 @@ class AssetsDefinition(ResourceAddable):
             metadata_by_key={
                 keys_by_output_name[output_name]: metadata
                 for output_name, metadata in metadata_by_output_name.items()
+                if metadata is not None
             }
             if metadata_by_output_name
             else None,
             freshness_policies_by_key={
                 keys_by_output_name[output_name]: freshness_policy
                 for output_name, freshness_policy in freshness_policies_by_output_name.items()
+                if freshness_policy is not None
             }
             if freshness_policies_by_output_name
             else None,
-            can_subset=can_subset,
             descriptions_by_key={
                 keys_by_output_name[output_name]: description
                 for output_name, description in descriptions_by_output_name.items()
+                if description is not None
             }
             if descriptions_by_output_name
             else None,
+            can_subset=can_subset,
         )
 
     @public
@@ -663,8 +690,7 @@ class AssetsDefinition(ResourceAddable):
         check.failed(f"Asset key {key.to_user_string()} not found in AssetsDefinition")
 
     def get_op_def_for_asset_key(self, key: AssetKey) -> OpDefinition:
-        """
-        If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
+        """If this is an op-backed asset, returns the op def. If it's a graph-backed asset,
         returns the op def within the graph that produces the given asset key.
         """
         output_name = self.get_output_name_for_asset_key(key)
@@ -804,8 +830,7 @@ class AssetsDefinition(ResourceAddable):
         self,
         selected_asset_keys: AbstractSet[AssetKey],
     ) -> "AssetsDefinition":
-        """
-        Create a subset of this AssetsDefinition that will only materialize the assets in the
+        """Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
 
         Args:
@@ -898,8 +923,7 @@ class AssetsDefinition(ResourceAddable):
 
     @public
     def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
-        """
-        Returns a representation of this asset as a :py:class:`SourceAsset`.
+        """Returns a representation of this asset as a :py:class:`SourceAsset`.
 
         If this is a multi-asset, the "key" argument allows selecting which asset to return a
         SourceAsset representation of.
@@ -1065,7 +1089,7 @@ def _infer_keys_by_output_names(
             (
                 "The set of output names keys specified in the keys_by_output_name argument must "
                 f"equal the set of asset keys outputted by {node_def.name}. \n"
-                f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
+                f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
                 f"expected keys: {set(output_names)}"
             ),
         )
@@ -1110,14 +1134,13 @@ def _build_invocation_context_with_included_resources(
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
     if isinstance(context, UnboundOpExecutionContext):
-        # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
             config=context.op_config,
-            resources_config=context._resources_config,
-            instance=context._instance,
-            partition_key=context._partition_key,
-            mapping_key=context._mapping_key,
+            resources_config=context._resources_config,  # noqa: SLF001
+            instance=context._instance,  # noqa: SLF001
+            partition_key=context._partition_key,  # noqa: SLF001
+            mapping_key=context._mapping_key,  # noqa: SLF001
         )
     else:
         # If user is mocking OpExecutionContext, send it through (we don't know

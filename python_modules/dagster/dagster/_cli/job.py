@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import click
 import pendulum
@@ -12,12 +12,15 @@ import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
+    ClickArgMapping,
+    ClickArgValue,
+    ClickOption,
+    get_code_location_from_workspace,
     get_external_job_from_external_repo,
     get_external_job_from_kwargs,
+    get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
     get_job_python_origin_from_kwargs,
-    get_repository_location_from_workspace,
     get_workspace_from_kwargs,
     job_repository_target_argument,
     job_target_argument,
@@ -31,15 +34,17 @@ from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantVio
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import create_backfill_run
+from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalPipeline,
     ExternalRepository,
     RepositoryHandle,
-    RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
@@ -56,15 +61,15 @@ from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
 
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
 
 @click.group(name="job")
 def job_cli():
-    """
-    Commands for working with Dagster jobs.
-    """
+    """Commands for working with Dagster jobs."""
 
 
-def apply_click_params(command, *click_params):
+def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
     for click_param in click_params:
         command = click_param(command)
     return command
@@ -241,7 +246,7 @@ def job_list_versions_command(**kwargs):
         execute_list_versions_command(instance, kwargs)
 
 
-def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
+def execute_list_versions_command(instance: DagsterInstance, kwargs: ClickArgMapping):
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(
@@ -300,7 +305,7 @@ def add_step_to_table(memoized_plan):
 @python_job_target_argument
 @python_job_config_argument("execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
-def job_execute_command(**kwargs):
+def job_execute_command(**kwargs: ClickArgValue):
     with capture_interrupts():
         with get_instance_for_service("``dagster job execute``") as instance:
             execute_execute_command(instance, kwargs)
@@ -308,9 +313,8 @@ def job_execute_command(**kwargs):
 
 @telemetry_wrapper
 def execute_execute_command(
-    instance: DagsterInstance,
-    kwargs: Mapping[str, object],
-):
+    instance: DagsterInstance, kwargs: ClickArgMapping
+) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(
@@ -335,11 +339,12 @@ def execute_execute_command(
     return result
 
 
-def get_tags_from_args(kwargs):
+def get_tags_from_args(kwargs: ClickArgMapping) -> Mapping[str, str]:
     if kwargs.get("tags") is None:
         return {}
     try:
-        return json.loads(kwargs.get("tags"))
+        tags = json.loads(check.str_elem(kwargs, "tags"))
+        return check.is_dict(tags, str, str)
     except JSONDecodeError as e:
         raise click.UsageError(
             "Invalid JSON-string given for `--tags`: {}\n\n{}".format(
@@ -379,7 +384,7 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
         check.failed("Unhandled case getting config from kwargs")
 
 
-def get_solid_selection_from_args(kwargs):
+def get_solid_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
     solid_selection_str = kwargs.get("solid_selection")
     if not isinstance(solid_selection_str, str):
         return None
@@ -395,7 +400,7 @@ def do_execute_command(
     tags: Optional[Mapping[str, str]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     preset: Optional[str] = None,
-):
+) -> PipelineExecutionResult:
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(config, "config", of_type=str)
@@ -444,9 +449,9 @@ def execute_launch_command(
     config = get_config_from_args(kwargs)
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
-        repo_location = get_repository_location_from_workspace(workspace, kwargs.get("location"))
-        external_repo = get_external_repository_from_repo_location(
-            repo_location, cast(Optional[str], kwargs.get("repository"))
+        code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
+        external_repo = get_external_repository_from_code_location(
+            code_location, cast(Optional[str], kwargs.get("repository"))
         )
         external_pipeline = get_external_job_from_external_repo(
             external_repo,
@@ -469,7 +474,7 @@ def execute_launch_command(
 
         pipeline_run = _create_external_pipeline_run(
             instance=instance,
-            repo_location=repo_location,
+            code_location=code_location,
             external_repo=external_repo,
             external_pipeline=external_pipeline,
             run_config=config,
@@ -485,7 +490,7 @@ def execute_launch_command(
 
 def _create_external_pipeline_run(
     instance: DagsterInstance,
-    repo_location: RepositoryLocation,
+    code_location: CodeLocation,
     external_repo: ExternalRepository,
     external_pipeline: ExternalPipeline,
     run_config: Mapping[str, object],
@@ -494,9 +499,9 @@ def _create_external_pipeline_run(
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
     run_id: Optional[str],
-):
+) -> DagsterRun:
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(repo_location, "repo_location", RepositoryLocation)
+    check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
@@ -518,17 +523,17 @@ def _create_external_pipeline_run(
 
     pipeline_name = external_pipeline.name
     pipeline_selector = PipelineSelector(
-        location_name=repo_location.name,
+        location_name=code_location.name,
         repository_name=external_repo.name,
         pipeline_name=pipeline_name,
         solid_selection=solid_selection,
     )
 
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
     pipeline_mode = mode or external_pipeline.get_default_mode_name()
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
         pipeline_mode,
@@ -726,13 +731,13 @@ def job_backfill_command(**kwargs):
 
 def execute_backfill_command(cli_args, print_fn, instance):
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
-        repo_location = get_repository_location_from_workspace(workspace, cli_args.get("location"))
+        code_location = get_code_location_from_workspace(workspace, cli_args.get("location"))
         _execute_backfill_command_at_location(
             cli_args,
             print_fn,
             instance,
             workspace,
-            repo_location,
+            code_location,
         )
 
 
@@ -741,10 +746,10 @@ def _execute_backfill_command_at_location(
     print_fn,
     instance,
     workspace,
-    repo_location,
+    code_location,
 ):
-    external_repo = get_external_repository_from_repo_location(
-        repo_location, cli_args.get("repository")
+    external_repo = get_external_repository_from_code_location(
+        code_location, cli_args.get("repository")
     )
 
     external_pipeline = get_external_job_from_external_repo(external_repo, cli_args.get("job_name"))
@@ -781,11 +786,13 @@ def _execute_backfill_command_at_location(
 
     repo_handle = RepositoryHandle(
         repository_name=external_repo.name,
-        repository_location=repo_location,
+        code_location=code_location,
     )
 
     try:
-        partition_names_or_error = repo_location.get_external_partition_names(partition_set)
+        partition_names_or_error = code_location.get_external_partition_names(
+            partition_set, instance=instance
+        )
     except Exception as e:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
@@ -822,7 +829,7 @@ def _execute_backfill_command_at_location(
         )
         try:
             partition_execution_data = (
-                repo_location.get_external_partition_set_execution_param_data(
+                code_location.get_external_partition_set_execution_param_data(
                     repository_handle=repo_handle,
                     partition_set_name=partition_set_name,
                     partition_names=partition_names,
@@ -841,7 +848,7 @@ def _execute_backfill_command_at_location(
         for partition_data in partition_execution_data.partition_data:
             pipeline_run = create_backfill_run(
                 instance,
-                repo_location,
+                code_location,
                 external_pipeline,
                 partition_set,
                 backfill_job,
@@ -912,7 +919,7 @@ def split_chunk(lst, n):
         yield lst[i : i + n]
 
 
-def validate_partition_slice(partition_names, name, value):
+def validate_partition_slice(partition_names: Sequence[str], name: str, value) -> int:
     is_start = name == "from"
     if value is None:
         return 0 if is_start else len(partition_names)

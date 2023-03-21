@@ -6,9 +6,7 @@ from dagster_airbyte.managed.generated import destinations, sources
 
 
 def instantiate(obj: Any) -> Any:
-    """
-    Utility that attempts to instantiate a class with dummy values for all of its parameters.
-    """
+    """Utility that attempts to instantiate a class with dummy values for all of its parameters."""
     signature = get_type_hints(obj.__init__)
 
     inputs = {}
@@ -22,9 +20,7 @@ def instantiate(obj: Any) -> Any:
 
 
 def get_param_value(param_name, param_type) -> Any:
-    """
-    Simple utility to generate an input for a given parameter name and type.
-    """
+    """Simple utility to generate an input for a given parameter name and type."""
     if param_name == "name":
         return "test_name"
 
@@ -45,16 +41,15 @@ def get_param_value(param_name, param_type) -> Any:
 
 
 def test_destination_constructors():
-    """
-    Sanity check that we can instantiate all of the generated AirbyteDestination classes
+    """Sanity check that we can instantiate all of the generated AirbyteDestination classes
     and that they produce a reasonable-looking configuration JSON.
     """
-    for source, obj in inspect.getmembers(destinations):
+    for source, possible_class in inspect.getmembers(destinations):
         if source == "GeneratedAirbyteDestination":
             continue
 
-        if inspect.isclass(obj):
-            obj: AirbyteDestination = instantiate(obj)
+        if inspect.isclass(possible_class):
+            obj: AirbyteDestination = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
             assert obj.name == "test_name"
@@ -66,16 +61,15 @@ def test_destination_constructors():
 
 
 def test_source_constructors():
-    """
-    Sanity check that we can instantiate all of the generated AirbyteSource classes
+    """Sanity check that we can instantiate all of the generated AirbyteSource classes
     and that they produce a reasonable-looking configuration JSON.
     """
-    for source, obj in inspect.getmembers(sources):
+    for source, possible_class in inspect.getmembers(sources):
         if source == "GeneratedAirbyteSource":
             continue
 
-        if inspect.isclass(obj):
-            obj: AirbyteSource = instantiate(obj)
+        if inspect.isclass(possible_class):
+            obj: AirbyteSource = instantiate(possible_class)
 
             # Make sure that the name flows through correctly
             assert obj.name == "test_name"

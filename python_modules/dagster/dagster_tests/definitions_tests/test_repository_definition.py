@@ -37,8 +37,6 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import AssetGroup
 from dagster._loggers import default_loggers
 
-# pylint: disable=comparison-with-callable
-
 
 def create_single_node_job(name, called):
     called[name] = called[name] + 1
@@ -376,7 +374,10 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'stuff' required by op 'needy' was not provided",
+    ):
 
         @repository
         def _test():
@@ -661,7 +662,10 @@ def test_bad_coerce():
     def bar():
         foo()
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'x' required by op 'foo' was not provided",
+    ):
 
         @repository
         def _fails():
@@ -1169,7 +1173,6 @@ def test_default_executor_assets_repo():
     def the_repo():
         return [no_executor_provided, the_asset]
 
-    # pylint: disable=comparison-with-callable
     assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
 
     assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor

@@ -329,7 +329,7 @@ const dateTimeOptions: Intl.DateTimeFormatOptions = {
 };
 
 const dateTimeOptionsWithTimezone: Intl.DateTimeFormatOptions = {
-  month: 'numeric',
+  month: 'short',
   day: 'numeric',
   year: 'numeric',
   timeZoneName: 'short',
@@ -347,7 +347,11 @@ const TimeDividers = (props: TimeDividersProps) => {
   const dateMarkers: DateMarker[] = React.useMemo(() => {
     const totalTime = end - start;
     const startDate = new Date(start);
-    const startDateStringWithTimezone = formatDateTime(startDate, dateTimeOptionsWithTimezone);
+    const startDateStringWithTimezone = formatDateTime(
+      startDate,
+      dateTimeOptionsWithTimezone,
+      'en-US',
+    );
 
     const dayBoundaries = [];
 

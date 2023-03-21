@@ -1,4 +1,5 @@
 import re
+from typing import Any, Mapping, Optional
 
 import pytest
 import yaml
@@ -42,6 +43,7 @@ from dagster._core.test_utils import (
 from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 from dagster_tests.api_tests.utils import get_bar_workspace
 
@@ -114,25 +116,20 @@ def test_unified_storage_env_var(tmpdir):
                 }
             }
         ) as instance:
-            assert (
-                _runs_directory(str(tmpdir))
-                in instance.run_storage._conn_string  # pylint: disable=protected-access
-            )
+            assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001
             assert (
                 _event_logs_directory(str(tmpdir))
-                == instance.event_log_storage._base_dir + "/"  # pylint: disable=protected-access
+                == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
             )
             assert (
                 _schedule_directory(str(tmpdir))
-                in instance.schedule_storage._conn_string  # pylint: disable=protected-access
+                in instance.schedule_storage._conn_string  # noqa: SLF001
             )
 
 
 def test_custom_secrets_manager():
     with instance_for_test() as instance:
-        assert isinstance(
-            instance._secrets_loader, EnvFileLoader  # pylint:disable=protected-access
-        )
+        assert isinstance(instance._secrets_loader, EnvFileLoader)  # noqa: SLF001
 
     with instance_for_test(
         overrides={
@@ -145,12 +142,8 @@ def test_custom_secrets_manager():
             }
         }
     ) as instance:
-        assert isinstance(
-            instance._secrets_loader, TestSecretsLoader  # pylint:disable=protected-access
-        )
-        assert instance._secrets_loader.env_vars == {  # pylint:disable=protected-access
-            "FOO": "BAR"
-        }
+        assert isinstance(instance._secrets_loader, TestSecretsLoader)  # noqa: SLF001
+        assert instance._secrets_loader.env_vars == {"FOO": "BAR"}  # noqa: SLF001
 
 
 def test_in_memory_persist_one_run():
@@ -209,7 +202,7 @@ def test_submit_run():
     ) as instance:
         with get_bar_workspace(instance) as workspace:
             external_pipeline = (
-                workspace.get_repository_location("bar_repo_location")
+                workspace.get_code_location("bar_code_location")
                 .get_repository("bar_repo")
                 .get_full_external_job("foo")
             )
@@ -261,7 +254,7 @@ def test_get_required_daemon_types():
 
 
 class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
         super().__init__()
 
@@ -273,8 +266,10 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return TestNonResumeRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context):
@@ -304,7 +299,7 @@ def test_grpc_override_settings():
         assert instance.code_server_process_startup_timeout == 60
 
 
-def test_run_monitoring(capsys):  # pylint: disable=unused-argument
+def test_run_monitoring(capsys):
     with instance_for_test(
         overrides={
             "run_monitoring": {"enabled": True},
@@ -386,7 +381,7 @@ def test_invalid_configurable_class():
         with instance_for_test(
             overrides={"run_launcher": {"module": "dagster", "class": "MadeUpRunLauncher"}}
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
 
 def test_invalid_configurable_module():
@@ -407,7 +402,7 @@ def test_invalid_configurable_module():
                 }
             }
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
 
 @pytest.mark.parametrize("dirname", (".", ".."))
@@ -538,4 +533,4 @@ def test_configurable_class_missing_methods():
                 }
             }
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201

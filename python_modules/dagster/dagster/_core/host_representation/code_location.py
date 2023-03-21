@@ -41,9 +41,9 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
-    GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
-    RepositoryLocationOrigin,
+    CodeLocationOrigin,
+    GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.libraries import DagsterLibraryRegistry
@@ -59,7 +59,7 @@ from dagster._grpc.impl import (
     get_partition_tags,
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
 
@@ -74,23 +74,22 @@ if TYPE_CHECKING:
     )
 
 
-class RepositoryLocation(AbstractContextManager):
-    """
-    A RepositoryLocation represents a target containing user code which has a set of Dagster
+class CodeLocation(AbstractContextManager):
+    """A CodeLocation represents a target containing user code which has a set of Dagster
     definition objects. A given location will contain some number of uniquely named
     RepositoryDefinitions, which therein contains Pipeline, Solid, and other definitions.
 
-    Dagster tools are typically "host" processes, meaning they load a RepositoryLocation and
+    Dagster tools are typically "host" processes, meaning they load a CodeLocation and
     communicate with it over an IPC/RPC layer. Currently this IPC layer is implemented by
     invoking the dagster CLI in a target python interpreter (e.g. a virtual environment) in either
       a) the current node
       b) a container
 
     In the near future, we may also make this communication channel able over an RPC layer, in
-    which case the information needed to load a RepositoryLocation will be a url that abides by
+    which case the information needed to load a CodeLocation will be a url that abides by
     some RPC contract.
 
-    We also allow for InProcessRepositoryLocation which actually loads the user-defined artifacts
+    We also allow for InProcessCodeLocation which actually loads the user-defined artifacts
     into process with the host tool. This is mostly for test scenarios.
     """
 
@@ -179,7 +178,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -199,7 +198,7 @@ class RepositoryLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,
     ) -> "ScheduleExecutionData":
         pass
 
@@ -235,7 +234,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @property
     @abstractmethod
-    def origin(self) -> RepositoryLocationOrigin:
+    def origin(self) -> CodeLocationOrigin:
         pass
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -288,12 +287,12 @@ class RepositoryLocation(AbstractContextManager):
         ...
 
 
-class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, origin: InProcessRepositoryLocationOrigin):
+class InProcessCodeLocation(CodeLocation):
+    def __init__(self, origin: InProcessCodeLocationOrigin):
         from dagster._grpc.server import LoadedRepositories
         from dagster._utils.hosted_user_process import external_repo_from_def
 
-        self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", InProcessCodeLocationOrigin)
 
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
@@ -308,7 +307,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         for repo_name, repo_def in self._loaded_repositories.definitions_by_name.items():
             self._repositories[repo_name] = external_repo_from_def(
                 repo_def,
-                RepositoryHandle(repository_name=repo_name, repository_location=self),
+                RepositoryHandle(repository_name=repo_name, code_location=self),
             )
 
     @property
@@ -316,7 +315,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return False
 
     @property
-    def origin(self) -> InProcessRepositoryLocationOrigin:
+    def origin(self) -> InProcessCodeLocationOrigin:
         return self._origin
 
     @property
@@ -430,7 +429,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_partition_tags(
@@ -449,11 +448,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -461,7 +460,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance)
             )
 
         return get_partition_names(
@@ -485,12 +484,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
-            scheduled_execution_timestamp=scheduled_execution_time.timestamp()
-            if scheduled_execution_time
-            else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
-            if scheduled_execution_time
-            else None,
+            scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -534,7 +529,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_names=partition_names,
-            instance=instance,
+            instance_ref=instance.get_ref(),
         )
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
@@ -545,10 +540,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return DagsterLibraryRegistry.get()
 
 
-class GrpcServerRepositoryLocation(RepositoryLocation):
+class GrpcServerCodeLocation(CodeLocation):
     def __init__(
         self,
-        origin: RepositoryLocationOrigin,
+        origin: CodeLocationOrigin,
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
@@ -560,13 +555,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
-        self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
+        self._origin = check.inst_param(origin, "origin", CodeLocationOrigin)
 
         self.grpc_server_registry = check.opt_inst_param(
             grpc_server_registry, "grpc_server_registry", GrpcServerRegistry
         )
 
-        if isinstance(self.origin, GrpcServerRepositoryLocationOrigin):
+        if isinstance(self.origin, GrpcServerCodeLocationOrigin):
             self._port = self.origin.port
             self._socket = self.origin.socket
             self._host = self.origin.host
@@ -644,7 +639,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
                     repo_data,
                     RepositoryHandle(
                         repository_name=repo_name,
-                        repository_location=self,
+                        code_location=self,
                     ),
                 )
                 for repo_name, repo_data in self._external_repositories_data.items()
@@ -654,7 +649,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             raise
 
     @property
-    def origin(self) -> RepositoryLocationOrigin:
+    def origin(self) -> CodeLocationOrigin:
         return self._origin
 
     @property
@@ -694,13 +689,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return self._use_ssl
 
     def _reload_current_image(self) -> Optional[str]:
-        return deserialize_as(
+        return deserialize_value(
             self.client.get_current_image(),
             GetCurrentImageResult,
         ).current_image
 
     def get_current_runs(self) -> Sequence[str]:
-        return deserialize_as(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
+        return deserialize_value(self.client.get_current_runs(), GetCurrentRunsResult).current_runs
 
     def cleanup(self) -> None:
         if self._heartbeat_shutdown_event:
@@ -812,7 +807,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> "ExternalPartitionNamesData":
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -820,7 +815,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance=instance)
             )
 
         return sync_get_external_partition_names_grpc(

@@ -15,6 +15,7 @@ export type PartitionHealthQuery = {
         partitionKeysByDimension: Array<{
           __typename: 'DimensionPartitionKeys';
           name: string;
+          type: Types.PartitionDefinitionType;
           partitionKeys: Array<string>;
         }>;
         assetPartitionStatuses:

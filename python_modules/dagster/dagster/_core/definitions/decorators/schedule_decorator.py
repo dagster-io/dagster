@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
 )
@@ -22,6 +23,8 @@ from dagster._core.definitions.partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
@@ -47,15 +50,13 @@ from ..schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     has_at_least_one_parameter,
+    validate_and_get_schedule_resource_dict,
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
 
 if TYPE_CHECKING:
     from dagster import Partition
-
-# Error messages are long
-# pylint: disable=C0301
 
 
 def schedule(
@@ -71,9 +72,9 @@ def schedule(
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
-    """
-    Creates a schedule following the provided cron schedule and requests runs for the provided job.
+    """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
     The decorated function takes in a :py:class:`~dagster.ScheduleEvaluationContext` as its only
     argument, and does one of the following:
@@ -115,6 +116,7 @@ def schedule(
             that should execute when this schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -133,6 +135,9 @@ def schedule(
         elif tags:
             validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
+        context_param_name = get_context_param_name(fn)
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
                 with user_code_error_boundary(
@@ -144,15 +149,16 @@ def schedule(
                             f"should_execute function for {schedule_name} returned false."
                         )
                         return
+            resources = validate_and_get_schedule_resource_dict(
+                context.resources, schedule_name, resource_arg_names
+            )
 
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                if has_at_least_one_parameter(fn):
-                    result = fn(context)
-                else:
-                    result = fn()  # type: ignore
+                context_param = {context_param_name: context} if context_param_name else {}
+                result = fn(**context_param, **resources)
 
                 if isinstance(result, dict):
                     # this is the run-config based decorated function, wrap the evaluated run config
@@ -191,6 +197,7 @@ def schedule(
             execution_fn=evaluation_fn,
             job=job,
             default_status=default_status,
+            required_resource_keys=required_resource_keys,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

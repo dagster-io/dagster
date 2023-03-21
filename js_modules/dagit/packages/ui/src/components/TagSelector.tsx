@@ -1,4 +1,5 @@
 import React from 'react';
+import {List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
@@ -8,32 +9,41 @@ import {Icon} from './Icon';
 import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
-import {TextInputStyles} from './TextInput';
+import {TextInput, TextInputStyles} from './TextInput';
 import {useViewport} from './useViewport';
 
-type TagProps = {
+export type TagSelectorTagProps = {
   remove: (ev: React.SyntheticEvent<HTMLDivElement>) => void;
 };
-type DropdownItemProps = {
+export type TagSelectorDropdownItemProps = {
   toggle: () => void;
   selected: boolean;
 };
-type DropdownProps = {
+export type TagSelectorDropdownProps = {
   width: string;
+  allTags: string[];
 };
 type Props = {
   placeholder?: React.ReactNode;
   allTags: string[];
   selectedTags: string[];
   setSelectedTags: (tags: string[]) => void;
-  renderTag?: (tag: string, tagProps: TagProps) => React.ReactNode;
+  renderTag?: (tag: string, tagProps: TagSelectorTagProps) => React.ReactNode;
   renderTagList?: (tags: React.ReactNode[]) => React.ReactNode;
-  renderDropdown?: (dropdown: React.ReactNode, dropdownProps: DropdownProps) => React.ReactNode;
-  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactNode;
+  renderDropdown?: (
+    dropdown: React.ReactNode,
+    dropdownProps: TagSelectorDropdownProps,
+  ) => React.ReactNode;
+  renderDropdownItem?: (
+    tag: string,
+    dropdownItemProps: TagSelectorDropdownItemProps,
+  ) => React.ReactNode;
   dropdownStyles?: React.CSSProperties;
+  rowWidth?: number;
+  rowHeight?: number;
 };
 
-const defaultRenderTag = (tag: string, tagProps: TagProps) => {
+const defaultRenderTag = (tag: string, tagProps: TagSelectorTagProps) => {
   return (
     <Tag key={tag}>
       <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between', alignItems: 'center'}}>
@@ -46,7 +56,10 @@ const defaultRenderTag = (tag: string, tagProps: TagProps) => {
   );
 };
 
-const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemProps) => {
+const defaultRenderDropdownItem = (
+  tag: string,
+  dropdownItemProps: TagSelectorDropdownItemProps,
+) => {
   return (
     <label>
       <MenuItem
@@ -62,6 +75,8 @@ const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemP
   );
 };
 
+const MENU_ITEM_HEIGHT = 32;
+
 export const TagSelector = ({
   allTags,
   placeholder,
@@ -72,9 +87,11 @@ export const TagSelector = ({
   renderDropdown,
   dropdownStyles,
   renderTagList,
+  rowHeight = MENU_ITEM_HEIGHT,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const {viewport, containerProps} = useViewport();
+
   const dropdown = React.useMemo(() => {
     const dropdownContent = (
       <Box
@@ -84,22 +101,30 @@ export const TagSelector = ({
           ...dropdownStyles,
         }}
       >
-        {allTags.map((tag) => {
-          const selected = selectedTags.includes(tag);
-          const toggle = () => {
-            setSelectedTags(
-              selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
-            );
-          };
-          if (renderDropdownItem) {
-            return <div key={tag}>{renderDropdownItem(tag, {toggle, selected})}</div>;
-          }
-          return defaultRenderDropdownItem(tag, {toggle, selected});
-        })}
+        <List
+          style={{outline: 'none', marginRight: -5, paddingRight: 5}}
+          rowCount={allTags.length}
+          rowHeight={rowHeight}
+          rowRenderer={(a) => {
+            const tag = allTags[a.index]!;
+            const selected = selectedTags.includes(tag);
+            const toggle = () => {
+              setSelectedTags(
+                selected ? selectedTags.filter((t) => t !== tag) : [...selectedTags, tag],
+              );
+            };
+            if (renderDropdownItem) {
+              return <div key={tag}>{renderDropdownItem(tag, {toggle, selected})}</div>;
+            }
+            return defaultRenderDropdownItem(tag, {toggle, selected});
+          }}
+          width={viewport.width}
+          height={Math.min(allTags.length * rowHeight, rowHeight * 7.5)}
+        />
       </Box>
     );
     if (renderDropdown) {
-      return renderDropdown(dropdownContent, {width: viewport.width + 'px'});
+      return renderDropdown(dropdownContent, {width: viewport.width + 'px', allTags});
     }
     return <Menu style={{width: viewport.width + 'px'}}>{dropdownContent}</Menu>;
   }, [
@@ -107,6 +132,7 @@ export const TagSelector = ({
     dropdownStyles,
     renderDropdown,
     renderDropdownItem,
+    rowHeight,
     selectedTags,
     setSelectedTags,
     viewport.width,
@@ -184,3 +210,59 @@ const TagsContainer = styled(Box)`
   scrollbar-width: none;
   -ms-overflow-style: none;
 `;
+
+export const TagSelectorWithSearch = (
+  props: Props & {
+    searchPlaceholder?: string;
+  },
+) => {
+  const [search, setSearch] = React.useState('');
+  const {
+    allTags,
+    selectedTags,
+    setSelectedTags,
+    rowHeight,
+    renderDropdown,
+    searchPlaceholder,
+    ...rest
+  } = props;
+  const filteredTags = React.useMemo(() => {
+    if (search.trim() === '') {
+      return allTags;
+    }
+    return allTags.filter((tag) => tag.toLowerCase().includes(search.toLowerCase()));
+  }, [allTags, search]);
+  return (
+    <TagSelector
+      {...rest}
+      allTags={filteredTags}
+      selectedTags={selectedTags}
+      setSelectedTags={setSelectedTags}
+      dropdownStyles={{width: 'auto'}}
+      renderDropdown={React.useCallback(
+        (dropdownContent, dropdownProps) => {
+          return (
+            <Menu style={{width: 'auto'}}>
+              <Box flex={{direction: 'column'}}>
+                <Box flex={{direction: 'column', grow: 1}} padding={{horizontal: 8}}>
+                  <TextInput
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={searchPlaceholder || 'Search'}
+                    ref={(input) => {
+                      if (input) {
+                        input.focus();
+                      }
+                    }}
+                  />
+                </Box>
+                {renderDropdown ? renderDropdown(dropdownContent, dropdownProps) : dropdownContent}
+              </Box>
+            </Menu>
+          );
+        },
+        [renderDropdown, search, searchPlaceholder],
+      )}
+    />
+  );
+};

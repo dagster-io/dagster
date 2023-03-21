@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+from unittest import mock
 
 import pendulum
 import pytest
@@ -33,7 +34,7 @@ def test_compute_log_manager(gcs_bucket):
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -123,7 +124,7 @@ def test_compute_log_manager_with_envvar(gcs_bucket):
         @op
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)  # pylint: disable=print-call
+            print(HELLO_WORLD)  # noqa: T201
             return "easy"
 
         easy()
@@ -249,17 +250,44 @@ def test_prefix_filter(gcs_bucket):
         assert logs == "hello hello"
 
 
+def test_storage_download_url_fallback(gcs_bucket):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = GCSComputeLogManager(bucket=gcs_bucket, local_dir=temp_dir)
+        time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
+        log_key = ["arbitrary", "log", "key", time_str]
+
+        orig_blob_fn = manager._bucket.blob  # noqa: SLF001
+        with mock.patch.object(manager._bucket, "blob") as blob_fn:  # noqa: SLF001
+
+            def _return_mocked_blob(*args, **kwargs):
+                blob = orig_blob_fn(*args, **kwargs)
+                blob.generate_signed_url = mock.Mock().side_effect = Exception("unauthorized")
+                return blob
+
+            blob_fn.side_effect = _return_mocked_blob
+
+            with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
+                write_stream.write("hello hello")
+
+            # can read bytes
+            log_data, _ = manager.log_data_for_type(log_key, ComputeIOType.STDERR, 0, None)
+            assert log_data.decode("utf-8") == "hello hello"
+
+            url = manager.download_url_for_type(log_key, ComputeIOType.STDERR)
+            assert url.startswith("/logs")  # falls back to local storage url
+
+
 class TestGCSComputeLogManager(TestCapturedLogManager):
     __test__ = True
 
     @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def captured_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def write_manager(self, gcs_bucket):
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(
@@ -270,7 +298,7 @@ class TestGCSComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def read_manager(self, gcs_bucket):
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)

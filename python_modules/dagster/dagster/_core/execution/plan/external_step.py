@@ -86,7 +86,7 @@ class LocalExternalStepLauncher(StepLauncher):
             # write each pickled event from the external instance to the local instance
             step_context.instance.handle_new_event(event)
             if event.is_dagster_event:
-                yield event.dagster_event  # type: ignore  # (possible none)
+                yield event.get_dagster_event()
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:
@@ -109,8 +109,7 @@ def step_context_to_step_run_ref(
     step_context: StepExecutionContext,
     package_dir: Optional[str] = None,
 ) -> StepRunRef:
-    """
-    Args:
+    """Args:
         step_context (StepExecutionContext): The step context.
         package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
             to be relative a module pointer relative to the package root.  This enables executing
@@ -163,8 +162,7 @@ def step_context_to_step_run_ref(
 def external_instance_from_step_run_ref(
     step_run_ref: StepRunRef, event_listener_fn: Optional[Callable[[EventLogEntry], object]] = None
 ) -> DagsterInstance:
-    """
-    Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
+    """Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
     by a StepRunRef by pre-populating certain values.
 
     Args:

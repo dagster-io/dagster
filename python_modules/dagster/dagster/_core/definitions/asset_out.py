@@ -32,8 +32,7 @@ class AssetOut(
         ],
     )
 ):
-    """
-    Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
+    """Defines one of the assets produced by a :py:func:`@multi_asset <multi_asset>`.
 
     Attributes:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the

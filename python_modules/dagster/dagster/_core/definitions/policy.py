@@ -8,8 +8,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 class Backoff(Enum):
-    """
-    A modifier for delay as a function of attempt number.
+    """A modifier for delay as a function of attempt number.
 
     LINEAR: `attempt_num * delay`
     EXPONENTIAL: `((2 ^ attempt_num) - 1) * delay`
@@ -42,8 +41,7 @@ class RetryPolicy(
         ],
     ),
 ):
-    """
-    A declarative policy for when to request retries when an exception occurs during op execution.
+    """A declarative policy for when to request retries when an exception occurs during op execution.
 
     Args:
         max_retries (int):

@@ -234,8 +234,7 @@ def fetch_connected(
 def fetch_sinks(
     graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A sink is an asset that has no downstream dependencies within the provided selection.
+    """A sink is an asset that has no downstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
@@ -250,8 +249,7 @@ def fetch_sinks(
 def fetch_sources(
     graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
-    """
-    A source is a node that has no upstream dependencies within the provided selection.
+    """A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     dp: Dict[T_Hashable, bool] = {}
@@ -524,6 +522,7 @@ def parse_asset_selection(
     assets_defs: Sequence["AssetsDefinition"],
     source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
+    raise_on_clause_has_no_matches: bool = True,
 ) -> AbstractSet[AssetKey]:
     """Find assets that match the given selection query.
 
@@ -548,7 +547,7 @@ def parse_asset_selection(
     # loop over clauses
     for clause in asset_selection:
         subset = clause_to_subset(graph, clause, AssetKey.from_user_string)
-        if len(subset) == 0:
+        if len(subset) == 0 and raise_on_clause_has_no_matches:
             raise DagsterInvalidSubsetError(
                 f"No qualified assets to execute found for clause='{clause}'"
             )

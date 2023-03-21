@@ -7,7 +7,7 @@ from dagster._core.host_representation.external_data import ExternalScheduleExec
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExternalScheduleExecutionArgs
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
 
     origin = repository_handle.get_external_origin()
     with ephemeral_grpc_api_client(
-        origin.repository_location_origin.loadable_target_origin
+        origin.code_location_origin.loadable_target_origin
     ) as api_client:
         return sync_get_external_schedule_execution_data_grpc(
             api_client,
@@ -47,7 +47,7 @@ def sync_get_external_schedule_execution_data_grpc(
     check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
 
     origin = repository_handle.get_external_origin()
-    result = deserialize_as(
+    result = deserialize_value(
         api_client.external_schedule_execution(
             external_schedule_execution_args=ExternalScheduleExecutionArgs(
                 repository_origin=origin,

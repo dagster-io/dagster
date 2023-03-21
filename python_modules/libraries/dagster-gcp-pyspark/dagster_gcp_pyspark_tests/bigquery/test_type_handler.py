@@ -8,6 +8,7 @@ import pandas_gbq
 import pytest
 from dagster import (
     AssetIn,
+    AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -18,6 +19,7 @@ from dagster import (
     StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    TimeWindowPartitionMapping,
     asset,
     build_input_context,
     build_output_context,
@@ -58,7 +60,6 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
     )
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     try:
-        print(table_name)
         yield table_name
     finally:
         bq_client.query(
@@ -534,3 +535,88 @@ def test_dynamic_partitions(spark):
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_self_dependent_asset(spark):
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+    ) as table_name:
+        daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
+
+        @asset(
+            partitions_def=daily_partitions,
+            key_prefix=schema,
+            ins={
+                "self_dependent_asset": AssetIn(
+                    key=AssetKey([schema, table_name]),
+                    partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+                ),
+            },
+            metadata={
+                "partition_expr": "TIMESTAMP(key)",
+            },
+            config_schema={"value": str, "last_partition_key": str},
+            name=table_name,
+        )
+        def self_dependent_asset(context, self_dependent_asset: DataFrame) -> DataFrame:
+            key = context.asset_partition_key_for_output()
+
+            if not self_dependent_asset.isEmpty():
+                pd_df = self_dependent_asset.toPandas()
+                assert len(pd_df.index) == 3
+                assert (pd_df["key"] == context.op_config["last_partition_key"]).all()
+            else:
+                assert context.op_config["last_partition_key"] == "NA"
+            value = context.op_config["value"]
+            schema = StructType(
+                [
+                    StructField("KEY", StringType()),
+                    StructField("A", StringType()),
+                ]
+            )
+            data = [
+                (key, value),
+                (key, value),
+                (key, value),
+            ]
+            df = spark.createDataFrame(data, schema=schema)
+
+            return df
+
+        asset_full_name = f"{schema}__{table_name}"
+        bq_table_path = f"{schema}.{table_name}"
+
+        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
+        resource_defs = {"io_manager": bq_io_manager}
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-01",
+            resources=resource_defs,
+            run_config={
+                "ops": {asset_full_name: {"config": {"value": "1", "last_partition_key": "NA"}}}
+            },
+        )
+
+        out_df = pandas_gbq.read_gbq(
+            f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
+
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-02",
+            resources=resource_defs,
+            run_config={
+                "ops": {
+                    asset_full_name: {"config": {"value": "2", "last_partition_key": "2023-01-01"}}
+                }
+            },
+        )
+
+        out_df = pandas_gbq.read_gbq(
+            f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

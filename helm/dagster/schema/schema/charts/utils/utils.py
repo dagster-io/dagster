@@ -23,8 +23,7 @@ class ConfigurableClass(PydanticBaseModel):
 
 class BaseModel(PydanticBaseModel):
     class Config:
-        """
-        Pydantic currently does not support nullable required fields. Here, we use a workaround to
+        """Pydantic currently does not support nullable required fields. Here, we use a workaround to
         allow this behavior.
 
         See https://github.com/samuelcolvin/pydantic/issues/1270#issuecomment-729555558

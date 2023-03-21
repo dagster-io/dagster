@@ -56,7 +56,7 @@ class MyOpConfig(Config):
 
 @op
 def print_greeting(config: MyOpConfig):
-    print(f"hello {config.person_name}")
+    print(f"hello {config.person_name}")  # noqa: T201
 ```
 
 </TabItem>
@@ -99,7 +99,26 @@ asset_result = materialize(
 )
 ```
 
-\--
+### Using environment variables with config
+
+Ops and assets can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing your config object. This is useful when the value may vary based on environment or is sensitive. If you're using Dagster Cloud, environment variables can be [set up directly in the UI](/dagster-cloud/developing-testing/environment-variables-and-secrets).
+
+```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config_envvar endbefore=end_execute_with_config_envvar dedent=4
+from dagster import job, materialize, op, RunConfig, EnvVar
+
+job_result = greeting_job.execute_in_process(
+    run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})
+)
+
+asset_result = materialize(
+    [greeting],
+    run_config=RunConfig(
+        {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+    ),
+)
+```
+
+---
 
 ## Defining complex config schemas
 
@@ -124,6 +143,31 @@ class MyMetadataConfig(Config):
 
 # errors!
 MyMetadataConfig(person_name="Alice", age=200)
+```
+
+### Defaults and optional config fields
+
+Config fields can be marked as optional by specifying a default value. For example, we can mark the `greeting_phrase` field as optional by specifying a default of `hello`. Optional fields, such as `person_name`, can be specified a default value of `None`.
+
+```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_optional_config endbefore=end_optional_config dedent=4
+from typing import Optional
+from dagster import asset, Config, materialize, RunConfig
+
+class MyAssetConfig(Config):
+    person_name: Optional[str] = None
+    greeting_phrase: str = "hello"
+
+@asset
+def greeting(config: MyAssetConfig) -> str:
+    if config.person_name:
+        return f"{config.greeting_phrase} {config.person_name}"
+    else:
+        return config.greeting_phrase
+
+asset_result = materialize(
+    [greeting],
+    run_config=RunConfig({"greeting": MyAssetConfig()}),
+)
 ```
 
 ### Basic data structures

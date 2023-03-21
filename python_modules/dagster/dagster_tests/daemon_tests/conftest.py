@@ -5,9 +5,9 @@ from typing import Iterator, Optional, cast
 import pytest
 from dagster import DagsterInstance
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalRepository,
-    InProcessRepositoryLocationOrigin,
-    RepositoryLocation,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
@@ -40,7 +40,7 @@ def instance_fixture(instance_module_scoped) -> Iterator[DagsterInstance]:
 
 def workspace_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessRepositoryLocationOrigin(
+        InProcessCodeLocationOrigin(
             loadable_target_origin=loadable_target_origin(attribute=attribute),
             location_name="test_location",
         )
@@ -60,10 +60,10 @@ def external_repo_fixture(
     workspace_context: WorkspaceProcessContext,
 ) -> Iterator[ExternalRepository]:
     yield cast(
-        RepositoryLocation,
+        CodeLocation,
         next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location,
+        ).code_location,
     ).get_repository("the_repo")
 
 

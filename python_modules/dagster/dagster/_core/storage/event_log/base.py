@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -24,7 +23,7 @@ from dagster._core.execution.stats import (
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import MayHaveInstanceWeakref
+from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
@@ -138,7 +137,7 @@ class AssetRecord(NamedTuple):
     asset_entry: AssetEntry
 
 
-class EventLogStorage(ABC, MayHaveInstanceWeakref):
+class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     """Abstract base class for storing structured event logs from pipeline runs.
 
     Note that event log storages using SQL databases as backing stores should implement
@@ -156,7 +155,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
-    ) -> Iterable["EventLogEntry"]:
+    ) -> Sequence["EventLogEntry"]:
         """Get all of the logs corresponding to a run.
 
         Args:
@@ -262,7 +261,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         pass
 
     def supports_event_consumer_queries(self) -> bool:
@@ -287,9 +286,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
+    def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
+        pass
+
+    @abstractmethod
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Iterable[AssetRecord]:
+    ) -> Sequence[AssetRecord]:
         pass
 
     @abstractmethod
@@ -297,7 +300,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def all_asset_keys(self) -> Iterable[AssetKey]:
+    def all_asset_keys(self) -> Sequence[AssetKey]:
         pass
 
     @abstractmethod
@@ -311,7 +314,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Iterable[AssetKey]:
+    ) -> Sequence[AssetKey]:
         # base implementation of get_asset_keys, using the existing `all_asset_keys` and doing the
         # filtering in-memory
         asset_keys = sorted(self.all_asset_keys(), key=str)
@@ -356,7 +359,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_asset_run_ids(self, asset_key: AssetKey) -> Iterable[str]:
+    def get_asset_run_ids(self, asset_key: AssetKey) -> Sequence[str]:
         pass
 
     @abstractmethod

@@ -10,6 +10,7 @@ from dagster._core.run_coordinator import QueuedRunCoordinator
 from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
+from dagster_celery_k8s import CeleryK8sRunLauncher
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
 from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
@@ -234,10 +235,13 @@ def test_k8s_run_launcher_resources(template: HelmTemplate):
     assert run_launcher_config["config"]["resources"] == resources
 
 
-def _check_valid_run_launcher_yaml(dagster_config):
+def _check_valid_run_launcher_yaml(dagster_config, instance_class=K8sRunLauncher):
     with environ(
         {
             "DAGSTER_PG_PASSWORD": "hunter12",
+            "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "fake-configmap",
+            "DAGSTER_CELERY_BROKER_URL": "https://fake-celery-broker",
+            "DAGSTER_CELERY_BACKEND_URL": "https://fake-celery-backend",
         }
     ):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -245,7 +249,7 @@ def _check_valid_run_launcher_yaml(dagster_config):
                 yaml.dump(dagster_config, fd, default_flow_style=False)
                 run_launcher_data = InstanceRef.from_dir(temp_dir).run_launcher_data
                 process_result = process_config(
-                    resolve_to_config_type(K8sRunLauncher.config_type()),
+                    resolve_to_config_type(instance_class.config_type()),
                     run_launcher_data.config_dict,
                 )
                 assert process_result.success, str(process_result.errors)
@@ -496,6 +500,40 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     run_launcher_config = instance["run_launcher"]
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
+
+
+def test_celery_k8s_run_launcher_default_namespace(template: HelmTemplate):
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct()
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]["config"]
+    assert "job_namespace" not in run_launcher_config
+
+
+def test_celery_k8s_run_launcher_set_namespace(template: HelmTemplate):
+    default_helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    jobNamespace="my-namespace"
+                )
+            ),
+        )
+    )
+    configmaps = template.render(default_helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    _check_valid_run_launcher_yaml(instance, instance_class=CeleryK8sRunLauncher)
+    run_launcher_config = instance["run_launcher"]["config"]
+    assert run_launcher_config["job_namespace"] == "my-namespace"
 
 
 def test_queued_run_coordinator_config_default(template: HelmTemplate):

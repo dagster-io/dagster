@@ -1,5 +1,5 @@
 import sys
-from typing import cast
+from typing import Optional, cast
 
 import kubernetes
 from dagster import (
@@ -72,7 +72,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         include=None,
         config_source=None,
         retries=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         k8s_client_batch_api=None,
         env_config_maps=None,
         env_secrets=None,
@@ -83,6 +83,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_secrets=None,
         labels=None,
         fail_pod_on_run_failure=None,
+        job_namespace=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -134,6 +135,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._fail_pod_on_run_failure = check.opt_bool_param(
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
+        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace", default="default")
 
         super().__init__()
 
@@ -223,7 +225,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": pipeline_origin.pipeline_name}],
         )
 
-        job_namespace = exc_config.get("job_namespace")
+        job_namespace = exc_config.get("job_namespace", self.job_namespace)
 
         self._instance.report_engine_event(
             "Creating Kubernetes run worker job",
@@ -343,7 +345,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_run = self._instance.get_run_by_id(run_id)
         run_config = pipeline_run.run_config
         executor_config = _get_validated_celery_k8s_executor_config(run_config)
-        return executor_config.get("job_namespace")
+        return executor_config.get("job_namespace", self.job_namespace)
 
     @property
     def supports_check_run_worker_health(self):
@@ -351,7 +353,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     def check_run_worker_health(self, run: DagsterRun):
         job_namespace = _get_validated_celery_k8s_executor_config(run.run_config).get(
-            "job_namespace"
+            "job_namespace", self.job_namespace
         )
         job_name = get_job_name_from_run_id(run.run_id)
         try:

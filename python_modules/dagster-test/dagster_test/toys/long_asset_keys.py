@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 from dagster import AssetIn, asset
 from dagster._legacy import AssetGroup
 

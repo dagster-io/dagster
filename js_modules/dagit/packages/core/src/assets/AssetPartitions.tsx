@@ -1,12 +1,12 @@
 import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
-import without from 'lodash/without';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -15,8 +15,6 @@ import {testId} from '../testing/testId';
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
-import {CurrentRunsBanner} from './CurrentRunsBanner';
-import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
@@ -44,14 +42,17 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE];
+const DISPLAYED_STATES = [
+  PartitionState.MISSING,
+  PartitionState.SUCCESS,
+  PartitionState.FAILURE,
+].sort();
 
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
   assetPartitionDimensions,
   params,
   setParams,
-  liveData,
   dataRefreshHint,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], dataRefreshHint);
@@ -59,7 +60,10 @@ export const AssetPartitions: React.FC<Props> = ({
     knownDimensionNames: assetPartitionDimensions,
     modifyQueryString: true,
     assetHealth,
+    shouldReadPartitionQueryStringParam: false,
   });
+
+  const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
 
   const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
     defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
@@ -106,23 +110,26 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {dimension, selectedRanges} = selections[idx];
     const allKeys = dimension.partitionKeys;
+    const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
+    if (isEqual(DISPLAYED_STATES, stateFilters)) {
+      const result = getSelectionKeys();
+      return sort === 1 ? result : result.reverse();
+    }
+
+    const rangesInSelection = rangesClippedToSelection(
+      materializedRangesByDimension[idx],
+      selectedRanges,
+    );
+
     const getKeysWithStates = (states: PartitionState[]) => {
-      const materializedInSelection = rangesClippedToSelection(
-        materializedRangesByDimension[idx],
-        selectedRanges,
-      );
-      return materializedInSelection.flatMap((r) =>
+      return rangesInSelection.flatMap((r) =>
         states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
-
-    if (isEqual(DISPLAYED_STATES, stateFilters)) {
-      return getSelectionKeys(); // optimization for the default case
-    }
 
     const states: PartitionState[] = [];
     if (stateFilters.includes(PartitionState.SUCCESS)) {
@@ -133,16 +140,19 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     const matching = uniq(getKeysWithStates(states));
 
+    let result;
     // We have to add in "missing" separately because it's the absence of a range
     if (stateFilters.includes(PartitionState.MISSING)) {
-      const missing = without(
-        getSelectionKeys(),
-        ...getKeysWithStates([PartitionState.SUCCESS, PartitionState.FAILURE]),
+      result = allKeys.filter(
+        (a, idx) =>
+          matching.includes(a) ||
+          !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
       );
-      return uniq([...matching, ...missing]);
     } else {
-      return matching;
+      result = matching;
     }
+
+    return sort === 1 ? result : result.reverse();
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
@@ -157,15 +167,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
   return (
     <>
-      <FailedRunsSinceMaterializationBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
-
-      <CurrentRunsBanner
-        liveData={liveData}
-        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-      />
       {timeDimensionIdx !== -1 && (
         <Box
           padding={{vertical: 16, horizontal: 24}}
@@ -180,6 +181,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 selections.map((r, idx) => (idx === timeDimensionIdx ? {...r, selectedKeys} : r)),
               )
             }
+            dimensionType={selections[timeDimensionIdx].dimension.type}
           />
         </Box>
       )}
@@ -207,18 +209,40 @@ export const AssetPartitions: React.FC<Props> = ({
             flex={{direction: 'column'}}
             border={{side: 'right', color: Colors.KeylineGray, width: 1}}
             background={Colors.Gray50}
+            data-testid={testId(`partitions-${selection.dimension.name}`)}
           >
-            {selection.dimension.name !== 'default' && (
-              <Box
-                padding={{horizontal: 24, vertical: 8}}
-                flex={{gap: 8, alignItems: 'center'}}
-                background={Colors.White}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            <Box
+              flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+              background={Colors.White}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              padding={{horizontal: 24, vertical: 8}}
+            >
+              <div>
+                {selection.dimension.name !== 'default' && (
+                  <Box flex={{gap: 8, alignItems: 'center'}}>
+                    <Icon name="partition" />
+                    <Subheading>{selection.dimension.name}</Subheading>
+                  </Box>
+                )}
+              </div>
+              <SortButton
+                style={{marginRight: '-16px'}}
+                data-testid={`sort-${idx}`}
+                onClick={() => {
+                  setSelectionSorts((sorts) => {
+                    const copy = [...sorts];
+                    if (copy[idx]) {
+                      copy[idx] = copy[idx] === -1 ? 1 : -1;
+                    } else {
+                      copy[idx] = (defaultSort(selections[idx].dimension.type) * -1) as -1 | 1;
+                    }
+                    return copy;
+                  });
+                }}
               >
-                <Icon name="partition" />
-                <Subheading>{selection.dimension.name}</Subheading>
-              </Box>
-            )}
+                <Icon name="sort_by_alpha" color={Colors.Gray400} />
+              </SortButton>
+            </Box>
 
             {!assetHealth ? (
               <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
@@ -254,3 +278,11 @@ export const AssetPartitions: React.FC<Props> = ({
     </>
   );
 };
+
+function defaultSort(definitionType: PartitionDefinitionType) {
+  if (definitionType === PartitionDefinitionType.TIME_WINDOW) {
+    return -1;
+  } else {
+    return 1;
+  }
+}

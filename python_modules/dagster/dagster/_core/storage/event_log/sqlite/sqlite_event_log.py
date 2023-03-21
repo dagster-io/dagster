@@ -40,8 +40,9 @@ from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
     ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
 )
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
@@ -107,16 +108,14 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def upgrade(self) -> None:
         all_run_ids = self.get_all_run_ids()
-        print(  # pylint: disable=print-call
-            f"Updating event log storage for {len(all_run_ids)} runs on disk..."
-        )
+        print(f"Updating event log storage for {len(all_run_ids)} runs on disk...")  # noqa: T201
         alembic_config = get_alembic_config(__file__)
         if all_run_ids:
             for run_id in tqdm(all_run_ids):
                 with self.run_connection(run_id) as conn:
                     run_alembic_upgrade(alembic_config, conn, run_id)
 
-        print("Updating event log storage for index db on disk...")  # pylint: disable=print-call
+        print("Updating event log storage for index db on disk...")  # noqa: T201
         with self.index_connection() as conn:
             run_alembic_upgrade(alembic_config, conn, "index")
 
@@ -130,9 +129,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
+        cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 
@@ -227,8 +226,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return self._connect(INDEX_SHARD_NAME)
 
     def store_event(self, event: EventLogEntry) -> None:
-        """
-        Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
+        """Overridden method to replicate asset events in a central assets.db sqlite shard, enabling
         cross-run asset queries.
 
         Args:
@@ -341,18 +339,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             for row_id, json_str in results:
                 try:
-                    event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                    if not isinstance(event_record, EventLogEntry):
-                        logging.warning(
-                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
-                        )
-                        continue
-                    else:
-                        event_records.append(
-                            EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                        )
+                    event_record = deserialize_value(json_str, EventLogEntry)
+                    event_records.append(
+                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                    )
                     if limit and len(event_records) >= limit:
                         break
+                except DeserializationError:
+                    logging.warning(
+                        "Could not resolve event record as EventLogEntry for id `%s`.", row_id
+                    )
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
@@ -386,7 +382,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
             conn.execute(
-                SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.delete().where(
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                 )
             )

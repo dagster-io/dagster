@@ -694,7 +694,11 @@ export function expandAutocompletionContextAtCursor(editor: any) {
 
   let searchString: string;
   let start: number;
-  if (token.type === 'whitespace' || token.string.startsWith(':')) {
+  if (
+    token.type === 'whitespace' ||
+    token.type?.startsWith('indent ') ||
+    token.string.startsWith(':')
+  ) {
     searchString = '';
     start = token.end;
   } else {

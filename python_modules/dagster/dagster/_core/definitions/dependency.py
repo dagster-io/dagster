@@ -28,9 +28,6 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
 from dagster._utils import frozentags
@@ -110,9 +107,7 @@ class NodeInvocation(
 
 
 class Node(ABC):
-    """
-    Node invocation within a graph. Identified by its name inside the graph.
-    """
+    """Node invocation within a graph. Identified by its name inside the graph."""
 
     name: str
     definition: "NodeDefinition"
@@ -335,29 +330,9 @@ class OpNode(Node):
         return f"op '{self.name}'"
 
 
-class NodeHandleSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # persist using legacy name SolidHandle
-        storage["__class__"] = "SolidHandle"
-        return storage
-
-
-@whitelist_for_serdes(serializer=NodeHandleSerializer)
+@whitelist_for_serdes(storage_name="SolidHandle")
 class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])):
-    """
-    A structured object to identify nodes in the potentially recursive graph structure.
-    """
+    """A structured object to identify nodes in the potentially recursive graph structure."""
 
     def __new__(cls, name: str, parent: Optional["NodeHandle"]):
         return super(NodeHandle, cls).__new__(
@@ -428,7 +403,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
@@ -455,7 +429,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
             NodeHandle:
 
         Example:
-
         .. code-block:: python
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
@@ -518,21 +491,15 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 class NodeInputHandle(
     NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
 ):
-    """
-    A structured object to uniquely identify inputs in the potentially recursive graph structure.
+    """A structured object to uniquely identify inputs in the potentially recursive graph structure.
     """
 
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
+    """A structured object to uniquely identify outputs in the potentially recursive graph structure.
     """
-    A structured object to uniquely identify outputs in the potentially recursive graph structure.
-    """
-
-
-# previous name for NodeHandle was SolidHandle
-register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
@@ -620,7 +587,7 @@ class DependencyType(Enum):
     DYNAMIC_COLLECT = "DYNAMIC_COLLECT"
 
 
-class IDependencyDefinition(ABC):  # pylint: disable=no-init
+class IDependencyDefinition(ABC):
     @abstractmethod
     def get_node_dependencies(self) -> Sequence["DependencyDefinition"]:
         pass
@@ -1006,8 +973,7 @@ class DependencyStructure:
     def input_to_upstream_outputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeInput, Sequence[NodeOutput]]:
-        """
-        Returns a Dict[NodeInput, List[NodeOutput]] that encodes
+        """Returns a Dict[NodeInput, List[NodeOutput]] that encodes
         where all the the inputs are sourced from upstream. Usually the
         List[NodeOutput] will be a list of one, except for the
         multi-dependency case.
@@ -1018,8 +984,7 @@ class DependencyStructure:
     def output_to_downstream_inputs_for_node(
         self, node_name: str
     ) -> Mapping[NodeOutput, Sequence[NodeInput]]:
-        """
-        Returns a Dict[NodeOutput, List[NodeInput]] that
+        """Returns a Dict[NodeOutput, List[NodeInput]] that
         represents all the downstream inputs for each output in the
         dictionary.
         """

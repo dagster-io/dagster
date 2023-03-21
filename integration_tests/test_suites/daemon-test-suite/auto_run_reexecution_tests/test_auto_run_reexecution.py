@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import logging
 import time
 
@@ -7,7 +6,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import snapshot_from_execution_plan
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
@@ -16,7 +15,6 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     get_reexecution_strategy,
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-from dagster._legacy import DagsterRunStatus
 
 from .utils import foo, get_foo_job_handle
 

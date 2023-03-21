@@ -90,7 +90,6 @@ def test_event_log_subscription():
         assert run.run_id
 
         with create_asgi_client(instance) as client:
-            # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
@@ -112,7 +111,6 @@ def test_event_log_subscription_chunked():
         assert run.run_id
 
         with create_asgi_client(instance) as client:
-            # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
@@ -136,7 +134,6 @@ def test_compute_log_subscription(mock_watch_completed):
         assert run.run_id
 
         with create_asgi_client(instance) as client:
-            # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
                 start_subscription(
                     ws,

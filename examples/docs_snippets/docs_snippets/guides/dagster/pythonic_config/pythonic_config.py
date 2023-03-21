@@ -1,5 +1,4 @@
 # isort: skip_file
-# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
 
 
 class Engine:
@@ -35,7 +34,7 @@ def execute_with_config() -> None:
 
     @op
     def print_greeting(config: MyOpConfig):
-        print(f"hello {config.person_name}")
+        print(f"hello {config.person_name}")  # noqa: T201
 
     # end_basic_op_config
 
@@ -69,6 +68,22 @@ def execute_with_config() -> None:
     )
 
     # end_execute_with_config
+
+    # start_execute_with_config_envvar
+    from dagster import job, materialize, op, RunConfig, EnvVar
+
+    job_result = greeting_job.execute_in_process(
+        run_config=RunConfig({"print_greeting": MyOpConfig(person_name=EnvVar("PERSON_NAME"))})  # type: ignore
+    )
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig(
+            {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+        ),
+    )
+
+    # end_execute_with_config_envvar
 
 
 def basic_data_structures_config() -> None:
@@ -189,3 +204,28 @@ def metadata_config() -> None:
     MyMetadataConfig(person_name="Alice", age=200)
 
     # end_metadata_config
+
+
+def optional_config() -> None:
+    # start_optional_config
+
+    from typing import Optional
+    from dagster import asset, Config, materialize, RunConfig
+
+    class MyAssetConfig(Config):
+        person_name: Optional[str] = None
+        greeting_phrase: str = "hello"
+
+    @asset
+    def greeting(config: MyAssetConfig) -> str:
+        if config.person_name:
+            return f"{config.greeting_phrase} {config.person_name}"
+        else:
+            return config.greeting_phrase
+
+    asset_result = materialize(
+        [greeting],
+        run_config=RunConfig({"greeting": MyAssetConfig()}),
+    )
+
+    # end_optional_config

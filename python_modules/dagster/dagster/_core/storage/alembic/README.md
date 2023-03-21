@@ -22,6 +22,13 @@ Users should be prompted to manually run migrations using `dagster instance migr
 
 For schema migrations, we test migration behavior in sqlite / postgres / mysql.
 
+For all backcompat schema migrations, the back compat tests should have the following structure:
+1. Load an instance from a DB snapshot
+1. Assert that the migrations have not been run
+1. Test the affected storage methods using the pre-migrated snapshot, if the functionality existed pre-migration
+1. Run the migration
+1. Test the affected storage methods post-migration
+
 ### sqlite
 
 Migration tests for sqlite can be found here: `python_modules/dagster/dagster_tests/general_tests/compat_tests/test_back_compat.py`

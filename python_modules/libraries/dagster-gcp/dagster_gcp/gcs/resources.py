@@ -40,8 +40,7 @@ def gcs_file_manager(context):
 
 
 def _gcs_client_from_config(config):
-    """
-    Args:
+    """Args:
         config: A configuration containing the fields in GCS_CLIENT_CONFIG.
 
     Returns: A GCS client.

@@ -197,9 +197,7 @@ def test_start_execution_file():
 
 
 def test_start_execution_save_output():
-    """
-    Test that the --output flag saves the GraphQL response to the specified file.
-    """
+    """Test that the --output flag saves the GraphQL response to the specified file."""
     variables = _seven.json.dumps(
         {
             "executionParams": {

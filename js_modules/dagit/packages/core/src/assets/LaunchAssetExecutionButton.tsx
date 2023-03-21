@@ -42,7 +42,7 @@ import {
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; partitionSetName: string}
-  | {type: 'pureAssetBackfill'; anchorAssetKey: AssetKey};
+  | {type: 'pureWithAnchorAsset'; anchorAssetKey: AssetKey};
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -82,7 +82,7 @@ type Asset =
       isSource: boolean;
     };
 
-type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
+export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
 
 type LaunchOption = {assetKeys: AssetKey[]; label: string; hasMaterializePermission: boolean};
 
@@ -190,48 +190,50 @@ export const LaunchAssetExecutionButton: React.FC<{
             intent={intent}
             data-testid={testId('materialize-button')}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
-            style={
-              options.length > 1
-                ? {
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                    borderRight: `1px solid rgba(255,255,255,0.2)`,
-                  }
-                : {}
-            }
+            style={{
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              borderRight: `1px solid rgba(255,255,255,0.2)`,
+            }}
             disabled={!firstOption.assetKeys.length}
             icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
           >
             {firstOption.label}
           </MaterializeButton>
         </Tooltip>
-        {options.length > 1 && (
-          <Popover
-            isOpen={isOpen}
-            onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-            position="bottom-right"
-            content={
-              <Menu>
-                {options.slice(1).map((option) => (
-                  <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon="materialization"
-                    disabled={option.assetKeys.length === 0}
-                    onClick={(e) => onClick(option.assetKeys, e)}
-                  />
-                ))}
-              </Menu>
-            }
-          >
-            <Button
-              role="button"
-              style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
-              icon={<Icon name="arrow_drop_down" />}
-              intent={intent}
-            />
-          </Popover>
-        )}
+
+        <Popover
+          isOpen={isOpen}
+          onInteraction={(nextOpen) => setIsOpen(nextOpen)}
+          position="bottom-right"
+          content={
+            <Menu>
+              <MenuItem
+                onClick={(e: React.MouseEvent<any>) => {
+                  onClick(firstOption.assetKeys, e, true);
+                }}
+                text="Open in lanchpad"
+              />
+              {options.slice(1).map((option) => (
+                <MenuItem
+                  key={option.label}
+                  text={option.label}
+                  icon="materialization"
+                  disabled={option.assetKeys.length === 0}
+                  onClick={(e) => onClick(option.assetKeys, e)}
+                />
+              ))}
+            </Menu>
+          }
+        >
+          <Button
+            role="button"
+            style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
+            icon={<Icon name="arrow_drop_down" />}
+            disabled={options.slice(1).every((o) => o.assetKeys.length === 0)}
+            intent={intent}
+          />
+        </Popover>
       </Box>
       {launchpadElement}
     </>
@@ -247,7 +249,11 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
   const [state, setState] = React.useState<LaunchAssetsState>({type: 'none'});
 
-  const onClick = async (assetKeys: AssetKey[], e: React.MouseEvent<any>) => {
+  const onClick = async (
+    assetKeys: AssetKey[],
+    e: React.MouseEvent<any>,
+    _forceLaunchpad = false,
+  ) => {
     if (state.type === 'loading') {
       return;
     }
@@ -265,7 +271,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
 
     const assets = result.data.assetNodes;
-    const forceLaunchpad = e.shiftKey;
+    const forceLaunchpad = e.shiftKey || _forceLaunchpad;
 
     const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
 
@@ -406,7 +412,7 @@ async function stateForLaunchingAssets(
     return {
       type: 'partitions',
       assets,
-      target: {type: 'pureAssetBackfill', anchorAssetKey: anchorAsset.assetKey},
+      target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -747,7 +753,7 @@ export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
 
-const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
+export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
   query LaunchAssetCheckUpstreamQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id

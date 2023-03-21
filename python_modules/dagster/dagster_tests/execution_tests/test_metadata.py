@@ -21,7 +21,6 @@ from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
-    TableMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -33,7 +32,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
 from dagster._legacy import execute_pipeline, pipeline
-from dagster._serdes.serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils import frozendict
 
 
@@ -216,8 +215,8 @@ def test_table_metadata_value_schema_inference():
         "foo",
         value=MetadataValue.table(
             records=[
-                TableRecord(dict(name="foo", status=False)),
-                TableRecord(dict(name="bar", status=True)),
+                TableRecord(data=dict(name="foo", status=False)),
+                TableRecord(data=dict(name="bar", status=True)),
             ],
         ),
     )
@@ -359,13 +358,16 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_table_serialization():
-    entry = MetadataValue.table(
-        records=[
-            TableRecord(dict(foo=1, bar=2)),
-        ],
+    entry = MetadataEntry(
+        "foo",
+        value=MetadataValue.table(
+            records=[
+                TableRecord(dict(foo=1, bar=2)),
+            ],
+        ),
     )
-    serialized = serialize_dagster_namedtuple(entry)
-    assert deserialize_as(serialized, TableMetadataValue) == entry
+    serialized = serialize_value(entry)
+    assert deserialize_value(serialized, MetadataEntry) == entry
 
 
 def test_bool_metadata_value():

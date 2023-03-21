@@ -22,7 +22,7 @@ from dagster._core.events.utils import filter_dagster_events_from_cli_logs
 from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
-from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._serdes import pack_value, serialize_value, unpack_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
@@ -126,7 +126,7 @@ def celery_k8s_job_executor(init_context):
         include=include,
         retries=retries,
         job_config=job_config,
-        job_namespace=exc_cfg.get("job_namespace"),
+        job_namespace=exc_cfg.get("job_namespace", run_launcher.job_namespace),
         load_incluster_config=exc_cfg.get("load_incluster_config"),
         kubeconfig_file=exc_cfg.get("kubeconfig_file"),
         repo_location_name=exc_cfg.get("repo_location_name"),
@@ -165,7 +165,7 @@ class CeleryK8sJobExecutor(Executor):
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
         self.job_config = check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace", default="default")
+        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = check.bool_param(
             load_incluster_config, "load_incluster_config"
@@ -549,7 +549,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 )
 
         events += filter_dagster_events_from_cli_logs(logs)
-        serialized_events = [serialize_dagster_namedtuple(event) for event in events]
+        serialized_events = [serialize_value(event) for event in events]
         return serialized_events
 
     return _execute_step_k8s_job

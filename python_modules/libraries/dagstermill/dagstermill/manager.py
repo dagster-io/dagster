@@ -37,7 +37,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
+from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager
@@ -86,8 +86,7 @@ class Manager:
         instance: Optional[DagsterInstance],
         emit_persistent_events: Optional[bool],
     ):
-        """
-        Drop-in replacement for
+        """Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
         `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it.
         """
@@ -141,14 +140,14 @@ class Manager:
         pipeline_def = pipeline.get_definition()
 
         try:
-            instance_ref = cast(InstanceRef, unpack_value(instance_ref_dict))
+            instance_ref = unpack_value(instance_ref_dict, InstanceRef)
             instance = DagsterInstance.from_ref(instance_ref)
         except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
 
-        pipeline_run = cast(DagsterRun, unpack_value(pipeline_run_dict))
+        dagster_run = unpack_value(pipeline_run_dict, DagsterRun)
 
         node_handle = NodeHandle.from_dict(node_handle_kwargs)
         op = pipeline_def.get_solid(node_handle)
@@ -160,20 +159,20 @@ class Manager:
         self.pipeline = pipeline
 
         resolved_run_config = ResolvedRunConfig.build(
-            pipeline_def, run_config, mode=pipeline_run.mode
+            pipeline_def, run_config, mode=dagster_run.mode
         )
 
         execution_plan = ExecutionPlan.build(
             self.pipeline,
             resolved_run_config,
-            step_keys_to_execute=pipeline_run.step_keys_to_execute,
+            step_keys_to_execute=dagster_run.step_keys_to_execute,
         )
 
         with scoped_pipeline_context(
             execution_plan,
             pipeline,
             run_config,
-            pipeline_run,
+            dagster_run,
             instance,
             scoped_resources_builder_cm=self._setup_resources,
             # Set this flag even though we're not in test for clearer error reporting
@@ -341,7 +340,7 @@ class Manager:
             )
 
         # pass output value cross process boundary using io manager
-        step_context = self.context._step_context  # pylint: disable=protected-access
+        step_context = self.context._step_context  # noqa: SLF001
         # Note: yield_result currently does not support DynamicOutput
 
         # dagstermill assets do not support yielding additional results within the notebook:
@@ -372,7 +371,6 @@ class Manager:
                 An event to yield back to Dagster.
         """
         valid_types = (
-            Materialization,
             AssetMaterialization,
             AssetObservation,
             ExpectationResult,
@@ -408,7 +406,7 @@ class Manager:
         dm_context = check.not_none(self.context)
         if not isinstance(dm_context, DagstermillRuntimeExecutionContext):
             check.failed("Expected DagstermillRuntimeExecutionContext")
-        step_context = dm_context.step_context  # pylint: disable=protected-access
+        step_context = dm_context.step_context
         step_input = step_context.step.step_input_named(input_name)
         input_def = step_context.op_def.input_def_named(input_name)
         for event_or_input_value in step_input.source.load_input_object(step_context, input_def):

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import boto3
 import dagster._seven as seven
@@ -22,6 +22,7 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
+from typing_extensions import Self
 
 POLLING_INTERVAL = 5
 
@@ -68,7 +69,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self,
         bucket,
         local_dir=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         prefix="dagster",
         use_ssl=True,
         verify=True,
@@ -118,8 +119,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             ),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return S3ComputeLogManager(inst_data=inst_data, **config_value)
 
     @property

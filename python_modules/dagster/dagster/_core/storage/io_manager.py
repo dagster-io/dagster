@@ -120,8 +120,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
 
 
 class IOManager(InputManager, OutputManager):
-    """
-    Base class for user-provided IO managers.
+    """Base class for user-provided IO managers.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
@@ -178,8 +177,7 @@ def io_manager(
     required_resource_keys: Optional[Set[str]] = None,
     version: Optional[str] = None,
 ) -> Union[IOManagerDefinition, Callable[[IOManagerFunction], IOManagerDefinition],]:
-    """
-    Define an IO manager.
+    """Define an IO manager.
 
     IOManagers are used to store op outputs and load them as inputs to downstream ops.
 
@@ -273,6 +271,7 @@ class _IOManagerDecoratorCallable:
             input_config_schema=self.input_config_schema,
         )
 
-        update_wrapper(io_manager_def, wrapped=fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(io_manager_def, wrapped=fn)  # type: ignore
 
         return io_manager_def

@@ -14,8 +14,7 @@ from dagster_managed_elements.types import ManagedElementDiff, ManagedElementRec
 
 
 def _deepgetattr(obj, attr: str):
-    """
-    Recursive getattr that allows for nested attributes.
+    """Recursive getattr that allows for nested attributes.
 
     https://stackoverflow.com/a/14324459
     """
@@ -61,8 +60,7 @@ def get_reconcilable_objects_from_module(
 
 
 def get_reconcilable_objects(module: ModuleType) -> Sequence[ManagedElementReconciler]:
-    """
-    Collect all ManagedElementReconciler-implementing objects in the root of the
+    """Collect all ManagedElementReconciler-implementing objects in the root of the
     module.
     """
     return [
