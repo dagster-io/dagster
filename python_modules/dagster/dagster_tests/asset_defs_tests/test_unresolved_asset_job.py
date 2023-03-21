@@ -625,7 +625,7 @@ def test_intersecting_partitions_on_repo_invalid():
     def d(c):
         return c
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions_def"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions def"):
 
         @repository
         def my_repo():

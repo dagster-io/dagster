@@ -1,9 +1,8 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import Callable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .asset_graph import InternalAssetGraph
 from .decorators.schedule_decorator import schedule
 from .job_definition import JobDefinition
 from .multi_dimensional_partitions import MultiPartitionsDefinition
@@ -38,8 +37,8 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
         partitions_def = resolved_job.partitions_def
         if partitions_def is None:
             check.failed(
-                "A job provided to build_schedule_from_partitioned_job must contain partitioned"
-                " assets or a partitions definition."
+                f"Job '{resolved_job.name}' provided to build_schedule_from_partitioned_job must"
+                " contain partitioned assets or a partitions definition."
             )
 
         partitions_def = _check_valid_schedule_partitions_def(partitions_def)

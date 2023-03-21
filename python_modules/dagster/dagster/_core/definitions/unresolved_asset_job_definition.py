@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 from datetime import datetime
 from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
@@ -179,7 +180,6 @@ class UnresolvedAssetJobDefinition(
         public, a lot of users use them, so going to wait until a minor release to get rid of them.
         """
         from dagster._core.definitions.asset_graph import AssetGraph
-        from dagster._core.definitions.partition import PartitionsDefinition
 
         if asset_graph is not None:
             if assets is not None or source_assets is not None:
@@ -203,33 +203,43 @@ class UnresolvedAssetJobDefinition(
 
         selected_asset_keys = self.selection.resolve(asset_graph)
 
-        partitions_defs = {
-            cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-            for asset_key in selected_asset_keys
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-        if len(partitions_defs) == 0 and self.partitions_def:
+        asset_keys_by_partitions_def = defaultdict(set)
+        for asset_key in selected_asset_keys:
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def is not None:
+                asset_keys_by_partitions_def[partitions_def].add(asset_key)
+
+        if len(asset_keys_by_partitions_def) == 0 and self.partitions_def:
             raise DagsterInvalidDefinitionError(
                 "Tried to build a partitioned job, but none of the selected assets are partitioned."
             )
 
-        if len(partitions_defs) > 1:
+        if len(asset_keys_by_partitions_def) > 1:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in asset_keys_by_partitions_def.items()
+            )
             raise DagsterInvalidDefinitionError(
-                "All assets selected in a job must have the same partitions_def or be"
-                " unpartitioned."
+                f"Multiple partitioned assets exist in assets job '{self.name}'. Selected assets"
+                " must have the same partitions definitions, but the selected assets have"
+                f" different partitions definitions: \n{keys_by_partitions_def_str}"
             )
 
+        inferred_partitions_def = (
+            next(iter(asset_keys_by_partitions_def.keys()))
+            if asset_keys_by_partitions_def
+            else None
+        )
         if (
-            len(partitions_defs) == 1
-            and self.partitions_def != next(iter(partitions_defs))
+            inferred_partitions_def
+            and self.partitions_def != inferred_partitions_def
             and self.partitions_def is not None
         ):
             raise DagsterInvalidDefinitionError(
-                f"Job received a partitions_def of {self.partitions_def}, but the selected assets "
-                f"have a non-matching partitions_def of {next(iter(partitions_defs))}"
+                f"Job '{self.name}' received a partitions_def of {self.partitions_def}, but the"
+                f" selected assets {next(iter(asset_keys_by_partitions_def.values()))} have a"
+                f" non-matching partitions_def of {inferred_partitions_def}"
             )
-
-        inferred_partitions_def = next(iter(partitions_defs)) if partitions_defs else None
 
         return build_asset_selection_job(
             name=self.name,
