@@ -13,12 +13,17 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors i
     asset_a_and_b_sensor_with_skip_reason,
     downstream_daily_asset,
     downstream_weekly_asset,
+    test_my_asset_sensor,
     trigger_daily_asset_if_both_upstream_partitions_materialized,
     trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
     trigger_weekly_asset_from_daily_asset,
     upstream_daily_1,
     upstream_daily_2,
 )
+
+
+def test_single_asset_sensor():
+    test_my_asset_sensor()
 
 
 def test_asset_sensors():
