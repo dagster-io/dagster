@@ -242,7 +242,7 @@ const ResourceConfig: React.FC<{
           <SectionHeader>
             <Subheading>Resource dependencies</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th style={{width: 120}}>Key</th>
@@ -367,7 +367,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Parent resources</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th>Resource</th>
@@ -398,7 +398,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Assets</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th>Asset key</th>
@@ -423,7 +423,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Jobs</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th>Job name</th>
