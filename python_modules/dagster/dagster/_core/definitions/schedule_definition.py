@@ -219,13 +219,14 @@ class ScheduleEvaluationContext:
             resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
             self._resources = self._exit_stack.enter_context(resources_cm)
 
-        resources_contain_cm = self._resources and isinstance(self._resources, IContainsGenerator)
-        if resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                )
+
         return self._resources
 
     @public
