@@ -17,9 +17,6 @@ jest.mock('../DryRunRequestTable', () => {
 
 const onCloseMock = jest.fn();
 
-console.log({Mocks});
-debugger;
-
 function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
   return (
     <MockedProvider mocks={mocks} resolvers={resolvers}>
@@ -39,7 +36,7 @@ function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolve
 }
 
 describe('SensorDryRunTest', () => {
-  it.only('submits sensorDryRun mutation with cursor variable and renders successful result and persists cursor', async () => {
+  it('submits sensorDryRun mutation with cursor variable and renders successful result and persists cursor', async () => {
     await act(async () => {
       render(
         <Test mocks={[Mocks.SensorDryRunMutationRunRequests, Mocks.PersistCursorValueMock]} />,

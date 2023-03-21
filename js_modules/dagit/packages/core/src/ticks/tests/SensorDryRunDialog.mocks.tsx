@@ -42,15 +42,6 @@ export const runRequests: RunRequest[] = [
     runConfigYaml:
       'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
     tags: [
-      buildPipelineTag({key: 'dagster4', value: 'test'}),
-      buildPipelineTag({key: 'marco4', value: 'salazar4'}),
-    ],
-  }),
-  buildRunRequest({
-    runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
-    runConfigYaml:
-      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
-    tags: [
       buildPipelineTag({key: 'dagster6', value: 'test'}),
       buildPipelineTag({key: 'marco6', value: 'salazar6'}),
     ],
@@ -76,6 +67,7 @@ export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutatio
         evaluationResult: buildTickEvaluation({
           cursor: 'a new cursor',
           runRequests,
+          error: null,
         }),
       }),
     },
