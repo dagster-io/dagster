@@ -1431,6 +1431,12 @@ def external_resource_data_from_def(
     }
 
     nested_resources = _get_nested_resources(resource_def, resource_key_mapping)
+
+    resource_type_def = resource_def
+    if isinstance(resource_type_def, ResourceWithKeyMapping):
+        resource_type_def = resource_type_def.wrapped_resource
+    resource_type = str(type(resource_type_def))[8:-2]
+
     return ExternalResourceData(
         name=name,
         resource_snapshot=build_resource_def_snap(name, resource_def),
@@ -1439,7 +1445,7 @@ def external_resource_data_from_def(
         config_schema_snap=config_type.get_schema_snapshot(),
         nested_resources=nested_resources,
         is_top_level=True,
-        resource_type=str(type(resource_def))[8:-2],
+        resource_type=resource_type,
     )
 
 
