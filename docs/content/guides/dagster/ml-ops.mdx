@@ -1,11 +1,22 @@
 ---
-title: Building your machine learning pipelines In Dagster | Dagster Docs
+title: Building machine learning pipelines In Dagster | Dagster Docs
 description: This guide illustrates how to use Dagster to operationaize your machine learning pipeline
 ---
 
-# Building your machine learning pipelines with Dagster
+# Building machine learning pipelines with Dagster
 
 In this guide, we’ll walk you through how to take your machine learning models and deploy and mantain them in production using Dagster, reliably and efficently.
+
+We will work through several aspects of MLOps, including using assets for different elements of your machine learning pipeline, how to automate model training, and monitoring your model's drift.
+
+---
+
+## Why build your ML pipelines with Dagster?
+
+- Dagster makes iterating on machine learning models and testing easy and it is designed to use during the development process.
+- Dagster has a lightweight execution model means you can access the benefits of an orchestrator, like re-executing from the middle of a pipeline and parallelizing steps while you're experimenting.
+- Dagster models data assets, not just tasks, so it understands the upstream and downstream data dependencies.
+- Dagster is one-stop shop for both the data transformations and the models that depend on the data transformations!
 
 <Note>
   This guide assumes you have familiarity with machine learning concepts and several Dagster concepts,
@@ -14,29 +25,19 @@ In this guide, we’ll walk you through how to take your machine learning models
   and <a href="/concepts/ops-jobs-graphs/jobs">jobs</a> . We also recommend
   reviewing the{" "}
   <a href="/guides/dagster/automating-pipelines">
-    automating data pipelines guide
+    Automating Data Pipelines guide
   </a>{" "}
-  as many of the same principles can be applied to MLOps.
+  as many of the same principles can be applied to Machine Learning Operations (MLOps).
 </Note>
 
-We will work through several aspects of MLOps, including using assets for different elements of your machine learning pipeline, how to automate model training, and monitoring your model's drift.
-
 ---
-
-## Why build your ML pipelines with Dagster?
-
-- Dagster is designed to use during development, the lightweight execution model means you can access the benefits of an orchestrator, like re-executing from the middle of a pipeline and parallelizing steps while you're experiementing.
-- Dagster models data assets, not just tasks, so it understands the upstream and downstream data dependencies and is a one-stop shop for both the data transformations and the models that depend on the data transformations.
-
----
-
 ## Machine learning development
 
 If you are already using Dagster for your ETL pipelines, it is a natural progression to build out and test your models in Dagster.
 
-For this guide, we will be using the hackernews data which is demoed in the [tutorial](/tutorial).
+For this guide, we will be using the Hacker News data demoed in the [tutorial](/tutorial).
 
-The machine learning model we will walk through is taking the hackernews stories, using the title to predict the number of comments that a story will generate. This will be a supervised model since we have the number of comments for all the previous stories.
+The machine learning model we will walk through takes the Hacker News stories and uses the titles to predict the number of comments that a story will generate. This will be a supervised model since we have the number of comments for all the previous stories.
 
 The assets graph will look like this at the end of this guide:
 
@@ -47,7 +48,7 @@ width={1804}
 height={1064}
 />
 
-### Data Ingestion
+### Ingesting Data
 
 First, we will be creating an asset which retrieves the latest 1000 hackernews records.
 
@@ -79,11 +80,11 @@ def hackernews_stories():
     return df
 ```
 
-### Data Transformation
+### Transforming data
 
 Now that we have a dataframe with all valid stories, we want to transform that data into something our machine learning model will be able to use.
 
-The first step is taking the dataframe and splitting into a [training and test set](https://en.wikipedia.org/wiki/Training,\_validation,\_and_test_data_sets). In some of your models, you also might choose to have an additional split for a validation set. The reason we split the data is so that we can have a test and/or a validation dataset that is independent of the training set and we can use that to see how well our model did.
+The first step is taking the dataframe and splitting into a [training and test set](https://en.wikipedia.org/wiki/Training,\_validation,\_and_test_data_sets). In some of your models, you also might choose to have an additional split for a validation set. The reason we split the data is so that we can have a test and/or a validation dataset that is independent of the training set. We can then use that dataset to see how well our model did.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=test_train_split_start endbefore=test_train_split_end
 from sklearn.model_selection import train_test_split
@@ -127,13 +128,14 @@ def transformed_test_data(test_data, Tfidf_Vectorizer):
     return transformed_X_test, transformed_y_test
 ```
 
-We have also transformed the dataframes into numpy arrays and removed na values to prepare the data for training.
+We also transformed the dataframes into NumPy arrays and removed <PyObject object="nan"/> values to prepare the data for training.
 
-### Model training
 
-At this point, we have X_train, y_train, X_test, y_test ready to go for our model. We can use any number of models to train our model from libraries like [sklearn](https://scikit-learn.org/), [tensorflow](https://www.tensorflow.org/) and [pytorch](https://pytorch.org/).
+### Training the model
 
-In our example, we will be training a [XGBoost model](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor) to predict a numerical value.
+At this point, we have <PyObject object="X_train"/>, <PyObject object="y_train"/>, <PyObject object="X_test"/>, and <PyObject object="y_test"/> ready to go for our model. To train our model, we can use any number of models from libraries like [sklearn](https://scikit-learn.org/), [tensorflow](https://www.tensorflow.org/), and [pytorch](https://pytorch.org/).
+
+In our example, we will train an [XGBoost model](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor) to predict a numerical value.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=models_start endbefore=models_end
 import xgboost as xg
@@ -156,9 +158,9 @@ def score_xgboost( transformed_test_data, xgboost):
     return score
 ```
 
-We include freshness policies in the models here which will ensure the upstream data transformation assets are updated to comply with these policies.
+We include [freshness policies](/concepts/partitions-schedules-sensors/asset-sensors#freshness-policy-sensors) in the models here which will ensure the upstream data transformation assets are updated to comply with these policies.
 
-### Evaluate our results
+### Evaluating our results
 
 In our model assets, we evaluated each of the models on the test data and in this case, got the error between the predicted and actual results. Next, lets create an asset which runs inference on the model, more frequently than the model is re-trained to predict the results.
 
