@@ -8,8 +8,7 @@ description: This guide illustrates how to use Dagster to operationaize your mac
 In this guide, we’ll walk you through how to take your machine learning models and deploy and mantain them in production using Dagster, reliably and efficently.
 
 <Note>
-  This guide assumes you have familiarity with machine learning concepts,{" "}
-  <a href="/tutorial">the Dagster tutorial</a> and several Dagster concepts,
+  This guide assumes you have familiarity with machine learning concepts and several Dagster concepts,
   including{" "}
   <a href="/concepts/assets/software-defined-assets">software-defined assets</a>{" "}
   and <a href="/concepts/ops-jobs-graphs/jobs">jobs</a> . We also recommend
@@ -20,7 +19,7 @@ In this guide, we’ll walk you through how to take your machine learning models
   as many of the same principles can be applied to MLOps.
 </Note>
 
-We will work through several aspects of MLOps, including using assets for different elements of your machine learning pipeline, how to automate model training and monitoring your model's drift.
+We will work through several aspects of MLOps, including using assets for different elements of your machine learning pipeline, how to automate model training, and monitoring your model's drift.
 
 ---
 
@@ -32,8 +31,6 @@ We will work through several aspects of MLOps, including using assets for differ
 ---
 
 ## Machine learning development
-
-Before we go into how to operatialize a machine learning model, let's go over some of the tools you can use in Dagster to develop a machine learning model.
 
 If you are already using Dagster for your ETL pipelines, it is a natural progression to build out and test your models in Dagster.
 
@@ -52,7 +49,7 @@ height={1064}
 
 ### Data Ingestion
 
-First, we will be creating an asset which retrieves all the hackernews records from the previous run to the latest hackernews record.
+First, we will be creating an asset which retrieves the latest 1000 hackernews records.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=data_ingestion_start endbefore=data_ingestion_end
 import requests
@@ -194,28 +191,3 @@ def model_inference(xgboost, Tfidf_Vectorizer):
 Depending on what the objective of your ML model is, you can use this data to set alerts, save model performance history and trigger retraining.
 
 Dagster integrates with [Weights & Biases](/\_apidocs/libraries/dagster-wandb) and an [example](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb) which demonstrates how to use W\&B's artifacts with Dagster.
-
----
-
-## Machine learning operations
-
-Now that we have set up our data and machine learning pipeline, let's go over some of the Dagster tools to operationalize your pipeline.
-
-### Monitoring
-
-Integrating your machine learning models into your ETL pipelines in Dagster will allow you to understand what assets, including your ML models, were refreshed and when, what has failed. With Dagster, setting up monitoring on the performance on your ML model can not only let you know that something has failed or a model is not performing, but allows you to set up remidation paths such as triggering model retraining that can help automatically resolve issues like model drift.
-
-### Automation
-
-Whether you have a large or small model, Dagster can help automate the data refreshes and model training based on your specific business needs.
-
-If we think through our hackernews example:
-
-- We want to refresh the hackernews stories and store them in a database using [I/O managers](/concepts/io-management/io-managers) every 10 minutes using a [freshness policy](/concepts/partitions-schedules-sensors/asset-sensors#freshness-policy-sensors)
-- We want to retrain the machine learning model using a [cron schedule on a daily basis](/concepts/partitions-schedules-sensors/schedules#basic-schedules)
-- We want to trigger the hyperparameters to optimize the model when the model performance is declining using a [graph backed asset](/concepts/assets/graph-backed-assets)
-- We want to use the model to predict the engagement on some sample titles to see which we should chose to generate maximum engagement on a post. We can set up an input mechanism such as a file in an S3 bucket with a series of titles and a [sensor](/concepts/partitions-schedules-sensors/sensors) that triggers a job that populates the predicted values.
-
-### Asset Partitions
-
-By using asset partitions within the scope of a machine learning pipeline, you can use new partitions of labeled data to continuously track the performance of your model.
