@@ -196,7 +196,6 @@ class ScheduleEvaluationContext:
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resources
-        self._resources_cm = None
         self._resources = None
         self._resources_contain_cm = None
         self._cm_scope_entered = False
@@ -206,18 +205,8 @@ class ScheduleEvaluationContext:
         return self
 
     def __exit__(self, *exc) -> None:
-        if self._resources_cm is not None:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
-
-    def __del__(self) -> None:
-        if (
-            self._resources_contain_cm
-            and not self._cm_scope_entered
-            and self._resources_cm is not None
-        ):
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
     def resources(self) -> Resources:
@@ -228,11 +217,9 @@ class ScheduleEvaluationContext:
             from dagster._core.execution.build_resources import build_resources
 
             instance = self.instance if self._instance or self._instance_ref else None
-            self._resources_cm = build_resources(
-                resources=self._resource_defs or {}, instance=instance
-            )
 
-            self._resources = self._resources_cm.__enter__()
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
 
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
