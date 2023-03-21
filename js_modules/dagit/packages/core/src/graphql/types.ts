@@ -2859,6 +2859,7 @@ export type ResourceDetails = {
   isTopLevel: Scalars['Boolean'];
   name: Scalars['String'];
   nestedResources: Array<NestedResourceEntry>;
+  parentResources: Array<NestedResourceEntry>;
   resourceType: Scalars['String'];
 };
 
@@ -10226,6 +10227,14 @@ export const buildResourceDetails = (
     nestedResources:
       overrides && overrides.hasOwnProperty('nestedResources')
         ? overrides.nestedResources!
+        : [
+            relationshipsToOmit.has('NestedResourceEntry')
+              ? ({} as NestedResourceEntry)
+              : buildNestedResourceEntry({}, relationshipsToOmit),
+          ],
+    parentResources:
+      overrides && overrides.hasOwnProperty('parentResources')
+        ? overrides.parentResources!
         : [
             relationshipsToOmit.has('NestedResourceEntry')
               ? ({} as NestedResourceEntry)
