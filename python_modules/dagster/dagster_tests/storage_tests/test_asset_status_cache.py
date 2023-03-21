@@ -360,12 +360,6 @@ def test_failure_cache():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
 
         asset_job.execute_in_process(
             instance=created_instance, partition_key="good1", raise_on_error=False
@@ -381,12 +375,6 @@ def test_failure_cache():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1", "fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
 
         run_1 = create_run_for_test(created_instance)
         created_instance.event_log_storage.store_event(
@@ -413,12 +401,6 @@ def test_failure_cache():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
 
         run_2 = create_run_for_test(created_instance)
         created_instance.event_log_storage.store_event(
@@ -443,9 +425,6 @@ def test_failure_cache():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail2"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"good2"}
 
 
 def test_failure_cache_added():
@@ -522,15 +501,9 @@ def test_failure_cache_in_progress_runs():
         cached_status = get_and_update_asset_status_cache_value(
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
+        assert partitions_def.deserialize_subset(
+            cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
 
         run_2 = create_run_for_test(created_instance, status=DagsterRunStatus.STARTED)
         created_instance.event_log_storage.store_event(
@@ -553,27 +526,18 @@ def test_failure_cache_in_progress_runs():
         cached_status = get_and_update_asset_status_cache_value(
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
+        assert partitions_def.deserialize_subset(
+            cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail2"}
 
         created_instance.report_run_failed(run_2)
 
         cached_status = get_and_update_asset_status_cache_value(
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
-        assert cached_status.deserialize_failed_partition_subsets(
-            partitions_def
+        assert partitions_def.deserialize_subset(
+            cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1", "fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
 
 
 def test_cache_cancelled_runs():
@@ -611,9 +575,6 @@ def test_cache_cancelled_runs():
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
         early_id = cached_status.earliest_in_progress_materialization_event_id
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
 
         run_2 = create_run_for_test(created_instance, status=DagsterRunStatus.STARTED)
         created_instance.event_log_storage.store_event(
@@ -642,9 +603,6 @@ def test_cache_cancelled_runs():
             ).get_partition_keys()
             == set()
         )
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1", "fail2"}
         assert cached_status.earliest_in_progress_materialization_event_id == early_id
 
         created_instance.report_run_failed(run_2)
@@ -655,9 +613,6 @@ def test_cache_cancelled_runs():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail2"}
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
         assert cached_status.earliest_in_progress_materialization_event_id == early_id
 
         created_instance.report_run_canceled(run_1)
@@ -668,12 +623,6 @@ def test_cache_cancelled_runs():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail2"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
         assert cached_status.earliest_in_progress_materialization_event_id is None
 
 
@@ -729,9 +678,6 @@ def test_failure_cache_concurrent_materializations():
         cached_status = get_and_update_asset_status_cache_value(
             created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
         )
-        assert cached_status.deserialize_in_progress_partition_subsets(
-            partitions_def
-        ).get_partition_keys() == {"fail1"}
         assert cached_status.earliest_in_progress_materialization_event_id is not None
 
         created_instance.report_run_failed(run_2)
@@ -742,11 +688,5 @@ def test_failure_cache_concurrent_materializations():
         assert partitions_def.deserialize_subset(
             cached_status.serialized_failed_partition_subset
         ).get_partition_keys() == {"fail1"}
-        assert (
-            cached_status.deserialize_in_progress_partition_subsets(
-                partitions_def
-            ).get_partition_keys()
-            == set()
-        )
         # run_1 is still in progress, but run_2 started after and failed, so we move on
         assert cached_status.earliest_in_progress_materialization_event_id is None
