@@ -348,21 +348,13 @@ const ResourceUses: React.FC<{
 
   if (numUses === 0) {
     return (
-      <Table>
-        <tbody>
-          <tr>
-            <td>
-              <Box padding={{vertical: 8}}>
-                <NonIdealState
-                  icon="search"
-                  title="No uses"
-                  description="This resource is not used by any assets or resources."
-                />
-              </Box>
-            </td>
-          </tr>
-        </tbody>
-      </Table>
+      <Box padding={{vertical: 16}}>
+        <NonIdealState
+          icon="list"
+          title="No uses"
+          description="This resource is not used by any assets or resources."
+        />
+      </Box>
     );
   }
 
