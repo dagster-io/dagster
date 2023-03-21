@@ -17,7 +17,7 @@ def hackernews_stories():
     scope = range(latest_item - 1000, latest_item)
     for item_id in scope:
         item = requests.get(
-            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+            "https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
         results.append(item)
     # Store the results in a dataframe and filter on stories with valid titles
@@ -116,7 +116,7 @@ def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_mo
 def latest_story_comment_predictions(xgboost_comments_model, tfidf_vectorizer):
     # Get the max ID number from hacker news
     latest_item = requests.get(
-        f"https://hacker-news.firebaseio.com/v0/maxitem.json"
+        "https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
     # Get items based on story ids from the HackerNews items endpoint
     results = []
