@@ -185,7 +185,7 @@ class FreshnessPolicy(
 
         # iterate over each schedule tick in the provided time window
         evaluation_tick = next(constraint_ticks, None)
-        while evaluation_tick is not None and evaluation_tick < window_end:
+        while evaluation_tick is not None:
             required_data_time = evaluation_tick - self.maximum_lag_delta
             required_by_time = evaluation_tick
 
@@ -198,6 +198,8 @@ class FreshnessPolicy(
             )
 
             evaluation_tick = next(constraint_ticks, None)
+            if evaluation_tick is None or evaluation_tick > window_end:
+                break
             # fallback if the user selects a very small maximum_lag_minutes value
             if len(constraints) > 100:
                 break

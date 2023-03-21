@@ -381,6 +381,7 @@ freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
 freshness_1d = FreshnessPolicy(maximum_lag_minutes=24 * 60)
 freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+freshness_cron = FreshnessPolicy(cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60)
 
 # basics
 one_asset = [asset_def("asset1")]
@@ -466,6 +467,12 @@ overlapping_freshness_inf = diamond + [
 overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
+]
+
+overlapping_freshness_cron = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], freshness_policy=freshness_30m),
+    asset_def("asset3", ["asset1"], freshness_policy=freshness_cron),
 ]
 
 non_subsettable_multi_asset_on_top = [
@@ -1272,6 +1279,17 @@ scenarios = {
         # 3, so will be defered
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_overlapping_defer_propagate_with_cron": AssetReconciliationScenario(
+        assets=overlapping_freshness_cron,
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=6, tz="UTC"),
+        evaluation_delta=datetime.timedelta(minutes=90),
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3"]),
+            run(["asset1"]),
+        ],
+        # don't run asset 3 even though its parent updated as freshness policy will handle it
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
     ),
     "freshness_non_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=non_subsettable_multi_asset_on_top,
