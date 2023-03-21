@@ -92,7 +92,6 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    Materialization,
     ModeDefinition,
     PartitionSetDefinition,
     PresetDefinition,
@@ -1396,36 +1395,6 @@ def chained_failure_pipeline():
     after_failure(conditionally_fail(always_succeed()))
 
 
-@pipeline
-def backcompat_materialization_pipeline():
-    @op
-    def backcompat_materialize(_):
-        yield Materialization(
-            asset_key="all_types",
-            description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
-                ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-            ],
-        )
-        yield Output(None)
-
-    backcompat_materialize()
-
-
 @graph
 def simple_graph():
     noop_solid()
@@ -1950,7 +1919,6 @@ def define_pipelines():
         tagged_pipeline,
         chained_failure_pipeline,
         dynamic_pipeline,
-        backcompat_materialization_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),

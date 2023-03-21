@@ -27,7 +27,6 @@ from dagster import (
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
-from dagster._legacy import Materialization
 
 
 def execute_op_in_graph(an_op, instance=None, resources=None):
@@ -443,8 +442,7 @@ def test_log_events():
     @op
     def basic_op(context):
         context.log_event(AssetMaterialization("first"))
-        context.log_event(Materialization("second"))
-        context.log_event(AssetMaterialization("third"))
+        context.log_event(AssetMaterialization("second"))
         context.log_event(ExpectationResult(success=True))
         context.log_event(AssetObservation("fourth"))
 
@@ -455,7 +453,7 @@ def test_log_events():
             for materialization in result.asset_materializations_for_node("basic_op")
         ]
 
-        assert asset_materialization_keys == ["first", "second", "third"]
+        assert asset_materialization_keys == ["first", "second"]
 
         relevant_events_from_execution = [
             event
@@ -483,12 +481,9 @@ def test_log_events():
             assert events[1].is_step_materialization
             assert events[1].event_specific_data.materialization.label == "second"
 
-            assert events[2].is_step_materialization
-            assert events[2].event_specific_data.materialization.label == "third"
+            assert events[2].is_expectation_result
 
-            assert events[3].is_expectation_result
-
-            assert events[4].is_asset_observation
+            assert events[3].is_asset_observation
 
         _assertions_from_event_list(relevant_events_from_execution)
 

@@ -25,7 +25,6 @@ from dagster._core.definitions import (
     AssetObservation,
     ExpectationResult,
     HookDefinition,
-    Materialization,
     MetadataEntry,
     NodeHandle,
 )
@@ -698,7 +697,7 @@ class DagsterEvent(
         return cast(StepExpectationResultData, self.event_specific_data)
 
     @property
-    def materialization(self) -> Union[Materialization, AssetMaterialization]:
+    def materialization(self) -> AssetMaterialization:
         _assert_type(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
@@ -882,7 +881,7 @@ class DagsterEvent(
     @staticmethod
     def asset_materialization(
         step_context: IStepContext,
-        materialization: Union[AssetMaterialization, Materialization],
+        materialization: AssetMaterialization,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -1415,20 +1414,20 @@ class StepMaterializationData(
     NamedTuple(
         "_StepMaterializationData",
         [
-            ("materialization", Union[Materialization, AssetMaterialization]),
+            ("materialization", AssetMaterialization),
             ("asset_lineage", Sequence[AssetLineageInfo]),
         ],
     )
 ):
     def __new__(
         cls,
-        materialization: Union[Materialization, AssetMaterialization],
+        materialization: AssetMaterialization,
         asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ):
         return super(StepMaterializationData, cls).__new__(
             cls,
             materialization=check.inst_param(
-                materialization, "materialization", (Materialization, AssetMaterialization)
+                materialization, "materialization", AssetMaterialization
             ),
             asset_lineage=check.opt_sequence_param(
                 asset_lineage, "asset_lineage", of_type=AssetLineageInfo
