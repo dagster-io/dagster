@@ -355,6 +355,13 @@ GET_2D_ASSET_PARTITIONS = """
                     }
                 }
             }
+            partitionDefinition {
+                name
+                dimensionTypes {
+                    dynamicPartitionsDefinitionName
+                    name
+                }
+            }
         }
     }
 """
@@ -1897,6 +1904,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetNodes"]
+
+        assert result.data["assetNodes"][0]["partitionDefinition"] == {
+            "dimensionTypes": [
+                {"dynamicPartitionsDefinitionName": "dynamic", "name": "dynamic"},
+                {"dynamicPartitionsDefinitionName": None, "name": "static"},
+            ],
+            "name": None,
+        }
 
         # success asset contains 1 materialized range
         success_asset_result = result.data["assetNodes"][1]

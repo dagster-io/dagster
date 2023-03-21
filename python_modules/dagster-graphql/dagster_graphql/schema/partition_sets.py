@@ -362,6 +362,7 @@ class GrapheneDimensionDefinitionType(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionDefinitionType)
     isPrimaryDimension = graphene.NonNull(graphene.Boolean)
+    dynamicPartitionsDefinitionName = graphene.Field(graphene.String)
 
     class Meta:
         name = "DimensionDefinitionType"
@@ -418,6 +419,11 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     == cast(
                         MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
                     ).primary_dimension.name,
+                    dynamicPartitionsDefinitionName=dim.external_partitions_def_data.name
+                    if isinstance(
+                        dim.external_partitions_def_data, ExternalDynamicPartitionsDefinitionData
+                    )
+                    else None,
                 )
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
@@ -430,6 +436,9 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                         partition_def_data
                     ),
                     isPrimaryDimension=True,
+                    dynamicPartitionsDefinitionName=partition_def_data.name
+                    if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+                    else None,
                 )
             ],
             timeWindowMetadata=_get_time_partitions_metadata(partition_def_data)
