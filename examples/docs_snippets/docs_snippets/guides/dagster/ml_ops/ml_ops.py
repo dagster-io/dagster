@@ -2,11 +2,11 @@
 
 ## data_ingestion_start
 import requests
-from dagster import asset, FreshnessPolicy
+from dagster import asset
 import pandas as pd
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
+@asset
 def hackernews_stories():
     # Get the max ID number from hacker news
     latest_item = requests.get(
@@ -56,7 +56,7 @@ import numpy as np
 
 
 @multi_asset(
-    outs={"tfidf_Vectorizer": AssetOut(), "transformed_training_data": AssetOut()}
+    outs={"tfidf_vectorizer": AssetOut(), "transformed_training_data": AssetOut()}
 )
 def transformed_train_data(training_data):
     X_train, y_train = training_data
@@ -70,10 +70,10 @@ def transformed_train_data(training_data):
 
 
 @asset
-def transformed_test_data(test_data, tfidf_Vectorizer):
+def transformed_test_data(test_data, tfidf_vectorizer):
     X_test, y_test = test_data
     # Use the fitted tokenizer to transform the test dataset
-    transformed_X_test = tfidf_Vectorizer.transform(X_test)
+    transformed_X_test = tfidf_vectorizer.transform(X_test)
     transformed_y_test = np.array(y_test)
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
@@ -112,8 +112,8 @@ def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_mo
 
 
 ## inference_start
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
-def latest_story_comment_predictions(xgboost, Tfidf_Vectorizer):
+@asset
+def latest_story_comment_predictions(xgboost_comments_model, tfidf_vectorizer):
     # Get the max ID number from hacker news
     latest_item = requests.get(
         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
@@ -133,8 +133,8 @@ def latest_story_comment_predictions(xgboost, Tfidf_Vectorizer):
         df = df[~df.title.isna()]
     inference_x = df.title
     # Transform the new story titles using the existing vectorizer
-    inference_x = Tfidf_Vectorizer.transform(inference_x)
-    return xgboost.predict(inference_x)
+    inference_x = tfidf_vectorizer.transform(inference_x)
+    return xgboost_comments_model.predict(inference_x)
 
 
 ## inference_end

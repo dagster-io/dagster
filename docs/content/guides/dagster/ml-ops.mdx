@@ -1,5 +1,5 @@
 ---
-title: Building machine learning pipelines In Dagster | Dagster Docs
+title: Building machine learning pipelines with Dagster | Dagster Docs
 description: This guide illustrates how to use Dagster to operationalize your machine learning pipeline
 ---
 
@@ -11,12 +11,12 @@ We will work through building a machine learning pipeline, including using asset
 
 ---
 
-## Why build your ML pipelines with Dagster?
+## Benefits of building machine learning pipelines in Dagster
 
 - Dagster makes iterating on machine learning models and testing easy, and it is designed to use during the development process.
 - Dagster has a lightweight execution model means you can access the benefits of an orchestrator, like re-executing from the middle of a pipeline and parallelizing steps while you're experimenting.
 - Dagster models data assets, not just tasks, so it understands the upstream and downstream data dependencies.
-- Dagster is a one-stop shop for both the data transformations and the models that depend on the data transformations!
+- Dagster is a one-stop shop for both the data transformations and the models that depend on the data transformations.
 
 <Note>
   This guide assumes you have familiarity with machine learning concepts and
@@ -40,13 +40,13 @@ For this guide, we will be using the Hacker News data demoed in the [tutorial](/
 
 The machine learning model we will walk through takes the Hacker News stories and uses the titles to predict the number of comments that a story will generate. This will be a supervised model since we have the number of comments for all the previous stories.
 
-The assets graph will look like this at the end of this guide:
+The assets graph will look like this at the end of this guide (click to expand):
 
 <Image
 alt="alt"
 src="/images/guides/ml-ops/ml_asset_dag.png"
-width={1804}
-height={1064}
+width={1188}
+height={941}
 />
 
 ### Ingesting Data
@@ -55,11 +55,11 @@ First, we will create an asset that retrieves the most recent Hacker News record
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=data_ingestion_start endbefore=data_ingestion_end
 import requests
-from dagster import asset, FreshnessPolicy
+from dagster import asset
 import pandas as pd
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=10))
+@asset
 def hackernews_stories():
     # Get the max ID number from hacker news
     latest_item = requests.get(
@@ -167,17 +167,14 @@ def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_mo
     return score
 ```
 
-We include [freshness policies](/concepts/partitions-schedules-sensors/asset-sensors#freshness-policy-sensors) in the models here which will ensure the upstream data transformation assets are updated to comply with these policies.
-
 ### Evaluating our results
 
 In our model assets, we evaluated each of the models on the test data and in this case, got the [score](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor.score) derived from comparing the predicted to actual results. Next, to predict the results, we'll create another asset that runs inference on the model more frequently than the model is re-trained.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=inference_start endbefore=inference_end
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
+@asset
 def latest_story_comment_predictions(xgboost, Tfidf_Vectorizer):
     # Get the max ID number from hacker news
-
     latest_item = requests.get(
         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
