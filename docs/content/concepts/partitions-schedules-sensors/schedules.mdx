@@ -131,12 +131,21 @@ from dagster import (
 )
 
 
-@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
+hourly_partition_def = HourlyPartitionsDefinition(
+    start_date="2023-03-19-00:00"
+)
+
+
+@asset(partitions_def=hourly_partition_def)
 def hourly_asset():
     ...
 
 
-partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
+partitioned_asset_job = define_asset_job(
+    "partitioned_job", 
+    selection=[hourly_asset],
+    partitions_def=hourly_partition_def,
+    )
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
