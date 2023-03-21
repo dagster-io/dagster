@@ -127,7 +127,8 @@ def create_dagster_pandas_dataframe_description(description, columns):
 def create_table_schema_metadata_from_dataframe(
     pandas_df: pd.DataFrame,
 ) -> TableSchemaMetadataValue:
-    """This function takes a pandas DataFrame and returns its metadata as a Dagster TableSchema.
+    """
+    This function takes a pandas DataFrame and returns its metadata as a Dagster TableSchema.
 
     Args:
         pandas_df (pandas.DataFrame): A pandas DataFrame for which to create metadata.
