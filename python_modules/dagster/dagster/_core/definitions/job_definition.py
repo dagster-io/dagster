@@ -110,7 +110,7 @@ class JobDefinition(PipelineDefinition):
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
-        _did_user_provide_resources: bool = False,
+        _did_user_provide_resources: Optional[bool] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers

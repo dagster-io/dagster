@@ -1551,6 +1551,15 @@ def test_bind_resource_to_job_with_job_config() -> None:
     assert defs.get_job_def("hello_earth_job").execute_in_process().success
     assert out_txt == ["msg: hello, earth!"]
 
+    # Validate that we correctly error
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+        Definitions(
+            jobs=BindResourcesToJobs([hello_world_job]),
+        )
+
 
 def test_execute_in_process() -> None:
     out_txt = []
