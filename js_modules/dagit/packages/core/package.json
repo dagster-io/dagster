@@ -18,7 +18,7 @@
     "build-storybook": "build-storybook"
   },
   "peerDependencies": {
-    "@apollo/client": "3.6.9",
+    "@apollo/client": "3.7.10",
     "@blueprintjs/core": "^3.45.0",
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
@@ -124,6 +124,7 @@
     "eslint-plugin-graphql": "4.0.0",
     "eslint-plugin-storybook": "^0.5.5",
     "faker": "5.5.3",
+    "graphql-codegen-typescript-mock-data": "^3.3.0",
     "graphql-tag": "^2.10.1",
     "graphql.macro": "^1.4.2",
     "identity-obj-proxy": "^3.0.0",
