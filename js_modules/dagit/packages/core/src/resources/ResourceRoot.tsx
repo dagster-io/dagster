@@ -111,9 +111,8 @@ export const ResourceRoot: React.FC<Props> = (props) => {
       ? queryResult.data?.topLevelResourceDetailsOrError.parentResources.length
       : 0;
 
-  const tab = useRouteMatch<{tab?: string; selector: string}>([
-    '/locations/:repoPath/resources/:name/:tab?',
-  ])?.params.tab;
+  const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
+    .tab;
 
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
@@ -170,7 +169,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                 firstInitialPercent={50}
                 firstMinSize={400}
                 first={
-                  <div style={{overflowY: 'scroll'}}>
+                  <Box padding={{bottom: 48}} style={{overflowY: 'auto'}}>
                     {tab === 'uses' ? (
                       <ResourceUses
                         resourceDetails={topLevelResourceDetailsOrError}
@@ -182,7 +181,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                         repoAddress={repoAddress}
                       />
                     )}
-                  </div>
+                  </Box>
                 }
                 second={
                   <RightInfoPanel>
@@ -260,15 +259,13 @@ const ResourceConfig: React.FC<{
                       description={resource.resource.description || undefined}
                     />
                   ) : (
-                    <ResourceEntry name={resource.name} description={undefined} />
+                    <ResourceEntry name={resource.name} />
                   );
 
                 return (
                   <tr key={resource.name}>
                     <td>
-                      <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                        <strong>{resource.name}</strong>
-                      </Box>
+                      <strong>{resource.name}</strong>
                     </td>
                     <td colSpan={2}>{resourceEntry}</td>
                   </tr>
@@ -296,7 +293,7 @@ const ResourceConfig: React.FC<{
                 <td colSpan={3}>
                   <Box padding={{vertical: 8}}>
                     <NonIdealState
-                      icon="search"
+                      icon="settings"
                       title="No configuration"
                       description="This resource has no configuration fields."
                     />
@@ -324,7 +321,7 @@ const ResourceConfig: React.FC<{
                     </td>
                     <td>{remapName(field.configTypeKey)}</td>
                     <td>
-                      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                      <Box flex={{direction: 'row', gap: 16}}>
                         <Tooltip content={<>Default: {defaultValue}</>} canShow={!isDefault}>
                           {type === 'ENV_VAR' ? <Tag>{actualValue}</Tag> : actualValue}
                         </Tooltip>
@@ -351,37 +348,35 @@ const ResourceUses: React.FC<{
 
   const parentResources = resourceDetails.parentResources;
   return (
-    <>
-      <Box>
-        <SectionHeader>
-          <Subheading>Parent resources</Subheading>
-        </SectionHeader>
-        <Table>
-          <thead>
-            <tr>
-              <th>Resource</th>
-            </tr>
-          </thead>
-          <tbody>
-            {parentResources.map((resource) => {
-              return (
-                resource.resource && (
-                  <tr key={resource.name}>
-                    <td colSpan={2}>
-                      <ResourceEntry
-                        url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
-                        name={resourceDisplayName(resource.resource) || ''}
-                        description={resource.resource.description || undefined}
-                      />
-                    </td>
-                  </tr>
-                )
-              );
-            })}
-          </tbody>
-        </Table>
-      </Box>
-    </>
+    <Box>
+      <SectionHeader>
+        <Subheading>Parent resources</Subheading>
+      </SectionHeader>
+      <Table>
+        <thead>
+          <tr>
+            <th>Resource</th>
+          </tr>
+        </thead>
+        <tbody>
+          {parentResources.map((resource) => {
+            return (
+              resource.resource && (
+                <tr key={resource.name}>
+                  <td colSpan={2}>
+                    <ResourceEntry
+                      url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
+                      name={resourceDisplayName(resource.resource) || ''}
+                      description={resource.resource.description || undefined}
+                    />
+                  </td>
+                </tr>
+              )
+            );
+          })}
+        </tbody>
+      </Table>
+    </Box>
   );
 };
 
@@ -394,10 +389,7 @@ export const ResourceEntry: React.FC<{
 
   return (
     <Box flex={{direction: 'column'}}>
-      <Box
-        flex={{direction: 'row', alignItems: 'center', display: 'inline-flex', gap: 4}}
-        style={{maxWidth: '100%'}}
-      >
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{maxWidth: '100%'}}>
         <Icon name="resource" color={Colors.Blue700} />
         <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
           {url ? (
