@@ -83,6 +83,6 @@ def failing_pattern_multi_partitioned(context):
 
 
 @asset(partitions_def=multipartition_w_dynamic_partitions_def)
-def dynamic_dimension_random_failures():
+def multipartitioned_with_dynamic_dimension_random_failures():
     if random() < FAILURE_RATE:
         raise ValueError("Failed")

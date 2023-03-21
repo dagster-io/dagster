@@ -35,10 +35,8 @@ multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
 )
 
 
-@asset(
-    partitions_def=multipartition_w_dynamic_partitions_def,
-)
-def dynamic_dimension_success():
+@asset(partitions_def=multipartition_w_dynamic_partitions_def)
+def multipartitioned_with_dynamic_dimension():
     return 1
 
 
