@@ -20,7 +20,6 @@ from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozentags
 from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
@@ -149,8 +148,8 @@ class UserDefinedDagsterK8sConfig(
         )
 
 
-def get_k8s_resource_requirements(tags):
-    check.inst_param(tags, "tags", frozentags)
+def get_k8s_resource_requirements(tags: Mapping[str, str]):
+    check.mapping_param(tags, "tags", key_type=str, value_type=str)
     check.invariant(K8S_RESOURCE_REQUIREMENTS_KEY in tags)
 
     resource_requirements = json.loads(tags[K8S_RESOURCE_REQUIREMENTS_KEY])
@@ -166,8 +165,8 @@ def get_k8s_resource_requirements(tags):
     return result.value
 
 
-def get_user_defined_k8s_config(tags):
-    check.inst_param(tags, "tags", frozentags)
+def get_user_defined_k8s_config(tags: Mapping[str, str]):
+    check.mapping_param(tags, "tags", key_type=str, value_type=str)
 
     if not any(key in tags for key in [K8S_RESOURCE_REQUIREMENTS_KEY, USER_DEFINED_K8S_CONFIG_KEY]):
         return UserDefinedDagsterK8sConfig()
@@ -187,7 +186,7 @@ def get_user_defined_k8s_config(tags):
 
         user_defined_k8s_config = result.value
 
-    container_config = user_defined_k8s_config.get("container_config", {})
+    container_config = user_defined_k8s_config.get("container_config", {})  # type: ignore
 
     # Backcompat for resource requirements key
     if K8S_RESOURCE_REQUIREMENTS_KEY in tags:
@@ -198,11 +197,11 @@ def get_user_defined_k8s_config(tags):
 
     return UserDefinedDagsterK8sConfig(
         container_config=container_config,
-        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
-        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
-        job_config=user_defined_k8s_config.get("job_config"),
-        job_metadata=user_defined_k8s_config.get("job_metadata"),
-        job_spec_config=user_defined_k8s_config.get("job_spec_config"),
+        pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),  # type: ignore
+        pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),  # type: ignore
+        job_config=user_defined_k8s_config.get("job_config"),  # type: ignore
+        job_metadata=user_defined_k8s_config.get("job_metadata"),  # type: ignore
+        job_spec_config=user_defined_k8s_config.get("job_spec_config"),  # type: ignore
     )
 
 

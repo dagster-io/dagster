@@ -14,7 +14,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, make_readonly_value
+from dagster._utils import hash_collection
 
 
 @whitelist_for_serdes
@@ -45,36 +45,11 @@ class AssetsDefinitionCacheableData(
         internal_asset_deps: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
         group_name: Optional[str] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        key_prefix: Optional[Sequence[str]] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ):
-        keys_by_input_name = check.opt_nullable_mapping_param(
-            keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
-        )
-
-        keys_by_output_name = check.opt_nullable_mapping_param(
-            keys_by_output_name, "keys_by_output_name", key_type=str, value_type=AssetKey
-        )
-
-        internal_asset_deps = check.opt_nullable_mapping_param(
-            internal_asset_deps, "internal_asset_deps", key_type=str, value_type=(set, frozenset)
-        )
-
-        metadata_by_output_name = check.opt_nullable_mapping_param(
-            metadata_by_output_name, "metadata_by_output_name", key_type=str, value_type=dict
-        )
-
-        freshness_policies_by_output_name = check.opt_nullable_mapping_param(
-            freshness_policies_by_output_name,
-            "freshness_policies_by_output_name",
-            key_type=str,
-            value_type=FreshnessPolicy,
-        )
-
-        key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
-
         extra_metadata = check.opt_nullable_mapping_param(extra_metadata, "extra_metadata")
         try:
             # check that the value is JSON serializable
@@ -84,24 +59,45 @@ class AssetsDefinitionCacheableData(
 
         return super().__new__(
             cls,
-            keys_by_input_name=frozendict(keys_by_input_name) if keys_by_input_name else None,
-            keys_by_output_name=frozendict(keys_by_output_name) if keys_by_output_name else None,
-            internal_asset_deps=frozendict(
-                {k: frozenset(v) for k, v in internal_asset_deps.items()}
-            )
-            if internal_asset_deps
-            else None,
+            keys_by_input_name=check.opt_nullable_mapping_param(
+                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+            ),
+            keys_by_output_name=check.opt_nullable_mapping_param(
+                keys_by_output_name, "keys_by_output_name", key_type=str, value_type=AssetKey
+            ),
+            internal_asset_deps=check.opt_nullable_mapping_param(
+                internal_asset_deps,
+                "internal_asset_deps",
+                key_type=str,
+                value_type=(set, frozenset),
+            ),
             group_name=check.opt_str_param(group_name, "group_name"),
-            metadata_by_output_name=make_readonly_value(metadata_by_output_name)
-            if metadata_by_output_name
-            else None,
-            key_prefix=frozenlist(key_prefix) if key_prefix else None,
+            metadata_by_output_name=check.opt_nullable_mapping_param(
+                metadata_by_output_name, "metadata_by_output_name", key_type=str
+            ),
+            key_prefix=[key_prefix]
+            if isinstance(key_prefix, str)
+            else check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
-            extra_metadata=make_readonly_value(extra_metadata) if extra_metadata else None,
-            freshness_policies_by_output_name=frozendict(freshness_policies_by_output_name)
-            if freshness_policies_by_output_name
-            else None,
+            extra_metadata=extra_metadata,
+            freshness_policies_by_output_name=check.opt_nullable_mapping_param(
+                freshness_policies_by_output_name,
+                "freshness_policies_by_output_name",
+                key_type=str,
+                value_type=FreshnessPolicy,
+            ),
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
+    # - `RepositoryLoadData` has a `Mapping` attribute containing `AssetsDefinitionCacheableData`
+    # - `AssetsDefinitionCacheableData` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class CacheableAssetsDefinition(ResourceAddable, ABC):

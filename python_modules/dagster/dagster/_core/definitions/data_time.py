@@ -14,7 +14,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import frozendict
+from dagster._utils import make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -168,8 +168,9 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: int,
         record_timestamp: Optional[float],
-        record_tags: Mapping[str, str],
+        record_tags: Tuple[Tuple[str, str]],  # for hashability
     ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        record_tags_dict = dict(record_tags)
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
 
@@ -184,10 +185,10 @@ class CachingDataTimeResolver:
                 continue
 
             input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
-            if input_event_pointer_tag in record_tags:
+            if input_event_pointer_tag in record_tags_dict:
                 # get the upstream materialization event which was consumed when producing this
                 # materialization event
-                pointer_tag = record_tags[input_event_pointer_tag]
+                pointer_tag = record_tags_dict[input_event_pointer_tag]
                 if pointer_tag and pointer_tag != "NULL":
                     input_record_id = int(pointer_tag)
                     parent_record = self._instance_queryer.get_latest_materialization_record(
@@ -209,7 +210,7 @@ class CachingDataTimeResolver:
                 asset_key=parent_key,
                 record_id=parent_record.storage_id if parent_record else None,
                 record_timestamp=parent_record.event_log_entry.timestamp if parent_record else None,
-                record_tags=frozendict(
+                record_tags=make_hashable(
                     (
                         parent_record.asset_materialization.tags
                         if parent_record and parent_record.asset_materialization
@@ -233,7 +234,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: Optional[int],
         record_timestamp: Optional[float],
-        record_tags: Mapping[str, str],
+        record_tags: Tuple[Tuple[str, str]],  # for hashability
     ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
@@ -279,7 +280,7 @@ class CachingDataTimeResolver:
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=frozendict(record.asset_materialization.tags or {}),
+            record_tags=make_hashable(record.asset_materialization.tags or {}),
         )
 
         return {
@@ -330,7 +331,7 @@ class CachingDataTimeResolver:
                 asset_key=asset_key,
                 record_id=latest_record.storage_id if latest_record else None,
                 record_timestamp=latest_record.event_log_entry.timestamp if latest_record else None,
-                record_tags=frozendict(
+                record_tags=make_hashable(
                     (
                         latest_record.asset_materialization.tags
                         if latest_record and latest_record.asset_materialization

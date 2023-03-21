@@ -13,7 +13,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._utils import frozendict, frozenlist
 
 from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
@@ -54,11 +53,11 @@ class NodeDefinition(NamedConfigurableDefinition):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
-        self._input_defs = frozenlist(input_defs)
-        self._input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
+        self._input_defs = input_defs
+        self._input_dict = {input_def.name: input_def for input_def in input_defs}
         check.invariant(len(self._input_defs) == len(self._input_dict), "Duplicate input def names")
-        self._output_defs = frozenlist(output_defs)
-        self._output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
+        self._output_defs = output_defs
+        self._output_dict = {output_def.name: output_def for output_def in output_defs}
         check.invariant(
             len(self._output_defs) == len(self._output_dict), "Duplicate output def names"
         )

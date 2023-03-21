@@ -1,6 +1,6 @@
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils import make_readonly_value
+from dagster._utils import hash_collection
 from dagster_k8s.container_context import K8sContainerContext
 
 
@@ -189,9 +189,10 @@ def test_invalid_config():
 
 
 def _check_same_sorted(list1, list2):
-    assert sorted(
-        [make_readonly_value(val) for val in list1], key=lambda val: val.__hash__()
-    ) == sorted([make_readonly_value(val) for val in list2], key=lambda val: val.__hash__())
+    key_fn = lambda x: hash_collection(x) if isinstance(x, (list, dict)) else hash(x)
+    sorted1 = sorted(list1, key=key_fn)
+    sorted2 = sorted(list2, key=key_fn)
+    assert sorted1 == sorted2
 
 
 def test_camel_case_volumes(container_context_camel_case_volumes, container_context):

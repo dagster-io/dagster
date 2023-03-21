@@ -15,7 +15,6 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
-from dagster._utils import frozenlist
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -317,7 +316,7 @@ class ListRepositoriesResponse(
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else None
             ),
