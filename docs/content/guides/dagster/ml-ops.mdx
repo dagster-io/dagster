@@ -162,7 +162,7 @@ We include [freshness policies](/concepts/partitions-schedules-sensors/asset-sen
 
 ### Evaluating our results
 
-In our model assets, we evaluated each of the models on the test data and in this case, got the error between the predicted and actual results. Next, lets create an asset which runs inference on the model, more frequently than the model is re-trained to predict the results.
+In our model assets, we evaluated each of the models on the test data and in this case, got the [score](https://xgboost.readthedocs.io/en/stable/python/python_api.html#xgboost.XGBRegressor.score) derived from comparing the predicted to actual results. Next, to predict the results, we'll create another asset that runs inference on the model more frequently than the model is re-trained.
 
 ```python file=/guides/dagster/ml_ops/ml_ops.py startafter=inference_start endbefore=inference_end
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
@@ -192,4 +192,9 @@ def model_inference(xgboost, Tfidf_Vectorizer):
 
 Depending on what the objective of your ML model is, you can use this data to set alerts, save model performance history and trigger retraining.
 
-Dagster integrates with [Weights & Biases](/\_apidocs/libraries/dagster-wandb) and an [example](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb) which demonstrates how to use W\&B's artifacts with Dagster.
+---
+## Where to go from here 
+
+- Dagster is flexible so there could be many 'right' ways to implement your machine learning pipeline and different avenues to explore 
+- Dagster intergrates with [MLflow](/_apidocs/libraries/dagster-mlflow) that can be used to keep track of your models 
+- Dagster integrates with [Weights & Biases](/\_apidocs/libraries/dagster-wandb) and an [example](https://github.com/dagster-io/dagster/tree/master/examples/with_wandb) which demonstrates how to use W&B's artifacts with Dagster.
