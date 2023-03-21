@@ -51,8 +51,8 @@ def training_test_data(hackernews_stories):
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 
-@multi_asset(outs={'Tfidf_Vectorizer': AssetOut(), 'transformed_training_data': AssetOut()})
-def transformed_train(training_data):
+@multi_asset(outs={'tfidf_Vectorizer': AssetOut(), 'transformed_training_data': AssetOut()})
+def transformed_train_data(training_data):
     X_train,  y_train = training_data
     # Initiate and fit the tokenizer on the training data and transform the training dataset
     vectorizer = TfidfVectorizer()
@@ -63,10 +63,10 @@ def transformed_train(training_data):
     return vectorizer, (transformed_X_train, transformed_y_train)
 
 @asset
-def transformed_test_data(test_data, Tfidf_Vectorizer):
+def transformed_test_data(test_data, tfidf_Vectorizer):
     X_test, y_test = test_data
     # Use the fitted tokenizer to transform the test dataset
-    transformed_X_test = Tfidf_Vectorizer.transform(X_test)
+    transformed_X_test = tfidf_Vectorizer.transform(X_test)
     transformed_y_test = np.array(y_test)
     y_test = y_test.fillna(0)
     transformed_y_test = np.array(y_test)
@@ -89,7 +89,7 @@ def xgboost_comments_model(transformed_training_data):
     return xgb_r
 
 @asset 
-def score_xgboost( transformed_test_data, xgboost_comments_model):
+def comments_model_test_set_r_squared( transformed_test_data, xgboost_comments_model):
     transformed_X_test, transformed_y_test = transformed_test_data
     # Use the test set data to get a score of the XGBoost model
     score = xgboost_comments_model.score(transformed_X_test, transformed_y_test)
