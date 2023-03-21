@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 from datetime import datetime
 from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
@@ -6,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
 from dagster._utils.backcompat import deprecation_warning
@@ -199,6 +201,46 @@ class UnresolvedAssetJobDefinition(
             )
             asset_graph = AssetGraph.from_assets([*assets, *source_assets])
 
+        selected_asset_keys = self.selection.resolve(asset_graph)
+
+        asset_keys_by_partitions_def = defaultdict(set)
+        for asset_key in selected_asset_keys:
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def is not None:
+                asset_keys_by_partitions_def[partitions_def].add(asset_key)
+
+        if len(asset_keys_by_partitions_def) == 0 and self.partitions_def:
+            raise DagsterInvalidDefinitionError(
+                "Tried to build a partitioned job, but none of the selected assets are partitioned."
+            )
+
+        if len(asset_keys_by_partitions_def) > 1:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in asset_keys_by_partitions_def.items()
+            )
+            raise DagsterInvalidDefinitionError(
+                f"Multiple partitioned assets exist in assets job '{self.name}'. Selected assets"
+                " must have the same partitions definitions, but the selected assets have"
+                f" different partitions definitions: \n{keys_by_partitions_def_str}"
+            )
+
+        inferred_partitions_def = (
+            next(iter(asset_keys_by_partitions_def.keys()))
+            if asset_keys_by_partitions_def
+            else None
+        )
+        if (
+            inferred_partitions_def
+            and self.partitions_def != inferred_partitions_def
+            and self.partitions_def is not None
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"Job '{self.name}' received a partitions_def of {self.partitions_def}, but the"
+                f" selected assets {next(iter(asset_keys_by_partitions_def.values()))} have a"
+                f" non-matching partitions_def of {inferred_partitions_def}"
+            )
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -206,8 +248,8 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve(asset_graph),
-            partitions_def=self.partitions_def,
+            asset_selection=selected_asset_keys,
+            partitions_def=self.partitions_def if self.partitions_def else inferred_partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )
 
@@ -294,7 +336,8 @@ def define_asset_job(
             A description for the Job.
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
-            must have a matching PartitionsDefinition.
+            must have a matching PartitionsDefinition. If no PartitionsDefinition is provided, the
+            PartitionsDefinition will be inferred from the selected AssetDefinitions.
         executor_def (Optional[ExecutorDefinition]):
             How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
             which can be switched between multi-process and in-process modes of execution. The

@@ -31,6 +31,9 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partition import PartitionSetDefinition
+from dagster._core.definitions.partitioned_schedule import (
+    UnresolvedPartitionedAssetScheduleDefinition,
+)
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -229,26 +232,6 @@ def build_caching_repository_data_from_list(
         source_assets_by_key = {}
         assets_defs_by_key = {}
 
-    asset_graph = AssetGraph.from_assets(
-        [*combined_asset_group.assets, *combined_asset_group.source_assets]
-        if combined_asset_group
-        else []
-    )
-
-    # resolve all the UnresolvedAssetJobDefinitions and
-    # UnresolvedPartitionedAssetScheduleDefinitions using the full set of assets
-    if unresolved_partitioned_asset_schedules:
-        for (
-            name,
-            unresolved_partitioned_asset_schedule,
-        ) in unresolved_partitioned_asset_schedules.items():
-            schedules[name] = unresolved_partitioned_asset_schedule.resolve(asset_graph)
-            if schedules[name].has_loadable_target():
-                target = schedules[name].load_target()
-                _process_and_validate_target(
-                    schedules[name], coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
-                )
-
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():
             targets = sensor_def.load_targets()
@@ -264,12 +247,44 @@ def build_caching_repository_data_from_list(
                 schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
             )
 
+    asset_graph = AssetGraph.from_assets(
+        [*combined_asset_group.assets, *combined_asset_group.source_assets]
+        if combined_asset_group
+        else []
+    )
+
+    if unresolved_partitioned_asset_schedules:
+        for (
+            name,
+            unresolved_partitioned_asset_schedule,
+        ) in unresolved_partitioned_asset_schedules.items():
+            _process_and_validate_target(
+                unresolved_partitioned_asset_schedule,
+                coerced_graphs,
+                unresolved_jobs,
+                pipelines_or_jobs,
+                unresolved_partitioned_asset_schedule.job,
+            )
+
+    # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
     if unresolved_jobs:
         for name, unresolved_job_def in unresolved_jobs.items():
             resolved_job = unresolved_job_def.resolve(
                 asset_graph=asset_graph, default_executor_def=default_executor_def
             )
             pipelines_or_jobs[name] = resolved_job
+
+    # resolve all the UnresolvedPartitionedAssetScheduleDefinitions using
+    # the resolved job containing the partitions def
+    if unresolved_partitioned_asset_schedules:
+        for (
+            name,
+            unresolved_partitioned_asset_schedule,
+        ) in unresolved_partitioned_asset_schedules.items():
+            resolved_job = pipelines_or_jobs[unresolved_partitioned_asset_schedule.job.name]
+            schedules[name] = unresolved_partitioned_asset_schedule.resolve(
+                cast(JobDefinition, resolved_job)
+            )
 
     for pipeline_or_job in pipelines_or_jobs.values():
         pipeline_or_job.validate_resource_requirements_satisfied()
@@ -384,7 +399,9 @@ def build_caching_repository_data_from_dict(
 
 
 def _process_and_validate_target(
-    schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
+    schedule_or_sensor_def: Union[
+        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
+    ],
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
