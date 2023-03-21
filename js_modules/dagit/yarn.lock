@@ -6332,7 +6332,7 @@ __metadata:
     worker-loader: ^3.0.8
     yaml: 2.0.0-10
   peerDependencies:
-    "@apollo/client": 3.6.9
+    "@apollo/client": 3.7.10
     "@blueprintjs/core": ^3.45.0
     "@blueprintjs/popover2": 0.10.1
     "@blueprintjs/select": ^3.16.4
