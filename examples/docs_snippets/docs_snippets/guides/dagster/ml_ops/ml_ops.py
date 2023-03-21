@@ -10,7 +10,7 @@ import pandas as pd
 def hackernews_stories():
     # Get the max ID number from hacker news
     latest_item = requests.get(
-        f"https://hacker-news.firebaseio.com/v0/maxitem.json"
+        "https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
     # Get items based on story ids from the HackerNews items endpoint
     results = []
