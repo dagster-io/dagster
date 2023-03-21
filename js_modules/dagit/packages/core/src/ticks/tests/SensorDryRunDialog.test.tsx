@@ -6,12 +6,7 @@ import * as React from 'react';
 
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 
-import {
-  SensorDryRunMutationError,
-  SensorDryRunMutationSkipped,
-  SensorDryRunMutationRunRequests,
-  PersistCursorValueMock,
-} from './SensorDryRunDialog.mocks';
+import * as Mocks from './SensorDryRunDialog.mocks';
 
 // This component is unit tested separately so mocking it out
 jest.mock('../DryRunRequestTable', () => {
@@ -21,6 +16,9 @@ jest.mock('../DryRunRequestTable', () => {
 });
 
 const onCloseMock = jest.fn();
+
+console.log({Mocks});
+debugger;
 
 function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
   return (
@@ -41,9 +39,11 @@ function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolve
 }
 
 describe('SensorDryRunTest', () => {
-  it('submits sensorDryRun mutation with cursor variable and renders successful result and persists cursor', async () => {
+  it.only('submits sensorDryRun mutation with cursor variable and renders successful result and persists cursor', async () => {
     await act(async () => {
-      render(<Test mocks={[SensorDryRunMutationRunRequests, PersistCursorValueMock]} />);
+      render(
+        <Test mocks={[Mocks.SensorDryRunMutationRunRequests, Mocks.PersistCursorValueMock]} />,
+      );
     });
     const cursorInput = screen.getByTestId('cursor-input');
     userEvent.type(cursorInput, 'testing123');
@@ -62,7 +62,7 @@ describe('SensorDryRunTest', () => {
 
   it('renders errors', async () => {
     await act(async () => {
-      render(<Test mocks={[SensorDryRunMutationError]} />);
+      render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     });
     const cursorInput = screen.getByTestId('cursor-input');
     userEvent.type(cursorInput, 'testing123');
@@ -75,7 +75,7 @@ describe('SensorDryRunTest', () => {
 
   it('allows you to test again', async () => {
     await act(async () => {
-      render(<Test mocks={[SensorDryRunMutationError]} />);
+      render(<Test mocks={[Mocks.SensorDryRunMutationError]} />);
     });
     const cursorInput = screen.getByTestId('cursor-input');
     userEvent.type(cursorInput, 'testing123');
@@ -92,7 +92,7 @@ describe('SensorDryRunTest', () => {
 
   it('renders skip reason', async () => {
     await act(async () => {
-      render(<Test mocks={[SensorDryRunMutationSkipped]} />);
+      render(<Test mocks={[Mocks.SensorDryRunMutationSkipped]} />);
     });
     const cursorInput = screen.getByTestId('cursor-input');
     userEvent.type(cursorInput, 'testing123');

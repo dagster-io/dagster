@@ -30,7 +30,7 @@ const config: CodegenConfig = {
           'typescript-mock-data': {
             addTypename: true,
             prefix: 'build',
-            listElementCount: 3,
+            listElementCount: 0,
             typeNames: 'keep',
             enumValues: 'keep',
             terminateCircularRelationships: true,

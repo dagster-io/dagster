@@ -3,7 +3,6 @@ import {MockedResponse} from '@apollo/client/testing';
 import {
   InstigationStatus,
   RunRequest,
-  buildDagitMutation,
   buildDryRunInstigationTick,
   buildErrorChainLink,
   buildInstigationState,
@@ -71,14 +70,15 @@ export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutatio
     },
   },
   result: {
-    data: buildDagitMutation({
+    data: {
+      __typename: 'DagitMutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           cursor: 'a new cursor',
           runRequests,
         }),
       }),
-    }),
+    },
   },
 };
 
@@ -95,7 +95,8 @@ export const SensorDryRunMutationError: MockedResponse<SensorDryRunMutation> = {
     },
   },
   result: {
-    data: buildDagitMutation({
+    data: {
+      __typename: 'DagitMutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           error: buildPythonError({
@@ -124,7 +125,7 @@ export const SensorDryRunMutationError: MockedResponse<SensorDryRunMutation> = {
           }),
         }),
       }),
-    }),
+    },
   },
 };
 
@@ -141,7 +142,8 @@ export const SensorDryRunMutationSkipped: MockedResponse<SensorDryRunMutation> =
     },
   },
   result: {
-    data: buildDagitMutation({
+    data: {
+      __typename: 'DagitMutation',
       sensorDryRun: buildDryRunInstigationTick({
         evaluationResult: buildTickEvaluation({
           cursor: '',
@@ -151,7 +153,7 @@ export const SensorDryRunMutationSkipped: MockedResponse<SensorDryRunMutation> =
           error: null,
         }),
       }),
-    }),
+    },
   },
 };
 
@@ -168,7 +170,8 @@ export const PersistCursorValueMock: MockedResponse<SetSensorCursorMutation> = {
     },
   },
   result: {
-    data: buildDagitMutation({
+    data: {
+      __typename: 'DagitMutation',
       setSensorCursor: buildSensor({
         id: '8c8110e095e45239948246b18f9c66def47a2a11',
         sensorState: buildInstigationState({
@@ -179,6 +182,6 @@ export const PersistCursorValueMock: MockedResponse<SetSensorCursorMutation> = {
           }),
         }),
       }),
-    }),
+    },
   },
 };
