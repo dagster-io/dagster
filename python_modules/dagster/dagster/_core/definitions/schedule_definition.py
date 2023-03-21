@@ -162,7 +162,6 @@ class ScheduleEvaluationContext:
         "_schedule_name",
         "_resources_cm",
         "_resources",
-        "_resources_contain_cm",
         "_cm_scope_entered",
     ]
 
@@ -197,7 +196,6 @@ class ScheduleEvaluationContext:
         # Wait to set resources unless they're accessed
         self._resource_defs = resources
         self._resources = None
-        self._resources_contain_cm = None
         self._cm_scope_entered = False
 
     def __enter__(self) -> "ScheduleEvaluationContext":
@@ -210,20 +208,19 @@ class ScheduleEvaluationContext:
 
     @property
     def resources(self) -> Resources:
-        if not self._resources:
-            from dagster._core.definitions.scoped_resources_builder import (
-                IContainsGenerator,
-            )
-            from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
 
+        if not self._resources:
             instance = self.instance if self._instance or self._instance_ref else None
 
             resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
             self._resources = self._exit_stack.enter_context(resources_cm)
 
-            self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
-
-        if self._resources_contain_cm and not self._cm_scope_entered:
+        resources_contain_cm = self._resources and isinstance(self._resources, IContainsGenerator)
+        if resources_contain_cm and not self._cm_scope_entered:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
                 "resources outside of context manager scope. You can use the following syntax to "
