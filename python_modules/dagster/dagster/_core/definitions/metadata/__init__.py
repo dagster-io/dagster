@@ -45,6 +45,9 @@ if TYPE_CHECKING:
 
 RawMetadataValue = Union[
     "MetadataValue",
+    TableSchema,
+    "AssetKey",
+    os.PathLike,
     Dict[Any, Any],
     float,
     int,

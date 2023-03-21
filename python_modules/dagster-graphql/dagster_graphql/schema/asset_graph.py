@@ -11,10 +11,11 @@ from dagster._core.definitions.data_version import (
     StaleStatus,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
@@ -53,7 +54,6 @@ from ..implementation.fetch_assets import (
 )
 from ..implementation.loader import (
     BatchMaterializationLoader,
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -101,7 +101,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
     def __init__(
         self,
-        repository_location: RepositoryLocation,
+        repository_location: CodeLocation,
         external_repository: ExternalRepository,
         input_name: Optional[str],
         asset_key: AssetKey,
@@ -109,7 +109,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
         self._repository_location = check.inst_param(
-            repository_location, "repository_location", RepositoryLocation
+            repository_location, "repository_location", CodeLocation
         )
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
@@ -241,7 +241,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def __init__(
         self,
-        repository_location: RepositoryLocation,
+        repository_location: CodeLocation,
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
@@ -254,7 +254,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._repository_location = check.inst_param(
             repository_location,
             "repository_location",
-            RepositoryLocation,
+            CodeLocation,
         )
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
@@ -291,7 +291,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
 
     @property
-    def repository_location(self) -> RepositoryLocation:
+    def repository_location(self) -> CodeLocation:
         return self._repository_location
 
     @property

@@ -133,6 +133,20 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'dynamic_in_multipartitions_fail'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_success'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'fail_partition_materialization'
                     ]
                 }
@@ -457,6 +471,20 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'dummy_source_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_fail'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_success'
                     ]
                 }
             },
@@ -793,6 +821,20 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'dynamic_in_multipartitions_fail'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_success'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'fail_partition_materialization'
                     ]
                 }
@@ -1117,6 +1159,20 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'dummy_source_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_fail'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'dynamic_in_multipartitions_success'
                     ]
                 }
             },
@@ -1492,6 +1548,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["downstream_dynamic_partitioned_asset"]'
         },
         {
@@ -1714,6 +1780,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
         },
         {
             'freshnessInfo': None,
@@ -1944,6 +2020,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["downstream_dynamic_partitioned_asset"]'
         },
         {
@@ -2166,6 +2252,16 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_fail"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["dynamic_in_multipartitions_success"]'
         },
         {
             'freshnessInfo': None,

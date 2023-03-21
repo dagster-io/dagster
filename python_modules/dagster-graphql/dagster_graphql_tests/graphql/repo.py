@@ -8,7 +8,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import List, Tuple
+from typing import Iterator, List, Mapping, NoReturn, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
@@ -37,6 +37,7 @@ from dagster import (
     MetadataEntry,
     Noneable,
     Nothing,
+    OpExecutionContext,
     Output,
     Partition,
     PythonObjectDagsterType,
@@ -81,18 +82,18 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
     Materialization,
     ModeDefinition,
-    OpExecutionContext,
     PartitionSetDefinition,
     PresetDefinition,
     build_assets_job,
@@ -111,11 +112,13 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
+T = TypeVar("T")
+
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
-def df_input_schema(_context, path):
+def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
     with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
@@ -128,7 +131,9 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 
 @contextmanager
-def define_test_out_of_process_context(instance):
+def define_test_out_of_process_context(
+    instance: DagsterInstance,
+) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
     with define_out_of_process_context(__file__, main_repo_name(), instance) as context:
         yield context
@@ -139,7 +144,7 @@ def create_main_recon_repo():
 
 
 @contextmanager
-def get_main_workspace(instance):
+def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -153,9 +158,9 @@ def get_main_workspace(instance):
 
 
 @contextmanager
-def get_main_external_repo(instance):
+def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
     with get_main_workspace(instance) as workspace:
-        location = workspace.get_repository_location(main_repo_location_name())
+        location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 
@@ -997,7 +1002,9 @@ def basic_job():
     pass
 
 
-def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
+def get_retry_multi_execution_params(
+    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
+) -> Mapping[str, Any]:
     selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
     return {
         "mode": "default",
@@ -1013,7 +1020,9 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
     }
 
 
-def last_empty_partition(context, partition_set_def):
+def last_empty_partition(
+    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[T]
+) -> Optional[Partition[T]]:
     check.inst_param(context, "context", ScheduleEvaluationContext)
     partition_set_def = check.inst_param(
         partition_set_def, "partition_set_def", PartitionSetDefinition
@@ -1032,7 +1041,10 @@ def last_empty_partition(context, partition_set_def):
     return selected
 
 
-def define_schedules():
+def define_schedules() -> Sequence[ScheduleDefinition]:
+    def throw_error() -> NoReturn:
+        raise Exception("This is an error")
+
     integer_partition_set = PartitionSetDefinition(
         name="scheduled_integer_partitions",
         pipeline_name="no_config_pipeline",
@@ -1068,7 +1080,7 @@ def define_schedules():
     partition_based = integer_partition_set.create_schedule_definition(
         schedule_name="partition_based",
         cron_schedule="0 0 * * *",
-        partition_selector=last_empty_partition,
+        partition_selector=last_empty_partition,  # type: ignore
     )
 
     @daily_schedule(
@@ -1137,7 +1149,7 @@ def define_schedules():
     @daily_schedule(
         job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # noqa: F821
+        should_execute=lambda _: throw_error(),
     )
     def should_execute_error_schedule(_date):
         return {}
@@ -1145,7 +1157,7 @@ def define_schedules():
     @daily_schedule(
         job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # noqa: F821
+        tags_fn_for_date=lambda _: throw_error(),
     )
     def tags_error_schedule(_date):
         return {}
@@ -1155,7 +1167,7 @@ def define_schedules():
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
-        return asdf  # noqa: F821
+        throw_error()
 
     @daily_schedule(
         job_name="no_config_pipeline",
@@ -1859,6 +1871,24 @@ def no_multipartitions_1():
     return 1
 
 
+dynamic_in_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+        "static": StaticPartitionsDefinition(["a", "b", "c"]),
+    }
+)
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_success():
+    return 1
+
+
+@asset(partitions_def=dynamic_in_multipartitions_def)
+def dynamic_in_multipartitions_fail(context, dynamic_in_multipartitions_success):
+    raise Exception("oops")
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1970,6 +2000,15 @@ def define_asset_jobs():
             "multipartitions_fail_job",
             AssetSelection.assets(multipartitions_fail),
             partitions_def=multipartitions_def,
+        ),
+        dynamic_in_multipartitions_success,
+        dynamic_in_multipartitions_fail,
+        define_asset_job(
+            "dynamic_in_multipartitions_success_job",
+            AssetSelection.assets(
+                dynamic_in_multipartitions_success, dynamic_in_multipartitions_fail
+            ),
+            partitions_def=dynamic_in_multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,

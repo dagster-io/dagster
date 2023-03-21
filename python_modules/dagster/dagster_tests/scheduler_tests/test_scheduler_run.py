@@ -2,8 +2,9 @@ import datetime
 import random
 import string
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
-from typing import cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import pendulum
 import pytest
@@ -21,14 +22,18 @@ from dagster import (
     repository,
     schedule,
 )
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.host_representation import (
+    CodeLocation,
     ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocation,
-    GrpcServerRepositoryLocationOrigin,
-    RepositoryLocation,
+    GrpcServerCodeLocation,
+    GrpcServerCodeLocationOrigin,
 )
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -48,6 +53,7 @@ from dagster._core.test_utils import (
     mock_system_timezone,
     wait_for_futures,
 )
+from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
@@ -56,11 +62,14 @@ from dagster._legacy import daily_schedule, hourly_schedule
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster._utils import find_free_port
+from dagster._utils import DebugCrashFlags, find_free_port
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from .conftest import loadable_target_origin, workspace_load_target
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
 
 _COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
 
@@ -95,13 +104,13 @@ def get_schedule_executors():
 
 
 def evaluate_schedules(
-    workspace_context,
-    executor,
-    end_datetime_utc,
-    max_tick_retries=0,
-    max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
-    debug_crash_flags=None,
-    timeout=75,
+    workspace_context: IWorkspaceProcessContext,
+    executor: Optional[ThreadPoolExecutor],
+    end_datetime_utc: "DateTime",
+    max_tick_retries: int = 0,
+    max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
+    debug_crash_flags: Optional[DebugCrashFlags] = None,
+    timeout: int = 75,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}
@@ -473,6 +482,21 @@ def stale_asset_selection_schedule():
     return RunRequest(stale_assets_only=True)
 
 
+@observable_source_asset
+def source_asset():
+    return DataVersion("foo")
+
+
+observable_source_asset_job = define_asset_job(
+    "observable_source_asset_job", selection=[source_asset]
+)
+
+
+@schedule(job=observable_source_asset_job, cron_schedule="@daily")
+def source_asset_observation_schedule():
+    return RunRequest(asset_selection=[source_asset.key])
+
+
 @repository
 def the_repo():
     return [
@@ -504,9 +528,10 @@ def the_repo():
         two_step_job,
         default_config_schedule,
         empty_schedule,
-        [asset1, asset2],
+        [asset1, asset2, source_asset],
         asset_selection_schedule,
         stale_asset_selection_schedule,
+        source_asset_observation_schedule,
     ]
 
 
@@ -704,19 +729,25 @@ def test_simple_schedule(instance, workspace_context, external_repo, executor):
 
 # Verify that the scheduler uses selector and not origin to dedupe schedules
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_schedule_with_different_origin(instance, workspace_context, external_repo, executor):
+def test_schedule_with_different_origin(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
+):
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     existing_origin = external_schedule.get_external_origin()
 
-    repo_location_origin = existing_origin.external_repository_origin.repository_location_origin
-    modified_loadable_target_origin = repo_location_origin.loadable_target_origin._replace(
+    code_location_origin = existing_origin.external_repository_origin.code_location_origin
+    assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
+    modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
         executable_path="/different/executable_path"
     )
 
     # Change metadata on the origin that shouldn't matter for execution
     modified_origin = existing_origin._replace(
         external_repository_origin=existing_origin.external_repository_origin._replace(
-            repository_location_origin=repo_location_origin._replace(
+            code_location_origin=code_location_origin._replace(
                 loadable_target_origin=modified_loadable_target_origin
             )
         )
@@ -801,11 +832,11 @@ def test_schedule_without_timezone(instance, executor):
             workspace_load_target=workspace_load_target(),
             instance=instance,
         ) as workspace_context:
-            repo_location = next(
+            code_location = next(
                 iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).repository_location
-            assert repo_location is not None
-            external_repo = repo_location.get_repository("the_repo")
+            ).code_location
+            assert code_location is not None
+            external_repo = code_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
                 "daily_schedule_without_timezone"
             )
@@ -1326,7 +1357,13 @@ def test_run_scheduled_on_time_boundary(instance, workspace_context, external_re
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_bad_load_repository(instance, workspace_context, external_repo, caplog, executor):
+def test_bad_load_repository(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    caplog: pytest.LogCaptureFixture,
+    executor: ThreadPoolExecutor,
+):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
         "US/Central",
@@ -1338,7 +1375,7 @@ def test_bad_load_repository(instance, workspace_context, external_repo, caplog,
         # Swap out a new repository name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.repository_location_origin,
+                valid_schedule_origin.external_repository_origin.code_location_origin,
                 "invalid_repo_name",
             ),
             valid_schedule_origin.instigator_name,
@@ -1407,7 +1444,7 @@ def test_bad_load_schedule(instance, workspace_context, external_repo, caplog, e
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_error_load_repository_location(instance, executor):
+def test_error_load_code_location(instance, executor):
     with create_test_daemon_workspace_context(
         _get_unloadable_workspace_load_target(), instance
     ) as workspace_context:
@@ -1448,8 +1485,12 @@ def test_error_load_repository_location(instance, executor):
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
-def test_load_repository_location_not_in_workspace(
-    instance, workspace_context, external_repo, caplog, executor
+def test_load_code_location_not_in_workspace(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    caplog: pytest.LogCaptureFixture,
+    executor: ThreadPoolExecutor,
 ):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1460,12 +1501,12 @@ def test_load_repository_location_not_in_workspace(
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         valid_schedule_origin = external_schedule.get_external_origin()
 
+        code_location_origin = valid_schedule_origin.external_repository_origin.code_location_origin
+        assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
         # Swap out a new location name
         invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
-                valid_schedule_origin.external_repository_origin.repository_location_origin._replace(
-                    location_name="missing_location"
-                ),
+                code_location_origin._replace(location_name="missing_location"),
                 valid_schedule_origin.external_repository_origin.repository_name,
             ),
             valid_schedule_origin.instigator_name,
@@ -1991,10 +2032,10 @@ def _grpc_server_external_repo(port, instance):
     try:
         # shuts down server when it leaves this contextmanager
         with EphemeralDagsterGrpcClient(port=port, socket=None, server_process=server_process):
-            location_origin = GrpcServerRepositoryLocationOrigin(
+            location_origin = GrpcServerCodeLocationOrigin(
                 host="localhost", port=port, location_name="test_location"
             )
-            with GrpcServerRepositoryLocation(origin=location_origin) as location:
+            with GrpcServerCodeLocation(origin=location_origin) as location:
                 yield location.get_repository("the_repo")
 
     finally:
@@ -2036,12 +2077,12 @@ def test_skip_reason_schedule(instance, workspace_context, external_repo, execut
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_grpc_server_down(instance, executor):
     port = find_free_port()
-    location_origin = GrpcServerRepositoryLocationOrigin(
+    location_origin = GrpcServerCodeLocationOrigin(
         host="localhost", port=port, location_name="test_location"
     )
     schedule_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
-            repository_location_origin=location_origin,
+            code_location_origin=location_origin,
             repository_name="the_repo",
         ),
         instigator_name="simple_schedule",
@@ -2118,7 +2159,7 @@ def test_status_in_code_schedule(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         with pendulum.test(freeze_datetime):
             running_schedule = external_repo.get_external_schedule("always_running_schedule")
@@ -2239,7 +2280,7 @@ def test_status_in_code_schedule(instance, executor):
             ] = workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
             ]._replace(
-                repository_location=None,
+                code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
@@ -2273,7 +2314,7 @@ def test_change_default_status(instance, executor):
     ) as workspace_context:
         external_repo = next(
             iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-        ).repository_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")
 
         not_running_schedule = external_repo.get_external_schedule("never_running_schedule")
 
@@ -2353,14 +2394,14 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
     ) as full_workspace_context:
         with pendulum.test(freeze_datetime):
             full_location = cast(
-                RepositoryLocation,
+                CodeLocation,
                 next(
                     iter(
                         full_workspace_context.create_request_context()
                         .get_workspace_snapshot()
                         .values()
                     )
-                ).repository_location,
+                ).code_location,
             )
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
@@ -2550,6 +2591,48 @@ def test_stale_asset_selection_subset(instance, workspace_context, external_repo
         validate_run_started(
             instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
         )
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_source_asset_observation(
+    instance: DagsterInstance, workspace_context, external_repo, executor
+):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("source_asset_observation_schedule")
+    schedule_origin = external_schedule.get_external_origin()
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+        # launch_scheduled_runs does nothing before the first tick
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in instance.get_runs()],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        run = next(iter(instance.get_runs()))
+        assert run.asset_selection == {AssetKey("source_asset")}
+
+        validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
 
 
 def _get_stale_asset_selection_schedule_start():

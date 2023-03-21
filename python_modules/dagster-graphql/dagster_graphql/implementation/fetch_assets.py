@@ -33,6 +33,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsSubset,
 )
 from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
     DefaultPartitionsSubset,
     PartitionsDefinition,
     PartitionsSubset,
@@ -44,20 +45,19 @@ from dagster._core.definitions.time_window_partitions import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
-    CACHEABLE_PARTITION_TYPES,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
+    is_cacheable_partition_type,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from dagster_graphql.implementation.loader import (
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -124,8 +124,8 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 
 def asset_node_iter(
     graphene_info,
-) -> Iterator[Tuple[RepositoryLocation, ExternalRepository, ExternalAssetNode]]:
-    for location in graphene_info.context.repository_locations:
+) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
+    for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
                 yield location, repository, external_asset_node
@@ -359,13 +359,11 @@ def get_materialized_and_failed_partition_subsets(
     if not partitions_def:
         return None, None
 
-    if instance.can_cache_asset_status_data() and isinstance(
-        partitions_def, CACHEABLE_PARTITION_TYPES
-    ):
+    if instance.can_cache_asset_status_data() and is_cacheable_partition_type(partitions_def):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def
+            instance, asset_key, partitions_def, dynamic_partitions_loader
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -553,7 +551,15 @@ def get_2d_run_length_encoded_partitions(
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
-    if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+    if (
+        len(dim1_keys) == 0
+        or len(
+            secondary_dim.partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        )
+        == 0
+    ):
         return GrapheneMultiPartitions(ranges=[], primaryDimensionName=primary_dim.name)
 
     while unevaluated_idx <= len(dim1_keys):

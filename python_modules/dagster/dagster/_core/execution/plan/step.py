@@ -159,7 +159,7 @@ class ExecutionStep(
                 {
                     "step_key": handle.to_key(),
                     "pipeline_name": pipeline_name,
-                    "solid_name": handle.solid_handle.name,
+                    "solid_name": handle.node_handle.name,
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
@@ -169,7 +169,7 @@ class ExecutionStep(
 
     @property
     def node_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+        return self.handle.node_handle
 
     @property
     def solid_name(self) -> str:
@@ -259,7 +259,7 @@ class UnresolvedMappedExecutionStep(
 
     @property
     def node_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+        return self.handle.node_handle
 
     @property
     def key(self) -> str:
@@ -354,7 +354,7 @@ class UnresolvedMappedExecutionStep(
 
             execution_steps.append(
                 ExecutionStep(
-                    handle=ResolvedFromDynamicStepHandle(self.handle.solid_handle, mapped_key),
+                    handle=ResolvedFromDynamicStepHandle(self.handle.node_handle, mapped_key),
                     pipeline_name=self.pipeline_name,
                     step_inputs=resolved_inputs,
                     step_outputs=self.step_outputs,
@@ -418,7 +418,7 @@ class UnresolvedCollectExecutionStep(
 
     @property
     def node_handle(self) -> "NodeHandle":
-        return self.handle.solid_handle
+        return self.handle.node_handle
 
     @property
     def key(self) -> str:

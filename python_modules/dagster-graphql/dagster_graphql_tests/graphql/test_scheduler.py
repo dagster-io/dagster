@@ -5,7 +5,7 @@ import pendulum
 import pytest
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -297,7 +297,7 @@ def _get_unloadable_schedule_origin(name):
         working_directory=working_directory,
     )
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(loadable_target_origin), "fake_repository"
+        InProcessCodeLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 
 
@@ -435,7 +435,7 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     assert result.data["schedulesOrError"]
     assert result.data["schedulesOrError"]["__typename"] == "Schedules"
 
-    external_repository = graphql_context.get_repository_location(
+    external_repository = graphql_context.get_code_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 

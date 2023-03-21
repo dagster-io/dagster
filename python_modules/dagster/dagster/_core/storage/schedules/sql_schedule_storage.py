@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     ContextManager,
-    Iterable,
     Mapping,
     NamedTuple,
     Optional,
@@ -270,7 +269,7 @@ class SqlScheduleStorage(ScheduleStorage):
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
-    ) -> Mapping[str, Iterable[InstigatorTick]]:
+    ) -> Mapping[str, Sequence[InstigatorTick]]:
         check.sequence_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
         check.opt_sequence_param(statuses, "statuses", of_type=TickStatus)

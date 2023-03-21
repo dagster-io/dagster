@@ -582,7 +582,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         pipeline_run.external_pipeline_origin
                     ).external_repository_origin
                     run_job_selector = JobSelector(
-                        location_name=external_repository_origin.repository_location_origin.location_name,
+                        location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
                         job_name=pipeline_run.pipeline_name,
                     )
@@ -591,7 +591,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                     # make a RepositorySelector for the run in question
                     run_repo_selector = RepositorySelector(
-                        location_name=external_repository_origin.repository_location_origin.location_name,
+                        location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
                     )
                     if run_repo_selector in other_repos:

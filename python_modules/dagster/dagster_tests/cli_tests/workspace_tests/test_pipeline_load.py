@@ -55,7 +55,7 @@ def get_all_loading_combos():
 
 
 @pytest.mark.parametrize("cli_args", get_all_loading_combos())
-def test_valid_loading_combos_single_pipeline_repo_location(cli_args):
+def test_valid_loading_combos_single_pipeline_code_location(cli_args):
     external_pipeline = successfully_load_pipeline_via_cli(cli_args)
     assert isinstance(external_pipeline, ExternalPipeline)
     assert external_pipeline.name == "hello_world_pipeline"

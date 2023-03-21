@@ -871,7 +871,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
         handle = self._external_pipeline.repository_handle
-        location = graphene_info.context.get_repository_location(handle.location_name)
+        location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
 
@@ -879,7 +879,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         from ..external import GrapheneRepository
 
         handle = self._external_pipeline.repository_handle
-        location = graphene_info.context.get_repository_location(handle.location_name)
+        location = graphene_info.context.get_code_location(handle.location_name)
         return GrapheneRepository(
             graphene_info.context.instance,
             location.get_repository(handle.repository_name),

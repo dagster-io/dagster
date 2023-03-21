@@ -62,14 +62,14 @@ def chunked_run_iterator(
 
         while has_more:
             chunk = storage.get_runs(cursor=cursor, limit=chunk_size)
-            has_more = chunk_size and len(chunk) >= chunk_size  # type: ignore
+            has_more = chunk_size and len(chunk) >= chunk_size
 
             for run in chunk:
                 cursor = run.run_id
                 yield run
 
             if progress:
-                progress.update(len(chunk))  # type: ignore
+                progress.update(len(chunk))
 
 
 def chunked_run_records_iterator(

@@ -1440,19 +1440,6 @@ def external_multi_partitions_definition_from_def(
 ) -> ExternalMultiPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
 
-    if any(
-        [
-            not isinstance(
-                dimension.partitions_def,
-                (TimeWindowPartitionsDefinition, StaticPartitionsDefinition),
-            )
-            for dimension in partitions_def.partitions_defs
-        ]
-    ):
-        raise DagsterInvalidDefinitionError(
-            "Only static and time window partition dimensions are currently supported."
-        )
-
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(

@@ -10,7 +10,7 @@ from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.errors import DagsterRepositoryLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import LaunchRunContext
@@ -28,7 +28,6 @@ from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
-from dagster._utils import len_iter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
@@ -194,13 +193,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         in_progress_runs = self._get_in_progress_runs(instance)
 
         max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
-        max_runs_to_launch = max_concurrent_runs - len_iter(in_progress_runs)
+        max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
         if max_concurrent_runs_enabled:
             # Possibly under 0 if runs were launched without queuing
             if max_runs_to_launch <= 0:
                 self._logger.info(
                     "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                        len_iter(in_progress_runs), max_concurrent_runs
+                        len(in_progress_runs), max_concurrent_runs
                     )
                 )
                 return []
@@ -263,7 +262,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         runs = instance.get_runs(filters=queued_runs_filter)[::-1]
         return runs
 
-    def _get_in_progress_runs(self, instance: DagsterInstance) -> Iterable[DagsterRun]:
+    def _get_in_progress_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs: Iterable[DagsterRun]) -> Sequence[DagsterRun]:
@@ -344,7 +343,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return False
             elif run_queue_config.max_user_code_failure_retries and isinstance(
-                e, (DagsterUserCodeUnreachableError, DagsterRepositoryLocationLoadError)
+                e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 if location_name:
                     with self._location_timeouts_lock:

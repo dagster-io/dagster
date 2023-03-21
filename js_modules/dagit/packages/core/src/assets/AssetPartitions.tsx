@@ -4,8 +4,9 @@ import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -62,6 +63,8 @@ export const AssetPartitions: React.FC<Props> = ({
     shouldReadPartitionQueryStringParam: false,
   });
 
+  const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
+
   const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
     defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
     encode: (val) => ({states: [...val].sort().join(',')}),
@@ -107,11 +110,14 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const {dimension, selectedRanges} = selections[idx];
     const allKeys = dimension.partitionKeys;
+    const sort = selectionSorts[idx] || defaultSort(selections[idx].dimension.type);
+
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
-      return getSelectionKeys(); // optimization for the default case
+      const result = getSelectionKeys();
+      return sort === 1 ? result : result.reverse();
     }
 
     const rangesInSelection = rangesClippedToSelection(
@@ -134,16 +140,19 @@ export const AssetPartitions: React.FC<Props> = ({
     }
     const matching = uniq(getKeysWithStates(states));
 
+    let result;
     // We have to add in "missing" separately because it's the absence of a range
     if (stateFilters.includes(PartitionState.MISSING)) {
-      return allKeys.filter(
+      result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
           !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
       );
     } else {
-      return matching;
+      result = matching;
     }
+
+    return sort === 1 ? result : result.reverse();
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
@@ -200,18 +209,40 @@ export const AssetPartitions: React.FC<Props> = ({
             flex={{direction: 'column'}}
             border={{side: 'right', color: Colors.KeylineGray, width: 1}}
             background={Colors.Gray50}
+            data-testid={testId(`partitions-${selection.dimension.name}`)}
           >
-            {selection.dimension.name !== 'default' && (
-              <Box
-                padding={{horizontal: 24, vertical: 8}}
-                flex={{gap: 8, alignItems: 'center'}}
-                background={Colors.White}
-                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            <Box
+              flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+              background={Colors.White}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+              padding={{horizontal: 24, vertical: 8}}
+            >
+              <div>
+                {selection.dimension.name !== 'default' && (
+                  <Box flex={{gap: 8, alignItems: 'center'}}>
+                    <Icon name="partition" />
+                    <Subheading>{selection.dimension.name}</Subheading>
+                  </Box>
+                )}
+              </div>
+              <SortButton
+                style={{marginRight: '-16px'}}
+                data-testid={`sort-${idx}`}
+                onClick={() => {
+                  setSelectionSorts((sorts) => {
+                    const copy = [...sorts];
+                    if (copy[idx]) {
+                      copy[idx] = copy[idx] === -1 ? 1 : -1;
+                    } else {
+                      copy[idx] = (defaultSort(selections[idx].dimension.type) * -1) as -1 | 1;
+                    }
+                    return copy;
+                  });
+                }}
               >
-                <Icon name="partition" />
-                <Subheading>{selection.dimension.name}</Subheading>
-              </Box>
-            )}
+                <Icon name="sort_by_alpha" color={Colors.Gray400} />
+              </SortButton>
+            </Box>
 
             {!assetHealth ? (
               <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
@@ -247,3 +278,11 @@ export const AssetPartitions: React.FC<Props> = ({
     </>
   );
 };
+
+function defaultSort(definitionType: PartitionDefinitionType) {
+  if (definitionType === PartitionDefinitionType.TIME_WINDOW) {
+    return -1;
+  } else {
+    return 1;
+  }
+}

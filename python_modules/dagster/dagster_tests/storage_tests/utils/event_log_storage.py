@@ -53,7 +53,7 @@ from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -87,7 +87,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
                 run_id=run_id,
                 external_pipeline_origin=ExternalPipelineOrigin(
                     ExternalRepositoryOrigin(
-                        InProcessRepositoryLocationOrigin(
+                        InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
                                 executable_path=sys.executable,
                                 module_name="fake",

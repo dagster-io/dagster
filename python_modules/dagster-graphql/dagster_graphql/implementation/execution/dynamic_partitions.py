@@ -21,8 +21,8 @@ def _repository_contains_dynamic_partitions_def(
         ExternalDynamicPartitionsDefinitionData,
     )
 
-    if graphene_info.context.has_repository_location(repository_selector.location_name):
-        repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
+    if graphene_info.context.has_code_location(repository_selector.location_name):
+        repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             repository = repo_loc.get_repository(repository_selector.repository_name)
             matching_dynamic_partitions_defs = [

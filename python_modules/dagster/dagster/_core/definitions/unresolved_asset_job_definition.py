@@ -8,6 +8,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
+from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
@@ -191,7 +192,11 @@ class UnresolvedAssetJobDefinition(
                 check.failed(
                     "If asset_graph is not provided, must provide both assets and source_assets"
                 )
-
+            deprecation_warning(
+                "`assets` and `source_assets` arguments to `resolve`",
+                "1.3.0",
+                "Please use the `asset_graph` argument instead.",
+            )
             asset_graph = AssetGraph.from_assets([*assets, *source_assets])
 
         return build_asset_selection_job(
@@ -230,7 +235,11 @@ def define_asset_job(
     name: str,
     selection: Optional[
         Union[
-            str, Sequence[str], Sequence[AssetKey], Sequence["AssetsDefinition"], "AssetSelection"
+            str,
+            Sequence[str],
+            Sequence[AssetKey],
+            Sequence[Union["AssetsDefinition", "SourceAsset"]],
+            "AssetSelection",
         ]
     ] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
@@ -239,14 +248,15 @@ def define_asset_job(
     partitions_def: Optional["PartitionsDefinition[Any]"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
-    """Creates a definition of a job which will materialize a selection of assets. This will only be
-    resolved to a JobDefinition once placed in a code location.
+    """Creates a definition of a job which will either materialize a selection of assets or observe
+    a selection of source assets. This will only be resolved to a JobDefinition once placed in a
+    code location.
 
     Args:
         name (str):
             The name for the job.
-        selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[AssetsDefinition], AssetSelection]):
-            The assets that will be materialized when the job is run.
+        selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
+            The assets that will be materialized or observed when the job is run.
 
             The selected assets must all be included in the assets that are passed to the assets
             argument of the Definitions object that this job is included on.
@@ -255,7 +265,12 @@ def define_asset_job(
             location. A list of strings represents the union of all assets selected by strings
             within the list.
 
-            The selection will be resolved to a set of assets once the when location is loaded.
+            The selection will be resolved to a set of assets when the location is loaded. If the
+            selection resolves to all source assets, the created job will perform source asset
+            observations. If the selection resolves to all regular assets, the created job will
+            materialize assets. If the selection resolves to a mixed set of source assets and
+            regular assets, an error will be thrown.
+
         config:
             Describes how the Job is parameterized at runtime.
 
@@ -318,6 +333,16 @@ def define_asset_job(
                 jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
             )
 
+            @observable_source_asset
+            def source_asset():
+                ...
+
+            # A job that observes a source asset:
+            defs = Definitions(
+                assets=assets,
+                jobs=[define_asset_job("observation_job", selection=[source_asset])],
+            )
+
             # Resources are supplied to the assets, not the job:
             @asset(required_resource_keys={"slack_client"})
             def asset1():
@@ -328,8 +353,9 @@ def define_asset_job(
                 jobs=[define_asset_job("all_assets")],
                 resources={"slack_client": prod_slack_client},
             )
+
     """
-    from dagster._core.definitions import AssetsDefinition, AssetSelection
+    from dagster._core.definitions import AssetsDefinition, AssetSelection, SourceAsset
 
     # convert string-based selections to AssetSelection objects
     resolved_selection: AssetSelection
@@ -343,14 +369,19 @@ def define_asset_job(
         resolved_selection = reduce(
             operator.or_, [_selection_from_string(cast(str, s)) for s in selection]
         )
-    elif isinstance(selection, list) and all(isinstance(el, AssetsDefinition) for el in selection):
-        resolved_selection = AssetSelection.assets(*cast(Sequence[AssetsDefinition], selection))
+    elif isinstance(selection, list) and all(
+        isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
+    ):
+        resolved_selection = AssetSelection.keys(
+            *(el.key for el in cast(Sequence[Union[AssetsDefinition, SourceAsset]], selection))
+        )
     elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
         resolved_selection = AssetSelection.keys(*cast(Sequence[AssetKey], selection))
     else:
         check.failed(
             "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
-            f" Sequence[AssetsDefinition], AssetSelection. Was {type(selection)}."
+            " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
+            f" {type(selection)}."
         )
 
     return UnresolvedAssetJobDefinition(
