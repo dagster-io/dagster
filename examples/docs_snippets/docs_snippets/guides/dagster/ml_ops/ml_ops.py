@@ -1,3 +1,5 @@
+# isort: skip_file
+
 ## data_ingestion_start
 import requests
 from dagster import asset, FreshnessPolicy
@@ -113,7 +115,6 @@ def comments_model_test_set_r_squared(transformed_test_data, xgboost_comments_mo
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
 def latest_story_comment_predictions(xgboost, Tfidf_Vectorizer):
     # Get the max ID number from hacker news
-
     latest_item = requests.get(
         f"https://hacker-news.firebaseio.com/v0/maxitem.json"
     ).json()
