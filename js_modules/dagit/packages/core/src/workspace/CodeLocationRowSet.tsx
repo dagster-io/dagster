@@ -11,7 +11,10 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
+import {SharedToaster} from '../app/DomUtils';
+import {useCopyToClipboard} from '../app/browser';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
@@ -106,20 +109,59 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
 };
 
 export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+  const copy = useCopyToClipboard();
   const imageKV = metadata.find(({key}) => key === 'image');
+  const value = imageKV?.value || '';
+
+  const onClick = React.useCallback(() => {
+    copy(value);
+    SharedToaster.show({
+      intent: 'success',
+      icon: 'done',
+      message: 'Image string copied!',
+    });
+  }, [copy, value]);
+
   if (imageKV) {
     return (
-      <Box
-        flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
-      >
+      <ImageNameBox flex={{direction: 'row', gap: 4}}>
         <span style={{fontWeight: 500}}>image:</span>
-        <MiddleTruncate text={imageKV.value} />
-      </Box>
+        <Tooltip content="Click to copy" placement="top" display="block">
+          <button onClick={onClick}>
+            <MiddleTruncate text={imageKV.value} />
+          </button>
+        </Tooltip>
+      </ImageNameBox>
     );
   }
   return null;
 };
+
+const ImageNameBox = styled(Box)`
+  width: 100%;
+  color: ${Colors.Gray700};
+  font-size: 12px;
+
+  .bp3-popover2-target {
+    overflow: hidden;
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    color: ${Colors.Gray700};
+    cursor: pointer;
+    font-size: 12px;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+
+    :focus {
+      outline: none;
+    }
+  }
+`;
 
 export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
   metadata,
