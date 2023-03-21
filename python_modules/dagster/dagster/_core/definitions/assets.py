@@ -1089,7 +1089,7 @@ def _infer_keys_by_output_names(
             (
                 "The set of output names keys specified in the keys_by_output_name argument must "
                 f"equal the set of asset keys outputted by {node_def.name}. \n"
-                f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
+                f"keys_by_output_name keys: {set(keys_by_output_name.keys())} \n"
                 f"expected keys: {set(output_names)}"
             ),
         )
