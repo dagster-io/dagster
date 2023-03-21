@@ -18,7 +18,7 @@ def hackernews_stories():
             f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
         results.append(item)
-
+    # Store the results in a dataframe and filter on stories with valid titles
     df = pd.DataFrame(results)
     if len(df) > 0:
         df = df[df.type == "story"]
@@ -82,7 +82,7 @@ from sklearn.metrics import mean_absolute_error
 @asset
 def xgboost_comments_model(transformed_training_data):
     transformed_X_train, transformed_y_train = transformed_training_data
-    # Train XGBoost model, which is a highly efficent and flexible model 
+    # Train XGBoost model, which is a highly efficient and flexible model 
     xgb_r = xg.XGBRegressor(objective ='reg:squarederror', eval_metric=mean_absolute_error,
                   n_estimators = 20)
     xgb_r.fit(transformed_X_train, transformed_y_train)
@@ -91,7 +91,7 @@ def xgboost_comments_model(transformed_training_data):
 @asset 
 def score_xgboost( transformed_test_data, xgboost_comments_model):
     transformed_X_test, transformed_y_test = transformed_test_data
-    """Use the test set data to get a score of the XGBoost model"""
+    # Use the test set data to get a score of the XGBoost model
     score = xgboost_comments_model.score(transformed_X_test, transformed_y_test)
     return score 
 ## models_end
@@ -99,7 +99,7 @@ def score_xgboost( transformed_test_data, xgboost_comments_model):
 
 ## inference_start
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60))
-def model_inference(xgboost, Tfidf_Vectorizer):
+def latest_story_comment_predictions(xgboost, Tfidf_Vectorizer):
     # Get the max ID number from hacker news
 
     latest_item = requests.get(
@@ -118,7 +118,7 @@ def model_inference(xgboost, Tfidf_Vectorizer):
     if len(df) > 0:
         df = df[df.type == "story"]
         df = df[~df.title.isna()]
-    inference_x = df.title
+    inference_x = df.title 
     # Transform the new story titles using the existing vectorizer 
     inference_x = Tfidf_Vectorizer.transform(inference_x)
     return xgboost.predict(inference_x)
