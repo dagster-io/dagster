@@ -396,6 +396,10 @@ one_asset_depends_on_two = [
     asset_def("parent2"),
     asset_def("child", ["parent1", "parent2"]),
 ]
+two_assets_one_source = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1", "source_asset"]),
+]
 
 diamond = [
     asset_def("asset1"),
@@ -618,6 +622,11 @@ scenarios = {
         assets=two_assets_depend_on_one,
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
+    ),
+    "parent_materialized_with_source_asset_launch_child": AssetReconciliationScenario(
+        assets=two_assets_one_source,
+        unevaluated_runs=[single_asset_run(asset_key="asset1")],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
     "parent_rematerialized_after_tick": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
