@@ -19,22 +19,37 @@ def _repository_contains_dynamic_partitions_def(
 ) -> bool:
     from dagster._core.host_representation.external_data import (
         ExternalDynamicPartitionsDefinitionData,
+        ExternalMultiPartitionsDefinitionData,
+        ExternalPartitionsDefinitionData,
     )
+
+    def _is_matching_partitions_def(partitions_def_data: ExternalPartitionsDefinitionData):
+        if isinstance(partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+            return partitions_def_data.name == partitions_def_name
+        if isinstance(partitions_def_data, ExternalMultiPartitionsDefinitionData):
+            return any(
+                [
+                    _is_matching_partitions_def(dimension.external_partitions_def_data)
+                    for dimension in partitions_def_data.external_partition_dimension_definitions
+                ]
+            )
+        return False
 
     if graphene_info.context.has_code_location(repository_selector.location_name):
         repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             repository = repo_loc.get_repository(repository_selector.repository_name)
-            matching_dynamic_partitions_defs = [
+            found_partitions_defs = [
                 asset_node.partitions_def_data
                 for asset_node in repository.external_repository_data.external_asset_graph_data
                 if asset_node.partitions_def_data
-                and isinstance(
-                    asset_node.partitions_def_data, ExternalDynamicPartitionsDefinitionData
-                )
-                and asset_node.partitions_def_data.name == partitions_def_name
             ]
-            return len(matching_dynamic_partitions_defs) > 0
+            return any(
+                [
+                    _is_matching_partitions_def(partitions_def)
+                    for partitions_def in found_partitions_defs
+                ]
+            )
     return False
 
 

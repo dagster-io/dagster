@@ -980,6 +980,7 @@ export type DeleteRunMutation = {
 export type DimensionDefinitionType = {
   __typename: 'DimensionDefinitionType';
   description: Scalars['String'];
+  dynamicPartitionsDefinitionName: Maybe<Scalars['String']>;
   isPrimaryDimension: Scalars['Boolean'];
   name: Scalars['String'];
   type: PartitionDefinitionType;
@@ -5524,6 +5525,10 @@ export const buildDimensionDefinitionType = (
     __typename: 'DimensionDefinitionType',
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'aut',
+    dynamicPartitionsDefinitionName:
+      overrides && overrides.hasOwnProperty('dynamicPartitionsDefinitionName')
+        ? overrides.dynamicPartitionsDefinitionName!
+        : 'qui',
     isPrimaryDimension:
       overrides && overrides.hasOwnProperty('isPrimaryDimension')
         ? overrides.isPrimaryDimension!
