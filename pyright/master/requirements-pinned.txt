@@ -507,6 +507,7 @@ widgetsnbextension==4.0.6
 wordcloud==1.8.2.2
 wrapt==1.15.0
 WTForms==2.3.3
+xgboost==1.7.4
 xmltodict==0.12.0
 xyzservices==2023.2.0
 yamllint==1.30.0
