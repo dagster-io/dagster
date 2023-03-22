@@ -9,6 +9,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.instance_for_test import instance_for_test
 from pytest import fixture
 
 
@@ -36,21 +37,24 @@ def test_partitioned_io_manager(hourly, daily):
     def daily_asset(hourly_asset: Dict[str, Any]):
         return hourly_asset
 
-    # Build hourly materializations
-    hourly_keys = [f"2022-01-01-{hour:02d}:00" for hour in range(0, 24)]
-    for key in hourly_keys:
-        materialize(
-            [hourly_asset],
-            partition_key=key,
-        )
+    with instance_for_test() as instance:
+        # Build hourly materializations
+        hourly_keys = [f"2022-01-01-{hour:02d}:00" for hour in range(0, 24)]
+        for key in hourly_keys:
+            materialize(
+                [hourly_asset],
+                partition_key=key,
+                instance=instance,
+            )
 
-    # Materialize daily asset that depends on hourlies
-    result = materialize(
-        [*hourly_asset.to_source_assets(), daily_asset],
-        partition_key="2022-01-01",
-    )
-    expected = {k: 42 for k in hourly_keys}
-    assert result.output_for_node("daily_asset") == expected
+        # Materialize daily asset that depends on hourlies
+        result = materialize(
+            [*hourly_asset.to_source_assets(), daily_asset],
+            partition_key="2022-01-01",
+            instance=instance,
+        )
+        expected = {k: 42 for k in hourly_keys}
+        assert result.output_for_node("daily_asset") == expected
 
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(daily):
