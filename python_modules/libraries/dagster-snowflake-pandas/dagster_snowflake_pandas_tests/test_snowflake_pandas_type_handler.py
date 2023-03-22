@@ -41,6 +41,7 @@ from dagster_snowflake_pandas import (
     snowflake_pandas_io_manager,
 )
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _add_missing_timezone,
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
@@ -94,7 +95,9 @@ def test_handle_output():
     handler = SnowflakePandasTypeHandler()
     connection = MagicMock()
     df = DataFrame([{"col1": "a", "col2": 1}])
-    output_context = build_output_context(resource_config=resource_config)
+    output_context = build_output_context(
+        resource_config={**resource_config, "time_data_to_string": False}
+    )
 
     metadata = handler.handle_output(
         output_context,
@@ -125,7 +128,9 @@ def test_load_input():
         mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
 
         handler = SnowflakePandasTypeHandler()
-        input_context = build_input_context()
+        input_context = build_input_context(
+            resource_config={**resource_config, "time_data_to_string": False}
+        )
         df = handler.load_input(
             input_context,
             TableSlice(
@@ -144,8 +149,7 @@ def test_load_input():
 def test_type_conversions():
     # no timestamp data
     no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
-
+    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time, None))
     assert (converted == no_time).all()
 
     # timestamp data
@@ -156,7 +160,7 @@ def test_type_conversions():
             pandas.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
-    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
+    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time, None))
 
     assert (with_time == time_converted).all()
 
@@ -164,6 +168,25 @@ def test_type_conversions():
     string_data = pandas.Series(["not", "a", "timestamp"])
 
     assert (_convert_string_to_timestamp(string_data) == string_data).all()
+
+
+def test_timezone_conversions():
+    # no timestamp data
+    no_time = pandas.Series([1, 2, 3, 4, 5])
+    converted = _add_missing_timezone(no_time, None)
+    assert (converted == no_time).all()
+
+    # timestamp data
+    with_time = pandas.Series(
+        [
+            pandas.Timestamp("2017-01-01T12:30:45.35"),
+            pandas.Timestamp("2017-02-01T12:30:45.35"),
+            pandas.Timestamp("2017-03-01T12:30:45.35"),
+        ]
+    )
+    time_converted = _add_missing_timezone(with_time, None)
+
+    assert (with_time.dt.tz_localize("UTC") == time_converted).all()
 
 
 def test_build_snowflake_pandas_io_manager():
