@@ -1,5 +1,7 @@
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
+
 import {PartitionDefinitionType} from '../graphql/types';
-import {PartitionState} from '../partitions/PartitionStatus';
 
 import {
   PartitionHealthData,
@@ -7,6 +9,7 @@ import {
   PartitionDimensionSelection,
   Range,
   AssetPartitionStatus,
+  PartitionHealthDataMerged,
 } from './usePartitionHealthData';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
@@ -33,13 +36,11 @@ the asset health bar you see is a flattened representation of the health of all 
 "show per-asset health" button beneath.
 
 */
-export function mergedAssetHealth(
-  assetHealth: PartitionHealthData[],
-): Omit<PartitionHealthData, 'assetKey' | 'ranges' | 'isRangeDataInverted'> {
+export function mergedAssetHealth(assetHealth: PartitionHealthData[]): PartitionHealthDataMerged {
   if (!assetHealth.length) {
     return {
       dimensions: [],
-      stateForKey: () => AssetPartitionStatus.MISSING,
+      stateForKey: () => [AssetPartitionStatus.MISSING],
       rangesForSingleDimension: () => [],
     };
   }
@@ -69,7 +70,7 @@ export function mergedAssetHealth(
       type: dimension.type,
     })),
     stateForKey: (dimensionKeys: string[]) =>
-      mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
+      uniq(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
         dimensions[dimensionIdx].partitionKeys,
@@ -78,21 +79,6 @@ export function mergedAssetHealth(
         ),
       ),
   };
-}
-
-export function mergedStates(states: AssetPartitionStatus[]): AssetPartitionStatus {
-  if (states.includes(AssetPartitionStatus.FAILED)) {
-    return AssetPartitionStatus.FAILED;
-  } else if (
-    states.includes(AssetPartitionStatus.MISSING) &&
-    states.includes(AssetPartitionStatus.MATERIALIZED)
-  ) {
-    return AssetPartitionStatus.SUCCESS_MISSING;
-  } else if (states.includes(AssetPartitionStatus.SUCCESS_MISSING)) {
-    return AssetPartitionStatus.SUCCESS_MISSING;
-  } else {
-    return states[0];
-  }
 }
 
 /**
@@ -129,7 +115,7 @@ export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length);
 }
 
-export type Transition = {idx: number; delta: number; state: AssetPartitionStatus};
+export type Transition = {idx: number; delta: number; state: AssetPartitionStatus[]};
 
 export function assembleRangesFromTransitions(
   allKeys: string[],
@@ -147,37 +133,46 @@ export function assembleRangesFromTransitions(
   // FROM: [{idx: 0, delta: 1}, {idx: 0, delta: 1}, {idx: 3, delta: 1}, {idx: 10, delta: -1}]
   //   TO: [{idx: 0, depth: 2}, {idx: 3, depth: 3}, {idx: 10, depth: 2}]
   //
-  const depths: {idx: number; failure: number; success: number; success_missing: 0}[] = [];
+  const depths: {idx: number; materialized: number; failed: number; materializing: number}[] = [];
   for (const transition of transitions) {
     const last = depths[depths.length - 1];
     if (last && last.idx === transition.idx) {
-      (last as any)[transition.state] = ((last as any)[transition.state] || 0) + transition.delta;
+      for (const state of transition.state) {
+        last[state] = (last[state] || 0) + transition.delta;
+      }
     } else {
-      depths.push({
-        ...(last || {}),
-        idx: transition.idx,
-        [transition.state]: ((last as any)?.[transition.state] || 0) + transition.delta,
-      });
+      for (const state of transition.state) {
+        depths.push({
+          ...(last || {}),
+          idx: transition.idx,
+          [state]: (last?.[state] || 0) + transition.delta,
+        });
+      }
     }
   }
 
   // Ok! This array of depth values IS our SUCCESS vs. SUCCESS_MISSING range state. We just need to flatten it one
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
   //
-  const result: (Omit<Range, 'value'> & {value: AssetPartitionStatus})[] = [];
-  for (const {idx, success, failure, success_missing} of depths) {
-    const value =
-      success === maxOverlap
-        ? AssetPartitionStatus.MATERIALIZED
-        : failure > 0
-        ? AssetPartitionStatus.FAILED
-        : success > 0 || success_missing > 0
-        ? AssetPartitionStatus.SUCCESS_MISSING
-        : AssetPartitionStatus.MISSING;
+  const result: Range[] = [];
+  for (const {idx, materialized, failed, materializing} of depths) {
+    const value: AssetPartitionStatus[] = [];
+    if (failed > 0) {
+      value.push(AssetPartitionStatus.FAILED);
+    }
+    if (materialized > 0) {
+      value.push(AssetPartitionStatus.MATERIALIZED);
+    }
+    if (materializing > 0) {
+      value.push(AssetPartitionStatus.MATERIALIZING);
+    }
+    if (failed + materialized + materializing < maxOverlap) {
+      value.push(AssetPartitionStatus.MISSING);
+    }
 
     const last = result[result.length - 1];
 
-    if (last?.value !== value) {
+    if (!isEqual(last?.value, value)) {
       if (last) {
         last.end = {idx: idx - 1, key: allKeys[idx - 1]};
       }
@@ -185,7 +180,7 @@ export function assembleRangesFromTransitions(
     }
   }
 
-  return result.filter((range) => range.value !== AssetPartitionStatus.MISSING) as Range[];
+  return result.filter((range) => !isEqual(range.value, [AssetPartitionStatus.MISSING]));
 }
 
 export function partitionDefinitionsEqual(
@@ -200,7 +195,7 @@ export function partitionDefinitionsEqual(
 
 export function explodePartitionKeysInSelection(
   selections: PartitionDimensionSelection[],
-  stateForKey: (dimensionKeys: string[]) => PartitionState,
+  stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus[],
 ) {
   if (selections.length === 0) {
     return [];
@@ -214,7 +209,7 @@ export function explodePartitionKeysInSelection(
     });
   }
   if (selections.length === 2) {
-    const all: {partitionKey: string; state: PartitionState}[] = [];
+    const all: {partitionKey: string; state: AssetPartitionStatus[]}[] = [];
     for (const key of selections[0].selectedKeys) {
       for (const subkey of selections[1].selectedKeys) {
         all.push({

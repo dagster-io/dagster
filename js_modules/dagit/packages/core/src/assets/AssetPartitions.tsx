@@ -129,13 +129,13 @@ export const AssetPartitions: React.FC<Props> = ({
 
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return rangesInSelection.flatMap((r) =>
-        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
     const states: AssetPartitionStatus[] = [];
     if (stateFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
-      states.push(AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.SUCCESS_MISSING);
+      states.push(AssetPartitionStatus.MATERIALIZED);
     }
     if (stateFilters.includes(AssetPartitionStatus.FAILED)) {
       states.push(AssetPartitionStatus.FAILED);
@@ -259,7 +259,7 @@ export const AssetPartitions: React.FC<Props> = ({
                 partitions={dimensionKeysInSelection(idx)}
                 stateForPartition={(dimensionKey) => {
                   if (idx === 1 && focusedDimensionKeys[0]) {
-                    return assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey]);
+                    return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
                   }
                   const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                   return partitionStateAtIndex(materializedRangesByDimension[idx], dimensionKeyIdx);

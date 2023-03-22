@@ -271,9 +271,7 @@ const BackfillRunStatus = ({
   const health = React.useMemo(
     () => ({
       partitionStateForKey: (key: string) =>
-        statuses
-          ? runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0]?.runStatus)
-          : PartitionState.MISSING,
+        statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
     }),
     [statuses],
   );
@@ -424,7 +422,7 @@ const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested
   const health = React.useMemo(
     () => ({
       partitionStateForKey: (key: string) =>
-        requested && requested.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING,
+        requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
     }),
     [requested],
   );

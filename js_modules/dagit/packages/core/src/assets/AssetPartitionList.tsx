@@ -2,7 +2,7 @@ import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
+import {partitionStateToStyle} from '../partitions/PartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
@@ -10,7 +10,7 @@ import {AssetPartitionStatus} from './usePartitionHealthData';
 
 export interface AssetPartitionListProps {
   partitions: string[];
-  stateForPartition: (dimensionKey: string) => PartitionState;
+  stateForPartition: (dimensionKey: string) => AssetPartitionStatus[];
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
 }
@@ -89,16 +89,14 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
                   <div style={{flex: 1}} />
-                  {(state === AssetPartitionStatus.SUCCESS_MISSING ||
-                    state === AssetPartitionStatus.SUCCESS) && (
-                    <StateDot state={AssetPartitionStatus.SUCCESS} />
+                  {state.includes(AssetPartitionStatus.MATERIALIZED) && (
+                    <StateDot state={AssetPartitionStatus.MATERIALIZED} />
                   )}
-                  {(state === AssetPartitionStatus.SUCCESS_MISSING ||
-                    state === AssetPartitionStatus.MISSING) && (
+                  {state.includes(AssetPartitionStatus.MISSING) && (
                     <StateDot state={AssetPartitionStatus.MISSING} />
                   )}
-                  {state === AssetPartitionStatus.FAILURE && (
-                    <StateDot state={AssetPartitionStatus.FAILURE} />
+                  {state.includes(AssetPartitionStatus.FAILED) && (
+                    <StateDot state={AssetPartitionStatus.FAILED} />
                   )}
                 </Box>
               </Box>

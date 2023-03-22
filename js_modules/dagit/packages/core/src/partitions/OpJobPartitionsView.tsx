@@ -13,7 +13,7 @@ import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
-import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
+import {getVisibleItemCount} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
   OpJobPartitionSetFragment,

@@ -17,6 +17,7 @@ import styled from 'styled-components/macro';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {
+  AssetPartitionStatus,
   PartitionHealthData,
   PartitionHealthDimension,
   partitionStateAtIndex,
@@ -126,7 +127,7 @@ export const PartitionPerAssetStatus: React.FC<
       steps: layoutBoxesWithRangeDimension.map((box) => ({
         name: box.node.name,
         unix: 0,
-        color: partitionStateToStatusSquareColor(
+        color: assetPartitionStatusToSquareColor(
           partitionStateAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
         ),
       })),
@@ -141,6 +142,17 @@ export const PartitionPerAssetStatus: React.FC<
       showLatestRun={false}
     />
   );
+};
+
+export const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]) => {
+  return state.includes(AssetPartitionStatus.MATERIALIZED) &&
+    state.includes(AssetPartitionStatus.MISSING)
+    ? 'SUCCESS-MISSING'
+    : state.includes(AssetPartitionStatus.MATERIALIZED)
+    ? 'SUCCESS'
+    : state.includes(AssetPartitionStatus.FAILED)
+    ? 'FAILURE'
+    : 'MISSING';
 };
 
 export const partitionStateToStatusSquareColor = (state: PartitionState) => {

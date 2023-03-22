@@ -306,10 +306,10 @@ function buildAssetNodeStatusRow({
     const numMissing = numPartitions - numFailed - numMaterialized;
     const {background, foreground, border} = StyleForPartitionState[
       late || numFailed
-        ? AssetPartitionStatus.FAILURE
+        ? AssetPartitionStatus.FAILED
         : numMissing
         ? AssetPartitionStatus.MISSING
-        : AssetPartitionStatus.SUCCESS
+        : AssetPartitionStatus.MATERIALIZED
     ];
 
     return {

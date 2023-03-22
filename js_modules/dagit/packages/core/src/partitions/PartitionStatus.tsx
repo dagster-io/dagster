@@ -32,7 +32,7 @@ export enum PartitionState {
 export type PartitionStatusRange = {
   start: {idx: number; key: string};
   end: {idx: number; key: string};
-  value: AssetPartitionStatus;
+  value: AssetPartitionStatus[];
 };
 
 // This component can be wired up to assets, which provide partition status in terms
@@ -43,8 +43,8 @@ export type PartitionStatusRange = {
 // and assemble ranges by itself for display.
 //
 export type PartitionStatusHealthSource =
-  | {ranges: PartitionStatusRange[]}
-  | {partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState};
+  | {ranges: PartitionStatusRange[]} // assets
+  | {partitionStateForKey: (partitionKey: string, partitionIdx: number) => RunStatus};
 
 export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   switch (runStatus) {

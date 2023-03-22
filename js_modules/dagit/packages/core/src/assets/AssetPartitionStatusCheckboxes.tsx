@@ -1,9 +1,9 @@
 import {Box, Checkbox} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {partitionStatusToText} from '../partitions/PartitionStatus';
 import {testId} from '../testing/testId';
 
-import {partitionStatusToText} from './PartitionStatus';
 import {AssetPartitionStatus} from './usePartitionHealthData';
 
 export function countsByState(

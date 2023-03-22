@@ -1,60 +1,7 @@
-import {PartitionState} from '../../partitions/PartitionStatus';
-import {mergedRanges, mergedStates} from '../MultipartitioningSupport';
+import {mergedRanges} from '../MultipartitioningSupport';
 import {AssetPartitionStatus, Range} from '../usePartitionHealthData';
 
 describe('multipartitioning support', () => {
-  describe('mergedStates', () => {
-    it('returns SUCCESS_MISSING if SUCCESS and MISSING are both present', () => {
-      expect(
-        mergedStates([
-          AssetPartitionStatus.MATERIALIZED,
-          AssetPartitionStatus.MISSING,
-          AssetPartitionStatus.MISSING,
-        ]),
-      ).toEqual(AssetPartitionStatus.MATERIALIZED_MISSING);
-    });
-
-    it('returns SUCCESS_MISSING if SUCCESS_MISSING is present', () => {
-      expect(
-        mergedStates([
-          AssetPartitionStatus.MATERIALIZED_MISSING,
-          AssetPartitionStatus.MISSING,
-          AssetPartitionStatus.MISSING,
-        ]),
-      ).toEqual(AssetPartitionStatus.MATERIALIZED_MISSING);
-    });
-
-    it('returns SUCCESS if all states are success', () => {
-      expect(
-        mergedStates([
-          AssetPartitionStatus.MATERIALIZED,
-          AssetPartitionStatus.MATERIALIZED,
-          AssetPartitionStatus.MATERIALIZED,
-        ]),
-      ).toEqual(AssetPartitionStatus.MATERIALIZED);
-    });
-
-    it('returns MISSING if all states are missing', () => {
-      expect(
-        mergedStates([
-          AssetPartitionStatus.MISSING,
-          AssetPartitionStatus.MISSING,
-          AssetPartitionStatus.MISSING,
-        ]),
-      ).toEqual(AssetPartitionStatus.MISSING);
-    });
-    it('should not modify the input data', () => {
-      const input = [
-        AssetPartitionStatus.MATERIALIZED_MISSING,
-        AssetPartitionStatus.MISSING,
-        AssetPartitionStatus.MISSING,
-      ];
-      const before = JSON.stringify({input});
-      mergedStates(input);
-      expect(JSON.stringify({input})).toEqual(before);
-    });
-  });
-
   describe('mergedRanges', () => {
     const KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
     const A_I: Range = {
