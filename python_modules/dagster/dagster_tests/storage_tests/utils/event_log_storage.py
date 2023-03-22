@@ -3155,8 +3155,15 @@ class TestEventLogStorage:
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
                 serialized_failed_partition_subset="baz",
+                serialized_in_progress_partition_subset="qux",
                 earliest_in_progress_materialization_event_id=42,
             )
+
+            # Check that AssetStatusCacheValue has all fields set. This ensures that we test that the
+            # cloud gql representation is complete.
+            for field in cache_value._fields:
+                assert getattr(cache_value, field) is not None
+
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
