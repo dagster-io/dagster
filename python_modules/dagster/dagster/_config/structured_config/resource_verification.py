@@ -50,8 +50,7 @@ def resource_verification_op_name(resource_key: str) -> str:
 
 
 def is_resource_verifiable(resource: ResourceDefinition) -> bool:
-    """Returns whether the resource is (or wraps) a ConfigVerifiable resource.
-    """
+    """Returns whether the resource is (or wraps) a ConfigVerifiable resource."""
     from dagster._config.structured_config import ResourceWithKeyMapping, is_fully_configured
 
     if isinstance(resource, ResourceWithKeyMapping):
