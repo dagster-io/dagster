@@ -291,7 +291,9 @@ function buildAssetNodeStatusRow({
         <>
           <AssetLatestRunSpinner liveData={liveData} />
           <Caption style={{flex: 1}} color={Colors.Gray800}>
-            Materializing...
+            {liveData.partitionStats?.numMaterializing
+              ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
+              : `Materializing...`}
           </Caption>
           <AssetRunLink runId={materializingRunId} />
         </>
@@ -479,6 +481,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
     partitionStats {
       numMaterialized
+      numMaterializing
       numPartitions
       numFailed
     }
