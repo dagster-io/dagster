@@ -267,7 +267,7 @@ marshmallow-oneofschema==3.0.1
 marshmallow-sqlalchemy==0.26.1
 mashumaro==2.9
 matplotlib==3.7.1
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.3
 mbstrdecoder==1.1.2
 minimal-snowplow-tracker==0.0.2
 mistune==0.8.4
@@ -371,6 +371,7 @@ python-daemon==3.0.1
 python-dateutil==2.8.2
 python-dotenv==1.0.0
 python-json-logger==2.0.7
+python-multipart==0.0.6
 python-nvd3==0.15.0
 python-slugify==8.0.1
 python-utils==3.5.2
@@ -506,6 +507,7 @@ widgetsnbextension==4.0.6
 wordcloud==1.8.2.2
 wrapt==1.15.0
 WTForms==2.3.3
+xgboost==1.7.4
 xmltodict==0.12.0
 xyzservices==2023.2.0
 yamllint==1.30.0
