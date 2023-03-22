@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
+from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
@@ -28,7 +28,10 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
+    IWorkspaceProcessContext,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -69,7 +72,10 @@ def execute_job_backfill_iteration(
 
         if chunk:
             for _run_id in submit_backfill_runs(
-                instance, workspace_process_context, backfill, chunk
+                instance,
+                lambda: workspace_process_context.create_request_context(),
+                backfill,
+                chunk,
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
@@ -164,7 +170,7 @@ def _get_partitions_chunk(
 
 def submit_backfill_runs(
     instance: DagsterInstance,
-    workspace_process_context: IWorkspaceProcessContext,
+    create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
@@ -178,7 +184,7 @@ def submit_backfill_runs(
     if not partition_names:
         partition_names = cast(Sequence[str], backfill_job.partition_names)
 
-    workspace = workspace_process_context.create_request_context()
+    workspace = create_workspace()
     code_location = workspace.get_code_location(location_name)
 
     check.invariant(
@@ -210,7 +216,7 @@ def submit_backfill_runs(
         )
     for partition_data in result.partition_data:
         # Refresh the code location in case the workspace has reloaded mid-backfill
-        workspace = workspace_process_context.create_request_context()
+        workspace = create_workspace()
         code_location = workspace.get_code_location(location_name)
 
         dagster_run = create_backfill_run(
