@@ -21,7 +21,12 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._config.structured_config.resource_verification import (
+    VerificationResult,
+    VerificationStatus,
+)
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -77,6 +82,8 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
+    ResourceVerificationRequest,
+    ResourceVerificationResult,
     SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
@@ -829,6 +836,44 @@ class DagsterApiServer(DagsterApiServicer):
                     )
                 )
             )
+
+    def ResourceVerification(self, request: Any, _context) -> api_pb2.ResourceVerificationResult:
+        serializable_error_info = None
+        response = VerificationResult(
+            VerificationStatus.FAILURE, "Error executing verification check"
+        )
+        try:
+            resource_verification_request = deserialize_value(
+                request.serialized_resource_verification_request, ResourceVerificationRequest
+            )
+
+            definition = self._get_repo_for_origin(resource_verification_request.repository_origin)
+
+            pipeline = definition.get_pipeline(
+                f"__CONFIG_CHECK_{resource_verification_request.resource_name}"
+            )
+            assert pipeline
+            if isinstance(pipeline, JobDefinition):
+                assert self._instance_ref
+                with DagsterInstance.from_ref(self._instance_ref) as instance:
+                    result = pipeline.execute_in_process(
+                        instance=instance, resources=definition.get_top_level_resources()
+                    )
+
+                    response = result.output_for_node(
+                        f"config_check_{resource_verification_request.resource_name}"
+                    )
+
+        except:
+            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.ResourceVerificationResult(
+            serialized_resource_verification_result=serialize_value(
+                ResourceVerificationResult(
+                    response=response, serializable_error_info=serializable_error_info
+                )
+            )
+        )
 
 
 @whitelist_for_serdes

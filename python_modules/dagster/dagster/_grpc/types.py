@@ -3,6 +3,7 @@ import zlib
 from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
+from dagster._config.structured_config.resource_verification import VerificationResult
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -728,6 +729,55 @@ class GetCurrentRunsResult(
         return super(GetCurrentRunsResult, cls).__new__(
             cls,
             current_runs=check.list_param(current_runs, "current_runs", of_type=str),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ResourceVerificationRequest(
+    NamedTuple(
+        "_ResourceVerificationRequest",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("instance_ref", Optional[InstanceRef]),
+            ("resource_name", str),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        repository_origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        resource_name: str,
+    ):
+        return super(ResourceVerificationRequest, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
+            ),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            resource_name=check.str_param(resource_name, "resource_name"),
+        )
+
+
+@whitelist_for_serdes
+class ResourceVerificationResult(
+    NamedTuple(
+        "_ResourceVerificationResult",
+        [
+            ("response", VerificationResult),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls, response: VerificationResult, serializable_error_info: Optional[SerializableErrorInfo]
+    ):
+        return super(ResourceVerificationResult, cls).__new__(
+            cls,
+            response=check.inst_param(response, "response", VerificationResult),
             serializable_error_info=check.opt_inst_param(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),

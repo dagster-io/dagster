@@ -17,6 +17,7 @@ from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -31,6 +32,8 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
+    ResourceVerificationRequest,
+    ResourceVerificationResult,
     SensorExecutionArgs,
 )
 from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
@@ -489,6 +492,21 @@ class DagsterGrpcClient:
         status_number = response.status
 
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
+
+    def resource_verification(
+        self, resource_verification: ResourceVerificationRequest
+    ) -> ResourceVerificationResult:
+        check.inst_param(
+            resource_verification, "resource_verification", ResourceVerificationRequest
+        )
+        res = self._query(
+            "ResourceVerification",
+            api_pb2.ResourceVerificationRequest,
+            serialized_resource_verification_request=serialize_value(resource_verification),
+        )
+        return deserialize_value(
+            res.serialized_resource_verification_result, ResourceVerificationResult
+        )
 
 
 @contextmanager

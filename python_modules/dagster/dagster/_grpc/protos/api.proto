@@ -28,6 +28,7 @@ service DagsterApi {
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
+  rpc ResourceVerification (ResourceVerificationRequest) returns (ResourceVerificationResult) {}
 }
 
 message Empty {}
@@ -184,4 +185,12 @@ message ExternalJobRequest {
 message ExternalJobReply {
   string serialized_job_data = 1;
   string serialized_error = 2;
+}
+
+message ResourceVerificationRequest {
+  string serialized_resource_verification_request = 1;
+}
+
+message ResourceVerificationResult {
+  string serialized_resource_verification_result = 1;
 }
