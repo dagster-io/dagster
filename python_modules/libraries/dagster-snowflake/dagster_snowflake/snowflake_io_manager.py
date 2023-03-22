@@ -16,6 +16,7 @@ from dagster._core.storage.db_io_manager import (
 )
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
+from dagster._utils.backcompat import deprecation_warning
 
 from .resources import SnowflakeConnection
 
@@ -93,6 +94,10 @@ def build_snowflake_io_manager(
 
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
+        if init_context.config["time_data_to_string"]:
+            deprecation_warning(
+                "Snowflake I/O manager config time_data_to_string", "2.0.0", "Convert existing tables to use timestamps and remove time_data_to_string configuration instead."
+            )
         return DbIOManager(
             type_handlers=type_handlers,
             db_client=SnowflakeDbClient(),
@@ -192,6 +197,15 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         description=(
             "The password of the private key. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
+    )
+    time_data_to_string: bool =  Field(
+        default=False,
+        description=(
+            "If using Pandas DataFrames, whether to convert time data to strings. If True,"
+            " time data will be converted to strings when storing the DataFrame and"
+            " converted back to time data when loading the DataFrame. If False, time data"
+            " without a timezone will be set to UTC timezone to avoid a Snowflake bug. Defaults to False."
         ),
     )
 

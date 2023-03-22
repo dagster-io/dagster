@@ -2,25 +2,39 @@ from typing import Mapping, Optional, Sequence, Type
 
 import pandas as pd
 import pandas.core.dtypes.common as pd_core_dtypes_common
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
 from snowflake.connector.pandas_tools import pd_writer
 
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
-def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
+
+def _table_exists(table_slice: TableSlice, connection):
+    tables = connection.execute(
+        f"SHOW TABLES LIKE '{table_slice.table}' IN DATABASE '{table_slice.database}' SCHEMA"
+        f" '{table_slice.schema}'"
+    ).fetchall()
+    return len(tables) > 0
+
+def _get_table_schema(table_slice: TableSlice, connection):
+    if _table_exists(table_slice, connection):
+        return connection.execute(f"DESCRIBE TABLE {table_slice.table}").fetchall()
+
+def _convert_timestamp_to_string(s: pd.Series, table_schema) -> pd.Series:
     """Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
+        if table_schema:
+            pass
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
     else:
         return s
 
 
-def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
+def _convert_string_to_timestamp(s: pd.Series, table_schema) -> pd.Series:
     """Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
     _convert_timestamp_to_string.
 
@@ -79,7 +93,15 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
-        with_uppercase_cols = with_uppercase_cols.apply(_add_missing_timezone, axis="index")
+        table_schema = _get_table_schema(table_slice, connection)
+        if context.config["time_data_to_string"]:
+            with_uppercase_cols = with_uppercase_cols.apply(
+                _convert_timestamp_to_string, axis="index", args=(table_schema)
+            )
+        else:
+            with_uppercase_cols = with_uppercase_cols.apply(
+                _add_missing_timezone, axis="index", args=(table_schema)
+            )
         with_uppercase_cols.to_sql(
             table_slice.table,
             con=connection.engine,
@@ -108,7 +130,8 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )
-        # result = result.apply(_convert_string_to_timestamp, axis="index")
+        if context.config["time_data_to_string"]:
+            result = result.apply(_convert_string_to_timestamp, axis="index")
         result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
         return result
 
