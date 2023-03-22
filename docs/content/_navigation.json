@@ -45,6 +45,10 @@
         "path": "/tutorial/building-an-asset-graph"
       },
       {
+        "title": "Scheduling your pipeline",
+        "path": "/tutorial/scheduling-your-pipeline"
+      },
+      {
         "title": "Next steps",
         "path": "/tutorial/next-steps"
       }
