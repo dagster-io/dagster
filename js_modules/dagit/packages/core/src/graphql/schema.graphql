@@ -1919,6 +1919,8 @@ type ResourceDetails {
   resourceType: String!
   assetKeysUsing: [AssetKey!]!
   jobsOpsUsing: [JobWithOps!]!
+  supportsVerification: Boolean!
+  verificationResult: ResourceVerificationResult
 }
 
 type ConfiguredValue {
@@ -1946,6 +1948,16 @@ enum NestedResourceType {
 type JobWithOps {
   job: Job!
   opsUsing: [SolidHandle!]!
+}
+
+type ResourceVerificationResult {
+  status: VerificationStatus!
+  message: String!
+}
+
+enum VerificationStatus {
+  SUCCESS
+  FAILURE
 }
 
 type RepositoryConnection {
@@ -3003,6 +3015,9 @@ type DagitMutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): AddDynamicPartitionResult!
+  launchResourceVerification(
+    resourceSelector: ResourceSelector!
+  ): LaunchResourceVerificationMutationResult!
 }
 
 input ReexecutionParams {
@@ -3057,6 +3072,12 @@ type AddDynamicPartitionSuccess {
   partitionsDefName: String!
   partitionKey: String!
 }
+
+union LaunchResourceVerificationMutationResult =
+    RepositoryLocationNotFound
+  | UnauthorizedError
+  | PythonError
+  | ResourceVerificationResult
 
 type DagitSubscription {
   pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
