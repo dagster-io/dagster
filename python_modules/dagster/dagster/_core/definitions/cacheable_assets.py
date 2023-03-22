@@ -242,7 +242,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         )
 
         super().__init__(
-            unique_id=f"{wrapped._unique_id}_prefix_or_group_{self._get_hash()}",  # noqa: SLF001
+            unique_id=f"{wrapped.unique_id}_prefix_or_group_{self._get_hash()}",
             wrapped=wrapped,
         )
 
@@ -331,7 +331,7 @@ class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition)
         self._resource_defs = resource_defs
 
         super().__init__(
-            unique_id=f"{wrapped._unique_id}_resources_{self._get_hash()}",  # noqa: SLF001
+            unique_id=f"{wrapped.unique_id}_resources_{self._get_hash()}",
             wrapped=wrapped,
         )
 
