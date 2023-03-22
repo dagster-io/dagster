@@ -654,6 +654,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     name
     dimensionTypes {
       name
+      dynamicPartitionsDefinitionName
     }
   }
 

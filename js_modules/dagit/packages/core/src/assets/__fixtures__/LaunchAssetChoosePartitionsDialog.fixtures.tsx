@@ -1,7 +1,7 @@
-import {ReleasesWorkspace_RAW} from './LaunchAssetLoaderQuery.fixtures';
+import {assetNodes} from './LaunchAssetLoaderQuery.fixtures';
 
 export const ReleasesJobProps = {
-  assets: ReleasesWorkspace_RAW.result.data.assetNodes,
+  assets: assetNodes,
   upstreamAssetKeys: [],
   repoAddress: {
     name: '__repository__',
