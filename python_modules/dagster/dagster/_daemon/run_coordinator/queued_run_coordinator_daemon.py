@@ -57,7 +57,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._executor = None
-        self._exit_stack.pop_all()
+        self._exit_stack.close()
         super().__exit__(_exception_type, _exception_value, _traceback)
 
     @classmethod
