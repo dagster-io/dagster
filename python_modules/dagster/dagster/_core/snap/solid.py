@@ -194,10 +194,10 @@ def _check_solid_def_header_args(
     )
 
 
-@whitelist_for_serdes
-class CompositeSolidDefSnap(
+@whitelist_for_serdes(storage_name="CompositeSolidDefSnap")
+class GraphDefSnap(
     NamedTuple(
-        "_CompositeSolidDefSnap",
+        "_GraphDefSnap",
         [
             ("name", str),
             ("input_def_snaps", Sequence[InputDefSnap]),
@@ -223,7 +223,7 @@ class CompositeSolidDefSnap(
         input_mapping_snaps: Sequence[InputMappingSnap],
         output_mapping_snaps: Sequence[OutputMappingSnap],
     ):
-        return super(CompositeSolidDefSnap, cls).__new__(
+        return super(GraphDefSnap, cls).__new__(
             cls,
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
@@ -304,14 +304,14 @@ class SolidDefinitionsSnapshot(
         "_SolidDefinitionsSnapshot",
         [
             ("solid_def_snaps", Sequence[OpDefSnap]),
-            ("composite_solid_def_snaps", Sequence[CompositeSolidDefSnap]),
+            ("composite_solid_def_snaps", Sequence[GraphDefSnap]),
         ],
     )
 ):
     def __new__(
         cls,
         solid_def_snaps: Sequence[OpDefSnap],
-        composite_solid_def_snaps: Sequence[CompositeSolidDefSnap],
+        composite_solid_def_snaps: Sequence[GraphDefSnap],
     ):
         return super(SolidDefinitionsSnapshot, cls).__new__(
             cls,
@@ -323,7 +323,7 @@ class SolidDefinitionsSnapshot(
                 check.sequence_param(
                     composite_solid_def_snaps,
                     "composite_solid_def_snaps",
-                    of_type=CompositeSolidDefSnap,
+                    of_type=GraphDefSnap,
                 ),
                 key=lambda comp_def: comp_def.name,
             ),
@@ -351,7 +351,7 @@ def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidD
 
 def build_composite_solid_def_snap(comp_solid_def):
     check.inst_param(comp_solid_def, "comp_solid_def", GraphDefinition)
-    return CompositeSolidDefSnap(
+    return GraphDefSnap(
         name=comp_solid_def.name,
         input_def_snaps=list(map(build_input_def_snap, comp_solid_def.input_defs)),
         output_def_snaps=list(map(build_output_def_snap, comp_solid_def.output_defs)),
@@ -386,7 +386,7 @@ def build_core_solid_def_snap(solid_def):
 
 
 # shared impl for CompositeSolidDefSnap and SolidDefSnap
-def _get_input_snap(solid_def: Union[CompositeSolidDefSnap, OpDefSnap], name: str) -> InputDefSnap:
+def _get_input_snap(solid_def: Union[GraphDefSnap, OpDefSnap], name: str) -> InputDefSnap:
     check.str_param(name, "name")
     for inp in solid_def.input_def_snaps:
         if inp.name == name:
@@ -400,9 +400,7 @@ def _get_input_snap(solid_def: Union[CompositeSolidDefSnap, OpDefSnap], name: st
 
 
 # shared impl for CompositeSolidDefSnap and SolidDefSnap
-def _get_output_snap(
-    solid_def: Union[CompositeSolidDefSnap, OpDefSnap], name: str
-) -> OutputDefSnap:
+def _get_output_snap(solid_def: Union[GraphDefSnap, OpDefSnap], name: str) -> OutputDefSnap:
     check.str_param(name, "name")
     for out in solid_def.output_def_snaps:
         if out.name == name:

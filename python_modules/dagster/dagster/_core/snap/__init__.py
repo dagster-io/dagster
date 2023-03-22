@@ -63,7 +63,7 @@ from .pipeline_snapshot import (
     create_pipeline_snapshot_id as create_pipeline_snapshot_id,
 )
 from .solid import (
-    CompositeSolidDefSnap as CompositeSolidDefSnap,
+    GraphDefSnap as GraphDefSnap,
     NodeDefSnap as NodeDefSnap,
     build_composite_solid_def_snap as build_composite_solid_def_snap,
 )

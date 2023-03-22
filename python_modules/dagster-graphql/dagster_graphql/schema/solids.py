@@ -7,7 +7,7 @@ from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedPipeline
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline
-from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, NodeDefSnap
+from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, NodeDefSnap
 from dagster._core.snap.solid import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.pipeline_run import RunsFilter
 
@@ -351,7 +351,7 @@ def _build_solid_handles(
             parent=parent if parent else None,
         )
         solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        if isinstance(solid_def_snap, CompositeSolidDefSnap):
+        if isinstance(solid_def_snap, GraphDefSnap):
             all_handle += _build_solid_handles(
                 represented_pipeline,
                 represented_pipeline.get_dep_structure_index(solid_def_name),
@@ -547,7 +547,7 @@ class GrapheneSolid(graphene.ObjectType):
         return self._solid_invocation_snap.is_dynamic_mapped
 
     def get_is_composite(self) -> bool:
-        return isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        return isinstance(self._solid_def_snap, GraphDefSnap)
 
     def get_pipeline_name(self) -> str:
         return self._represented_pipeline.name
@@ -683,7 +683,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
     def resolve_output_mappings(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneOutputMapping]:
-        assert isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        assert isinstance(self._solid_def_snap, GraphDefSnap)
         return [
             GrapheneOutputMapping(
                 self._represented_pipeline,
@@ -695,7 +695,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         ]
 
     def resolve_input_mappings(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneInputMapping]:
-        assert isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        assert isinstance(self._solid_def_snap, GraphDefSnap)
         return [
             GrapheneInputMapping(
                 self._represented_pipeline,
@@ -744,7 +744,7 @@ def build_solid_definition(
     if isinstance(solid_def_snap, NodeDefSnap):
         return GrapheneSolidDefinition(represented_pipeline, solid_def_snap.name)
 
-    if isinstance(solid_def_snap, CompositeSolidDefSnap):
+    if isinstance(solid_def_snap, GraphDefSnap):
         return GrapheneCompositeSolidDefinition(represented_pipeline, solid_def_snap.name)
 
     check.failed("Unknown solid definition type {type}".format(type=type(solid_def_snap)))

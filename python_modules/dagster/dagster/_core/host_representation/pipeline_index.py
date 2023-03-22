@@ -10,13 +10,13 @@ from dagster._core.snap import (
 )
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
-from dagster._core.snap.solid import CompositeSolidDefSnap, NodeDefSnap
+from dagster._core.snap.solid import GraphDefSnap, NodeDefSnap
 
 
 class PipelineIndex:
     pipeline_snapshot: PipelineSnapshot
     parent_pipeline_snapshot: Optional[PipelineSnapshot]
-    _node_defs_snaps_index: Mapping[str, Union[NodeDefSnap, CompositeSolidDefSnap]]
+    _node_defs_snaps_index: Mapping[str, Union[NodeDefSnap, GraphDefSnap]]
     _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
     _comp_dep_structures: Mapping[str, DependencyStructureIndex]
@@ -43,7 +43,7 @@ class PipelineIndex:
                 ),
             )
 
-        node_def_snaps: Sequence[Union[NodeDefSnap, CompositeSolidDefSnap]] = [
+        node_def_snaps: Sequence[Union[NodeDefSnap, GraphDefSnap]] = [
             *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
             *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
         ]
@@ -96,7 +96,7 @@ class PipelineIndex:
     def get_dagster_type_from_name(self, type_name: str) -> DagsterTypeSnap:
         return self._dagster_type_snaps_by_name_index[type_name]
 
-    def get_node_def_snap(self, node_def_name: str) -> Union[NodeDefSnap, CompositeSolidDefSnap]:
+    def get_node_def_snap(self, node_def_name: str) -> Union[NodeDefSnap, GraphDefSnap]:
         check.str_param(node_def_name, "node_def_name")
         return self._node_defs_snaps_index[node_def_name]
 
