@@ -10,7 +10,7 @@ Learn about Dagster's core concepts and how to use them in your data platform.
 
 ## Software-defined assets
 
-An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A **software-defined asset** is a Dagster object that couples an asset to the function and upstream assets used to produce its contents.
 
 <ArticleList>
   <ArticleListItem
@@ -39,7 +39,7 @@ An asset is an object in persistent storage, such as a table, file, or persisted
 
 ## Ops
 
-Ops are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
+**Ops** are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
 
 <ArticleList>
   <ArticleListItem
@@ -64,7 +64,7 @@ Ops are the core unit of computation in Dagster. They typically perform relative
 
 ## Graphs
 
-A graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+A **graph** is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
 <ArticleList>
   <ArticleListItem
@@ -85,7 +85,7 @@ A graph is a set of interconnected ops or sub-graphs. While individual ops typic
 
 ## Jobs
 
-Jobs are the main unit of execution and monitoring in Dagster. The core of a job is a graph of ops connected via data dependencies.
+**Jobs** are the main unit of execution and monitoring in Dagster. The core of a job is a graph of ops connected via data dependencies.
 
 <ArticleList>
   <ArticleListItem
@@ -106,7 +106,7 @@ Jobs are the main unit of execution and monitoring in Dagster. The core of a job
 
 ## Schedules and sensors
 
-Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change.
+**Schedules** launch runs on a fixed interval, while **sensors** allow you to do so based on an external state change.
 
 <ArticleList>
   <ArticleListItem
@@ -123,7 +123,7 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
 
 ## Partitions and backfills
 
-A software-defined asset or job can represent a collection of _partitions_ that can be tracked and executed independently.
+A software-defined asset or job can represent a collection of **partitions** that can be tracked and executed independently.
 
 <ArticleList>
   <ArticleListItem
@@ -138,26 +138,9 @@ A software-defined asset or job can represent a collection of _partitions_ that 
 
 ---
 
-## I/O management
-
-IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
-
-<ArticleList>
-  <ArticleListItem
-    title="I/O managers"
-    href="/concepts/io-management/io-managers"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Unconnected inputs"
-    href="/concepts/io-management/unconnected-inputs"
-  ></ArticleListItem>
-</ArticleList>
-
----
-
 ## Configuration
 
-Dagster provides a configuration system that allows you to document, schematize, and error-check your configuration.
+Dagster provides a **configuration** system that allows you to document, schematize, and error-check your configuration.
 
 <ArticleList>
   <ArticleListItem
@@ -174,31 +157,40 @@ Dagster provides a configuration system that allows you to document, schematize,
 
 ## Code locations
 
-A code location is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like Dagit and the Dagster CLI use code locations to load your code.
+A **code location** is a collection of Dagster definitions, including assets, jobs, schedules, sensors, and resources. Dagster tools like Dagit and the Dagster CLI use code locations to load your code.
 
 [Learn more about code locations](/concepts/code-locations).
 
 ---
 
-## Resources
+## Resources and I/O management
 
-Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments.
+**Resources** enable you to separate logic from external dependencies, making development and testing in multiple environments possible.
 
 [Learn more about resources](/concepts/resources).
 
+A special type of resource, **I/O managers** are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+
+<ArticleList>
+  <ArticleListItem
+    title="I/O managers"
+    href="/concepts/io-management/io-managers"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Unconnected inputs"
+    href="/concepts/io-management/unconnected-inputs"
+  ></ArticleListItem>
+</ArticleList>
+
 ---
 
-## Dagit
+## Dagit and GraphQL API
 
-Dagit is a web-based interface for viewing and interacting with Dagster objects.
+**Dagit** is a web-based interface for viewing and interacting with Dagster objects.
 
 [Learn more about Dagit](/concepts/dagit/dagit).
 
----
-
-## GraphQL API
-
-The GraphQL API allows you to interact programmatically with Dagster.
+The **GraphQL API** allows you to interact programmatically with Dagster.
 
 <ArticleList>
   <ArticleListItem
@@ -215,7 +207,7 @@ The GraphQL API allows you to interact programmatically with Dagster.
 
 ## Dagster types
 
-The Dagster type system provides gradual, opt-in typing for the inputs and outputs of assets and ops.
+The **Dagster type system** provides gradual, opt-in typing for the inputs and outputs of assets and ops.
 
 [Learn more about Dagster types](/concepts/types).
 
@@ -223,7 +215,7 @@ The Dagster type system provides gradual, opt-in typing for the inputs and outpu
 
 ## Logging
 
-A rich, extensible logging system, Dagster's built-in logger tracks all execution events. Loggers can also be customized to fit your infrastructure.
+A rich, extensible logging system, Dagster's built-in **logger** tracks all execution events. Loggers can also be customized to fit your infrastructure.
 
 <ArticleList>
   <ArticleListItem
