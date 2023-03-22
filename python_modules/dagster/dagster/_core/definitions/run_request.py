@@ -3,7 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
@@ -220,13 +220,14 @@ class PipelineRunReaction(
         )
 
 
-class SensorTickResult(
+@experimental
+class SensorResult(
     NamedTuple(
-        "_SensorTickResult",
+        "_SensorResult",
         [
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_reason", Optional[SkipReason]),
-            ("pipeline_run_reaction", Optional[PipelineRunReaction]),
+            ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
             ("cursor", Optional[str]),
         ],
     )
@@ -236,37 +237,42 @@ class SensorTickResult(
     Attributes:
         run_requests (Optional[Sequence[RunRequest]]): A list
             of run requests to be executed.
+        skip_reason (Optional[SkipReason]): A skip message indicating why sensor evaluation was skipped.
         cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
             context for the next sensor evaluation.
+        pipeline_run_reactions (Optional[PipelineRunReaction]): A list of pipeline run reactions to be evaluated.
     """
 
     def __new__(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_reason: Optional[SkipReason] = None,
-        pipeline_run_reaction: Optional[PipelineRunReaction] = None,
+        pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
         cursor: Optional[str] = None,
     ):
+        if not run_requests and not skip_reason and not pipeline_run_reactions:
+            check.failed(
+                "Must provide at least one of run_requests, skip_reason, or pipeline_run_reactions"
+            )
+
         if skip_reason:
             if len(run_requests if run_requests else []) > 0:
                 check.failed(
                     "Expected a single SkipReason or one or more RunRequests: received both "
                     "RunRequest and SkipReason"
                 )
-            elif pipeline_run_reaction:
+            elif pipeline_run_reactions:
                 check.failed(
                     "Expected a single SkipReason or one or more PipelineRunReaction: "
                     "received both PipelineRunReaction and SkipReason"
                 )
-            else:
-                check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
-        return super(SensorTickResult, cls).__new__(
+        return super(SensorResult, cls).__new__(
             cls,
             run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
             skip_reason=check.opt_inst_param(skip_reason, "skip_reason", SkipReason),
-            pipeline_run_reaction=check.opt_inst_param(
-                pipeline_run_reaction, "pipeline_run_reaction", PipelineRunReaction
+            pipeline_run_reactions=check.opt_sequence_param(
+                pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
             ),
             cursor=check.opt_str_param(cursor, "cursor"),
         )
