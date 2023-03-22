@@ -164,10 +164,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
   }, [assetHealth, assetHealthLoading, target]);
 
-  const displayedPartitionDefinition =
+  const displayedBaseAsset =
     target.type === 'job'
-      ? partitionedAssets[0].partitionDefinition
-      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))?.partitionDefinition;
+      ? partitionedAssets[0]
+      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey));
+
+  const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
@@ -468,7 +470,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                     ),
                   )
                 }
-                partitionDefinitionName={displayedPartitionDefinition?.name}
+                partitionDefinitionName={
+                  displayedPartitionDefinition?.name ||
+                  displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
+                    (d) => d.name === range.dimension.name,
+                  )?.dynamicPartitionsDefinitionName
+                }
                 repoAddress={repoAddress}
                 refetch={refetch}
               />
