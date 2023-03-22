@@ -31,7 +31,10 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
+    IWorkspaceProcessContext,
+)
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
@@ -207,7 +210,9 @@ class AssetBackfillData(NamedTuple):
 
 
 def execute_asset_backfill_iteration(
-    backfill: "PartitionBackfill", workspace: BaseWorkspaceRequestContext, instance: DagsterInstance
+    backfill: "PartitionBackfill",
+    workspace_process_context: IWorkspaceProcessContext,
+    instance: DagsterInstance,
 ) -> Iterable[None]:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -217,7 +222,9 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus
 
-    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+    asset_graph = ExternalAssetGraph.from_workspace(
+        workspace_process_context.create_request_context()
+    )
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
@@ -250,7 +257,12 @@ def execute_asset_backfill_iteration(
     for run_request in result.run_requests:
         yield None
         submit_run_request(
-            run_request=run_request, asset_graph=asset_graph, workspace=workspace, instance=instance
+            run_request=run_request,
+            asset_graph=asset_graph,
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the backfill
+            workspace=workspace_process_context.create_request_context(),
+            instance=instance,
         )
 
     instance.update_backfill(updated_backfill)
