@@ -53,6 +53,7 @@ setup(
             "slack_sdk",
             "snapshottest",
             "dbt-duckdb",
+            "xgboost",
             "dagit[test]",
         ]
     },
