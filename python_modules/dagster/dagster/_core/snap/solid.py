@@ -298,31 +298,37 @@ class OpDefSnap(
         return _get_output_snap(self, name)
 
 
-@whitelist_for_serdes
-class SolidDefinitionsSnapshot(
+@whitelist_for_serdes(
+    storage_name="SolidDefinitionsSnapshot",
+    storage_field_names={
+        "op_def_snaps": "solid_def_snaps",
+        "graph_def_snaps": "composite_solid_def_snaps",
+    },
+)
+class NodeDefinitionsSnapshot(
     NamedTuple(
-        "_SolidDefinitionsSnapshot",
+        "_NodeDefinitionsSnapshot",
         [
-            ("solid_def_snaps", Sequence[OpDefSnap]),
-            ("composite_solid_def_snaps", Sequence[GraphDefSnap]),
+            ("op_def_snaps", Sequence[OpDefSnap]),
+            ("graph_def_snaps", Sequence[GraphDefSnap]),
         ],
     )
 ):
     def __new__(
         cls,
-        solid_def_snaps: Sequence[OpDefSnap],
-        composite_solid_def_snaps: Sequence[GraphDefSnap],
+        op_def_snaps: Sequence[OpDefSnap],
+        graph_def_snaps: Sequence[GraphDefSnap],
     ):
-        return super(SolidDefinitionsSnapshot, cls).__new__(
+        return super(NodeDefinitionsSnapshot, cls).__new__(
             cls,
-            solid_def_snaps=sorted(
-                check.sequence_param(solid_def_snaps, "solid_def_snaps", of_type=OpDefSnap),
+            op_def_snaps=sorted(
+                check.sequence_param(op_def_snaps, "op_def_snaps", of_type=OpDefSnap),
                 key=lambda solid_def: solid_def.name,
             ),
-            composite_solid_def_snaps=sorted(
+            graph_def_snaps=sorted(
                 check.sequence_param(
-                    composite_solid_def_snaps,
-                    "composite_solid_def_snaps",
+                    graph_def_snaps,
+                    "graph_def_snaps",
                     of_type=GraphDefSnap,
                 ),
                 key=lambda comp_def: comp_def.name,
@@ -330,7 +336,7 @@ class SolidDefinitionsSnapshot(
         )
 
 
-def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidDefinitionsSnapshot:
+def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDefinitionsSnapshot:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     solid_def_snaps = []
     graph_def_snaps = []
@@ -342,7 +348,7 @@ def build_solid_definitions_snapshot(pipeline_def: PipelineDefinition) -> SolidD
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
-    return SolidDefinitionsSnapshot(
+    return NodeDefinitionsSnapshot(
         solid_def_snaps=solid_def_snaps,
         # update when snapshot renames happen
         composite_solid_def_snaps=graph_def_snaps,

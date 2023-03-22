@@ -47,8 +47,8 @@ from .dep_snapshot import (
 from .mode import ModeDefSnap, build_mode_def_snap
 from .solid import (
     GraphDefSnap,
+    NodeDefinitionsSnapshot,
     NodeDefSnap,
-    SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
 )
 
@@ -93,7 +93,7 @@ class PipelineSnapshot(
             ("tags", Mapping[str, Any]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
-            ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
+            ("solid_definitions_snapshot", NodeDefinitionsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
             ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
@@ -109,7 +109,7 @@ class PipelineSnapshot(
         tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
-        solid_definitions_snapshot: SolidDefinitionsSnapshot,
+        solid_definitions_snapshot: NodeDefinitionsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
@@ -130,7 +130,7 @@ class PipelineSnapshot(
                 DagsterTypeNamespaceSnapshot,
             ),
             solid_definitions_snapshot=check.inst_param(
-                solid_definitions_snapshot, "solid_definitions_snapshot", SolidDefinitionsSnapshot
+                solid_definitions_snapshot, "solid_definitions_snapshot", NodeDefinitionsSnapshot
             ),
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
@@ -194,11 +194,11 @@ class PipelineSnapshot(
 
     def get_node_def_snap(self, solid_def_name: str) -> Union[NodeDefSnap, GraphDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
-        for solid_def_snap in self.solid_definitions_snapshot.solid_def_snaps:
+        for solid_def_snap in self.solid_definitions_snapshot.op_def_snaps:
             if solid_def_snap.name == solid_def_name:
                 return solid_def_snap
 
-        for comp_solid_def_snap in self.solid_definitions_snapshot.composite_solid_def_snaps:
+        for comp_solid_def_snap in self.solid_definitions_snapshot.graph_def_snaps:
             if comp_solid_def_snap.name == solid_def_name:
                 return comp_solid_def_snap
 

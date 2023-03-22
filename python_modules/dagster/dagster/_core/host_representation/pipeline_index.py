@@ -44,8 +44,8 @@ class PipelineIndex:
             )
 
         node_def_snaps: Sequence[Union[NodeDefSnap, GraphDefSnap]] = [
-            *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
-            *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
+            *pipeline_snapshot.solid_definitions_snapshot.op_def_snaps,
+            *pipeline_snapshot.solid_definitions_snapshot.graph_def_snaps,
         ]
         self._node_defs_snaps_index = {sd.name: sd for sd in node_def_snaps}
 
@@ -61,7 +61,7 @@ class PipelineIndex:
 
         self._comp_dep_structures = {
             comp_snap.name: DependencyStructureIndex(comp_snap.dep_structure_snapshot)
-            for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
+            for comp_snap in pipeline_snapshot.solid_definitions_snapshot.graph_def_snaps
         }
 
         self._memo_lock = Lock()
