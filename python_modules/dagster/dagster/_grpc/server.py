@@ -24,6 +24,8 @@ import dagster._seven as seven
 from dagster._config.structured_config.resource_verification import (
     VerificationResult,
     VerificationStatus,
+    resource_verification_job_name,
+    resource_verification_op_name,
 )
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.job_definition import JobDefinition
@@ -849,19 +851,19 @@ class DagsterApiServer(DagsterApiServicer):
 
             definition = self._get_repo_for_origin(resource_verification_request.repository_origin)
 
-            pipeline = definition.get_pipeline(
-                f"__CONFIG_CHECK_{resource_verification_request.resource_name}"
+            pipeline = cast(
+                JobDefinition,
+                definition.get_pipeline(
+                    resource_verification_job_name(resource_verification_request.resource_name)
+                ),
             )
-            assert pipeline
-            if isinstance(pipeline, JobDefinition):
-                assert self._instance_ref
-                with DagsterInstance.from_ref(self._instance_ref) as instance:
-                    result = pipeline.execute_in_process(
-                        instance=instance, resources=definition.get_top_level_resources()
-                    )
-
+            with DagsterInstance.from_ref(check.not_none(self._instance_ref)) as instance:
+                result = pipeline.execute_in_process(
+                    instance=instance, resources=definition.get_top_level_resources()
+                )
+                if result.success:
                     response = result.output_for_node(
-                        f"config_check_{resource_verification_request.resource_name}"
+                        resource_verification_op_name(resource_verification_request.resource_name)
                     )
 
         except:

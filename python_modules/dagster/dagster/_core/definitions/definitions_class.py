@@ -10,35 +10,26 @@ from typing import (
     Sequence,
     Type,
     Union,
-    cast,
 )
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._config.structured_config import (
-    ResourceWithKeyMapping,
     attach_resource_id_to_key_mapping,
-    is_fully_configured,
 )
 from dagster._config.structured_config.resource_verification import (
-    ConfigVerifiable,
-    VerificationResult,
+    create_resource_verification_job,
+    is_resource_verifiable,
 )
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.decorators.op_decorator import op
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, Output
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
-from dagster._core.definitions.output import Out
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils.cached_method import cached_method
 
-from ..execution.context.compute import OpExecutionContext
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
@@ -55,46 +46,6 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
     from dagster._core.storage.asset_value_loader import AssetValueLoader
-
-
-def _is_checkable(resource: ResourceDefinition) -> bool:
-    if isinstance(resource, ResourceWithKeyMapping):
-        return _is_checkable(resource.wrapped_resource)
-
-    if not is_fully_configured(resource):
-        return False
-    return isinstance(resource, ConfigVerifiable)
-
-
-def _create_config_check_job(
-    resource_key: str, resource_defs: Mapping[str, ResourceDefinition]
-) -> JobDefinition:
-    @op(
-        name=f"config_check_{resource_key}",
-        required_resource_keys={resource_key},
-        out={"result": Out(VerificationResult)},
-    )
-    def resource_verification_op(context: OpExecutionContext) -> Output[VerificationResult]:
-        result = cast(ConfigVerifiable, getattr(context.resources, resource_key)).verify_config()
-
-        return Output(
-            result,
-            metadata_entries=[
-                MetadataEntry("status", value=MetadataValue.text(result.status.name)),
-                MetadataEntry(
-                    "message",
-                    value=MetadataValue.text(result.message)
-                    if result.message
-                    else MetadataValue.null(),
-                ),
-            ],
-        )
-
-    @job(name=f"__CONFIG_CHECK_{resource_key}", resource_defs=resource_defs)
-    def resource_verification_job() -> None:
-        resource_verification_op()
-
-    return resource_verification_job
 
 
 @public
@@ -289,11 +240,12 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
+    # Generate (user-hidden) jobs to check the config of any ConfigValidatable resources
     config_check_jobs: List[JobDefinition] = []
     for resource_key, resource in resource_defs.items():
-        if _is_checkable(resource=resource):
+        if is_resource_verifiable(resource=resource):
             config_check_jobs.append(
-                _create_config_check_job(
+                create_resource_verification_job(
                     resource_key=resource_key,
                     resource_defs=resource_defs,
                 )
