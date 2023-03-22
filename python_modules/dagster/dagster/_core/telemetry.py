@@ -70,8 +70,6 @@ BACKFILL_RUN_CREATED = "backfill_run_created"
 STEP_START_EVENT = "step_start_event"
 STEP_SUCCESS_EVENT = "step_success_event"
 STEP_FAILURE_EVENT = "step_failure_event"
-DYNAMIC_PARTITIONS_ADDED = "dynamic_partitions_added"
-DYNAMIC_PARTITIONS_FETCHED = "dynamic_partitions_fetched"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -462,11 +460,25 @@ def log_external_repo_stats(
     external_pipeline: Optional["ExternalPipeline"] = None,
 ):
     from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external_data import (
+        ExternalDynamicPartitionsDefinitionData,
+    )
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+
+    def _get_num_dynamic_partitioned_assets(external_asset_nodes) -> int:
+        return sum(
+            [
+                1
+                if asset.partitions_def_data
+                and isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData)
+                else 0
+                for asset in external_asset_nodes
+            ]
+        )
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
@@ -477,7 +489,11 @@ def log_external_repo_stats(
         num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
         num_schedules_in_repo = len(external_repo.get_external_schedules())
         num_sensors_in_repo = len(external_repo.get_external_sensors())
-        num_assets_in_repo = len(external_repo.get_external_asset_nodes())
+        external_asset_nodes = external_repo.get_external_asset_nodes()
+        num_assets_in_repo = len(external_asset_nodes)
+        num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(
+            external_asset_nodes
+        )
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -494,6 +510,9 @@ def log_external_repo_stats(
                     "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
                     "location_name_hash": location_name_hash,
+                    "num_dynamic_partitioned_assets_in_repo": str(
+                        num_dynamic_partitioned_assets_in_repo
+                    ),
                 },
             )._asdict()
         )
@@ -505,10 +524,21 @@ def log_repo_stats(
     pipeline: Optional[IPipeline] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
+    from dagster._core.definitions.partition import DynamicPartitionsDefinition
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.opt_inst_param(pipeline, "pipeline", IPipeline)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
+
+    def _get_num_dynamic_partitioned_assets(asset_defs) -> int:
+        return sum(
+            1
+            if assets_def.partitions_def
+            and isinstance(assets_def.partitions_def, DynamicPartitionsDefinition)
+            else 0
+            for assets_def in asset_defs
+        )
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
@@ -522,6 +552,7 @@ def log_repo_stats(
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
+            num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         elif isinstance(repo, ReconstructableRepository):
             pipeline_name_hash = ""
             repository = repo.get_definition()
@@ -531,6 +562,7 @@ def log_repo_stats(
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
+            num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)  # type: ignore
             repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))  # type: ignore
@@ -538,6 +570,7 @@ def log_repo_stats(
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
             num_assets_in_repo = 0
+            num_dynamic_partitioned_assets_in_repo = 0
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -553,6 +586,9 @@ def log_repo_stats(
                     "num_sensors_in_repo": str(num_sensors_in_repo),
                     "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
+                    "num_dynamic_partitioned_assets_in_repo": str(
+                        num_dynamic_partitioned_assets_in_repo
+                    ),
                 },
             )._asdict()
         )
