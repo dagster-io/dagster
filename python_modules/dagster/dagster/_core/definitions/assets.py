@@ -885,7 +885,13 @@ class AssetsDefinition(ResourceAddable):
                 freshness_policies_by_key=self.freshness_policies_by_key,
             )
 
+    @public
     def to_source_assets(self) -> Sequence[SourceAsset]:
+        """Returns a SourceAsset for each asset in this definition.
+
+        Each produced SourceAsset will have the same key, metadata, io_manager_key, etc. as the
+        corresponding asset
+        """
         return [
             self._output_to_source_asset(output_name)
             for output_name in self.keys_by_output_name.keys()
