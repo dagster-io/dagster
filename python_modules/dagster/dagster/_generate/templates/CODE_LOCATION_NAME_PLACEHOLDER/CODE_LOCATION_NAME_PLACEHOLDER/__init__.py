@@ -5,5 +5,5 @@ from . import assets
 all_assets = load_assets_from_modules([assets])
 
 defs = Definitions(
-    assets=all_assets
+    assets=all_assets,
 )
