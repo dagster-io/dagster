@@ -1,8 +1,12 @@
-from typing import List
+from typing import List, cast
 
 import dagster._check as check
 import graphene
+from dagster._config.structured_config.resource_verification import VerificationStatus
+from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.definitions.selector import ResourceSelector
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.host_representation.external import ExternalRepository, ExternalResource
 from dagster._core.host_representation.external_data import (
     ExternalResourceConfigEnvVar,
@@ -10,6 +14,8 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.workspace.workspace import IWorkspace
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
@@ -73,6 +79,17 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
         name = "JobWithOps"
 
 
+GrapheneResourceVerificationStatus = graphene.Enum.from_enum(VerificationStatus)
+
+
+class GrapheneResourceVerificationResult(graphene.ObjectType):
+    status = graphene.NonNull(GrapheneResourceVerificationStatus)
+    message = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ResourceVerificationResult"
+
+
 class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -99,6 +116,8 @@ class GrapheneResourceDetails(graphene.ObjectType):
     resourceType = graphene.NonNull(graphene.String)
     assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
     jobsOpsUsing = graphene.Field(non_null_list(GrapheneJobAndSpecificOps))
+    supportsVerification = graphene.NonNull(graphene.Boolean)
+    verificationResult = graphene.Field(GrapheneResourceVerificationResult)
 
     class Meta:
         name = "ResourceDetails"
@@ -126,6 +145,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self.resourceType = external_resource.resource_type
         self._asset_keys_using = external_resource.asset_keys_using
         self._job_ops_using = external_resource.job_ops_using
+        self.supportsVerification = "verification" in external_resource.capabilities
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -202,6 +222,44 @@ class GrapheneResourceDetails(graphene.ObjectType):
         repo = context.get_code_location(self._location_name).get_repository(self._repository_name)
 
         return [self._construct_job_and_specific_ops(repo, entry) for entry in self._job_ops_using]
+
+    def resolve_verificationResult(self, graphene_info) -> GrapheneResourceVerificationResult:
+        instance: DagsterInstance = graphene_info.context.instance
+        most_recent_runs = list(
+            instance.run_storage.get_runs(RunsFilter(job_name="__CONFIG_CHECK_github"), limit=1)
+        )
+        if len(most_recent_runs) == 0:
+            return GrapheneResourceVerificationStatus(VerificationStatus.FAILURE, "none yet")
+        run_id = most_recent_runs[0].run_id
+
+        records = instance.all_logs(run_id=run_id, of_type=DagsterEventType.STEP_OUTPUT)
+        # records = instance.event_log_storage.get_event_records(
+        #     event_records_filter=EventRecordsFilter(
+        #         DagsterEventType.HANDLED_OUTPUT, tags={"pipeline_name": "__CONFIG_CHECK_github"}
+        #     ),
+        #     limit=5,
+        # )
+        # for record in records:
+        #     print(record.dagster_event_type)
+        status = None
+        message = None
+        for record in records:
+            step_output_data = (
+                cast(StepOutputData, record.dagster_event.event_specific_data)
+                if record.dagster_event
+                else None
+            )
+            if step_output_data:
+                entry_dict = {
+                    entry.label: entry.value for entry in step_output_data.metadata_entries
+                }
+                status_entry = entry_dict.get("status")
+                if isinstance(status_entry, TextMetadataValue):
+                    status = status_entry.text
+                message_entry = entry_dict.get("message")
+                if isinstance(message_entry, TextMetadataValue):
+                    message = message_entry.text
+        return GrapheneResourceVerificationResult(VerificationStatus(status), message or "")
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):

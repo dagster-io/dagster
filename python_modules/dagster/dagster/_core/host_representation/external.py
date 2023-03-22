@@ -603,6 +603,10 @@ class ExternalResource:
     def job_ops_using(self) -> List[ResourceJobUsageEntry]:
         return self._external_resource_data.job_ops_using
 
+    @property
+    def capabilities(self) -> List[str]:
+        return self._external_resource_data.capabilities
+
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
