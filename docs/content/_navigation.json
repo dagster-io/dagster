@@ -24,7 +24,7 @@
     ]
   },
   {
-    "title": "Tutorial",
+    "title": "Your first data pipeline",
     "icon": "Tutorials",
     "path": "/tutorial",
     "children": [
@@ -77,7 +77,7 @@
         ]
       },
       {
-        "title": "Building with assets",
+        "title": "Working with data assets",
         "children": [
           {
             "title": "Understanding assets, ops, and graphs",
@@ -106,7 +106,7 @@
         ]
       },
       {
-        "title": "Building task-based pipelines",
+        "title": "Working with tasks",
         "children": [
           {
             "title": "Intro to ops and jobs",
@@ -164,37 +164,42 @@
         ]
       },
       {
-        "title": "Experimental features",
+        "title": "Advanced & experimental features",
         "path": "/guides/experimental-features",
         "children": [
           {
-            "title": "Using custom run coordinators",
-            "path": "/guides/dagster/run-attribution"
+            "title": "Advanced features",
+            "children": [
+              {
+                "title": "Validating data",
+                "path": "/guides/dagster/dagster_type_factories"
+              }
+            ]
           },
           {
-            "title": "Airbyte ingestion as code",
-            "path": "/guides/dagster/airbyte-ingestion-as-code"
-          },
-          {
-            "title": "Asset versioning and caching",
-            "path": "/guides/dagster/asset-versioning-and-caching"
-          },
-          {
-            "title": "Pythonic config",
-            "path": "/guides/dagster/pythonic-config"
-          },
-          {
-            "title": "Pythonic resources",
-            "path": "/guides/dagster/pythonic-resources"
-          }
-        ]
-      },
-      {
-        "title": "NEEDS A HOME",
-        "children": [
-          {
-            "title": "Validating data",
-            "path": "/guides/dagster/dagster_type_factories"
+            "title": "Experimental features",
+            "children": [
+              {
+                "title": "Using custom run coordinators",
+                "path": "/guides/dagster/run-attribution"
+              },
+              {
+                "title": "Airbyte ingestion as code",
+                "path": "/guides/dagster/airbyte-ingestion-as-code"
+              },
+              {
+                "title": "Asset versioning and caching",
+                "path": "/guides/dagster/asset-versioning-and-caching"
+              },
+              {
+                "title": "Pythonic config",
+                "path": "/guides/dagster/pythonic-config"
+              },
+              {
+                "title": "Pythonic resources",
+                "path": "/guides/dagster/pythonic-resources"
+              }
+            ]
           }
         ]
       }
@@ -214,11 +219,11 @@
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Asset Materializations",
+            "title": "Asset materializations",
             "path": "/concepts/assets/asset-materializations"
           },
           {
-            "title": "Asset Observations",
+            "title": "Asset observations",
             "path": "/concepts/assets/asset-observations"
           },
           {
@@ -230,7 +235,7 @@
             "path": "/concepts/assets/multi-assets"
           },
           {
-            "title": "Asset Selection Syntax",
+            "title": "Asset selection syntax",
             "path": "/concepts/assets/asset-selection-syntax"
           }
         ]
@@ -244,15 +249,15 @@
             "path": "/concepts/ops-jobs-graphs/ops"
           },
           {
-            "title": "Op Events",
+            "title": "Op events",
             "path": "/concepts/ops-jobs-graphs/op-events"
           },
           {
-            "title": "Op Hooks",
+            "title": "Op hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
           },
           {
-            "title": "Op Retries",
+            "title": "Op retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
@@ -266,11 +271,11 @@
             "path": "/concepts/ops-jobs-graphs/graphs"
           },
           {
-            "title": "Nesting Graphs",
+            "title": "Nesting graphs",
             "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
-            "title": "Dynamic Graphs",
+            "title": "Dynamic graphs",
             "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
           }
         ]
@@ -284,17 +289,17 @@
             "path": "/concepts/ops-jobs-graphs/jobs"
           },
           {
-            "title": "Job Execution",
+            "title": "Job execution",
             "path": "/concepts/ops-jobs-graphs/job-execution"
           },
           {
-            "title": "Metadata & Tags",
+            "title": "Metadata & tags",
             "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
       },
       {
-        "title": "Schedules & Sensors",
+        "title": "Schedules & sensors",
         "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
@@ -306,13 +311,13 @@
             "path": "/concepts/partitions-schedules-sensors/sensors"
           },
           {
-            "title": "Asset Sensors",
+            "title": "Asset sensors",
             "path": "/concepts/partitions-schedules-sensors/asset-sensors"
           }
         ]
       },
       {
-        "title": "Partitions & Backfills",
+        "title": "Partitions & backfills",
         "path": "/concepts/partitions-schedules-sensors/partitions",
         "children": [
           {
@@ -330,7 +335,7 @@
         "path": "/concepts/configuration/config-schema",
         "children": [
           {
-            "title": "Run Configuration",
+            "title": "Run configuration",
             "path": "/concepts/configuration/config-schema"
           },
           {
@@ -347,12 +352,17 @@
             "path": "/concepts/resources"
           },
           {
-            "title": "I/O Managers",
-            "path": "/concepts/io-management/io-managers"
-          },
-          {
-            "title": "Unconnected Inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
+            "title": "I/O management",
+            "children": [
+              {
+                "title": "I/O managers",
+                "path": "/concepts/io-management/io-managers"
+              },
+              {
+                "title": "Unconnected inputs",
+                "path": "/concepts/io-management/unconnected-inputs"
+              }
+            ]
           }
         ]
       },
@@ -388,7 +398,7 @@
         ]
       },
       {
-        "title": "Dagster Types",
+        "title": "Dagster types",
         "path": "/concepts/types"
       },
       {
@@ -399,7 +409,7 @@
             "path": "/concepts/logging/loggers"
           },
           {
-            "title": "Python Logging",
+            "title": "Python logging",
             "path": "/concepts/logging/python-logging"
           }
         ]
@@ -747,7 +757,7 @@
             "path": "/integrations/airflow/from-airflow-to-dagster"
           },
           {
-            "title": "Airflow Migration Guide",
+            "title": "Migrating from Airflow",
             "path": "/integrations/airflow/migrating-to-dagster"
           },
           {
