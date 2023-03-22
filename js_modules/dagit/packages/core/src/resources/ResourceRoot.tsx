@@ -1,7 +1,8 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
+  Button,
   ButtonLink,
   CaptionMono,
   Colors,
@@ -25,8 +26,10 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useTrackPageView} from '../app/analytics';
 import {AssetLink} from '../assets/AssetLink';
+import {VerificationStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {SidebarSection} from '../pipelines/SidebarComponents';
@@ -40,6 +43,8 @@ import {
   ResourceRootQuery,
   ResourceRootQueryVariables,
   ResourceDetailsFragment,
+  VerificationMutation,
+  VerificationMutationVariables,
 } from './types/ResourceRoot.types';
 
 interface Props {
@@ -76,7 +81,7 @@ const SectionHeader: React.FC = (props) => {
   return (
     <Box
       padding={{left: 24, vertical: 16}}
-      background={Colors.Gray50}
+      background={Colors.White}
       border={{width: 1, color: Colors.KeylineGray, side: 'all'}}
     >
       {props.children}
@@ -90,6 +95,39 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {resourceName} = useParams<{resourceName: string}>();
 
+  const [launchVerification] = useMutation<VerificationMutation, VerificationMutationVariables>(
+    VERIFY_MUTATION,
+  );
+
+  const [verificationResult, setVerificationResult] = React.useState<{
+    status: VerificationStatus;
+    message: string | null;
+  } | null>(null);
+
+  const verify = async () => {
+    const res = await launchVerification({
+      variables: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+        resourceName,
+      },
+    });
+    console.log(res.data?.launchResourceVerification);
+
+    if (res.data?.launchResourceVerification.__typename === 'ResourceVerificationResult') {
+      setVerificationResult({
+        status: res.data.launchResourceVerification.status,
+        message: res.data.launchResourceVerification.message,
+      });
+    } else if (res.data?.launchResourceVerification.__typename === 'PythonError') {
+      showCustomAlert({
+        title: 'Unable to verify resource',
+        body: <PythonErrorInfo error={res.data?.launchResourceVerification} />,
+      });
+      return;
+    }
+  };
+
   useDocumentTitle(`Resource: ${resourceName}`);
 
   const resourceSelector = {
@@ -101,6 +139,12 @@ export const ResourceRoot: React.FC<Props> = (props) => {
       resourceSelector,
     },
   });
+
+  React.useEffect(() => {
+    if (queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails') {
+      setVerificationResult(queryResult.data.topLevelResourceDetailsOrError.verificationResult);
+    }
+  }, [queryResult]);
 
   const displayName =
     (queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails' &&
@@ -209,6 +253,32 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                         <SidebarSection title="Description">
                           <Box padding={{vertical: 16, horizontal: 24}}>
                             {topLevelResourceDetailsOrError.description}
+                          </Box>
+                        </SidebarSection>
+                      ) : null}
+                      {topLevelResourceDetailsOrError.supportsVerification ? (
+                        <SidebarSection title="Verification">
+                          <Box
+                            padding={{vertical: 16, horizontal: 24}}
+                            flex={{direction: 'column', gap: 8}}
+                          >
+                            <Box flex={{direction: 'row', gap: 8}}>
+                              <Button onClick={() => verify()}>Launch verification</Button>
+                              {verificationResult && (
+                                <Tag
+                                  intent={
+                                    verificationResult.status === VerificationStatus.SUCCESS
+                                      ? 'success'
+                                      : 'danger'
+                                  }
+                                >
+                                  {verificationResult.status === VerificationStatus.SUCCESS
+                                    ? 'Success'
+                                    : 'Failure'}
+                                </Tag>
+                              )}
+                            </Box>
+                            <CaptionMono>{verificationResult?.message}</CaptionMono>
                           </Box>
                         </SidebarSection>
                       ) : null}
@@ -544,6 +614,7 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
     name
     description
+    supportsVerification
     configFields {
       name
       description
@@ -588,6 +659,10 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
         }
       }
     }
+    verificationResult {
+      status
+      message
+    }
     resourceType
   }
 `;
@@ -599,5 +674,44 @@ const RESOURCE_ROOT_QUERY = gql`
     }
   }
   ${RESOURCE_DETAILS_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+// const SECTION_HEADER_HEIGHT = 48;
+// const SectionHeader = styled.div`
+//   background-color: ${Colors.Gray50};
+//   border: 0;
+//   box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
+//   cursor: pointer;
+//   display: block;
+//   width: 100%;
+//   margin: 0;
+//   height: ${SECTION_HEADER_HEIGHT}px;
+//   line-height: ${SECTION_HEADER_HEIGHT}px;
+//   text-align: left;
+//   padding-left: 24px;
+//   font-weight: bold;
+// `;
+const VERIFY_MUTATION = gql`
+  mutation Verification(
+    $repositoryName: String!
+    $repositoryLocationName: String!
+    $resourceName: String!
+  ) {
+    launchResourceVerification(
+      resourceSelector: {
+        repositoryLocationName: $repositoryLocationName
+        repositoryName: $repositoryName
+        resourceName: $resourceName
+      }
+    ) {
+      __typename
+      ... on ResourceVerificationResult {
+        status
+        message
+      }
+      ...PythonErrorFragment
+    }
+  }
   ${PYTHON_ERROR_FRAGMENT}
 `;

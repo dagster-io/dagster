@@ -1958,6 +1958,7 @@ type ResourceVerificationResult {
 enum VerificationStatus {
   SUCCESS
   FAILURE
+  NOT_RUN
 }
 
 type RepositoryConnection {
