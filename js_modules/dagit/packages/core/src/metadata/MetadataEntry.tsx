@@ -7,7 +7,6 @@ import {
   Dialog,
   Group,
   Icon,
-  Markdown,
   Tooltip,
   FontFamily,
   tryPrettyPrintJSON,
@@ -20,6 +19,7 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
