@@ -1926,6 +1926,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "runK8sConfig": {
+                    "title": "RunK8sConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/RunK8sConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

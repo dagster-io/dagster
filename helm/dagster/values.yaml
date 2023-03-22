@@ -597,6 +597,10 @@ runLauncher:
       # By default, the namespace "default" is used.
       jobNamespace: ~
 
+      # Raw k8s configuration for the Kubernetes Job and Pod created for the run.
+      # See: https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
+      runK8sConfig: { }
+
       # Support overriding the name prefix of Celery worker pods
       nameOverride: "celery-workers"
 

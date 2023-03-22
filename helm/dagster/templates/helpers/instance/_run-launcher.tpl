@@ -9,6 +9,24 @@ config:
   {{- if $celeryK8sRunLauncherConfig.jobNamespace }}
   job_namespace: {{ $celeryK8sRunLauncherConfig.jobNamespace }}
   {{- end }}
+  {{- if $celeryK8sRunLauncherConfig.runK8sConfig }}
+  run_k8s_config:
+    {{- if $celeryK8sRunLauncherConfig.runK8sConfig.containerConfig }}
+    container_config: {{- $celeryK8sRunLauncherConfig.runK8sConfig.containerConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.runK8sConfig.podSpecConfig }}
+    pod_spec_config: {{- $celeryK8sRunLauncherConfig.runK8sConfig.podSpecConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.runK8sConfig.podTemplateSpecMetadata }}
+    pod_template_spec_metadata: {{- $celeryK8sRunLauncherConfig.runK8sConfig.podTemplateSpecMetadata | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.runK8sConfig.jobSpecConfig }}
+    job_spec_config: {{- $celeryK8sRunLauncherConfig.runK8sConfig.jobSpecConfig | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.runK8sConfig.jobMetadata }}
+    job_metadata: {{- $celeryK8sRunLauncherConfig.runK8sConfig.jobMetadata | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
   broker:
     env: DAGSTER_CELERY_BROKER_URL
   backend:
