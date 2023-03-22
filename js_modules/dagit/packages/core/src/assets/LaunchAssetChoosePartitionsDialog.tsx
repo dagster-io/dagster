@@ -413,8 +413,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     );
   };
 
-  console.log({selections, assets, target});
-
   return (
     <>
       <div data-testid={testId('choose-partitions-dialog')}>
