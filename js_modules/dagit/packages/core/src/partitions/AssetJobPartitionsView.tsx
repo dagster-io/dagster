@@ -8,7 +8,7 @@ import {
   explodePartitionKeysInSelection,
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
-import {usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {AssetPartitionStatus, usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -53,7 +53,7 @@ export const AssetJobPartitionsView: React.FC<{
     return {
       merged,
       total: allKeys.length,
-      missing: allKeys.filter((p) => p.state === PartitionState.MISSING).length,
+      missing: allKeys.filter((p) => p.state === AssetPartitionStatus.MISSING).length,
     };
   }, [assetHealth]);
 

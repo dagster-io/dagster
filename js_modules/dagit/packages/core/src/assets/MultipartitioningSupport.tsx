@@ -6,6 +6,7 @@ import {
   PartitionHealthDimension,
   PartitionDimensionSelection,
   Range,
+  AssetPartitionStatus,
 } from './usePartitionHealthData';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
@@ -38,7 +39,7 @@ export function mergedAssetHealth(
   if (!assetHealth.length) {
     return {
       dimensions: [],
-      stateForKey: () => PartitionState.MISSING,
+      stateForKey: () => AssetPartitionStatus.MISSING,
       rangesForSingleDimension: () => [],
     };
   }
@@ -79,13 +80,16 @@ export function mergedAssetHealth(
   };
 }
 
-export function mergedStates(states: PartitionState[]): PartitionState {
-  if (states.includes(PartitionState.FAILURE)) {
-    return PartitionState.FAILURE;
-  } else if (states.includes(PartitionState.MISSING) && states.includes(PartitionState.SUCCESS)) {
-    return PartitionState.SUCCESS_MISSING;
-  } else if (states.includes(PartitionState.SUCCESS_MISSING)) {
-    return PartitionState.SUCCESS_MISSING;
+export function mergedStates(states: AssetPartitionStatus[]): AssetPartitionStatus {
+  if (states.includes(AssetPartitionStatus.FAILED)) {
+    return AssetPartitionStatus.FAILED;
+  } else if (
+    states.includes(AssetPartitionStatus.MISSING) &&
+    states.includes(AssetPartitionStatus.MATERIALIZED)
+  ) {
+    return AssetPartitionStatus.SUCCESS_MISSING;
+  } else if (states.includes(AssetPartitionStatus.SUCCESS_MISSING)) {
+    return AssetPartitionStatus.SUCCESS_MISSING;
   } else {
     return states[0];
   }
@@ -125,7 +129,7 @@ export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length);
 }
 
-export type Transition = {idx: number; delta: number; state: PartitionState};
+export type Transition = {idx: number; delta: number; state: AssetPartitionStatus};
 
 export function assembleRangesFromTransitions(
   allKeys: string[],
@@ -160,16 +164,16 @@ export function assembleRangesFromTransitions(
   // Ok! This array of depth values IS our SUCCESS vs. SUCCESS_MISSING range state. We just need to flatten it one
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
   //
-  const result: (Omit<Range, 'value'> & {value: PartitionState})[] = [];
+  const result: (Omit<Range, 'value'> & {value: AssetPartitionStatus})[] = [];
   for (const {idx, success, failure, success_missing} of depths) {
     const value =
       success === maxOverlap
-        ? PartitionState.SUCCESS
+        ? AssetPartitionStatus.MATERIALIZED
         : failure > 0
-        ? PartitionState.FAILURE
+        ? AssetPartitionStatus.FAILED
         : success > 0 || success_missing > 0
-        ? PartitionState.SUCCESS_MISSING
-        : PartitionState.MISSING;
+        ? AssetPartitionStatus.SUCCESS_MISSING
+        : AssetPartitionStatus.MISSING;
 
     const last = result[result.length - 1];
 
@@ -181,7 +185,7 @@ export function assembleRangesFromTransitions(
     }
   }
 
-  return result.filter((range) => range.value !== PartitionState.MISSING) as Range[];
+  return result.filter((range) => range.value !== AssetPartitionStatus.MISSING) as Range[];
 }
 
 export function partitionDefinitionsEqual(

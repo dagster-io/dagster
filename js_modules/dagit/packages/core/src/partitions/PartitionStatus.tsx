@@ -2,6 +2,7 @@ import {Box, Tooltip, Colors, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {AssetPartitionStatus} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 
 import {assembleIntoSpans} from './SpanRepresentation';
@@ -31,7 +32,7 @@ export enum PartitionState {
 export type PartitionStatusRange = {
   start: {idx: number; key: string};
   end: {idx: number; key: string};
-  value: PartitionState;
+  value: AssetPartitionStatus;
 };
 
 // This component can be wired up to assets, which provide partition status in terms
@@ -401,7 +402,9 @@ function buildRangesFromStateFn(
   }));
 }
 
-export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
+export const partitionStateToStyle = (
+  status: PartitionState | AssetPartitionStatus,
+): React.CSSProperties => {
   switch (status) {
     case PartitionState.SUCCESS:
       return {background: Colors.Green500};

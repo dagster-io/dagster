@@ -6,6 +6,7 @@ import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStat
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
+import {AssetPartitionStatus} from './usePartitionHealthData';
 
 export interface AssetPartitionListProps {
   partitions: string[];
@@ -88,15 +89,17 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
                   <div style={{flex: 1}} />
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.SUCCESS) && (
-                    <StateDot state={PartitionState.SUCCESS} />
+                  {(state === AssetPartitionStatus.SUCCESS_MISSING ||
+                    state === AssetPartitionStatus.SUCCESS) && (
+                    <StateDot state={AssetPartitionStatus.SUCCESS} />
                   )}
-                  {(state === PartitionState.SUCCESS_MISSING ||
-                    state === PartitionState.MISSING) && (
-                    <StateDot state={PartitionState.MISSING} />
+                  {(state === AssetPartitionStatus.SUCCESS_MISSING ||
+                    state === AssetPartitionStatus.MISSING) && (
+                    <StateDot state={AssetPartitionStatus.MISSING} />
                   )}
-                  {state === PartitionState.FAILURE && <StateDot state={PartitionState.FAILURE} />}
+                  {state === AssetPartitionStatus.FAILURE && (
+                    <StateDot state={AssetPartitionStatus.FAILURE} />
+                  )}
                 </Box>
               </Box>
             </AssetListRow>
@@ -107,7 +110,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   );
 };
 
-export const StateDot = ({state}: {state: PartitionState}) => (
+export const StateDot = ({state}: {state: AssetPartitionStatus}) => (
   <div
     key={state}
     style={{

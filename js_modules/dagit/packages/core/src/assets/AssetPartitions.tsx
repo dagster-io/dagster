@@ -8,12 +8,11 @@ import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
-import {PartitionState} from '../partitions/PartitionStatus';
 import {testId} from '../testing/testId';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
+import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
 import {AssetViewParams} from './AssetView';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
@@ -23,6 +22,7 @@ import {
   rangesClippedToSelection,
   keyCountByStateInSelection,
   partitionStateAtIndex,
+  AssetPartitionStatus,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
 
@@ -43,9 +43,9 @@ interface Props {
 }
 
 const DISPLAYED_STATES = [
-  PartitionState.MISSING,
-  PartitionState.SUCCESS,
-  PartitionState.FAILURE,
+  AssetPartitionStatus.MISSING,
+  AssetPartitionStatus.MATERIALIZED,
+  AssetPartitionStatus.FAILED,
 ].sort();
 
 export const AssetPartitions: React.FC<Props> = ({
@@ -65,11 +65,13 @@ export const AssetPartitions: React.FC<Props> = ({
 
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
 
-  const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
+  const [stateFilters, setStateFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
     encode: (val) => ({states: [...val].sort().join(',')}),
     decode: (qs) =>
-      (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),
+      (qs.states || '')
+        .split(',')
+        .filter((s: AssetPartitionStatus) => DISPLAYED_STATES.includes(s)),
   });
 
   // Determine which axis we will show at the top of the page, if any.
@@ -125,24 +127,24 @@ export const AssetPartitions: React.FC<Props> = ({
       selectedRanges,
     );
 
-    const getKeysWithStates = (states: PartitionState[]) => {
+    const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return rangesInSelection.flatMap((r) =>
         states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
-    const states: PartitionState[] = [];
-    if (stateFilters.includes(PartitionState.SUCCESS)) {
-      states.push(PartitionState.SUCCESS, PartitionState.SUCCESS_MISSING);
+    const states: AssetPartitionStatus[] = [];
+    if (stateFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
+      states.push(AssetPartitionStatus.MATERIALIZED, AssetPartitionStatus.SUCCESS_MISSING);
     }
-    if (stateFilters.includes(PartitionState.FAILURE)) {
-      states.push(PartitionState.FAILURE);
+    if (stateFilters.includes(AssetPartitionStatus.FAILED)) {
+      states.push(AssetPartitionStatus.FAILED);
     }
     const matching = uniq(getKeysWithStates(states));
 
     let result;
     // We have to add in "missing" separately because it's the absence of a range
-    if (stateFilters.includes(PartitionState.MISSING)) {
+    if (stateFilters.includes(AssetPartitionStatus.MISSING)) {
       result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
@@ -194,9 +196,13 @@ export const AssetPartitions: React.FC<Props> = ({
         <div data-testid={testId('partitions-selected')}>
           {countsFiltered.toLocaleString()} Partitions Selected
         </div>
-        <PartitionStateCheckboxes
+        <AssetPartitionStatusCheckboxes
           counts={countsByStateInSelection}
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE]}
+          allowed={[
+            AssetPartitionStatus.MISSING,
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.FAILED,
+          ]}
           value={stateFilters}
           onChange={setStateFilters}
         />

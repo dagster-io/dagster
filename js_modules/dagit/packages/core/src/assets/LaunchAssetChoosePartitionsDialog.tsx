@@ -76,7 +76,11 @@ import {
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {
+  AssetPartitionStatus,
+  PartitionDimensionSelection,
+  usePartitionHealthData,
+} from './usePartitionHealthData';
 
 interface Props {
   open: boolean;
@@ -194,7 +198,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         // but defining missing as "missing for /any/ asset I've selected" is simpler.
         //
         const state = displayedHealth.stateForKey(dimensionKeys);
-        return state === PartitionState.SUCCESS_MISSING ? PartitionState.MISSING : state;
+        return state === AssetPartitionStatus.SUCCESS_MISSING
+          ? AssetPartitionStatus.MISSING
+          : state;
       }),
     [selections, displayedHealth],
   );
@@ -207,7 +213,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     () =>
       missingFailedOnly
         ? keysInSelection.filter((key) =>
-            [PartitionState.MISSING, PartitionState.FAILURE].includes(key.state),
+            [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILURE].includes(key.state),
           )
         : keysInSelection,
     [keysInSelection, missingFailedOnly],
@@ -657,7 +663,9 @@ const UpstreamUnavailableWarning: React.FC<{
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return a.dimensions.length && a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
+      return (
+        a.dimensions.length && a.stateForKey([singleDimensionKey]) === AssetPartitionStatus.MISSING
+      );
     });
 
   const upstreamUnavailableSpans =

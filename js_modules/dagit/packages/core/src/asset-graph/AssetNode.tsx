@@ -9,8 +9,8 @@ import {withMiddleTruncation} from '../app/Util';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetPartitionStatus} from '../assets/usePartitionHealthData';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {PartitionState} from '../partitions/PartitionStatus';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
@@ -87,17 +87,17 @@ const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
       padding={{bottom: 8, horizontal: 8}}
     >
       <AssetNodePartitionCountBox
-        state={PartitionState.SUCCESS}
+        status={AssetPartitionStatus.MATERIALIZED}
         value={data?.numMaterialized}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
-        state={PartitionState.MISSING}
+        status={AssetPartitionStatus.MISSING}
         value={data ? data.numPartitions - data.numFailed - data.numMaterialized : undefined}
         total={data?.numPartitions}
       />
       <AssetNodePartitionCountBox
-        state={PartitionState.FAILURE}
+        status={AssetPartitionStatus.FAILED}
         value={data?.numFailed}
         total={data?.numPartitions}
       />
@@ -114,21 +114,21 @@ const StyleForPartitionState: {
     adjective: string;
   };
 } = {
-  [PartitionState.FAILURE]: {
+  [AssetPartitionStatus.FAILED]: {
     background: Colors.Red50,
     foreground: Colors.Red700,
     border: Colors.Red500,
     icon: 'partition_failure',
     adjective: 'failed',
   },
-  [PartitionState.SUCCESS]: {
+  [AssetPartitionStatus.MATERIALIZED]: {
     background: Colors.Green50,
     foreground: Colors.Green700,
     border: Colors.Green500,
     icon: 'partition_success',
     adjective: 'materialized',
   },
-  [PartitionState.MISSING]: {
+  [AssetPartitionStatus.MISSING]: {
     background: Colors.Gray100,
     foreground: Colors.Gray900,
     border: Colors.Gray500,
@@ -143,11 +143,11 @@ const partitionStateToString = (count: number | undefined, adjective = '') =>
   }`;
 
 const AssetNodePartitionCountBox: React.FC<{
-  state: PartitionState;
+  status: AssetPartitionStatus;
   value: number | undefined;
   total: number | undefined;
-}> = ({state, value, total}) => {
-  const style = StyleForPartitionState[state];
+}> = ({status, value, total}) => {
+  const style = StyleForPartitionState[status];
   const foreground = value ? style.foreground : Colors.Gray500;
   const background = value ? style.background : Colors.Gray50;
 
@@ -306,10 +306,10 @@ function buildAssetNodeStatusRow({
     const numMissing = numPartitions - numFailed - numMaterialized;
     const {background, foreground, border} = StyleForPartitionState[
       late || numFailed
-        ? PartitionState.FAILURE
+        ? AssetPartitionStatus.FAILURE
         : numMissing
-        ? PartitionState.MISSING
-        : PartitionState.SUCCESS
+        ? AssetPartitionStatus.MISSING
+        : AssetPartitionStatus.SUCCESS
     ];
 
     return {

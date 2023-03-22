@@ -1,41 +1,53 @@
 import {PartitionState} from '../../partitions/PartitionStatus';
 import {mergedRanges, mergedStates} from '../MultipartitioningSupport';
-import {Range} from '../usePartitionHealthData';
+import {AssetPartitionStatus, Range} from '../usePartitionHealthData';
 
 describe('multipartitioning support', () => {
   describe('mergedStates', () => {
     it('returns SUCCESS_MISSING if SUCCESS and MISSING are both present', () => {
       expect(
-        mergedStates([PartitionState.SUCCESS, PartitionState.MISSING, PartitionState.MISSING]),
-      ).toEqual(PartitionState.SUCCESS_MISSING);
+        mergedStates([
+          AssetPartitionStatus.MATERIALIZED,
+          AssetPartitionStatus.MISSING,
+          AssetPartitionStatus.MISSING,
+        ]),
+      ).toEqual(AssetPartitionStatus.MATERIALIZED_MISSING);
     });
 
     it('returns SUCCESS_MISSING if SUCCESS_MISSING is present', () => {
       expect(
         mergedStates([
-          PartitionState.SUCCESS_MISSING,
-          PartitionState.MISSING,
-          PartitionState.MISSING,
+          AssetPartitionStatus.MATERIALIZED_MISSING,
+          AssetPartitionStatus.MISSING,
+          AssetPartitionStatus.MISSING,
         ]),
-      ).toEqual(PartitionState.SUCCESS_MISSING);
+      ).toEqual(AssetPartitionStatus.MATERIALIZED_MISSING);
     });
 
     it('returns SUCCESS if all states are success', () => {
       expect(
-        mergedStates([PartitionState.SUCCESS, PartitionState.SUCCESS, PartitionState.SUCCESS]),
-      ).toEqual(PartitionState.SUCCESS);
+        mergedStates([
+          AssetPartitionStatus.MATERIALIZED,
+          AssetPartitionStatus.MATERIALIZED,
+          AssetPartitionStatus.MATERIALIZED,
+        ]),
+      ).toEqual(AssetPartitionStatus.MATERIALIZED);
     });
 
     it('returns MISSING if all states are missing', () => {
       expect(
-        mergedStates([PartitionState.MISSING, PartitionState.MISSING, PartitionState.MISSING]),
-      ).toEqual(PartitionState.MISSING);
+        mergedStates([
+          AssetPartitionStatus.MISSING,
+          AssetPartitionStatus.MISSING,
+          AssetPartitionStatus.MISSING,
+        ]),
+      ).toEqual(AssetPartitionStatus.MISSING);
     });
     it('should not modify the input data', () => {
       const input = [
-        PartitionState.SUCCESS_MISSING,
-        PartitionState.MISSING,
-        PartitionState.MISSING,
+        AssetPartitionStatus.MATERIALIZED_MISSING,
+        AssetPartitionStatus.MISSING,
+        AssetPartitionStatus.MISSING,
       ];
       const before = JSON.stringify({input});
       mergedStates(input);
@@ -48,21 +60,21 @@ describe('multipartitioning support', () => {
     const A_I: Range = {
       start: {idx: 0, key: 'A'},
       end: {idx: 8, key: 'I'},
-      value: PartitionState.SUCCESS,
+      value: AssetPartitionStatus.MATERIALIZED,
     };
     const A_I_Partial: Range = {
       ...A_I,
-      value: PartitionState.SUCCESS_MISSING,
+      value: AssetPartitionStatus.MATERIALIZED_MISSING,
     };
     const B_E: Range = {
       start: {idx: 1, key: 'B'},
       end: {idx: 4, key: 'E'},
-      value: PartitionState.SUCCESS,
+      value: AssetPartitionStatus.MATERIALIZED,
     };
     const G_I: Range = {
       start: {idx: 6, key: 'G'},
       end: {idx: 8, key: 'I'},
-      value: PartitionState.SUCCESS,
+      value: AssetPartitionStatus.MATERIALIZED,
     };
 
     it('merges two [A...I] range set into one [A...I] range set', () => {
@@ -88,17 +100,17 @@ describe('multipartitioning support', () => {
         {
           start: {idx: 0, key: 'A'},
           end: {idx: 0, key: 'A'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: AssetPartitionStatus.MATERIALIZED_MISSING,
         },
         {
           start: {idx: 1, key: 'B'},
           end: {idx: 4, key: 'E'},
-          value: PartitionState.SUCCESS,
+          value: AssetPartitionStatus.MATERIALIZED,
         },
         {
           start: {idx: 5, key: 'F'},
           end: {idx: 8, key: 'I'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: AssetPartitionStatus.MATERIALIZED_MISSING,
         },
       ]);
     });
@@ -108,22 +120,22 @@ describe('multipartitioning support', () => {
         {
           start: {idx: 0, key: 'A'},
           end: {idx: 0, key: 'A'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: AssetPartitionStatus.MATERIALIZED_MISSING,
         },
         {
           start: {idx: 1, key: 'B'},
           end: {idx: 4, key: 'E'},
-          value: PartitionState.SUCCESS,
+          value: AssetPartitionStatus.MATERIALIZED,
         },
         {
           start: {idx: 5, key: 'F'},
           end: {idx: 5, key: 'F'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: AssetPartitionStatus.MATERIALIZED_MISSING,
         },
         {
           start: {idx: 6, key: 'G'},
           end: {idx: 8, key: 'I'},
-          value: PartitionState.SUCCESS,
+          value: AssetPartitionStatus.MATERIALIZED,
         },
       ]);
     });
