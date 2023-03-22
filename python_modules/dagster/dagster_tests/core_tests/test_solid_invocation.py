@@ -1,11 +1,14 @@
 import asyncio
+from datetime import datetime
 from functools import partial
 
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DailyPartitionsDefinition,
     DynamicOut,
     DynamicOutput,
     ExpectationResult,
@@ -18,6 +21,7 @@ from dagster import (
     Output,
     RetryRequested,
     Selector,
+    asset,
     build_op_context,
     op,
     resource,
@@ -1187,3 +1191,20 @@ def test_required_resource_keys_no_context_invocation():
         ),
     ):
         uses_resource_no_context(None)
+
+
+def test_partitions_time_window_asset_invocation():
+    partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
+
+    @asset(
+        partitions_def=partitions_def,
+    )
+    def partitioned_asset(context):
+        start, end = context.asset_partitions_time_window_for_output()
+        assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
+        assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
+
+    context = build_op_context(
+        partition_key="2023-02-02",
+    )
+    partitioned_asset(context)

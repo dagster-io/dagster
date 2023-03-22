@@ -13,6 +13,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -34,6 +35,10 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
@@ -70,6 +75,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         mapping_key: Optional[str],
+        _assets_def: Optional[AssetsDefinition],
     ):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_pipeline import initialize_console_manager
@@ -104,6 +110,8 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
+
+        self._assets_def = _assets_def
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -260,6 +268,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
             partition_key=self._partition_key,
+            _assets_def=self._assets_def,
         )
 
     def get_events(self) -> Sequence[UserEvent]:
@@ -357,6 +366,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
         partition_key: Optional[str],
+        _assets_def: Optional[AssetsDefinition],
     ):
         self._op_def = op_def
         self._op_config = op_config
@@ -373,6 +383,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._output_metadata = output_metadata
         self._mapping_key = mapping_key
         self._partition_key = partition_key
+        self._assets_def = _assets_def
 
     @property
     def op_config(self) -> Any:
@@ -516,6 +527,23 @@ class BoundOpExecutionContext(OpExecutionContext):
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.partition_key
 
+    def asset_partitions_time_window_for_output(
+        self, output_name: str = "result"
+    ) -> Optional[TimeWindow]:
+        if self._assets_def is None:
+            check.failed(
+                "Tried to access asset_partitions_time_window_for_output for a non-asset op"
+            )
+
+        partitions_def = self._assets_def.partitions_def
+        if partitions_def is None:
+            check.failed("Tried to access partition_key for a non-partitioned asset")
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Tried to access output time window for a non-time-partitioned asset")
+
+        return partitions_def.time_window_for_partition_key(self.partition_key)
+
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
@@ -608,6 +636,7 @@ def build_op_context(
     config: Any = None,
     partition_key: Optional[str] = None,
     mapping_key: Optional[str] = None,
+    _assets_def: Optional[AssetsDefinition] = None,
 ) -> UnboundOpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -651,4 +680,5 @@ def build_op_context(
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
+        _assets_def=check.opt_inst_param(_assets_def, "_assets_def", AssetsDefinition),
     )
