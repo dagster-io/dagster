@@ -255,7 +255,7 @@ def _build_status_cache(
         )
     )
 
-    failed_subset, in_progress_subset, cursor = _build_failed_and_in_progress_partition_subset(
+    failed_subset, in_progress_subset, cursor = build_failed_and_in_progress_partition_subset(
         instance, asset_key, partitions_def, dynamic_partitions_store
     )
 
@@ -271,7 +271,7 @@ def _build_status_cache(
     )
 
 
-def _build_failed_and_in_progress_partition_subset(
+def build_failed_and_in_progress_partition_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,
     partitions_def: PartitionsDefinition,

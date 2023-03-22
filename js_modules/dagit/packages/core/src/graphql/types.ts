@@ -958,6 +958,7 @@ export type DefaultPartitions = {
   __typename: 'DefaultPartitions';
   failedPartitions: Array<Scalars['String']>;
   materializedPartitions: Array<Scalars['String']>;
+  materializingPartitions: Array<Scalars['String']>;
   unmaterializedPartitions: Array<Scalars['String']>;
 };
 
@@ -2345,6 +2346,7 @@ export type PartitionStats = {
   __typename: 'PartitionStats';
   numFailed: Scalars['Int'];
   numMaterialized: Scalars['Int'];
+  numMaterializing: Scalars['Int'];
   numPartitions: Scalars['Int'];
 };
 
@@ -5479,6 +5481,10 @@ export const buildDefaultPartitions = (
       overrides && overrides.hasOwnProperty('materializedPartitions')
         ? overrides.materializedPartitions!
         : ['commodi'],
+    materializingPartitions:
+      overrides && overrides.hasOwnProperty('materializingPartitions')
+        ? overrides.materializingPartitions!
+        : ['laborum'],
     unmaterializedPartitions:
       overrides && overrides.hasOwnProperty('unmaterializedPartitions')
         ? overrides.unmaterializedPartitions!
@@ -8862,6 +8868,10 @@ export const buildPartitionStats = (
     numFailed: overrides && overrides.hasOwnProperty('numFailed') ? overrides.numFailed! : 4790,
     numMaterialized:
       overrides && overrides.hasOwnProperty('numMaterialized') ? overrides.numMaterialized! : 9478,
+    numMaterializing:
+      overrides && overrides.hasOwnProperty('numMaterializing')
+        ? overrides.numMaterializing!
+        : 4213,
     numPartitions:
       overrides && overrides.hasOwnProperty('numPartitions') ? overrides.numPartitions! : 4096,
   };

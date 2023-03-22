@@ -1045,6 +1045,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'hanging_partition_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_partition_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_partition_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'hard_fail_or_0'
                 },
                 'invocations': [
