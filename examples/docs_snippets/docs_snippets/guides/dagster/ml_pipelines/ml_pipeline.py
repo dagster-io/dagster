@@ -17,7 +17,7 @@ def hackernews_stories():
     scope = range(latest_item - 1000, latest_item)
     for item_id in scope:
         item = requests.get(
-            "https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
         results.append(item)
     # Store the results in a dataframe and filter on stories with valid titles
