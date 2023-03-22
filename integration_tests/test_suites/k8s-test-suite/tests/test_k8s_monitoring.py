@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -18,7 +19,55 @@ def log_run_events(instance, run_id):
 
 
 @pytest.mark.integration
-def test_k8s_run_monitoring(
+def test_k8s_run_monitoring_startup_fail(
+    dagster_instance_for_k8s_run_launcher,
+    user_code_namespace_for_k8s_run_launcher,
+    dagit_url_for_k8s_run_launcher,
+):
+    run_config = merge_dicts(
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        {
+            "execution": {
+                "k8s": {
+                    "config": {
+                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                        "image_pull_policy": image_pull_policy(),
+                        "env_config_maps": ["non-existent-config-map"],
+                    }
+                }
+            },
+        },
+    )
+    run_id = None
+    try:
+        run_id = launch_run_over_graphql(
+            dagit_url_for_k8s_run_launcher,
+            run_config=run_config,
+            pipeline_name="slow_pipeline",
+            mode="k8s",
+            tags={
+                "dagster-k8s/config": json.dumps(
+                    {
+                        "container_config": {
+                            "env_from": [{"config_map_ref": {"name": "non-existent-config-map"}}]
+                        }
+                    }
+                )
+            },
+        )
+
+        poll_for_finished_run(dagster_instance_for_k8s_run_launcher, run_id, timeout=120)
+        assert (
+            dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id).status
+            == DagsterRunStatus.FAILURE
+        )
+    finally:
+        if run_id:
+            log_run_events(dagster_instance_for_k8s_run_launcher, run_id)
+
+
+@pytest.mark.integration
+def test_k8s_run_monitoring_resume(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
