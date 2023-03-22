@@ -777,6 +777,7 @@ type DimensionDefinitionType {
   description: String!
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
+  dynamicPartitionsDefinitionName: String
 }
 
 type TimePartitionsDefinitionMetadata {
