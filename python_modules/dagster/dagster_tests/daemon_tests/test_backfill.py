@@ -8,6 +8,7 @@ import pendulum
 import pytest
 from dagster import (
     Any,
+    AssetIn,
     AssetKey,
     AssetsDefinition,
     DagsterInstance,
@@ -15,6 +16,7 @@ from dagster import (
     In,
     Nothing,
     Out,
+    StaticPartitionMapping,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -23,7 +25,9 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions import StaticPartitionsDefinition
+from dagster._core.definitions import (
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionedConfig
@@ -219,6 +223,34 @@ ab2 = AssetsDefinition(
 )
 
 
+partitions_a = StaticPartitionsDefinition(["foo_a"])
+
+partitions_b = StaticPartitionsDefinition(["foo_b"])
+
+partitions_c = StaticPartitionsDefinition(["foo_c"])
+
+
+@asset(partitions_def=partitions_a)
+def asset_a():
+    pass
+
+
+@asset(
+    partitions_def=partitions_b,
+    ins={"asset_a": AssetIn(partition_mapping=StaticPartitionMapping({"foo_a": "foo_b"}))},
+)
+def asset_b(asset_a):
+    pass
+
+
+@asset(
+    partitions_def=partitions_c,
+    ins={"asset_a": AssetIn(partition_mapping=StaticPartitionMapping({"foo_a": "foo_c"}))},
+)
+def asset_c(asset_a):
+    pass
+
+
 @repository
 def the_repo():
     return [
@@ -240,6 +272,9 @@ def the_repo():
         define_asset_job("twisted_asset_mess", selection="*b2", partitions_def=static_partitions),
         # baz is a configurable asset which has no dependencies
         baz,
+        asset_a,
+        asset_b,
+        asset_c,
     ]
 
 
@@ -675,6 +710,69 @@ def test_backfill_with_asset_selection(
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+
+
+def test_pure_asset_backfill_with_multiple_asset_selections(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+
+    partition_name_list = [partition.name for partition in partitions_a.get_partitions()]
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=ExternalAssetGraph.from_workspace(
+                workspace_context.create_request_context()
+            ),
+            backfill_id="backfill_with_multiple_asset_selections",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_name_list,
+            dynamic_partitions_store=instance,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("backfill_with_multiple_asset_selections")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == "backfill_with_multiple_asset_selections"
+    assert run.tags["custom_tag_key"] == "custom_tag_value"
+    assert run.asset_selection == {AssetKey(["asset_a"])}
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    runs = instance.get_runs()
+
+    assert any([run.asset_selection == {AssetKey(["asset_b"])}] for run in runs)
+    assert any([run.asset_selection == {AssetKey(["asset_c"])}] for run in runs)
+
+    assert all([run.status == DagsterRunStatus.SUCCESS] for run in runs)
 
 
 def test_pure_asset_backfill(
