@@ -17,6 +17,7 @@ from dagster._core.storage.db_io_manager import (
 from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 from dagster._utils.backcompat import deprecation_warning
+from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeConnection
 
@@ -94,9 +95,14 @@ def build_snowflake_io_manager(
 
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
-        if init_context.config["time_data_to_string"]:
+        if init_context.resource_config["time_data_to_string"]:
             deprecation_warning(
-                "Snowflake I/O manager config time_data_to_string", "2.0.0", "Convert existing tables to use timestamps and remove time_data_to_string configuration instead."
+                "Snowflake I/O manager config time_data_to_string",
+                "2.0.0",
+                (
+                    "Convert existing tables to use timestamps and remove time_data_to_string"
+                    " configuration instead."
+                ),
             )
         return DbIOManager(
             type_handlers=type_handlers,

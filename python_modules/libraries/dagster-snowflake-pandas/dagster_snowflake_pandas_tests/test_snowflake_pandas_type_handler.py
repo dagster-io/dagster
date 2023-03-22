@@ -31,6 +31,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
@@ -240,6 +241,24 @@ def test_io_manager_with_snowflake_pandas_timestamp_data(io_manager):
 
         res = io_manager_timestamp_test_job.execute_in_process()
         assert res.success
+
+        @job(
+            resource_defs={"snowflake": io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            "time_data_as_string": True,
+                        }
+                    }
+                }
+            },
+        )
+        def io_manager_timestamp_as_string_test_job():
+            read_time_df(emit_time_df())
+
+        with pytest.raises(DagsterInvariantViolationError):
+            io_manager_timestamp_as_string_test_job.execute_in_process()
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")

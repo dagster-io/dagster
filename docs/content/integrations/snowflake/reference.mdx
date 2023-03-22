@@ -11,6 +11,7 @@ This reference page provides information for working with [`dagster-snowflake`](
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
+- [Storing timestamp data in Pandas DataFrames](#storing-timestamp-data-in-pandas-dataframes)
 - [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
 - [Storing and loading PySpark DataFrames in Snowflake](#storing-and-loading-pyspark-dataframes-in-snowflake)
 - [Using Pandas and PySpark DataFrames with Snowflake](#using-pandas-and-pyspark-dataframes-with-snowflake)
@@ -326,6 +327,39 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
   it via the asset key and vice versa. If no <code>schema</code> is provided,
   either from configuration or asset keys, the default schema{" "}
   <code>PUBLIC</code> will be used.
+</Note>
+
+---
+
+## Storing timestamp data in Pandas DataFrames
+Due to a longstanding bug in the Snowflake Pandas connector, loading timestamp data from a Pandas DataFrame to Snowflake sometimes causes the data to be corrupted. Prior to `dagster-snowflake` version `0.19.0` we solved this issue by converting all timestamp data to strings before loading the data in Snowflake, and doing the opposite conversion when fetching a DataFrame from Snowflake. However, we can also avoid this issue by ensuring that all timestamp data has a timezone. This allows us to store the data as TIMESTAMP_NTZ(9) type in Snowflake.
+
+To specify how you would like timestamp data to be handled, use the `time_data_to_string` configuration value for the Snowflake I/O manager. If `True`, the I/O manager will convert timestamp data to a string before loading it into Snowflake. If `False` the I/O manager will ensure the data has a timezone (attaching the UTC timezone if necessary) before loading it into Snowflake.
+
+If you would like to migrate a table created prior to `0.19.0` to one with a TIMESTAMP_NTZ(9) type, you can run the follow SQL queries in Snowflake. In the example, our table is located at `database.schema.table` and the column we want to migrate is called `time`:
+
+```sql
+
+// Add a column of type TIMESTAMP_NTZ(9)
+ALTER TABLE database.schema.table
+ADD COLUMN time_copy TIMESTAMP_NTZ(9)
+
+// copy the data from time and convert to timestamp data
+UPDATE database.schema.table
+SET time_copy = to_timestamp_ntz(time)
+
+// drop the time column
+ALTER TABLE database.schema.table
+DROP COLUMN time
+
+// rename the time_copy column to time
+ALTER TABLER database.schema.table
+RENAME COLUMN time_copy TO time
+
+```
+
+<Note>
+The <code>time_data_to_string</code> configuration value will be deprecated in version X.Y.Z of the <code>dagster-snowflake</code> library.
 </Note>
 
 ---
