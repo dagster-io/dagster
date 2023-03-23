@@ -503,6 +503,10 @@
                     "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
                   },
                   {
+                    "title": "Using with Gitlab",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab"
+                  },
+                  {
                     "title": "Using with dagster-cloud CLI",
                     "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
                   }
