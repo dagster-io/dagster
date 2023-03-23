@@ -15,7 +15,6 @@ from typing import (
     Tuple,
     cast,
 )
-from dagster._utils.schedules import cron_string_iterator
 
 import pendulum
 
@@ -29,6 +28,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
