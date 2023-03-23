@@ -3,6 +3,11 @@ from typing import Dict, List
 from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._config.structured_config.resource_verification import (
+    ConfigVerifiable,
+    VerificationResult,
+    VerificationStatus,
+)
 from dagster._core.definitions.definitions_class import BindResourcesToJobs
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
@@ -19,6 +24,7 @@ from dagster._core.host_representation import (
 from dagster._core.host_representation.external_data import (
     NestedResource,
     NestedResourceType,
+    ResourceCapability,
     ResourceJobUsageEntry,
 )
 from dagster._core.snap import PipelineSnapshot
@@ -262,6 +268,27 @@ def test_repository_snap_definitions_resources_complex():
     assert external_repo_data.external_resource_data[0].configured_values == {
         "my_string": '"baz"',
     }
+
+
+def test_verifiable_resource() -> None:
+    class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
+        def verify_config(self) -> VerificationResult:
+            return VerificationResult(VerificationStatus.SUCCESS, "foo")
+
+    defs = Definitions(
+        resources={"foo": MyVerifiableResource()},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+
+    assert len(foo) == 1
+    assert foo[0].capabilities == [ResourceCapability.VERIFICATION]
 
 
 def test_repository_snap_empty():

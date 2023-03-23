@@ -842,10 +842,13 @@ class DagsterApiServer(DagsterApiServicer):
         self, resource_verification_request: ResourceVerificationRequest
     ) -> ResourceVerificationResult:
         definition = self._get_repo_for_origin(resource_verification_request.repository_origin)
+        repo_label = resource_verification_request.repository_origin.get_label()
+
         return launch_resource_verification(
             repo_def=definition,
             instance_ref=self._instance_ref,
             resource_name=resource_verification_request.resource_name,
+            repo_label=repo_label,
         )
 
     def UserCodeExecution(self, request: Any, _context) -> api_pb2.UserCodeExecutionResult:

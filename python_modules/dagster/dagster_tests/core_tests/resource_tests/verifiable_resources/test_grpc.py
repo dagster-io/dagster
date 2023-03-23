@@ -34,9 +34,9 @@ from dagster._core.workspace.load_target import ModuleTarget
 @pytest.fixture(name="instance_session_scoped", scope="session")
 def instance_session_scoped_fixture() -> Any:
     with instance_for_test(
-        overrides={
-            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
-        }
+        # overrides={
+        #     "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
+        # }
     ) as instance:
         yield instance
 
@@ -116,12 +116,26 @@ class MyUnverifiableResource(ConfigurableResource, ConfigVerifiable):
         raise Exception("failure")
 
 
+count = 0
+
+
+class MyAlternatingResource(ConfigurableResource, ConfigVerifiable):
+    def verify_config(self) -> VerificationResult:
+        global count  # noqa: PLW0603
+        count += 1
+        if count % 2 == 0:
+            return VerificationResult(VerificationStatus.FAILURE, "even")
+        else:
+            return VerificationResult(VerificationStatus.SUCCESS, "odd")
+
+
 the_repo = Definitions(
     jobs=[the_job],
     resources={
         "success_resource": MyVerifiableResource(a_str="foo"),
         "failure_resource": MyVerifiableResource(a_str="bar"),
         "exception_resource": MyUnverifiableResource(),
+        "alternating": MyAlternatingResource(),
     },
 )
 
@@ -146,12 +160,19 @@ def test_base_resource(
     assert code_location
 
     assert instance.get_runs() == []
+    for resource in ("success_resource", "failure_resource", "exception_resource"):
+        assert instance.get_verification_status(
+            resource, external_repo.get_external_origin()
+        ) == VerificationResult(VerificationStatus.NOT_RUN, None)
 
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "success_resource"
     )
     assert result.response == VerificationResult.success("asdf")
     assert [run.status for run in instance.get_runs()] == [DagsterRunStatus.SUCCESS]
+    assert instance.get_verification_status(
+        "success_resource", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.SUCCESS, "asdf")
 
     # A failed (non-exception) verification should still create a successful run
     result = code_location.launch_resource_verification(
@@ -162,6 +183,9 @@ def test_base_resource(
         DagsterRunStatus.SUCCESS,
         DagsterRunStatus.SUCCESS,
     ]
+    assert instance.get_verification_status(
+        "failure_resource", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.FAILURE, "qwer")
 
     # When an exception is raised in the verification, the run should fail
     result = code_location.launch_resource_verification(
@@ -176,6 +200,10 @@ def test_base_resource(
         DagsterRunStatus.SUCCESS,
         DagsterRunStatus.SUCCESS,
     ]
+
+    assert instance.get_verification_status(
+        "exception_resource", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.FAILURE, "Error executing verification check")
 
 
 def test_resource_not_found(
@@ -230,3 +258,52 @@ def test_in_process_code_location() -> None:
             resource_name="failure_resource",
         )
         assert result.response == VerificationResult.failure("qwer")
+
+
+def test_resources_alternating(
+    caplog,
+    instance: DagsterInstance,
+    workspace_context: IWorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    instance = workspace_context.instance
+
+    workspace_snapshot = {
+        location_entry.origin.location_name: location_entry
+        for location_entry in workspace_context.create_request_context()
+        .get_workspace_snapshot()
+        .values()
+    }
+
+    location_entry = list(workspace_snapshot.values())[0]
+    code_location = location_entry.code_location
+    assert code_location
+
+    assert instance.get_runs() == []
+    assert instance.get_verification_status(
+        "alternating", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.NOT_RUN, None)
+
+    result = code_location.launch_resource_verification(
+        external_repo.get_external_origin(), instance.get_ref(), "alternating"
+    )
+    assert result.response == VerificationResult(VerificationStatus.SUCCESS, "odd")
+    assert instance.get_verification_status(
+        "alternating", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.SUCCESS, "odd")
+
+    result = code_location.launch_resource_verification(
+        external_repo.get_external_origin(), instance.get_ref(), "alternating"
+    )
+    assert result.response == VerificationResult(VerificationStatus.FAILURE, "even")
+    assert instance.get_verification_status(
+        "alternating", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.FAILURE, "even")
+
+    result = code_location.launch_resource_verification(
+        external_repo.get_external_origin(), instance.get_ref(), "alternating"
+    )
+    assert result.response == VerificationResult(VerificationStatus.SUCCESS, "odd")
+    assert instance.get_verification_status(
+        "alternating", external_repo.get_external_origin()
+    ) == VerificationResult(VerificationStatus.SUCCESS, "odd")

@@ -16,6 +16,7 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 class VerificationStatus(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    NOT_RUN = "NOT_RUN"
 
 
 @whitelist_for_serdes
@@ -109,6 +111,7 @@ def launch_resource_verification(
     repo_def: RepositoryDefinition,
     instance_ref: Optional[InstanceRef],
     resource_name: str,
+    repo_label: str,
 ) -> "ResourceVerificationResult":
     from dagster._grpc.types import ResourceVerificationResult
 
@@ -122,7 +125,11 @@ def launch_resource_verification(
         )
         with DagsterInstance.from_ref(check.not_none(instance_ref)) as instance:
             result = pipeline.execute_in_process(
-                instance=instance, resources=repo_def.get_top_level_resources()
+                instance=instance,
+                resources=repo_def.get_top_level_resources(),
+                tags={
+                    REPOSITORY_LABEL_TAG: repo_label,
+                },
             )
             if result.success:
                 response = result.output_for_node(resource_verification_op_name(resource_name))

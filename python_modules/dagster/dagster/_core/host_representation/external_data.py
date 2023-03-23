@@ -927,6 +927,11 @@ class ExternalResourceConfigEnvVar(NamedTuple):
     name: str
 
 
+@whitelist_for_serdes
+class ResourceCapability(Enum):
+    VERIFICATION = "verification"
+
+
 ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
 
 
@@ -957,7 +962,7 @@ class ExternalResourceData(
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
             ("job_ops_using", List[ResourceJobUsageEntry]),
-            ("capabilities", List[str]),
+            ("capabilities", List[ResourceCapability]),
         ],
     )
 ):
@@ -979,7 +984,7 @@ class ExternalResourceData(
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
         job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
-        capabilities: Optional[Sequence[str]] = None,
+        capabilities: Optional[Sequence[ResourceCapability]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -1025,7 +1030,9 @@ class ExternalResourceData(
                 )
             )
             or [],
-            capabilities=list(check.opt_sequence_param(capabilities, "capabilities", of_type=str)),
+            capabilities=list(
+                check.opt_sequence_param(capabilities, "capabilities", of_type=ResourceCapability)
+            ),
         )
 
 
@@ -1578,7 +1585,8 @@ def external_resource_data_from_def(
     can_verify = isinstance(resource_def, ConfigVerifiable)
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
-        can_verify = isinstance(resource_def.wrapped_resource, ConfigVerifiable)
+        can_verify = isinstance(resource_type_def, ConfigVerifiable)
+
     resource_type = str(type(resource_type_def))[8:-2]
 
     return ExternalResourceData(
@@ -1593,7 +1601,7 @@ def external_resource_data_from_def(
         asset_keys_using=resource_asset_usage_map.get(name, []),
         job_ops_using=resource_job_usage_map.get(name, []),
         resource_type=resource_type,
-        capabilities=["verification"] if can_verify else [],
+        capabilities=[ResourceCapability.VERIFICATION] if can_verify else [],
     )
 
 

@@ -65,6 +65,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
+    REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
 )
@@ -93,6 +94,7 @@ AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
+    from dagster._config.structured_config.resource_verification import VerificationResult
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
@@ -113,6 +115,7 @@ if TYPE_CHECKING:
         HistoricalPipeline,
     )
     from dagster._core.host_representation.external import ExternalSchedule
+    from dagster._core.host_representation.origin import ExternalRepositoryOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
@@ -2553,3 +2556,58 @@ class DagsterInstance(DynamicPartitionsStore):
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    def get_verification_status(
+        self, resource_name: str, external_repo_origin: "ExternalRepositoryOrigin"
+    ) -> "VerificationResult":
+        from dagster._config.structured_config.resource_verification import (
+            VerificationResult,
+            VerificationStatus,
+            resource_verification_job_name,
+        )
+        from dagster._core.definitions.metadata import TextMetadataValue
+        from dagster._core.events import DagsterEventType
+        from dagster._core.execution.plan.outputs import StepOutputData
+
+        most_recent_runs = list(
+            self.get_runs(
+                RunsFilter(
+                    job_name=resource_verification_job_name(resource_name),
+                    tags={
+                        REPOSITORY_LABEL_TAG: external_repo_origin.get_label(),
+                    },
+                ),
+                limit=1,
+            )
+        )
+        if len(most_recent_runs) == 0:
+            return VerificationResult(VerificationStatus.NOT_RUN, None)
+        run = most_recent_runs[0]
+        if run.status == DagsterRunStatus.FAILURE:
+            return VerificationResult(
+                VerificationStatus.FAILURE, "Error executing verification check"
+            )
+
+        records = self.all_logs(run_id=run.run_id, of_type=DagsterEventType.STEP_OUTPUT)
+
+        status = None
+        message = None
+        for record in records:
+            step_output_data = (
+                cast(StepOutputData, record.dagster_event.event_specific_data)
+                if record.dagster_event
+                else None
+            )
+            if step_output_data:
+                entry_dict = {
+                    entry.label: entry.value for entry in step_output_data.metadata_entries
+                }
+                status_entry = entry_dict.get("status")
+                if isinstance(status_entry, TextMetadataValue):
+                    status = status_entry.text
+                message_entry = entry_dict.get("message")
+                if isinstance(message_entry, TextMetadataValue):
+                    message = message_entry.text
+        if not status:
+            return VerificationResult(VerificationStatus.NOT_RUN, None)
+        return VerificationResult(VerificationStatus(status), message or "")

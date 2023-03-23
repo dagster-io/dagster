@@ -561,7 +561,9 @@ class InProcessCodeLocation(CodeLocation):
         resource_name: str,
     ) -> ResourceVerificationResult:
         definition = self._get_repo_def(origin.repository_name)
-        return launch_resource_verification(definition, instance_ref, resource_name)
+        return launch_resource_verification(
+            definition, instance_ref, resource_name, origin.get_label()
+        )
 
 
 class GrpcServerCodeLocation(CodeLocation):
