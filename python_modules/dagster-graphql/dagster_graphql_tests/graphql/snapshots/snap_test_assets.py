@@ -1666,6 +1666,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_partition_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["grouped_asset_1"]'
         },
         {
@@ -1898,6 +1903,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[postgres_with_default_run_
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["never_runs_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_partition_asset"]'
         },
         {
             'freshnessInfo': None,
@@ -2138,6 +2148,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
         {
             'freshnessInfo': None,
             'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_partition_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
             'id': 'test.test_repo.["grouped_asset_1"]'
         },
         {
@@ -2370,6 +2385,11 @@ snapshots['TestAssetAwareEventLog.test_freshness_info[sqlite_with_default_run_la
             'freshnessInfo': None,
             'freshnessPolicy': None,
             'id': 'test.test_repo.["never_runs_asset"]'
+        },
+        {
+            'freshnessInfo': None,
+            'freshnessPolicy': None,
+            'id': 'test.test_repo.["hanging_partition_asset"]'
         },
         {
             'freshnessInfo': None,
