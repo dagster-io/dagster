@@ -603,7 +603,7 @@ class SqlRunStorage(RunStorage):
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Tuple[str, Iterable[DagsterRun]]:
+    def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
         pipeline_run = self._get_run_by_id(run_id)
         if not pipeline_run:

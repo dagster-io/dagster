@@ -179,6 +179,18 @@ def test_dagit_name_override(deployment_template, name_override):
     assert deployment_name == f"{deployment_template.release_name}-{name_override}"
 
 
+@pytest.mark.parametrize("path_prefix", ["dagit", "some-path"])
+def test_dagit_path_prefix(deployment_template, path_prefix):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct(pathPrefix=path_prefix))
+    dagit_deployments = deployment_template.render(helm_values)
+
+    assert len(dagit_deployments) == 1
+
+    command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--path-prefix {path_prefix}" in command
+
+
 def test_dagit_service(service_template):
     helm_values = DagsterHelmValues.construct()
     dagit_template = service_template.render(helm_values)

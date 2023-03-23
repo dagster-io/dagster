@@ -35,9 +35,7 @@
     "codemirror": "^5.65.2",
     "deepmerge": "^4.2.2",
     "react-codemirror2": "^7.2.1",
-    "react-markdown": "^6.0.3",
     "react-virtualized": "^9.22.3",
-    "remark-gfm": "1.0.0",
     "yaml": "2.0.0-10"
   },
   "devDependencies": {

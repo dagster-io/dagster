@@ -10,7 +10,7 @@ from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
 )
-from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
@@ -139,17 +139,17 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 )
 @click.version_option(version=__version__, prog_name="dagit")
 def dagit(
-    host,
-    port,
-    path_prefix,
-    db_statement_timeout,
-    db_pool_recycle,
-    read_only,
-    suppress_warnings,
-    log_level,
-    code_server_log_level,
-    instance_ref,
-    **kwargs,
+    host: str,
+    port: int,
+    path_prefix: str,
+    db_statement_timeout: int,
+    db_pool_recycle: int,
+    read_only: bool,
+    suppress_warnings: bool,
+    log_level: str,
+    code_server_log_level: str,
+    instance_ref: Optional[str],
+    **kwargs: ClickArgValue,
 ):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"

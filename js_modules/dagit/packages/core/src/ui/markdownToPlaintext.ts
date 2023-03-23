@@ -1,5 +1,5 @@
 import LRUCache from 'lru-cache';
-import remark from 'remark';
+import {remark} from 'remark';
 import gfm from 'remark-gfm';
 import toPlainText from 'remark-plain-text';
 

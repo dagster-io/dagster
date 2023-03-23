@@ -17,8 +17,8 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
-from dagster._legacy import DagsterRunStatus
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -309,6 +309,7 @@ GET_1D_ASSET_PARTITIONS = """
                     materializedPartitions
                     failedPartitions
                     unmaterializedPartitions
+                    materializingPartitions
                 }
             }
             partitionKeysByDimension {
@@ -350,9 +351,17 @@ GET_2D_ASSET_PARTITIONS = """
                                 materializedPartitions
                                 failedPartitions
                                 unmaterializedPartitions
+                                materializingPartitions
                             }
                         }
                     }
+                }
+            }
+            partitionDefinition {
+                name
+                dimensionTypes {
+                    dynamicPartitionsDefinitionName
+                    name
                 }
             }
         }
@@ -367,6 +376,7 @@ GET_PARTITION_STATS = """
                 numMaterialized
                 numPartitions
                 numFailed
+                numMaterializing
             }
         }
     }
@@ -969,6 +979,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             len(result.data["assetNodes"][0]["assetPartitionStatuses"]["unmaterializedPartitions"])
             == 4
         )
+        assert (
+            len(result.data["assetNodes"][0]["assetPartitionStatuses"]["materializingPartitions"])
+            == 0
+        )
         assert result.data["assetNodes"][0]["partitionDefinition"]["name"] is None
 
         result = execute_dagster_graphql(
@@ -1038,6 +1052,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 1
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 0
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
         _create_partitioned_run(
             graphql_context,
@@ -1057,6 +1072,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 1
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
         # failing a partition that already materialized removes it from the numMaterialized count
         _create_partitioned_run(
@@ -1077,6 +1093,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
         assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
         assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 2
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 0
 
     def test_dynamic_partitions(self, graphql_context):
         traced_counter.set(Counter())
@@ -1683,6 +1700,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 ["a", "c"]
             )
             assert len(ranges[range_idx]["secondaryDim"]["failedPartitions"]) == 0
+            assert len(ranges[range_idx]["secondaryDim"]["materializingPartitions"]) == 0
+
         # 2022-01-04 should only have a materialized
         assert ranges[2]["primaryDimStartKey"] == "2022-01-04"
         assert ranges[2]["primaryDimEndKey"] == "2022-01-04"
@@ -1725,6 +1744,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(ranges[0]["secondaryDim"]["materializedPartitions"]) == 3
         assert set(ranges[0]["secondaryDim"]["materializedPartitions"]) == set(["a", "b", "c"])
         assert len(ranges[0]["secondaryDim"]["failedPartitions"]) == 0
+        assert len(ranges[0]["secondaryDim"]["materializingPartitions"]) == 0
         # 2022-01-04 should have a...b materialized
         assert ranges[1]["primaryDimStartKey"] == "2022-01-04"
         assert ranges[1]["primaryDimEndKey"] == "2022-01-04"
@@ -1733,6 +1753,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(ranges[1]["secondaryDim"]["materializedPartitions"]) == 2
         assert set(ranges[1]["secondaryDim"]["materializedPartitions"]) == set(["a", "b"])
         assert len(ranges[1]["secondaryDim"]["failedPartitions"]) == 0
+        assert len(ranges[1]["secondaryDim"]["materializingPartitions"]) == 0
         # multipartitions_2 should have no materialized partitions
         assert result.data["assetNodes"][1]["assetPartitionStatuses"]["ranges"] == []
 
@@ -1793,6 +1814,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             assert ranges[range_idx]["primaryDimEndTime"] == _get_date_float(end_date)
             assert len(ranges[range_idx]["secondaryDim"]["failedPartitions"]) == 2
             assert set(ranges[range_idx]["secondaryDim"]["failedPartitions"]) == set(["a", "c"])
+            assert len(ranges[range_idx]["secondaryDim"]["materializingPartitions"]) == 0
             assert len(ranges[range_idx]["secondaryDim"]["materializedPartitions"]) == 0
         # 2022-01-04 should only have a failed
         assert ranges[2]["primaryDimStartKey"] == "2022-01-04"
@@ -1886,14 +1908,25 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "dynamic_in_multipartitions_success_job",
             MultiPartitionKey({"dynamic": "1", "static": "a"}),
         )
+        traced_counter.set(Counter())
         result = execute_dagster_graphql(
             graphql_context,
             GET_2D_ASSET_PARTITIONS,
             variables={"pipelineSelector": selector},
         )
+        counts = traced_counter.get().counts()
+        assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         assert result.data
         assert result.data["assetNodes"]
+
+        assert result.data["assetNodes"][0]["partitionDefinition"] == {
+            "dimensionTypes": [
+                {"dynamicPartitionsDefinitionName": "dynamic", "name": "dynamic"},
+                {"dynamicPartitionsDefinitionName": None, "name": "static"},
+            ],
+            "name": None,
+        }
 
         # success asset contains 1 materialized range
         success_asset_result = result.data["assetNodes"][1]
@@ -2102,14 +2135,100 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["unstartedRunIds"] == [run_id]
             assert assets_live_info[0]["inProgressRunIds"] == []
 
+    def test_partitioned_asset_in_progress(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "hanging_partition_asset_job")
+
+        with safe_tempfile_path() as path:
+            result = execute_dagster_graphql(
+                graphql_context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "mode": "default",
+                        "runConfigData": {
+                            "resources": {"hanging_asset_resource": {"config": {"file": path}}}
+                        },
+                        "executionMetadata": {"tags": [{"key": "dagster/partition", "value": "a"}]},
+                    }
+                },
+            )
+
+            assert not result.errors
+            assert result.data
+
+            run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            stats_result = execute_dagster_graphql(
+                graphql_context,
+                GET_PARTITION_STATS,
+                variables={"pipelineSelector": selector},
+            )
+
+            partitions_result = execute_dagster_graphql(
+                graphql_context,
+                GET_1D_ASSET_PARTITIONS,
+                variables={"pipelineSelector": selector},
+            )
+
+            graphql_context.instance.run_launcher.terminate(run_id)
+
+            assert stats_result.data
+            assert stats_result.data["assetNodes"]
+            assert len(stats_result.data["assetNodes"]) == 1
+            assert stats_result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+            assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+            assert stats_result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 0
+            assert stats_result.data["assetNodes"][0]["partitionStats"]["numMaterializing"] == 1
+
+            assert partitions_result.data
+            assert partitions_result.data["assetNodes"]
+
+            assert (
+                len(
+                    partitions_result.data["assetNodes"][0]["assetPartitionStatuses"][
+                        "materializedPartitions"
+                    ]
+                )
+                == 0
+            )
+            assert (
+                len(
+                    partitions_result.data["assetNodes"][0]["assetPartitionStatuses"][
+                        "failedPartitions"
+                    ]
+                )
+                == 0
+            )
+            assert (
+                len(
+                    partitions_result.data["assetNodes"][0]["assetPartitionStatuses"][
+                        "unmaterializedPartitions"
+                    ]
+                )
+                == 4
+            )
+            assert (
+                len(
+                    partitions_result.data["assetNodes"][0]["assetPartitionStatuses"][
+                        "materializingPartitions"
+                    ]
+                )
+                == 1
+            )
+
 
 class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
     def test_cross_repo_assets(self, graphql_context):
-        repository_location = graphql_context.get_repository_location("cross_asset_repos")
-        repository = repository_location.get_repository("upstream_assets_repository")
+        code_location = graphql_context.get_code_location("cross_asset_repos")
+        repository = code_location.get_repository("upstream_assets_repository")
 
         selector = {
-            "repositoryLocationName": repository_location.name,
+            "repositoryLocationName": code_location.name,
             "repositoryName": repository.name,
         }
         result = execute_dagster_graphql(

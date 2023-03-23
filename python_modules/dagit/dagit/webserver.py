@@ -133,14 +133,14 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
             )
 
         context = self.make_request_context(request)
-        repo_location_name = request.query_params["repoLocName"]
+        code_location_name = request.query_params["repoLocName"]
 
         nb_path = request.query_params["path"]
         if not nb_path.endswith(".ipynb"):
             return PlainTextResponse("Invalid Path", status_code=400)
 
         # get ipynb content from grpc call
-        notebook_content = context.get_external_notebook_data(repo_location_name, nb_path)
+        notebook_content = context.get_external_notebook_data(code_location_name, nb_path)
         check.inst_param(notebook_content, "notebook_content", bytes)
 
         # parse content to HTML

@@ -6,19 +6,19 @@ from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult, StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
-from .utils import get_bar_repo_repository_location
+from .utils import get_bar_repo_code_location
 
 
 def test_launch_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location(instance) as repository_location:
-            job_handle = JobHandle("forever", repository_location.get_repository("bar_repo").handle)
-            api_client = repository_location.client
+        with get_bar_repo_code_location(instance) as code_location:
+            job_handle = JobHandle("forever", code_location.get_repository("bar_repo").handle)
+            api_client = code_location.client
 
             run = create_run_for_test(instance, pipeline_name="forever")
             run_id = run.run_id
 
-            assert repository_location.get_current_runs() == []
+            assert code_location.get_current_runs() == []
 
             res = deserialize_value(
                 api_client.start_run(
@@ -32,7 +32,7 @@ def test_launch_run_grpc():
             )
             assert res.success
 
-            assert repository_location.get_current_runs() == [run_id]
+            assert code_location.get_current_runs() == [run_id]
 
             res = deserialize_value(
                 api_client.cancel_execution(CancelExecutionRequest(run_id=run_id)),
@@ -46,4 +46,4 @@ def test_launch_run_grpc():
 
             # have to wait for grpc server cleanup thread to run
             time.sleep(1)
-            assert repository_location.get_current_runs() == []
+            assert code_location.get_current_runs() == []

@@ -422,11 +422,11 @@ class DagsterMaxRetriesExceededError(DagsterError):
         )
 
 
-class DagsterRepositoryLocationNotFoundError(DagsterError):
+class DagsterCodeLocationNotFoundError(DagsterError):
     pass
 
 
-class DagsterRepositoryLocationLoadError(DagsterError):
+class DagsterCodeLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
 
@@ -435,7 +435,7 @@ class DagsterRepositoryLocationLoadError(DagsterError):
             "load_error_infos",
             SerializableErrorInfo,
         )
-        super(DagsterRepositoryLocationLoadError, self).__init__(*args, **kwargs)
+        super(DagsterCodeLocationLoadError, self).__init__(*args, **kwargs)
 
 
 class DagsterLaunchFailedError(DagsterError):

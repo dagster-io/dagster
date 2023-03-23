@@ -33,8 +33,9 @@ runLauncher:
       runK8sConfig:
         containerConfig: # raw config for the pod's main container
           resources:
-            cpu: 100m
-            memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
         podTemplateSpecMetadata: # raw config for the pod's metadata
           annotations:
             mykey: myvalue

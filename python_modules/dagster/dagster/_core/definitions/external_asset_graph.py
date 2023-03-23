@@ -57,15 +57,15 @@ class ExternalAssetGraph(AssetGraph):
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
-        repo_locations = (
-            location_entry.repository_location
+        code_locations = (
+            location_entry.code_location
             for location_entry in context.get_workspace_snapshot().values()
-            if location_entry.repository_location
+            if location_entry.code_location
         )
         repos = (
             repo
-            for repo_location in repo_locations
-            for repo in repo_location.get_repositories().values()
+            for code_location in code_locations
+            for repo in code_location.get_repositories().values()
         )
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]] = [
             (repo.handle, external_asset_node)
@@ -108,9 +108,7 @@ class ExternalAssetGraph(AssetGraph):
             if not node.is_source
         }
         job_names_by_key = {
-            node.asset_key: node.job_names
-            for _, node in repo_handle_external_asset_nodes
-            if not node.is_source
+            node.asset_key: node.job_names for _, node in repo_handle_external_asset_nodes
         }
         code_versions_by_key = {
             node.asset_key: node.code_version

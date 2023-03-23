@@ -7,17 +7,20 @@ from collections import OrderedDict
 from typing import AbstractSet, Any, Iterable, Mapping, Sequence, Tuple, TypeVar, Union, cast
 
 import toposort as toposort_
+from typing_extensions import Final
 
 import dagster._check as check
-from dagster._utils import frozendict, library_version_from_core_version, parse_package_version
+from dagster._utils import library_version_from_core_version, parse_package_version
 
 BACKFILL_TAG_LENGTH = 8
 
-PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
-    OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
+PYTHON_LOGGING_LEVELS_MAPPING: Final[Mapping[str, int]] = OrderedDict(
+    {"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10}
 )
 
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
+PYTHON_LOGGING_LEVELS_ALIASES: Final[Mapping[str, str]] = OrderedDict(
+    {"FATAL": "CRITICAL", "WARN": "WARNING"}
+)
 
 PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     [
@@ -35,18 +38,18 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level
-    check.str_param(log_level, "log_level")
+    str_log_level = check.str_param(log_level, "log_level")
     check.invariant(
-        log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
+        str_log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
         "Bad value for log level {level}: permissible values are {levels}.".format(
-            level=log_level,
+            level=str_log_level,
             levels=", ".join(
                 ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
             ),
         ),
     )
-    log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
-    return PYTHON_LOGGING_LEVELS_MAPPING[log_level]
+    str_log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
+    return PYTHON_LOGGING_LEVELS_MAPPING[str_log_level]
 
 
 def toposort(data: Mapping[T, AbstractSet[T]]) -> Sequence[Sequence[T]]:

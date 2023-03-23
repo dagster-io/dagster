@@ -122,7 +122,7 @@ class DagsterGraphQLClient:
         run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         preset: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         solid_selection: Optional[List[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):

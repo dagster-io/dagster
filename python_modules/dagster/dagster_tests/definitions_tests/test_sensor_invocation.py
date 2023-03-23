@@ -154,6 +154,27 @@ def test_sensor_invocation_resources_context_manager() -> None:
         assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
 
 
+def test_sensor_invocation_resources_deferred() -> None:
+    class MyResource(ConfigurableResource):
+        def create_resource(self, context) -> None:
+            raise Exception()
+
+    @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})
+    def basic_sensor_resource_req() -> RunRequest:
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    context = build_sensor_context(resources={"my_resource": MyResource()})
+
+    # Resource isn't created until sensor is invoked
+    with pytest.raises(Exception):
+        basic_sensor_resource_req(context)
+
+    # Same goes for context manager
+    with context as open_context:
+        with pytest.raises(Exception):
+            basic_sensor_resource_req(open_context)
+
+
 def test_instance_access_built_sensor():
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -772,6 +793,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
         bob,
         candace,
         danny,
+        earth,
         edgar,
         fiona,
         george,
@@ -785,7 +807,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
 
     @repository
     def my_repo():
-        return [alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
+        return [earth, alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(

@@ -26,7 +26,6 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._utils import frozentags
 
 from .config import ConfigMapping
 from .dependency import (
@@ -231,7 +230,7 @@ class InProgressCompositionContext:
         given_alias: Optional[str],
         node_def: NodeDefinition,
         input_bindings: Mapping[str, InputSource],
-        tags: Optional[frozentags],
+        tags: Optional[Mapping[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
     ) -> str:
@@ -396,7 +395,7 @@ class PendingNodeInvocation:
 
     node_def: NodeDefinition
     given_alias: Optional[str]
-    tags: Optional[frozentags]
+    tags: Optional[Mapping[str, str]]
     hook_defs: AbstractSet[HookDefinition]
     retry_policy: Optional[RetryPolicy]
 
@@ -404,13 +403,13 @@ class PendingNodeInvocation:
         self,
         node_def: NodeDefinition,
         given_alias: Optional[str],
-        tags: Optional[frozentags],
+        tags: Optional[Mapping[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
     ):
         self.node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
-        self.tags = check.opt_inst_param(tags, "tags", frozentags)
+        self.tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
         self.retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
@@ -665,7 +664,7 @@ class PendingNodeInvocation:
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
-            tags=frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
+            tags={**(self.tags or {}), **tags},
             hook_defs=self.hook_defs,
             retry_policy=self.retry_policy,
         )
@@ -725,7 +724,7 @@ class PendingNodeInvocation:
             description=description,
             resource_defs=resource_defs,
             config=config,
-            tags=tags if not self.tags else self.tags.updated_with(tags),
+            tags={**(self.tags or {}), **tags},
             logger_defs=logger_defs,
             executor_def=executor_def,
             hooks=job_hooks,
@@ -783,7 +782,7 @@ class InvokedNode(NamedTuple):
     node_name: str
     node_def: NodeDefinition
     input_bindings: Mapping[str, InputSource]
-    tags: Optional[frozentags]
+    tags: Optional[Mapping[str, str]]
     hook_defs: Optional[AbstractSet[HookDefinition]]
     retry_policy: Optional[RetryPolicy]
 

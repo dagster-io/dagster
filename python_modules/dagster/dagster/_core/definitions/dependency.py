@@ -30,7 +30,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
-from dagster._utils import frozentags
+from dagster._utils import hash_collection
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -98,12 +98,16 @@ class NodeInvocation(
             cls,
             name=check.str_param(name, "name"),
             alias=check.opt_str_param(alias, "alias"),
-            tags=frozentags(check.opt_mapping_param(tags, "tags", value_type=str, key_type=str)),
-            hook_defs=frozenset(
-                check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-            ),
+            tags=check.opt_mapping_param(tags, "tags", value_type=str, key_type=str),
+            hook_defs=check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition),
             retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
+
+    # Needs to be hashable because this class is used as a key in dependencies dicts
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class Node(ABC):
@@ -185,9 +189,8 @@ class Node(ABC):
         return self.definition.output_dict
 
     @property
-    def tags(self) -> frozentags:
-        # Type-ignore temporarily pending assessment of right data structure for `tags`
-        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
+    def tags(self) -> Mapping[str, str]:
+        return {**self.definition.tags, **self._additional_tags}
 
     def container_maps_input(self, input_name: str) -> bool:
         return (

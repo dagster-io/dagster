@@ -503,6 +503,10 @@
                     "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
                   },
                   {
+                    "title": "Using with Gitlab",
+                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-gitlab"
+                  },
+                  {
                     "title": "Using with dagster-cloud CLI",
                     "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
                   }
@@ -740,6 +744,10 @@
           {
             "title": "Structuring your Dagster project",
             "path": "/guides/dagster/recommended-project-structure"
+          },
+          {
+          "title": "Building machine learning pipelines",
+          "path": "/guides/dagster/ml-pipeline"
           },
           {
             "title": "Using environment variables and secrets",

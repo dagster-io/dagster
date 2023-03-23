@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, Dict, Mapping, Optional, Sequence, cast
+from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -13,7 +13,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.pipeline_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import frozendict
+from dagster._utils import make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -163,7 +163,7 @@ class CachingDataTimeResolver:
     ####################
 
     def _upstream_records_by_key(
-        self, asset_key: AssetKey, record_id: int, record_tags: Mapping[str, str]
+        self, asset_key: AssetKey, record_id: int, record_tags_dict: Mapping[str, str]
     ) -> Mapping[AssetKey, "EventLogRecord"]:
         upstream_records: Dict[AssetKey, EventLogRecord] = {}
 
@@ -172,17 +172,17 @@ class CachingDataTimeResolver:
                 continue
 
             input_event_pointer_tag = get_input_event_pointer_tag(parent_key)
-            if input_event_pointer_tag not in record_tags:
+            if input_event_pointer_tag not in record_tags_dict:
                 # if the input event id was not recorded (materialized pre-1.1.0), just grab
                 # the most recent asset materialization for this parent which happened before
                 # the current record
                 parent_record = self._instance_queryer.get_latest_materialization_record(
                     parent_key, before_cursor=record_id
                 )
-            elif record_tags[input_event_pointer_tag] != "NULL":
+            elif record_tags_dict[input_event_pointer_tag] != "NULL":
                 # get the upstream materialization event which was consumed when producing this
                 # materialization event
-                input_record_id = int(record_tags[input_event_pointer_tag])
+                input_record_id = int(record_tags_dict[input_event_pointer_tag])
                 parent_record = self._instance_queryer.get_latest_materialization_record(
                     parent_key, before_cursor=input_record_id + 1
                 )
@@ -200,7 +200,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: int,
         record_timestamp: float,
-        record_tags: Mapping[str, str],
+        record_tags: Tuple[Tuple[str, str]],
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if not self._asset_graph.has_non_source_parents(asset_key):
             return {
@@ -212,15 +212,16 @@ class CachingDataTimeResolver:
         data_time_by_key = {}
 
         # find the upstream times of each of the parents of this asset
+        record_tags_dict = dict(record_tags)
         for parent_key, parent_record in self._upstream_records_by_key(
-            asset_key, record_id, record_tags
+            asset_key, record_id, record_tags_dict
         ).items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
                 asset_key=parent_key,
                 record_id=parent_record.storage_id if parent_record else None,
-                record_timestamp=parent_record.event_log_entry.timestamp if parent_record else 0.0,
-                record_tags=frozendict(
+                record_timestamp=parent_record.event_log_entry.timestamp if parent_record else None,
+                record_tags=make_hashable(
                     (
                         parent_record.asset_materialization.tags
                         if parent_record and parent_record.asset_materialization
@@ -248,11 +249,12 @@ class CachingDataTimeResolver:
         self,
         asset_key: AssetKey,
         record_id: Optional[int],
-        record_timestamp: float,
-        record_tags: Mapping[str, str],
+        record_timestamp: Optional[float],
+        record_tags: Tuple[Tuple[str, str]],  # for hashability
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:
             return {key: None for key in self._asset_graph.get_non_source_roots(asset_key)}
+        record_timestamp = check.not_none(record_timestamp)
 
         partitions_def = self._asset_graph.get_partitions_def(asset_key)
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -412,7 +414,7 @@ class CachingDataTimeResolver:
             asset_key=record.asset_key,
             record_id=record.storage_id,
             record_timestamp=record.event_log_entry.timestamp,
-            record_tags=frozendict(record.asset_materialization.tags or {}),
+            record_tags=make_hashable(record.asset_materialization.tags or {}),
         )
 
     def get_current_data_time(self, asset_key: AssetKey) -> Optional[datetime.datetime]:

@@ -116,13 +116,14 @@ used in staleness calculations for downstream assets.
 
 The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
 
-```python file=/concepts/assets/observable_source_assets.py startafter=start_marker endbefore=end_marker
+```python file=/concepts/assets/observable_source_assets.py startafter=start_plain endbefore=end_plain
 from hashlib import sha256
+
 from dagster import DataVersion, observable_source_asset
 
 
 @observable_source_asset
-def foo_source_asset(_context):
+def foo_source_asset():
     content = read_some_file()
     hash_sig = sha256()
     hash_sig.update(bytearray(content, "utf8"))
@@ -139,3 +140,34 @@ src="/images/concepts/assets/observe-sources.png"
 width={1768}
 height={1282}
 />
+
+Source asset observations can also be run as part of an asset job. This allows you to run source asset observations on a schedule:
+
+```python file=/concepts/assets/observable_source_assets.py startafter=start_schedule endbefore=end_schedule
+from dagster import (
+    DataVersion,
+    ScheduleDefinition,
+    define_asset_job,
+    observable_source_asset,
+)
+
+
+@observable_source_asset
+def foo_source_asset():
+    content = read_some_file()
+    hash_sig = sha256()
+    hash_sig.update(bytearray(content, "utf8"))
+    return DataVersion(hash_sig.hexdigest())
+
+
+observation_job = define_asset_job("observation_job", [foo_source_asset])
+
+# schedule that will run the observation on foo_source_asset every day
+observation_schedule = ScheduleDefinition(
+    name="observation_schedule",
+    cron_schedule="@daily",
+    job=observation_job,
+)
+```
+
+**NOTE**: Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject object="define_asset_job" /> must target only observable source assets-- an error will be thrown if a mix of regular assets and observable source assets is selected.

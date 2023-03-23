@@ -562,7 +562,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
-
     for level in asset_graph.toposort_asset_keys():
         for key in level:
             if asset_graph.is_source(key) or not asset_graph.get_downstream_freshness_policies(

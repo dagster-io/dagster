@@ -53,7 +53,7 @@ from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -87,7 +87,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
                 run_id=run_id,
                 external_pipeline_origin=ExternalPipelineOrigin(
                     ExternalRepositoryOrigin(
-                        InProcessRepositoryLocationOrigin(
+                        InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
                                 executable_path=sys.executable,
                                 module_name="fake",
@@ -3155,8 +3155,15 @@ class TestEventLogStorage:
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
                 serialized_failed_partition_subset="baz",
+                serialized_in_progress_partition_subset="qux",
                 earliest_in_progress_materialization_event_id=42,
             )
+
+            # Check that AssetStatusCacheValue has all fields set. This ensures that we test that the
+            # cloud gql representation is complete.
+            for field in cache_value._fields:
+                assert getattr(cache_value, field) is not None
+
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
@@ -3171,6 +3178,25 @@ class TestEventLogStorage:
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
             if self.can_wipe():
+                cache_value = AssetStatusCacheValue(
+                    latest_storage_id=1,
+                    partitions_def_id=None,
+                    serialized_materialized_partition_subset=None,
+                )
+                storage.update_asset_cached_status_data(
+                    asset_key=asset_key, cache_values=cache_value
+                )
+                assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+                record = storage.get_asset_records([asset_key])[0]
+                storage.wipe_asset_cached_status(asset_key)
+                assert _get_cached_status_for_asset(storage, asset_key) is None
+                post_wipe_record = storage.get_asset_records([asset_key])[0]
+                assert (
+                    record.asset_entry.last_materialization_record
+                    == post_wipe_record.asset_entry.last_materialization_record
+                )
+                assert record.asset_entry.last_run_id == post_wipe_record.asset_entry.last_run_id
+
                 storage.wipe_asset(asset_key)
                 assert storage.get_asset_records() == []
 

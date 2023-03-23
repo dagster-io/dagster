@@ -28,7 +28,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, Materialization
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -870,7 +870,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -1098,9 +1098,21 @@ class SqlEventLogStorage(EventLogStorage):
     def can_cache_asset_status_data(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
+    def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
+        if self.can_cache_asset_status_data():
+            check.inst_param(asset_key, "asset_key", AssetKey)
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(dict(cached_status_data=None))
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
+                )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Iterable[AssetRecord]:
+    ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
         can_cache_asset_status_data = self.can_cache_asset_status_data()
@@ -1134,7 +1146,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Iterable[AssetKey]:
+    ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
         asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
         return [asset_key for asset_key in asset_keys if asset_key]
@@ -1556,7 +1568,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _asset_materialization_from_json_column(
         self, json_str: str
-    ) -> Optional[Union[Materialization, AssetMaterialization]]:
+    ) -> Optional[AssetMaterialization]:
         if not json_str:
             return None
 

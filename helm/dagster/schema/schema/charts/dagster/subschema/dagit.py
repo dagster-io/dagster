@@ -22,6 +22,7 @@ class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
     nameOverride: str
+    pathPrefix: Optional[str]
     service: kubernetes.Service
     workspace: Workspace
     env: Union[Dict[str, str], List[kubernetes.EnvVar]]

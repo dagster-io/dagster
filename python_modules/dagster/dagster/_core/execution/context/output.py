@@ -19,7 +19,6 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    Materialization,
 )
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -99,7 +98,7 @@ class OutputContext:
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
+    _user_events: List[Union[AssetMaterialization, AssetObservation]]
     _metadata_entries: Optional[Sequence[MetadataEntry]]
 
     def __init__(
@@ -585,15 +584,13 @@ class OutputContext:
         return self.get_asset_identifier()
 
     @public
-    def log_event(
-        self, event: Union[AssetObservation, AssetMaterialization, Materialization]
-    ) -> None:
+    def log_event(self, event: Union[AssetObservation, AssetMaterialization]) -> None:
         """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation]): The event to log.
 
         Examples:
         .. code-block:: python
@@ -606,7 +603,7 @@ class OutputContext:
         """
         from dagster._core.events import DagsterEvent
 
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, (AssetMaterialization)):
             if self._step_context:
                 self._events.append(DagsterEvent.asset_materialization(self._step_context, event))
             self._user_events.append(event)
@@ -628,7 +625,7 @@ class OutputContext:
 
     def get_logged_events(
         self,
-    ) -> Sequence[Union[AssetMaterialization, Materialization, AssetObservation]]:
+    ) -> Sequence[Union[AssetMaterialization, AssetObservation]]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 

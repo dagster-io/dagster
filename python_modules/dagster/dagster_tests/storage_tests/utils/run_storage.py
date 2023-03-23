@@ -16,7 +16,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -90,7 +90,7 @@ class TestRunStorage:
     def fake_repo_target(repo_name=None):
         name = repo_name or "fake_repo_name"
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),

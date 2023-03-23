@@ -444,6 +444,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         - One of its parents has been updated more recently than it has
         - One of its parents is unreconciled.
         """
+        # always treat source assets as reconciled
+        if asset_graph.is_source(asset_partition.asset_key):
+            return True
+
         if not self.materialization_exists(asset_partition):
             return False
 
