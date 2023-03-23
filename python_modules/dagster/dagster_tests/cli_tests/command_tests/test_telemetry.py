@@ -4,6 +4,7 @@ import tempfile
 from difflib import SequenceMatcher
 
 from click.testing import CliRunner
+from dagster import DynamicPartitionsDefinition, asset, define_asset_job, repository
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.telemetry import (
@@ -125,6 +126,51 @@ def test_dagster_telemetry_unset(caplog):
 
             # Needed to avoid file contention issues on windows with the telemetry log file
             cleanup_telemetry_logger()
+
+
+def get_dynamic_partitioned_asset_repo():
+    @asset(partitions_def=DynamicPartitionsDefinition(name="fruit"))
+    def my_asset(_):
+        pass
+
+    @repository
+    def my_repo():
+        return [define_asset_job("dynamic_job"), my_asset]
+
+    return my_repo
+
+
+def test_update_repo_stats_dynamic_partitions(caplog):
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+        instance.add_dynamic_partitions("fruit", ["apple"])
+        runner = CliRunner()
+        with pushd(path_to_file("")):
+            job_attribute = "get_dynamic_partitioned_asset_repo"
+            job_name = "dynamic_job"
+            result = runner.invoke(
+                job_execute_command,
+                [
+                    "-f",
+                    __file__,
+                    "-a",
+                    job_attribute,
+                    "--job",
+                    job_name,
+                    "--tags",
+                    '{"dagster/partition": "apple"}',
+                ],
+            )
+
+            for record in caplog.records:
+                message = json.loads(record.getMessage())
+                if message.get("action") == UPDATE_REPO_STATS:
+                    metadata = message.get("metadata")
+                    assert metadata.get("num_pipelines_in_repo") == str(2)
+                    assert metadata.get("num_dynamic_partitioned_assets_in_repo") == str(1)
+            assert result.exit_code == 0
+
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
 
 
 # TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
