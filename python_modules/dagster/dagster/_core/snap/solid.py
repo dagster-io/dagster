@@ -121,21 +121,21 @@ def build_output_mapping_snap(output_mapping: OutputMapping) -> OutputMappingSna
     )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"mapped_node_name": "mapped_solid_name"})
 class InputMappingSnap(
     NamedTuple(
         "_InputMappingSnap",
         [
-            ("mapped_solid_name", str),
+            ("mapped_node_name", str),
             ("mapped_input_name", str),
             ("external_input_name", str),
         ],
     )
 ):
-    def __new__(cls, mapped_solid_name: str, mapped_input_name: str, external_input_name: str):
+    def __new__(cls, mapped_node_name: str, mapped_input_name: str, external_input_name: str):
         return super(InputMappingSnap, cls).__new__(
             cls,
-            mapped_solid_name=check.str_param(mapped_solid_name, "mapped_solid_name"),
+            mapped_node_name=check.str_param(mapped_node_name, "mapped_node_name"),
             mapped_input_name=check.str_param(mapped_input_name, "mapped_input_name"),
             external_input_name=check.str_param(external_input_name, "external_input_name"),
         )
@@ -143,7 +143,7 @@ class InputMappingSnap(
 
 def build_input_mapping_snap(input_mapping: InputMapping) -> InputMappingSnap:
     return InputMappingSnap(
-        mapped_solid_name=input_mapping.maps_to.node_name,
+        mapped_node_name=input_mapping.maps_to.node_name,
         mapped_input_name=input_mapping.maps_to.input_name,
         external_input_name=input_mapping.graph_input_name,
     )
