@@ -336,7 +336,7 @@ class NodeDefsSnap(
         )
 
 
-def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDefsSnap:
+def build_node_defs_snap(pipeline_def: PipelineDefinition) -> NodeDefsSnap:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     solid_def_snaps = []
     graph_def_snaps = []

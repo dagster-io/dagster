@@ -49,7 +49,7 @@ from .solid import (
     GraphDefSnap,
     NodeDefSnap,
     NodeDefsSnap,
-    build_node_definitions_snapshot,
+    build_node_defs_snap,
 )
 
 
@@ -180,7 +180,7 @@ class PipelineSnapshot(
             metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
-            solid_definitions_snapshot=build_node_definitions_snapshot(pipeline_def),
+            solid_definitions_snapshot=build_node_defs_snap(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(pipeline_def.graph),
             mode_def_snaps=[
                 build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
