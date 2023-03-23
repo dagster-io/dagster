@@ -294,7 +294,24 @@ def find_parent_materialized_asset_partitions(
                     asset_key,
                     partition_key,
                 ):
-                    result_asset_partitions.add(child)
+                    # must check if this child was planned to be materialized in the same run as
+                    # the parent
+                    if partition_key == child.partition_key and latest_storage_id is not None:
+                        # TODO: this is slow if many partitions have been materialized since the last
+                        # cursor
+                        latest_partition_record = check.not_none(
+                            instance_queryer.get_latest_materialization_record(
+                                AssetKeyPartitionKey(asset_key, partition_key),
+                                after_cursor=latest_storage_id,
+                            )
+                        )
+                        if not instance_queryer.is_asset_planned_for_run(
+                            latest_partition_record.run_id, child
+                        ):
+                            result_asset_partitions.add(child)
+                    # could not have happened in the same run
+                    else:
+                        result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
 

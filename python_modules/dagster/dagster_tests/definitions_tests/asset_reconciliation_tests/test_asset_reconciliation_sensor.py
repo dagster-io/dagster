@@ -742,6 +742,16 @@ scenarios = {
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
         expected_run_requests=[],
     ),
+    "partial_run_partitioned": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_one_partition,
+        cursor_from=AssetReconciliationScenario(
+            assets=two_assets_in_sequence_one_partition,
+            unevaluated_runs=[run(["asset1"], partition_key="a")],
+            expected_run_requests=[run_request(["asset2"])],
+        ),
+        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"], partition_key="a")],
+        expected_run_requests=[],
+    ),
     ################################################################################################
     # Partitions
     ################################################################################################
