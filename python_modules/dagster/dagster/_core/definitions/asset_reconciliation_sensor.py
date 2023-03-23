@@ -15,6 +15,7 @@ from typing import (
     Tuple,
     cast,
 )
+from dagster._utils.schedules import cron_string_iterator
 
 import pendulum
 
@@ -502,8 +503,20 @@ def get_execution_period_for_policy(
         return pendulum.Period(start=evaluation_time, end=evaluation_time)
 
     if freshness_policy.cron_schedule:
-        # todo
-        return pendulum.Period(start=evaluation_time, end=evaluation_time)
+        tick_iterator = cron_string_iterator(
+            start_timestamp=evaluation_time.timestamp(),
+            cron_string=freshness_policy.cron_schedule,
+            execution_timezone=freshness_policy.cron_schedule_timezone,
+        )
+
+        while True:
+            # find the next tick tick that requires data after the current effective data time
+            # (usually, this will be the next tick)
+            tick = next(tick_iterator)
+            required_data_time = tick - freshness_policy.maximum_lag_delta
+            if effective_data_time is None or effective_data_time < required_data_time:
+                return pendulum.Period(start=required_data_time, end=tick)
+
     else:
         return pendulum.Period(
             # we don't want to execute this too frequently
