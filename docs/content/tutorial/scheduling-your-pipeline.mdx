@@ -5,21 +5,16 @@ description: Learn how to schedule your pipeline to run at a set frequency.
 
 # Tutorial, part five: Scheduling your pipeline
 
-Now that you've written an entire pipeline in Dagster, you will need to run it regularly to keep it up to date.
+Now that you've written an entire pipeline in Dagster, you will need to run it regularly to keep your assets up to date.
 
 By the end of this part of the tutorial, you'll be able to:
 
 - Structure your project with code locations and jobs
 - Refresh your assets periodically with schedules
-- Understand your data's freshness and staleness
 
 ---
 
-## Routinely refreshing your assets
-
-Data pipelines need to be run regularly to update their data. Now, you'll schedule your assets to materialize hourly. While doing so, you'll learn about two more Dagster concepts: jobs and schedules.
-
-### Defining what assets to update
+## Defining what assets to update
 
 A _job_ lets you target a selection of assets to materialize them together as a single action. Assets can belong to multiple jobs.
 
@@ -66,9 +61,9 @@ width={1146}
 height={640}
 />
 
-### About definitions
+## About definitions
 
-Up until this point, you defined assets using the <PyObject object="asset" decorator /> decorator. Dagster definitions are entities that Dagster learns about by importing your code. Just now, you used a different definition: a job definition.
+Up until this point, you defined assets using the <PyObject object="asset" decorator /> decorator. Dagster definitions are entities that Dagster learns about by importing your code. Just now, you used a different kind of definition: a job definition.
 
 Managing one type of definition, such as assets, is easy. However, it can quickly become unruly as your project grows to have a variety of definitions (ex. schedules, jobs, sensors, etc.). Dagster provides a utility called the <PyObject object="Definitions" /> object. This <PyObject object="Definitions" /> object is used to combine all definitions into one.
 
@@ -155,4 +150,4 @@ By now, you've:
 - Defined a sequence of materializations with a job
 - Run the job on a schedule
 
-In the next section, you'll learn to store tabular data in a database and other data in file storage using I/O managers.
+Move on to find out what to do now that you've completed the tutorial in the [next steps](/tutorial/next-steps) section.
