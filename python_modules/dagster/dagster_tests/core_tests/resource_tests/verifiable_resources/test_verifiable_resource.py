@@ -16,7 +16,7 @@ from dagster._core.test_utils import environ
 
 
 def test_config_verifiable_job_basic() -> None:
-    class MyVerifiableResoruce(ConfigurableResource, ConfigVerifiable):
+    class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
         a_str: str
 
         def verify_config(self) -> VerificationResult:
@@ -27,7 +27,7 @@ def test_config_verifiable_job_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResoruce(a_str="foo"),
+            "my_resource": MyVerifiableResource(a_str="foo"),
         },
     )
 
@@ -48,7 +48,7 @@ def test_config_verifiable_job_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResoruce(a_str="bar"),
+            "my_resource": MyVerifiableResource(a_str="bar"),
         },
     )
 
@@ -69,7 +69,7 @@ def test_config_verifiable_job_basic() -> None:
 
 
 def test_config_verifiable_job_env_var() -> None:
-    class MyVerifiableResoruce(ConfigurableResource, ConfigVerifiable):
+    class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
         a_str: str
 
         def verify_config(self) -> VerificationResult:
@@ -80,7 +80,7 @@ def test_config_verifiable_job_env_var() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResoruce(a_str=EnvVar("ENV_VARIABLE_FOR_TEST")),
+            "my_resource": MyVerifiableResource(a_str=EnvVar("ENV_VARIABLE_FOR_TEST")),
         },
     )
 

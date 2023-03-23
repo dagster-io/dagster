@@ -844,6 +844,7 @@ class DagsterApiServer(DagsterApiServicer):
         response = VerificationResult(
             VerificationStatus.FAILURE, "Error executing verification check"
         )
+
         try:
             resource_verification_request = deserialize_value(
                 request.serialized_resource_verification_request, ResourceVerificationRequest
@@ -865,8 +866,7 @@ class DagsterApiServer(DagsterApiServicer):
                     response = result.output_for_node(
                         resource_verification_op_name(resource_verification_request.resource_name)
                     )
-
-        except:
+        except Exception:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
         return api_pb2.ResourceVerificationResult(

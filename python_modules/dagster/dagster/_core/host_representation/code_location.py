@@ -42,10 +42,12 @@ from dagster._core.host_representation.grpc_server_registry import GrpcServerReg
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
+    ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
@@ -58,7 +60,12 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
+from dagster._grpc.types import (
+    GetCurrentImageResult,
+    GetCurrentRunsResult,
+    ResourceVerificationRequest,
+    ResourceVerificationResult,
+)
 from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
@@ -155,6 +162,15 @@ class CodeLocation(AbstractContextManager):
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead.
         """
+
+    @abstractmethod
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        pass
 
     @abstractmethod
     def get_external_partition_config(
@@ -717,6 +733,18 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self.external_repositories
+
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        return self.client.resource_verification(
+            ResourceVerificationRequest(
+                repository_origin=origin, instance_ref=instance_ref, resource_name=resource_name
+            )
+        )
 
     def get_external_execution_plan(
         self,
