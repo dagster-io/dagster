@@ -11,24 +11,18 @@ We will work through building a machine learning pipeline, including using asset
 
 ---
 
+## Before you begin
+
+This guide assumes you have familiarity with machine learning concepts and several Dagster concepts, including [software-defined assets](/concepts/assets/software-defined-assets) and [jobs](/concepts/ops-jobs-graphs/jobs). We also recommend reviewing the [Automating Data Pipelines guide](/guides/dagster/automating-pipelines) as many of the same principles can be applied to machine learning.
+
+---
+
 ## Benefits of building machine learning pipelines in Dagster
 
 - Dagster makes iterating on machine learning models and testing easy, and it is designed to use during the development process.
 - Dagster has a lightweight execution model means you can access the benefits of an orchestrator, like re-executing from the middle of a pipeline and parallelizing steps while you're experimenting.
 - Dagster models data assets, not just tasks, so it understands the upstream and downstream data dependencies.
 - Dagster is a one-stop shop for both the data transformations and the models that depend on the data transformations.
-
-<Note>
-  This guide assumes you have familiarity with machine learning concepts and
-  several Dagster concepts, including{" "}
-  <a href="/concepts/assets/software-defined-assets">software-defined assets</a>{" "}
-  and <a href="/concepts/ops-jobs-graphs/jobs">jobs</a> . We also recommend
-  reviewing the{" "}
-  <a href="/guides/dagster/automating-pipelines">
-    Automating Data Pipelines guide
-  </a>{" "}
-  as many of the same principles can be applied to machine learning.
-</Note>
 
 ---
 
