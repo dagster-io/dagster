@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 class ReadinessCheckStatus(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    NOT_RUN = "NOT_RUN"
 
 
 @whitelist_for_serdes

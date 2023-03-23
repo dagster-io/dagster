@@ -1,4 +1,4 @@
-from dagster._config.structured_config.resource_verification import VerificationResult
+from dagster._config.structured_config.readiness_check import ReadinessCheckResult
 from dagster._core.definitions.selector import ResourceSelector
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
@@ -9,9 +9,9 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def resource_verification(
+def resource_readiness_check(
     graphene_info: "ResolveInfo", resource_selector: ResourceSelector
-) -> VerificationResult:
+) -> ReadinessCheckResult:
     instance: DagsterInstance = graphene_info.context.instance
 
     context: WorkspaceRequestContext = graphene_info.context
@@ -22,7 +22,7 @@ def resource_verification(
 
     # origin = ExternalInstigatorOrigin(
     #     external_repository_origin=repository.get_external_origin(),
-    #     instigator_name="resource_verification",
+    #     instigator_name="resource_readiness_check",
     # )
     # state = InstigatorState(
     #     origin=origin,
@@ -33,7 +33,7 @@ def resource_verification(
     # # print("OK2")
     # # instance.schedule_storage.add_instigator_state(state)
     # print("OK")
-    res = location.launch_resource_verification(
+    res = location.launch_resource_readiness_check(
         origin=repository.get_external_origin(),
         instance_ref=instance.get_ref(),
         resource_name=resource_selector.resource_name,

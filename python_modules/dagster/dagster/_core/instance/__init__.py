@@ -93,6 +93,7 @@ AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
+    from dagster._config.structured_config.readiness_check import ReadinessCheckResult
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
@@ -113,6 +114,7 @@ if TYPE_CHECKING:
         HistoricalPipeline,
     )
     from dagster._core.host_representation.external import ExternalSchedule
+    from dagster._core.host_representation.origin import ExternalRepositoryOrigin
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
@@ -2553,3 +2555,31 @@ class DagsterInstance(DynamicPartitionsStore):
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    def get_readiness_check_status(
+        self, resource_name: str, external_repo_origin: "ExternalRepositoryOrigin"
+    ) -> "ReadinessCheckResult":
+        from dagster._config.structured_config.readiness_check import (
+            ReadinessCheckResult,
+            ReadinessCheckStatus,
+        )
+        from dagster._core.scheduler.instigation import (
+            TickStatus,
+        )
+
+        ticks: List[InstigatorTick] = list(
+            self.get_ticks(
+                origin_id=external_repo_origin.get_id(), selector_id=resource_name, limit=1
+            )
+        )
+
+        if len(ticks) == 0:
+            return ReadinessCheckResult(ReadinessCheckStatus.NOT_RUN, None)
+        tick = ticks[0]
+        if tick.status == TickStatus.FAILURE:
+            return ReadinessCheckResult(
+                ReadinessCheckStatus.FAILURE, "Error executing readiness_check check"
+            )
+        elif tick.status == TickStatus.SKIPPED:
+            return ReadinessCheckResult(ReadinessCheckStatus.FAILURE, tick.cursor)
+        return ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, tick.cursor)

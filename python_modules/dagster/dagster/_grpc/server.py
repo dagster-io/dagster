@@ -842,6 +842,8 @@ class DagsterApiServer(DagsterApiServicer):
         self, resource_readiness_check_request: ResourceReadinessCheckRequest
     ) -> ResourceReadinessCheckResult:
         definition = self._get_repo_for_origin(resource_readiness_check_request.repository_origin)
+        resource_readiness_check_request.repository_origin.get_label()
+
         return launch_resource_readiness_check(
             repo_def=definition,
             instance_ref=self._instance_ref,

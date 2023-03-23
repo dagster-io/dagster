@@ -14,7 +14,7 @@ from dagster._core.test_utils import environ
 
 
 def test_config_readiness_checked_basic() -> None:
-    class FailureToggleVerificableResource(ConfigurableResource, ReadinessCheckedResource):
+    class FailureToggleReadinessCheckedResource(ConfigurableResource, ReadinessCheckedResource):
         should_pass_readiness_check: bool
 
         def readiness_check(self) -> ReadinessCheckResult:
@@ -25,7 +25,7 @@ def test_config_readiness_checked_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": FailureToggleVerificableResource(should_pass_readiness_check=True),
+            "my_resource": FailureToggleReadinessCheckedResource(should_pass_readiness_check=True),
         },
     )
 
@@ -39,7 +39,7 @@ def test_config_readiness_checked_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": FailureToggleVerificableResource(should_pass_readiness_check=False),
+            "my_resource": FailureToggleReadinessCheckedResource(should_pass_readiness_check=False),
         },
     )
 

@@ -35,9 +35,9 @@ from dagster._core.workspace.load_target import ModuleTarget
 @pytest.fixture(name="instance_session_scoped", scope="session")
 def instance_session_scoped_fixture() -> Any:
     with instance_for_test(
-        overrides={
-            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
-        }
+        # overrides={
+        #     "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
+        # }
     ) as instance:
         yield instance
 
@@ -117,12 +117,26 @@ class MyUncheckableResource(ConfigurableResource, ReadinessCheckedResource):
         raise Exception("failure")
 
 
+count = 0
+
+
+class MyAlternatingResource(ConfigurableResource, ReadinessCheckedResource):
+    def verify_config(self) -> ReadinessCheckResult:
+        global count  # noqa: PLW0603
+        count += 1
+        if count % 2 == 0:
+            return ReadinessCheckResult(ReadinessCheckStatus.FAILURE, "even")
+        else:
+            return ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, "odd")
+
+
 the_repo = Definitions(
     jobs=[the_job],
     resources={
         "success_resource": MyReadinessCheckedResource(a_str="foo"),
         "failure_resource": MyReadinessCheckedResource(a_str="bar"),
         "exception_resource": MyUncheckableResource(),
+        "alternating": MyAlternatingResource(),
     },
 )
 
@@ -202,6 +216,10 @@ def test_base_resource(
     assert ticks[0].is_failure
     assert ticks[0].instigator_type == InstigatorType.READINESS_CHECK
 
+    assert instance.get_readiness_check_status(
+        "exception_resource", external_repo.get_external_origin()
+    ) == ReadinessCheckResult(ReadinessCheckStatus.FAILURE, "Error executing readiness_check check")
+
 
 def test_resource_not_found(
     caplog,
@@ -255,3 +273,52 @@ def test_in_process_code_location() -> None:
             resource_name="failure_resource",
         )
         assert result.response == ReadinessCheckResult.failure("qwer")
+
+
+def test_resources_alternating(
+    caplog,
+    instance: DagsterInstance,
+    workspace_context: IWorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    instance = workspace_context.instance
+
+    workspace_snapshot = {
+        location_entry.origin.location_name: location_entry
+        for location_entry in workspace_context.create_request_context()
+        .get_workspace_snapshot()
+        .values()
+    }
+
+    location_entry = list(workspace_snapshot.values())[0]
+    code_location = location_entry.code_location
+    assert code_location
+
+    assert instance.get_runs() == []
+    assert instance.get_readiness_check_status(
+        "alternating", external_repo.get_external_origin()
+    ) == ReadinessCheckResult(ReadinessCheckStatus.NOT_RUN, None)
+
+    result = code_location.launch_resource_readiness_check(
+        external_repo.get_external_origin(), instance, "alternating"
+    )
+    assert result.response == ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, "odd")
+    assert instance.get_readiness_check_status(
+        "alternating", external_repo.get_external_origin()
+    ) == ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, "odd")
+
+    result = code_location.launch_resource_readiness_check(
+        external_repo.get_external_origin(), instance, "alternating"
+    )
+    assert result.response == ReadinessCheckResult(ReadinessCheckStatus.FAILURE, "even")
+    assert instance.get_readiness_check_status(
+        "alternating", external_repo.get_external_origin()
+    ) == ReadinessCheckResult(ReadinessCheckStatus.FAILURE, "even")
+
+    result = code_location.launch_resource_readiness_check(
+        external_repo.get_external_origin(), instance, "alternating"
+    )
+    assert result.response == ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, "odd")
+    assert instance.get_readiness_check_status(
+        "alternating", external_repo.get_external_origin()
+    ) == ReadinessCheckResult(ReadinessCheckStatus.SUCCESS, "odd")

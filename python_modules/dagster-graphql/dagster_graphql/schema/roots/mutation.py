@@ -18,10 +18,10 @@ from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
 )
-from dagster_graphql.implementation.resource_verification import (
-    resource_verification,
+from dagster_graphql.implementation.readiness_check import (
+    resource_readiness_check,
 )
-from dagster_graphql.schema.resources import GrapheneResourceVerificationResult
+from dagster_graphql.schema.resources import GrapheneResourceReadinessCheckResult
 
 from ...implementation.execution import (
     delete_pipeline_run,
@@ -700,22 +700,22 @@ class GrapheneSetNuxSeenMutation(graphene.Mutation):
         return get_has_seen_nux()
 
 
-class GrapheneLaunchResourceVerificationMutationResult(graphene.Union):
+class GrapheneLaunchResourceReadinessCheckMutationResult(graphene.Union):
     class Meta:
         types = (
             GrapheneRepositoryLocationNotFound,
             GrapheneUnauthorizedError,
             GraphenePythonError,
-            GrapheneResourceVerificationResult,
+            GrapheneResourceReadinessCheckResult,
         )
-        name = "LaunchResourceVerificationMutationResult"
+        name = "LaunchResourceReadinessCheckMutationResult"
 
 
-class GrapheneLaunchResourceVerificationMutation(graphene.Mutation):
-    Output = graphene.NonNull(GrapheneLaunchResourceVerificationMutationResult)
+class GrapheneLaunchResourceReadinessCheckMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneLaunchResourceReadinessCheckMutationResult)
 
     class Meta:
-        name = "LaunchResourceVerificationMutation"
+        name = "LaunchResourceReadinessCheckMutation"
 
     class Arguments:
         resourceSelector = graphene.NonNull(GrapheneResourceSelector)
@@ -724,10 +724,10 @@ class GrapheneLaunchResourceVerificationMutation(graphene.Mutation):
     def mutate(
         self, graphene_info: ResolveInfo, resourceSelector: GrapheneResourceSelector
     ) -> bool:
-        res = resource_verification(
+        res = resource_readiness_check(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
         )
-        return GrapheneResourceVerificationResult(status=res.status, message=res.message or "")
+        return GrapheneResourceReadinessCheckResult(status=res.status, message=res.message or "")
 
 
 class GrapheneDagitMutation(graphene.ObjectType):
@@ -761,4 +761,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     log_telemetry = GrapheneLogTelemetryMutation.Field()
     set_nux_seen = GrapheneSetNuxSeenMutation.Field()
     add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()
-    launch_resource_verification = GrapheneLaunchResourceVerificationMutation.Field()
+    launch_resource_readiness_check = GrapheneLaunchResourceReadinessCheckMutation.Field()

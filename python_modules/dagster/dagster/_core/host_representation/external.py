@@ -66,6 +66,7 @@ from .external_data import (
     ExternalSensorMetadata,
     ExternalTargetData,
     NestedResource,
+    ResourceCapability,
     ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
@@ -610,7 +611,7 @@ class ExternalResource:
         return self._external_resource_data.job_ops_using
 
     @property
-    def capabilities(self) -> List[str]:
+    def capabilities(self) -> List[ResourceCapability]:
         return self._external_resource_data.capabilities
 
 
