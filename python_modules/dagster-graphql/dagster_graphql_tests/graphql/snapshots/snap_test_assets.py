@@ -2670,4 +2670,3 @@ snapshots['TestAssetAwareEventLog.test_op_assets[sqlite_with_default_run_launche
         }
     }
 }
-i
