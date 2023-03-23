@@ -17,6 +17,7 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
     instance_for_test,
@@ -140,16 +141,25 @@ def test_resources(
     code_location = location_entry.code_location
     assert code_location
 
+    assert instance.get_runs() == []
+
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "success_resource"
     )
     assert result.response == VerificationResult(VerificationStatus.SUCCESS, "asdf")
+    assert [run.status for run in instance.get_runs()] == [DagsterRunStatus.SUCCESS]
 
+    # A failed (non-exception) verification should still create a successful run
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "failure_resource"
     )
     assert result.response == VerificationResult(VerificationStatus.FAILURE, "qwer")
+    assert [run.status for run in instance.get_runs()] == [
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.SUCCESS,
+    ]
 
+    # When an exception is raised in the verification, the run should fail
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "exception_resource"
     )
@@ -157,3 +167,8 @@ def test_resources(
         VerificationStatus.FAILURE, "Error executing verification check"
     )
     assert result.serializable_error_info
+    assert [run.status for run in instance.get_runs()] == [
+        DagsterRunStatus.FAILURE,
+        DagsterRunStatus.SUCCESS,
+        DagsterRunStatus.SUCCESS,
+    ]
