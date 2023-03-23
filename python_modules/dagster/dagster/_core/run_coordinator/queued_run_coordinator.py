@@ -256,9 +256,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 run,
                 message="Canceling run from the queue.",
             )
-            self._instance.report_run_canceled(
-                run, message=None, cancellation_reason=cancellation_reason
-            )
+            self._instance.report_run_canceled(run)
             return True
         else:
             self._instance.report_run_canceling(

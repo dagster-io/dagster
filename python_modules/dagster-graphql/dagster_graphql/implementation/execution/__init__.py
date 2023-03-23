@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple,
 # re-exports
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.events import CancellationReason, EngineEventData
+from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
@@ -51,9 +51,7 @@ if TYPE_CHECKING:
     )
 
 
-def _force_mark_as_canceled(
-    instance: DagsterInstance, run_id, cancellation_reason: CancellationReason
-) -> "GrapheneTerminateRunSuccess":
+def _force_mark_as_canceled(instance: DagsterInstance, run_id: str) -> "GrapheneTerminateRunSuccess":
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
 
@@ -64,9 +62,7 @@ def _force_mark_as_canceled(
             "This pipeline was forcibly marked as canceled from outside the execution context. The "
             "computational resources created by the run may not have been fully cleaned up."
         )
-        instance.report_run_canceled(
-            reloaded_record.dagster_run, message=message, cancellation_reason=cancellation_reason
-        )
+        instance.report_run_canceled(reloaded_record.dagster_run, message=message)
         reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
 
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
@@ -126,9 +122,7 @@ def terminate_pipeline_execution(
     if force_mark_as_canceled:
         try:
             if instance.run_coordinator and can_cancel_run:
-                instance.run_coordinator.cancel_run(
-                    run_id, cancellation_reason=CancellationReason.MANUAL
-                )
+                instance.run_coordinator.cancel_run(run_id)
         except:
             instance.report_engine_event(
                 (
@@ -141,17 +135,9 @@ def terminate_pipeline_execution(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
             )
-        return _force_mark_as_canceled(
-            instance, run_id, cancellation_reason=CancellationReason.MANUAL
-        )
+        return _force_mark_as_canceled(instance, run_id)
 
-    if (
-        instance.run_coordinator
-        and can_cancel_run
-        and instance.run_coordinator.cancel_run(
-            run_id, cancellation_reason=CancellationReason.MANUAL
-        )
-    ):
+    if instance.run_coordinator and can_cancel_run and instance.run_coordinator.cancel_run(run_id):
         return GrapheneTerminateRunSuccess(graphene_run)
 
     return GrapheneTerminateRunFailure(

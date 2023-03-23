@@ -73,6 +73,7 @@ EventSpecificData = Union[
     "ComputeLogsCaptureData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
+    "PipelineCancelingData",
 ]
 
 
@@ -311,6 +312,13 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
 
     log_level = logging.ERROR if event_specific_data.error else logging.DEBUG
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
+
+
+@whitelist_for_serdes
+class CancellationReason(Enum):
+    UNKNOWN = "UNKNOWN"
+    MANUAL = "MANUAL"
+    TIMED_OUT = "TIMED_OUT"
 
 
 class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
@@ -980,9 +988,7 @@ class DagsterEvent(
 
     @staticmethod
     def pipeline_canceled(
-        pipeline_context: IPlanContext,
-        error_info: Optional[SerializableErrorInfo] = None,
-        cancellation_reason: Optional["CancellationReason"] = None,
+        pipeline_context: IPlanContext, error_info: Optional[SerializableErrorInfo] = None
     ) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
             DagsterEventType.RUN_CANCELED,
@@ -991,8 +997,7 @@ class DagsterEvent(
                 pipeline_name=pipeline_context.pipeline_name
             ),
             event_specific_data=PipelineCanceledData(
-                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
-                cancellation_reason=cancellation_reason,
+                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
         )
 
@@ -1589,29 +1594,23 @@ class PipelineFailureData(
 
 
 @whitelist_for_serdes
-class CancellationReason(Enum):
-    UNKNOWN = "UNKNOWN"
-    MANUAL = "MANUAL"
-    TIMED_OUT = "TIMED_OUT"
-
-
-@whitelist_for_serdes
 class PipelineCanceledData(
     NamedTuple(
         "_PipelineCanceledData",
-        [("error", Optional[SerializableErrorInfo]), ("cancellation_reason", CancellationReason)],
+        [
+            ("error", Optional[SerializableErrorInfo]),
+        ],
     )
 ):
-    def __new__(
-        cls,
-        error: Optional[SerializableErrorInfo],
-        cancellation_reason: Optional[CancellationReason] = None,
-    ):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(PipelineCanceledData, cls).__new__(
-            cls,
-            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-            cancellation_reason=cancellation_reason or CancellationReason.UNKNOWN,
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
+
+
+@whitelist_for_serdes
+class PipelineCancelingData(NamedTuple):
+    cancellation_reason: CancellationReason = CancellationReason.UNKNOWN
 
 
 @whitelist_for_serdes
