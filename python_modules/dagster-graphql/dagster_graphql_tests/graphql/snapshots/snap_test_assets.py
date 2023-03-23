@@ -238,6 +238,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'hanging_partition_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'int_asset'
                     ]
                 }
@@ -576,6 +583,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
                 'key': {
                     'path': [
                         'hanging_graph'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_partition_asset'
                     ]
                 }
             },
@@ -926,6 +940,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
+                        'hanging_partition_asset'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'int_asset'
                     ]
                 }
@@ -1264,6 +1285,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'hanging_graph'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'hanging_partition_asset'
                     ]
                 }
             },
