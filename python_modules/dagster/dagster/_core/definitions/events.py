@@ -188,6 +188,21 @@ CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
 CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
 
 
+def check_opt_coercible_to_asset_key_prefix_param(
+    prefix: Optional[CoercibleToAssetKeyPrefix], param_name: str
+) -> Optional[Sequence[str]]:
+    if prefix is None:
+        return prefix
+    elif isinstance(prefix, str):
+        return [prefix]
+    elif isinstance(prefix, list):
+        return prefix
+    else:
+        raise check.ParameterCheckError(
+            f'Param "{param_name}" is not a string or a sequence of strings'
+        )
+
+
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 
 
