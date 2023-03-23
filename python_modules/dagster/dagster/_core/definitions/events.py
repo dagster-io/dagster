@@ -22,6 +22,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
@@ -378,7 +379,7 @@ class AssetObservation(
 
     def __new__(
         cls,
-        asset_key: Union[Sequence[str], AssetKey, str],
+        asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         partition: Optional[str] = None,
@@ -389,7 +390,7 @@ class AssetObservation(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, Sequence):
+        else:
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
@@ -421,7 +422,23 @@ class AssetObservation(
         return " ".join(self.asset_key.path)
 
 
-@whitelist_for_serdes(old_storage_names={"Materialization"})
+UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
+
+
+class AssetMaterializationSerializer(NamedTupleSerializer):
+    # There are old `Materialization` objects in storage. We set the default value for asset key to
+    # be `AssetKey(["__undefined__"])` to ensure that we can load these objects, without needing to
+    # allow for the construction of new `AssetMaterialization` objects with no defined AssetKey.
+    def before_unpack(self, **raw_dict: Any) -> Any:
+        # cover both the case where "asset_key" is not present at all and where it is None
+        if raw_dict.get("asset_key") is None:
+            raw_dict["asset_key"] = {"__class__": "AssetKey", "path": UNDEFINED_ASSET_KEY_PATH}
+        return raw_dict
+
+
+@whitelist_for_serdes(
+    old_storage_names={"Materialization"}, serializer=AssetMaterializationSerializer
+)
 class AssetMaterialization(
     NamedTuple(
         "_AssetMaterialization",
@@ -476,7 +493,7 @@ class AssetMaterialization(
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
-        elif isinstance(asset_key, Sequence):
+        else:
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 

@@ -964,6 +964,10 @@ class TestEventLogStorage:
             assert isinstance(record, EventLogRecord)
             assert record.event_log_entry.dagster_event.asset_key == asset_key
 
+    def test_asset_materialization_null_key_fails(self):
+        with pytest.raises(check.CheckError):
+            AssetMaterialization(asset_key=None)
+
     def test_asset_events_error_parsing(self, storage):
         if not isinstance(storage, SqlEventLogStorage):
             pytest.skip("This test is for SQL-backed Event Log behavior")

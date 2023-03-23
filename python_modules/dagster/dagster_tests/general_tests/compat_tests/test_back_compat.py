@@ -24,7 +24,7 @@ from dagster import (
 )
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
@@ -47,7 +47,6 @@ from dagster._serdes.serdes import (
     pack_value,
     serialize_value,
 )
-from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 
@@ -1172,41 +1171,47 @@ def test_add_primary_keys():
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
 # In the future, we will need to enable the runtime null check on `AssetMaterialization` and
 # introduce a dummy asset key when deserializing old `Materialization` events.
-@pytest.mark.parametrize("asset_key", [AssetKey(["foo", "bar"]), None], ids=("defined", "none"))
+@pytest.mark.parametrize(
+    "asset_key", [AssetKey(["foo", "bar"]), None, "__missing__"], ids=("defined", "none", "missing")
+)
 def test_load_old_materialization(asset_key: Optional[AssetKey]):
-    packed_asset_key = pack_value(asset_key) if asset_key else None
-    old_materialization = json.dumps(
-        {
-            "__class__": "StepMaterializationData",
-            "materialization": {
-                "__class__": "Materialization",
-                "label": "foo",
-                "description": "bar",
-                "metadata_entries": [
-                    {
-                        "__class__": "EventMetadataEntry",
-                        "label": "baz",
-                        "description": "qux",
-                        "entry_data": {
-                            "__class__": "TextMetadataEntryData",
-                            "text": "quux",
-                        },
-                    }
-                ],
-                "partition": "alpha",
-                "asset_key": packed_asset_key,
-            },
-            "asset_lineage": [
+    packed_asset_key = pack_value(asset_key) if isinstance(asset_key, AssetKey) else None
+    delete_asset_key = asset_key == "__missing__"
+    packed_old_materialization = {
+        "__class__": "StepMaterializationData",
+        "materialization": {
+            "__class__": "Materialization",
+            "label": "foo",
+            "description": "bar",
+            "metadata_entries": [
                 {
-                    "__class__": "AssetLineageInfo",
-                    "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
-                    "partitions": {"__set__": ["alpha"]},
+                    "__class__": "EventMetadataEntry",
+                    "label": "baz",
+                    "description": "qux",
+                    "entry_data": {
+                        "__class__": "TextMetadataEntryData",
+                        "text": "quux",
+                    },
                 }
             ],
-        }
-    )
+            "partition": "alpha",
+            "asset_key": packed_asset_key,  # this key will be deleted for `__missing__`
+        },
+        "asset_lineage": [
+            {
+                "__class__": "AssetLineageInfo",
+                "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
+                "partitions": {"__set__": ["alpha"]},
+            }
+        ],
+    }
+    if delete_asset_key:
+        del packed_old_materialization["materialization"]["asset_key"]
+    old_materialization = serialize_value(packed_old_materialization)
 
-    deserialized_asset_key = asset_key
+    deserialized_asset_key = (
+        AssetKey(UNDEFINED_ASSET_KEY_PATH) if asset_key in (None, "__missing__") else asset_key
+    )
     assert deserialize_value(
         old_materialization, StepMaterializationData
     ) == StepMaterializationData(
@@ -1216,7 +1221,7 @@ def test_load_old_materialization(asset_key: Optional[AssetKey]):
                 MetadataEntry("baz", description="qux", entry_data=MetadataValue.text("quux"))
             ],
             partition="alpha",
-            asset_key=deserialized_asset_key,  # type: ignore
+            asset_key=deserialized_asset_key,
         ),
         asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
     )
