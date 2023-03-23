@@ -360,3 +360,29 @@ def test_raise_on_error():
 
     with instance_for_test() as instance:
         assert not materialize([asset1], raise_on_error=False, instance=instance).success
+
+
+def test_selection():
+    @asset
+    def upstream():
+        ...
+
+    @asset
+    def downstream(upstream):
+        ...
+
+    assets = [upstream, downstream]
+
+    with TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            result1 = materialize(assets, instance=instance, selection=[upstream])
+            assert result1.success
+            materialization_events = result1.get_asset_materialization_events()
+            assert len(materialization_events) == 1
+            assert materialization_events[0].materialization.asset_key == AssetKey("upstream")
+
+            result2 = materialize(assets, instance=instance, selection=[downstream])
+            assert result2.success
+            materialization_events = result2.get_asset_materialization_events()
+            assert len(materialization_events) == 1
+            assert materialization_events[0].materialization.asset_key == AssetKey("downstream")
