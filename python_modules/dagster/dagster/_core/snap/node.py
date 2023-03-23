@@ -385,7 +385,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
         description=op_def.description,
         tags=op_def.tags,
         required_resource_keys=sorted(list(op_def.required_resource_keys)),
-        config_field_snap=snap_from_field("config", op_def.config_field)
+        config_field_snap=snap_from_field("config", op_def.config_field)  # type: ignore  # (possible none)
         if op_def.has_config_field
         else None,
     )

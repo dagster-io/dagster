@@ -25,7 +25,7 @@ from dagster._core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.solid import GraphDefSnap, OpDefSnap
+from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 

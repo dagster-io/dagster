@@ -50,7 +50,7 @@ def op_invocation_result(
 
     compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedOpFunction):
-        check.failed("solid invocation only works with decorated solid fns")
+        check.failed("op invocation only works with decorated op fns")
 
     compute_fn = cast(DecoratedOpFunction, compute_fn)
 
@@ -68,30 +68,30 @@ def op_invocation_result(
 
 
 def _check_invocation_requirements(
-    solid_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
+    op_def: "OpDefinition", context: Optional["UnboundOpExecutionContext"]
 ) -> None:
-    """Ensure that provided context fulfills requirements of solid definition.
+    """Ensure that provided context fulfills requirements of op definition.
 
-    If no context was provided, then construct an enpty UnboundSolidExecutionContext
+    If no context was provided, then construct an enpty UnboundOpExecutionContext
     """
     # Check resource requirements
     if (
-        solid_def.required_resource_keys
-        and cast("DecoratedOpFunction", solid_def.compute_fn).has_context_arg()
+        op_def.required_resource_keys
+        and cast("DecoratedOpFunction", op_def.compute_fn).has_context_arg()
         and context is None
     ):
-        node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
+        node_label = op_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f'{node_label} "{solid_def.name}" has required resources, but no context was provided.'
+            f'{node_label} "{op_def.name}" has required resources, but no context was provided.'
             f" Use the `build_{node_label}_context` function to construct a context with the"
             " required resources."
         )
 
     # Check config requirements
-    if not context and solid_def.config_schema.as_field().is_required:
-        node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
+    if not context and op_def.config_schema.as_field().is_required:
+        node_label = op_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f'{node_label} "{solid_def.name}" has required config schema, but no context was'
+            f'{node_label} "{op_def.name}" has required config schema, but no context was'
             f" provided. Use the `build_{node_label}_context` function to create a context with"
             " config."
         )
@@ -109,7 +109,7 @@ def _resolve_inputs(
     # Check kwargs for nothing inputs, and error if someone provided one.
     for input_def in nothing_input_defs:
         if input_def.name in kwargs:
-            node_label = op_def.node_type_str  # string "solid" for solids, "op" for ops
+            node_label = op_def.node_type_str
 
             raise DagsterInvalidInvocationError(
                 f"Attempted to provide value for nothing input '{input_def.name}'. Nothing "
@@ -202,14 +202,14 @@ def _resolve_inputs(
 
 
 def _type_check_output_wrapper(
-    solid_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
+    op_def: "OpDefinition", result: Any, context: "BoundOpExecutionContext"
 ) -> Any:
-    """Type checks and returns the result of a solid.
+    """Type checks and returns the result of a op.
 
-    If the solid result is itself a generator, then wrap in a fxn that will type check and yield
+    If the op result is itself a generator, then wrap in a fxn that will type check and yield
     outputs.
     """
-    output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
+    output_defs = {output_def.name: output_def for output_def in op_def.output_defs}
 
     # Async generator case
     if inspect.isasyncgen(result):
@@ -226,7 +226,7 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator,"
+                            f"When yielding outputs from a {op_def.node_type_str} generator,"
                             " they should be wrapped in an `Output` object."
                         )
                     else:
@@ -236,15 +236,15 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded"
+                                f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
                                 f" an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield event
-            for output_def in solid_def.output_defs:
+            for output_def in op_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
-                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return"
+                        f"Invocation of {op_def.node_type_str} '{context.alias}' did not return"
                         f" an output for non-optional output '{output_def.name}'"
                     )
 
@@ -255,7 +255,7 @@ def _type_check_output_wrapper(
 
         async def type_check_coroutine(coro):
             out = await coro
-            return _type_check_function_output(solid_def, out, context)
+            return _type_check_function_output(op_def, out, context)
 
         return type_check_coroutine(result)
 
@@ -273,7 +273,7 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator,"
+                            f"When yielding outputs from a {op_def.node_type_str} generator,"
                             " they should be wrapped in an `Output` object."
                         )
                     else:
@@ -283,12 +283,12 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded"
+                                f"Invocation of {op_def.node_type_str} '{context.alias}' yielded"
                                 f" an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield output
-            for output_def in solid_def.output_defs:
+            for output_def in op_def.output_defs:
                 if (
                     output_def.name not in outputs_seen
                     and output_def.is_required
@@ -299,14 +299,14 @@ def _type_check_output_wrapper(
                         yield Output(output_name=output_def.name, value=None)
                     else:
                         raise DagsterInvariantViolationError(
-                            f"Invocation of {solid_def.node_type_str} '{context.alias}' did not"
+                            f"Invocation of {op_def.node_type_str} '{context.alias}' did not"
                             f" return an output for non-optional output '{output_def.name}'"
                         )
 
         return type_check_gen(result)
 
     # Non-generator case
-    return _type_check_function_output(solid_def, result, context)
+    return _type_check_function_output(op_def, result, context)
 
 
 def _type_check_function_output(
@@ -328,7 +328,7 @@ def _type_check_output(
     Args:
         output_def (OutputDefinition): The output definition to validate against.
         output (Any): The output to validate.
-        context (BoundSolidExecutionContext): Context containing resources to be used for type
+        context (BoundOpExecutionContext): Context containing resources to be used for type
             check.
     """
     from ..execution.plan.execute_step import do_type_check

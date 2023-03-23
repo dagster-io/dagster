@@ -45,10 +45,10 @@ from .dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from .mode import ModeDefSnap, build_mode_def_snap
-from .solid import (
+from .node import (
     GraphDefSnap,
-    NodeDefSnap,
     NodeDefsSnap,
+    OpDefSnap,
     build_node_defs_snap,
 )
 
@@ -190,7 +190,7 @@ class PipelineSnapshot(
             graph_def_name=pipeline_def.graph.name,
         )
 
-    def get_node_def_snap(self, solid_def_name: str) -> Union[NodeDefSnap, GraphDefSnap]:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         for solid_def_snap in self.solid_definitions_snapshot.op_def_snaps:
             if solid_def_snap.name == solid_def_name:
@@ -211,9 +211,9 @@ class PipelineSnapshot(
 
     def get_config_type_from_solid_def_snap(
         self,
-        solid_def_snap: Union[NodeDefSnap, GraphDefSnap],
+        solid_def_snap: Union[OpDefSnap, GraphDefSnap],
     ) -> Optional[ConfigType]:
-        check.inst_param(solid_def_snap, "solid_def_snap", (NodeDefSnap, GraphDefSnap))
+        check.inst_param(solid_def_snap, "solid_def_snap", (OpDefSnap, GraphDefSnap))
         if solid_def_snap.config_field_snap:
             config_type_key = solid_def_snap.config_field_snap.type_key
             if self.config_schema_snapshot.has_config_snap(config_type_key):

@@ -58,12 +58,12 @@ from .mode import (
     ModeDefSnap as ModeDefSnap,
     ResourceDefSnap as ResourceDefSnap,
 )
+from .node import (
+    GraphDefSnap as GraphDefSnap,
+    OpDefSnap as OpDefSnap,
+    build_graph_def_snap as build_graph_def_snap,
+)
 from .pipeline_snapshot import (
     PipelineSnapshot as PipelineSnapshot,
     create_pipeline_snapshot_id as create_pipeline_snapshot_id,
-)
-from .solid import (
-    GraphDefSnap as GraphDefSnap,
-    NodeDefSnap as NodeDefSnap,
-    build_graph_def_snap as build_graph_def_snap,
 )

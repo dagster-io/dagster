@@ -33,8 +33,8 @@ def build_solid_invocation_snap(
         )
 
     return NodeInvocationSnap(
-        solid_name=solid.name,
-        solid_def_name=solid.definition.name,
+        node_name=solid.name,
+        node_def_name=solid.definition.name,
         tags=solid.tags,
         input_dep_snaps=input_def_snaps,
         is_dynamic_mapped=dep_structure.is_dynamic_mapped(solid.name),
