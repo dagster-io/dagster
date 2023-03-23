@@ -92,10 +92,6 @@ If you're using the default I/O manager, materializing partition `2022-07-23` of
 
 #### Multi-dimensionally partitioned assets
 
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
-
 The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to partitions definition, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
 
 ```python file=/concepts/partitions_schedules_sensors/multipartitions_asset.py startafter=start_multi_partitions_marker endbefore=end_multi_partitions_marker
