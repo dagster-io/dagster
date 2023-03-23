@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
+from typing import AbstractSet, FrozenSet, NamedTuple, Optional
 
 import pendulum
 
@@ -207,20 +207,21 @@ class FreshnessPolicy(
 
     def minutes_late(
         self,
+        data_time: Optional[datetime.datetime],
         evaluation_time: datetime.datetime,
-        used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Optional[float]:
         """Returns a number of minutes past the specified freshness policy that this asset currently
         is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
         how late it is, and this will return None.
 
         Args:
+            data_time (Optional[datetime]): The timestamp of the data that was used to create the
+                current version of this asset.
             evaluation_time (datetime): The time at which we're evaluating the lateness of this
                 asset. Generally, this is the current time.
-            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the data that was used to create the current
-                version of this asset.
         """
+        if data_time is None:
+            return None
         if self.cron_schedule:
             # most recent cron schedule tick
             schedule_ticks = reverse_cron_string_iterator(
@@ -232,15 +233,5 @@ class FreshnessPolicy(
         else:
             evaluation_tick = evaluation_time
 
-        minutes_late = 0.0
-        for used_data_time in used_data_times.values():
-            # upstream data was not used, undefined how out of date you are
-            if used_data_time is None:
-                return None
-
-            required_time = evaluation_tick - self.maximum_lag_delta
-            if used_data_time < required_time:
-                minutes_late = max(
-                    minutes_late, (required_time - used_data_time).total_seconds() / 60
-                )
-        return minutes_late
+        required_time = evaluation_tick - self.maximum_lag_delta
+        return max(0.0, (required_time - data_time).total_seconds() / 60)
