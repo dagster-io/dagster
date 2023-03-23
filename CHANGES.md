@@ -1,5 +1,33 @@
 # Changelog
 
+
+# 1.2.3 (core) / 0.18.3 (libraries)
+### New
+
+- Jobs defined via `define_asset_job` now auto-infer their partitions definitions if not explicitly defined.
+- Observable source assets can now be run as part of a job via `define_asset_job`. This allows putting them on a schedule/sensor.
+- Added an `instance` property to the `HookContext` object that is passed into [Op Hook](https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#op-hooks) functions, which can be used to access the current `DagsterInstance` object for the hook.
+- (experimental) Dynamic partitions definitions can now exist as dimensions of multi-partitions definitions.
+- [dagster-pandas] New `create_table_schema_metadata_from_dataframe` function to generate a `TableSchemaMetadataValue` from a Pandas DataFrame. Thanks [@AndyBys](https://github.com/AndyBys)!
+- [dagster-airflow] New option for setting `dag_run` configuration on the integration’s database resources.
+- [ui] The asset partitions page now links to the most recent failed or in-progress run for the selected partition.
+- [ui] Asset descriptions have been moved to the top in the asset sidebar.
+- [ui] Log filter switches have been consolidated into a single control, and selected log levels will be persisted locally so that the same selections are used by default when viewing a run.
+- [ui] You can now customize the hour formatting in timestamp display: 12-hour, 24-hour, or automatic (based on your browser locale). This option can be found in User Settings.
+
+### Bugfixes
+
+- In certain situations a few of the first partitions displayed as “unpartitioned” in the health bar despite being materialized. This has now been fixed, but users may need to run `dagster asset wipe-partitions-status-cache` to see the partitions displayed.
+- Starting `1.1.18`, users with a gRPC server that could not access the Dagster instance on user code deployments would see an error when launching backfills as the instance could not instantiate. This has been fixed.
+- Previously, incorrect partition status counts would display for static partitions definitions with duplicate keys. This has been fixed.
+- In some situations, having SourceAssets could prevent the `build_asset_reconciliation_sensor` from kicking off runs of downstream assets. This has been fixed.
+- The `build_asset_reconciliation_sensor` is now much more performant in cases where unpartitioned assets are upstream or downstream of static-partitioned assets with a large number of partitions.
+- [dagster-airflow] Fixed an issue were the persistent Airflow DB resource required the user to set the correct Airflow database URI environment variable.
+- [dagster-celery-k8s] Fixed an issue where run monitoring failed when setting the `jobNamespace` field in the Dagster Helm chart when using the `CeleryK8sRunLauncher`.
+- [ui] Filtering on the asset partitions page no longer results in keys being presented out of order in the left sidebar in some scenarios.
+- [ui] Launching an asset backfill outside an asset job page now supports partition mapping, even if your selection shares a partition space.
+- [ui] In the run timeline, date/time display at the top of the timeline was sometimes broken for users not using the `en-US` browser locale. This has been fixed.
+
 # 1.2.2 (core) / 0.18.2 (libraries)
 
 ### New

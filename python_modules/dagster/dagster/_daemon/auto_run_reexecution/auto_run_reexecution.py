@@ -94,22 +94,20 @@ def retry_run(
         return
 
     origin = failed_run.external_pipeline_origin.external_repository_origin
-    repo_location = workspace.get_repository_location(
-        origin.repository_location_origin.location_name
-    )
+    code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 
-    if not repo_location.has_repository(repo_name):
+    if not code_location.has_repository(repo_name):
         instance.report_engine_event(
             (
-                f"Could not find repository {repo_name} in location {repo_location.name}, unable to"
+                f"Could not find repository {repo_name} in location {code_location.name}, unable to"
                 " retry the run. It was likely renamed or deleted."
             ),
             failed_run,
         )
         return
 
-    external_repo = repo_location.get_repository(repo_name)
+    external_repo = code_location.get_repository(repo_name)
 
     if not external_repo.has_external_job(failed_run.pipeline_name):
         instance.report_engine_event(
@@ -127,7 +125,7 @@ def retry_run(
 
     new_run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=strategy,
         extra_tags=tags,

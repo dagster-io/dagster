@@ -15,7 +15,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
@@ -496,7 +495,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation, ExpectationResult]): The event to log.
 
         **Examples:**
 
@@ -508,7 +507,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, AssetMaterialization):
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
             )

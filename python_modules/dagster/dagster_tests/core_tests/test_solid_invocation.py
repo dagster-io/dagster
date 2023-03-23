@@ -34,7 +34,6 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    Materialization,
     execute_solid,
     pipeline,
 )
@@ -1006,7 +1005,6 @@ def test_logged_user_events():
     @op
     def logs_events(context):
         context.log_event(AssetMaterialization("first"))
-        context.log_event(Materialization("second"))
         context.log_event(ExpectationResult(success=True))
         context.log_event(AssetObservation("fourth"))
         yield AssetMaterialization("fifth")
@@ -1016,7 +1014,6 @@ def test_logged_user_events():
     list(logs_events(context))
     assert [type(event) for event in context.get_events()] == [
         AssetMaterialization,
-        Materialization,
         ExpectationResult,
         AssetObservation,
     ]

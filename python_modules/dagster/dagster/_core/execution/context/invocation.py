@@ -20,7 +20,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.hook_definition import HookDefinition
@@ -489,7 +488,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         check.inst_param(
             event,
             "event",
-            (AssetMaterialization, AssetObservation, ExpectationResult, Materialization),
+            (AssetMaterialization, AssetObservation, ExpectationResult),
         )
         self._user_events.append(event)
 

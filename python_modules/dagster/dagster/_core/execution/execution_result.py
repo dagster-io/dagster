@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Optional, Sequence, Set, Union, cast
+from typing import AbstractSet, Callable, List, Optional, Sequence, Set, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Materialization
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.events import (
@@ -147,9 +147,7 @@ class ExecutionResult(ABC):
 
         return events[0]
 
-    def asset_materializations_for_node(
-        self, node_name: str
-    ) -> Sequence[Union[Materialization, AssetMaterialization]]:
+    def asset_materializations_for_node(self, node_name: str) -> Sequence[AssetMaterialization]:
         return [
             cast(StepMaterializationData, event.event_specific_data).materialization
             for event in self.events_for_node(node_name)

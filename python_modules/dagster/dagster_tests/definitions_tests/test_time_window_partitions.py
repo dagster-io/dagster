@@ -595,12 +595,12 @@ def test_time_window_partitions_contains():
 
 def test_unique_identifier():
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
-        != DailyPartitionsDefinition(start_date="2015-01-02").serializable_unique_identifier
+        DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
+        != DailyPartitionsDefinition(start_date="2015-01-02").get_serializable_unique_identifier()
     )
     assert (
-        DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
-        == DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
+        DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
+        == DailyPartitionsDefinition(start_date="2015-01-01").get_serializable_unique_identifier()
     )
 
 

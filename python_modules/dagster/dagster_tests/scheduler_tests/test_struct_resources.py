@@ -127,7 +127,7 @@ def external_repo_fixture(workspace_context_struct_resources: WorkspaceProcessCo
             .get_workspace_snapshot()
             .values()
         )
-    ).repository_location
+    ).code_location
     assert repo_loc
     return repo_loc.get_repository(SINGLETON_REPOSITORY_NAME)
 

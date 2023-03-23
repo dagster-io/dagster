@@ -223,6 +223,13 @@ def test_segfault_compute_log_tail(
                     wait_for_process(stderr_pid)
 
 
+def test_input_signal_hang():
+    please_dont_hang = open_ipc_subprocess(
+        [sys.executable, file_relative_path(__file__, "import_readline.py")],
+    )
+    please_dont_hang.communicate(timeout=10)
+
+
 def test_interrupt_compute_log_tail_grandchild(
     windows_legacy_stdio_env,
 ):

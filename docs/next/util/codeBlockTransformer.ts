@@ -81,8 +81,8 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
         );
 
         // remove pragmas
-        contentWithLimit = contentWithLimit.replace(/^\s*# (type|noqa):.*$/g, '');
-        contentWithLimit = contentWithLimit.replace(/  # (type|noqa):.*$/g, '');
+        contentWithLimit = contentWithLimit.replace(/^\s*# (type|ruff|isort|noqa):.*$/g, '');
+        contentWithLimit = contentWithLimit.replace(/  # (type|ruff|isort|noqa):.*$/g, '');
 
         if (metaOptions.trim) {
           contentWithLimit = contentWithLimit.trim();

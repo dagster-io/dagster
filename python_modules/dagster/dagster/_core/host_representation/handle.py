@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     ExternalRepositoryOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.origin import RepositoryPythonOrigin
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.repository_location import RepositoryLocation
+    from dagster._core.host_representation.code_location import CodeLocation
 
 
 class RepositoryHandle(
@@ -17,31 +17,31 @@ class RepositoryHandle(
         "_RepositoryHandle",
         [
             ("repository_name", str),
-            ("repository_location_origin", RepositoryLocationOrigin),
+            ("code_location_origin", CodeLocationOrigin),
             ("repository_python_origin", RepositoryPythonOrigin),
             ("display_metadata", Mapping[str, str]),
         ],
     )
 ):
-    def __new__(cls, repository_name: str, repository_location: "RepositoryLocation"):
-        from dagster._core.host_representation.repository_location import RepositoryLocation
+    def __new__(cls, repository_name: str, code_location: "CodeLocation"):
+        from dagster._core.host_representation.code_location import CodeLocation
 
-        check.inst_param(repository_location, "repository_location", RepositoryLocation)
+        check.inst_param(code_location, "code_location", CodeLocation)
         return super(RepositoryHandle, cls).__new__(
             cls,
             check.str_param(repository_name, "repository_name"),
-            repository_location.origin,
-            repository_location.get_repository_python_origin(repository_name),
-            repository_location.get_display_metadata(),
+            code_location.origin,
+            code_location.get_repository_python_origin(repository_name),
+            code_location.get_display_metadata(),
         )
 
     @property
     def location_name(self) -> str:
-        return self.repository_location_origin.location_name
+        return self.code_location_origin.location_name
 
     def get_external_origin(self):
         return ExternalRepositoryOrigin(
-            self.repository_location_origin,
+            self.code_location_origin,
             self.repository_name,
         )
 

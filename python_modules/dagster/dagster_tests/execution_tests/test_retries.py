@@ -27,9 +27,9 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    DagsterRun,
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,

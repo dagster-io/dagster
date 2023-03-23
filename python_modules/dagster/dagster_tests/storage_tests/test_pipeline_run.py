@@ -7,7 +7,7 @@ from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -29,7 +29,7 @@ def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
-            InProcessRepositoryLocationOrigin(
+            InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable,
                     module_name="fake",

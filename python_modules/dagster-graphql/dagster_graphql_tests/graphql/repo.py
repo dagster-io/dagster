@@ -8,7 +8,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import List, Tuple
+from typing import Iterator, List, Mapping, NoReturn, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
@@ -82,16 +82,16 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    Materialization,
     ModeDefinition,
     PartitionSetDefinition,
     PresetDefinition,
@@ -111,11 +111,13 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
+T = TypeVar("T")
+
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
-def df_input_schema(_context, path):
+def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
     with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
@@ -128,7 +130,9 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 
 @contextmanager
-def define_test_out_of_process_context(instance):
+def define_test_out_of_process_context(
+    instance: DagsterInstance,
+) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
     with define_out_of_process_context(__file__, main_repo_name(), instance) as context:
         yield context
@@ -139,7 +143,7 @@ def create_main_recon_repo():
 
 
 @contextmanager
-def get_main_workspace(instance):
+def get_main_workspace(instance: DagsterInstance) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -153,9 +157,9 @@ def get_main_workspace(instance):
 
 
 @contextmanager
-def get_main_external_repo(instance):
+def get_main_external_repo(instance: DagsterInstance) -> Iterator[ExternalRepository]:
     with get_main_workspace(instance) as workspace:
-        location = workspace.get_repository_location(main_repo_location_name())
+        location = workspace.get_code_location(main_repo_location_name())
         yield location.get_repository(main_repo_name())
 
 
@@ -997,7 +1001,9 @@ def basic_job():
     pass
 
 
-def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
+def get_retry_multi_execution_params(
+    graphql_context: WorkspaceRequestContext, should_fail: bool, retry_id: Optional[str] = None
+) -> Mapping[str, Any]:
     selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
     return {
         "mode": "default",
@@ -1013,7 +1019,9 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
     }
 
 
-def last_empty_partition(context, partition_set_def):
+def last_empty_partition(
+    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[T]
+) -> Optional[Partition[T]]:
     check.inst_param(context, "context", ScheduleEvaluationContext)
     partition_set_def = check.inst_param(
         partition_set_def, "partition_set_def", PartitionSetDefinition
@@ -1032,7 +1040,10 @@ def last_empty_partition(context, partition_set_def):
     return selected
 
 
-def define_schedules():
+def define_schedules() -> Sequence[ScheduleDefinition]:
+    def throw_error() -> NoReturn:
+        raise Exception("This is an error")
+
     integer_partition_set = PartitionSetDefinition(
         name="scheduled_integer_partitions",
         pipeline_name="no_config_pipeline",
@@ -1068,7 +1079,7 @@ def define_schedules():
     partition_based = integer_partition_set.create_schedule_definition(
         schedule_name="partition_based",
         cron_schedule="0 0 * * *",
-        partition_selector=last_empty_partition,
+        partition_selector=last_empty_partition,  # type: ignore
     )
 
     @daily_schedule(
@@ -1137,7 +1148,7 @@ def define_schedules():
     @daily_schedule(
         job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # noqa: F821
+        should_execute=lambda _: throw_error(),
     )
     def should_execute_error_schedule(_date):
         return {}
@@ -1145,7 +1156,7 @@ def define_schedules():
     @daily_schedule(
         job_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # noqa: F821
+        tags_fn_for_date=lambda _: throw_error(),
     )
     def tags_error_schedule(_date):
         return {}
@@ -1155,7 +1166,7 @@ def define_schedules():
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
-        return asdf  # noqa: F821
+        throw_error()
 
     @daily_schedule(
         job_name="no_config_pipeline",
@@ -1382,36 +1393,6 @@ def chained_failure_pipeline():
         return "world"
 
     after_failure(conditionally_fail(always_succeed()))
-
-
-@pipeline
-def backcompat_materialization_pipeline():
-    @op
-    def backcompat_materialize(_):
-        yield Materialization(
-            asset_key="all_types",
-            description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
-                ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-            ],
-        )
-        yield Output(None)
-
-    backcompat_materialize()
 
 
 @graph
@@ -1647,6 +1628,29 @@ fail_partition_materialization_job = build_assets_job(
     "fail_partition_materialization_job",
     assets=[fail_partition_materialization],
     executor_def=in_process_executor,
+)
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    required_resource_keys={"hanging_asset_resource"},
+)
+def hanging_partition_asset(context):
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+hanging_partition_asset_job = build_assets_job(
+    "hanging_partition_asset_job",
+    assets=[hanging_partition_asset],
+    executor_def=in_process_executor,
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
 )
 
 
@@ -1938,7 +1942,6 @@ def define_pipelines():
         tagged_pipeline,
         chained_failure_pipeline,
         dynamic_pipeline,
-        backcompat_materialization_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
         composed_graph.to_job(),
@@ -1951,6 +1954,7 @@ def define_pipelines():
         time_partitioned_assets_job,
         partition_materialization_job,
         fail_partition_materialization_job,
+        hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
         asset_group_job,

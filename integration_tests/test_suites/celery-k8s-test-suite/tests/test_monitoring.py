@@ -22,7 +22,7 @@ def log_run_events(instance, run_id):
         print(str(log) + "\n")  # noqa: T201
 
 
-def get_celery_job_engine_config(dagster_docker_image, job_namespace):
+def get_celery_job_engine_config(dagster_docker_image, job_namespace=None):
     return {
         "execution": {
             "config": merge_dicts(
@@ -33,8 +33,14 @@ def get_celery_job_engine_config(dagster_docker_image, job_namespace):
                     if dagster_docker_image
                     else {}
                 ),
+                (
+                    {
+                        "job_namespace": job_namespace,
+                    }
+                    if job_namespace
+                    else {}
+                ),
                 {
-                    "job_namespace": job_namespace,
                     "image_pull_policy": image_pull_policy(),
                 },
             )
@@ -74,9 +80,7 @@ def test_run_monitoring_fails_on_interrupt(
                 os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
             ]
         ),
-        get_celery_job_engine_config(
-            dagster_docker_image=dagster_docker_image, job_namespace=helm_namespace
-        ),
+        get_celery_job_engine_config(dagster_docker_image=dagster_docker_image),
     )
 
     pipeline_name = "demo_job_celery"

@@ -439,3 +439,30 @@ def test_invalid_multipartitioned_job_schedule():
         build_schedule_from_partitioned_job(
             define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
         )
+
+
+def test_unresolved_partitioned_schedule():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    job1 = define_asset_job("job1")
+    schedule1 = build_schedule_from_partitioned_job(job1)
+
+    @repository
+    def my_repo():
+        return [asset1, job1, schedule1]
+
+    run_requests = (
+        my_repo.get_schedule_def("job1_schedule")
+        .evaluate_tick(
+            build_schedule_context(
+                scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT)
+            )
+        )
+        .run_requests
+    )
+    assert len(run_requests) == 1
+    assert run_requests[0].partition_key == "2020-01-01"

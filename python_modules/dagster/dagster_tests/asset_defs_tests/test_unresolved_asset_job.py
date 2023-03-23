@@ -19,7 +19,6 @@ from dagster import (
     op,
     repository,
 )
-from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.partition import (
@@ -441,7 +440,7 @@ def test_define_selection_job_assets_definition_selection():
     job1.execute_in_process()
 
 
-def test_source_asset_selection():
+def test_root_asset_selection():
     @asset
     def a(source):
         return source + 1
@@ -450,6 +449,7 @@ def test_source_asset_selection():
     def b(a):
         return a + 1
 
+    # Source asset should not be included in the job
     assert define_asset_job("job", selection="*b").resolve(
         assets=[a, b], source_assets=[SourceAsset("source")]
     )
@@ -625,7 +625,7 @@ def test_intersecting_partitions_on_repo_invalid():
     def d(c):
         return c
 
-    with pytest.raises(CheckError, match="partitions_def of Daily"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="must have the same partitions def"):
 
         @repository
         def my_repo():

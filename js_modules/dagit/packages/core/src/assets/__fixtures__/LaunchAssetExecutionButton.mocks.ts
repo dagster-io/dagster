@@ -8,6 +8,7 @@ import {
   LaunchBackfillParams,
   PartitionDefinitionType,
   PartitionRangeStatus,
+  buildDimensionDefinitionType,
 } from '../../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../../instance/types/BackfillUtils.types';
@@ -615,7 +616,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Daily, starting 2020-01-01 UTC.',
-            dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+            dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
             __typename: 'PartitionDefinition',
           },
           configField: {
@@ -641,7 +642,7 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
             name: 'Foo',
             type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Weekly, starting 2020-01-01 UTC.',
-            dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+            dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
             __typename: 'PartitionDefinition',
           },
           configField: {
@@ -761,7 +762,7 @@ const ASSET_DAILY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
     description: 'Daily, starting 2020-01-01 UTC.',
-    dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
   },
   configField: {
@@ -788,7 +789,7 @@ const ASSET_WEEKLY_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
     description: 'Weekly, starting 2020-01-01 UTC.',
-    dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
   },
 
@@ -826,7 +827,7 @@ const ASSET_WEEKLY_ROOT_LOADER_RESULT: LaunchAssetLoaderQueryAssetNode = {
     name: 'Foo',
     type: PartitionDefinitionType.TIME_WINDOW,
     description: 'Weekly, starting 2020-01-01 UTC.',
-    dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+    dimensionTypes: [buildDimensionDefinitionType({name: 'default'})],
     __typename: 'PartitionDefinition',
   },
   configField: {

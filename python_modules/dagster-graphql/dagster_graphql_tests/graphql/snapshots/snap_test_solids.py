@@ -317,22 +317,6 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'backcompat_materialize'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'backcompat_materialization_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'backcompat_materialize'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
                     'name': 'bar'
                 },
                 'invocations': [
@@ -1054,6 +1038,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'hanging_graph.hanging_op'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'hanging_partition_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_partition_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_partition_asset'
                         }
                     }
                 ]

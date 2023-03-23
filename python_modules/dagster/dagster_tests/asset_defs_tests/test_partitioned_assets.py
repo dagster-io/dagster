@@ -27,6 +27,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -51,6 +52,7 @@ def check_experimental_warnings():
                 or "io_manager_def" in w.message.args[0]
                 or "build_assets_job" in w.message.args[0]
                 or "MultiPartitionsDefinition" in w.message.args[0]
+                or "SQLALCHEMY" in w.message.args[0]  # from sqlalchemy <2
             ):
                 continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
@@ -544,7 +546,7 @@ def test_job_config_with_asset_partitions():
         "job",
         partitions_def=daily_partitions_def,
         config={"ops": {"asset1": {"config": {"a": 5}}}},
-    ).resolve([asset1], [])
+    ).resolve(asset_graph=AssetGraph.from_assets([asset1]))
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
     assert (
@@ -566,7 +568,9 @@ def test_job_partitioned_config_with_asset_partitions():
     def myconfig(start, _end):
         return {"ops": {"asset1": {"config": {"day_of_month": start.day}}}}
 
-    the_job = define_asset_job("job", config=myconfig).resolve([asset1], [])
+    the_job = define_asset_job("job", config=myconfig).resolve(
+        asset_graph=AssetGraph.from_assets([asset1])
+    )
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
 
@@ -590,7 +594,9 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
             " than supplied for 'partitions_def'."
         ),
     ):
-        define_asset_job("job", config=myconfig).resolve([asset1], [])
+        define_asset_job("job", config=myconfig).resolve(
+            asset_graph=AssetGraph.from_assets([asset1])
+        )
 
 
 def test_partition_range_single_run():
@@ -611,7 +617,9 @@ def test_partition_range_single_run():
             start="2020-01-01", end="2020-01-03"
         )
 
-    the_job = define_asset_job("job").resolve([upstream_asset, downstream_asset], [])
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([upstream_asset, downstream_asset])
+    )
 
     result = the_job.execute_in_process(
         tags={
@@ -651,7 +659,9 @@ def test_multipartition_range_single_run():
             isinstance(key, MultiPartitionKey) for key in context.asset_partition_keys_for_output()
         )
 
-    the_job = define_asset_job("job").resolve([multipartitioned_asset], [])
+    the_job = define_asset_job("job").resolve(
+        asset_graph=AssetGraph.from_assets([multipartitioned_asset])
+    )
 
     result = the_job.execute_in_process(
         tags={

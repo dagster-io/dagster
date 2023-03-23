@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item, frozendict
+from dagster._utils import ensure_single_item
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .errors import (
@@ -210,7 +210,7 @@ def validate_selector_config(
 
     if child_evaluate_value_result.success:
         return EvaluateValueResult.for_value(  # type: ignore
-            frozendict({field_name: child_evaluate_value_result.value})
+            {field_name: child_evaluate_value_result.value}
         )
     else:
         return child_evaluate_value_result
@@ -289,7 +289,7 @@ def _validate_shape_config(
     if errors:
         return EvaluateValueResult.for_errors(errors)
     else:
-        return EvaluateValueResult.for_value(frozendict(config_value))  # type: ignore
+        return EvaluateValueResult.for_value(config_value)  # type: ignore
 
 
 def validate_permissive_shape_config(
@@ -304,7 +304,7 @@ def validate_permissive_shape_config(
 
 def validate_map_config(
     context: ValidationContext, config_value: object
-) -> EvaluateValueResult[Mapping[str, object]]:
+) -> EvaluateValueResult[Mapping[object, object]]:
     check.inst_param(context, "context", ValidationContext)
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.MAP)
     check.not_none_param(config_value, "config_value")
@@ -325,7 +325,7 @@ def validate_map_config(
         if not result.success:
             errors += cast(List, result.errors)
 
-    return EvaluateValueResult(not bool(errors), frozendict(config_value), errors)
+    return EvaluateValueResult(not bool(errors), config_value, errors)
 
 
 def validate_shape_config(

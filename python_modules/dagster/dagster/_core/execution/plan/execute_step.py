@@ -22,7 +22,6 @@ from dagster._core.definitions import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     Output,
     OutputDefinition,
     TypeCheck,
@@ -383,7 +382,7 @@ def core_dagster_event_sequence_for_step(
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
-            elif isinstance(user_event, (AssetMaterialization, Materialization)):
+            elif isinstance(user_event, AssetMaterialization):
                 yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)

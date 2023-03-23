@@ -1,6 +1,6 @@
 import sys
 
-from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster._core.host_representation import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils import file_relative_path
@@ -8,7 +8,7 @@ from dagster._utils import file_relative_path
 
 def test_dagster_out_of_process_location():
     with instance_for_test() as instance:
-        with ManagedGrpcPythonEnvRepositoryLocationOrigin(
+        with ManagedGrpcPythonEnvCodeLocationOrigin(
             location_name="test_location",
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
