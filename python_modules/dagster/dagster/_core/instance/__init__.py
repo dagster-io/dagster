@@ -1796,7 +1796,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         check.str_param(partitions_def_name, "partitions_def_name")
-
         return self._event_storage.get_dynamic_partitions(partitions_def_name)
 
     @public

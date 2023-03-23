@@ -461,6 +461,7 @@ def log_external_repo_stats(
 ):
     from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
     from dagster._core.host_representation.external_data import (
+        ExternalAssetNode,
         ExternalDynamicPartitionsDefinitionData,
     )
 
@@ -469,15 +470,14 @@ def log_external_repo_stats(
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
-    def _get_num_dynamic_partitioned_assets(external_asset_nodes) -> int:
+    def _get_num_dynamic_partitioned_assets(
+        external_asset_nodes: Sequence[ExternalAssetNode],
+    ) -> int:
         return sum(
-            [
-                1
-                if asset.partitions_def_data
-                and isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData)
-                else 0
-                for asset in external_asset_nodes
-            ]
+            1
+            for asset in external_asset_nodes
+            if asset.partitions_def_data
+            and isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData)
         )
 
     if _get_instance_telemetry_enabled(instance):
@@ -524,6 +524,7 @@ def log_repo_stats(
     pipeline: Optional[IPipeline] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.partition import DynamicPartitionsDefinition
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -531,13 +532,12 @@ def log_repo_stats(
     check.opt_inst_param(pipeline, "pipeline", IPipeline)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
-    def _get_num_dynamic_partitioned_assets(asset_defs) -> int:
+    def _get_num_dynamic_partitioned_assets(asset_defs: Sequence[AssetsDefinition]) -> int:
         return sum(
             1
-            if assets_def.partitions_def
-            and isinstance(assets_def.partitions_def, DynamicPartitionsDefinition)
-            else 0
-            for assets_def in asset_defs
+            for asset in asset_defs
+            if asset.partitions_def
+            and isinstance(asset.partitions_def, DynamicPartitionsDefinition)
         )
 
     if _get_instance_telemetry_enabled(instance):
