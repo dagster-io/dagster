@@ -23,11 +23,12 @@ from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessConstraint
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
+from dagster._utils.schedules import cron_string_iterator
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
@@ -493,97 +494,65 @@ def determine_asset_partitions_to_reconcile(
     )
 
 
-def get_freshness_constraints_by_key(
-    data_time_resolver: "CachingDataTimeResolver",
-    asset_graph: AssetGraph,
-    plan_window_start: datetime.datetime,
-    plan_window_end: datetime.datetime,
-) -> Mapping[AssetKey, AbstractSet[FreshnessConstraint]]:
-    # a dictionary mapping each asset to a set of constraints that must be satisfied about the data
-    # times of its upstream assets
-    constraints_by_key: Dict[AssetKey, AbstractSet[FreshnessConstraint]] = defaultdict(set)
+def get_execution_period_for_policy(
+    freshness_policy: FreshnessPolicy,
+    effective_data_time: Optional[datetime.datetime],
+    evaluation_time: datetime.datetime,
+) -> pendulum.Period:
+    if effective_data_time is None:
+        return pendulum.Period(start=evaluation_time, end=evaluation_time)
 
-    # for each asset with a FreshnessPolicy, get all unsolved constraints for the given time window
-    has_freshness_policy = False
-    for key, freshness_policy in asset_graph.freshness_policies_by_key.items():
-        # TODO: generate constraints for partitioned assets. For now, the alternative reconciliation
-        # logic will handle them.
-        if freshness_policy is None or asset_graph.is_partitioned(key):
-            continue
-        has_freshness_policy = True
-        upstream_keys = asset_graph.get_non_source_roots(key)
-        constraints_by_key[key] = freshness_policy.constraints_for_time_window(
-            window_start=plan_window_start,
-            window_end=plan_window_end,
-            upstream_keys=frozenset(upstream_keys),
+    if freshness_policy.cron_schedule:
+        tick_iterator = cron_string_iterator(
+            start_timestamp=evaluation_time.timestamp(),
+            cron_string=freshness_policy.cron_schedule,
+            execution_timezone=freshness_policy.cron_schedule_timezone,
         )
 
-    # no freshness policies, so don't bother with constraints
-    if not has_freshness_policy:
-        return {}
+        while True:
+            # find the next tick tick that requires data after the current effective data time
+            # (usually, this will be the next tick)
+            tick = next(tick_iterator)
+            required_data_time = tick - freshness_policy.maximum_lag_delta
+            if effective_data_time is None or effective_data_time < required_data_time:
+                return pendulum.Period(start=required_data_time, end=tick)
 
-    # propagate constraints upwards through the graph
-    #
-    # we ignore whether or not the constraint we're propagating corresponds to an asset which
-    # is actually upstream of the asset we're operating on, as we'll filter those invalid
-    # constraints out in the next step, and it's expensive to calculate if a given asset is
-    # upstream of another asset.
-    for level in reversed(asset_graph.toposort_asset_keys()):
-        for key in level:
-            if asset_graph.is_source(key):
-                continue
-            for upstream_key in asset_graph.get_parents(key):
-                # pass along all of your constraints to your parents
-                constraints_by_key[upstream_key] |= constraints_by_key[key]
-    return constraints_by_key
+    else:
+        return pendulum.Period(
+            # we don't want to execute this too frequently
+            start=effective_data_time + 0.9 * freshness_policy.maximum_lag_delta,
+            end=max(effective_data_time + freshness_policy.maximum_lag_delta, evaluation_time),
+        )
 
 
-def get_execution_time_window_for_constraints(
-    constraints: AbstractSet[FreshnessConstraint],
-    current_data_time: Optional[datetime.datetime],
-    in_progress_data_time: Optional[datetime.datetime],
-    failed_data_time: Optional[datetime.datetime],
-    expected_data_time: Optional[datetime.datetime],
-) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+def get_execution_period_for_policies(
+    policies: AbstractSet[FreshnessPolicy],
+    effective_data_time: Optional[datetime.datetime],
+    evaluation_time: datetime.datetime,
+) -> Optional[pendulum.Period]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    currently_executable = False
-    execution_window_start = None
-    execution_window_end = None
-    min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+    merged_period = None
+    for period in sorted(
+        (
+            get_execution_period_for_policy(policy, effective_data_time, evaluation_time)
+            for policy in policies
+        ),
+        # sort execution periods by most pressing
+        key=lambda period: period.end,
+    ):
+        if merged_period is None:
+            merged_period = period
+        elif period.start <= merged_period.end:
+            merged_period = pendulum.Period(
+                start=max(period.start, merged_period.start),
+                end=period.end,
+            )
+        else:
+            break
 
-    for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-        if not (
-            # ensure that this constraint is not satisfied by the current state of the data and
-            # will not be satisfied once all in progress runs complete, and was not intended to
-            # be satisfied by a run that failed
-            (current_data_time or min_dt) >= constraint.required_data_time
-            or (in_progress_data_time or min_dt) >= constraint.required_data_time
-            or (failed_data_time or min_dt) >= constraint.required_data_time
-        ):
-            # for this constraint, if all required data times will be satisfied by an execution
-            # on this tick, it is valid to execute this asset
-            if (expected_data_time or min_dt) >= constraint.required_data_time:
-                currently_executable = True
-
-            # you can solve this constraint within the existing execution window
-            if execution_window_end is None or constraint.required_data_time < execution_window_end:
-                execution_window_start = max(
-                    execution_window_start or constraint.required_data_time,
-                    constraint.required_data_time,
-                )
-                execution_window_end = min(
-                    execution_window_end or constraint.required_by_time,
-                    constraint.required_by_time,
-                )
-            else:
-                break
-
-    if not currently_executable:
-        return None, execution_window_end
-
-    return execution_window_start, execution_window_end
+    return merged_period
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
@@ -597,19 +566,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-    # look within a 12-hour time window to combine future runs together
-    current_time = pendulum.now(tz=pendulum.UTC)
-    plan_window_start = current_time
-    plan_window_end = plan_window_start + datetime.timedelta(hours=12)
-
-    # get a set of constraints that must be satisfied for each key
-    constraints_by_key = get_freshness_constraints_by_key(
-        data_time_resolver, asset_graph, plan_window_start, plan_window_end
-    )
-
-    # no constraints, so exit early
-    if not constraints_by_key:
-        return (set(), set())
+    evaluation_time = pendulum.now(tz=pendulum.UTC)
 
     # get the set of asset keys we're allowed to execute
     target_asset_keys = target_asset_selection.resolve(asset_graph)
@@ -620,62 +577,51 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
     for level in asset_graph.toposort_asset_keys():
         for key in level:
-            if asset_graph.is_source(key):
-                continue
-            # no need to evaluate this key, as it has no constraints
-            constraints = constraints_by_key[key]
-            if not constraints:
+            if asset_graph.is_source(key) or not asset_graph.get_downstream_freshness_policies(
+                asset_key=key
+            ):
                 continue
 
             # figure out the current contents of this asset with respect to its constraints
             current_data_time = data_time_resolver.get_current_data_time(key)
 
-            upstream_expected_data_times = {
-                expected_data_time_by_key.get(parent_key)
-                for parent_key in asset_graph.get_parents(key)
-                if not asset_graph.is_source(parent_key)
-            }
-            expected_data_time: Optional[datetime.datetime] = (
+            # figure out the expected data time of this asset if it were to be executed on this tick
+            expected_data_time = min(
                 (
-                    None
-                    if None in upstream_expected_data_times
-                    else min(cast(AbstractSet[datetime.datetime], upstream_expected_data_times))
-                )
-                if asset_graph.has_non_source_parents(key)
-                else current_time
+                    cast(datetime.datetime, expected_data_time_by_key[k])
+                    for k in asset_graph.get_parents(key)
+                    if k in expected_data_time_by_key and expected_data_time_by_key[k] is not None
+                ),
+                default=evaluation_time,
             )
 
-            # should not execute if key is not targeted or previous run failed
-            if key not in target_asset_keys:
-                # cannot execute this asset, so if something consumes it, it should expect to
-                # recieve the current contents of the asset
-                execution_window_start = None
-            else:
-                # this key will be updated eventually
-                if constraints:
-                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
-
+            if key in target_asset_keys:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_time = data_time_resolver.get_in_progress_data_time(
-                    key, current_time
+                    key, evaluation_time
                 )
 
                 # calculate the data times you would have expected if the most recent run succeeded
                 failed_data_time = data_time_resolver.get_ignored_failure_data_time(key)
 
-                # figure out a time window that you can execute this asset within to solve a maximum
-                # number of constraints
-                (
-                    execution_window_start,
-                    _,
-                ) = get_execution_time_window_for_constraints(
-                    constraints=constraints,
-                    current_data_time=current_data_time,
-                    in_progress_data_time=in_progress_data_time,
-                    failed_data_time=failed_data_time,
-                    expected_data_time=expected_data_time,
+                effective_data_time = max(
+                    filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
+                    default=None,
                 )
+
+                # figure out a time period that you can execute this asset within to solve a maximum
+                # number of constraints
+                execution_period = get_execution_period_for_policies(
+                    policies=asset_graph.get_downstream_freshness_policies(asset_key=key),
+                    effective_data_time=effective_data_time,
+                    evaluation_time=evaluation_time,
+                )
+                if execution_period:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
+
+            else:
+                execution_period = None
 
             # a key may already be in to_materialize by the time we get here if a required
             # neighbor was selected to be updated
@@ -683,9 +629,10 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             if asset_key_partition_key in to_materialize:
                 expected_data_time_by_key[key] = expected_data_time
             elif (
-                # this key should be updated on this tick, as we are within the allowable window
-                execution_window_start is not None
-                and execution_window_start <= current_time
+                execution_period is not None
+                and execution_period.start <= evaluation_time
+                and expected_data_time is not None
+                and expected_data_time >= execution_period.start
             ):
                 to_materialize.add(asset_key_partition_key)
                 expected_data_time_by_key[key] = expected_data_time

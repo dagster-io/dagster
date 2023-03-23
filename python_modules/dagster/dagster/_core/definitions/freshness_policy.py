@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional
 
 import pendulum
 
@@ -8,7 +8,6 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.schedules import (
-    cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
@@ -148,62 +147,6 @@ class FreshnessPolicy(
     @property
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)
-
-    def constraints_for_time_window(
-        self,
-        window_start: datetime.datetime,
-        window_end: datetime.datetime,
-        upstream_keys: FrozenSet[AssetKey],
-    ) -> AbstractSet[FreshnessConstraint]:
-        """For a given time window, calculate a set of FreshnessConstraints that this asset must
-        satisfy.
-
-        Args:
-            window_start (datetime): The start time of the window that constraints will be
-                calculated for. Generally, this is the current time.
-            window_start (datetime): The end time of the window that constraints will be
-                calculated for.
-            upstream_keys (FrozenSet[AssetKey]): The relevant upstream keys for this policy.
-        """
-        constraints = set()
-
-        # get an iterator of times to evaluate these constraints at
-        if self.cron_schedule:
-            constraint_ticks = cron_string_iterator(
-                start_timestamp=window_start.timestamp(),
-                cron_string=self.cron_schedule,
-                execution_timezone=self.cron_schedule_timezone,
-            )
-        else:
-            # this constraint must be satisfied at all points in time, so generate a series of
-            # many constraints (10 per maximum lag window)
-            period = pendulum.period(pendulum.instance(window_start), pendulum.instance(window_end))
-            # old versions of pendulum return a list, so ensure this is an iterator
-            constraint_ticks = iter(
-                period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
-            )
-
-        # iterate over each schedule tick in the provided time window
-        evaluation_tick = next(constraint_ticks, None)
-        while evaluation_tick is not None:
-            required_data_time = evaluation_tick - self.maximum_lag_delta
-            required_by_time = evaluation_tick
-
-            constraints.add(
-                FreshnessConstraint(
-                    asset_keys=upstream_keys,
-                    required_data_time=required_data_time,
-                    required_by_time=required_by_time,
-                )
-            )
-
-            evaluation_tick = next(constraint_ticks, None)
-            if evaluation_tick is None or evaluation_tick > window_end:
-                break
-            # fallback if the user selects a very small maximum_lag_minutes value
-            if len(constraints) > 100:
-                break
-        return constraints
 
     def minutes_late(
         self,
