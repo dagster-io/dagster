@@ -174,7 +174,7 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
 # This and a set of shared props helps implement a de facto mixin for
 # Inheritance is quite difficult and counterintuitive in namedtuple land, so went with this scheme
 # instead.
-def _check_solid_def_header_args(
+def _check_node_def_header_args(
     name: str,
     input_def_snaps: Sequence[InputDefSnap],
     output_def_snaps: Sequence[OutputDefSnap],
@@ -234,7 +234,7 @@ class GraphDefSnap(
             output_mapping_snaps=check.sequence_param(
                 output_mapping_snaps, "output_mapping_snaps", of_type=OutputMappingSnap
             ),
-            **_check_solid_def_header_args(
+            **_check_node_def_header_args(
                 name,
                 input_def_snaps,
                 output_def_snaps,
@@ -281,7 +281,7 @@ class OpDefSnap(
             required_resource_keys=check.sequence_param(
                 required_resource_keys, "required_resource_keys", str
             ),
-            **_check_solid_def_header_args(
+            **_check_node_def_header_args(
                 name,
                 input_def_snaps,
                 output_def_snaps,
@@ -349,14 +349,14 @@ def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDef
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
     return NodeDefinitionsSnapshot(
-        solid_def_snaps=solid_def_snaps,
+        op_def_snaps=solid_def_snaps,
         # update when snapshot renames happen
-        composite_solid_def_snaps=graph_def_snaps,
+        graph_def_snaps=graph_def_snaps,
     )
 
 
-def build_graph_def_snap(graph_def):
-    check.inst_param(graph_def, "comp_solid_def", GraphDefinition)
+def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
+    check.inst_param(graph_def, "graph_def", GraphDefinition)
     return GraphDefSnap(
         name=graph_def.name,
         input_def_snaps=list(map(build_input_def_snap, graph_def.input_defs)),
@@ -376,8 +376,8 @@ def build_graph_def_snap(graph_def):
     )
 
 
-def build_op_def_snap(op_def):
-    check.inst_param(op_def, "solid_def", OpDefinition)
+def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
+    check.inst_param(op_def, "op_def", OpDefinition)
     return OpDefSnap(
         name=op_def.name,
         input_def_snaps=list(map(build_input_def_snap, op_def.input_defs)),
@@ -391,29 +391,21 @@ def build_op_def_snap(op_def):
     )
 
 
-# shared impl for CompositeSolidDefSnap and SolidDefSnap
-def _get_input_snap(solid_def: Union[GraphDefSnap, OpDefSnap], name: str) -> InputDefSnap:
+# shared impl for GraphDefSnap and OpDefSnap
+def _get_input_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> InputDefSnap:
     check.str_param(name, "name")
-    for inp in solid_def.input_def_snaps:
+    for inp in node_def.input_def_snaps:
         if inp.name == name:
             return inp
 
-    check.failed(
-        "Could not find input {input_name} in solid def {solid_def_name}".format(
-            input_name=name, solid_def_name=solid_def.name
-        )
-    )
+    check.failed(f"Could not find input {name} in op def {node_def.name}")
 
 
-# shared impl for CompositeSolidDefSnap and SolidDefSnap
-def _get_output_snap(solid_def: Union[GraphDefSnap, OpDefSnap], name: str) -> OutputDefSnap:
+# shared impl for GraphDefSnap and OpDefSnap
+def _get_output_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> OutputDefSnap:
     check.str_param(name, "name")
-    for out in solid_def.output_def_snaps:
+    for out in node_def.output_def_snaps:
         if out.name == name:
             return out
 
-    check.failed(
-        "Could not find output {output_name} in solid def {solid_def_name}".format(
-            output_name=name, solid_def_name=solid_def.name
-        )
-    )
+    check.failed(f"Could not find output {name} in solid def {node_def.name}")
