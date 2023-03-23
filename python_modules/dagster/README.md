@@ -1,7 +1,7 @@
 <div align="center">
   <!-- Note: Do not try adding the dark mode version here with the `picture` element, it will break formatting in PyPI -->
   <a target="_blank" href="https://dagster.io" style="background:none">
-    <img alt="dagster logo" src="docs/dagster-readme-header.svg" width="auto" height="100%">
+    <img alt="dagster logo" src=".github/dagster-readme-header.svg" width="auto" height="100%">
   </a>
 <p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
@@ -92,7 +92,7 @@ You can find the full Dagster documentation [here](https://docs.dagster.io), inc
 ## Key Features:
 
   <p align="center">
-    <img width="100%" alt="image" src="key-features-cards.svg">
+    <img width="100%" alt="image" src=".github/key-features-cards.svg">
   </p>
 
 ### Dagster as a productivity platform
@@ -113,7 +113,7 @@ Dagster provides a growing library of integrations for today’s most popular da
 <br/>
 <p align="center">
     <a target="_blank" href="https://dagster.io/integrations" style="background:none">
-        <img width="100%" alt="image" src="docs/integrations-bar-for-readme.png">
+        <img width="100%" alt="image" src=".github/integrations-bar-for-readme.png">
     </a>
 </p>
 
