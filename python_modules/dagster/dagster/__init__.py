@@ -267,7 +267,7 @@ from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
-    MultiPartitionsMapping as MultiPartitionsMapping,
+    MultiPartitionMapping as MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
     SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,

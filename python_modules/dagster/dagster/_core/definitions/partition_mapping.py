@@ -559,18 +559,15 @@ class DimensionMapping(
     NamedTuple(
         "_DimensionMapping",
         [
-            ("upstream_dimension_name", str),
             ("downstream_dimension_name", str),
             ("partition_mapping", PartitionMapping),
         ],
     )
 ):
     """
-    Defines an explicit correspondence between one dimension of a MultiPartitionsDefinition
-    and one dimension of another MultiPartitionsDefinition.
+    TODO update docstring
 
     Args:
-        upstream_dimension_name (str): The name of the dimension in the upstream MultiPartitionsDefinition.
         downstream_dimension_name (str): The name of the dimension in the downstream MultiPartitionsDefinition.
         partition_mapping (PartitionMapping): The partition mapping object used to calculate
             the downstream dimension partitions from the upstream dimension partitions and vice versa.
@@ -578,15 +575,11 @@ class DimensionMapping(
 
     def __new__(
         cls,
-        upstream_dimension_name: str,
         downstream_dimension_name: str,
         partition_mapping: PartitionMapping,
     ):
         return super(DimensionMapping, cls).__new__(
             cls,
-            upstream_dimension_name=check.str_param(
-                upstream_dimension_name, "upstream_dimension_name"
-            ),
             downstream_dimension_name=check.str_param(
                 downstream_dimension_name, "downstream_dimension_name"
             ),
@@ -598,9 +591,12 @@ class DimensionMapping(
 
 @experimental
 @whitelist_for_serdes
-class MultiPartitionsMapping(
+class MultiPartitionMapping(
     PartitionMapping,
-    NamedTuple("_MultiPartitionMapping", [("dimension_mappings", Sequence[DimensionMapping])]),
+    NamedTuple(
+        "_MultiPartitionMapping",
+        [("downstream_mappings_by_upstream_dimension", Mapping[str, DimensionMapping])],
+    ),
 ):
     """
     Defines a correspondence between two MultiPartitionsDefinitions.
@@ -613,30 +609,19 @@ class MultiPartitionsMapping(
 
 
     Args:
-        dimension_mappings (Sequence[DimensionMapping]): A list of DimensionMappings, each of which
+        downstream_mappings_by_upstream_dimension (Mapping[str, DimensionMapping]): A list of DimensionMappings, each of which
             defines an explicit correspondence between one dimension of the upstream MultiPartitionsDefinition
             and one dimension of the downstream MultiPartitionsDefinition.
     """
 
-    def __new__(cls, dimension_mappings: Sequence[DimensionMapping]):
-        upstream_dimension_names = set()
-        downstream_dimension_names = set()
-        for dimension_mapping in dimension_mappings:
-            check.invariant(
-                dimension_mapping.upstream_dimension_name not in upstream_dimension_names,
-                "upstream_dimension_name must be unique in dimension_mappings",
-            )
-            check.invariant(
-                dimension_mapping.downstream_dimension_name not in downstream_dimension_names,
-                "downstream_dimension_name must be unique in dimension_mappings",
-            )
-            upstream_dimension_names.add(dimension_mapping.upstream_dimension_name)
-            downstream_dimension_names.add(dimension_mapping.downstream_dimension_name)
-
-        return super(MultiPartitionsMapping, cls).__new__(
+    def __new__(cls, downstream_mappings_by_upstream_dimension: Mapping[str, DimensionMapping]):
+        return super(MultiPartitionMapping, cls).__new__(
             cls,
-            dimension_mappings=check.list_param(
-                dimension_mappings, "dimension_mappings", of_type=DimensionMapping
+            downstream_mappings_by_upstream_dimension=check.mapping_param(
+                downstream_mappings_by_upstream_dimension,
+                "downstream_mappings_by_upstream_dimension",
+                key_type=str,
+                value_type=DimensionMapping,
             ),
         )
 
@@ -666,38 +651,23 @@ class MultiPartitionsMapping(
             for partitions_def in (upstream_partitions_def, downstream_partitions_def)
         ):
             check.failed(
-                "Both partitions defs provided to a MultiPartitionsMapping must be"
-                " multi-partitioned"
+                "Both partitions defs provided to a MultiPartitionMapping must be multi-partitioned"
             )
 
-        upstream_dimension_names = [
+        upstream_dimension_names = {
             dim.name
             for dim in cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
-        ]
-        downstream_dimension_names = [
+        }
+        downstream_dimension_names = {
             dim.name
             for dim in cast(MultiPartitionsDefinition, downstream_partitions_def).partitions_defs
-        ]
-        if len(upstream_dimension_names) != len(set(upstream_dimension_names)) or len(
-            downstream_dimension_names
-        ) != len(set(downstream_dimension_names)):
-            raise DagsterInvalidDefinitionError(
-                "A dimension name cannot be specified in more than one DimensionMapping in a"
-                " MultiPartitionsMapping."
-            )
+        }
 
-        if len(upstream_dimension_names) != len(
-            cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
-        ) or len(downstream_dimension_names) != len(
-            cast(MultiPartitionsDefinition, downstream_partitions_def).partitions_defs
-        ):
-            raise DagsterInvalidDefinitionError(
-                "Each dimension in the upstream and downstream partitions defs must be mapped to "
-                "exactly one dimension in the other partitions def."
-            )
-
-        for dimension_mapping in self.dimension_mappings:
-            if dimension_mapping.upstream_dimension_name not in upstream_dimension_names:
+        for (
+            upstream_dimension_name,
+            dimension_mapping,
+        ) in self.downstream_mappings_by_upstream_dimension.items():
+            if upstream_dimension_name not in upstream_dimension_names:
                 check.failed(
                     "Dimension mapping has an upstream dimension name that is not in the upstream "
                     "partitions def"
@@ -707,7 +677,8 @@ class MultiPartitionsMapping(
                     "Dimension mapping has a downstream dimension name that is not in the"
                     " downstream partitions def"
                 )
-            upstream_dimension_names.remove(dimension_mapping.upstream_dimension_name)
+
+            upstream_dimension_names.remove(upstream_dimension_name)
             downstream_dimension_names.remove(dimension_mapping.downstream_dimension_name)
 
         check.invariant(
@@ -764,11 +735,11 @@ class MultiPartitionsMapping(
             # dimension names of a_partitions_def to the corresponding dependent dimensions of
             # b_partitions_def
             a_dim_to_dependent_b_dim = {
-                dimension_mapping.upstream_dimension_name: (
+                upstream_dim: (
                     dimension_mapping.downstream_dimension_name,
                     dimension_mapping,
                 )
-                for dimension_mapping in self.dimension_mappings
+                for upstream_dim, dimension_mapping in self.downstream_mappings_by_upstream_dimension.items()
             }
 
             for dimension_name, keys in a_partition_keys_by_dimension.items():
@@ -792,10 +763,10 @@ class MultiPartitionsMapping(
             # b_partitions_def
             a_dim_to_dependency_b_dim = {
                 dimension_mapping.downstream_dimension_name: (
-                    dimension_mapping.upstream_dimension_name,
+                    upstream_dim,
                     dimension_mapping,
                 )
-                for dimension_mapping in self.dimension_mappings
+                for upstream_dim, dimension_mapping in self.downstream_mappings_by_upstream_dimension.items()
             }
 
             for dimension_name, keys in a_partition_keys_by_dimension.items():
@@ -1089,5 +1060,5 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
         MultiToSingleDimensionPartitionMapping,
-        MultiPartitionsMapping,
+        MultiPartitionMapping,
     )
