@@ -5,6 +5,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     extract_data_provenance_from_entry,
@@ -25,7 +26,10 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -266,6 +270,16 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
         return cast(OpDefinition, self.op.definition)
+
+    @public
+    @property
+    def assets_def(self) -> AssetsDefinition:
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an assets definition."
+            )
+        return assets_def
 
     @public
     @property
