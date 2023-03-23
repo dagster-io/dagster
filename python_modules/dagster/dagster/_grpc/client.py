@@ -190,12 +190,12 @@ class DagsterGrpcClient:
 
     def ping(self, echo: str):
         check.str_param(echo, "echo")
-        res = self._query("Ping", api_pb2.PingRequest, echo=echo)  # type: ignore
+        res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def heartbeat(self, echo: str = ""):
         check.str_param(echo, "echo")
-        res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)  # type: ignore
+        res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def streaming_ping(self, sequence_length: int, echo: str):
@@ -204,7 +204,7 @@ class DagsterGrpcClient:
 
         for res in self._streaming_query(
             "StreamingPing",
-            api_pb2.StreamingPingRequest,  # type: ignore
+            api_pb2.StreamingPingRequest,
             sequence_length=sequence_length,
             echo=echo,
         ):
@@ -214,7 +214,7 @@ class DagsterGrpcClient:
             }
 
     def get_server_id(self, timeout: int = DEFAULT_GRPC_TIMEOUT) -> str:
-        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)  # type: ignore
+        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs):
@@ -223,7 +223,7 @@ class DagsterGrpcClient:
         )
         res = self._query(
             "ExecutionPlanSnapshot",
-            api_pb2.ExecutionPlanSnapshotRequest,  # type: ignore
+            api_pb2.ExecutionPlanSnapshotRequest,
             serialized_execution_plan_snapshot_args=serialize_value(execution_plan_snapshot_args),
         )
         return res.serialized_execution_plan_snapshot
@@ -312,7 +312,7 @@ class DagsterGrpcClient:
 
         res = self._query(
             "ExternalRepository",
-            api_pb2.ExternalRepositoryRequest,  # type: ignore
+            api_pb2.ExternalRepositoryRequest,
             # rename this param name
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
@@ -333,7 +333,7 @@ class DagsterGrpcClient:
 
         return self._query(
             "ExternalJob",
-            api_pb2.ExternalJobRequest,  # type: ignore
+            api_pb2.ExternalJobRequest,
             serialized_repository_origin=serialize_value(external_repository_origin),
             job_name=job_name,
         )
@@ -345,7 +345,7 @@ class DagsterGrpcClient:
     ):
         for res in self._streaming_query(
             "StreamingExternalRepository",
-            api_pb2.ExternalRepositoryRequest,  # type: ignore
+            api_pb2.ExternalRepositoryRequest,
             # Rename parameter
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
@@ -404,7 +404,7 @@ class DagsterGrpcClient:
         check.str_param(notebook_path, "notebook_path")
         res = self._query(
             "ExternalNotebookData",
-            api_pb2.ExternalNotebookDataRequest,  # type: ignore
+            api_pb2.ExternalNotebookDataRequest,
             notebook_path=notebook_path,
         )
         return res.content
@@ -441,7 +441,7 @@ class DagsterGrpcClient:
 
         res = self._query(
             "CanCancelExecution",
-            api_pb2.CanCancelExecutionRequest,  # type: ignore
+            api_pb2.CanCancelExecutionRequest,
             timeout=timeout,
             serialized_can_cancel_execution_request=serialize_value(can_cancel_execution_request),
         )
@@ -455,7 +455,7 @@ class DagsterGrpcClient:
             try:
                 res = self._query(
                     "StartRun",
-                    api_pb2.StartRunRequest,  # type: ignore
+                    api_pb2.StartRunRequest,
                     serialized_execute_run_args=serialize_value(execute_run_args),
                 )
                 return res.serialized_start_run_result

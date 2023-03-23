@@ -371,23 +371,23 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.definitions_by_name[external_repo_origin.repository_name]
 
-    def Ping(self, request, _context) -> api_pb2.PingReply:  # type: ignore
+    def Ping(self, request, _context) -> api_pb2.PingReply:
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)  # type: ignore
+        return api_pb2.PingReply(echo=echo)
 
-    def StreamingPing(self, request, _context) -> Iterator[api_pb2.StreamingPingEvent]:  # type: ignore
+    def StreamingPing(self, request, _context) -> Iterator[api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
         echo = request.echo
         for sequence_number in range(sequence_length):
-            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)  # type: ignore
+            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
-    def Heartbeat(self, request, _context) -> api_pb2.PingReply:  # type: ignore
+    def Heartbeat(self, request, _context) -> api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)  # type: ignore
+        return api_pb2.PingReply(echo=echo)
 
-    def GetServerId(self, _request, _context) -> api_pb2.GetServerIdReply:  # type:ignore
-        return api_pb2.GetServerIdReply(server_id=self._server_id)  # type: ignore
+    def GetServerId(self, _request, _context) -> api_pb2.GetServerIdReply:
+        return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context):
         execution_plan_args = deserialize_value(
@@ -406,9 +406,9 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
 
-    def ListRepositories(self, request, _context) -> api_pb2.ListRepositoriesReply:  # type: ignore
+    def ListRepositories(self, request, _context) -> api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
-            return api_pb2.ListRepositoriesReply(  # type: ignore
+            return api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(
                     self._serializable_load_error
                 )
@@ -426,16 +426,16 @@ class DagsterApiServer(DagsterApiServicer):
             dagster_library_versions=DagsterLibraryRegistry.get(),
         )
 
-        return api_pb2.ListRepositoriesReply(  # type: ignore
+        return api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response_or_error=serialize_value(response)
         )
 
-    def ExternalPartitionNames(self, request, _context) -> api_pb2.ExternalPartitionNamesReply:  # type: ignore
+    def ExternalPartitionNames(self, request, _context) -> api_pb2.ExternalPartitionNamesReply:
         partition_names_args = deserialize_value(
             request.serialized_partition_names_args,
             PartitionNamesArgs,
         )
-        return api_pb2.ExternalPartitionNamesReply(  # type: ignore
+        return api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialize_value(
                 get_partition_names(
                     self._get_repo_for_origin(partition_names_args.repository_origin),
@@ -444,10 +444,10 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def ExternalNotebookData(self, request, _context) -> api_pb2.ExternalNotebookDataReply:  # type: ignore
+    def ExternalNotebookData(self, request, _context) -> api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
-        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))  # type: ignore
+        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
         args = deserialize_value(
@@ -486,7 +486,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
-    def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:  # type: ignore
+    def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:
         partition_args = deserialize_value(request.serialized_partition_args, PartitionArgs)
 
         instance_ref = (
@@ -502,19 +502,19 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-        return api_pb2.ExternalPartitionTagsReply(  # type: ignore
+        return api_pb2.ExternalPartitionTagsReply(
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPipelineSubsetSnapshot(
         self, request: Any, _context
-    ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore
+    ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:
         pipeline_subset_snapshot_args = deserialize_value(
             request.serialized_pipeline_subset_snapshot_args,
             PipelineSubsetSnapshotArgs,
         )
 
-        return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore
+        return api_pb2.ExternalPipelineSubsetSnapshotReply(
             serialized_external_pipeline_subset_result=serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
@@ -551,7 +551,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
-    def ExternalJob(self, request, _context) -> api_pb2.ExternalJobReply:  # type: ignore
+    def ExternalJob(self, request, _context) -> api_pb2.ExternalJobReply:
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_origin,
@@ -560,9 +560,9 @@ class DagsterApiServer(DagsterApiServicer):
 
             job_def = self._get_repo_for_origin(repository_origin).get_pipeline(request.job_name)
             ser_job_data = serialize_value(external_pipeline_data_from_def(job_def))
-            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)  # type: ignore
+            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
-            return api_pb2.ExternalJobReply(  # type: ignore
+            return api_pb2.ExternalJobReply(
                 serialized_error=serialize_value(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
@@ -639,16 +639,16 @@ class DagsterApiServer(DagsterApiServicer):
 
         yield from self._split_serialized_data_into_chunk_events(serialized_sensor_data)
 
-    def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:  # type: ignore
+    def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:
         try:
             self._shutdown_once_executions_finish_event.set()
-            return api_pb2.ShutdownServerReply(  # type: ignore
+            return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
         except:
-            return api_pb2.ShutdownServerReply(  # type: ignore
+            return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
                         success=False,
@@ -687,7 +687,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def CanCancelExecution(self, request, _context) -> api_pb2.CanCancelExecutionReply:  # type: ignore
+    def CanCancelExecution(self, request, _context) -> api_pb2.CanCancelExecutionReply:
         can_cancel_execution_request = deserialize_value(
             request.serialized_can_cancel_execution_request,
             CanCancelExecutionRequest,
@@ -698,15 +698,15 @@ class DagsterApiServer(DagsterApiServicer):
                 run_id in self._executions and not self._termination_events[run_id].is_set()
             )
 
-        return api_pb2.CanCancelExecutionReply(  # type: ignore
+        return api_pb2.CanCancelExecutionReply(
             serialized_can_cancel_execution_result=serialize_value(
                 CanCancelExecutionResult(can_cancel=can_cancel)
             )
         )
 
-    def StartRun(self, request, _context) -> api_pb2.StartRunReply:  # type: ignore
+    def StartRun(self, request, _context) -> api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
-            return api_pb2.StartRunReply(  # type: ignore
+            return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -732,7 +732,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         except:
-            return api_pb2.StartRunReply(  # type: ignore
+            return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -810,7 +810,7 @@ class DagsterApiServer(DagsterApiServicer):
             with self._execution_lock:
                 self._clear_run(run_id)
 
-        return api_pb2.StartRunReply(  # type: ignore
+        return api_pb2.StartRunReply(
             serialized_start_run_result=serialize_value(
                 StartRunResult(
                     success=success,
@@ -829,9 +829,9 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentRuns(self, request, context) -> api_pb2.GetCurrentRunsReply:  # type: ignore
+    def GetCurrentRuns(self, request, context) -> api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
-            return api_pb2.GetCurrentRunsReply(  # type: ignore
+            return api_pb2.GetCurrentRunsReply(
                 serialized_current_runs=serialize_value(
                     GetCurrentRunsResult(
                         current_runs=list(self._executions.keys()), serializable_error_info=None
