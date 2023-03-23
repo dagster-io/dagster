@@ -342,7 +342,7 @@ def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDef
     graph_def_snaps = []
     for node_def in pipeline_def.all_node_defs:
         if isinstance(node_def, OpDefinition):
-            solid_def_snaps.append(build_core_solid_def_snap(node_def))
+            solid_def_snaps.append(build_op_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):
             graph_def_snaps.append(build_graph_def_snap(node_def))
         else:
@@ -376,17 +376,17 @@ def build_graph_def_snap(graph_def):
     )
 
 
-def build_core_solid_def_snap(solid_def):
-    check.inst_param(solid_def, "solid_def", OpDefinition)
+def build_op_def_snap(op_def):
+    check.inst_param(op_def, "solid_def", OpDefinition)
     return OpDefSnap(
-        name=solid_def.name,
-        input_def_snaps=list(map(build_input_def_snap, solid_def.input_defs)),
-        output_def_snaps=list(map(build_output_def_snap, solid_def.output_defs)),
-        description=solid_def.description,
-        tags=solid_def.tags,
-        required_resource_keys=sorted(list(solid_def.required_resource_keys)),
-        config_field_snap=snap_from_field("config", solid_def.config_field)
-        if solid_def.has_config_field
+        name=op_def.name,
+        input_def_snaps=list(map(build_input_def_snap, op_def.input_defs)),
+        output_def_snaps=list(map(build_output_def_snap, op_def.output_defs)),
+        description=op_def.description,
+        tags=op_def.tags,
+        required_resource_keys=sorted(list(op_def.required_resource_keys)),
+        config_field_snap=snap_from_field("config", op_def.config_field)
+        if op_def.has_config_field
         else None,
     )
 
