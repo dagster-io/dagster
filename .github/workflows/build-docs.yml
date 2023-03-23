@@ -4,7 +4,11 @@ on:
     branches:
       - master
       - 'release-*'
+    paths:
+      - docs/next/**
   pull_request:
+    paths:
+      - docs/next/**
 jobs:
   deploy:
     runs-on: ubuntu-latest

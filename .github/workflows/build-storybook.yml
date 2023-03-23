@@ -4,7 +4,11 @@ on:
     branches:
       - master
       - 'release-*'
+    paths:
+      - js_modules/dagit/packages/ui/**
   pull_request:
+    paths:
+      - js_modules/dagit/packages/ui/**
 jobs:
   deploy:
     runs-on: ubuntu-latest
