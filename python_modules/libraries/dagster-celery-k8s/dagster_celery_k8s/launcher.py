@@ -84,6 +84,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         labels=None,
         fail_pod_on_run_failure=None,
         job_namespace=None,
+        run_k8s_config=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -136,6 +137,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
         self.job_namespace = check.opt_str_param(job_namespace, "job_namespace", default="default")
+        self._run_k8s_config = check.opt_dict_param(run_k8s_config, "run_k8s_config")
 
         super().__init__()
 
