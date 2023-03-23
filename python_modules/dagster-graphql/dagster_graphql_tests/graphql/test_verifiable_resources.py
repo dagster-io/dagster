@@ -1,9 +1,7 @@
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_repository_selector,
     infer_resource_selector,
 )
-
 
 TOP_LEVEL_RESOURCE_QUERY = """
 query ResourceDetailsQuery($selector: ResourceSelector!) {
@@ -32,7 +30,7 @@ def test_fetch_top_level_resource_no_verification(definitions_graphql_context, s
     assert result.data["topLevelResourceDetailsOrError"]
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
-    assert my_resource["supportsVerification"] == False
+    assert my_resource["supportsVerification"] is False
 
     snapshot.assert_match(result.data)
 
@@ -50,6 +48,6 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
     assert result.data["topLevelResourceDetailsOrError"]
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
-    assert my_resource["supportsVerification"] == True
+    assert my_resource["supportsVerification"] is True
 
     snapshot.assert_match(result.data)

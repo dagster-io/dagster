@@ -1,13 +1,13 @@
 from contextlib import contextmanager
 
 from dagster import (
+    ConfigVerifiable,
     DagsterInstance,
     Definitions,
+    VerificationResult,
+    VerificationStatus,
     _check as check,
     asset,
-    ConfigVerifiable,
-    VerificationResult,
-    VerificationStatus
 )
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import ConfigurableResource
