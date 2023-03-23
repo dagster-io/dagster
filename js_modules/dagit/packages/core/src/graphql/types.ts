@@ -10185,6 +10185,7 @@ export const buildResourceDetails = (
           ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
+    isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
   };
 };
