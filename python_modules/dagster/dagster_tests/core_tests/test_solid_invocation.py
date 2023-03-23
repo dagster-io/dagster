@@ -1193,6 +1193,24 @@ def test_required_resource_keys_no_context_invocation():
         uses_resource_no_context(None)
 
 
+def test_assets_def_invocation():
+    @asset()
+    def my_asset(context):
+        assert context.assets_def == my_asset
+
+    @op
+    def non_asset_op(context):
+        context.assets_def
+
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
+        my_asset(context)
+
+        with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
+            non_asset_op(context)
+
+
 def test_partitions_time_window_asset_invocation():
     partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
 
