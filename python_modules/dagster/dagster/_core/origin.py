@@ -1,15 +1,16 @@
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
+
+from typing_extensions import Final
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
-from dagster._utils import frozenlist
 
-DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
+DEFAULT_DAGSTER_ENTRY_POINT: Final = ["dagster"]
 
 
-def get_python_environment_entry_point(executable_path: str) -> List[str]:
-    return frozenlist([executable_path, "-m", "dagster"])
+def get_python_environment_entry_point(executable_path: str) -> Sequence[str]:
+    return [executable_path, "-m", "dagster"]
 
 
 @whitelist_for_serdes
@@ -52,7 +53,7 @@ class RepositoryPythonOrigin(
             check.inst_param(code_pointer, "code_pointer", CodePointer),
             check.opt_str_param(container_image, "container_image"),
             (
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else None
             ),

@@ -71,7 +71,7 @@ from dagster._core.storage.tags import (
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import PrintFn, frozentags, traced
+from dagster._utils import PrintFn, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -1043,7 +1043,7 @@ class DagsterInstance(DynamicPartitionsStore):
         solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
-        tags: frozentags,
+        tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         pipeline_snapshot: Optional[PipelineSnapshot],
@@ -1057,7 +1057,10 @@ class DagsterInstance(DynamicPartitionsStore):
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
-                tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
+                tags = {
+                    **tags,
+                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat(),
+                }
 
         check.invariant(
             not (not pipeline_snapshot and execution_plan_snapshot),
@@ -1360,7 +1363,7 @@ class DagsterInstance(DynamicPartitionsStore):
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
-            tags=dict(validated_tags),  # type: ignore
+            tags=validated_tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
@@ -1479,7 +1482,7 @@ class DagsterInstance(DynamicPartitionsStore):
         mode: Optional[str],
         solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
-        tags: frozentags,
+        tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         pipeline_snapshot: Optional[PipelineSnapshot],

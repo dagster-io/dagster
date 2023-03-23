@@ -38,7 +38,6 @@ from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
@@ -961,9 +960,7 @@ class PartitionSetDefinition(Generic[T_cov]):
                 return
 
             selected_partitions = (
-                selector_result
-                if isinstance(selector_result, (frozenlist, list))
-                else [selector_result]
+                selector_result if isinstance(selector_result, list) else [selector_result]
             )
 
             check.is_list(selected_partitions, of_type=Partition)

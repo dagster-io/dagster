@@ -12,7 +12,6 @@ from dagster._check import (
     NotImplementedCheckError,
     ParameterCheckError,
 )
-from dagster._utils import frozendict, frozenlist
 
 
 @contextmanager
@@ -216,7 +215,6 @@ class AlsoWrong:
 
 DICT_TEST_CASES = [
     (dict(obj={}), True),
-    (dict(obj=frozendict()), True),
     (dict(obj={"a": 2}), True),
     (dict(obj=None), False),
     (dict(obj=0), False),
@@ -322,7 +320,6 @@ def test_opt_dict_param_with_type():
 def test_opt_dict_param():
     assert check.opt_dict_param(None, "opt_dict_param") == {}
     assert check.opt_dict_param({}, "opt_dict_param") == {}
-    assert check.opt_dict_param(frozendict(), "opt_dict_param") == {}
     ddict = {"a": 2}
     assert check.opt_dict_param(ddict, "opt_dict_param") == ddict
 
@@ -345,7 +342,6 @@ def test_opt_dict_param():
 def test_opt_nullable_dict_param():
     assert check.opt_nullable_dict_param(None, "opt_nullable_dict_param") is None
     assert check.opt_nullable_dict_param({}, "opt_nullable_dict_param") == {}
-    assert check.opt_nullable_dict_param(frozendict(), "opt_nullable_dict_param") == {}
     ddict = {"a": 2}
     assert check.opt_nullable_dict_param(ddict, "opt_nullable_dict_param") == ddict
 
@@ -776,7 +772,6 @@ def test_opt_inst_param():
 
 def test_list_param():
     assert check.list_param([], "list_param") == []
-    assert check.list_param(frozenlist(), "list_param") == []
 
     assert check.list_param(["foo"], "list_param", of_type=str) == ["foo"]
 
@@ -812,7 +807,6 @@ def test_opt_list_param():
     assert check.opt_list_param(None, "list_param") == []
     assert check.opt_list_param(None, "list_param", of_type=str) == []
     assert check.opt_list_param([], "list_param") == []
-    assert check.opt_list_param(frozenlist(), "list_param") == []
     obj_list = [1]
     assert check.list_param(obj_list, "list_param") == obj_list
     assert check.opt_list_param(["foo"], "list_param", of_type=str) == ["foo"]
@@ -852,7 +846,6 @@ def test_opt_typed_list_param():
 def test_opt_nullable_list_param():
     assert check.opt_nullable_list_param(None, "list_param") is None
     assert check.opt_nullable_list_param([], "list_param") == []
-    assert check.opt_nullable_list_param(frozenlist(), "list_param") == []
     obj_list = [1]
     assert check.opt_nullable_list_param(obj_list, "list_param") == obj_list
 

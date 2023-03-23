@@ -34,7 +34,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import make_readonly_value
+from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
@@ -62,7 +62,7 @@ class RepositoryLoadData(
     def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=make_readonly_value(
+            cached_data_by_key=(
                 check.mapping_param(
                     cached_data_by_key,
                     "cached_data_by_key",
@@ -71,6 +71,16 @@ class RepositoryLoadData(
                 )
             ),
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
+    # - `RepositoryLoadData` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class RepositoryDefinition:

@@ -10,7 +10,6 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
-from dagster._utils import frozentags
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -92,8 +91,10 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> frozentags:
-    valid_tags = {}
+def validate_tags(
+    tags: Optional[Mapping[str, Any]], allow_reserved_tags: bool = True
+) -> Mapping[str, str]:
+    valid_tags: Dict[str, str] = {}
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
             valid = False
@@ -118,14 +119,14 @@ def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -
                     )
                 )
 
-            valid_tags[key] = str_val
+            valid_tags[key] = str_val  # type: ignore  # (possible none)
         else:
             valid_tags[key] = value
 
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
 
-    return frozentags(valid_tags)
+    return valid_tags
 
 
 def validate_group_name(group_name: Optional[str]) -> str:
