@@ -1,8 +1,10 @@
 from dagster import asset
 
+
 @asset
 def topstory_ids():
     pass
+
 
 @asset
 def topstories():
