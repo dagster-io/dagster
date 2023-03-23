@@ -80,7 +80,7 @@ export const EnabledRunLogLevelsKey = 'EnabledRunLogLevels';
 
 export const validateLogLevels = (json: any) => {
   if (json === undefined || !Array.isArray(json)) {
-    return [];
+    return null;
   }
 
   const validLevels = new Set(Object.keys(LogLevel));
@@ -95,7 +95,8 @@ export function useQueryPersistedLogFilter(): [LogFilter, (updates: LogFilter) =
   const [storedLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
 
   const defaults = React.useMemo(() => {
-    return {...DefaultQuerystring, levels: levelsToQuery(storedLogLevels || DefaultLogLevels)};
+    const levels = storedLogLevels ?? DefaultLogLevels;
+    return {...DefaultQuerystring, levels: levelsToQuery(levels)};
   }, [storedLogLevels]);
 
   return useQueryPersistedState<LogFilter>({
