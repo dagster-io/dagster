@@ -68,12 +68,14 @@ Up until this point, you defined assets using the <PyObject object="asset" decor
 Managing one type of definition, such as assets, is easy. However, it can quickly become unruly as your project grows to have a variety of definitions (ex. schedules, jobs, sensors, etc.). Dagster provides a utility called the <PyObject object="Definitions" /> object. This <PyObject object="Definitions" /> object is used to combine all definitions into one.
 
 <Note>
-  The <PyObject object="Definitions" /> object is used to centralize all the definitions that are
-  inside a code location. A <i>Code Location</i> is a collection of related
-  definitions. For example, a code location can contain all the pipelines of a
-  data team, or it can be a separation between verticals such as marketing and
-  sales. A Dagster project/deployment can have multiple code locations. For more
-  on code locations and <PyObject object="Definitions" />, read the <a href="/concepts/code-locations">Code Locations</a> documentation.
+  The <PyObject object="Definitions" /> object is used to centralize all the
+  definitions that are inside a code location. A <i>Code Location</i> is a
+  collection of related definitions. For example, a code location can contain
+  all the pipelines of a data team, or it can be a separation between verticals
+  such as marketing and sales. A Dagster project/deployment can have multiple
+  code locations. For more on code locations and{" "}
+  <PyObject object="Definitions" />, read the{" "}
+  <a href="/concepts/code-locations">Code Locations</a> documentation.
 </Note>
 
 ---
@@ -133,7 +135,12 @@ height={968}
 />
 
 <Note>
-Schedules are just one way to start jobs. Jobs can also be run by using the CLI, a Python function, or the Dagit UI. Refer to the <a href="/concepts/ops-jobs-graphs/job-execution#executing-a-job">Jobs documentation</a> to learn more.
+  Schedules are just one way to start jobs. Jobs can also be run by using the
+  CLI, a Python function, or the Dagit UI. Refer to the{" "}
+  <a href="/concepts/ops-jobs-graphs/job-execution#executing-a-job">
+    Jobs documentation
+  </a>{" "}
+  to learn more.
 </Note>
 
 ### Other ways to automate your pipelines
