@@ -1680,3 +1680,23 @@ def fetch_flattened_time_window_ranges(
         )
 
     return flattened_time_window_statuses
+
+
+def has_one_dimension_time_window_partitioning(
+    partitions_def: PartitionsDefinition,
+) -> bool:
+    from .multi_dimensional_partitions import MultiPartitionsDefinition
+
+    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return True
+
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        time_window_dims = [
+            dim
+            for dim in partitions_def.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        if len(time_window_dims) == 1:
+            return True
+
+    return False

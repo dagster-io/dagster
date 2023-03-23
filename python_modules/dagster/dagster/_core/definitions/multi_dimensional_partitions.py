@@ -35,7 +35,7 @@ from .partition import (
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -407,6 +407,17 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return cast(
             TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
         ).timezone
+
+    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+        if not isinstance(partition_key, MultiPartitionKey):
+            partition_key = self.get_partition_key_from_str(partition_key)
+
+        time_window_dimension = self.time_window_dimension
+        return cast(
+            TimeWindowPartitionsDefinition, time_window_dimension.partitions_def
+        ).time_window_for_partition_key(
+            cast(MultiPartitionKey, partition_key).keys_by_dimension[time_window_dimension.name]
+        )
 
     def get_multipartition_keys_with_dimension_value(
         self,
