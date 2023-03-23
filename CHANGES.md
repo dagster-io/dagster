@@ -1,7 +1,13 @@
 # Changelog
 
+# 1.2.4 (core) / 0.18.4 (libraries)
+
+### Bugfixes
+
+- [ui] Fixed a bug where by default no log levels were selected in the run view.
 
 # 1.2.3 (core) / 0.18.3 (libraries)
+
 ### New
 
 - Jobs defined via `define_asset_job` now auto-infer their partitions definitions if not explicitly defined.
