@@ -5,6 +5,9 @@ from dagster import (
     Definitions,
     _check as check,
     asset,
+    ConfigVerifiable,
+    VerificationResult,
+    VerificationStatus
 )
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import ConfigurableResource
@@ -17,11 +20,14 @@ def my_asset():
     pass
 
 
-class MyResource(ConfigurableResource):
+class MyResource(ConfigurableResource, ConfigVerifiable):
     """My description."""
 
     a_string: str = "baz"
     an_unset_string: str = "defaulted"
+
+    def verify_config(self) -> VerificationResult:
+        return VerificationResult(VerificationStatus.SUCCESS, "foobar")
 
 
 class MyInnerResource(ConfigurableResource):
