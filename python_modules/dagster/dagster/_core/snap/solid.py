@@ -344,7 +344,7 @@ def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDef
         if isinstance(node_def, OpDefinition):
             solid_def_snaps.append(build_core_solid_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):
-            graph_def_snaps.append(build_composite_solid_def_snap(node_def))
+            graph_def_snaps.append(build_graph_def_snap(node_def))
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
@@ -355,24 +355,24 @@ def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDef
     )
 
 
-def build_composite_solid_def_snap(comp_solid_def):
-    check.inst_param(comp_solid_def, "comp_solid_def", GraphDefinition)
+def build_graph_def_snap(graph_def):
+    check.inst_param(graph_def, "comp_solid_def", GraphDefinition)
     return GraphDefSnap(
-        name=comp_solid_def.name,
-        input_def_snaps=list(map(build_input_def_snap, comp_solid_def.input_defs)),
-        output_def_snaps=list(map(build_output_def_snap, comp_solid_def.output_defs)),
-        description=comp_solid_def.description,
-        tags=comp_solid_def.tags,
+        name=graph_def.name,
+        input_def_snaps=list(map(build_input_def_snap, graph_def.input_defs)),
+        output_def_snaps=list(map(build_output_def_snap, graph_def.output_defs)),
+        description=graph_def.description,
+        tags=graph_def.tags,
         config_field_snap=snap_from_field(
-            "config", comp_solid_def.config_mapping.config_schema.as_field()
+            "config", graph_def.config_mapping.config_schema.as_field()
         )
-        if comp_solid_def.config_mapping
-        and comp_solid_def.config_mapping.config_schema
-        and comp_solid_def.config_mapping.config_schema.as_field()
+        if graph_def.config_mapping
+        and graph_def.config_mapping.config_schema
+        and graph_def.config_mapping.config_schema.as_field()
         else None,
-        dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(comp_solid_def),
-        input_mapping_snaps=list(map(build_input_mapping_snap, comp_solid_def.input_mappings)),
-        output_mapping_snaps=list(map(build_output_mapping_snap, comp_solid_def.output_mappings)),
+        dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(graph_def),
+        input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
+        output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
     )
 
 

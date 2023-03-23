@@ -2,7 +2,7 @@ from dagster import graph, op
 from dagster._core.snap import (
     DependencyStructureIndex,
     GraphDefSnap,
-    build_composite_solid_def_snap,
+    build_graph_def_snap,
 )
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -17,7 +17,7 @@ def test_noop_comp_solid_definition():
     def comp_graph():
         noop_op()
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
@@ -36,7 +36,7 @@ def test_basic_comp_solid_definition():
     def comp_graph():
         take_one(return_one())
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
@@ -61,7 +61,7 @@ def test_complex_comp_solid_definition():
     def comp_graph(this_number):
         take_many([return_one(), this_number, return_one.alias("return_one_also")()])
 
-    comp_solid_meta = build_composite_solid_def_snap(comp_graph)
+    comp_solid_meta = build_graph_def_snap(comp_graph)
 
     assert isinstance(comp_solid_meta, GraphDefSnap)
     assert deserialize_value(serialize_value(comp_solid_meta), GraphDefSnap) == comp_solid_meta
