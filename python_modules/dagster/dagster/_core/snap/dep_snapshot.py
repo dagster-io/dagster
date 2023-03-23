@@ -41,13 +41,13 @@ def build_solid_invocation_snap(
     )
 
 
-def build_dep_structure_snapshot_from_icontains_solids(
-    icontains_solids: GraphDefinition,
+def build_dep_structure_snapshot_from_graph_def(
+    graph_def: GraphDefinition,
 ) -> "DependencyStructureSnapshot":
-    check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
+    check.inst_param(graph_def, "graph_def", GraphDefinition)
     return DependencyStructureSnapshot(
         solid_invocation_snaps=[
-            build_solid_invocation_snap(icontains_solids, solid) for solid in icontains_solids.nodes
+            build_solid_invocation_snap(graph_def, node) for node in graph_def.nodes
         ]
     )
 

@@ -14,7 +14,7 @@ from dagster._core.snap.dep_snapshot import (
     DependencyStructureSnapshot,
     InputHandle,
     OutputHandleSnap,
-    build_dep_structure_snapshot_from_icontains_solids,
+    build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._legacy import pipeline
 from dagster._serdes import (
@@ -87,9 +87,7 @@ def test_noop_deps_snap():
     def noop_job():
         noop_op()
 
-    invocations = build_dep_structure_snapshot_from_icontains_solids(
-        noop_job.graph
-    ).solid_invocation_snaps
+    invocations = build_dep_structure_snapshot_from_graph_def(noop_job.graph).solid_invocation_snaps
     assert len(invocations) == 1
     assert isinstance(invocations[0], NodeInvocationSnap)
 
@@ -105,7 +103,7 @@ def test_two_invocations_deps_snap(snapshot):
         noop_op.alias("two")()
 
     index = DependencyStructureIndex(
-        build_dep_structure_snapshot_from_icontains_solids(two_solid_job.graph)
+        build_dep_structure_snapshot_from_graph_def(two_solid_job.graph)
     )
     assert index.get_invocation("one")
     assert index.get_invocation("two")
@@ -131,7 +129,7 @@ def test_basic_dep():
         passthrough(return_one())
 
     index = DependencyStructureIndex(
-        build_dep_structure_snapshot_from_icontains_solids(single_dep_job.graph)
+        build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     )
 
     assert index.get_invocation("return_one")
@@ -158,9 +156,7 @@ def test_basic_dep_fan_out(snapshot):
         passthrough.alias("passone")(return_one_result)
         passthrough.alias("passtwo")(return_one_result)
 
-    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(
-        single_dep_job.graph
-    )
+    dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("return_one")
@@ -207,7 +203,7 @@ def test_basic_fan_in(snapshot):
             ]
         )
 
-    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(fan_in_test.graph)
+    dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(fan_in_test.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("nothing_one")

@@ -18,7 +18,7 @@ from dagster._serdes import whitelist_for_serdes
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,
-    build_dep_structure_snapshot_from_icontains_solids,
+    build_dep_structure_snapshot_from_graph_def,
 )
 
 
@@ -370,7 +370,7 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         and graph_def.config_mapping.config_schema
         and graph_def.config_mapping.config_schema.as_field()
         else None,
-        dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(graph_def),
+        dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
     )
