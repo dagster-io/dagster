@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional
 
 import pendulum
 
