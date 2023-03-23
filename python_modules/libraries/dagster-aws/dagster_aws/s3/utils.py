@@ -45,7 +45,7 @@ def construct_s3_client(
     check.bool_param(use_unsigned_session, "use_unsigned_session")
     check.opt_str_param(profile_name, "profile_name")
     check.bool_param(use_ssl, "use_ssl")
-    check.bool_param(verify, "verify")
+    check.opt_str_param(verify, "verify")
     check.opt_str_param(profile_name, "aws_access_key_id")
     check.opt_str_param(profile_name, "aws_secret_access_key")
     check.opt_str_param(profile_name, "aws_session_token")
