@@ -47,8 +47,8 @@ from .dep_snapshot import (
 from .mode import ModeDefSnap, build_mode_def_snap
 from .solid import (
     GraphDefSnap,
-    NodeDefinitionsSnapshot,
     NodeDefSnap,
+    NodeDefsSnap,
     build_node_definitions_snapshot,
 )
 
@@ -93,7 +93,7 @@ class PipelineSnapshot(
             ("tags", Mapping[str, Any]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
-            ("solid_definitions_snapshot", NodeDefinitionsSnapshot),
+            ("solid_definitions_snapshot", NodeDefsSnap),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
             ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
@@ -109,7 +109,7 @@ class PipelineSnapshot(
         tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
-        solid_definitions_snapshot: NodeDefinitionsSnapshot,
+        solid_definitions_snapshot: NodeDefsSnap,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
@@ -130,7 +130,7 @@ class PipelineSnapshot(
                 DagsterTypeNamespaceSnapshot,
             ),
             solid_definitions_snapshot=check.inst_param(
-                solid_definitions_snapshot, "solid_definitions_snapshot", NodeDefinitionsSnapshot
+                solid_definitions_snapshot, "solid_definitions_snapshot", NodeDefsSnap
             ),
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot

@@ -305,9 +305,9 @@ class OpDefSnap(
         "graph_def_snaps": "composite_solid_def_snaps",
     },
 )
-class NodeDefinitionsSnapshot(
+class NodeDefsSnap(
     NamedTuple(
-        "_NodeDefinitionsSnapshot",
+        "_NodeDefsSnapshot",
         [
             ("op_def_snaps", Sequence[OpDefSnap]),
             ("graph_def_snaps", Sequence[GraphDefSnap]),
@@ -319,7 +319,7 @@ class NodeDefinitionsSnapshot(
         op_def_snaps: Sequence[OpDefSnap],
         graph_def_snaps: Sequence[GraphDefSnap],
     ):
-        return super(NodeDefinitionsSnapshot, cls).__new__(
+        return super(NodeDefsSnap, cls).__new__(
             cls,
             op_def_snaps=sorted(
                 check.sequence_param(op_def_snaps, "op_def_snaps", of_type=OpDefSnap),
@@ -336,7 +336,7 @@ class NodeDefinitionsSnapshot(
         )
 
 
-def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDefinitionsSnapshot:
+def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDefsSnap:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     solid_def_snaps = []
     graph_def_snaps = []
@@ -348,7 +348,7 @@ def build_node_definitions_snapshot(pipeline_def: PipelineDefinition) -> NodeDef
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
-    return NodeDefinitionsSnapshot(
+    return NodeDefsSnap(
         op_def_snaps=solid_def_snaps,
         # update when snapshot renames happen
         graph_def_snaps=graph_def_snaps,
