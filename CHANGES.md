@@ -36,7 +36,7 @@
 - Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
 
   ```python
-  @op(required_resource_keys={"foo")
+  @op(required_resource_keys={"foo"})
   def my_op(context)
       print(context.foo)
 
