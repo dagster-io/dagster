@@ -140,7 +140,7 @@ def test_malformed_dependencies():
 def test_list_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='The expected type for "dependencies" is Dict',
+        match=r'The expected type for "dependencies" is Union\[Mapping\[',
     ):
         GraphDefinition(node_defs=solid_a_b_list(), name="test", dependencies=[])
 

@@ -30,6 +30,7 @@ from dagster._core.errors import (
 from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
+    DependencyMapping,
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
@@ -280,7 +281,7 @@ class CompleteCompositionContext(NamedTuple):
 
     name: str
     solid_defs: Sequence[NodeDefinition]
-    dependencies: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+    dependencies: DependencyMapping[NodeInvocation]
     input_mappings: Sequence[InputMapping]
     output_mapping_dict: Mapping[str, OutputMapping]
     node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
@@ -292,10 +293,10 @@ class CompleteCompositionContext(NamedTuple):
         invocations: Mapping[str, "InvokedNode"],
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
-    ):
+    ) -> "CompleteCompositionContext":
         from .source_asset import SourceAsset
 
-        dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
+        dep_dict: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
         node_input_source_assets: Dict[str, Dict[str, "SourceAsset"]] = defaultdict(dict)
@@ -983,7 +984,7 @@ def do_composition(
 ) -> Tuple[
     Sequence[InputMapping],
     Sequence[OutputMapping],
-    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
+    DependencyMapping[NodeInvocation],
     Sequence[NodeDefinition],
     Optional[ConfigMapping],
     Sequence[str],
