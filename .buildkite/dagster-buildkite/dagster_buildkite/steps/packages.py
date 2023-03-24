@@ -386,7 +386,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
                     tox_factor
                     in {
                         "general_tests_old_protobuf",  # protobuf 3 not compatible with python 3.11
-                        "cli_tests",  # test suite prone to hangs on unpinned grpcio version due to https://github.com/grpc/grpc/issues/31885
                     }
                 )
                 else []
@@ -407,25 +406,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "postgres-instance_managed_grpc_env",
             "postgres-instance_deployed_grpc_env",
         ],
-        unsupported_python_versions=(
-            lambda tox_factor: (
-                [AvailablePythonVersion.V3_11]
-                if (
-                    tox_factor
-                    in {
-                        # test suites particularly likely to crash and/or hang
-                        # due to https://github.com/grpc/grpc/issues/31885
-                        "sqlite_instance_managed_grpc_env",
-                        "sqlite_instance_deployed_grpc_env",
-                        "sqlite_instance_multi_location",
-                        "postgres-instance_multi_location",
-                        "postgres-instance_managed_grpc_env",
-                        "postgres-instance_deployed_grpc_env",
-                    }
-                )
-                else []
-            )
-        ),
     ),
     PackageSpec(
         "python_modules/dagster-test",
