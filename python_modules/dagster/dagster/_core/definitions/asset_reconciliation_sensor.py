@@ -51,7 +51,7 @@ class AssetReconciliationCursor(NamedTuple):
         parents that has been requested by this sensor or has been materialized (even if not by
         this sensor).
     materialized_or_requested_root_partitions_by_asset_key: Every key is a partitioned root
-        asset. Every value is the set of that asset's partitoins that have been requested by
+        asset. Every value is the set of that asset's partitions that have been requested by
         this sensor or have been materialized (even if not by this sensor).
     """
 

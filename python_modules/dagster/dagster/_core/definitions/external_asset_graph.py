@@ -4,12 +4,14 @@ from typing import (
     AbstractSet,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
 )
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
 
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
@@ -54,6 +56,11 @@ class ExternalAssetGraph(AssetGraph):
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._job_names_by_key = job_names_by_key
+
+        self._asset_keys_by_job_name: Mapping[str, List[AssetKey]] = defaultdict(list)
+        for asset_key, job_names in self._job_names_by_key.items():
+            for job_name in job_names:
+                self._asset_keys_by_job_name[job_name].append(asset_key)
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
@@ -188,4 +195,15 @@ class ExternalAssetGraph(AssetGraph):
         return self._job_names_by_key[asset_key]
 
     def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
-        return [k for k in self.all_asset_keys if job_name in self.get_job_names(k)]
+        return self._asset_keys_by_job_name[job_name]
+
+    def get_implicit_job_name_for_assets(self, asset_keys: Iterable[AssetKey]) -> Optional[str]:
+        """Returns the name of the asset base job that contains all the given assets, or None if there is no such
+        job.
+        """
+        for job_name in sorted(self._asset_keys_by_job_name.keys()):
+            if not job_name.startswith(ASSET_BASE_JOB_PREFIX):
+                continue
+            if all(asset_key in self._asset_keys_by_job_name[job_name] for asset_key in asset_keys):
+                return job_name
+        return None
