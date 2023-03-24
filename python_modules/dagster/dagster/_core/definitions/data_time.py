@@ -56,7 +56,6 @@ class CachingDataTimeResolver:
         beginning of that time window, or all data up until the end of the first filled time window
         in the total set, whichever is less.
         """
-
         # the total set of materialized partitions
         partition_subset = partitions_def.empty_subset().with_partition_keys(
             partition_key

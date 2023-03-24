@@ -1,7 +1,6 @@
 import datetime
 from collections import defaultdict
 from typing import List, NamedTuple, Optional
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 
 import mock
 import pendulum
@@ -19,6 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
