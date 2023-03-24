@@ -31,7 +31,6 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import ExperimentalWarning
@@ -555,34 +554,32 @@ class MultiToSingleDimensionPartitionMapping(
             )
 
 
-class DimensionMapping(
+class DimensionPartitionMapping(
     NamedTuple(
-        "_DimensionMapping",
+        "_DimensionPartitionMapping",
         [
-            ("downstream_dimension_name", str),
+            ("dimension_name", str),
             ("partition_mapping", PartitionMapping),
         ],
     )
 ):
-    """
-    TODO update docstring
+    """A helper class for MultiPartitionMapping that defines a partition mapping used to calculate
+    the dependent partition keys in the selected downstream MultiPartitions definition dimension.
 
     Args:
-        downstream_dimension_name (str): The name of the dimension in the downstream MultiPartitionsDefinition.
+        dimension_name (str): The name of the dimension in the downstream MultiPartitionsDefinition.
         partition_mapping (PartitionMapping): The partition mapping object used to calculate
             the downstream dimension partitions from the upstream dimension partitions and vice versa.
     """
 
     def __new__(
         cls,
-        downstream_dimension_name: str,
+        dimension_name: str,
         partition_mapping: PartitionMapping,
     ):
-        return super(DimensionMapping, cls).__new__(
+        return super(DimensionPartitionMapping, cls).__new__(
             cls,
-            downstream_dimension_name=check.str_param(
-                downstream_dimension_name, "downstream_dimension_name"
-            ),
+            dimension_name=check.str_param(dimension_name, "dimension_name"),
             partition_mapping=check.inst_param(
                 partition_mapping, "partition_mapping", PartitionMapping
             ),
@@ -595,33 +592,94 @@ class MultiPartitionMapping(
     PartitionMapping,
     NamedTuple(
         "_MultiPartitionMapping",
-        [("downstream_mappings_by_upstream_dimension", Mapping[str, DimensionMapping])],
+        [("downstream_mappings_by_upstream_dimension", Mapping[str, DimensionPartitionMapping])],
     ),
 ):
-    """
-    Defines a correspondence between two MultiPartitionsDefinitions.
+    """Defines a correspondence between two MultiPartitionsDefinitions.
 
-    Accepts a list of DimensionMappings, each of which defines an explicit correspondence
-    between one dimension of the upstream MultiPartitionsDefinition and one dimension of the
-    downstream MultiPartitionsDefinition. Each dimension of an upstream MultiPartitionsDefinition
-    must be explicitly mapped to a dimension of the downstream MultiPartitionsDefinition, and vice
-    versa.
+    Accepts a mapping of upstream dimension name to downstream DimensionPartitionMapping, representing
+    the explicit correspondence between the upstream and downstream MultiPartitions dimensions
+    and the partition mapping used to calculate the downstream partitions.
 
+    Examples:
+        .. code-block:: python
+            weekly_abc = MultiPartitionsDefinition(
+                {
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                    "weekly": WeeklyPartitionsDefinition("2023-01-01"),
+                }
+            )
+            daily_123 = MultiPartitionsDefinition(
+                {
+                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                    "daily": DailyPartitionsDefinition("2023-01-01"),
+                }
+            )
+
+            MultiPartitionsMapping(
+                {
+                    "abc": DimensionPartitionMapping(
+                        dimension_name="123",
+                        partition_mapping=StaticPartitionMapping({"a": "1", "b": "2", "c": "3"}),
+                    ),
+                    "weekly": DimensionPartitionMapping(
+                        dimension_name="daily",
+                        partition_mapping=TimeWindowPartitionMapping(),
+                    )
+                }
+            )
+
+    For upstream or downstream dimensions not explicitly defined in the mapping, Dagster will
+    assume an `AllPartitionsMapping`, meaning that all upstream partitions in those dimensions
+    will be mapped to all downstream partitions in those dimensions.
+
+    Examples:
+        .. code-block:: python
+            weekly_abc = MultiPartitionsDefinition(
+                {
+                    "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                    "daily": DailyPartitionsDefinition("2023-01-01"),
+                }
+            )
+            daily_123 = MultiPartitionsDefinition(
+                {
+                    "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                    "daily": DailyPartitionsDefinition("2023-01-01"),
+                }
+            )
+
+            MultiPartitionsMapping(
+                {
+                    "daily": DimensionPartitionMapping(
+                        dimension_name="daily",
+                        partition_mapping=IdentityPartitionMapping(),
+                    )
+                }
+            )
+
+            # Will map `daily_123` partition key {"123": "1", "daily": "2023-01-01"} to the upstream:
+            # {"abc": "a", "daily": "2023-01-01"}
+            # {"abc": "b", "daily": "2023-01-01"}
+            # {"abc": "c", "daily": "2023-01-01"}
 
     Args:
-        downstream_mappings_by_upstream_dimension (Mapping[str, DimensionMapping]): A list of DimensionMappings, each of which
-            defines an explicit correspondence between one dimension of the upstream MultiPartitionsDefinition
-            and one dimension of the downstream MultiPartitionsDefinition.
+        downstream_mappings_by_upstream_dimension (Mapping[str, DimensionPartitionMapping]): A
+            mapping that defines an explicit correspondence between one dimension of the upstream
+            MultiPartitionsDefinition and one dimension of the downstream MultiPartitionsDefinition.
+            Maps a string representing upstream dimension name to downstream DimensionPartitionMapping,
+            containing the downstream dimension name and partition mapping.
     """
 
-    def __new__(cls, downstream_mappings_by_upstream_dimension: Mapping[str, DimensionMapping]):
+    def __new__(
+        cls, downstream_mappings_by_upstream_dimension: Mapping[str, DimensionPartitionMapping]
+    ):
         return super(MultiPartitionMapping, cls).__new__(
             cls,
             downstream_mappings_by_upstream_dimension=check.mapping_param(
                 downstream_mappings_by_upstream_dimension,
                 "downstream_mappings_by_upstream_dimension",
                 key_type=str,
-                value_type=DimensionMapping,
+                value_type=DimensionPartitionMapping,
             ),
         )
 
@@ -658,7 +716,7 @@ class MultiPartitionMapping(
             dim.name
             for dim in cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
         }
-        downstream_dimension_names = {
+        dimension_names = {
             dim.name
             for dim in cast(MultiPartitionsDefinition, downstream_partitions_def).partitions_defs
         }
@@ -672,37 +730,24 @@ class MultiPartitionMapping(
                     "Dimension mapping has an upstream dimension name that is not in the upstream "
                     "partitions def"
                 )
-            if dimension_mapping.downstream_dimension_name not in downstream_dimension_names:
+            if dimension_mapping.dimension_name not in dimension_names:
                 check.failed(
                     "Dimension mapping has a downstream dimension name that is not in the"
                     " downstream partitions def"
                 )
 
             upstream_dimension_names.remove(upstream_dimension_name)
-            downstream_dimension_names.remove(dimension_mapping.downstream_dimension_name)
+            dimension_names.remove(dimension_mapping.dimension_name)
 
-        check.invariant(
-            not upstream_dimension_names,
-            "Upstream partitions def has dimensions that are not mapped: {}".format(
-                upstream_dimension_names
-            ),
-        )
-        check.invariant(
-            not downstream_dimension_names,
-            "Downstream partitions def has dimensions that are not mapped: {}".format(
-                downstream_dimension_names
-            ),
-        )
-
-    def _get_dependency_keys(
+    def _get_dependency_partitions_subset(
         self,
         a_partitions_def: MultiPartitionsDefinition,
-        a_partition_keys: Sequence[str],
+        a_partition_keys: Sequence[MultiPartitionKey],
         b_partitions_def: MultiPartitionsDefinition,
         a_upstream_of_b: bool,
-    ):
-        """
-        Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> PartitionsSubset:
+        """Given two partitions definitions a_partitions_def and b_partitions_def that have a dependency
         relationship (a_upstream_of_b is True if a_partitions_def is upstream of b_partitions_def),
         and a_partition_keys, a list of partition keys in a_partitions_def, returns a list of
         partition keys in the partitions definition b_partitions_def that are
@@ -710,9 +755,7 @@ class MultiPartitionMapping(
         """
         a_partition_keys_by_dimension = defaultdict(set)
         for partition_key in a_partition_keys:
-            for dimension_name, key in cast(
-                MultiPartitionKey, partition_key
-            ).keys_by_dimension.items():
+            for dimension_name, key in partition_key.keys_by_dimension.items():
                 a_partition_keys_by_dimension[dimension_name].add(key)
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
@@ -722,82 +765,105 @@ class MultiPartitionMapping(
         )
 
         a_dimension_partitions_defs_by_name = {
-            partitions_def.name: partitions_def.partitions_def
-            for partitions_def in a_partitions_def.partitions_defs
+            dimension.name: dimension.partitions_def
+            for dimension in a_partitions_def.partitions_defs
         }
         b_dimension_partitions_def_by_name = {
-            partitions_def.name: partitions_def.partitions_def
-            for partitions_def in b_partitions_def.partitions_defs
+            dimension.name: dimension.partitions_def
+            for dimension in b_partitions_def.partitions_defs
         }
 
         if a_upstream_of_b:
             # a_partitions_def is upstream of b_partitions_def, so we need to map the
             # dimension names of a_partitions_def to the corresponding dependent dimensions of
             # b_partitions_def
-            a_dim_to_dependent_b_dim = {
+            a_dim_to_dependency_b_dim = {
                 upstream_dim: (
-                    dimension_mapping.downstream_dimension_name,
-                    dimension_mapping,
+                    dimension_mapping.dimension_name,
+                    dimension_mapping.partition_mapping,
                 )
                 for upstream_dim, dimension_mapping in self.downstream_mappings_by_upstream_dimension.items()
             }
 
-            for dimension_name, keys in a_partition_keys_by_dimension.items():
-                (
-                    b_dim_name,
-                    dimension_mapping,
-                ) = a_dim_to_dependent_b_dim[dimension_name]
-                a_dimension_partitions_def = a_dimension_partitions_defs_by_name[dimension_name]
-                b_dimension_partitions_def = b_dimension_partitions_def_by_name[b_dim_name]
-                for key in keys:
-                    dep_b_keys_by_a_dim_and_key[dimension_name][key] = list(
-                        dimension_mapping.partition_mapping.get_downstream_partitions_for_partitions(
-                            a_dimension_partitions_def.empty_subset().with_partition_keys([key]),
-                            b_dimension_partitions_def,
-                            # Add dynamic partitions store
-                        ).get_partition_keys()
-                    )
+            for a_dim_name, keys in a_partition_keys_by_dimension.items():
+                if a_dim_name in a_dim_to_dependency_b_dim:
+                    (
+                        b_dim_name,
+                        dimension_mapping,
+                    ) = a_dim_to_dependency_b_dim[a_dim_name]
+                    a_dimension_partitions_def = a_dimension_partitions_defs_by_name[a_dim_name]
+                    b_dimension_partitions_def = b_dimension_partitions_def_by_name[b_dim_name]
+                    for key in keys:
+                        # if downstream dimension mapping exists, for a given key, get the list of
+                        # downstream partition keys that are dependencies of that key
+                        dep_b_keys_by_a_dim_and_key[a_dim_name][key] = list(
+                            dimension_mapping.get_downstream_partitions_for_partitions(
+                                a_dimension_partitions_def.empty_subset().with_partition_keys(
+                                    [key]
+                                ),
+                                b_dimension_partitions_def,
+                                dynamic_partitions_store,
+                            ).get_partition_keys()
+                        )
+
         else:
             # a_partitions_def is downstream of b_partitions_def, so we need to map the
             # dimension names of a_partitions_def to the corresponding dependency dimensions of
             # b_partitions_def
             a_dim_to_dependency_b_dim = {
-                dimension_mapping.downstream_dimension_name: (
+                dimension_mapping.dimension_name: (
                     upstream_dim,
-                    dimension_mapping,
+                    dimension_mapping.partition_mapping,
                 )
                 for upstream_dim, dimension_mapping in self.downstream_mappings_by_upstream_dimension.items()
             }
 
-            for dimension_name, keys in a_partition_keys_by_dimension.items():
-                (
-                    b_dim_name,
-                    dimension_mapping,
-                ) = a_dim_to_dependency_b_dim[dimension_name]
-                a_dimension_partitions_def = a_dimension_partitions_defs_by_name[dimension_name]
-                b_dimension_partitions_def = b_dimension_partitions_def_by_name[b_dim_name]
-                for key in keys:
-                    dep_b_keys_by_a_dim_and_key[dimension_name][key] = list(
-                        dimension_mapping.partition_mapping.get_upstream_partitions_for_partitions(
-                            a_dimension_partitions_def.empty_subset().with_partition_keys([key]),
-                            b_dimension_partitions_def,
-                            # Add dynamic partitions store
-                        ).get_partition_keys()
-                    )
+            for a_dim_name, keys in a_partition_keys_by_dimension.items():
+                if a_dim_name in a_dim_to_dependency_b_dim:
+                    (
+                        b_dim_name,
+                        partition_mapping,
+                    ) = a_dim_to_dependency_b_dim[a_dim_name]
+                    a_dimension_partitions_def = a_dimension_partitions_defs_by_name[a_dim_name]
+                    b_dimension_partitions_def = b_dimension_partitions_def_by_name[b_dim_name]
+                    for key in keys:
+                        dep_b_keys_by_a_dim_and_key[a_dim_name][key] = list(
+                            partition_mapping.get_upstream_partitions_for_partitions(
+                                a_dimension_partitions_def.empty_subset().with_partition_keys(
+                                    [key]
+                                ),
+                                b_dimension_partitions_def,
+                                dynamic_partitions_store,
+                            ).get_partition_keys()
+                        )
 
         b_partition_keys = set()
-        dimension_names = [dim.name for dim in a_partitions_def.partitions_defs]
+
+        mapped_a_dim_names = a_dim_to_dependency_b_dim.keys()
+        mapped_b_dim_names = [mapping[0] for mapping in a_dim_to_dependency_b_dim.values()]
+        unmapped_b_dim_names = list(
+            set(b_dimension_partitions_def_by_name.keys()) - set(mapped_b_dim_names)
+        )
+
         for key in a_partition_keys:
-            key = cast(MultiPartitionKey, key)
             for b_key_values in itertools.product(
+                *(
+                    [
+                        dep_b_keys_by_a_dim_and_key[dim_name][key.keys_by_dimension[dim_name]]
+                        for dim_name in mapped_a_dim_names
+                    ]
+                ),
                 *[
-                    dep_b_keys_by_a_dim_and_key[dim][key.keys_by_dimension[dim]]
-                    for dim in dimension_names
-                ]
+                    b_dimension_partitions_def_by_name[dim_name].get_partition_keys()
+                    for dim_name in unmapped_b_dim_names
+                ],
             ):
                 b_partition_keys.add(
                     MultiPartitionKey(
-                        {dimension_names[i]: key for i, key in enumerate(b_key_values)}
+                        {
+                            (mapped_b_dim_names + unmapped_b_dim_names)[i]: key
+                            for i, key in enumerate(b_key_values)
+                        }
                     )
                 )
 
@@ -809,12 +875,6 @@ class MultiPartitionMapping(
         upstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        check.opt_inst_param(
-            downstream_partitions_subset, "downstream_partitions_subset", PartitionsSubset
-        )
-        check.opt_inst_param(
-            upstream_partitions_def, "upstream_partitions_def", PartitionsDefinition
-        )
         if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
 
@@ -823,11 +883,14 @@ class MultiPartitionMapping(
             downstream_partitions_subset.partitions_def,
         )
 
-        return self._get_dependency_keys(
+        return self._get_dependency_partitions_subset(
             cast(MultiPartitionsDefinition, downstream_partitions_subset.partitions_def),
-            list(downstream_partitions_subset.get_partition_keys()),
+            list(
+                cast(Sequence[MultiPartitionKey], downstream_partitions_subset.get_partition_keys())
+            ),
             cast(MultiPartitionsDefinition, upstream_partitions_def),
             a_upstream_of_b=False,
+            dynamic_partitions_store=dynamic_partitions_store,
         )
 
     def get_downstream_partitions_for_partitions(
@@ -836,12 +899,6 @@ class MultiPartitionMapping(
         downstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        check.opt_inst_param(
-            upstream_partitions_subset, "upstream_partitions_subset", PartitionsSubset
-        )
-        check.opt_inst_param(
-            downstream_partitions_def, "downstream_partitions_def", PartitionsDefinition
-        )
         if upstream_partitions_subset is None:
             check.failed("upstream asset is not partitioned")
 
@@ -850,11 +907,14 @@ class MultiPartitionMapping(
             downstream_partitions_def,
         )
 
-        return self._get_dependency_keys(
+        return self._get_dependency_partitions_subset(
             cast(MultiPartitionsDefinition, upstream_partitions_subset.partitions_def),
-            list(upstream_partitions_subset.get_partition_keys()),
+            list(
+                cast(Sequence[MultiPartitionKey], upstream_partitions_subset.get_partition_keys())
+            ),
             cast(MultiPartitionsDefinition, downstream_partitions_def),
             a_upstream_of_b=True,
+            dynamic_partitions_store=dynamic_partitions_store,
         )
 
 

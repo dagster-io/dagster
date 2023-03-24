@@ -2,6 +2,7 @@ import pytest
 from dagster import (
     AllPartitionMapping,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     IdentityPartitionMapping,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -15,10 +16,11 @@ from dagster._check import CheckError
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
-    DimensionMapping,
+    DimensionPartitionMapping,
     MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping,
 )
+from dagster._core.test_utils import instance_for_test
 
 
 def test_get_downstream_partitions_single_key_in_range():
@@ -236,11 +238,11 @@ upstream_and_downstream_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="abc", partition_mapping=IdentityPartitionMapping()
+                "abc": DimensionPartitionMapping(
+                    dimension_name="abc", partition_mapping=IdentityPartitionMapping()
                 ),
-                "daily": DimensionMapping(
-                    downstream_dimension_name="weekly",
+                "daily": DimensionPartitionMapping(
+                    dimension_name="weekly",
                     partition_mapping=TimeWindowPartitionMapping(),
                 ),
             }
@@ -274,11 +276,11 @@ upstream_and_downstream_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="abc", partition_mapping=IdentityPartitionMapping()
+                "abc": DimensionPartitionMapping(
+                    dimension_name="abc", partition_mapping=IdentityPartitionMapping()
                 ),
-                "daily": DimensionMapping(
-                    downstream_dimension_name="weekly",
+                "daily": DimensionPartitionMapping(
+                    dimension_name="weekly",
                     partition_mapping=TimeWindowPartitionMapping(),
                 ),
             },
@@ -310,6 +312,83 @@ upstream_and_downstream_tests = [
             ]
         ],
     ),
+    (
+        MultiPartitionsDefinition(
+            {
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+                "daily": DailyPartitionsDefinition("2023-01-01"),
+            }
+        ),
+        MultiPartitionMapping(
+            {
+                "daily": DimensionPartitionMapping(
+                    dimension_name="daily",
+                    partition_mapping=IdentityPartitionMapping(),
+                ),
+            },
+        ),
+        [
+            MultiPartitionKey({"123": values[0], "daily": values[1]})
+            for values in [
+                ("1", "2023-01-01"),
+                ("2", "2023-01-01"),
+                ("3", "2023-01-01"),
+                ("1", "2023-01-02"),
+                ("2", "2023-01-02"),
+                ("3", "2023-01-02"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"abc": values[0], "daily": values[1]})
+            for values in [
+                ("a", "2023-01-01"),
+                ("b", "2023-01-01"),
+                ("c", "2023-01-01"),
+                ("a", "2023-01-02"),
+                ("b", "2023-01-02"),
+                ("c", "2023-01-02"),
+            ]
+        ],
+    ),
+    (
+        MultiPartitionsDefinition(
+            {
+                "12": StaticPartitionsDefinition(["1", "2"]),
+                "xy": StaticPartitionsDefinition(["x", "y"]),
+            }
+        ),
+        MultiPartitionsDefinition(
+            {
+                "ab": StaticPartitionsDefinition(["a", "b"]),
+                "01": StaticPartitionsDefinition(["0", "1"]),
+            }
+        ),
+        MultiPartitionMapping({}),
+        [
+            MultiPartitionKey({"12": values[0], "xy": values[1]})
+            for values in [
+                ("1", "x"),
+                ("2", "y"),
+                ("1", "y"),
+                ("2", "x"),
+            ]
+        ],
+        [
+            MultiPartitionKey({"ab": values[0], "01": values[1]})
+            for values in [
+                ("a", "0"),
+                ("a", "1"),
+                ("b", "0"),
+                ("b", "1"),
+            ]
+        ],
+    ),
 ]
 
 upstream_only_tests = [
@@ -328,12 +407,12 @@ upstream_only_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="123",
+                "abc": DimensionPartitionMapping(
+                    dimension_name="123",
                     partition_mapping=SpecificPartitionsPartitionMapping(["c"]),
                 ),
-                "weekly": DimensionMapping(
-                    downstream_dimension_name="daily",
+                "weekly": DimensionPartitionMapping(
+                    dimension_name="daily",
                     partition_mapping=TimeWindowPartitionMapping(),
                 ),
             },
@@ -367,12 +446,12 @@ upstream_only_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="123",
+                "abc": DimensionPartitionMapping(
+                    dimension_name="123",
                     partition_mapping=SpecificPartitionsPartitionMapping(["c"]),
                 ),
-                "weekly": DimensionMapping(
-                    downstream_dimension_name="daily",
+                "weekly": DimensionPartitionMapping(
+                    dimension_name="daily",
                     partition_mapping=TimeWindowPartitionMapping(),
                 ),
             }
@@ -419,11 +498,11 @@ upstream_only_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="123", partition_mapping=AllPartitionMapping()
+                "abc": DimensionPartitionMapping(
+                    dimension_name="123", partition_mapping=AllPartitionMapping()
                 ),
-                "daily": DimensionMapping(
-                    downstream_dimension_name="daily", partition_mapping=IdentityPartitionMapping()
+                "daily": DimensionPartitionMapping(
+                    dimension_name="daily", partition_mapping=IdentityPartitionMapping()
                 ),
             }
         ),
@@ -461,12 +540,12 @@ downstream_only_tests = [
         ),
         MultiPartitionMapping(
             {
-                "abc": DimensionMapping(
-                    downstream_dimension_name="123",
+                "abc": DimensionPartitionMapping(
+                    dimension_name="123",
                     partition_mapping=StaticPartitionMapping({"a": "1", "b": "2", "c": "3"}),
                 ),
-                "weekly": DimensionMapping(
-                    downstream_dimension_name="daily",
+                "weekly": DimensionPartitionMapping(
+                    dimension_name="daily",
                     partition_mapping=TimeWindowPartitionMapping(),
                 ),
             }
@@ -541,6 +620,38 @@ def test_multipartitions_mapping_get_downstream_partitions(
     ).get_partition_keys() == set(downstream_partition_keys)
 
 
+def test_multipartitions_mapping_dynamic():
+    mapping = MultiPartitionMapping(
+        {"dynamic": DimensionPartitionMapping("dynamic", IdentityPartitionMapping())}
+    )
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions("dynamic", ["a", "b", "c"])
+        downstream_partitions_def = MultiPartitionsDefinition(
+            {
+                "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+                "123": StaticPartitionsDefinition(["1", "2", "3"]),
+            }
+        )
+        upstream_partitions_def = MultiPartitionsDefinition(
+            {
+                "dynamic": DynamicPartitionsDefinition(name="dynamic"),
+                "456": StaticPartitionsDefinition(["4", "5", "6"]),
+            }
+        )
+        assert mapping.get_upstream_partitions_for_partitions(
+            downstream_partitions_def.empty_subset().with_partition_keys(
+                [MultiPartitionKey({"dynamic": "a", "123": "1"})]
+            ),
+            upstream_partitions_def,
+            dynamic_partitions_store=instance,
+        ).get_partition_keys() == set(
+            [
+                MultiPartitionKey({"dynamic": val[1], "abc": val[0]})
+                for val in [("4", "a"), ("5", "a"), ("6", "a")]
+            ]
+        )
+
+
 def test_error_multipartitions_mapping():
     weekly_abc = MultiPartitionsDefinition(
         {
@@ -555,22 +666,12 @@ def test_error_multipartitions_mapping():
         }
     )
 
-    with pytest.raises(CheckError, match="dimensions that are not mapped"):
-        MultiPartitionMapping(
-            {
-                "123": DimensionMapping(
-                    downstream_dimension_name="abc",
-                    partition_mapping=SpecificPartitionsPartitionMapping(["c"]),
-                )
-            }
-        ).get_upstream_partitions_for_partitions(weekly_abc.empty_subset(), daily_123)
-
     with pytest.raises(
         CheckError, match="upstream dimension name that is not in the upstream partitions def"
     ):
         MultiPartitionMapping(
             {
-                "nonexistent dimension": DimensionMapping(
+                "nonexistent dimension": DimensionPartitionMapping(
                     "other nonexistent dimension", SpecificPartitionsPartitionMapping(["c"])
                 )
             }
@@ -579,11 +680,11 @@ def test_error_multipartitions_mapping():
     with pytest.raises(ValueError):
         MultiPartitionMapping(
             {
-                "123": DimensionMapping(
+                "123": DimensionPartitionMapping(
                     "abc",
                     StaticPartitionMapping({"1": "a", "2": "b", "3": "c"}),
                 ),
-                "daily": DimensionMapping("weekly", IdentityPartitionMapping()),  # Invalid
+                "daily": DimensionPartitionMapping("weekly", IdentityPartitionMapping()),  # Invalid
             }
         ).get_upstream_partitions_for_partitions(
             weekly_abc.empty_subset().with_partition_keys(
