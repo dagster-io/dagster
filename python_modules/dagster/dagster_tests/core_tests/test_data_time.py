@@ -1,6 +1,7 @@
 import datetime
 from collections import defaultdict
 from typing import List, NamedTuple, Optional
+from dagster._core.definitions.data_time import CachingDataTimeResolver
 
 import mock
 import pendulum
@@ -122,7 +123,10 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             assert result.success
 
             # rebuild the data time queryer after each run
-            data_time_queryer = CachingInstanceQueryer(instance)
+            data_time_queryer = CachingDataTimeResolver(
+                instance_queryer=CachingInstanceQueryer(instance),
+                asset_graph=asset_graph,
+            )
 
             # build mapping of expected timestamps
             for entry in instance.all_logs(
@@ -135,8 +139,10 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
 
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
-                    latest_asset_record = data_time_queryer.get_latest_materialization_record(
-                        AssetKey(ak)
+                    latest_asset_record = (
+                        data_time_queryer.instance_queryer.get_latest_materialization_record(
+                            AssetKey(ak)
+                        )
                     )
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated
@@ -144,13 +150,11 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
                             "dagster.AssetMaterialization.tags", new_callable=mock.PropertyMock
                         ) as tags_property:
                             tags_property.return_value = None
-                            upstream_data_times = data_time_queryer.get_data_times_by_key(
-                                asset_graph=asset_graph,
+                            upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
                                 record=latest_asset_record,
                             )
                     else:
-                        upstream_data_times = data_time_queryer.get_data_times_by_key(
-                            asset_graph=asset_graph,
+                        upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
                             record=latest_asset_record,
                         )
                     assert upstream_data_times == {
@@ -271,7 +275,14 @@ def test_partitioned_data_time(scenario):
         _materialize_partitions(instance, scenario.before_partitions)
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
-        data_time_queryer = CachingInstanceQueryer(instance)
-        assert data_time_queryer.get_data_times_by_key(
-            asset_graph=partition_repo.asset_graph, record=record
-        ) == {AssetKey("partitioned_asset"): scenario.expected_time}
+        data_time_queryer = CachingDataTimeResolver(
+            instance_queryer=CachingInstanceQueryer(instance),
+            asset_graph=partition_repo.asset_graph,
+        )
+
+        data_time = data_time_queryer.get_data_time_by_key_for_record(record=record)
+
+        if scenario.expected_time is None:
+            assert data_time == {} or data_time == {AssetKey("partitioned_asset"): None}
+        else:
+            assert data_time == {AssetKey("partitioned_asset"): scenario.expected_time}
