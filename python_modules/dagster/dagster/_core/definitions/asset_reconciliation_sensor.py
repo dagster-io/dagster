@@ -583,7 +583,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 continue
 
             # figure out the current contents of this asset with respect to its constraints
-            current_data_time = data_time_resolver.get_current_data_time(key)
+            current_data_time = data_time_resolver.get_current_data_time(key, evaluation_time)
 
             # figure out the expected data time of this asset if it were to be executed on this tick
             expected_data_time = min(
@@ -603,7 +603,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 )
 
                 # calculate the data times you would have expected if the most recent run succeeded
-                failed_data_time = data_time_resolver.get_ignored_failure_data_time(key)
+                failed_data_time = data_time_resolver.get_ignored_failure_data_time(
+                    key, evaluation_time
+                )
 
                 effective_data_time = max(
                     filter(None, (current_data_time, in_progress_data_time, failed_data_time)),

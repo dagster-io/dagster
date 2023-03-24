@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections import defaultdict
 from typing import List, NamedTuple, Optional
 
@@ -19,7 +20,10 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_layer import build_asset_selection_job
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.event_api import EventRecordsFilter
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -286,3 +290,182 @@ def test_partitioned_data_time(scenario):
             assert data_time == {} or data_time == {AssetKey("partitioned_asset"): None}
         else:
             assert data_time == {AssetKey("partitioned_asset"): scenario.expected_time}
+
+
+@observable_source_asset
+def sA():
+    return DataVersion(str(random.random()))
+
+
+@observable_source_asset
+def sB():
+    return DataVersion(str(random.random()))
+
+
+@asset(non_argument_deps={"sA"})
+def A():
+    pass
+
+
+@asset(non_argument_deps={"sB"})
+def B():
+    pass
+
+
+@asset(non_argument_deps={"B"})
+def B2():
+    pass
+
+
+@asset(non_argument_deps={"sA", "sB"})
+def AB():
+    pass
+
+
+@repository
+def versioned_repo():
+    return [sA, sB, A, B, AB, B2]
+
+
+def observe_sources(*args):
+    def observe_sources_fn(*, instance, times_by_key, **kwargs):
+        for arg in args:
+            key = AssetKey(arg)
+            observe(source_assets=[versioned_repo.source_assets_by_key[key]], instance=instance)
+            latest_record = instance.get_latest_data_version_record(key, is_source=True)
+            latest_timestamp = latest_record.timestamp
+            times_by_key[key].append(
+                datetime.datetime.fromtimestamp(latest_timestamp, tz=datetime.timezone.utc)
+            )
+
+    return observe_sources_fn
+
+
+def run_assets(*args):
+    def run_assets_fn(*, instance, **kwargs):
+        assets = [versioned_repo.assets_defs_by_key[AssetKey(arg)] for arg in args]
+        materialize_to_memory(assets=assets, instance=instance)
+
+    return run_assets_fn
+
+
+def assert_has_current_time(key_str):
+    def assert_has_current_time_fn(*, instance, evaluation_time, **kwargs):
+        resolver = CachingDataTimeResolver(
+            instance_queryer=CachingInstanceQueryer(instance),
+            asset_graph=versioned_repo.asset_graph,
+        )
+        data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
+        assert data_time == evaluation_time
+
+    return assert_has_current_time_fn
+
+
+def assert_has_index_time(key_str, source_key_str, index):
+    def assert_has_index_time_fn(*, instance, times_by_key, evaluation_time, **kwargs):
+        resolver = CachingDataTimeResolver(
+            instance_queryer=CachingInstanceQueryer(instance),
+            asset_graph=versioned_repo.asset_graph,
+        )
+        data_time = resolver.get_current_data_time(AssetKey(key_str), current_time=evaluation_time)
+        if index is None:
+            assert data_time is None
+        else:
+            assert data_time == times_by_key[AssetKey(source_key_str)][index]
+
+    return assert_has_index_time_fn
+
+
+timelines = {
+    "basic_one_parent": [
+        observe_sources("sA"),
+        assert_has_index_time("A", None, None),
+        # run A, make sure it knows it's current
+        run_assets("A"),
+        assert_has_current_time("A"),
+        # new version of sA, A now points at the timestamp of that new version
+        observe_sources("sA"),
+        assert_has_index_time("A", "sA", 1),
+        # run A again, make sure it knows it's current
+        run_assets("A"),
+        assert_has_current_time("A"),
+    ],
+    "basic_two_parents": [
+        observe_sources("sA", "sB"),
+        assert_has_index_time("AB", None, None),
+        # run AB, make sure it knows it's current
+        run_assets("AB"),
+        assert_has_current_time("AB"),
+        # new version of sA, AB now points at the timestamp of that new version
+        observe_sources("sA"),
+        assert_has_index_time("AB", "sA", 1),
+        # run AB again, make sure it knows it's current
+        run_assets("AB"),
+        assert_has_current_time("AB"),
+        # new version of sA and sB, AB now points at the timestamp of the older new version
+        observe_sources("sA"),
+        assert_has_index_time("AB", "sA", 2),
+        observe_sources("sB"),
+        assert_has_index_time("AB", "sA", 2),
+        # run AB again, make sure it knows it's current
+        run_assets("AB"),
+        assert_has_current_time("AB"),
+    ],
+    "chained": [
+        observe_sources("sA", "sB"),
+        run_assets("B"),
+        assert_has_current_time("B"),
+        run_assets("B2"),
+        assert_has_current_time("B2"),
+        observe_sources("sA"),
+        assert_has_current_time("B"),
+        assert_has_current_time("B2"),
+        observe_sources("sB"),
+        assert_has_index_time("B", "sB", 1),
+        assert_has_index_time("B2", "sB", 1),
+        run_assets("B"),
+        assert_has_current_time("B"),
+        assert_has_index_time("B2", "sB", 1),
+        run_assets("B2"),
+        assert_has_current_time("B2"),
+    ],
+    "chained_multiple_observations": [
+        observe_sources("sB"),
+        run_assets("B", "B2"),
+        assert_has_current_time("B"),
+        assert_has_current_time("B2"),
+        # after getting current, get a bunch of new versions
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        # should point to the time at which the version changed
+        assert_has_index_time("B", "sB", 1),
+        assert_has_index_time("B2", "sB", 1),
+        # run B, make sure it knows it's current
+        run_assets("B"),
+        assert_has_current_time("B"),
+        # after getting current, get a bunch of new versions
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        observe_sources("sB"),
+        # should point to the time at which the version changed
+        assert_has_index_time("B", "sB", 6),
+        assert_has_index_time("B2", "sB", 1),
+    ],
+}
+
+
+@pytest.mark.parametrize("timeline", list(timelines.values()), ids=list(timelines.keys()))
+def test_non_volatile_data_time(timeline):
+    with DagsterInstance.ephemeral() as instance:
+        times_by_key = defaultdict(list)
+        for action in timeline:
+            action(
+                instance=instance,
+                times_by_key=times_by_key,
+                evaluation_time=pendulum.now("UTC"),
+            )
