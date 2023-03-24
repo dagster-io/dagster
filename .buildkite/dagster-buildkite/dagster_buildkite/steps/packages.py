@@ -5,7 +5,6 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import BuildkiteQueue
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
@@ -339,7 +338,8 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
 
 LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
-        "python_modules/dagit", pytest_extra_cmds=dagit_extra_cmds, queue=BuildkiteQueue.DOCKER
+        "python_modules/dagit",
+        pytest_extra_cmds=dagit_extra_cmds,  # queue=BuildkiteQueue.DOCKER
     ),
     PackageSpec(
         "python_modules/dagster",
@@ -364,7 +364,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "launcher_tests",
             "logging_tests",
         ],
-        queue=BuildkiteQueue.DOCKER,
+        #        queue=BuildkiteQueue.DOCKER,
     ),
     PackageSpec(
         "python_modules/dagster-graphql",
@@ -380,6 +380,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "postgres-instance_managed_grpc_env",
             "postgres-instance_deployed_grpc_env",
         ],
-        queue=BuildkiteQueue.DOCKER,
+        #        queue=BuildkiteQueue.DOCKER,
     ),
 ]
