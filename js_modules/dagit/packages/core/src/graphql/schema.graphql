@@ -1944,8 +1944,8 @@ enum NestedResourceType {
 }
 
 type JobWithOps {
-  jobName: String!
-  ops: [String!]!
+  job: Job!
+  opsUsing: [SolidHandle!]!
 }
 
 type RepositoryConnection {

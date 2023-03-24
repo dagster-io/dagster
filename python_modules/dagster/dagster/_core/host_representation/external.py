@@ -66,6 +66,7 @@ from .external_data import (
     ExternalSensorMetadata,
     ExternalTargetData,
     NestedResource,
+    ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -599,7 +600,7 @@ class ExternalResource:
         return self._external_resource_data.asset_keys_using
 
     @property
-    def job_ops_using(self) -> Dict[str, List[str]]:
+    def job_ops_using(self) -> List[ResourceJobUsageEntry]:
         return self._external_resource_data.job_ops_using
 
 

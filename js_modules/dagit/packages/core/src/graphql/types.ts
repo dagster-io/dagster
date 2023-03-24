@@ -1748,8 +1748,8 @@ export type JobOrPipelineSelector = {
 
 export type JobWithOps = {
   __typename: 'JobWithOps';
-  jobName: Scalars['String'];
-  ops: Array<Scalars['String']>;
+  job: Job;
+  opsUsing: Array<SolidHandle>;
 };
 
 export type JsonMetadataEntry = MetadataEntry & {
@@ -7449,8 +7449,20 @@ export const buildJobWithOps = (
   relationshipsToOmit.add('JobWithOps');
   return {
     __typename: 'JobWithOps',
-    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'nihil',
-    ops: overrides && overrides.hasOwnProperty('ops') ? overrides.ops! : ['placeat'],
+    job:
+      overrides && overrides.hasOwnProperty('job')
+        ? overrides.job!
+        : relationshipsToOmit.has('Job')
+        ? ({} as Job)
+        : buildJob({}, relationshipsToOmit),
+    opsUsing:
+      overrides && overrides.hasOwnProperty('opsUsing')
+        ? overrides.opsUsing!
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
   };
 };
 
