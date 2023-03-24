@@ -40,7 +40,7 @@ class RunCoordinator(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def cancel_run(self, run_id):
+    def cancel_run(self, run_id, cancelation_source):
         """Cancels a run. The run may be queued in the coordinator, or it may have been launched.
 
         Returns False is the process was already canceled. Returns true if the cancellation was

@@ -9,7 +9,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import CancelationSource, DagsterEventType, EngineEventData
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -167,6 +167,7 @@ def check_run_timeout(
         instance.report_run_canceling(
             run_record.dagster_run,
             message=f"Canceling due to exceeding maximum runtime of {max_time} seconds.",
+            cancelation_source=CancelationSource.MONITORING_DAEMON,
         )
         try:
             instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id)

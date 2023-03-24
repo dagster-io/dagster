@@ -122,7 +122,7 @@ def terminate_pipeline_execution(
     if force_mark_as_canceled:
         try:
             if instance.run_coordinator and can_cancel_run:
-                instance.run_coordinator.cancel_run(run_id)
+                instance.run_coordinator.cancel_run(run_id, CancelationSource.GRAPHQL)
         except:
             instance.report_engine_event(
                 (
@@ -137,7 +137,11 @@ def terminate_pipeline_execution(
             )
         return _force_mark_as_canceled(instance, run_id)
 
-    if instance.run_coordinator and can_cancel_run and instance.run_coordinator.cancel_run(run_id):
+    if (
+        instance.run_coordinator
+        and can_cancel_run
+        and instance.run_coordinator.cancel_run(run_id, CancelationSource.GRAPHQL)
+    ):
         return GrapheneTerminateRunSuccess(graphene_run)
 
     return GrapheneTerminateRunFailure(

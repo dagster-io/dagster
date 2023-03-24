@@ -315,10 +315,10 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
 
 
 @whitelist_for_serdes
-class CancellationReason(Enum):
+class CancelationSource(Enum):
     UNKNOWN = "UNKNOWN"
-    MANUAL = "MANUAL"
-    TIMED_OUT = "TIMED_OUT"
+    GRAPHQL = "GRAPHQL"
+    MONITORING_DAEMON = "MONITORING_DAEMON"
 
 
 class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
@@ -1609,8 +1609,24 @@ class PipelineCanceledData(
 
 
 @whitelist_for_serdes
-class PipelineCancelingData(NamedTuple):
-    cancellation_reason: CancellationReason = CancellationReason.UNKNOWN
+class PipelineCancelingData(
+    NamedTuple(
+        "_PipelineCancelingData",
+        [
+            ("cancelation_source", CancelationSource),
+        ],
+    )
+):
+    def __new__(cls, cancelation_source: Optional[CancelationSource]):
+        return super(PipelineCancelingData, cls).__new__(
+            cls,
+            cancelation_source=check.opt_inst_param(
+                cancelation_source,
+                "cancelation_source",
+                CancelationSource,
+                default=CancelationSource.UNKNOWN,
+            ),
+        )
 
 
 @whitelist_for_serdes

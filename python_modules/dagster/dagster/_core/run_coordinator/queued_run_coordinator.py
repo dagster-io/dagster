@@ -13,7 +13,7 @@ from dagster import (
 from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.events import CancellationReason
+from dagster._core.events import CancelationSource
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -245,7 +245,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
         return run
 
-    def cancel_run(self, run_id: str, cancellation_reason: CancellationReason) -> bool:
+    def cancel_run(self, run_id: str, cancelation_source: CancelationSource) -> bool:
         run = self._instance.get_run_by_id(run_id)
         if not run:
             return False
@@ -253,13 +253,14 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         # https://github.com/dagster-io/dagster/issues/3323
         if run.status == DagsterRunStatus.QUEUED:
             self._instance.report_run_canceling(
-                run,
-                message="Canceling run from the queue.",
+                run, message="Canceling run from the queue.", cancelation_source=cancelation_source
             )
             self._instance.report_run_canceled(run)
             return True
         else:
             self._instance.report_run_canceling(
-                run, message="Received cancellation request from queued run coordinator."
+                run,
+                message="Received cancellation request from queued run coordinator.",
+                cancelation_source=cancelation_source,
             )
             return self._instance.run_launcher.terminate(run_id)
