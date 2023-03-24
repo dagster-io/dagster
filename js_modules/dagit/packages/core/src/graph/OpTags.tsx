@@ -3,58 +3,56 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import airbyte from './optag-images/airbyte.svg';
+import airflow from './optag-images/airflow.svg';
+import aws from './optag-images/aws.svg';
+import azure from './optag-images/azure.svg';
+import azureml from './optag-images/azureml.svg';
+import bigquery from './optag-images/bigquery.svg';
+import census from './optag-images/census.svg';
 import databricks from './optag-images/databricks.svg';
+import datadog from './optag-images/datadog.svg';
 import dbt from './optag-images/dbt.svg';
 import duckdb from './optag-images/duckdb.svg';
 import fivetran from './optag-images/fivetran.svg';
+import github from './optag-images/github.svg';
+import gitlab from './optag-images/gitlab.svg';
+import googlecloud from './optag-images/googlecloud.svg';
 import googlesheets from './optag-images/googlesheets.svg';
+import great_expectations from './optag-images/great_expectations.svg';
+import hex from './optag-images/hex.svg';
+import hightouch from './optag-images/hightouch.svg';
 import jupyter from './optag-images/jupyter.svg';
+import k8s from './optag-images/k8s.svg';
+import keras from './optag-images/keras.svg';
+import looker from './optag-images/looker.svg';
+import matplotlib from './optag-images/matplotlib.svg';
+import meltano from './optag-images/meltano.svg';
+import mlflow from './optag-images/mlflow.svg';
+import modal from './optag-images/modal.svg';
+import teams from './optag-images/msteams.svg';
 import noteable from './optag-images/noteable.svg';
+import numpy from './optag-images/numpy.svg';
+import openai from './optag-images/openai.svg';
 import pandas from './optag-images/pandas.svg';
+import plotly from './optag-images/plotly.svg';
+import postgres from './optag-images/postgres.svg';
+import powerbi from './optag-images/powerbi.svg';
 import pyspark from './optag-images/pyspark.svg';
 import python from './optag-images/python.svg';
 import pytorch from './optag-images/pytorch.svg';
+import sagemaker from './optag-images/sagemaker.svg';
+import scikitlearn from './optag-images/scikitlearn.svg';
+import scipy from './optag-images/scipy.svg';
+import segment from './optag-images/segment.svg';
 import slack from './optag-images/slack.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
-import tensorflow from './optag-images/tensorflow.svg';
-import weights_and_biases from './optag-images/weights_and_biases.svg';
-import airflow from './optag-images/airflow.svg';
-import datadog from './optag-images/datadog.svg';
-import postgres from './optag-images/postgres.svg';
-import hightouch from './optag-images/hightouch.svg';
-import stripe from './optag-images/stripe.svg';
-import bigquery from './optag-images/bigquery.svg';
-import azure from './optag-images/azure.svg';
-import hex from  './optag-images/hex.svg';
-import census from './optag-images/census.svg';
-import azureml from './optag-images/azureml.svg';
-import sagemaker from './optag-images/sagemaker.svg';
-import teams from './optag-images/msteams.svg';
-import mlflow from './optag-images/mlflow.svg';
-import great_expectations from './optag-images/great_expectations.svg';
-import powerbi from './optag-images/powerbi.svg';
-import googlecloud from './optag-images/googlecloud.svg';
-import looker from './optag-images/looker.svg';
-import tableau from './optag-images/tableau.svg';
-import segment from './optag-images/segment.svg';
-import aws from './optag-images/aws.svg';
 import stitch from './optag-images/stitch.svg';
-import openai from './optag-images/openai.svg';
+import stripe from './optag-images/stripe.svg';
+import tableau from './optag-images/tableau.svg';
+import tensorflow from './optag-images/tensorflow.svg';
 import vercel from './optag-images/vercel.svg';
-import github from './optag-images/github.svg';
-import gitlab from './optag-images/gitlab.svg';
-import modal from './optag-images/modal.svg';
-import plotly from './optag-images/plotly.svg';
-import meltano from './optag-images/meltano.svg';
-import k8s from './optag-images/k8s.svg';
-import matplotlib from './optag-images/matplotlib.svg';
-import scipy from './optag-images/scipy.svg';
-import numpy from './optag-images/numpy.svg';
-import scikitlearn from './optag-images/scikitlearn.svg';
-import keras from './optag-images/keras.svg';
-
-
+import weights_and_biases from './optag-images/weights_and_biases.svg';
 
 export interface IOpTag {
   label: string;
@@ -423,7 +421,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background: reduceColor && reduceText ? Colors.White : (reduceColor ? Colors.Gray100 : color),
+              background:
+                reduceColor && reduceText ? Colors.White : reduceColor ? Colors.Gray100 : color,
               color: reduceColor ? Colors.Gray700 : textcolor,
               fontWeight: reduceColor ? 500 : 700,
             }}
