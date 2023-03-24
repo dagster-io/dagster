@@ -42,7 +42,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .repository_data import CachingRepositoryData, _get_partition_set_from_schedule
+from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 
@@ -150,17 +150,6 @@ def build_caching_repository_data_from_list(
             schedule_and_sensor_names.add(definition.name)
 
             schedules[definition.name] = definition
-            partition_set_def = _get_partition_set_from_schedule(definition)
-            if partition_set_def:
-                if (
-                    partition_set_def.name in partition_sets
-                    and partition_set_def != partition_sets[partition_set_def.name]
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        "Duplicate partition set definition found for partition set "
-                        f"{partition_set_def.name}"
-                    )
-                partition_sets[partition_set_def.name] = partition_set_def
 
         elif isinstance(definition, UnresolvedPartitionedAssetScheduleDefinition):
             if definition.name in schedule_and_sensor_names:

@@ -54,7 +54,6 @@ from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
-    PartitionScheduleDefinition,
     ScheduleType,
 )
 from dagster._core.definitions.partition_mapping import (
@@ -1386,9 +1385,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
         mode=schedule_def._target.mode,  # noqa: SLF001
         environment_vars=schedule_def.environment_vars,
-        partition_set_name=schedule_def.get_partition_set().name
-        if isinstance(schedule_def, PartitionScheduleDefinition)
-        else None,
+        partition_set_name=None,
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
         default_status=schedule_def.default_status,
