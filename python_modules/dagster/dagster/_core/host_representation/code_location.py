@@ -428,7 +428,7 @@ class InProcessCodeLocation(CodeLocation):
         return get_partition_config(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
-            partition_name=partition_name,
+            partition_key=partition_name,
             instance_ref=instance.get_ref(),
         )
 

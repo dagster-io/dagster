@@ -30,7 +30,6 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -103,7 +102,6 @@ def build_caching_repository_data_from_list(
     pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
     coerced_graphs: Dict[str, JobDefinition] = {}
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
-    partition_sets: Dict[str, PartitionSetDefinition[object]] = {}
     schedules: Dict[str, ScheduleDefinition] = {}
     unresolved_partitioned_asset_schedules: Dict[
         str, UnresolvedPartitionedAssetScheduleDefinition
@@ -129,12 +127,6 @@ def build_caching_repository_data_from_list(
                     "is a reserved name. Please rename the job."
                 )
             pipelines_or_jobs[definition.name] = definition
-        elif isinstance(definition, PartitionSetDefinition):
-            if definition.name in partition_sets:
-                raise DagsterInvalidDefinitionError(
-                    f"Duplicate partition set definition found for partition set {definition.name}"
-                )
-            partition_sets[definition.name] = definition
         elif isinstance(definition, SensorDefinition):
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
@@ -308,7 +300,6 @@ def build_caching_repository_data_from_list(
     return CachingRepositoryData(
         pipelines=pipelines,
         jobs=jobs,
-        partition_sets=partition_sets,
         schedules=schedules,
         sensors=sensors,
         source_assets_by_key=source_assets_by_key,

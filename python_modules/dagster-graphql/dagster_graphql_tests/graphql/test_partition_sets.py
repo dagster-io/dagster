@@ -147,7 +147,7 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={"repositorySelector": selector, "pipelineName": "no_config_pipeline"},
+            variables={"repositorySelector": selector, "pipelineName": "integers"},
         )
 
         assert result.data
@@ -167,7 +167,10 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_QUERY,
-            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": selector,
+            },
         )
 
         assert result.data
@@ -204,7 +207,10 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_TAGS_QUERY,
-            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
+            variables={
+                "partitionSetName": "integers_partition_set",
+                "repositorySelector": selector,
+            },
         )
 
         assert not result.errors
@@ -216,7 +222,7 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         assert tags == {
             "foo": "0",
             "dagster/partition": "0",
-            "dagster/partition_set": "integer_partition",
+            "dagster/partition_set": "integers_partition_set",
         }
 
 
@@ -230,7 +236,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                     "forceSynchronousSubmission": True,
@@ -245,7 +251,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             query=GET_PARTITION_SET_STATUS_QUERY,
             variables={
-                "partitionSetName": "integer_partition",
+                "partitionSetName": "integers_partition_set",
                 "repositorySelector": repository_selector,
             },
         )
@@ -268,7 +274,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": [str(num) for num in range(10)],
                     "forceSynchronousSubmission": True,
@@ -283,7 +289,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             query=GET_PARTITION_SET_STATUS_QUERY,
             variables={
-                "partitionSetName": "integer_partition",
+                "partitionSetName": "integers_partition_set",
                 "repositorySelector": repository_selector,
             },
         )

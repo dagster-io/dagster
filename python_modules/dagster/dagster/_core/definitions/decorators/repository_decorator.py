@@ -21,7 +21,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
-from ..partition import PartitionSetDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
@@ -107,7 +106,6 @@ class _Repository:
                     definition,
                     (
                         PipelineDefinition,
-                        PartitionSetDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
@@ -132,7 +130,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
+                    "ScheduleDefinition, SensorDefinition, "
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
@@ -152,7 +150,7 @@ class _Repository:
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'jobs'}}: found "
+                    "keys other than {{'pipelines', 'schedules', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [

@@ -2,15 +2,20 @@
 
 import os
 import sys
-from typing import Generator, Optional, Sequence, Union
+from typing import Generator, Optional, Sequence, Tuple, Union
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsDefinition
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    PartitionedConfig,
+    PartitionsDefinition,
+)
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
@@ -35,6 +40,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPipelineSubsetResult,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
+    job_name_for_external_partition_set_name,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
@@ -370,36 +376,49 @@ def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDe
     return False
 
 
+def _get_job_partitions_and_config_for_partition_set_name(
+    repo_def: RepositoryDefinition,
+    partition_set_name: str,
+) -> Tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
+    job_name = job_name_for_external_partition_set_name(partition_set_name)
+    job_def = repo_def.get_job(job_name)
+    assert job_def.partitions_def and job_def.partitioned_config, (
+        f"Job {job_def.name} corresponding to external partition set {partition_set_name} does not"
+        " have a partitions_def"
+    )
+    return job_def, job_def.partitions_def, job_def.partitioned_config
+
+
 def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-    partition_name: str,
+    partition_key: str,
     instance_ref: Optional[InstanceRef] = None,
-):
+) -> Union[ExternalPartitionConfigData, ExternalPartitionExecutionErrorData]:
     try:
-        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+        (
+            _,
+            partitions_def,
+            partitioned_config,
+        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 
         # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
         # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-        if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
+        if _partitions_def_contains_dynamic_partitions_def(partitions_def):
             with DagsterInstance.from_ref(
                 instance_ref
             ) if instance_ref else nullcontext() as instance:
-                partition = partition_set_def.get_partition(
-                    partition_name, dynamic_partitions_store=instance
+                partition = partitions_def.get_partition(
+                    partition_key, dynamic_partitions_store=instance
                 )
         else:
-            partition = partition_set_def.get_partition(
-                partition_name, dynamic_partitions_store=None
-            )
+            partition = partitions_def.get_partition(partition_key, dynamic_partitions_store=None)
 
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: "Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}".format(
-                partition_set_name=partition_set_def.name
-            ),
+            lambda: f"Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}",
         ):
-            run_config = partition_set_def.run_config_for_partition(partition)
+            run_config = partitioned_config.get_run_config_for_partition_key(partition_key)
             return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -407,27 +426,22 @@ def get_partition_config(
         )
 
 
-def _get_target_for_partition_execution_error(partition_set_def):
-    if partition_set_def.job_name:
-        return f"partitioned config on job '{partition_set_def.job_name}'"
-    else:
-        return f"partition set '{partition_set_def.name}'"
-
-
 def get_partition_names(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-):
+) -> Union[ExternalPartitionNamesData, ExternalPartitionExecutionErrorData]:
     try:
-        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+        (
+            job_def,
+            partitions_def,
+            _,
+        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: f"Error occurred during the execution of the partition generation function for {_get_target_for_partition_execution_error(partition_set_def)}",
+            lambda: f"Error occurred during the execution of the partition generation function for partitioned config on job '{job_def.name}'",
         ):
-            return ExternalPartitionNamesData(
-                partition_names=partition_set_def.get_partition_names()
-            )
+            return ExternalPartitionNamesData(partition_names=partitions_def.get_partition_keys())
     except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
@@ -441,26 +455,27 @@ def get_partition_tags(
     instance_ref: Optional[InstanceRef] = None,
 ):
     try:
-        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+        (
+            job_def,
+            partitions_def,
+            partitioned_config,
+        ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 
         # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
         # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-        if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
-            with DagsterInstance.from_ref(
-                instance_ref
-            ) if instance_ref else nullcontext() as instance:
-                partition = partition_set_def.get_partition(
-                    partition_name, dynamic_partitions_store=instance
-                )
-        else:
-            partition = partition_set_def.get_partition(
-                partition_name, dynamic_partitions_store=None
-            )
+        instance = (
+            DagsterInstance.from_ref(instance_ref)
+            if (_partitions_def_contains_dynamic_partitions_def(partitions_def) and instance_ref)
+            else None
+        )
+        partition = partitions_def.get_partition(partition_name, dynamic_partitions_store=instance)
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for {_get_target_for_partition_execution_error(partition_set_def)}",
+            lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
         ):
-            tags = partition_set_def.tags_for_partition(partition)
+            tags = partitioned_config.get_tags_for_partition_key(
+                partition.name, job_name=job_def.name
+            )
             return ExternalPartitionTagsData(name=partition.name, tags=tags)
     except Exception:
         return ExternalPartitionExecutionErrorData(
@@ -499,45 +514,51 @@ def get_external_execution_plan_snapshot(
 
 
 def get_partition_set_execution_param_data(
-    repo_definition: RepositoryDefinition,
+    repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
-    partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
+    (
+        job_def,
+        partitions_def,
+        partitioned_config,
+    ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
+
     try:
+        # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+        # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+        instance = (
+            DagsterInstance.from_ref(instance_ref)
+            if (_partitions_def_contains_dynamic_partitions_def(partitions_def) and instance_ref)
+            else None
+        )
         with user_code_error_boundary(
             PartitionExecutionError,
-            lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
+            lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
         ):
-            # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
-            # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-            if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
-                with DagsterInstance.from_ref(
-                    instance_ref
-                ) if instance_ref else nullcontext() as instance:
-                    all_partitions = partition_set_def.get_partitions(
-                        dynamic_partitions_store=instance
-                    )
-            else:
-                all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=None)
-        partitions = [
-            partition for partition in all_partitions if partition.name in partition_names
-        ]
+            all_partitions = partitions_def.get_partitions(dynamic_partitions_store=instance)
+            partitions = [
+                partition for partition in all_partitions if partition.name in partition_names
+            ]
 
         partition_data = []
         for partition in partitions:
 
-            def _error_message_fn(partition_name):
+            def _error_message_fn(partition_name: str):
                 return (
-                    lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in {_get_target_for_partition_execution_error(partition_set_def)}"
+                    lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
                 )
 
             with user_code_error_boundary(
                 PartitionExecutionError, _error_message_fn(partition.name)
             ):
-                run_config = partition_set_def.run_config_for_partition(partition)
-                tags = partition_set_def.tags_for_partition(partition)
+                run_config = partitioned_config.get_run_config_for_partition_key(
+                    partition.name, instance
+                )
+                tags = partitioned_config.get_tags_for_partition_key(
+                    partition.name, instance, job_name=job_def.name
+                )
 
             partition_data.append(
                 ExternalPartitionExecutionParamData(

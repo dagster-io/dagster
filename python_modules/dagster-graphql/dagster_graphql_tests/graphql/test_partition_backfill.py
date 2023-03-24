@@ -217,7 +217,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                 }
@@ -255,7 +255,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                 }
@@ -267,7 +267,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             GET_PARTITION_BACKFILLS_QUERY,
             variables={
                 "repositorySelector": repository_selector,
-                "partitionSetName": "integer_partition",
+                "partitionSetName": "integers_partition_set",
             },
         )
         assert not result.errors
@@ -281,7 +281,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
-            "partitionSetName": "chained_integer_partition",
+            "partitionSetName": "chained_failure_job_partition_set",
         }
 
         # reexecute a partial pipeline
@@ -325,7 +325,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                 }
@@ -377,7 +377,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3"],
                 }
@@ -433,7 +433,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3", "4", "5"],
                 }
@@ -502,7 +502,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3", "4", "5"],
                 }
@@ -558,7 +558,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 "backfillParams": {
                     "selector": {
                         "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
+                        "partitionSetName": "integers_partition_set",
                     },
                     "partitionNames": ["2", "3", "4", "5"],
                 }
@@ -611,7 +611,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
-            "partitionSetName": "chained_integer_partition",
+            "partitionSetName": "chained_failure_job_partition_set",
         }
 
         # trigger failure in the conditionally_fail solid
@@ -673,7 +673,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         repository_selector = infer_repository_selector(graphql_context)
         partition_set_selector = {
             "repositorySelector": repository_selector,
-            "partitionSetName": "chained_integer_partition",
+            "partitionSetName": "chained_failure_job_partition_set",
         }
 
         result = execute_dagster_graphql_and_finish_runs(
