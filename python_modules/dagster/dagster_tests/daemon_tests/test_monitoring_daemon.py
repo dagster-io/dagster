@@ -59,7 +59,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         pass
 
-    def terminate(self, run_id, message=None):
+    def terminate(self, run_id):
         self.termination_calls.append(run_id)
         if self.should_fail_termination:
             raise Exception("oof")
@@ -322,3 +322,10 @@ def test_long_running_termination_failure(
         assert run
         assert run.status == DagsterRunStatus.CANCELED
         assert len(run_launcher.termination_calls) == 1
+
+    run_canceling_logs = instance.all_logs(run.run_id, of_type=DagsterEventType.RUN_CANCELING)
+    assert len(run_canceling_logs) == 1
+    run_canceling_log = run_canceling_logs[0]
+    assert (
+        run_canceling_log.message == "Canceling due to exceeding maximum runtime of 500.0 seconds."
+    )
