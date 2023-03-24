@@ -42,7 +42,7 @@ from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput
+from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput, OpNode
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
@@ -442,7 +442,7 @@ def construct_leaf_solid_config(
 
 
 def define_isolid_field(
-    solid: Node,
+    node: Union[OpNode, GraphNode],
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
@@ -461,12 +461,12 @@ def define_isolid_field(
     # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
     #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
 
-    if isinstance(solid.definition, OpDefinition):
+    if isinstance(node, OpNode):
         return construct_leaf_solid_config(
-            solid,
+            node,
             handle,
             dependency_structure,
-            solid.definition.config_schema,
+            node.definition.config_schema,
             resource_defs,
             ignored,
             is_using_graph_job_op_apis,
@@ -474,13 +474,13 @@ def define_isolid_field(
             input_source_assets,
         )
 
-    graph_def = solid.definition.ensure_graph_def()
+    graph_def = node.definition
 
     if graph_def.has_config_mapping:
         # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
         # be `configured`)...
         return construct_leaf_solid_config(
-            solid,
+            node,
             handle,
             dependency_structure,
             # ...and in both cases, the correct schema for 'config' key is exposed by this property:
@@ -496,7 +496,7 @@ def define_isolid_field(
     else:
         fields = {
             "inputs": get_inputs_field(
-                solid,
+                node,
                 handle,
                 dependency_structure,
                 resource_defs,
@@ -505,7 +505,7 @@ def define_isolid_field(
                 is_using_graph_job_op_apis,
                 input_source_assets,
             ),
-            "outputs": get_outputs_field(solid, resource_defs),
+            "outputs": get_outputs_field(node, resource_defs),
         }
         nodes_field = Field(
             define_solid_dictionary_cls(

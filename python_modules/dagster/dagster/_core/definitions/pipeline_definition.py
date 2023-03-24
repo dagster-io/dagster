@@ -794,7 +794,7 @@ def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
         if isinstance(node, GraphNode):
-            yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
+            yield from _iterate_all_nodes(node.definition.node_dict)
 
 
 def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:

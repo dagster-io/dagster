@@ -551,11 +551,13 @@ class PendingNodeInvocation:
             " ".join([output_def.name for output_def in outputs]),
         )(**invoked_output_handles)
 
-    def describe_node(self):
+    def describe_node(self) -> str:
         node_name = self.given_alias if self.given_alias else self.node_def.name
         return f"{self.node_def.node_type_str} '{node_name}'"
 
-    def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
+    def _process_argument_node(
+        self, node_name: str, output_node, input_name, input_bindings, arg_desc
+    ):
         from .source_asset import SourceAsset
 
         # already set - conflict between kwargs and args
