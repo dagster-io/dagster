@@ -294,11 +294,15 @@ def find_parent_materialized_asset_partitions(
                     asset_key,
                     partition_key,
                 ):
-                    # must check if this child was planned to be materialized in the same run as
-                    # the parent
-                    if partition_key == child.partition_key and latest_storage_id is not None:
-                        # TODO: this is slow if many partitions have been materialized since the last
-                        # cursor
+                    # we need to see if the child was materialized in the same run, but this is
+                    # expensive, so we try to avoid doing so in as many situations as possible
+                    if child.asset_key not in target_asset_keys:
+                        continue
+                    elif not candidates_unit_within_allowable_time_window(asset_graph, [child]):
+                        continue
+                    elif partition_key != child.partition_key:
+                        result_asset_partitions.add(child)
+                    else:
                         latest_partition_record = check.not_none(
                             instance_queryer.get_latest_materialization_record(
                                 AssetKeyPartitionKey(asset_key, partition_key),
@@ -309,9 +313,6 @@ def find_parent_materialized_asset_partitions(
                             latest_partition_record.run_id, child
                         ):
                             result_asset_partitions.add(child)
-                    # could not have happened in the same run
-                    else:
-                        result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
 
