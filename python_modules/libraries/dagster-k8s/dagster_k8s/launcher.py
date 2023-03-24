@@ -321,8 +321,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        self._instance.report_run_canceling(run)
-
         job_name = get_job_name_from_run_id(
             run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
         )

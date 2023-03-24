@@ -50,4 +50,10 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
         return run
 
     def cancel_run(self, run_id: str) -> bool:
+        run = self._instance.get_run_by_id(run_id)
+        if run is None:
+            check.failed(f"Failed to load run {run_id}")
+        self._instance.report_run_canceling(
+            run, message="Received cancellation request from default run coordinator"
+        )
         return self._instance.run_launcher.terminate(run_id)
