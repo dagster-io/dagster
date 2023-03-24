@@ -55,6 +55,7 @@ import scikitlearn from './optag-images/scikitlearn.svg';
 import keras from './optag-images/keras.svg';
 
 
+
 export interface IOpTag {
   label: string;
   onClick: (e: React.MouseEvent) => void;
@@ -65,6 +66,7 @@ interface OpTagsProps {
   tags: IOpTag[];
   reduceColor?: boolean;
   reduceText?: boolean;
+  reversed?: boolean;
 }
 
 export const KNOWN_TAGS = {
@@ -82,6 +84,7 @@ export const KNOWN_TAGS = {
     color: '#00D2D2',
     icon: noteable,
     content: 'Noteable',
+    reversed: true,
   },
   airbyte: {
     color: '#655CFC',
@@ -123,15 +126,22 @@ export const KNOWN_TAGS = {
     icon: pyspark,
     content: 'PySpark',
   },
+  spark: {
+    color: '#C74D15',
+    icon: pyspark,
+    content: 'Spark',
+  },
   duckdb: {
     color: '#FCBC41',
     icon: duckdb,
     content: 'DuckDB',
+    reversed: true,
   },
   tensorflow: {
     color: '#FE9413',
     icon: tensorflow,
     content: 'TensorFlow',
+    reversed: true,
   },
   pandas: {
     color: '#130754',
@@ -150,7 +160,9 @@ export const KNOWN_TAGS = {
   },
   wandb: {
     color: '#FCB119',
-    content: <img src={weights_and_biases} alt="Weights & Biases logo" role="img" />,
+    icon: weights_and_biases,
+    content: 'Weights & Biases',
+    reversed: true,
   },
   databricks: {
     color: '#FD3820',
@@ -376,6 +388,7 @@ export const AssetComputeKindTag: React.FC<{
   style: React.CSSProperties;
   reduceColor?: boolean;
   reduceText?: boolean;
+  reversed?: boolean;
 }> = ({definition, ...rest}) => {
   if (!definition.computeKind) {
     return null;
@@ -402,7 +415,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
         const known = KNOWN_TAGS[coerceToStandardLabel(tag.label)];
         const text = known?.content || tag.label;
         const color = known?.color || generateColorForLabel(tag.label);
-
+        const textcolor = known?.reversed ? Colors.Gray900 : Colors.White;
         return (
           <Box
             key={tag.label}
@@ -410,8 +423,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
             data-tooltip={reduceText ? text : undefined}
             onClick={tag.onClick}
             style={{
-              background: reduceColor ? Colors.Gray100 : color,
-              color: reduceColor ? Colors.Gray700 : Colors.White,
+              background: reduceColor && reduceText ? Colors.White : (reduceColor ? Colors.Gray100 : color),
+              color: reduceColor ? Colors.Gray700 : textcolor,
               fontWeight: reduceColor ? 500 : 700,
             }}
           >
@@ -420,7 +433,8 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
                 role="img"
                 $size={16}
                 $img={known?.icon}
-                $color={reduceColor ? color : 'white'}
+                $color={reduceColor ? (known?.reversed ? Colors.Gray900 : color) : textcolor}
+                //$color={reduceColor ? color : textcolor}
                 $rotation={null}
                 aria-label={tag.label}
               />
