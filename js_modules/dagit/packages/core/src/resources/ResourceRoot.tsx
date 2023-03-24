@@ -433,7 +433,7 @@ const ResourceUses: React.FC<{
             <tbody>
               {resourceDetails.jobsOpsUsing.map((jobOps) => {
                 return (
-                  <tr key={jobOps.jobName}>
+                  <tr key={jobOps.job.name}>
                     <td>
                       <Box
                         flex={{
@@ -446,8 +446,10 @@ const ResourceUses: React.FC<{
                       >
                         <Icon name="job" color={Colors.Gray400} />
 
-                        <Link to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.jobName}`)}>
-                          <MiddleTruncate text={jobOps.jobName} />
+                        <Link
+                          to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
+                        >
+                          <MiddleTruncate text={jobOps.job.name} />
                         </Link>
                       </Box>
                     </td>
@@ -461,7 +463,7 @@ const ResourceUses: React.FC<{
                         }}
                         style={{maxWidth: '100%'}}
                       >
-                        {jobOps.ops.map((op) => (
+                        {jobOps.opsUsing.map((op) => (
                           <Box
                             flex={{
                               direction: 'row',
@@ -470,17 +472,17 @@ const ResourceUses: React.FC<{
                               gap: 8,
                             }}
                             style={{maxWidth: '100%'}}
-                            key={op}
+                            key={op.handleID}
                           >
                             <Icon name="op" color={Colors.Gray400} />
 
                             <Link
                               to={workspacePathFromAddress(
                                 repoAddress,
-                                `/jobs/${jobOps.jobName}/${op}`,
+                                `/jobs/${jobOps.job.name}/${op.handleID.split('.').join('/')}`,
                               )}
                             >
-                              <MiddleTruncate text={op} />
+                              <MiddleTruncate text={op.solid.name} />
                             </Link>
                           </Box>
                         ))}
@@ -575,8 +577,15 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
       path
     }
     jobsOpsUsing {
-      jobName
-      ops
+      job {
+        name
+      }
+      opsUsing {
+        handleID
+        solid {
+          name
+        }
+      }
     }
     resourceType
   }

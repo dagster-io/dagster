@@ -43,7 +43,15 @@ export type ResourceDetailsFragment = {
     } | null;
   }>;
   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string; ops: Array<string>}>;
+  jobsOpsUsing: Array<{
+    __typename: 'JobWithOps';
+    job: {__typename: 'Job'; name: string};
+    opsUsing: Array<{
+      __typename: 'SolidHandle';
+      handleID: string;
+      solid: {__typename: 'Solid'; name: string};
+    }>;
+  }>;
 };
 
 export type ResourceRootQueryVariables = Types.Exact<{
@@ -104,7 +112,15 @@ export type ResourceRootQuery = {
           } | null;
         }>;
         assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-        jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string; ops: Array<string>}>;
+        jobsOpsUsing: Array<{
+          __typename: 'JobWithOps';
+          job: {__typename: 'Job'; name: string};
+          opsUsing: Array<{
+            __typename: 'SolidHandle';
+            handleID: string;
+            solid: {__typename: 'Solid'; name: string};
+          }>;
+        }>;
       }
     | {__typename: 'ResourceNotFoundError'};
 };
