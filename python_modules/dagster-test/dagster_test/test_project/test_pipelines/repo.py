@@ -272,6 +272,7 @@ def define_docker_celery_pipeline():
     @resource
     def resource_with_output():
         print("writing to stdout")  # noqa: T201
+        print("{}")  # noqa: T201
         return 42
 
     @op(required_resource_keys={"resource_with_output"})

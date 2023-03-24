@@ -2,6 +2,7 @@ from json import JSONDecodeError
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent
+from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 
@@ -42,6 +43,8 @@ def filter_dagster_events_from_cli_logs(log_lines):
         except JSONDecodeError:
             pass
         except check.CheckError:
+            pass
+        except DeserializationError:
             pass
 
     return events
