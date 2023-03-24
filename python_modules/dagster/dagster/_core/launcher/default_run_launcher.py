@@ -167,7 +167,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        self._instance.report_run_canceling(run)
         res = deserialize_value(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id)), CancelExecutionResult
         )

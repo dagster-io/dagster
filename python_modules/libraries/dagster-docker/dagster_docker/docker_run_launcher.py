@@ -205,8 +205,6 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
-        self._instance.report_run_canceling(run)
-
         container.stop()
 
         return True

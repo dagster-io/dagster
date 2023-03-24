@@ -303,8 +303,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_namespace = self.get_namespace_from_run_config(run_id)
 
-        self._instance.report_run_canceling(run)
-
         try:
             termination_result = self._api_client.delete_job(
                 job_name=job_name, namespace=job_namespace
