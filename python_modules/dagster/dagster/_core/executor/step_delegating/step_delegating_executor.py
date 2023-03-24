@@ -40,6 +40,7 @@ class StepDelegatingExecutor(Executor):
         max_concurrent: Optional[int] = None,
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         should_verify_step: bool = False,
+        fetch_events=None,
     ):
         self._step_handler = step_handler
         self._retries = retries
@@ -63,12 +64,13 @@ class StepDelegatingExecutor(Executor):
             ),
         )
         self._should_verify_step = should_verify_step
+        self._pop_events = fetch_events or self._fetch_events_from_db
 
     @property
     def retries(self):
         return self._retries
 
-    def _pop_events(self, instance, run_id) -> Sequence[DagsterEvent]:
+    def _fetch_events_from_db(self, instance, run_id) -> Sequence[DagsterEvent]:
         events = instance.logs_after(run_id, self._event_cursor, of_type=set(DagsterEventType))
         self._event_cursor += len(events)
         dagster_events = [event.dagster_event for event in events]
@@ -250,7 +252,8 @@ class StepDelegatingExecutor(Executor):
                                 )
 
                 # process skips from failures or uncovered inputs
-                list(active_execution.plan_events_iterator(plan_context))
+                for event in active_execution.plan_events_iterator(plan_context):
+                    yield event
 
                 curr_time = pendulum.now("UTC")
                 if (
@@ -267,7 +270,7 @@ class StepDelegatingExecutor(Executor):
                                 )
                             )
                             if not health_check_result.is_healthy:
-                                DagsterEvent.step_failure_event(
+                                event = DagsterEvent.step_failure_event(
                                     step_context=step_context,
                                     step_failure_data=StepFailureData(
                                         error=None,
@@ -278,19 +281,23 @@ class StepDelegatingExecutor(Executor):
                                         f" {health_check_result.unhealthy_reason}"
                                     ),
                                 )
+                                yield event
+                                active_execution.handle_event(event)
                         except Exception:
                             serializable_error = serializable_error_info_from_exc_info(
                                 sys.exc_info()
                             )
                             # Log a step failure event if there was an error during the health
                             # check
-                            DagsterEvent.step_failure_event(
+                            event = DagsterEvent.step_failure_event(
                                 step_context=plan_context.for_step(step),
                                 step_failure_data=StepFailureData(
                                     error=serializable_error,
                                     user_failure_data=None,
                                 ),
                             )
+                            yield event
+                            active_execution.handle_event(event)
 
                 if self._max_concurrent is not None:
                     max_steps_to_run = self._max_concurrent - len(running_steps)

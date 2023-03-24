@@ -1,6 +1,6 @@
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 from typing_extensions import Self, TypeAlias
 
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from dagster._core.executor.base import Executor
     from dagster._core.executor.in_process import InProcessExecutor
     from dagster._core.executor.init import InitExecutorContext
-    from dagster._core.executor.multiprocess import MultiprocessExecutor
     from dagster._core.instance import DagsterInstance
 
 
@@ -322,23 +321,26 @@ def execute_in_process_executor(_) -> "InProcessExecutor":
     )
 
 
-def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "MultiprocessExecutor":
-    from dagster._core.executor.multiprocess import MultiprocessExecutor
+def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Executor":
+    from dagster._core.executor.multiprocess import build_mutliprocess_executor
+
+    return build_mutliprocess_executor(config)
+    # from dagster._core.executor.multiprocess import MultiprocessExecutor
 
     # unpack optional selector
-    start_method = None
-    start_cfg: Dict[str, object] = {}
-    start_selector = check.opt_dict_elem(config, "start_method")
-    if start_selector:
-        start_method, start_cfg = list(start_selector.items())[0]
+    # start_method = None
+    # start_cfg: Dict[str, object] = {}
+    # start_selector = check.opt_dict_elem(config, "start_method")
+    # if start_selector:
+    #     start_method, start_cfg = list(start_selector.items())[0]
 
-    return MultiprocessExecutor(
-        max_concurrent=check.int_elem(config, "max_concurrent"),
-        tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
-        retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
-        start_method=start_method,
-        explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
-    )
+    # return MultiprocessExecutor(
+    #     max_concurrent=check.int_elem(config, "max_concurrent"),
+    #     tag_concurrency_limits=check.opt_list_elem(config, "tag_concurrency_limits"),
+    #     retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
+    #     start_method=start_method,
+    #     explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
+    # )
 
 
 MULTI_PROC_CONFIG = Field(

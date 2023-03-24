@@ -47,10 +47,6 @@ class TestStepHandler(StepHandler):
     terminate_step_count = 0
     verify_step_count = 0
 
-    @property
-    def name(self):
-        return "TestStepHandler"
-
     def launch_step(self, step_handler_context):
         if step_handler_context.execute_step_args.should_verify_step:
             TestStepHandler.verify_step_count += 1

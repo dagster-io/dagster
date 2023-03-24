@@ -8,8 +8,8 @@ from dagster import (
     MetadataEntry,
     _check as check,
 )
+from dagster._core.definitions.executor_definition import ExecutorConfig
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
-from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,
@@ -23,9 +23,14 @@ from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
+from dagster._core.executor.step_delegating.step_delegating_executor import StepDelegatingExecutor
+from dagster._core.executor.step_delegating.step_handler.base import (
+    CheckStepHealthResult,
+    StepHandler,
+    StepHandlerContext,
+)
 from dagster._core.instance import DagsterInstance
 from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -225,12 +230,11 @@ class MultiprocessExecutor(Executor):
                                 multiproc_ctx,
                                 pipeline,
                                 step_context,
-                                step,
                                 errors,
                                 term_events,
                                 self.retries,
                                 active_execution.get_known_state(),
-                                execution_plan.repository_load_data,
+                                # execution_plan.repository_load_data,
                             )
 
                     # process active iterators
@@ -329,28 +333,27 @@ def execute_step_out_of_process(
     multiproc_ctx: MultiprocessingBaseContext,
     pipeline: ReconstructablePipeline,
     step_context: IStepContext,
-    step: ExecutionStep,
     errors: Dict[int, SerializableErrorInfo],
     term_events: Dict[str, Any],
     retries: RetryMode,
     known_state: KnownExecutionState,
-    repository_load_data: Optional[RepositoryLoadData],
+    # repository_load_data: Optional[RepositoryLoadData],
 ) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         pipeline_run=step_context.dagster_run,
-        step_key=step.key,
+        step_key=step_context.step.key,
         instance_ref=step_context.instance.get_ref(),
-        term_event=term_events[step.key],
+        term_event=term_events[step_context.step.key],
         recon_pipeline=pipeline,
         retry_mode=retries,
         known_state=known_state,
-        repository_load_data=repository_load_data,
+        repository_load_data=pipeline.repository.repository_load_data,
     )
 
     yield DagsterEvent.step_worker_starting(
         step_context,
-        'Launching subprocess for "{}".'.format(step.key),
+        'Launching subprocess for "{}".'.format(step_context.step.key),
         metadata_entries=[],
     )
 
@@ -362,3 +365,159 @@ def execute_step_out_of_process(
                 errors[ret.pid] = ret.error_info
         else:
             check.failed("Unexpected return value from child process {}".format(type(ret)))
+
+
+class MultiprocessStepHandler(StepHandler):
+    def __init__(
+        self,
+        start_method: Optional[str] = None,
+        explicit_forkserver_preload: Optional[Sequence[str]] = None,
+    ):
+        start_method = check.opt_str_param(start_method, "start_method")
+        valid_starts = multiprocessing.get_all_start_methods()
+
+        if start_method is None:
+            start_method = "spawn"
+
+        if start_method not in valid_starts:
+            raise DagsterUnmetExecutorRequirementsError(
+                (
+                    f"The selected start_method '{start_method}' is not available. "
+                    f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}."
+                ),
+            )
+        self._start_method = start_method
+        self._explicit_forkserver_preload = explicit_forkserver_preload
+
+        self._multiproc_ctx: Optional[MultiprocessingBaseContext] = None
+
+        self._errors: Dict[int, SerializableErrorInfo] = {}
+        self._crashes: Dict[str, ChildProcessCrashException] = {}
+        self._term_events: Dict[str, Any] = {}
+        self._active_iters: Dict[str, Iterator[Optional[DagsterEvent]]] = {}
+
+    def _get_multiprocess_context(
+        self, step_handler_context: StepHandlerContext
+    ) -> MultiprocessingBaseContext:
+        if self._multiproc_ctx is None:
+            self._multiproc_ctx = multiprocessing.get_context(self._start_method)
+            if self._start_method == "forkserver":
+                module = (
+                    step_handler_context.get_orchestration_context().reconstructable_pipeline.get_module()
+                )
+                # if explicitly listed in config we will use that
+                if self._explicit_forkserver_preload is not None:
+                    preload = self._explicit_forkserver_preload
+
+                # or if the reconstructable pipeline has a module target, we will use that
+                elif module is not None:
+                    preload = [module]
+
+                # base case is to preload the dagster library
+                else:
+                    preload = ["dagster"]
+
+                # we import this module first to avoid user code like
+                # pyspark.serializers._hijack_namedtuple from breaking us
+                if "dagster._core.executor.multiprocess" not in preload:
+                    preload = ["dagster._core.executor.multiprocess", *preload]
+
+                self._multiproc_ctx.set_forkserver_preload(list(preload))
+
+        return self._multiproc_ctx
+
+    def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+        multiproc_ctx = self._get_multiprocess_context(step_handler_context)
+        step_key = step_handler_context.get_singular_step_key()
+        pipeline = step_handler_context.get_orchestration_context().reconstructable_pipeline
+        step_context = step_handler_context.get_step_context(step_key)
+
+        self._term_events[step_key] = multiproc_ctx.Event()
+        self._active_iters[step_key] = execute_step_out_of_process(
+            multiproc_ctx,
+            pipeline,
+            step_context,
+            self._errors,
+            self._term_events,
+            check.not_none(step_handler_context.execute_step_args.retry_mode),
+            check.not_none(step_handler_context.execute_step_args.known_state),
+        )
+        for event_or_none in self._active_iters[step_context.step.key]:
+            if event_or_none is None:
+                break
+            else:
+                yield event_or_none
+
+    def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
+        step_key = step_handler_context.get_singular_step_key()
+        # self._pids[step_key]
+        if step_key in self._crashes:
+            return CheckStepHealthResult(
+                is_healthy=False,
+                unhealthy_reason=get_run_crash_explanation(
+                    prefix="child process",
+                    exit_code=self._crashes[step_key].exit_code,
+                ),
+            )
+
+        return CheckStepHealthResult(is_healthy=True)
+
+    def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
+        step_key = step_handler_context.get_singular_step_key()
+        if step_key in self._term_events:
+            self._term_events[step_key].set()
+        # yield event on else condition?
+        return
+        yield
+
+    def fetch_events(self, _i, _r):
+        empties = set()
+        events = []
+        for key, active_iter in self._active_iters.items():
+            try:
+                event_or_none = next(active_iter)
+                if event_or_none is not None:
+                    events.append(event_or_none)
+            except ChildProcessCrashException as crash:
+                self._crashes[key] = crash
+                empties.add(key)
+            except StopIteration:
+                empties.add(key)
+
+        for key in empties:
+            del self._active_iters[key]
+            del self._term_events[key]
+
+        return events
+
+
+def build_mutliprocess_executor(config: ExecutorConfig):
+    # unpack optional selector
+    start_method = None
+    start_cfg: Dict[str, object] = {}
+    start_selector = check.opt_dict_elem(config, "start_method")
+    if start_selector:
+        start_method, start_cfg = list(start_selector.items())[0]
+
+    max_concurrent = check.int_elem(config, "max_concurrent")
+    if max_concurrent == 0:
+        env_var_default = os.getenv("DAGSTER_MULTIPROCESS_EXECUTOR_MAX_CONCURRENT")
+        max_concurrent = int(env_var_default) if env_var_default else multiprocessing.cpu_count()
+
+    tag_concurrency_limits = check.opt_list_elem(config, "tag_concurrency_limits")
+    retries = RetryMode.from_config(check.dict_elem(config, "retries"))
+    check.opt_list_elem(start_cfg, "preload_modules", of_type=str)
+
+    handler = MultiprocessStepHandler(
+        start_method=start_method,
+    )
+    return StepDelegatingExecutor(
+        handler,
+        retries=retries,
+        max_concurrent=max_concurrent,
+        tag_concurrency_limits=tag_concurrency_limits,
+        sleep_seconds=0.00,  # go fast
+        check_step_health_interval_seconds=1,
+        # pass event source to use thats not the instance DB
+        fetch_events=handler.fetch_events,
+    )

@@ -60,7 +60,7 @@ class ChildProcessCommand(ABC):
 class ChildProcessCrashException(Exception):
     """Thrown when the child process crashes."""
 
-    def __init__(self, exit_code=None):
+    def __init__(self, exit_code: int):
         self.exit_code = exit_code
         super().__init__()
 

@@ -20,10 +20,6 @@ class TestStepHandler(StepHandler):
     launched_second_attempt = False
     processes = []
 
-    @property
-    def name(self):
-        return "TestStepHandler"
-
     def launch_step(self, step_handler_context):
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 

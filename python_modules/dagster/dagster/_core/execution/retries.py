@@ -27,10 +27,10 @@ class RetryMode(Enum):
     DEFERRED = "deferred"
 
     @staticmethod
-    def from_config(config_value: Mapping[str, Mapping]) -> Optional["RetryMode"]:
+    def from_config(config_value: Mapping[str, Mapping]) -> "RetryMode":
         for selector, _ in config_value.items():
             return RetryMode(selector)
-        return None
+        check.failed(f"Failure to resolve RetryMode from config: {config_value}")
 
     @property
     def enabled(self) -> bool:

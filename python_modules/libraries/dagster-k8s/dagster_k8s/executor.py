@@ -134,9 +134,6 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
 
 
 class K8sStepHandler(StepHandler):
-    @property
-    def name(self):
-        return "K8sStepHandler"
 
     def __init__(
         self,

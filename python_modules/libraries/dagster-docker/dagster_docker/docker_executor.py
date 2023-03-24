@@ -157,10 +157,6 @@ class DockerStepHandler(StepHandler):
 
         return merged_container_context
 
-    @property
-    def name(self) -> str:
-        return "DockerStepHandler"
-
     def _get_client(self, docker_container_context: DockerContainerContext):
         client = docker.client.from_env()
         if docker_container_context.registry:
