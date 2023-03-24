@@ -19,6 +19,41 @@ import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import tensorflow from './optag-images/tensorflow.svg';
 import weights_and_biases from './optag-images/weights_and_biases.svg';
+import airflow from './optag-images/airflow.svg';
+import datadog from './optag-images/datadog.svg';
+import postgres from './optag-images/postgres.svg';
+import hightouch from './optag-images/hightouch.svg';
+import stripe from './optag-images/stripe.svg';
+import bigquery from './optag-images/bigquery.svg';
+import azure from './optag-images/azure.svg';
+import hex from  './optag-images/hex.svg';
+import census from './optag-images/census.svg';
+import azureml from './optag-images/azureml.svg';
+import sagemaker from './optag-images/sagemaker.svg';
+import teams from './optag-images/msteams.svg';
+import mlflow from './optag-images/mlflow.svg';
+import great_expectations from './optag-images/great_expectations.svg';
+import powerbi from './optag-images/powerbi.svg';
+import googlecloud from './optag-images/googlecloud.svg';
+import looker from './optag-images/looker.svg';
+import tableau from './optag-images/tableau.svg';
+import segment from './optag-images/segment.svg';
+import aws from './optag-images/aws.svg';
+import stitch from './optag-images/stitch.svg';
+import openai from './optag-images/openai.svg';
+import vercel from './optag-images/vercel.svg';
+import github from './optag-images/github.svg';
+import gitlab from './optag-images/gitlab.svg';
+import modal from './optag-images/modal.svg';
+import plotly from './optag-images/plotly.svg';
+import meltano from './optag-images/meltano.svg';
+import k8s from './optag-images/k8s.svg';
+import matplotlib from './optag-images/matplotlib.svg';
+import scipy from './optag-images/scipy.svg';
+import numpy from './optag-images/numpy.svg';
+import scikitlearn from './optag-images/scikitlearn.svg';
+import keras from './optag-images/keras.svg';
+
 
 export interface IOpTag {
   label: string;
@@ -121,6 +156,203 @@ export const KNOWN_TAGS = {
     color: '#FD3820',
     icon: databricks,
     content: 'Databricks',
+  },
+  airflow: {
+    color: '#017CEE',
+    icon: airflow,
+    content: 'Airflow',
+  },
+  datadog: {
+    color: '#632CA6',
+    icon: datadog,
+    content: 'Datadog',
+  },
+  postgres: {
+    color: '#336791',
+    icon: postgres,
+    content: 'Postgres',
+  },
+  stripe: {
+    color: '#635BFF',
+    icon: stripe,
+    content: 'Stripe',
+  },
+  hightouch: {
+    color: '#07484D',
+    icon: hightouch,
+    content: 'Hightouch',
+  },
+  census: {
+    color: '#EF54AC',
+    icon: census,
+    content: 'Census',
+  },
+  hex: {
+    color: '#F5C0C0',
+    icon: hex,
+    content: 'Hex',
+    reversed: true,
+  },
+  azure: {
+    color: '#39C3F1',
+    icon: azure,
+    content: 'Azure',
+  },
+  azureml: {
+    color: '#39C3F1',
+    icon: azureml,
+    content: 'Azure ML',
+  },
+  sagemaker: {
+    color: '#A164FD',
+    icon: sagemaker,
+    content: 'Sagemaker',
+  },
+  bigquery: {
+    color: '#4485F4',
+    icon: bigquery,
+    content: 'BigQuery',
+  },
+  teams: {
+    color: '#5255A9',
+    icon: teams,
+    content: 'Teams',
+  },
+  mlflow: {
+    color: '#0194E2',
+    icon: mlflow,
+    content: 'ML Flow',
+  },
+  greatexpectations: {
+    color: '#FF6310',
+    icon: great_expectations,
+    content: 'Great Expectations',
+  },
+  powerbi: {
+    color: '#EDC947',
+    icon: powerbi,
+    content: 'Power BI',
+    reversed: true,
+  },
+  gcp: {
+    color: '#4285F4',
+    icon: googlecloud,
+    content: 'GCP',
+  },
+  googlecloud: {
+    color: '#4285F4',
+    icon: googlecloud,
+    content: 'Google Cloud',
+  },
+  looker: {
+    color: '#5F6368',
+    icon: looker,
+    content: 'Looker',
+  },
+  tableau: {
+    color: '#25447A',
+    icon: tableau,
+    content: 'Tableau',
+  },
+  segment: {
+    color: '#43AF79',
+    icon: segment,
+    content: 'Segment',
+  },
+  athena: {
+    color: '#FF9900',
+    icon: aws,
+    content: 'Athena',
+    reversed: true,
+  },
+  s3: {
+    color: '#FF9900',
+    icon: aws,
+    content: 'S3',
+    reversed: true,
+  },
+  aws: {
+    color: '#FF9900',
+    icon: aws,
+    content: 'AWS',
+    reversed: true,
+  },
+  stitch: {
+    color: '#FFD201',
+    icon: stitch,
+    content: 'Stitch',
+    reversed: true,
+  },
+  openai: {
+    color: '#4AA081',
+    icon: openai,
+    content: 'Open AI',
+  },
+  vercel: {
+    color: '#171615',
+    icon: vercel,
+    content: 'Vercel',
+  },
+  github: {
+    color: '#171615',
+    icon: github,
+    content: 'Github',
+  },
+  gitlab: {
+    color: '#E24329',
+    icon: gitlab,
+    content: 'Gitlab',
+  },
+  plotly: {
+    color: '#787AF7',
+    icon: plotly,
+    content: 'plotly',
+  },
+  modal: {
+    color: '#9AEE86',
+    icon: modal,
+    content: 'Modal',
+    reversed: true,
+  },
+  meltano: {
+    color: '#2D1C6D',
+    icon: meltano,
+    content: 'Meltano',
+  },
+  matplotlib: {
+    color: '#2B597C',
+    icon: matplotlib,
+    content: 'matplotlib',
+  },
+  numpy: {
+    color: '#4D77CF',
+    icon: numpy,
+    content: 'NumPy',
+  },
+  scipy: {
+    color: '#0054A6',
+    icon: scipy,
+    content: 'SciPy',
+  },
+  scikitlearn: {
+    color: '#F7931E',
+    icon: scikitlearn,
+    content: 'Scikit Learn',
+  },
+  keras: {
+    color: '#D00000',
+    icon: keras,
+    content: 'Keras',
+  },
+  kubernetes: {
+    color: '#326CE5',
+    icon: k8s,
+    content: 'Kubernetes',
+  },
+  k8s: {
+    color: '#326CE5',
+    icon: k8s,
+    content: 'K8s',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
