@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - 'release-*'
     paths:
       - js_modules/dagit/packages/ui/**
   pull_request:
@@ -15,9 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: amondnet/vercel-action@v25
+        if: github.event_name == 'pull_request'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.STORYBOOK_VERCEL_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+      - uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.STORYBOOK_VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
