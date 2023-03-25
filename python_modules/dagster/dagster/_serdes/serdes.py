@@ -653,8 +653,7 @@ def deserialize_value(
     """
     check.str_param(val, "val")
 
-    # `metadata_entries` as a constructor argument is deprecated, but it is still used by serdes
-    # machinery.
+    # Never issue warnings when deserializing deprecated objects.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
 

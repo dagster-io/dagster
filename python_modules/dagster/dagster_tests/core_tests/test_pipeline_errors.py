@@ -5,12 +5,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
-    MetadataEntry,
     Output,
     _check as check,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (
@@ -219,7 +219,7 @@ def test_explicit_failure():
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",
-            metadata_entries=[MetadataEntry("always_fails", value="why")],
+            metadata={"always_fails": MetadataValue.text("why")},
         )
 
     @pipeline
@@ -230,4 +230,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]
+    assert exc_info.value.metadata == {"always_fails": MetadataValue.text("why")}

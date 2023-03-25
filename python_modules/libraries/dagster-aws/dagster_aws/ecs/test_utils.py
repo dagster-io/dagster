@@ -1,6 +1,6 @@
 from typing import Any, Mapping, Optional
 
-from dagster._core.events import EngineEventData, MetadataEntry
+from dagster._core.events import EngineEventData
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
@@ -58,5 +58,5 @@ class CustomECSRunLauncher(EcsRunLauncher):
         self._instance.report_engine_event(
             message="Launching run in custom ECS task",
             pipeline_run=run,
-            engine_event_data=EngineEventData([MetadataEntry("Run ID", value=run.run_id)]),
+            engine_event_data=EngineEventData({"Run ID": run.run_id}),
         )

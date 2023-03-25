@@ -226,7 +226,7 @@ def _resolve_inputs(
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
-                metadata_entries=type_check.metadata_entries,
+                metadata=type_check.metadata,
                 dagster_type=dagster_type,
             )
 
@@ -377,7 +377,7 @@ def _type_check_output(
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
-                metadata_entries=type_check.metadata_entries,
+                metadata=type_check.metadata,
                 dagster_type=dagster_type,
             )
 
@@ -395,7 +395,7 @@ def _type_check_output(
                     f'expected type "{dagster_type.display_name}". '
                     f"Description: {type_check.description}"
                 ),
-                metadata_entries=type_check.metadata_entries,
+                metadata=type_check.metadata,
                 dagster_type=dagster_type,
             )
         return output

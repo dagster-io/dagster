@@ -12,7 +12,9 @@ from dagster._core.definitions import (
     PipelineDefinition,
 )
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    MetadataFieldSerializer,
+    MetadataValue,
+    normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
 
@@ -22,7 +24,11 @@ from .dep_snapshot import (
 )
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"metadata_entries"})
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+    skip_when_empty_fields={"metadata"},
+)
 class InputDefSnap(
     NamedTuple(
         "_InputDefSnap",
@@ -30,7 +36,7 @@ class InputDefSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("description", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
         ],
     )
 ):
@@ -39,20 +45,24 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
         )
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"metadata_entries"})
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+    skip_when_empty_fields={"metadata"},
+)
 class OutputDefSnap(
     NamedTuple(
         "_OutputDefSnap",
@@ -61,7 +71,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
             ("is_dynamic", bool),
         ],
     )
@@ -72,7 +82,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
@@ -81,8 +91,8 @@ class OutputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )
@@ -155,7 +165,7 @@ def build_input_def_snap(input_def: InputDefinition) -> InputDefSnap:
         name=input_def.name,
         dagster_type_key=input_def.dagster_type.key,
         description=input_def.description,
-        metadata_entries=input_def.metadata_entries,
+        metadata=input_def.metadata,
     )
 
 
@@ -166,7 +176,7 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
         dagster_type_key=output_def.dagster_type.key,
         description=output_def.description,
         is_required=output_def.is_required,
-        metadata_entries=output_def.metadata_entries,
+        metadata=output_def.metadata,
         is_dynamic=output_def.is_dynamic,
     )
 

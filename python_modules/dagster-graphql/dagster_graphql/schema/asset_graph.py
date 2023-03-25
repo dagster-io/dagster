@@ -853,7 +853,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_metadata_entries(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneMetadataEntry]:
-        return list(iterate_metadata_entries(self._external_asset_node.metadata_entries))
+        return list(iterate_metadata_entries(self._external_asset_node.metadata))
 
     def resolve_op(
         self, _graphene_info: ResolveInfo

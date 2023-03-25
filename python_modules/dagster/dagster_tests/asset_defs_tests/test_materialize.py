@@ -42,7 +42,11 @@ def check_experimental_warnings():
         for w in record:
             # Expect experimental warnings to be thrown for direct
             # resource_defs and io_manager_def arguments.
-            if "resource_defs" in w.message.args[0] or "io_manager_def" in w.message.args[0]:
+            if (
+                "resource_defs" in w.message.args[0]
+                or "io_manager_def" in w.message.args[0]
+                or "SQLALCHEMY" in w.message.args[0]
+            ):
                 continue
             assert False, f"Unexpected warning: {str(w)}"
 
@@ -57,9 +61,9 @@ def test_basic_materialize():
         with instance_for_test(temp_dir=temp_dir) as instance:
             result = materialize([the_asset], instance=instance)
             assert result.success
-            assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
+            assert result.asset_materializations_for_node("the_asset")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
 
 
 def test_materialize_config():
@@ -302,7 +306,7 @@ def test_materialize_provided_resources():
         [the_asset], resources={"foo": foo_resource, "bar": 4, "io_manager": mem_io_manager}
     )
     assert result.success
-    assert result.asset_materializations_for_node("the_asset")[0].metadata_entries == []
+    assert result.asset_materializations_for_node("the_asset")[0].metadata == {}
 
 
 def test_conditional_materialize():
@@ -327,15 +331,15 @@ def test_conditional_materialize():
             result = materialize([the_asset, downstream], instance=instance)
             assert result.success
 
-            assert result.asset_materializations_for_node("the_asset")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
+            assert result.asset_materializations_for_node("the_asset")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "the_asset"))
             with open(os.path.join(temp_dir, "storage", "the_asset"), "rb") as f:
                 assert pickle.load(f) == 5
 
-            assert result.asset_materializations_for_node("downstream")[0].metadata_entries[
-                0
-            ].value == MetadataValue.path(os.path.join(temp_dir, "storage", "downstream"))
+            assert result.asset_materializations_for_node("downstream")[0].metadata[
+                "path"
+            ] == MetadataValue.path(os.path.join(temp_dir, "storage", "downstream"))
             with open(os.path.join(temp_dir, "storage", "downstream"), "rb") as f:
                 assert pickle.load(f) == 6
 

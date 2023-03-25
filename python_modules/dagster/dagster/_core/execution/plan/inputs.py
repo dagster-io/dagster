@@ -19,7 +19,6 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.version_strategy import ResourceVersionContext
 from dagster._core.errors import (
     DagsterExecutionLoadInputError,
@@ -188,15 +187,13 @@ class FromSourceAsset(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata_entries = load_input_context.consume_metadata_entries()
+        metadata = load_input_context.consume_metadata()
 
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
             manager_key=input_manager_key,
-            metadata_entries=[
-                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
-            ],
+            metadata=metadata,
         )
 
     def compute_version(
@@ -323,15 +320,13 @@ class FromRootInputManager(
 
         yield from _load_input_with_input_manager(loader, load_input_context)
 
-        metadata_entries = load_input_context.consume_metadata_entries()
+        metadata = load_input_context.consume_metadata()
 
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
             manager_key=input_manager_key,
-            metadata_entries=[
-                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
-            ],
+            metadata=metadata,
         )
 
     def compute_version(
@@ -515,7 +510,7 @@ class FromStepOutput(
         )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
-        metadata_entries = load_input_context.consume_metadata_entries()
+        metadata = load_input_context.consume_metadata()
 
         yield DagsterEvent.loaded_input(
             step_context,
@@ -523,9 +518,7 @@ class FromStepOutput(
             manager_key=manager_key,
             upstream_output_name=source_handle.output_name,
             upstream_step_key=source_handle.step_key,
-            metadata_entries=[
-                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
-            ],
+            metadata=metadata,
         )
 
     def compute_version(

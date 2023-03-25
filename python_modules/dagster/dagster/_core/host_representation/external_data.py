@@ -49,7 +49,12 @@ from dagster._core.definitions.definition_config_schema import ConfiguredDefinit
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
+from dagster._core.definitions.metadata import (
+    MetadataFieldSerializer,
+    MetadataUserInput,
+    MetadataValue,
+    normalize_metadata,
+)
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import (
@@ -948,7 +953,10 @@ class ExternalResourceData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class ExternalAssetNode(
     NamedTuple(
         "_ExternalAssetNode",
@@ -969,7 +977,7 @@ class ExternalAssetNode(
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
             ("group_name", Optional[str]),
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
@@ -1002,7 +1010,7 @@ class ExternalAssetNode(
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
@@ -1043,8 +1051,8 @@ class ExternalAssetNode(
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
@@ -1213,10 +1221,6 @@ def external_asset_graph_from_defs(
 
     for source_asset in source_assets_by_key.values():
         if source_asset.key not in node_defs_by_asset_key:
-            # TODO: For now we are dropping partition metadata entries
-            metadata_entries = [
-                entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
-            ]
             asset_nodes.append(
                 ExternalAssetNode(
                     asset_key=source_asset.key,
@@ -1224,7 +1228,7 @@ def external_asset_graph_from_defs(
                     depended_by=list(dep_by[source_asset.key].values()),
                     job_names=[ASSET_BASE_JOB_PREFIX] if source_asset.node_def is not None else [],
                     op_description=source_asset.description,
-                    metadata_entries=metadata_entries,
+                    metadata=source_asset.metadata,
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
@@ -1244,17 +1248,13 @@ def external_asset_graph_from_defs(
 
         asset_info = asset_info_by_asset_key[asset_key]
 
-        asset_metadata_entries = (
-            cast(
-                Sequence,
-                normalize_metadata(
-                    metadata=metadata_by_asset_key[asset_key],
-                    metadata_entries=[],
-                    allow_invalid=True,
-                ),
+        asset_metadata = (
+            normalize_metadata(
+                metadata_by_asset_key[asset_key],
+                allow_invalid=True,
             )
             if asset_key in metadata_by_asset_key
-            else cast(Sequence, output_def.metadata_entries)
+            else output_def.metadata
         )
 
         job_names = [job_def.name for _, job_def in node_tuple_list]
@@ -1290,7 +1290,7 @@ def external_asset_graph_from_defs(
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
-                metadata_entries=asset_metadata_entries,
+                metadata=asset_metadata,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group

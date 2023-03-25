@@ -25,11 +25,9 @@ MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
 
 
 def get_path(materialization_event):
-    for (
-        metadata_entry
-    ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.value, (PathMetadataValue, NotebookMetadataValue)):
-            return metadata_entry.value.path
+    for value in materialization_event.event_specific_data.materialization.metadata.values():
+        if isinstance(value, (PathMetadataValue, NotebookMetadataValue)):
+            return value.path
 
 
 def cleanup_result_notebook(result):

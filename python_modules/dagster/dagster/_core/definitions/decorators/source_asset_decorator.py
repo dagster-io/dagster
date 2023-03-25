@@ -1,9 +1,8 @@
-from typing import Mapping, Optional, Sequence, Union, overload
+from typing import Mapping, Optional, Union, overload
 
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
     MetadataUserInput,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -27,7 +26,6 @@ def observable_source_asset(
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     group_name: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> "_ObservableSourceAsset":
@@ -45,7 +43,6 @@ def observable_source_asset(
     io_manager_def: Optional[IOManagerDefinition] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     group_name: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[SourceAsset, "_ObservableSourceAsset"]:
@@ -90,7 +87,6 @@ def observable_source_asset(
         io_manager_def,
         description,
         partitions_def,
-        _metadata_entries,
         group_name,
         resource_defs,
     )
@@ -106,7 +102,6 @@ class _ObservableSourceAsset:
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
@@ -121,7 +116,6 @@ class _ObservableSourceAsset:
         self.io_manager_def = io_manager_def
         self.description = description
         self.partitions_def = partitions_def
-        self._metadata_entries = _metadata_entries
         self.group_name = group_name
         self.resource_defs = resource_defs
 
@@ -136,7 +130,6 @@ class _ObservableSourceAsset:
             io_manager_def=self.io_manager_def,
             description=self.description,
             partitions_def=self.partitions_def,
-            _metadata_entries=self._metadata_entries,
             group_name=self.group_name,
             resource_defs=self.resource_defs,
             observe_fn=observe_fn,
