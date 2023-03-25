@@ -346,6 +346,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     # Assumes execution lock is being held
     def _clear_run(self, run_id: str) -> None:
+        self._executions[run_id][0].join()
         del self._executions[run_id]
         del self._termination_events[run_id]
         if run_id in self._termination_times:
