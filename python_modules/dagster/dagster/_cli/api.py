@@ -699,29 +699,31 @@ def grpc_command(
         if override_system_timezone:
             exit_stack.enter_context(mock_system_timezone(override_system_timezone))
 
-        server = DagsterGrpcServer(
-            port=port,
-            socket=socket,
-            host=host,
-            loadable_target_origin=loadable_target_origin,
-            max_workers=max_workers,
-            heartbeat=heartbeat,
-            heartbeat_timeout=heartbeat_timeout,
-            lazy_load_user_code=lazy_load_user_code,
-            ipc_output_file=ipc_output_file,
-            fixed_server_id=fixed_server_id,
-            entry_point=(
-                get_python_environment_entry_point(sys.executable)
-                if use_python_environment_entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_image=container_image,
-            container_context=json.loads(container_context)
-            if container_context is not None
-            else None,
-            inject_env_vars_from_instance=inject_env_vars_from_instance,
-            instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-            location_name=location_name,
+        server = exit_stack.enter_context(
+            DagsterGrpcServer(
+                port=port,
+                socket=socket,
+                host=host,
+                loadable_target_origin=loadable_target_origin,
+                max_workers=max_workers,
+                heartbeat=heartbeat,
+                heartbeat_timeout=heartbeat_timeout,
+                lazy_load_user_code=lazy_load_user_code,
+                ipc_output_file=ipc_output_file,
+                fixed_server_id=fixed_server_id,
+                entry_point=(
+                    get_python_environment_entry_point(sys.executable)
+                    if use_python_environment_entry_point
+                    else DEFAULT_DAGSTER_ENTRY_POINT
+                ),
+                container_image=container_image,
+                container_context=json.loads(container_context)
+                if container_context is not None
+                else None,
+                inject_env_vars_from_instance=inject_env_vars_from_instance,
+                instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+                location_name=location_name,
+            )
         )
 
         code_desc = " "

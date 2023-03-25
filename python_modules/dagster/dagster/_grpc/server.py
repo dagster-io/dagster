@@ -10,6 +10,7 @@ import time
 import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -346,6 +347,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     # Assumes execution lock is being held
     def _clear_run(self, run_id: str) -> None:
+        self._executions[run_id][0].join()
         del self._executions[run_id]
         del self._termination_events[run_id]
         if run_id in self._termination_times:
@@ -855,7 +857,7 @@ class GrpcServerLoadErrorEvent(
 def server_termination_target(termination_event, server):
     termination_event.wait()
     # We could make this grace period configurable if we set it in the ShutdownServer handler
-    server.stop(grace=5)
+    server.stop(grace=1800)
 
 
 class DagsterGrpcServer:
@@ -913,11 +915,17 @@ class DagsterGrpcServer:
         check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         check.opt_str_param(location_name, "location_name")
 
-        self.server = grpc.server(
+        self._exit_stack = ExitStack()
+
+        self._executor = self._exit_stack.enter_context(
             ThreadPoolExecutor(
                 max_workers=max_workers,
                 thread_name_prefix="grpc-server-rpc-handler",
-            ),
+            )
+        )
+
+        self.server = grpc.server(
+            self._executor,
             compression=grpc.Compression.Gzip,
             options=[
                 ("grpc.max_send_message_length", max_send_bytes()),
@@ -977,6 +985,12 @@ class DagsterGrpcServer:
                 with ipc_write_stream(self._ipc_output_file) as ipc_stream:
                     ipc_stream.send(GrpcServerFailedToBindEvent())
             raise CouldNotBindGrpcServerToAddress(port)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exception_type, _exception_value, _traceback) -> None:
+        self._exit_stack.close()
 
     def serve(self):
         # Unfortunately it looks like ports bind late (here) and so this can fail with an error
