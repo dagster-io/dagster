@@ -21,6 +21,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.mode import ModeDefinition
@@ -63,7 +64,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_version import (
         DataVersion,
     )
-    from dagster._core.definitions.dependency import Node, NodeHandle
+    from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
@@ -545,7 +546,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def op_def(self) -> OpDefinition:
-        return self.solid.definition.ensure_op_def()
+        return self.solid.definition
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -564,18 +565,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._execution_data.mode_def
 
     @property
-    def solid(self) -> "Node":
-        return self.pipeline_def.get_solid(self._step.node_handle)
+    def solid(self) -> OpNode:
+        return self.pipeline_def.get_op(self._step.node_handle)
 
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
         return self.pipeline_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
-        if isinstance(self.op_def, OpDefinition):
-            return f'op "{str(self.node_handle)}"'
-
-        return f'solid "{str(self.node_handle)}"'
+        return f'op "{str(self.node_handle)}"'
 
     def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)

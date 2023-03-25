@@ -95,12 +95,12 @@ def def_config_field(
 
 class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
-    solids: Sequence[Node]
+    nodes: Sequence[Node]
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Mapping[str, LoggerDefinition]
-    ignored_solids: Sequence[Node]
+    ignored_nodes: Sequence[Node]
     required_resources: AbstractSet[str]
     is_using_graph_job_op_apis: bool
     direct_inputs: Mapping[str, Any]
@@ -173,11 +173,11 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             description="Configure how shared resources are implemented within a run.",
         ),
         "inputs": get_inputs_field(
-            solid=top_level_node,
+            node=top_level_node,
             handle=NodeHandle(top_level_node.name, parent=None),
             dependency_structure=creation_data.dependency_structure,
             resource_defs=creation_data.mode_definition.resource_defs,
-            solid_ignored=False,
+            node_ignored=False,
             direct_inputs=creation_data.direct_inputs,
             input_source_assets={},
             asset_layer=creation_data.asset_layer,
@@ -193,9 +193,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         )
     else:
         nodes_field = Field(
-            define_solid_dictionary_cls(
-                solids=creation_data.solids,
-                ignored_solids=creation_data.ignored_solids,
+            define_node_shape(
+                nodes=creation_data.nodes,
+                ignored_nodes=creation_data.ignored_nodes,
                 dependency_structure=creation_data.dependency_structure,
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
@@ -225,23 +225,23 @@ def selector_for_named_defs(named_defs) -> Selector:
 
 
 def get_inputs_field(
-    solid: Node,
+    node: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
-    solid_ignored: bool,
+    node_ignored: bool,
     asset_layer: AssetLayer,
     is_using_graph_job_op_apis: bool,
     input_source_assets: Mapping[str, "SourceAsset"],
     direct_inputs: Optional[Mapping[str, Any]] = None,
-):
+) -> Optional[Field]:
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
     inputs_field_fields = {}
-    for name, inp in solid.definition.input_dict.items():
-        inp_handle = NodeInput(solid, inp)
-        has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
+    for name, inp in node.definition.input_dict.items():
+        inp_handle = NodeInput(node, inp)
+        has_upstream = input_has_upstream(dependency_structure, inp_handle, node, name)
         if inp.input_manager_key:
-            input_field = get_input_manager_input_field(solid, inp, resource_defs)
+            input_field = get_input_manager_input_field(node, inp, resource_defs)
         elif (
             # if you have asset definitions, input will be loaded from the source asset
             asset_layer.has_assets_defs
@@ -254,9 +254,9 @@ def get_inputs_field(
         elif name in input_source_assets and not has_upstream:
             input_field = None
         elif inp.root_manager_key and not has_upstream:
-            input_field = get_input_manager_input_field(solid, inp, resource_defs)
+            input_field = get_input_manager_input_field(node, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
-            input_field = get_type_loader_input_field(solid, name, inp)
+            input_field = get_type_loader_input_field(node, name, inp)
         else:
             input_field = None
 
@@ -265,7 +265,7 @@ def get_inputs_field(
 
     if not inputs_field_fields:
         return None
-    if solid_ignored:
+    if node_ignored:
         node_type = "op" if is_using_graph_job_op_apis else "solid"
         return Field(
             Shape(inputs_field_fields),
@@ -282,21 +282,21 @@ def get_inputs_field(
 def input_has_upstream(
     dependency_structure: DependencyStructure,
     input_handle: NodeInput,
-    solid: Node,
+    node: Node,
     input_name: str,
 ) -> bool:
-    return dependency_structure.has_deps(input_handle) or solid.container_maps_input(input_name)
+    return dependency_structure.has_deps(input_handle) or node.container_maps_input(input_name)
 
 
 def get_input_manager_input_field(
-    solid: Node,
+    node: Node,
     input_def: InputDefinition,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
     if input_def.root_manager_key:
         if input_def.root_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key"
+                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key"
                 f" '{input_def.root_manager_key}', but no resource has been provided. Please"
                 " include a resource definition for that key in the provided resource_defs."
             )
@@ -304,7 +304,7 @@ def get_input_manager_input_field(
         root_manager = resource_defs[input_def.root_manager_key]
         if not isinstance(root_manager, IInputManagerDefinition):
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+                f"Input '{input_def.name}' for {node.describe_node()} requires root_manager_key "
                 f"'{input_def.root_manager_key}', but the resource definition provided is not an "
                 "IInputManagerDefinition"
             )
@@ -316,7 +316,7 @@ def get_input_manager_input_field(
     elif input_def.input_manager_key:
         if input_def.input_manager_key not in resource_defs:
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key"
+                f"Input '{input_def.name}' for {node.describe_node()} requires input_manager_key"
                 f" '{input_def.input_manager_key}', but no resource has been provided. Please"
                 " include a resource definition for that key in the provided resource_defs."
             )
@@ -324,7 +324,7 @@ def get_input_manager_input_field(
         input_manager = resource_defs[input_def.input_manager_key]
         if not isinstance(input_manager, IInputManagerDefinition):
             raise DagsterInvalidDefinitionError(
-                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key "
+                f"Input '{input_def.name}' for {node.describe_node()} requires input_manager_key "
                 f"'{input_def.input_manager_key}', but the resource definition provided is not an "
                 "IInputManagerDefinition"
             )
@@ -337,24 +337,24 @@ def get_input_manager_input_field(
     return None
 
 
-def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDefinition) -> Field:
+def get_type_loader_input_field(node: Node, input_name: str, input_def: InputDefinition) -> Field:
     loader = check.not_none(input_def.dagster_type.loader)
     return Field(
         loader.schema_type,
         is_required=(
-            not solid.definition.input_has_default(input_name) and not input_def.root_manager_key
+            not node.definition.input_has_default(input_name) and not input_def.root_manager_key
         ),
     )
 
 
 def get_outputs_field(
-    solid: Node,
+    node: Node,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
     output_manager_fields = {}
-    for name, output_def in solid.definition.output_dict.items():
+    for name, output_def in node.definition.output_dict.items():
         output_manager_output_field = get_output_manager_output_field(
-            solid, output_def, resource_defs
+            node, output_def, resource_defs
         )
         if output_manager_output_field:
             output_manager_fields[name] = output_manager_output_field
@@ -363,17 +363,17 @@ def get_outputs_field(
 
 
 def get_output_manager_output_field(
-    solid: Node, output_def: OutputDefinition, resource_defs: Mapping[str, ResourceDefinition]
+    node: Node, output_def: OutputDefinition, resource_defs: Mapping[str, ResourceDefinition]
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
+            f'Output "{output_def.name}" for {node.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but no resource has been provided. Please include a '
             "resource definition for that key in the provided resource_defs."
         )
     if not isinstance(resource_defs[output_def.io_manager_key], IOutputManagerDefinition):
         raise DagsterInvalidDefinitionError(
-            f'Output "{output_def.name}" for {solid.describe_node()} requires io_manager_key '
+            f'Output "{output_def.name}" for {node.describe_node()} requires io_manager_key '
             f'"{output_def.io_manager_key}", but the resource definition provided is not an '
             "IOutputManagerDefinition"
         )
@@ -388,7 +388,7 @@ def get_output_manager_output_field(
     return None
 
 
-def solid_config_field(
+def node_config_field(
     fields: Mapping[str, Optional[Field]], ignored: bool, is_using_graph_job_op_apis: bool
 ) -> Optional[Field]:
     field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
@@ -410,8 +410,8 @@ def solid_config_field(
         return None
 
 
-def construct_leaf_solid_config(
-    solid: Node,
+def construct_leaf_node_config(
+    node: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
@@ -421,10 +421,10 @@ def construct_leaf_solid_config(
     asset_layer: AssetLayer,
     input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
-    return solid_config_field(
+    return node_config_field(
         {
             "inputs": get_inputs_field(
-                solid,
+                node,
                 handle,
                 dependency_structure,
                 resource_defs,
@@ -433,7 +433,7 @@ def construct_leaf_solid_config(
                 is_using_graph_job_op_apis,
                 input_source_assets,
             ),
-            "outputs": get_outputs_field(solid, resource_defs),
+            "outputs": get_outputs_field(node, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
@@ -441,8 +441,8 @@ def construct_leaf_solid_config(
     )
 
 
-def define_isolid_field(
-    node: Union[OpNode, GraphNode],
+def define_node_field(
+    node: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
@@ -451,18 +451,20 @@ def define_isolid_field(
     asset_layer: AssetLayer,
     input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
-    # All solids regardless of compositing status get the same inputs and outputs
+    # All nodes regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
-    # 1) Vanilla solid definition: a 'config' key with the config_schema as the value
-    # 2) Composite with field mapping: a 'config' key with the config_schema of
-    #    the config mapping (via CompositeSolidDefinition#config_schema)
-    # 3) Composite without field mapping: a 'solids' key with recursively defined
-    #    solids dictionary
-    # 4) `configured` composite with field mapping: a 'config' key with the config_schema that was
-    #    provided when `configured` was called (via CompositeSolidDefinition#config_schema)
+    # 1) Vanilla op definition: a 'config' key with the config_schema as the value
+    # 2) Graph with field mapping: a 'config' key with the config_schema of
+    #    the config mapping (via GraphDefinition#config_schema)
+    # 3) Graph without field mapping: an 'ops' key with recursively defined
+    #    ops dictionary
+    # 4) `configured` graph with field mapping: a 'config' key with the config_schema that was
+    #    provided when `configured` was called (via GraphDefinition#config_schema)
+
+    assert isinstance(node, (OpNode, GraphNode)), f"Invalid node type: {type(node)}"
 
     if isinstance(node, OpNode):
-        return construct_leaf_solid_config(
+        return construct_leaf_node_config(
             node,
             handle,
             dependency_structure,
@@ -477,9 +479,9 @@ def define_isolid_field(
     graph_def = node.definition
 
     if graph_def.has_config_mapping:
-        # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
+        # has_config_mapping covers cases 2 & 4 from above (only config mapped graphs can
         # be `configured`)...
-        return construct_leaf_solid_config(
+        return construct_leaf_node_config(
             node,
             handle,
             dependency_structure,
@@ -491,8 +493,8 @@ def define_isolid_field(
             asset_layer,
             input_source_assets,
         )
-        # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
-        # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
+        # This case omits an 'ops' key, thus if a graph is `configured` or has a field
+        # mapping, the user cannot stub any config, inputs, or outputs for inner (child) nodes.
     else:
         fields = {
             "inputs": get_inputs_field(
@@ -508,9 +510,9 @@ def define_isolid_field(
             "outputs": get_outputs_field(node, resource_defs),
         }
         nodes_field = Field(
-            define_solid_dictionary_cls(
-                solids=graph_def.nodes,
-                ignored_solids=None,
+            define_node_shape(
+                nodes=graph_def.nodes,
+                ignored_nodes=None,
                 dependency_structure=graph_def.dependency_structure,
                 parent_handle=handle,
                 resource_defs=resource_defs,
@@ -524,14 +526,14 @@ def define_isolid_field(
         else:
             fields["solids"] = nodes_field
 
-        return solid_config_field(
+        return node_config_field(
             fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
         )
 
 
-def define_solid_dictionary_cls(
-    solids: Sequence[Node],
-    ignored_solids: Optional[Sequence[Node]],
+def define_node_shape(
+    nodes: Sequence[Node],
+    ignored_nodes: Optional[Sequence[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
@@ -557,37 +559,37 @@ def define_solid_dictionary_cls(
 
 
     """
-    ignored_solids = check.opt_sequence_param(ignored_solids, "ignored_solids", of_type=Node)
+    ignored_nodes = check.opt_sequence_param(ignored_nodes, "ignored_nodes", of_type=Node)
 
     fields = {}
-    for solid in solids:
-        solid_field = define_isolid_field(
-            solid,
-            NodeHandle(solid.name, parent_handle),
+    for node in nodes:
+        node_field = define_node_field(
+            node,
+            NodeHandle(node.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=False,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
-            input_source_assets=node_input_source_assets.get(solid.name, {}),
+            input_source_assets=node_input_source_assets.get(node.name, {}),
         )
 
-        if solid_field:
-            fields[solid.name] = solid_field
+        if node_field:
+            fields[node.name] = node_field
 
-    for solid in ignored_solids:
-        solid_field = define_isolid_field(
-            solid,
-            NodeHandle(solid.name, parent_handle),
+    for node in ignored_nodes:
+        node_field = define_node_field(
+            node,
+            NodeHandle(node.name, parent_handle),
             dependency_structure,
             resource_defs,
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
-            input_source_assets=node_input_source_assets.get(solid.name, {}),
+            input_source_assets=node_input_source_assets.get(node.name, {}),
         )
-        if solid_field:
-            fields[solid.name] = solid_field
+        if node_field:
+            fields[node.name] = node_field
 
     field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
     return Shape(fields, field_aliases=field_aliases)
@@ -598,8 +600,8 @@ def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigTy
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):
-        for solid in node_def.nodes:
-            yield from iterate_node_def_config_types(solid.definition)
+        for node in node_def.nodes:
+            yield from iterate_node_def_config_types(node.definition)
 
     else:
         check.invariant(f"Unexpected NodeDefinition type {type(node_def)}")

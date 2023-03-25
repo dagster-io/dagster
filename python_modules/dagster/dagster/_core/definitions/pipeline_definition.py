@@ -43,6 +43,7 @@ from .dependency import (
     NodeHandle,
     NodeInvocation,
     NodeOutput,
+    OpNode,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -485,6 +486,13 @@ class PipelineDefinition:
     def get_solid(self, handle: NodeHandle) -> Node:
         return self._graph_def.get_node(handle)
 
+    def get_op(self, handle: NodeHandle) -> OpNode:
+        node = self.get_solid(handle)
+        assert isinstance(
+            node, OpNode
+        ), f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        return node
+
     def has_solid_named(self, name: str) -> bool:
         return self._graph_def.has_node_named(name)
 
@@ -859,12 +867,12 @@ def _create_run_config_schema(
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
-            solids=pipeline_def.graph.nodes,
+            nodes=pipeline_def.graph.nodes,
             graph_def=pipeline_def.graph,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,
-            ignored_solids=ignored_solids,
+            ignored_nodes=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
             direct_inputs=get_direct_input_values_from_job(pipeline_def),

@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Mapping,
     NamedTuple,
@@ -15,8 +16,12 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
+    cast,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -26,6 +31,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._utils import is_named_tuple_instance
 
 from .config import ConfigMapping
 from .dependency import (
@@ -141,7 +147,7 @@ class DynamicFanIn(NamedTuple):
     output_name: str
 
 
-InputSource = Union[
+InputSource: TypeAlias = Union[
     InvokedNodeOutputHandle,
     InputMappingNode,
     DynamicFanIn,
@@ -371,7 +377,10 @@ class CompleteCompositionContext(NamedTuple):
         )
 
 
-class PendingNodeInvocation:
+T_NodeDefinition = TypeVar("T_NodeDefinition", bound=NodeDefinition)
+
+
+class PendingNodeInvocation(Generic[T_NodeDefinition]):
     """An intermediate object in composition that allows binding additional information before invoking.
 
     Users should not invoke this object directly.
@@ -394,7 +403,7 @@ class PendingNodeInvocation:
 
     """
 
-    node_def: NodeDefinition
+    node_def: T_NodeDefinition
     given_alias: Optional[str]
     tags: Optional[Mapping[str, str]]
     hook_defs: AbstractSet[HookDefinition]
@@ -402,7 +411,7 @@ class PendingNodeInvocation:
 
     def __init__(
         self,
-        node_def: NodeDefinition,
+        node_def: T_NodeDefinition,
         given_alias: Optional[str],
         tags: Optional[Mapping[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
@@ -431,6 +440,9 @@ class PendingNodeInvocation:
         # is an OpDefinition, then permit it to be invoked and executed like an OpDefinition.
         if not is_in_composition() and isinstance(self.node_def, OpDefinition):
             node_label = self.node_def.node_type_str
+            # Pyright does not currently infer the typevar-bound type of self based on the above
+            # `isinstance` check. We need the correct type for passing to `op_invocation_result`.
+            _self = cast(PendingNodeInvocation[OpDefinition], self)
             if not isinstance(self.node_def.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
                     f"Attemped to invoke {node_label} that was not constructed using the"
@@ -449,14 +461,14 @@ class PendingNodeInvocation:
                         " argument, but no context was provided when invoking."
                     )
                 context = args[0]
-                return op_invocation_result(self, context, *args[1:], **kwargs)
+                return op_invocation_result(_self, context, *args[1:], **kwargs)
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has no context"
                         " argument, but context was provided when invoking."
                     )
-                return op_invocation_result(self, None, *args, **kwargs)
+                return op_invocation_result(_self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
         input_bindings: Dict[str, InputSource] = {}
@@ -556,8 +568,8 @@ class PendingNodeInvocation:
         return f"{self.node_def.node_type_str} '{node_name}'"
 
     def _process_argument_node(
-        self, node_name: str, output_node, input_name, input_bindings, arg_desc
-    ):
+        self, node_name: str, output_node, input_name: str, input_bindings, arg_desc: str
+    ) -> None:
         from .source_asset import SourceAsset
 
         # already set - conflict between kwargs and args
@@ -595,7 +607,7 @@ class PendingNodeInvocation:
                         )
                     )
 
-        elif isinstance(output_node, tuple) and all(
+        elif is_named_tuple_instance(output_node) and all(
             map(lambda item: isinstance(item, InvokedNodeOutputHandle), output_node)
         ):
             raise DagsterInvalidDefinitionError(
@@ -650,7 +662,7 @@ class PendingNodeInvocation:
             )
 
     @public
-    def alias(self, name: str) -> "PendingNodeInvocation":
+    def alias(self, name: str) -> "PendingNodeInvocation[T_NodeDefinition]":
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=name,
@@ -660,7 +672,7 @@ class PendingNodeInvocation:
         )
 
     @public
-    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation[T_NodeDefinition]":
         tags = validate_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -671,7 +683,9 @@ class PendingNodeInvocation:
         )
 
     @public
-    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+    def with_hooks(
+        self, hook_defs: AbstractSet[HookDefinition]
+    ) -> "PendingNodeInvocation[T_NodeDefinition]":
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -682,7 +696,9 @@ class PendingNodeInvocation:
         )
 
     @public
-    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+    def with_retry_policy(
+        self, retry_policy: RetryPolicy
+    ) -> "PendingNodeInvocation[T_NodeDefinition]":
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
@@ -798,10 +814,14 @@ class InvokedNodeDynamicOutputWrapper:
         self.output_name = check.str_param(output_name, "output_name")
         self.node_type = check.str_param(node_type, "node_type")
 
-    def describe_node(self):
+    def describe_node(self) -> str:
         return f"{self.node_type} '{self.node_name}'"
 
-    def map(self, fn):
+    def map(
+        self, fn: Callable
+    ) -> Union[
+        "InvokedNodeDynamicOutputWrapper", Tuple["InvokedNodeDynamicOutputWrapper", ...], None
+    ]:
         check.is_callable(fn)
         result = fn(InvokedNodeOutputHandle(self.node_name, self.output_name, self.node_type))
 
@@ -836,7 +856,7 @@ class InvokedNodeDynamicOutputWrapper:
     def unwrap_for_composite_mapping(self) -> InvokedNodeOutputHandle:
         return InvokedNodeOutputHandle(self.node_name, self.output_name, self.node_type)
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the dynamic output "{out}" '
             'from the {described_node}. Use the "map" method on this object to create '
@@ -848,7 +868,7 @@ class InvokedNodeDynamicOutputWrapper:
             )
         )
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to index in to an {cls}. This object represents the dynamic out "{out}" '
             'from the {described_node}. Use the "map" method on this object to create '
@@ -860,7 +880,7 @@ class InvokedNodeDynamicOutputWrapper:
             )
         )
 
-    def alias(self, _):
+    def alias(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call alias method for {cls}. This object represents"
             ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'
@@ -873,7 +893,7 @@ class InvokedNodeDynamicOutputWrapper:
             )
         )
 
-    def with_hooks(self, _):
+    def with_hooks(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call hook method for {cls}. This object represents"
             ' the dynamic out "{out}" from the already invoked {described_node}. Consider checking'

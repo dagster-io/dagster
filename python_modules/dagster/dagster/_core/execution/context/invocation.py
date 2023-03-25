@@ -237,12 +237,12 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def bind(
         self,
-        op_def_or_invocation: Union[OpDefinition, PendingNodeInvocation],
+        op_def_or_invocation: Union[OpDefinition, PendingNodeInvocation[OpDefinition]],
     ) -> "BoundOpExecutionContext":
         op_def = (
             op_def_or_invocation
             if isinstance(op_def_or_invocation, OpDefinition)
-            else op_def_or_invocation.node_def.ensure_op_def()
+            else op_def_or_invocation.node_def
         )
 
         _validate_resource_requirements(self._resource_defs, op_def)

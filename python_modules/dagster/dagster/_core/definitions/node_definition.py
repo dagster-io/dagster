@@ -231,14 +231,6 @@ class NodeDefinition(NamedConfigurableDefinition):
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         return self.get_pending_invocation(retry_policy=retry_policy)
 
-    def ensure_op_def(self) -> "OpDefinition":
-        from .op_definition import OpDefinition
-
-        if isinstance(self, OpDefinition):
-            return self
-
-        check.failed(f"{self.name} is not an OpDefinition")
-
     @abstractmethod
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
