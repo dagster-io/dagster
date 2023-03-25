@@ -76,6 +76,10 @@ def instance_for_test(
             {
                 "telemetry": {"enabled": False},
                 "code_servers": {"wait_for_local_processes_on_shutdown": True},
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
             },
             (overrides if overrides else {}),
         )
