@@ -171,7 +171,7 @@ class DaskExecutor(Executor):
         check.param_invariant(
             isinstance(plan_context.executor, DaskExecutor),
             "plan_context",
-            "Expected executor to be DaskExecutor got {}".format(plan_context.executor),
+            f"Expected executor to be DaskExecutor got {plan_context.executor}",
         )
 
         check.invariant(

@@ -131,7 +131,7 @@ class PipelineIndex:
             if mode_def_snap.name == name:
                 return mode_def_snap
 
-        check.failed("Mode {mode} not found".format(mode=name))
+        check.failed(f"Mode {name} not found")
 
     @property
     def config_schema_snapshot(self) -> ConfigSchemaSnapshot:

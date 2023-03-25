@@ -787,10 +787,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
-            message=(
-                message
-                or 'Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key)
-            ),
+            message=(message or f'Execution of step "{step_context.step.key}" failed.'),
         )
 
     @staticmethod
@@ -804,7 +801,7 @@ class DagsterEvent(
             message=(
                 'Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
                     step_key=step_context.step.key,
-                    wait_str=" in {n} seconds".format(n=step_retry_data.seconds_to_wait)
+                    wait_str=f" in {step_retry_data.seconds_to_wait} seconds"
                     if step_retry_data.seconds_to_wait
                     else "",
                 )
@@ -890,9 +887,7 @@ class DagsterEvent(
             message=materialization.description
             if materialization.description
             else "Materialized value{label_clause}.".format(
-                label_clause=" {label}".format(label=materialization.label)
-                if materialization.label
-                else ""
+                label_clause=f" {materialization.label}" if materialization.label else ""
             ),
         )
 

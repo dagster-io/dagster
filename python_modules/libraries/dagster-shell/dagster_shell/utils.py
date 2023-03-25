@@ -110,7 +110,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
             log.info(output)
 
         sub_process.wait()
-        log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
+        log.info(f"Command exited with return code {sub_process.returncode}")
 
         return output, sub_process.returncode
     finally:
@@ -157,7 +157,7 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
             tmp_file.write(shell_command.encode("utf-8"))
             tmp_file.flush()
             script_location = os.path.abspath(tmp_file.name)
-            log.info("Temporary script location: {location}".format(location=script_location))
+            log.info(f"Temporary script location: {script_location}")
             return execute_script_file(
                 shell_script_path=tmp_file.name,
                 output_logging=output_logging,

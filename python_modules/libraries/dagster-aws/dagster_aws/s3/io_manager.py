@@ -63,7 +63,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
 
     def _uri_for_key(self, key):
         check.str_param(key, "key")
-        return "s3://" + self.bucket + "/" + "{key}".format(key=key)
+        return "s3://" + self.bucket + "/" + f"{key}"
 
     def load_input(self, context):
         if context.dagster_type.typing_type == type(None):

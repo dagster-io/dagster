@@ -42,11 +42,7 @@ def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:
 
 
 def get_worker_name(name: Optional[str] = None) -> str:
-    return (
-        name + "@%h"
-        if name is not None
-        else "dagster-{uniq}@%h".format(uniq=str(uuid.uuid4())[-6:])
-    )
+    return name + "@%h" if name is not None else f"dagster-{str(uuid.uuid4())[-6:]}@%h"
 
 
 def get_validated_config(config_yaml: Optional[str] = None) -> Any:
@@ -55,7 +51,7 @@ def get_validated_config(config_yaml: Optional[str] = None) -> Any:
     config = validate_config(config_type, config_value)
     if not config.success:
         raise DagsterInvalidConfigError(
-            "Errors while loading Celery executor config at {}.".format(config_yaml),
+            f"Errors while loading Celery executor config at {config_yaml}.",
             config.errors,
             config_value,
         )
@@ -71,9 +67,7 @@ def get_config_dir(config_yaml=None):
         instance.root_directory, "dagster_celery", "config", str(uuid.uuid4())
     )
     mkdir_p(config_dir)
-    config_path = os.path.join(
-        config_dir, "{config_module_name}.py".format(config_module_name=config_module_name)
-    )
+    config_path = os.path.join(config_dir, f"{config_module_name}.py")
 
     validated_config = get_validated_config(config_yaml)
     with open(config_path, "w", encoding="utf8") as fd:
@@ -89,7 +83,7 @@ def get_config_dir(config_yaml=None):
             )
         if "config_source" in validated_config and validated_config["config_source"]:
             for key, value in validated_config["config_source"].items():
-                fd.write("{key} = {value}\n".format(key=key, value=repr(value)))
+                fd.write(f"{key} = {repr(value)}\n")
 
     # n.b. right now we don't attempt to clean up this cache, but it might make sense to delete
     # any files older than some time if there are more than some number of files present, etc.

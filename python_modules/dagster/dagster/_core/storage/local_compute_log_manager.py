@@ -315,7 +315,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
 
     def download_url(self, run_id: str, key: str, io_type: ComputeIOType):
         check.inst_param(io_type, "io_type", ComputeIOType)
-        return "/download/{}/{}/{}".format(run_id, key, io_type.value)
+        return f"/download/{run_id}/{key}/{io_type.value}"
 
     def on_subscribe(self, subscription: "LogSubscription") -> None:
         self._subscription_manager.add_subscription(subscription)

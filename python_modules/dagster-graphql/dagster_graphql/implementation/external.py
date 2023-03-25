@@ -61,9 +61,7 @@ def _get_external_pipeline_or_raise(
                 GrapheneInvalidSubsetError(
                     message="{message}{cause_message}".format(
                         message=error_info.message,
-                        cause_message="\n{}".format(error_info.cause.message)
-                        if error_info.cause
-                        else "",
+                        cause_message=f"\n{error_info.cause.message}" if error_info.cause else "",
                     ),
                     pipeline=GraphenePipeline(ctx.get_full_external_job(selector)),
                 )

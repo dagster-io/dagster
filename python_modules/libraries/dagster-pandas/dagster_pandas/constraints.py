@@ -279,7 +279,7 @@ class StrictColumnsWithMetadata(ConstraintWithMetadata):
                         }
                         return (False, resdict)
 
-        basestr = "ensuring that the right columns, {} were present".format(self.column_list)
+        basestr = f"ensuring that the right columns, {self.column_list} were present"
         if enforce_ordering:
             basestr += " in the right order"
         super(StrictColumnsWithMetadata, self).__init__(
@@ -322,7 +322,7 @@ class StrictColumnsConstraint(DataFrameConstraint):
         self.strict_column_list = check.list_param(
             strict_column_list, "strict_column_list", of_type=str
         )
-        description = "No columns outside of {cols} allowed. ".format(cols=self.strict_column_list)
+        description = f"No columns outside of {self.strict_column_list} allowed. "
         if enforce_ordering:
             description += "Columns must be in that order."
         super(StrictColumnsConstraint, self).__init__(
@@ -803,7 +803,7 @@ def categorical_column_validator_factory(categories, ignore_missing_vals=False):
         return (x in categories), {}
 
     categorical_validation_fn.__doc__ = (
-        "checks whether values are within this set of values: {}".format(categories)
+        f"checks whether values are within this set of values: {categories}"
     )
     if ignore_missing_vals:
         categorical_validation_fn.__doc__ += ", ignoring nulls"
@@ -868,7 +868,7 @@ class ColumnRangeConstraintWithMetadata(ColumnConstraintWithMetadata):
     def __init__(self, minim=None, maxim=None, columns=None, raise_or_typecheck=True):
         self.name = self.__class__.__name__
 
-        description = "Confirms values are between {} and {}".format(minim, maxim)
+        description = f"Confirms values are between {minim} and {maxim}"
         super(ColumnRangeConstraintWithMetadata, self).__init__(
             description=description,
             validation_fn=column_range_validation_factory(minim=minim, maxim=maxim),
@@ -1022,8 +1022,8 @@ class CategoricalColumnConstraint(ColumnConstraint):
         self.categories = list(check.set_param(categories, "categories", of_type=str))
         self.ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
         super(CategoricalColumnConstraint, self).__init__(
-            error_description="Expected Categories are {}".format(self.categories),
-            markdown_description="Category examples are {}...".format(self.categories[:5]),
+            error_description=f"Expected Categories are {self.categories}",
+            markdown_description=f"Category examples are {self.categories[:5]}...",
         )
 
     def validate(self, dataframe, column_name):
@@ -1053,8 +1053,8 @@ class MinValueColumnConstraint(ColumnConstraint):
         self.min_value = check.inst_param(min_value, "min_value", (int, float, datetime))
         self.ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
         super(MinValueColumnConstraint, self).__init__(
-            markdown_description="values > {}".format(self.min_value),
-            error_description="Column must have values > {}".format(self.min_value),
+            markdown_description=f"values > {self.min_value}",
+            error_description=f"Column must have values > {self.min_value}",
         )
 
     def validate(self, dataframe, column_name):
@@ -1084,8 +1084,8 @@ class MaxValueColumnConstraint(ColumnConstraint):
         self.max_value = check.inst_param(max_value, "max_value", (int, float, datetime))
         self.ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
         super(MaxValueColumnConstraint, self).__init__(
-            markdown_description="values < {}".format(self.max_value),
-            error_description="Column must have values < {}".format(self.max_value),
+            markdown_description=f"values < {self.max_value}",
+            error_description=f"Column must have values < {self.max_value}",
         )
 
     def validate(self, dataframe, column_name):
@@ -1118,7 +1118,7 @@ class InRangeColumnConstraint(ColumnConstraint):
         self.max_value = check.inst_param(max_value, "max_value", (int, float, datetime))
         self.ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
         super(InRangeColumnConstraint, self).__init__(
-            markdown_description="{} < values < {}".format(self.min_value, self.max_value),
+            markdown_description=f"{self.min_value} < values < {self.max_value}",
             error_description="Column must have values between {} and {} inclusive.".format(
                 self.min_value, self.max_value
             ),

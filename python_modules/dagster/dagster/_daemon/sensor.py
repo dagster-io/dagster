@@ -691,9 +691,7 @@ def _evaluate_sensor(
 
         error_info = None
         try:
-            context.logger.info(
-                "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
-            )
+            context.logger.info(f"Launching run for {external_sensor.name}")
             instance.submit_run(run.run_id, workspace_process_context.create_request_context())
             context.logger.info(
                 "Completed launch of run {run_id} for {sensor_name}".format(

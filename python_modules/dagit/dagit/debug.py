@@ -25,13 +25,13 @@ from .version import __version__
     "--port",
     "-p",
     type=click.INT,
-    help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
+    help=f"Port to run server on, default is {DEFAULT_DAGIT_PORT}",
     default=DEFAULT_DAGIT_PORT,
 )
 def dagit_debug_command(input_files, port):
     debug_payloads = []
     for input_file in input_files:
-        click.echo("Loading {} ...".format(input_file))
+        click.echo(f"Loading {input_file} ...")
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
             debug_payload = deserialize_value(blob, DebugRunPayload)

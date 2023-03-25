@@ -82,7 +82,7 @@ def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Cal
 
 @job_cli.command(
     name="list",
-    help="List the jobs in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
+    help=f"List the jobs in a repository. {WORKSPACE_TARGET_WARNING}",
 )
 @job_repository_target_argument
 def job_list_command(**kwargs):
@@ -94,7 +94,7 @@ def execute_list_command(cli_args, print_fn):
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
-            title = "Repository {name}".format(name=external_repository.name)
+            title = f"Repository {external_repository.name}"
             print_fn(title)
             print_fn("*" * len(title))
             first = True
@@ -229,7 +229,7 @@ def print_op(
         printer.line("Inputs:")
         for input_dep_snap in solid_invocation_snap.input_dep_snaps:
             with printer.with_indent():
-                printer.line("Input: {name}".format(name=input_dep_snap.input_name))
+                printer.line(f"Input: {input_dep_snap.input_name}")
 
         printer.line("Outputs:")
         for output_def_snap in pipeline_snapshot.get_node_def_snap(
@@ -339,7 +339,7 @@ def execute_execute_command(
     result = do_execute_command(pipeline, instance, config, mode, tags, solid_selection, preset)
 
     if not result.success:
-        raise click.ClickException("Pipeline run {} resulted in failure.".format(result.run_id))
+        raise click.ClickException(f"Pipeline run {result.run_id} resulted in failure.")
 
     return result
 
@@ -806,12 +806,12 @@ def _execute_backfill_command_at_location(
     )
 
     # Print backfill info
-    print_fn("\n Job: {}".format(external_job.name))
-    print_fn("   Partitions: {}\n".format(print_partition_format(partition_names, indent_level=15)))
+    print_fn(f"\n Job: {external_job.name}")
+    print_fn(f"   Partitions: {print_partition_format(partition_names, indent_level=15)}\n")
 
     # Confirm and launch
     if noprompt or click.confirm(
-        "Do you want to proceed with the backfill ({} partitions)?".format(len(partition_names))
+        f"Do you want to proceed with the backfill ({len(partition_names)} partitions)?"
     ):
         print_fn("Launching runs... ")
 
@@ -840,7 +840,7 @@ def _execute_backfill_command_at_location(
             instance.add_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
             )
-            raise DagsterBackfillFailedError("Backfill failed: {}".format(error_info))
+            raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
@@ -858,7 +858,7 @@ def _execute_backfill_command_at_location(
 
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
-        print_fn("Launched backfill job `{}`".format(backfill_id))
+        print_fn(f"Launched backfill job `{backfill_id}`")
 
     else:
         print_fn("Aborted!")
@@ -927,6 +927,6 @@ def validate_partition_slice(partition_names: Sequence[str], name: str, value) -
     if value is None:
         return 0 if is_start else len(partition_names)
     if value not in partition_names:
-        raise click.UsageError("invalid value {} for {}".format(value, name))
+        raise click.UsageError(f"invalid value {value} for {name}")
     index = partition_names.index(value)
     return index if is_start else index + 1

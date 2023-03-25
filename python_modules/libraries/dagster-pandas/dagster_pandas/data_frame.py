@@ -56,9 +56,7 @@ def dataframe_loader(_context, config):
     elif file_type == "pickle":
         return pd.read_pickle(file_options["path"])
     else:
-        raise DagsterInvariantViolationError(
-            "Unsupported file_type {file_type}".format(file_type=file_type)
-        )
+        raise DagsterInvariantViolationError(f"Unsupported file_type {file_type}")
 
 
 def df_type_check(_, value):
@@ -99,7 +97,7 @@ def _construct_constraint_list(constraints):
 
 
 def _build_column_header(column_name, constraints):
-    header = "**{column_name}**".format(column_name=column_name)
+    header = f"**{column_name}**"
     for constraint in constraints:
         if isinstance(constraint, ColumnDTypeInSetConstraint):
             dtypes_tuple = tuple(constraint.expected_dtype_set)
@@ -277,11 +275,11 @@ def create_structured_dataframe_type(
             result_dict = result.metadata_entries[0].value.data
             metadata.append(
                 MetadataEntry(
-                    "{}-constraint-metadata".format(key),
+                    f"{key}-constraint-metadata",
                     value=result_dict,
                 )
             )
-            constraint_clauses.append("{} failing constraints, {}".format(key, result.description))
+            constraint_clauses.append(f"{key} failing constraints, {result.description}")
         # returns aggregates, then column, then dataframe
         return TypeCheck(
             success=typechecks_succeeded,

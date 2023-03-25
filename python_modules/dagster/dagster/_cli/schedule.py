@@ -53,10 +53,10 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     if not errors and not added_schedules and not changed_schedules and not removed_schedules:
         if preview:
             print_fn(click.style("No planned changes to schedules.", fg="magenta", bold=True))
-            print_fn("{num} schedules will remain unchanged".format(num=len(external_schedules)))
+            print_fn(f"{len(external_schedules)} schedules will remain unchanged")
         else:
             print_fn(click.style("No changes to schedules.", fg="magenta", bold=True))
-            print_fn("{num} schedules unchanged".format(num=len(external_schedules)))
+            print_fn(f"{len(external_schedules)} schedules unchanged")
         return
 
     if errors:
@@ -122,9 +122,7 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
     repository_name = repository.name
 
     if not repository.get_external_schedules():
-        raise click.UsageError(
-            "There are no schedules defined for repository {name}.".format(name=repository_name)
-        )
+        raise click.UsageError(f"There are no schedules defined for repository {repository_name}.")
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
@@ -179,7 +177,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             repository_name = external_repo.name
 
             if not name_filter:
-                title = "Repository {name}".format(name=repository_name)
+                title = f"Repository {repository_name}"
                 print_fn(title)
                 print_fn("*" * len(title))
 
@@ -275,7 +273,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
-                print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
+                print_fn(f"Started schedule {schedule_name}")
 
 
 @schedule_cli.command(name="stop", help="Stop an existing schedule.")
@@ -303,7 +301,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
-            print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
+            print_fn(f"Stopped schedule {schedule_name}")
 
 
 @schedule_cli.command(name="logs", help="Get logs for a schedule.")
@@ -342,7 +340,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
             )
 
             logs_directory = os.path.dirname(logs_path)
-            result_files = glob.glob("{}/*.result".format(logs_directory))
+            result_files = glob.glob(f"{logs_directory}/*.result")
             most_recent_log = max(result_files, key=os.path.getctime) if result_files else None
 
             output = ""
@@ -360,9 +358,9 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
                 "Errors that caused schedule executions to not run or fail can be found here. "
             )
             most_recent_info = (
-                "\nMost recent execution log: {}".format(most_recent_log) if most_recent_log else ""
+                f"\nMost recent execution log: {most_recent_log}" if most_recent_log else ""
             )
-            info = "All execution logs: {}{}".format(logs_directory, most_recent_info)
+            info = f"All execution logs: {logs_directory}{most_recent_info}"
             output += "\n{title}\n{sep}\n{info}\n".format(
                 title=title,
                 sep="=" * len(title),
@@ -443,7 +441,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
-                print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
+                print_fn(f"Restarted schedule {schedule_name}")
 
 
 @schedule_cli.command(name="wipe", help="Delete the schedule history and turn off all schedules.")

@@ -284,7 +284,7 @@ class DatabricksJobRunner:
             ]:
                 if library_name not in python_libraries:
                     libraries.append(
-                        {"pypi": {"package": "{}=={}".format(library_name, library.__version__)}}
+                        {"pypi": {"package": f"{library_name}=={library.__version__}"}}
                     )
 
         # Only one task should be able to be chosen really; make sure of that here.
@@ -346,7 +346,7 @@ class DatabricksJobRunner:
     ) -> Optional[str]:
         """Attempt up to `waiter_max_attempts` attempts to get logs from DBFS."""
         path = "/".join([prefix, cluster_id, "driver", filename])
-        log.info("Retrieving logs from {}".format(path))
+        log.info(f"Retrieving logs from {path}")
         num_attempts = 0
         while num_attempts <= waiter_max_attempts:
             try:

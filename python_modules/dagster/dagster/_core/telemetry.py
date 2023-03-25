@@ -177,7 +177,7 @@ def _telemetry_wrapper(
 
 def get_python_version() -> str:
     version = sys.version_info
-    return "{}.{}.{}".format(version.major, version.minor, version.micro)
+    return f"{version.major}.{version.minor}.{version.micro}"
 
 
 def get_is_known_ci_env() -> bool:

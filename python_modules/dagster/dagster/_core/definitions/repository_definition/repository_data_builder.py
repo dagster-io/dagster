@@ -316,9 +316,7 @@ def build_caching_repository_data_from_dict(
     check.invariant(
         set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS),
         "Bad dict: must not contain keys other than {{{valid_keys}}}: found {bad_keys}.".format(
-            valid_keys=", ".join(
-                ["'{key}'".format(key=key) for key in VALID_REPOSITORY_DATA_DICT_KEYS]
-            ),
+            valid_keys=", ".join([f"'{key}'" for key in VALID_REPOSITORY_DATA_DICT_KEYS]),
             bad_keys=", ".join(
                 [
                     "'{key}'"

@@ -83,7 +83,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             yield DagsterEvent.step_worker_started(
                 log_manager,
                 self.pipeline_run.pipeline_name,
-                message='Executing step "{}" in subprocess.'.format(self.step_key),
+                message=f'Executing step "{self.step_key}" in subprocess.',
                 metadata_entries=[
                     MetadataEntry("pid", value=str(os.getpid())),
                 ],
@@ -308,7 +308,7 @@ class MultiprocessExecutor(Executor):
                         " processes:\n{error_list}".format(
                             error_list="\n".join(
                                 [
-                                    "In process {pid}: {err}".format(pid=pid, err=err.to_string())
+                                    f"In process {pid}: {err.to_string()}"
                                     for pid, err in errs.items()
                                 ]
                             )
@@ -350,7 +350,7 @@ def execute_step_out_of_process(
 
     yield DagsterEvent.step_worker_starting(
         step_context,
-        'Launching subprocess for "{}".'.format(step.key),
+        f'Launching subprocess for "{step.key}".',
         metadata_entries=[],
     )
 
@@ -361,4 +361,4 @@ def execute_step_out_of_process(
             if isinstance(ret, ChildProcessSystemErrorEvent):
                 errors[ret.pid] = ret.error_info
         else:
-            check.failed("Unexpected return value from child process {}".format(type(ret)))
+            check.failed(f"Unexpected return value from child process {type(ret)}")

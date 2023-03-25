@@ -269,9 +269,7 @@ class CodeLocation(AbstractContextManager):
 
     def get_repository_python_origin(self, repository_name: str) -> "RepositoryPythonOrigin":
         if repository_name not in self.repository_code_pointer_dict:
-            raise DagsterInvariantViolationError(
-                "Unable to find repository {}.".format(repository_name)
-            )
+            raise DagsterInvariantViolationError(f"Unable to find repository {repository_name}.")
 
         code_pointer = self.repository_code_pointer_dict[repository_name]
         return RepositoryPythonOrigin(

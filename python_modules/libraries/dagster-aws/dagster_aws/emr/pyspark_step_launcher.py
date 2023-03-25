@@ -471,7 +471,7 @@ class EmrPySparkStepLauncher(StepLauncher):
 
     def _artifact_s3_uri(self, run_id, step_key, filename):
         key = self._artifact_s3_key(run_id, self._sanitize_step_key(step_key), filename)
-        return "s3://{bucket}/{key}".format(bucket=self.staging_bucket, key=key)
+        return f"s3://{self.staging_bucket}/{key}"
 
     def _artifact_s3_key(self, run_id, step_key, filename):
         return "/".join(

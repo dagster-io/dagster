@@ -315,7 +315,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
+                message=f"Unable to terminate run; can_terminate returned {can_terminate}",
                 pipeline_run=run,
                 cls=self.__class__,
             )

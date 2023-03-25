@@ -48,7 +48,7 @@ def test_k8s_run_launcher_default(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
@@ -141,7 +141,7 @@ def test_failing_k8s_run_launcher(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" not in result, f"no match, result: {result}"
 
     event_records = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
 
@@ -214,4 +214,4 @@ def test_k8s_run_launcher_secret_from_deployment(
         job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"

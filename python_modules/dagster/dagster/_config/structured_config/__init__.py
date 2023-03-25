@@ -207,7 +207,7 @@ def _process_config_values(
 
     if not post_processed_config.success:
         raise DagsterInvalidConfigError(
-            "Error while processing {} config ".format(config_obj_name),
+            f"Error while processing {config_obj_name} config ",
             post_processed_config.errors,
             data,
         )

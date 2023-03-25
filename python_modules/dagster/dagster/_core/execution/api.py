@@ -1055,7 +1055,7 @@ def pipeline_execution_iterator(
         elif failed_steps:
             event = DagsterEvent.pipeline_failure(
                 pipeline_context,
-                "Steps failed: {}.".format(failed_steps),
+                f"Steps failed: {failed_steps}.",
             )
         else:
             event = DagsterEvent.pipeline_success(pipeline_context)

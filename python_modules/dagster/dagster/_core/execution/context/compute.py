@@ -532,7 +532,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 DagsterEvent.step_expectation_result(self._step_execution_context, event)
             )
         else:
-            check.failed("Unexpected event {event}".format(event=event))
+            check.failed(f"Unexpected event {event}")
 
     def add_output_metadata(
         self,

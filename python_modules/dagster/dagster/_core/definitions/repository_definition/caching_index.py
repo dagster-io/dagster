@@ -120,10 +120,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
                     definition_kind=self._definition_kind,
                     definition_name=definition_name,
                     found_names=", ".join(
-                        [
-                            "'{found_name}'".format(found_name=found_name)
-                            for found_name in self.get_definition_names()
-                        ]
+                        [f"'{found_name}'" for found_name in self.get_definition_names()]
                     ),
                 )
             )

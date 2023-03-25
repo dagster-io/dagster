@@ -57,12 +57,12 @@ def _empty_handler(_signal, _frame):
 
 
 def quote_table_name(name: str) -> str:
-    return '"{}"'.format(name)
+    return f'"{name}"'
 
 
 def start_listening(connection, channels):
     names = (quote_table_name(each) for each in channels)
-    listens = "; ".join(["LISTEN {}".format(n) for n in names])
+    listens = "; ".join([f"LISTEN {n}" for n in names])
 
     with connection.cursor() as curs:
         curs.execute(listens)

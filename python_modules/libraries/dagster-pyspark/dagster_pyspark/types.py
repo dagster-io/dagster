@@ -690,9 +690,7 @@ def dataframe_loader(_context, config):
     elif file_type == "other":
         return spark_read.load(**file_options)
     else:
-        raise DagsterInvariantViolationError(
-            "Unsupported file_type {file_type}".format(file_type=file_type)
-        )
+        raise DagsterInvariantViolationError(f"Unsupported file_type {file_type}")
 
 
 DataFrame = PythonObjectDagsterType(

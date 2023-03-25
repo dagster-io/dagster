@@ -168,7 +168,7 @@ class TestMySQLInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode()
             raise MySQLDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
+                f"Failed to launch docker container(s) via docker-compose: {err_text}",
                 ex,
             ) from ex
 
@@ -204,7 +204,7 @@ def is_mysql_running(service_name):
                 "container",
                 "ps",
                 "-f",
-                "name={}".format(service_name),
+                f"name={service_name}",
                 "-f",
                 "status=running",
             ],

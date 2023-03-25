@@ -448,7 +448,7 @@ class PipelineDefinition:
 
         if mode_def is None:
             check.failed(
-                "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self.name),
+                f"Could not find mode {mode} in pipeline {self.name}",
             )
 
         return mode_def
@@ -475,7 +475,7 @@ class PipelineDefinition:
     def solid_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
 
-        check.invariant(name in self._all_node_defs, "{} not found".format(name))
+        check.invariant(name in self._all_node_defs, f"{name} not found")
         return self._all_node_defs[name]
 
     def has_solid_def(self, name: str) -> bool:

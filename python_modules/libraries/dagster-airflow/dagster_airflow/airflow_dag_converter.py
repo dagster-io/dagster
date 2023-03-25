@@ -110,7 +110,7 @@ def make_dagster_op_from_airflow_task(
             importlib.reload(airflow)
         else:
             importlib.reload(airflow)
-        context.log.info("Running Airflow task: {task_id}".format(task_id=task.task_id))
+        context.log.info(f"Running Airflow task: {task.task_id}")
 
         with replace_airflow_logger_handlers():
             dagrun = context.resources.airflow_db.get_dagrun(dag=dag)

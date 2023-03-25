@@ -530,7 +530,7 @@ def define_resource_pipeline():
         finally:
             context.log.info("tearing down s3_resource_with_context_manager")
             bucket = "dagster-scratch-80542c2"
-            key = "resource_termination_test/{}".format(context.run_id)
+            key = f"resource_termination_test/{context.run_id}"
             s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
 
     @op(required_resource_keys={"s3_resource_with_context_manager"})
@@ -568,9 +568,9 @@ def define_fan_in_fan_out_pipeline():
     def construct_fan_in_level(source, level, fanout):
         fan_outs = []
         for i in range(0, fanout):
-            fan_outs.append(add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source))
+            fan_outs.append(add_one_fan.alias(f"add_one_fan_{level}_{i}")(source))
 
-        return sum_fan_in.alias("sum_{}".format(level))(fan_outs)
+        return sum_fan_in.alias(f"sum_{level}")(fan_outs)
 
     @pipeline(mode_defs=celery_mode_defs())
     def fan_in_fan_out_pipeline():

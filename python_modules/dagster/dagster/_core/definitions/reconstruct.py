@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
     check.str_param(pipeline_name, "pipeline_name")
-    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
+    return f"__repository__{pipeline_name}"
 
 
 @whitelist_for_serdes

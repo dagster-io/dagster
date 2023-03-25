@@ -204,7 +204,7 @@ def _run_in_subprocess(
 
     run_event_handler(
         instance.report_engine_event(
-            "Started process for run (pid: {pid}).".format(pid=pid),
+            f"Started process for run (pid: {pid}).",
             pipeline_run,
             EngineEventData.in_process(pid),
         )
@@ -228,7 +228,7 @@ def _run_in_subprocess(
         if not closed:
             run_event_handler(
                 instance.report_engine_event(
-                    "Process for run exited (pid: {pid}).".format(pid=pid),
+                    f"Process for run exited (pid: {pid}).",
                     pipeline_run,
                 )
             )

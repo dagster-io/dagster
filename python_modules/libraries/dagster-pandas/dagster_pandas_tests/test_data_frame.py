@@ -220,9 +220,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
             return DataFrame({"foo": ["car"]})
         elif which_door == "door_c":
             return DataFrame({"foo": ["goat"]})
-        raise DagsterInvariantViolationError(
-            "You did not pick a door. You chose: {which_door}".format(which_door=which_door)
-        )
+        raise DagsterInvariantViolationError(f"You did not pick a door. You chose: {which_door}")
 
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",

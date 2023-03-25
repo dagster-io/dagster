@@ -399,7 +399,7 @@ def construct_config_type_from_snap(
         return _construct_map_from_snap(config_type_snap, config_snap_map)
     elif config_type_snap.kind == ConfigTypeKind.NONEABLE:
         return _construct_noneable_from_snap(config_type_snap, config_snap_map)
-    check.failed("Could not evaluate config type snap kind: {}".format(config_type_snap.kind))
+    check.failed(f"Could not evaluate config type snap kind: {config_type_snap.kind}")
 
 
 @whitelist_for_serdes(

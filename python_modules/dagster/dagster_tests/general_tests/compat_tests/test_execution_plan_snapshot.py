@@ -136,7 +136,7 @@ def dynamic_pipeline():
     echo_default()
     fan_outs = []
     for i in range(0, 10):
-        fan_outs.append(return_one.alias("return_one_{}".format(i))())
+        fan_outs.append(return_one.alias(f"return_one_{i}")())
     sum_fan_in(fan_outs)
 
 

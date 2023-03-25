@@ -106,7 +106,7 @@ def docker_service_up(docker_compose_file, build_args=None):
             logs_dir = f".docker_logs/{current_test}"
 
             # delete any existing logs
-            p = subprocess.Popen(["rm", "-rf", "{dir}".format(dir=logs_dir)])
+            p = subprocess.Popen(["rm", "-rf", f"{logs_dir}"])
             p.communicate()
             assert p.returncode == 0
 
@@ -114,7 +114,7 @@ def docker_service_up(docker_compose_file, build_args=None):
 
             for c in containers:
                 with open(
-                    "{dir}/{container}-logs.txt".format(dir=logs_dir, container=c.name),
+                    f"{logs_dir}/{c.name}-logs.txt",
                     "w",
                     encoding="utf8",
                 ) as log:
@@ -140,7 +140,7 @@ def docker_service_up(docker_compose_file, build_args=None):
                     "buildkite-agent",
                     "artifact",
                     "upload",
-                    "{dir}/**/*".format(dir=logs_dir),
+                    f"{logs_dir}/**/*",
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

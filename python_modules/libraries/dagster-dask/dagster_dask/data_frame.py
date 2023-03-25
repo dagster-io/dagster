@@ -476,9 +476,7 @@ def dataframe_loader(_context, config):
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
     if read_type not in DataFrameReadTypes:
-        raise DagsterInvariantViolationError(
-            "Unsupported read_type {read_type}.".format(read_type=read_type)
-        )
+        raise DagsterInvariantViolationError(f"Unsupported read_type {read_type}.")
 
     # Get the metadata entry for the read_type in order to know which function
     # to call and whether it uses path as the first argument. And, make

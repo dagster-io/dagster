@@ -715,7 +715,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
                 )
             )
         elif isinstance(diff, ManagedElementError):
-            raise ValueError("Error checking Airbyte connections: {}".format(str(diff)))
+            raise ValueError(f"Error checking Airbyte connections: {str(diff)}")
 
         return super()._get_connections()
 
