@@ -1,5 +1,5 @@
 from math import isnan
-from typing import Any, Iterator, Sequence, cast, no_type_check
+from typing import Any, Iterator, Mapping, Sequence, cast, no_type_check
 
 import dagster._check as check
 import dagster._seven as seven
@@ -10,7 +10,6 @@ from dagster import (
     IntMetadataValue,
     JsonMetadataValue,
     MarkdownMetadataValue,
-    MetadataEntry,
     NotebookMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
@@ -22,6 +21,7 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import (
     DagsterRunMetadataValue,
+    MetadataValue,
 )
 from dagster._core.events import (
     DagsterEventType,
@@ -37,7 +37,7 @@ MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
-def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Iterator[Any]:
+def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[Any]:
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
@@ -57,116 +57,109 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
 
-    check.sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
-    for metadata_entry in metadata_entries:
-        if isinstance(metadata_entry.value, PathMetadataValue):
+    check.mapping_param(metadata, "metadata", key_type=str)
+    for key, value in metadata.items():
+        if isinstance(value, PathMetadataValue):
             yield GraphenePathMetadataEntry(
-                label=metadata_entry.label,
-                path=metadata_entry.value.path,
+                label=key,
+                path=value.path,
             )
-        elif isinstance(metadata_entry.value, NotebookMetadataValue):
+        elif isinstance(value, NotebookMetadataValue):
             yield GrapheneNotebookMetadataEntry(
-                label=metadata_entry.label,
-                path=metadata_entry.value.path,
+                label=key,
+                path=value.path,
             )
-        elif isinstance(metadata_entry.value, JsonMetadataValue):
+        elif isinstance(value, JsonMetadataValue):
             yield GrapheneJsonMetadataEntry(
-                label=metadata_entry.label,
-                jsonString=seven.json.dumps(metadata_entry.value.data),
+                label=key,
+                jsonString=seven.json.dumps(value.data),
             )
-        elif isinstance(metadata_entry.value, TextMetadataValue):
+        elif isinstance(value, TextMetadataValue):
             yield GrapheneTextMetadataEntry(
-                label=metadata_entry.label,
-                text=metadata_entry.value.text,
+                label=key,
+                text=value.text,
             )
-        elif isinstance(metadata_entry.value, UrlMetadataValue):
+        elif isinstance(value, UrlMetadataValue):
             yield GrapheneUrlMetadataEntry(
-                label=metadata_entry.label,
-                url=metadata_entry.value.url,
+                label=key,
+                url=value.url,
             )
-        elif isinstance(metadata_entry.value, MarkdownMetadataValue):
+        elif isinstance(value, MarkdownMetadataValue):
             yield GrapheneMarkdownMetadataEntry(
-                label=metadata_entry.label,
-                md_str=metadata_entry.value.md_str,
+                label=key,
+                md_str=value.md_str,
             )
-        elif isinstance(metadata_entry.value, PythonArtifactMetadataValue):
+        elif isinstance(value, PythonArtifactMetadataValue):
             yield GraphenePythonArtifactMetadataEntry(
-                label=metadata_entry.label,
-                module=metadata_entry.value.module,
-                name=metadata_entry.value.name,
+                label=key,
+                module=value.module,
+                name=value.name,
             )
-        elif isinstance(metadata_entry.value, FloatMetadataValue):
-            float_val = metadata_entry.value.value
+        elif isinstance(value, FloatMetadataValue):
+            float_val = value.value
 
             # coerce NaN to null
             if float_val is not None and isnan(float_val):
                 float_val = None
 
             yield GrapheneFloatMetadataEntry(
-                label=metadata_entry.label,
+                label=key,
                 floatValue=float_val,
             )
-        elif isinstance(metadata_entry.value, IntMetadataValue):
+        elif isinstance(value, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
-            if (
-                isinstance(metadata_entry.value.value, int)
-                and MIN_INT <= metadata_entry.value.value <= MAX_INT
-            ):
-                int_val = metadata_entry.value.value
+            if isinstance(value.value, int) and MIN_INT <= value.value <= MAX_INT:
+                int_val = value.value
 
             yield GrapheneIntMetadataEntry(
-                label=metadata_entry.label,
+                label=key,
                 intValue=int_val,
                 # make string representation available to allow for > 32bit int
-                intRepr=str(metadata_entry.value.value),
+                intRepr=str(value.value),
             )
-        elif isinstance(metadata_entry.value, BoolMetadataValue):
+        elif isinstance(value, BoolMetadataValue):
             yield GrapheneBoolMetadataEntry(
-                label=metadata_entry.label,
-                boolValue=metadata_entry.value.value,
+                label=key,
+                boolValue=value.value,
             )
-        elif isinstance(metadata_entry.value, NullMetadataValue):
+        elif isinstance(value, NullMetadataValue):
             yield GrapheneNullMetadataEntry(
-                label=metadata_entry.label,
+                label=key,
             )
-        elif isinstance(metadata_entry.value, DagsterRunMetadataValue):
+        elif isinstance(value, DagsterRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
-                label=metadata_entry.label,
-                runId=metadata_entry.value.run_id,
+                label=key,
+                runId=value.run_id,
             )
-        elif isinstance(metadata_entry.value, DagsterAssetMetadataValue):
+        elif isinstance(value, DagsterAssetMetadataValue):
             yield GrapheneAssetMetadataEntry(
-                label=metadata_entry.label,
-                assetKey=metadata_entry.value.asset_key,
+                label=key,
+                assetKey=value.asset_key,
             )
-        elif isinstance(metadata_entry.value, TableMetadataValue):
+        elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(
-                label=metadata_entry.label,
+                label=key,
                 table=GrapheneTable(
-                    schema=metadata_entry.value.schema,
-                    records=[
-                        seven.json.dumps(record.data) for record in metadata_entry.value.records
-                    ],
+                    schema=value.schema,
+                    records=[seven.json.dumps(record.data) for record in value.records],
                 ),
             )
-        elif isinstance(metadata_entry.value, TableSchemaMetadataValue):
+        elif isinstance(value, TableSchemaMetadataValue):
             yield GrapheneTableSchemaMetadataEntry(
-                label=metadata_entry.label,
+                label=key,
                 schema=GrapheneTableSchema(
-                    constraints=metadata_entry.value.schema.constraints,
-                    columns=metadata_entry.value.schema.columns,
+                    constraints=value.schema.constraints,
+                    columns=value.schema.columns,
                 ),
             )
         else:
             # skip rest for now
-            check.not_implemented(
-                f"{type(metadata_entry.value)} unsupported metadata entry for now"
-            )
+            check.not_implemented(f"{type(value)} unsupported metadata entry for now")
 
 
-def _to_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Sequence[Any]:
-    return list(iterate_metadata_entries(metadata_entries) or [])
+def _to_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Sequence[Any]:
+    return list(iterate_metadata_entries(metadata or {}))
 
 
 # We don't typecheck this due to the excessive number of type errors resulting from the
@@ -247,7 +240,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         return GrapheneExecutionStepOutputEvent(
             output_name=data.output_name,
             type_check=data.type_check_data,
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
@@ -331,7 +324,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             output_name=data.output_name,
             manager_key=data.manager_key,
             metadataEntries=_to_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries  # type: ignore
+                dagster_event.event_specific_data.metadata  # type: ignore
             ),
             **basic_params,
         )
@@ -342,7 +335,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             manager_key=data.manager_key,
             upstream_output_name=data.upstream_output_name,
             upstream_step_key=data.upstream_step_key,
-            metadataEntries=_to_metadata_entries(data.metadata_entries or []),
+            metadataEntries=_to_metadata_entries(data.metadata or {}),
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
@@ -351,7 +344,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
         data = dagster_event.engine_event_data
         return GrapheneEngineEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             error=GraphenePythonError(data.error)
             if dagster_event.engine_event_data.error
             else None,
@@ -382,7 +375,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.STEP_WORKER_STARTING:
         data = dagster_event.engine_event_data
         return GrapheneStepWorkerStartingEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -390,7 +383,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.STEP_WORKER_STARTED:
         data = dagster_event.engine_event_data
         return GrapheneStepWorkerStartedEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -398,7 +391,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_STARTED:
         data = dagster_event.engine_event_data
         return GrapheneResourceInitStartedEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -406,7 +399,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_SUCCESS:
         data = dagster_event.engine_event_data
         return GrapheneResourceInitSuccessEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             **basic_params,
@@ -414,7 +407,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_FAILURE:
         data = dagster_event.engine_event_data
         return GrapheneResourceInitFailureEvent(
-            metadataEntries=_to_metadata_entries(data.metadata_entries),
+            metadataEntries=_to_metadata_entries(data.metadata),
             markerStart=data.marker_start,
             markerEnd=data.marker_end,
             error=GraphenePythonError(data.error),

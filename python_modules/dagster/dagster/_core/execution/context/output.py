@@ -20,7 +20,11 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
 )
-from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+    MetadataValue,
+    RawMetadataValue,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
@@ -82,7 +86,8 @@ class OutputContext:
     _name: Optional[str]
     _pipeline_name: Optional[str]
     _run_id: Optional[str]
-    _metadata: Optional[Mapping[str, RawMetadataValue]]
+    _metadata: ArbitraryMetadataMapping
+    _user_generated_metadata: Mapping[str, MetadataValue]
     _mapping_key: Optional[str]
     _config: object
     _op_def: Optional["OpDefinition"]
@@ -99,7 +104,6 @@ class OutputContext:
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation]]
-    _metadata_entries: Optional[Sequence[MetadataEntry]]
 
     def __init__(
         self,
@@ -107,7 +111,7 @@ class OutputContext:
         name: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         run_id: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         mapping_key: Optional[str] = None,
         config: object = None,
         dagster_type: Optional["DagsterType"] = None,
@@ -128,7 +132,7 @@ class OutputContext:
         self._name = name
         self._pipeline_name = pipeline_name
         self._run_id = run_id
-        self._metadata = metadata
+        self._metadata = metadata or {}
         self._mapping_key = mapping_key
         self._config = config
         self._op_def = op_def
@@ -157,7 +161,7 @@ class OutputContext:
 
         self._events = []
         self._user_events = []
-        self._metadata_entries = None
+        self._user_generated_metadata = {}
 
     def __enter__(self):
         if self._resources_cm:
@@ -222,7 +226,7 @@ class OutputContext:
 
     @public
     @property
-    def metadata(self) -> Optional[Mapping[str, object]]:
+    def metadata(self) -> Optional[ArbitraryMetadataMapping]:
         return self._metadata
 
     @public
@@ -671,32 +675,36 @@ class OutputContext:
         """
         from dagster._core.definitions.metadata import normalize_metadata
 
-        prior_metadata_entries = self._metadata_entries or []
-
-        overlapping_labels = {entry.label for entry in prior_metadata_entries} & metadata.keys()
+        overlapping_labels = set(self._user_generated_metadata.keys()) & metadata.keys()
         if overlapping_labels:
             raise DagsterInvalidMetadata(
                 f"Tried to add metadata for key(s) that already have metadata: {overlapping_labels}"
             )
 
-        self._metadata_entries = [*prior_metadata_entries, *normalize_metadata(metadata, [])]
+        self._user_generated_metadata = {
+            **self._user_generated_metadata,
+            **normalize_metadata(metadata),
+        }
 
-    def get_logged_metadata_entries(
+    def get_logged_metadata(
         self,
-    ) -> Sequence[MetadataEntry]:
-        """Get the list of metadata entries that have been logged for use with this output."""
-        return self._metadata_entries or []
+    ) -> Mapping[str, MetadataValue]:
+        """Get the mapping of metadata entries that have been logged for use with this output."""
+        return self._user_generated_metadata
 
-    def consume_logged_metadata_entries(
+    def consume_logged_metadata(
         self,
-    ) -> Sequence[MetadataEntry]:
+    ) -> Mapping[str, MetadataValue]:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
-        If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
+        If consume_logged_metadata has not yet been called, this will yield all logged events since
+        the call to `handle_output`. If consume_logged_metadata has been called, it will yield all
+        events since the last time consume_logged_metadata_entries was called. Designed for internal
+        use. Users should never need to invoke this method.
         """
-        result = self._metadata_entries
-        self._metadata_entries = []
-        return result or []
+        result = self._user_generated_metadata
+        self._user_generated_metadata = {}
+        return result or {}
 
 
 def get_output_context(

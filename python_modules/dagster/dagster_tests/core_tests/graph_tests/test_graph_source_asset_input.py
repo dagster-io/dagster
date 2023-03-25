@@ -12,7 +12,7 @@ from dagster import (
 )
 
 
-def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata=None):
+def make_io_manager(source_asset: SourceAsset, input_value=5, expected_metadata={}):
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             ...

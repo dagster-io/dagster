@@ -6,12 +6,14 @@ from functools import wraps
 import pandas as pd
 from dagster import (
     DagsterType,
-    MetadataEntry,
     TypeCheck,
     _check as check,
 )
 from dagster._utils.backcompat import experimental_class_warning
 from pandas import DataFrame
+from typing_extensions import Final
+
+CONSTRAINT_METADATA_KEY: Final = "constraint_metadata"
 
 
 class ConstraintViolationException(Exception):
@@ -60,20 +62,19 @@ class ConstraintWithMetadataException(Exception):
             return val
 
     def convert_to_metadata(self):
-        return MetadataEntry(
-            "constraint-metadata",
-            value={
+        return {
+            CONSTRAINT_METADATA_KEY: {
                 "constraint_name": self.constraint_name,
                 "constraint_description": self.constraint_description,
                 "expected": self.normalize_metadata_json_value(self.expectation),
                 "offending": self.normalize_metadata_json_value(self.offending),
                 "actual": self.normalize_metadata_json_value(self.actual),
             },
-        )
+        }
 
     def return_as_typecheck(self):
         return TypeCheck(
-            success=False, description=self.args[0], metadata_entries=[self.convert_to_metadata()]
+            success=False, description=self.args[0], metadata=self.convert_to_metadata()
         )
 
 
@@ -553,7 +554,7 @@ class MultiColumnConstraintWithMetadata(ColumnConstraintWithMetadata):
                     result_val = result.success
                     if result_val:
                         continue
-                    result_dict = result.metadata_entries[0].value.data
+                    result_dict = result.metadata[CONSTRAINT_METADATA_KEY].data
                     truthparam = truthparam and result_val
                     for key in result_dict.keys():
                         if "constraint" not in key:

@@ -1,6 +1,7 @@
 import ast
 import datetime
 import tempfile
+from typing import Sequence
 
 import pytest
 from dagster import (
@@ -37,6 +38,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPropertyError,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 
@@ -800,17 +802,13 @@ def test_from_op_w_configured():
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
 
 
-def get_step_keys_from_run(instance):
+def get_step_keys_from_run(instance: DagsterInstance) -> Sequence[str]:
     engine_events = list(
         instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
     )
-    metadata_entries = engine_events[
-        0
-    ].event_log_entry.dagster_event.engine_event_data.metadata_entries
-    step_metadata = next(
-        iter([metadata for metadata in metadata_entries if metadata.label == "step_keys"])
-    )
-    return ast.literal_eval(step_metadata.value.value)
+    metadata = engine_events[0].event_log_entry.get_dagster_event().engine_event_data.metadata
+    step_metadata = metadata["step_keys"]
+    return ast.literal_eval(step_metadata.value)  # type: ignore
 
 
 def get_num_events(instance, run_id, event_type):

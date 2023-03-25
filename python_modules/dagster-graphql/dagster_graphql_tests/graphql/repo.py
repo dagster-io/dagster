@@ -34,7 +34,6 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     Map,
-    MetadataEntry,
     Noneable,
     Nothing,
     OpExecutionContext,
@@ -706,48 +705,39 @@ def materialization_pipeline():
         yield AssetMaterialization(
             asset_key="all_types",
             description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
+            metadata={
+                "text": "text is cool",
+                "url": MetadataValue.url("https://bigty.pe/neato"),
+                "path": MetadataValue.path("/tmp/awesome"),
+                "json": {"is_dope": True},
+                "python class": MetadataValue.python_artifact(AssetMaterialization),
+                "python_function": MetadataValue.python_artifact(file_relative_path),
+                "float": 1.2,
+                "int": 1,
+                "float NaN": float("nan"),
+                "long int": LONG_INT,
+                "pipeline run": MetadataValue.dagster_run("fake_run_id"),
+                "my asset": AssetKey("my_asset"),
+                "table": MetadataValue.table(
+                    records=[
+                        TableRecord(dict(foo=1, bar=2)),
+                        TableRecord(dict(foo=3, bar=4)),
+                    ],
                 ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-                MetadataEntry(
-                    "table",
-                    value=MetadataValue.table(
-                        records=[
-                            TableRecord(dict(foo=1, bar=2)),
-                            TableRecord(dict(foo=3, bar=4)),
-                        ],
-                    ),
-                ),
-                MetadataEntry(
-                    "table_schema",
-                    value=TableSchema(
-                        columns=[
-                            TableColumn(
-                                name="foo",
-                                type="integer",
-                                constraints=TableColumnConstraints(unique=True),
-                            ),
-                            TableColumn(name="bar", type="string"),
-                        ],
-                        constraints=TableConstraints(
-                            other=["some constraint"],
+                "table_schema": TableSchema(
+                    columns=[
+                        TableColumn(
+                            name="foo",
+                            type="integer",
+                            constraints=TableColumnConstraints(unique=True),
                         ),
+                        TableColumn(name="bar", type="string"),
+                    ],
+                    constraints=TableConstraints(
+                        other=["some constraint"],
                     ),
                 ),
-            ],
+            },
         )
         yield Output(None)
 

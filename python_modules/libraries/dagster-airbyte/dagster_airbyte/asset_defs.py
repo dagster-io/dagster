@@ -177,9 +177,7 @@ def _build_airbyte_assets_from_metadata(
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.value for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
                 # e.g. nested objects, lists etc
@@ -268,9 +266,7 @@ def build_airbyte_assets(
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.value for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
                 # e.g. nested objects, lists etc

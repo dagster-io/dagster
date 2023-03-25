@@ -37,7 +37,6 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -106,7 +105,6 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
@@ -168,7 +166,6 @@ class JobDefinition(PipelineDefinition):
         )
         asset_layer = check.opt_inst_param(asset_layer, "asset_layer", AssetLayer)
         input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
-        _metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
         _preset_defs = check.opt_sequence_param(
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
@@ -252,7 +249,6 @@ class JobDefinition(PipelineDefinition):
             preset_defs=presets or _preset_defs,
             tags=tags,
             metadata=metadata,
-            metadata_entries=_metadata_entries,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -702,7 +698,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self._asset_layer,
-            _metadata_entries=self._metadata_entries,
+            metadata=self._metadata,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
@@ -742,7 +738,7 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
@@ -764,7 +760,7 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,

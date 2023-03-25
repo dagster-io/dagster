@@ -6,7 +6,6 @@ import pytest
 from dagster import (
     Failure,
     Field,
-    MetadataEntry,
     Nothing,
     Output,
     String,
@@ -15,6 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions import op
 from dagster._core.definitions.input import In
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
@@ -396,7 +396,7 @@ def test_optional_outputs():
 def throw():
     raise Failure(
         description="it Failure",
-        metadata_entries=[MetadataEntry("label", value="text")],
+        metadata={"label": "text"},
     )
 
 
@@ -424,8 +424,7 @@ def test_failure_multiprocessing():
         assert failure_data.user_failure_data.label == "intentional-failure"
         # from Failure
         assert failure_data.user_failure_data.description == "it Failure"
-        assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
+        assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
 
 
 @op

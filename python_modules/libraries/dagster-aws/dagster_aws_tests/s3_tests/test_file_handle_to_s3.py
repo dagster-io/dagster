@@ -1,4 +1,5 @@
 from dagster import DagsterEventType, job, op
+from dagster._core.definitions.metadata import MetadataValue
 from dagster_aws.s3 import S3FileHandle, file_handle_to_s3, s3_file_manager, s3_resource
 
 
@@ -39,8 +40,7 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
         if event.event_type == DagsterEventType.ASSET_MATERIALIZATION
     ]
     assert len(materializations) == 1
-    assert len(materializations[0].metadata_entries) == 1
-    assert (
-        materializations[0].metadata_entries[0].value.path == f"s3://{mock_s3_bucket.name}/some-key"
+    assert len(materializations[0].metadata) == 1
+    assert materializations[0].metadata["some-key"] == MetadataValue.path(
+        f"s3://{mock_s3_bucket.name}/some-key"
     )
-    assert materializations[0].metadata_entries[0].label == "some-key"

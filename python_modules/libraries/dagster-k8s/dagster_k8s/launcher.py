@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 from dagster import (
-    MetadataEntry,
     _check as check,
 )
 from dagster._cli.api import ExecuteRunArgs
@@ -240,11 +239,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "Creating Kubernetes run worker job",
             run,
             EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
+                {
+                    "Kubernetes Job name": job_name,
+                    "Kubernetes Namespace": container_context.namespace,
+                    "Run ID": run.run_id,
+                }
             ),
             cls=self.__class__,
         )

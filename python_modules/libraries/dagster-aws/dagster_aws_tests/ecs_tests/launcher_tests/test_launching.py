@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.events import MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
@@ -99,10 +99,10 @@ def test_default_launcher(
     events = instance.event_log_storage.get_logs_for_run(run.run_id)
     latest_event = events[-1]
     assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
-    event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
-    assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
-    assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
+    metadata = latest_event.dagster_event.engine_event_data.metadata
+    assert metadata["ECS Task ARN"] == MetadataValue.text(task_arn)
+    assert metadata["ECS Cluster"] == MetadataValue.text(cluster_arn)
+    assert metadata["Run ID"] == MetadataValue.text(run.run_id)
 
     # check status and stop task
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
@@ -190,10 +190,10 @@ def test_launcher_dont_use_current_task(
     events = instance.event_log_storage.get_logs_for_run(run.run_id)
     latest_event = events[-1]
     assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
-    event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
-    assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
-    assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
+    metadata = latest_event.dagster_event.engine_event_data.metadata
+    assert metadata["ECS Task ARN"] == MetadataValue.text(task_arn)
+    assert metadata["ECS Cluster"] == MetadataValue.text(cluster_arn)
+    assert metadata["Run ID"] == MetadataValue.text(run.run_id)
 
     # check status and stop task
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
@@ -1037,8 +1037,8 @@ def test_custom_launcher(
     events = custom_instance.event_log_storage.get_logs_for_run(custom_run.run_id)
     latest_event = events[-1]
     assert latest_event.message == "Launching run in custom ECS task"
-    event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert MetadataEntry("Run ID", value=custom_run.run_id) in event_metadata
+    metadata = latest_event.dagster_event.engine_event_data.metadata
+    assert metadata["Run ID"] == MetadataValue.text(custom_run.run_id)
 
     # check status and stop task
     assert (

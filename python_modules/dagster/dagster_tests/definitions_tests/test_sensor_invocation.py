@@ -8,7 +8,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    BoolMetadataValue,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
@@ -42,6 +41,7 @@ from dagster import (
     sensor,
 )
 from dagster._config.structured_config import ConfigurableResource
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -1163,10 +1163,10 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[
                 my_asset.key
-            ].event_log_entry.dagster_event.materialization.metadata_entries[
-                0
-            ].value == BoolMetadataValue(
-                value=True
+            ].event_log_entry.dagster_event.materialization.metadata[
+                "evaluated"
+            ] == MetadataValue.bool(
+                True
             )
 
     @repository

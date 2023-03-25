@@ -20,7 +20,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
-    MetadataEntry,
+    TableMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -45,12 +45,6 @@ def solid_events_for_type(
         for compute_step_event in solid_result.compute_step_events
         if compute_step_event.event_type == event_type
     ]
-
-
-def test_metadata_entry_construction():
-    entry = MetadataEntry("foo", value=MetadataValue.text("bar"))
-    assert entry.label == "foo"
-    assert entry.value == MetadataValue.text("bar")
 
 
 def test_metadata_asset_materialization():
@@ -82,8 +76,8 @@ def test_metadata_asset_materialization():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    assert len(materialization.metadata_entries) == 6
-    entry_map = {entry.label: entry.value.__class__ for entry in materialization.metadata_entries}
+    assert len(materialization.metadata) == 6
+    entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -120,8 +114,8 @@ def test_metadata_asset_observation():
     )
     assert len(observation_events) == 1
     observation = observation_events[0].event_specific_data.asset_observation
-    assert len(observation.metadata_entries) == 5
-    entry_map = {entry.label: entry.value.__class__ for entry in observation.metadata_entries}
+    assert len(observation.metadata) == 5
+    entry_map = {k: v.__class__ for k, v in observation.metadata.items()}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -154,37 +148,30 @@ def test_unknown_metadata_value():
 
 def test_parse_null_metadata():
     metadata = {"foo": None}
-    entries = normalize_metadata(metadata, [])
-    assert entries[0].label == "foo"
-    assert entries[0].value == NullMetadataValue()
+    normalized = normalize_metadata(metadata)
+    assert normalized["foo"] == NullMetadataValue()
 
 
 def test_parse_list_metadata():
     metadata = {"foo": ["bar"]}
-    entries = normalize_metadata(metadata, [])
-    assert entries[0].label == "foo"
-    assert entries[0].value == JsonMetadataValue(["bar"])
+    normalized = normalize_metadata(metadata)
+    assert normalized["foo"] == JsonMetadataValue(["bar"])
 
 
 def test_parse_invalid_metadata():
     metadata = {"foo": object()}
 
     with pytest.raises(DagsterInvalidMetadata) as _exc_info:
-        normalize_metadata(metadata, [])
+        normalize_metadata(metadata)
 
-    entries = normalize_metadata(metadata, [], allow_invalid=True)
-    assert len(entries) == 1
-    assert entries[0].label == "foo"
-    assert entries[0].value == TextMetadataValue("[object] (unserializable)")
+    normalized = normalize_metadata(metadata, allow_invalid=True)
+    assert normalized["foo"] == TextMetadataValue("[object] (unserializable)")
 
 
 def test_parse_path_metadata():
     metadata = {"path": Path("/a/b.csv")}
-
-    entries = normalize_metadata(metadata, [])
-    assert len(entries) == 1
-    assert entries[0].label == "path"
-    assert entries[0].value == PathMetadataValue("/a/b.csv")
+    normalized = normalize_metadata(metadata)
+    assert normalized["path"] == PathMetadataValue("/a/b.csv")
 
 
 def test_bad_json_metadata_value():
@@ -210,17 +197,14 @@ def test_bad_json_metadata_value():
 
 
 def test_table_metadata_value_schema_inference():
-    table_metadata_entry = MetadataEntry(
-        "foo",
-        value=MetadataValue.table(
-            records=[
-                TableRecord(data=dict(name="foo", status=False)),
-                TableRecord(data=dict(name="bar", status=True)),
-            ],
-        ),
+    table = MetadataValue.table(
+        records=[
+            TableRecord(data=dict(name="foo", status=False)),
+            TableRecord(data=dict(name="bar", status=True)),
+        ],
     )
 
-    schema = table_metadata_entry.value.schema
+    schema = table.schema
     assert isinstance(schema, TableSchema)
     assert schema.columns == [
         TableColumn(name="name", type="string"),
@@ -355,16 +339,13 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_table_serialization():
-    entry = MetadataEntry(
-        "foo",
-        value=MetadataValue.table(
-            records=[
-                TableRecord(dict(foo=1, bar=2)),
-            ],
-        ),
+    table_metadata = MetadataValue.table(
+        records=[
+            TableRecord(dict(foo=1, bar=2)),
+        ],
     )
-    serialized = serialize_value(entry)
-    assert deserialize_value(serialized, MetadataEntry) == entry
+    serialized = serialize_value(table_metadata)
+    assert deserialize_value(serialized, TableMetadataValue) == table_metadata
 
 
 def test_bool_metadata_value():
@@ -389,6 +370,6 @@ def test_bool_metadata_value():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    entry_map = {entry.label: entry.value.__class__ for entry in materialization.metadata_entries}
+    entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["first_bool"] == BoolMetadataValue
     assert entry_map["second_bool"] == BoolMetadataValue

@@ -5,10 +5,10 @@ import responses
 from dagster import (
     DagsterExecutionInterruptedError,
     Failure,
-    MetadataEntry,
     _check as check,
     build_init_resource_context,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
@@ -336,8 +336,8 @@ def test_assets(forward_logs):
     materializations = list(generate_materializations(airbyte_output, []))
     assert len(materializations) == 3
 
-    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
-    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
 
 
 @responses.activate
