@@ -73,7 +73,7 @@ EventSpecificData = Union[
     "ComputeLogsCaptureData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
-    "PipelineCancelingData",
+    "RunCancelingData",
 ]
 
 
@@ -1609,16 +1609,16 @@ class PipelineCanceledData(
 
 
 @whitelist_for_serdes
-class PipelineCancelingData(
+class RunCancelingData(
     NamedTuple(
-        "_PipelineCancelingData",
+        "_RunCancelingData",
         [
             ("cancelation_source", CancelationSource),
         ],
     )
 ):
     def __new__(cls, cancelation_source: Optional[CancelationSource]):
-        return super(PipelineCancelingData, cls).__new__(
+        return super(RunCancelingData, cls).__new__(
             cls,
             cancelation_source=check.opt_inst_param(
                 cancelation_source,

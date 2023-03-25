@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional, cast
 
 import pendulum
 import pytest
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import CancelationSource, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
@@ -328,4 +328,8 @@ def test_long_running_termination_failure(
     run_canceling_log = run_canceling_logs[0]
     assert (
         run_canceling_log.message == "Canceling due to exceeding maximum runtime of 500.0 seconds."
+    )
+    assert (
+        run_canceling_log.dagster_event.event_specific_data.cancelation_source
+        == CancelationSource.MONITORING_DAEMON
     )
