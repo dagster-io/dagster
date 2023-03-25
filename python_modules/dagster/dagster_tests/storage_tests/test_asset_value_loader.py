@@ -207,7 +207,7 @@ def test_default_io_manager():
             value = loader.load_asset_value(AssetKey("asset1"), python_type=int)
             assert value == 5
 
-    assert repo.load_asset_value(AssetKey("asset1"), python_type=int, instance=instance) == 5
+        assert repo.load_asset_value(AssetKey("asset1"), python_type=int, instance=instance) == 5
 
 
 def test_partition_key():

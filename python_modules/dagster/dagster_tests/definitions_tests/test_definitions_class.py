@@ -545,7 +545,6 @@ def test_unresolved_partitioned_asset_schedule():
     assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
 
     defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
-    defs_with_implicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
     assert defs_with_implicit_job.get_job_def("job1").name == "job1"
     assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
     assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"

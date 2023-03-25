@@ -27,13 +27,13 @@ from dagster._core.errors import (
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
+    DependencyMapping,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
     GraphNode,
@@ -178,7 +178,7 @@ class PipelineDefinition:
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
         ] = None,
         mode_defs: Optional[Sequence[ModeDefinition]] = None,
         preset_defs: Optional[Sequence[PresetDefinition]] = None,
@@ -357,7 +357,7 @@ class PipelineDefinition:
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
+        return merge_dicts(self._graph_def.tags, self._tags)
 
     @property
     def metadata(self) -> Sequence[MetadataEntry]:
@@ -376,9 +376,7 @@ class PipelineDefinition:
         return self._graph_def.dependency_structure
 
     @property
-    def dependencies(
-        self,
-    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+    def dependencies(self) -> DependencyMapping[NodeInvocation]:
         return self._graph_def.dependencies
 
     def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
@@ -732,7 +730,7 @@ def _get_pipeline_subset_def(
     )
 
     deps: Dict[
-        Union[str, NodeInvocation],
+        NodeInvocation,
         Dict[str, IDependencyDefinition],
     ] = {_dep_key_of(solid): {} for solid in solids}
 

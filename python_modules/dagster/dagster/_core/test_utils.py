@@ -22,7 +22,7 @@ from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
@@ -438,7 +438,7 @@ def get_mocked_system_timezone():
 
 # Test utility for creating a test workspace for a function
 class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
-    def __init__(self, origin: InProcessRepositoryLocationOrigin):
+    def __init__(self, origin: InProcessCodeLocationOrigin):
         self._origin = origin
 
     def create_origins(self):
@@ -450,7 +450,7 @@ def in_process_test_workspace(instance, loadable_target_origin, container_image=
     with WorkspaceProcessContext(
         instance,
         InProcessTestWorkspaceLoadTarget(
-            InProcessRepositoryLocationOrigin(
+            InProcessCodeLocationOrigin(
                 loadable_target_origin,
                 container_image=container_image,
             ),

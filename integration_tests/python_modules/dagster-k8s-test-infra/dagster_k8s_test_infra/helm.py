@@ -945,6 +945,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                     "labels": {
                         "run_launcher_label_key": "run_launcher_label_value",
                     },
+                    "jobNamespace": system_namespace,
                 },
             },
         },

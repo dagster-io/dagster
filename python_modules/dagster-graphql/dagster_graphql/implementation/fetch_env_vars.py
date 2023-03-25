@@ -1,6 +1,6 @@
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
 from dagster_graphql.schema.env_vars import (
@@ -19,7 +19,7 @@ def get_utilized_env_vars_or_error(
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    location: RepositoryLocation = graphene_info.context.get_repository_location(
+    location: CodeLocation = graphene_info.context.get_code_location(
         repository_selector.location_name
     )
     repository = location.get_repository(repository_selector.repository_name)

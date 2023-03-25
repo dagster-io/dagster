@@ -2,8 +2,10 @@ import click
 from dagster import (
     AssetSelection,
     DagsterInstance,
+    DailyPartitionsDefinition,
     Definitions,
     DynamicPartitionsDefinition,
+    MultiPartitionsDefinition,
     asset,
     define_asset_job,
     load_assets_from_current_module,
@@ -27,6 +29,15 @@ dynamic_partitions_job = define_asset_job(
     selection=AssetSelection.groups("dynamic_asset_partitions"),
     partitions_def=customers_partitions_def,
 )
+
+multipartition_w_dynamic_partitions_def = MultiPartitionsDefinition(
+    {"customers": customers_partitions_def, "daily": DailyPartitionsDefinition("2023-01-01")}
+)
+
+
+@asset(partitions_def=multipartition_w_dynamic_partitions_def)
+def multipartitioned_with_dynamic_dimension():
+    return 1
 
 
 defs = Definitions(assets=load_assets_from_current_module(), jobs=[dynamic_partitions_job])

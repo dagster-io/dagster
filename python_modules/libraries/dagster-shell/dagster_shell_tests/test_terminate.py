@@ -64,7 +64,7 @@ def test_terminate_kills_subproc():
     with instance_for_test() as instance:
         with get_managed_grpc_server_workspace(instance) as workspace:
             external_pipeline = (
-                workspace.get_repository_location("test")
+                workspace.get_code_location("test")
                 .get_repository("sleepy_repo")
                 .get_full_external_job("sleepy_job")
             )

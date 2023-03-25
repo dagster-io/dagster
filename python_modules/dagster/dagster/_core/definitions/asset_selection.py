@@ -1,12 +1,13 @@
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Optional, Sequence, Union
+from typing import AbstractSet, Iterable, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import fetch_connected, fetch_sinks, fetch_sources
+from dagster._utils.backcompat import deprecation_warning
 
 from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
@@ -112,7 +113,10 @@ class AssetSelection(ABC):
     ) -> "UpstreamAssetSelection":
         """Returns a selection that includes all assets that are upstream of any of the assets in
         this selection, selecting the assets in this selection by default. Iterates through each
-        asset in this selection and returns the union of all downstream assets.
+        asset in this selection and returns the union of all upstream assets.
+
+        Because mixed selections of source and regular assets are currently not supported, keys
+        corresponding to `SourceAssets` will not be included as upstream of regular assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
@@ -137,14 +141,30 @@ class AssetSelection(ABC):
         return SinkAssetSelection(self)
 
     @public
-    def sources(self) -> "SourceAssetSelection":
-        """Given an asset selection, returns a new asset selection that contains all of the source
+    def roots(self) -> "RootAssetSelection":
+        """Given an asset selection, returns a new asset selection that contains all of the root
         assets within the original asset selection.
 
-        A source asset is an asset that has no upstream dependencies within the asset selection.
-        The source asset can have downstream dependencies outside of the asset selection.
+        A root asset is an asset that has no upstream dependencies within the asset selection.
+        The root asset can have downstream dependencies outside of the asset selection.
         """
-        return SourceAssetSelection(self)
+        return RootAssetSelection(self)
+
+    @public
+    @deprecated
+    def sources(self) -> "RootAssetSelection":
+        """Given an asset selection, returns a new asset selection that contains all of the root
+        assets within the original asset selection.
+
+        A root asset is an asset that has no upstream dependencies within the asset selection.
+        The root asset can have downstream dependencies outside of the asset selection.
+        """
+        deprecation_warning(
+            "AssetSelection.sources",
+            "2.0",
+            "Use AssetSelection.roots instead.",
+        )
+        return self.roots()
 
     def __or__(self, other: "AssetSelection") -> "OrAssetSelection":
         check.inst_param(other, "other", AssetSelection)
@@ -159,15 +179,25 @@ class AssetSelection(ABC):
         return SubAssetSelection(self, other)
 
     def resolve(
-        self, all_assets: Union[Sequence[Union[AssetsDefinition, SourceAsset]], AssetGraph]
+        self, all_assets: Union[Iterable[Union[AssetsDefinition, SourceAsset]], AssetGraph]
     ) -> AbstractSet[AssetKey]:
         if isinstance(all_assets, AssetGraph):
             asset_graph = all_assets
         else:
-            check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
+            check.iterable_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
             asset_graph = AssetGraph.from_assets(all_assets)
 
-        return self.resolve_inner(asset_graph)
+        resolved = self.resolve_inner(asset_graph)
+        resolved_source_assets = asset_graph.source_asset_keys & resolved
+        resolved_regular_assets = resolved - asset_graph.source_asset_keys
+        check.invariant(
+            not (len(resolved_source_assets) > 0 and len(resolved_regular_assets) > 0),
+            (
+                "Asset selection specified both regular assets and source assets. This is not"
+                " currently supported. Selections must be all regular assets or all source assets."
+            ),
+        )
+        return resolved
 
     @abstractmethod
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
@@ -206,7 +236,7 @@ class SinkAssetSelection(AssetSelection):
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
 
 
-class SourceAssetSelection(AssetSelection):
+class RootAssetSelection(AssetSelection):
     def __init__(self, child: AssetSelection):
         self._child = child
 
@@ -265,15 +295,11 @@ class KeysAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         specified_keys = set(self._keys)
-        invalid_keys = {key for key in specified_keys if key not in asset_graph.all_asset_keys}
-        selected_source_asset_keys = specified_keys & asset_graph.source_asset_keys
-        if selected_source_asset_keys:
-            raise DagsterInvalidSubsetError(
-                f"AssetKey(s) {selected_source_asset_keys} were selected, but these keys are "
-                "supplied by SourceAsset objects, not AssetsDefinition objects. You don't need "
-                "to include source assets in a selection for downstream assets to be able to "
-                "read them."
-            )
+        invalid_keys = {
+            key
+            for key in specified_keys
+            if key not in asset_graph.all_asset_keys and key not in asset_graph.source_asset_keys
+        }
         if invalid_keys:
             raise DagsterInvalidSubsetError(
                 f"AssetKey(s) {invalid_keys} were selected, but no AssetsDefinition objects supply "
@@ -306,7 +332,7 @@ class UpstreamAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self._child.resolve_inner(asset_graph)
-        return operator.sub(
+        all_upstream = operator.sub(
             reduce(
                 operator.or_,
                 [
@@ -322,3 +348,4 @@ class UpstreamAssetSelection(AssetSelection):
             ),
             selection if not self.include_self else set(),
         )
+        return {key for key in all_upstream if key not in asset_graph.source_asset_keys}

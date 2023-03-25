@@ -8,7 +8,6 @@ import time
 import warnings
 import weakref
 from collections import defaultdict
-from contextlib import ExitStack
 from enum import Enum
 from tempfile import TemporaryDirectory
 from types import TracebackType
@@ -19,7 +18,6 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
     List,
     Mapping,
     Optional,
@@ -73,7 +71,7 @@ from dagster._core.storage.tags import (
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import PrintFn, frozentags, traced
+from dagster._utils import PrintFn, traced
 from dagster._utils.backcompat import deprecation_warning, experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -108,11 +106,11 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
+        CodeLocation,
         ExternalPipeline,
         ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,
-        RepositoryLocation,
     )
     from dagster._core.host_representation.external import ExternalSchedule
     from dagster._core.launcher import RunLauncher
@@ -324,8 +322,11 @@ class DagsterInstance(DynamicPartitionsStore):
             boundaries.
     """
 
-    _PROCESS_TEMPDIR: Optional[TemporaryDirectory[str]] = None
-    _EXIT_STACK = None
+    # Stores TemporaryDirectory instances that were created for DagsterInstance.local_temp() calls
+    # to be removed once the instance is garbage collected.
+    _TEMP_DIRS: weakref.WeakKeyDictionary[
+        DagsterInstance, TemporaryDirectory
+    ] = weakref.WeakKeyDictionary()
 
     def __init__(
         self,
@@ -440,21 +441,24 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @staticmethod
     def ephemeral(
-        tempdir: Optional[str] = None, preload: Optional[Sequence["DebugRunPayload"]] = None
+        tempdir: Optional[str] = None,
+        preload: Optional[Sequence["DebugRunPayload"]] = None,
     ) -> "DagsterInstance":
         from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster._core.run_coordinator import DefaultRunCoordinator
         from dagster._core.storage.event_log import InMemoryEventLogStorage
         from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-        from dagster._core.storage.root import LocalArtifactStorage
+        from dagster._core.storage.root import LocalArtifactStorage, TemporaryLocalArtifactStorage
         from dagster._core.storage.runs import InMemoryRunStorage
 
-        if tempdir is None:
-            tempdir = DagsterInstance.temp_storage()
+        if tempdir is not None:
+            local_storage = LocalArtifactStorage(tempdir)
+        else:
+            local_storage = TemporaryLocalArtifactStorage()
 
         return DagsterInstance(
             instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(tempdir),
+            local_artifact_storage=local_storage,
             run_storage=InMemoryRunStorage(preload=preload),
             event_storage=InMemoryEventLogStorage(preload=preload),
             compute_log_manager=NoOpComputeLogManager(),
@@ -504,10 +508,16 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @staticmethod
     def local_temp(
-        tempdir: Optional[str] = None, overrides: Optional[DagsterInstanceOverrides] = None
+        tempdir: Optional[str] = None,
+        overrides: Optional[DagsterInstanceOverrides] = None,
     ) -> "DagsterInstance":
         if tempdir is None:
-            tempdir = DagsterInstance.temp_storage()
+            created_dir = TemporaryDirectory()
+            i = DagsterInstance.from_ref(
+                InstanceRef.from_dir(created_dir.name, overrides=overrides)
+            )
+            DagsterInstance._TEMP_DIRS[i] = created_dir
+            return i
 
         return DagsterInstance.from_ref(InstanceRef.from_dir(tempdir, overrides=overrides))
 
@@ -585,18 +595,6 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def root_directory(self) -> str:
         return self._local_artifact_storage.base_dir
-
-    @staticmethod
-    def temp_storage() -> str:
-        from dagster._core.test_utils import environ
-
-        if DagsterInstance._PROCESS_TEMPDIR is None:
-            DagsterInstance._EXIT_STACK = ExitStack()
-            DagsterInstance._EXIT_STACK.enter_context(
-                environ({"DAGSTER_TELEMETRY_DISABLED": "yes"})
-            )
-            DagsterInstance._PROCESS_TEMPDIR = TemporaryDirectory()
-        return DagsterInstance._PROCESS_TEMPDIR.name
 
     def _info(self, component: object) -> Union[str, Mapping[Any, Any]]:
         # ConfigurableClass may not have inst_data if it's a direct instantiation
@@ -850,6 +848,7 @@ class DagsterInstance(DynamicPartitionsStore):
         print_fn("Done.")
 
     def dispose(self) -> None:
+        self._local_artifact_storage.dispose()
         self._run_storage.dispose()
         self.run_coordinator.dispose()
         if self._run_launcher:
@@ -858,6 +857,10 @@ class DagsterInstance(DynamicPartitionsStore):
         self._compute_log_manager.dispose()
         if self._secrets_loader:
             self._secrets_loader.dispose()
+
+        if self in DagsterInstance._TEMP_DIRS:
+            DagsterInstance._TEMP_DIRS[self].cleanup()
+            del DagsterInstance._TEMP_DIRS[self]
 
     # run storage
     @public
@@ -933,7 +936,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.get_run_tag_keys()
 
     @traced
-    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
+    def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
         return self._run_storage.get_run_group(run_id)
 
     def create_run_for_pipeline(
@@ -1040,7 +1043,7 @@ class DagsterInstance(DynamicPartitionsStore):
         solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
         status: Optional[DagsterRunStatus],
-        tags: frozentags,
+        tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         pipeline_snapshot: Optional[PipelineSnapshot],
@@ -1054,7 +1057,10 @@ class DagsterInstance(DynamicPartitionsStore):
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
-                tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
+                tags = {
+                    **tags,
+                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat(),
+                }
 
         check.invariant(
             not (not pipeline_snapshot and execution_plan_snapshot),
@@ -1357,7 +1363,7 @@ class DagsterInstance(DynamicPartitionsStore):
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
-            tags=dict(validated_tags),  # type: ignore
+            tags=validated_tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_snapshot,
@@ -1378,7 +1384,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         *,
         parent_run: DagsterRun,
-        repo_location: "RepositoryLocation",
+        code_location: "CodeLocation",
         external_pipeline: "ExternalPipeline",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
@@ -1390,10 +1396,10 @@ class DagsterInstance(DynamicPartitionsStore):
             ReexecutionStrategy,
         )
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
+        from dagster._core.host_representation import CodeLocation, ExternalPipeline
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
-        check.inst_param(repo_location, "repo_location", RepositoryLocation)
+        check.inst_param(code_location, "code_location", CodeLocation)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
@@ -1439,7 +1445,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
-        external_execution_plan = repo_location.get_external_execution_plan(
+        external_execution_plan = code_location.get_external_execution_plan(
             external_pipeline,
             run_config,
             mode=mode,
@@ -1476,7 +1482,7 @@ class DagsterInstance(DynamicPartitionsStore):
         mode: Optional[str],
         solids_to_execute: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
-        tags: frozentags,
+        tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         pipeline_snapshot: Optional[PipelineSnapshot],
@@ -1568,7 +1574,7 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ) -> Iterable[DagsterRun]:
+    ) -> Sequence[DagsterRun]:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
@@ -1683,7 +1689,13 @@ class DagsterInstance(DynamicPartitionsStore):
         self._event_storage.update_asset_cached_status_data(asset_key, cache_values)
 
     @traced
-    def all_asset_keys(self) -> Iterable[AssetKey]:
+    def wipe_asset_cached_status(self, asset_keys: Sequence[AssetKey]) -> None:
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+        for asset_key in asset_keys:
+            self._event_storage.wipe_asset_cached_status(asset_key)
+
+    @traced
+    def all_asset_keys(self) -> Sequence[AssetKey]:
         return self._event_storage.all_asset_keys()
 
     @public
@@ -1693,7 +1705,7 @@ class DagsterInstance(DynamicPartitionsStore):
         prefix: Optional[str] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Iterable[AssetKey]:
+    ) -> Sequence[AssetKey]:
         return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
     @public
@@ -1719,7 +1731,7 @@ class DagsterInstance(DynamicPartitionsStore):
         event_records_filter: "EventRecordsFilter",
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable["EventLogRecord"]:
+    ) -> Sequence["EventLogRecord"]:
         """Return a list of event records stored in the event log storage.
 
         Args:
@@ -1738,7 +1750,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Iterable["AssetRecord"]:
+    ) -> Sequence["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
 
     @traced
@@ -1763,7 +1775,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_event_tags_for_asset(asset_key, filter_tags, filter_event_id)
 
     @traced
-    def run_ids_for_asset_key(self, asset_key: AssetKey) -> Iterable[str]:
+    def run_ids_for_asset_key(self, asset_key: AssetKey) -> Sequence[str]:
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
 
@@ -2337,7 +2349,7 @@ class DagsterInstance(DynamicPartitionsStore):
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence["TickStatus"]] = None,
-    ) -> Mapping[str, Iterable["InstigatorTick"]]:
+    ) -> Mapping[str, Sequence["InstigatorTick"]]:
         if not self._schedule_storage:
             return {}
         return self._schedule_storage.get_batch_ticks(selector_ids, limit, statuses)
@@ -2349,7 +2361,7 @@ class DagsterInstance(DynamicPartitionsStore):
         matches = self._schedule_storage.get_ticks(  # type: ignore  # (possible none)
             origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
-        return matches[0] if len(matches) else None  # type: ignore  # (iterable getitem)
+        return matches[0] if len(matches) else None
 
     @traced
     def get_ticks(
@@ -2399,8 +2411,6 @@ class DagsterInstance(DynamicPartitionsStore):
         traceback: Optional[TracebackType],
     ) -> None:
         self.dispose()
-        if DagsterInstance._EXIT_STACK:
-            DagsterInstance._EXIT_STACK.close()
 
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:

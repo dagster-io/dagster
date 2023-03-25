@@ -515,6 +515,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def can_cache_asset_status_data(self) -> bool:
         return self._storage.event_log_storage.can_cache_asset_status_data()
 
+    def wipe_asset_cached_status(self, asset_key: "AssetKey") -> None:
+        return self._storage.event_log_storage.wipe_asset_cached_status(asset_key)
+
     def update_asset_cached_status_data(
         self, asset_key: "AssetKey", cache_values: "AssetStatusCacheValue"
     ) -> None:

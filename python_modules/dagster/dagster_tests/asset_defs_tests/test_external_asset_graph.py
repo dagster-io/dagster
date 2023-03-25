@@ -5,10 +5,13 @@ from unittest import mock
 
 from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.host_representation import InProcessRepositoryLocationOrigin
+from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.workspace import (
+    CodeLocationEntry,
+    CodeLocationLoadStatus,
+)
 
 
 @asset
@@ -62,7 +65,7 @@ partitioned_defs = Definitions(assets=[partitioned_source, downstream_of_partiti
 
 
 def make_location_entry(defs_attr: str):
-    origin = InProcessRepositoryLocationOrigin(
+    origin = InProcessCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=__file__,
@@ -75,13 +78,13 @@ def make_location_entry(defs_attr: str):
         location_name=None,
     )
 
-    repo_location = origin.create_location()
+    code_location = origin.create_location()
 
-    return WorkspaceLocationEntry(
+    return CodeLocationEntry(
         origin=origin,
-        repository_location=repo_location,
+        code_location=code_location,
         load_error=None,
-        load_status=WorkspaceLocationLoadStatus.LOADED,
+        load_status=CodeLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
     )

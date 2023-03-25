@@ -47,7 +47,7 @@ def workspace_fixture(instance_module_scoped):
 def external_repo_fixture(workspace_context):
     return next(
         iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-    ).repository_location.get_repository("the_repo")
+    ).code_location.get_repository("the_repo")
 
 
 def loadable_target_origin() -> LoadableTargetOrigin:

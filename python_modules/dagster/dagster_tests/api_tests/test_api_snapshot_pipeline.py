@@ -7,7 +7,7 @@ from dagster._core.host_representation.external_data import ExternalPipelineSubs
 from dagster._core.host_representation.handle import JobHandle
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .utils import get_bar_repo_repository_location
+from .utils import get_bar_repo_code_location
 
 
 def _test_job_subset_grpc(job_handle, api_client, solid_selection=None):
@@ -17,9 +17,9 @@ def _test_job_subset_grpc(job_handle, api_client, solid_selection=None):
 
 
 def test_pipeline_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         external_pipeline_subset_result = _test_job_subset_grpc(job_handle, api_client)
         assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
@@ -28,9 +28,9 @@ def test_pipeline_snapshot_api_grpc(instance):
 
 
 def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         external_pipeline_subset_result = _test_job_subset_grpc(
             job_handle, api_client, ["do_something"]
@@ -41,9 +41,9 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
 
 
 def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("foo", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         with pytest.raises(
             DagsterUserCodeProcessError,
@@ -53,9 +53,9 @@ def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):
 
 
 def test_pipeline_with_invalid_definition_snapshot_api_grpc(instance):
-    with get_bar_repo_repository_location(instance) as repository_location:
-        job_handle = JobHandle("bar", repository_location.get_repository("bar_repo").handle)
-        api_client = repository_location.client
+    with get_bar_repo_code_location(instance) as code_location:
+        job_handle = JobHandle("bar", code_location.get_repository("bar_repo").handle)
+        api_client = code_location.client
 
         try:
             _test_job_subset_grpc(job_handle, api_client, ["fail_subset"])

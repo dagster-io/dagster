@@ -43,18 +43,20 @@ from .handle import (
 from .historical import HistoricalPipeline as HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME as IN_PROCESS_NAME,
+    CodeLocationOrigin as CodeLocationOrigin,
     ExternalInstigatorOrigin as ExternalInstigatorOrigin,
     ExternalPipelineOrigin as ExternalPipelineOrigin,
     ExternalRepositoryOrigin as ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin as GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin as InProcessRepositoryLocationOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin as ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    RepositoryLocationOrigin as RepositoryLocationOrigin,
+    GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin as ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+
+# isort: split
+from .code_location import (
+    CodeLocation as CodeLocation,
+    GrpcServerCodeLocation as GrpcServerCodeLocation,
+    InProcessCodeLocation as InProcessCodeLocation,
 )
 from .pipeline_index import PipelineIndex as PipelineIndex
-from .repository_location import (
-    GrpcServerRepositoryLocation as GrpcServerRepositoryLocation,
-    InProcessRepositoryLocation as InProcessRepositoryLocation,
-    RepositoryLocation as RepositoryLocation,
-)
 from .represented import RepresentedPipeline as RepresentedPipeline

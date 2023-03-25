@@ -16,12 +16,10 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._utils.cached_method import cached_method
 
 
 class RepositoryDataType(Enum):
@@ -328,19 +326,6 @@ class BatchMaterializationLoader:
         }
 
 
-class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
-    """A batch loader that caches the partition keys for a given dynamic partitions definition,
-    to avoid repeated calls to the database for the same partitions definition.
-    """
-
-    def __init__(self, instance: DagsterInstance):
-        self._instance = instance
-
-    @cached_method
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self._instance.get_dynamic_partitions(partitions_def_name)
-
-
 class CrossRepoAssetDependedByLoader:
     """A batch loader that computes cross-repository asset dependencies. Locates source assets
     within all workspace repositories, and determines if they are derived (defined) assets in
@@ -386,7 +371,7 @@ class CrossRepoAssetDependedByLoader:
         external_asset_node_by_asset_key: Dict[
             AssetKey, ExternalAssetNode
         ] = {}  # only contains derived assets
-        for location in self._context.repository_locations:
+        for location in self._context.code_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
                 asset_nodes = external_repo.get_external_asset_nodes()

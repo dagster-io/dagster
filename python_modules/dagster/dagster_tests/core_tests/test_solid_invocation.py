@@ -1,11 +1,14 @@
 import asyncio
+from datetime import datetime
 from functools import partial
 
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DailyPartitionsDefinition,
     DynamicOut,
     DynamicOutput,
     ExpectationResult,
@@ -18,6 +21,7 @@ from dagster import (
     Output,
     RetryRequested,
     Selector,
+    asset,
     build_op_context,
     op,
     resource,
@@ -34,7 +38,6 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    Materialization,
     execute_solid,
     pipeline,
 )
@@ -1006,7 +1009,6 @@ def test_logged_user_events():
     @op
     def logs_events(context):
         context.log_event(AssetMaterialization("first"))
-        context.log_event(Materialization("second"))
         context.log_event(ExpectationResult(success=True))
         context.log_event(AssetObservation("fourth"))
         yield AssetMaterialization("fifth")
@@ -1016,7 +1018,6 @@ def test_logged_user_events():
     list(logs_events(context))
     assert [type(event) for event in context.get_events()] == [
         AssetMaterialization,
-        Materialization,
         ExpectationResult,
         AssetObservation,
     ]
@@ -1190,3 +1191,38 @@ def test_required_resource_keys_no_context_invocation():
         ),
     ):
         uses_resource_no_context(None)
+
+
+def test_assets_def_invocation():
+    @asset()
+    def my_asset(context):
+        assert context.assets_def == my_asset
+
+    @op
+    def non_asset_op(context):
+        context.assets_def
+
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
+        my_asset(context)
+
+        with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
+            non_asset_op(context)
+
+
+def test_partitions_time_window_asset_invocation():
+    partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
+
+    @asset(
+        partitions_def=partitions_def,
+    )
+    def partitioned_asset(context):
+        start, end = context.asset_partitions_time_window_for_output()
+        assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
+        assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
+
+    context = build_op_context(
+        partition_key="2023-02-02",
+    )
+    partitioned_asset(context)

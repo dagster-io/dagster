@@ -156,7 +156,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 )
 def test_successful_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("noop_pipeline")
     )
@@ -182,11 +182,11 @@ def test_successful_run(instance, workspace, run_config):
 
 
 def test_successful_run_from_pending(instance: DagsterInstance, pending_workspace):
-    repo_location = pending_workspace.get_repository_location("test2")
-    external_pipeline = repo_location.get_repository("pending").get_full_external_job(
+    code_location = pending_workspace.get_code_location("test2")
+    external_pipeline = code_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
     )
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config={},
         mode="default",
@@ -294,7 +294,7 @@ def test_invalid_instance_run():
                     ) as workspace_process_context:
                         workspace = workspace_process_context.create_request_context()
                         external_pipeline = (
-                            workspace.get_repository_location("test")
+                            workspace.get_code_location("test")
                             .get_repository("nope")
                             .get_full_external_job("noop_pipeline")
                         )
@@ -327,7 +327,7 @@ def test_invalid_instance_run():
 )
 def test_crashy_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("crashy_pipeline")
     )
@@ -370,7 +370,7 @@ def test_crashy_run(instance, workspace, run_config):
 )
 def test_exity_run(run_config, instance, workspace):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("exity_pipeline")
     )
@@ -411,7 +411,7 @@ def test_exity_run(run_config, instance, workspace):
 )
 def test_terminated_run(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("sleepy_pipeline")
     )
@@ -488,7 +488,7 @@ def test_terminated_run(instance, workspace, run_config):
 @pytest.mark.parametrize("run_config", run_configs())
 def test_cleanup_after_force_terminate(run_config, instance, workspace):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("sleepy_pipeline")
     )
@@ -587,7 +587,7 @@ def test_single_solid_selection_execution(
     run_config,
 ):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
@@ -624,7 +624,7 @@ def test_multi_solid_selection_execution(
     run_config,
 ):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
@@ -661,7 +661,7 @@ def test_multi_solid_selection_execution(
 )
 def test_engine_events(instance, workspace, run_config):
     external_pipeline = (
-        workspace.get_repository_location("test")
+        workspace.get_code_location("test")
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )

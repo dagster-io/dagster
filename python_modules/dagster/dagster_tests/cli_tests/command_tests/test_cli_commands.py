@@ -10,7 +10,6 @@ from click.testing import CliRunner
 from dagster import (
     Out,
     Output,
-    Partition,
     ScheduleDefinition,
     String,
     graph,
@@ -118,16 +117,11 @@ not_a_repo_or_pipeline = 123
 
 
 @pipeline
-def partitioned_scheduled_pipeline():
+def partitioned_pipeline():
     do_something()
 
 
 def define_bar_schedules():
-    partition_set = PartitionSetDefinition(
-        name="scheduled_partitions",
-        pipeline_name="partitioned_scheduled_pipeline",
-        partition_fn=lambda: string.digits,
-    )
     return {
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
@@ -141,11 +135,6 @@ def define_bar_schedules():
             job_name="foo",
             run_config={},
         ),
-        "partitioned_schedule": partition_set.create_schedule_definition(
-            schedule_name="partitioned_schedule",
-            cron_schedule="* * * * *",
-            partition_selector=lambda _context, _def: Partition("7"),
-        ),
     }
 
 
@@ -157,6 +146,11 @@ def define_bar_partitions():
         raise Exception("womp womp")
 
     return {
+        "partitioned_pipeline_partitions": PartitionSetDefinition(
+            name="partitioned_pipeline_partitions",
+            pipeline_name="partitioned_pipeline",
+            partition_fn=lambda: string.digits,
+        ),
         "baz_partitions": PartitionSetDefinition(
             name="baz_partitions",
             pipeline_name="baz",
@@ -219,7 +213,7 @@ def bar():
         "pipelines": {
             "foo": foo_pipeline,
             "baz": baz_pipeline,
-            "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
+            "partitioned_pipeline": partitioned_pipeline,
             "memoizable": memoizable_pipeline,
         },
         "jobs": {"qux": qux_job, "quux": quux_job, "memoizable_job": memoizable_job},
@@ -947,7 +941,7 @@ def create_repo_run(instance):
         ),
     ) as workspace_process_context:
         context = workspace_process_context.create_request_context()
-        repo = context.repository_locations[0].get_repository("my_repo")
+        repo = context.code_locations[0].get_repository("my_repo")
         external_job = repo.get_full_external_job("my_job")
         run = create_run_for_test(
             instance,

@@ -52,9 +52,9 @@ def _get_external_pipeline_or_raise(
     elif ignore_subset:
         external_pipeline = ctx.get_full_external_job(selector)
     else:
-        repository_location = ctx.get_repository_location(selector.location_name)
+        code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_pipeline = repository_location.get_external_pipeline(selector)
+            external_pipeline = code_location.get_external_pipeline(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(
@@ -125,7 +125,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnec
                 repository=repository,
                 repository_location=location,
             )
-            for location in graphene_info.context.repository_locations
+            for location in graphene_info.context.code_locations
             for repository in location.get_repositories().values()
         ]
     )
@@ -140,8 +140,8 @@ def fetch_repository(
 
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    if graphene_info.context.has_repository_location(repository_selector.location_name):
-        repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
+    if graphene_info.context.has_code_location(repository_selector.location_name):
+        repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
                 instance=graphene_info.context.instance,
@@ -195,6 +195,6 @@ def fetch_location_statuses(
                 ),
                 update_timestamp=status_entry.update_timestamp,
             )
-            for status_entry in workspace_request_context.get_location_statuses()
+            for status_entry in workspace_request_context.get_code_location_statuses()
         ]
     )

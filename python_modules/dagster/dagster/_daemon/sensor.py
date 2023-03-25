@@ -31,9 +31,9 @@ from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalPipeline, ExternalSensor
 from dagster._core.host_representation.external_data import ExternalTargetData
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -319,9 +319,9 @@ def execute_sensor_iteration(
 
     sensors: Dict[str, ExternalSensor] = {}
     for location_entry in workspace_snapshot.values():
-        repo_location = location_entry.repository_location
-        if repo_location:
-            for repo in repo_location.get_repositories().values():
+        code_location = location_entry.code_location
+        if code_location:
+            for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
                     selector_id = sensor.selector_id
                     if sensor.get_current_instigator_state(
@@ -343,26 +343,26 @@ def execute_sensor_iteration(
 
         for sensor_state in unloadable_sensor_states.values():
             sensor_name = sensor_state.origin.instigator_name
-            repo_location_origin = (
-                sensor_state.origin.external_repository_origin.repository_location_origin
+            code_location_origin = (
+                sensor_state.origin.external_repository_origin.code_location_origin
             )
 
-            repo_location_name = repo_location_origin.location_name
+            location_name = code_location_origin.location_name
             repo_name = sensor_state.origin.external_repository_origin.repository_name
             if (
-                repo_location_name not in workspace_snapshot
-                or not workspace_snapshot[repo_location_name].repository_location
+                location_name not in workspace_snapshot
+                or not workspace_snapshot[location_name].code_location
             ):
                 logger.warning(
                     f"Sensor {sensor_name} was started from a location "
-                    f"{repo_location_name} that can no longer be found in the workspace. "
+                    f"{location_name} that can no longer be found in the workspace. "
                     "You can turn off this sensor in the Dagit UI from the Status tab."
                 )
             elif not check.not_none(  # checked above
-                workspace_snapshot[repo_location_name].repository_location
+                workspace_snapshot[location_name].code_location
             ).has_repository(repo_name):
                 logger.warning(
-                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    f"Could not find repository {repo_name} in location {location_name} to "
                     + f"run sensor {sensor_name}. If this repository no longer exists, you can "
                     + "turn off the sensor in the Dagit UI from the Status tab.",
                 )
@@ -561,13 +561,13 @@ def _evaluate_sensor(
 
     sensor_origin = external_sensor.get_external_origin()
     repository_handle = external_sensor.handle.repository_handle
-    repo_location = workspace_process_context.create_request_context().get_repository_location(
-        sensor_origin.external_repository_origin.repository_location_origin.location_name
+    code_location = workspace_process_context.create_request_context().get_code_location(
+        sensor_origin.external_repository_origin.code_location_origin.location_name
     )
 
     instigator_data = _sensor_instigator_data(state)
 
-    sensor_runtime_data = repo_location.get_external_sensor_execution_data(
+    sensor_runtime_data = code_location.get_external_sensor_execution_data(
         instance,
         repository_handle,
         external_sensor.name,
@@ -663,17 +663,17 @@ def _evaluate_sensor(
         )
 
         pipeline_selector = PipelineSelector(
-            location_name=repo_location.name,
+            location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
             pipeline_name=target_data.pipeline_name,
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
         run = _get_or_create_sensor_run(
             context,
             instance,
-            repo_location,
+            code_location,
             external_sensor,
             external_pipeline,
             run_request,
@@ -789,7 +789,7 @@ def _fetch_existing_runs(
 def _get_or_create_sensor_run(
     context: SensorLaunchContext,
     instance: DagsterInstance,
-    repo_location: RepositoryLocation,
+    code_location: CodeLocation,
     external_sensor: ExternalSensor,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
@@ -798,7 +798,7 @@ def _get_or_create_sensor_run(
 ) -> Union[DagsterRun, SkippedSensorRun]:
     if not run_request.run_key:
         return _create_sensor_run(
-            instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+            instance, code_location, external_sensor, external_pipeline, run_request, target_data
         )
 
     run = existing_runs_by_key.get(run_request.run_key)
@@ -818,13 +818,13 @@ def _get_or_create_sensor_run(
     context.logger.info(f"Creating new run for {external_sensor.name}")
 
     return _create_sensor_run(
-        instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+        instance, code_location, external_sensor, external_pipeline, run_request, target_data
     )
 
 
 def _create_sensor_run(
     instance: DagsterInstance,
-    repo_location: RepositoryLocation,
+    code_location: CodeLocation,
     external_sensor: ExternalSensor,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
@@ -832,7 +832,7 @@ def _create_sensor_run(
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_request.run_config,
         target_data.mode,
@@ -857,7 +857,7 @@ def _create_sensor_run(
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
             "pipeline_name_hash": hash_name(external_pipeline.name),
-            "repo_hash": hash_name(repo_location.name),
+            "repo_hash": hash_name(code_location.name),
         },
     )
 

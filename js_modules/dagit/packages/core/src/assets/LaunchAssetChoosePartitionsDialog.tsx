@@ -164,10 +164,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
   }, [assetHealth, assetHealthLoading, target]);
 
-  const displayedPartitionDefinition =
+  const displayedBaseAsset =
     target.type === 'job'
-      ? partitionedAssets[0].partitionDefinition
-      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))?.partitionDefinition;
+      ? partitionedAssets[0]
+      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey));
+
+  const displayedPartitionDefinition = displayedBaseAsset?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingFailedOnly, setMissingFailedOnly] = React.useState(true);
@@ -435,6 +437,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               }}
               padding={{vertical: 12, horizontal: 24}}
             >
+              {target.type === 'pureWithAnchorAsset' && (
+                <Box flex={{gap: 8}} data-testid={testId('anchor-asset-label')}>
+                  <Icon name="asset" size={20} />
+                  <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
+                </Box>
+              )}
               <Box as={Subheading} flex={{alignItems: 'center', gap: 8}}>
                 <Icon name="partition" />
                 {range.dimension.name}
@@ -462,7 +470,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                     ),
                   )
                 }
-                partitionDefinitionName={displayedPartitionDefinition?.name}
+                partitionDefinitionName={
+                  displayedPartitionDefinition?.name ||
+                  displayedBaseAsset?.partitionDefinition?.dimensionTypes.find(
+                    (d) => d.name === range.dimension.name,
+                  )?.dynamicPartitionsDefinitionName
+                }
                 repoAddress={repoAddress}
                 refetch={refetch}
               />
@@ -511,8 +524,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           title={<Subheading data-testid={testId('backfill-options')}>Backfill options</Subheading>}
           isInitiallyOpen={true}
         >
-          <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
-            {target.type === 'pureWithAnchorAsset' ? null : (
+          {target.type === 'job' && (
+            <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 12}}>
               <Checkbox
                 data-testid={testId('missing-only-checkbox')}
                 label="Backfill only failed and missing partitions within selection"
@@ -520,42 +533,42 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 disabled={launchWithRangesAsTags}
                 onChange={() => setMissingFailedOnly(!missingFailedOnly)}
               />
-            )}
-            <RadioContainer>
-              <Subheading>Launch as...</Subheading>
-              <Radio
-                name="grant"
-                checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
-                disabled={!canLaunchWithRangesAsTags}
-                onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
-              >
-                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                  <span>Single run</span>
-                  <Tooltip
-                    targetTagName="div"
-                    position="top-left"
-                    content={
-                      <div style={{maxWidth: 300}}>
-                        This option requires that your assets are written to operate on a partition
-                        key range via context.asset_partition_key_range_for_output or
-                        context.asset_partitions_time_window_for_output.
-                      </div>
-                    }
-                  >
-                    <Icon name="info" color={Colors.Gray500} />
-                  </Tooltip>
-                </Box>
-              </Radio>
-              <Radio
-                name="grant"
-                checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
-                disabled={!canLaunchWithRangesAsTags}
-                onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
-              >
-                Multiple runs (One per selected partition)
-              </Radio>
-            </RadioContainer>
-          </Box>
+              <RadioContainer>
+                <Subheading>Launch as...</Subheading>
+                <Radio
+                  data-testid={testId('ranges-as-tags-true-radio')}
+                  checked={canLaunchWithRangesAsTags && launchWithRangesAsTags}
+                  disabled={!canLaunchWithRangesAsTags}
+                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                >
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    <span>Single run</span>
+                    <Tooltip
+                      targetTagName="div"
+                      position="top-left"
+                      content={
+                        <div style={{maxWidth: 300}}>
+                          This option requires that your assets are written to operate on a
+                          partition key range via context.asset_partition_key_range_for_output or
+                          context.asset_partitions_time_window_for_output.
+                        </div>
+                      }
+                    >
+                      <Icon name="info" color={Colors.Gray500} />
+                    </Tooltip>
+                  </Box>
+                </Radio>
+                <Radio
+                  data-testid={testId('ranges-as-tags-false-radio')}
+                  checked={!canLaunchWithRangesAsTags || !launchWithRangesAsTags}
+                  disabled={!canLaunchWithRangesAsTags}
+                  onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+                >
+                  Multiple runs (One per selected partition)
+                </Radio>
+              </RadioContainer>
+            </Box>
+          )}
         </ToggleableSection>
 
         <Box padding={{horizontal: 24}}>

@@ -45,6 +45,7 @@ dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- with .Values.dagit.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
 {{- with .Values.dagit.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}
+{{- if .Values.dagit.pathPrefix }} --path-prefix {{ .Values.dagit.pathPrefix }} {{- end -}}
 {{- with .Values.dagit.logLevel }} --log-level {{ . }} {{- end -}}
 {{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}

@@ -26,6 +26,7 @@ from dagster import (
     In,
     MetadataValue,
     Nothing,
+    OpExecutionContext,
     Out,
     PartitionsDefinition,
     TableColumn,
@@ -45,7 +46,6 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
@@ -208,7 +208,8 @@ def _get_deps(
             if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
-                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
+                # make a copy to avoid mutating the actual dictionary
+                queue = list(parent_node_info.get("depends_on", {}).get("nodes", []))
                 while queue:
                     candidate_parent_id = queue.pop()
                     if candidate_parent_id in visited:

@@ -9,9 +9,9 @@ from dagster import (
     __version__ as dagster_version,
 )
 from dagster._cli.workspace.cli_target import (
+    get_code_location_from_kwargs,
+    get_external_repository_from_code_location,
     get_external_repository_from_kwargs,
-    get_external_repository_from_repo_location,
-    get_repository_location_from_kwargs,
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
@@ -272,19 +272,19 @@ def execute_preview_command(
     sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
 ):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance,
             version=dagster_version,
             kwargs=cli_args,
-        ) as repo_location:
+        ) as code_location:
             try:
-                external_repo = get_external_repository_from_repo_location(
-                    repo_location, cli_args.get("repository")
+                external_repo = get_external_repository_from_code_location(
+                    code_location, cli_args.get("repository")
                 )
                 check_repo_and_scheduler(external_repo, instance)
                 external_sensor = external_repo.get_external_sensor(sensor_name)
                 try:
-                    sensor_runtime_data = repo_location.get_external_sensor_execution_data(
+                    sensor_runtime_data = code_location.get_external_sensor_execution_data(
                         instance,
                         external_repo.handle,
                         external_sensor.name,
@@ -350,17 +350,17 @@ def sensor_cursor_command(sensor_name, **kwargs):
 
 def execute_cursor_command(sensor_name, cli_args, print_fn):
     with DagsterInstance.get() as instance:
-        with get_repository_location_from_kwargs(
+        with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
-        ) as repo_location:
+        ) as code_location:
             if bool(cli_args.get("delete")) == bool(cli_args.get("set")):
                 # must use one of delete/set
                 raise click.UsageError("Must set cursor using `--set <value>` or use `--delete`")
 
             cursor_value = cli_args.get("set")
 
-            external_repo = get_external_repository_from_repo_location(
-                repo_location, cli_args.get("repository")
+            external_repo = get_external_repository_from_code_location(
+                code_location, cli_args.get("repository")
             )
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)

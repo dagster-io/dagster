@@ -8,14 +8,13 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.host_representation.origin import (
+    CodeLocationOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    RepositoryLocationOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
-from dagster._utils import frozenlist
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -317,7 +316,7 @@ class ListRepositoriesResponse(
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else None
             ),
@@ -473,18 +472,19 @@ class PipelineSubsetSnapshotArgs(
         )
 
 
-@whitelist_for_serdes
+# Different storage field name for backcompat
+@whitelist_for_serdes(storage_field_names={"code_location_origin": "repository_location_origin"})
 class NotebookPathArgs(
     NamedTuple(
         "_NotebookPathArgs",
-        [("repository_location_origin", RepositoryLocationOrigin), ("notebook_path", str)],
+        [("code_location_origin", CodeLocationOrigin), ("notebook_path", str)],
     )
 ):
-    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, notebook_path: str):
+    def __new__(cls, code_location_origin: CodeLocationOrigin, notebook_path: str):
         return super(NotebookPathArgs, cls).__new__(
             cls,
-            repository_location_origin=check.inst_param(
-                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            code_location_origin=check.inst_param(
+                code_location_origin, "code_location_origin", CodeLocationOrigin
             ),
             notebook_path=check.str_param(notebook_path, "notebook_path"),
         )

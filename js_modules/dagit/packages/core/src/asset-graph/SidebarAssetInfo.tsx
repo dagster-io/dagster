@@ -69,17 +69,6 @@ export const SidebarAssetInfo: React.FC<{
         padded={false}
       />
 
-      <AssetSidebarActivitySummary
-        assetKey={assetKey}
-        assetLastMaterializedAt={lastMaterialization?.timestamp}
-        assetHasDefinedPartitions={!!asset.partitionDefinition}
-        liveData={liveData}
-      />
-
-      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
-
-      {nodeDependsOnSelf(assetNode) && <DependsOnSelfBanner />}
-
       {(asset.description || OpMetadataPlugin?.SidebarComponent || !hasAssetMetadata) && (
         <SidebarSection title="Description">
           <Box padding={{vertical: 16, horizontal: 24}}>
@@ -92,6 +81,17 @@ export const SidebarAssetInfo: React.FC<{
           )}
         </SidebarSection>
       )}
+
+      <AssetSidebarActivitySummary
+        assetKey={assetKey}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
+        assetHasDefinedPartitions={!!asset.partitionDefinition}
+        liveData={liveData}
+      />
+
+      <div style={{borderBottom: `2px solid ${Colors.Gray300}`}} />
+
+      {nodeDependsOnSelf(assetNode) && <DependsOnSelfBanner />}
 
       {asset.opVersion && (
         <SidebarSection title="Code Version">

@@ -1,7 +1,7 @@
 from dagster import In, Out, repository
 from dagster._core.definitions.decorators import op
-from dagster._core.test_utils import today_at_midnight
-from dagster._legacy import daily_schedule, pipeline
+from dagster._core.definitions.decorators.schedule_decorator import schedule
+from dagster._legacy import pipeline
 
 
 @op(ins={"num": In(int)}, out=Out(int))
@@ -19,12 +19,12 @@ def math():
     return mult_two(num=add_one())
 
 
-@daily_schedule(
+@schedule(
+    cron_schedule="@daily",
     job_name="math",
-    start_date=today_at_midnight(),
 )
 def my_schedule(_):
-    return {"solids": {"mult_two": {"inputs": {"num": {"value": 2}}}}}
+    return {"ops": {"mult_two": {"inputs": {"num": {"value": 2}}}}}
 
 
 @repository

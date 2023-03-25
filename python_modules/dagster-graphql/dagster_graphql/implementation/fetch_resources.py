@@ -1,6 +1,6 @@
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
-from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.code_location import CodeLocation
 from graphene import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
@@ -13,7 +13,7 @@ def get_resources_or_error(graphene_info, repository_selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
-    location: RepositoryLocation = graphene_info.context.get_repository_location(
+    location: CodeLocation = graphene_info.context.get_code_location(
         repository_selector.location_name
     )
     repository = location.get_repository(repository_selector.repository_name)
@@ -33,7 +33,7 @@ def get_resource_or_error(graphene_info, resource_selector: ResourceSelector):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(resource_selector, "resource_selector", ResourceSelector)
-    location: RepositoryLocation = graphene_info.context.get_repository_location(
+    location: CodeLocation = graphene_info.context.get_code_location(
         resource_selector.location_name
     )
     repository = location.get_repository(resource_selector.repository_name)

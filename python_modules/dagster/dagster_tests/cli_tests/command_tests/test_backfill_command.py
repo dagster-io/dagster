@@ -61,7 +61,7 @@ def test_backfill_multiple_partition_set_matches(backfill_args_context):
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_single_partition_set_unspecified(backfill_args_context):
     with backfill_args_context as (cli_args, instance):
-        args = merge_dicts(cli_args, {"job_name": "partitioned_scheduled_pipeline"})
+        args = merge_dicts(cli_args, {"job_name": "partitioned_pipeline"})
         run_test_backfill(args, instance, expected_count=len(string.digits))
 
 
