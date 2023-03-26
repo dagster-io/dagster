@@ -258,7 +258,7 @@ class GrapheneInputMapping(graphene.ObjectType):
         return GrapheneInput(
             self._represented_pipeline,
             self._current_dep_index,
-            self._input_mapping_snap.mapped_solid_name,
+            self._input_mapping_snap.mapped_node_name,
             self._input_mapping_snap.mapped_input_name,
         )
 
@@ -300,7 +300,7 @@ class GrapheneOutputMapping(graphene.ObjectType):
         return GrapheneOutput(
             self._represented_pipeline,
             self._current_dep_index,
-            self._output_mapping_snap.mapped_solid_name,
+            self._output_mapping_snap.mapped_node_name,
             self._output_mapping_snap.mapped_output_name,
         )
 

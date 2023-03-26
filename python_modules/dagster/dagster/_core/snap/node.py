@@ -88,12 +88,12 @@ class OutputDefSnap(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"mapped_node_name": "mapped_solid_name"})
 class OutputMappingSnap(
     NamedTuple(
         "_OutputMappingSnap",
         [
-            ("mapped_solid_name", str),
+            ("mapped_node_name", str),
             ("mapped_output_name", str),
             ("external_output_name", str),
         ],
@@ -101,13 +101,13 @@ class OutputMappingSnap(
 ):
     def __new__(
         cls,
-        mapped_solid_name: str,
+        mapped_node_name: str,
         mapped_output_name: str,
         external_output_name: str,
     ):
         return super(OutputMappingSnap, cls).__new__(
             cls,
-            mapped_solid_name=check.str_param(mapped_solid_name, "mapped_solid_name"),
+            mapped_node_name=check.str_param(mapped_node_name, "mapped_node_name"),
             mapped_output_name=check.str_param(mapped_output_name, "mapped_output_name"),
             external_output_name=check.str_param(external_output_name, "external_output_name"),
         )
@@ -115,7 +115,7 @@ class OutputMappingSnap(
 
 def build_output_mapping_snap(output_mapping: OutputMapping) -> OutputMappingSnap:
     return OutputMappingSnap(
-        mapped_solid_name=output_mapping.maps_from.node_name,
+        mapped_node_name=output_mapping.maps_from.node_name,
         mapped_output_name=output_mapping.maps_from.output_name,
         external_output_name=output_mapping.graph_output_name,
     )
