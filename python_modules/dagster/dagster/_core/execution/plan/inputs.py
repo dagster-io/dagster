@@ -1071,14 +1071,3 @@ StepInputSourceUnion = Union[
 ]
 
 StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore
-
-# GRAVEYARD
-# kept around to prevent problematic deserialization
-
-
-@whitelist_for_serdes
-class FromRootInputConfig(
-    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
-    StepInputSource,
-):
-    """DEPRECATED replaced by FromConfig with None node handle."""
