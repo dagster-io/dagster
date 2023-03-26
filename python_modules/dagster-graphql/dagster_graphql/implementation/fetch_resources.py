@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
 from dagster._core.host_representation.code_location import CodeLocation
@@ -5,9 +7,17 @@ from graphene import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.resources import (
+        GrapheneResourceDetails,
+        GrapheneResourceDetailsList,
+    )
+
 
 @capture_error
-def get_resources_or_error(graphene_info, repository_selector):
+def get_resources_or_error(
+    graphene_info: "ResolveInfo", repository_selector: RepositorySelector
+) -> "GrapheneResourceDetailsList":
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -27,7 +37,9 @@ def get_resources_or_error(graphene_info, repository_selector):
 
 
 @capture_error
-def get_resource_or_error(graphene_info, resource_selector: ResourceSelector):
+def get_resource_or_error(
+    graphene_info: "ResolveInfo", resource_selector: ResourceSelector
+) -> "GrapheneResourceDetails":
     from ..schema.errors import GrapheneResourceNotFoundError
     from ..schema.resources import GrapheneResourceDetails
 

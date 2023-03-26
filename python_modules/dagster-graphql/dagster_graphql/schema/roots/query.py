@@ -492,18 +492,18 @@ class GrapheneDagitQuery(graphene.ObjectType):
             not (snapshotId and activePipelineSelector),
             "Must only pass one of snapshotId or activePipelineSelector",
         )
-        check.invariant(
-            snapshotId or activePipelineSelector,
-            "Must set one of snapshotId or activePipelineSelector",
-        )
 
         if activePipelineSelector:
             pipeline_selector = pipeline_selector_from_graphql(activePipelineSelector)
             return get_pipeline_snapshot_or_error_from_pipeline_selector(
                 graphene_info, pipeline_selector
             )
-        else:
+        elif snapshotId:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
+        else:
+            check.failed(
+                "Must set one of snapshotId or activePipelineSelector",
+            )
 
     def resolve_graphOrError(
         self, graphene_info: ResolveInfo, selector: Optional[GrapheneGraphSelector] = None

@@ -42,6 +42,7 @@ from dagster._core.definitions.time_window_partitions import (
     fetch_flattened_time_window_ranges,
 )
 from dagster._core.events import ASSET_EVENTS
+from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -62,17 +63,20 @@ from dagster_graphql.implementation.loader import (
 from .utils import capture_error
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetNode
+    from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
+    from ..schema.errors import GrapheneAssetNotFoundError
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
     from ..schema.pipelines.pipeline import (
+        GrapheneAsset,
         GrapheneDefaultPartitions,
         GrapheneMultiPartitions,
         GrapheneTimePartitions,
     )
+    from ..schema.roots.assets import GrapheneAssetConnection
     from ..schema.util import ResolveInfo
 
 
-def _normalize_asset_cursor_str(cursor_string):
+def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
     # the cursor for assets is derived from a json serialized string of the path.  Because there are
     # json serialization differences between JS and Python in its treatment of whitespace, we should
     # take extra precaution here and do a deserialization/serialization pass
@@ -87,7 +91,12 @@ def _normalize_asset_cursor_str(cursor_string):
 
 
 @capture_error
-def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
+def get_assets(
+    graphene_info: "ResolveInfo",
+    prefix: Optional[Sequence[str]] = None,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> "GrapheneAssetConnection":
     from ..schema.pipelines.pipeline import GrapheneAsset
     from ..schema.roots.assets import GrapheneAssetConnection
 
@@ -120,7 +129,7 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
 
 
 def asset_node_iter(
-    graphene_info,
+    graphene_info: "ResolveInfo",
 ) -> Iterator[Tuple[CodeLocation, ExternalRepository, ExternalAssetNode]]:
     for location in graphene_info.context.code_locations:
         for repository in location.get_repositories().values():
@@ -130,7 +139,7 @@ def asset_node_iter(
 
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
-):
+) -> List["GrapheneAssetNodeDefinitionCollision"]:
     from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
 
@@ -198,11 +207,13 @@ def get_asset_nodes_by_asset_key(
     return asset_nodes_by_asset_key
 
 
-def get_asset_nodes(graphene_info):
+def get_asset_nodes(graphene_info: "ResolveInfo"):
     return get_asset_nodes_by_asset_key(graphene_info).values()
 
 
-def get_asset_node(graphene_info, asset_key):
+def get_asset_node(
+    graphene_info: "ResolveInfo", asset_key: AssetKey
+) -> Union["GrapheneAssetNode", "GrapheneAssetNotFoundError"]:
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
@@ -212,7 +223,9 @@ def get_asset_node(graphene_info, asset_key):
     return node
 
 
-def get_asset(graphene_info, asset_key):
+def get_asset(
+    graphene_info: "ResolveInfo", asset_key: AssetKey
+) -> Union["GrapheneAsset", "GrapheneAssetNotFoundError"]:
     from ..schema.errors import GrapheneAssetNotFoundError
     from ..schema.pipelines.pipeline import GrapheneAsset
 
@@ -229,14 +242,14 @@ def get_asset(graphene_info, asset_key):
 
 
 def get_asset_materializations(
-    graphene_info,
-    asset_key,
-    partitions=None,
-    limit=None,
-    before_timestamp=None,
-    after_timestamp=None,
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
     tags: Optional[Mapping[str, str]] = None,
-):
+) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -258,13 +271,13 @@ def get_asset_materializations(
 
 
 def get_asset_observations(
-    graphene_info,
-    asset_key,
-    partitions=None,
-    limit=None,
-    before_timestamp=None,
-    after_timestamp=None,
-):
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -283,13 +296,13 @@ def get_asset_observations(
     return [event_record.event_log_entry for event_record in event_records]
 
 
-def get_asset_run_ids(graphene_info, asset_key):
+def get_asset_run_ids(graphene_info: "ResolveInfo", asset_key: AssetKey) -> Sequence[str]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
     return instance.run_ids_for_asset_key(asset_key)
 
 
-def get_assets_for_run_id(graphene_info, run_id):
+def get_assets_for_run_id(graphene_info: "ResolveInfo", run_id: str) -> Sequence["GrapheneAsset"]:
     from ..schema.pipelines.pipeline import GrapheneAsset
 
     check.str_param(run_id, "run_id")
@@ -297,9 +310,9 @@ def get_assets_for_run_id(graphene_info, run_id):
     records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_EVENTS)
     asset_keys = set(
         [
-            record.dagster_event.asset_key
+            record.get_dagster_event().asset_key
             for record in records
-            if record.is_dagster_event and record.dagster_event.asset_key
+            if record.is_dagster_event and record.get_dagster_event().asset_key
         ]
     )
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
@@ -395,7 +408,7 @@ def build_partition_statuses(
     materialized_partitions_subset: Optional[PartitionsSubset],
     failed_partitions_subset: Optional[PartitionsSubset],
     in_progress_partitions_subset: Optional[PartitionsSubset],
-) -> Union["GrapheneTimePartitions", "GrapheneDefaultPartitions", "GrapheneMultiPartitions",]:
+) -> Union["GrapheneTimePartitions", "GrapheneDefaultPartitions", "GrapheneMultiPartitions"]:
     from ..schema.pipelines.pipeline import (
         GrapheneDefaultPartitions,
         GrapheneTimePartitionRange,
@@ -632,7 +645,9 @@ def get_freshness_info(
     )
 
 
-def unique_repos(external_repositories):
+def unique_repos(
+    external_repositories: Sequence[ExternalRepository],
+) -> Sequence[ExternalRepository]:
     repos = []
     used = set()
     for external_repository in external_repositories:

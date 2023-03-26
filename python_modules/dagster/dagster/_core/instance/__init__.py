@@ -1702,7 +1702,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_asset_keys(
         self,
-        prefix: Optional[str] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
