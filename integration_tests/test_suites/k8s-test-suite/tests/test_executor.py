@@ -32,7 +32,7 @@ from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
 )
-from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
+from dagster_test.test_project.test_pipelines.repo import define_memoization_job
 
 
 @pytest.mark.integration
@@ -100,7 +100,7 @@ def test_k8s_run_launcher_volume_mounts(
         run_config,
         dagster_instance_for_k8s_run_launcher,
         user_code_namespace_for_k8s_run_launcher,
-        pipeline_name="volume_mount_pipeline",
+        pipeline_name="k8s_volume_mount_job",
         num_steps=1,
         mode="k8s",
     )
@@ -215,7 +215,7 @@ def _launch_executor_run(
     run_config,
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
-    pipeline_name="demo_k8s_executor_pipeline",
+    pipeline_name="demo_k8s_executor_job",
     num_steps=2,
     mode="default",
 ):
@@ -267,7 +267,7 @@ def test_k8s_run_launcher_image_from_origin(
         },
     )
 
-    pipeline_name = "demo_k8s_executor_pipeline"
+    pipeline_name = "demo_k8s_executor_job"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
@@ -290,7 +290,7 @@ def test_k8s_run_launcher_terminate(
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_pipeline"
+    pipeline_name = "slow_pipeline_k8s"
 
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -374,7 +374,7 @@ def test_k8s_executor_resource_requirements(
         },
     )
 
-    pipeline_name = "resources_limit_pipeline"
+    pipeline_name = "resources_limit_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
@@ -415,7 +415,7 @@ def test_execute_on_k8s_retry_pipeline(
         },
     )
 
-    pipeline_name = "retry_pipeline"
+    pipeline_name = "retry_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
@@ -482,7 +482,7 @@ def test_memoization_k8s_executor(
 
     # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
     try:
-        pipeline_name = "memoization_pipeline"
+        pipeline_name = "memoization_job_k8s"
 
         run_ids = []
         for _ in range(2):
@@ -514,5 +514,5 @@ def test_memoization_k8s_executor(
         assert len(_get_step_execution_events(events)) == 0
     finally:
         cleanup_memoized_results(
-            define_memoization_pipeline(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
+            define_memoization_job(), "k8s", dagster_instance_for_k8s_run_launcher, run_config
         )

@@ -126,7 +126,7 @@ def test_launcher_with_container_context(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
@@ -240,7 +240,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
@@ -327,7 +327,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
@@ -408,7 +408,7 @@ def test_raise_on_error(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
@@ -469,7 +469,7 @@ def test_no_postgres(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
                 pipeline_name=pipeline_name,
@@ -535,7 +535,7 @@ def test_check_run_health(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
 
             started_run = create_run_for_test(
                 instance,

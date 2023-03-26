@@ -20,7 +20,7 @@ from dagster_k8s_test_infra.integration_utils import (
     terminate_run_over_graphql,
 )
 from dagster_test.test_project import cleanup_memoized_results, get_test_project_environments_path
-from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
+from dagster_test.test_project.test_pipelines.repo import define_memoization_job
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -237,7 +237,7 @@ def test_execute_on_celery_k8s_retry_pipeline(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="retry_pipeline"
+        dagit_url, run_config=run_config, pipeline_name="retry_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -289,7 +289,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="resources_limit_pipeline"
+        dagit_url, run_config=run_config, pipeline_name="resources_limit_job_celery_k8s"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -300,9 +300,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
 
 
 def _test_termination(dagit_url, dagster_instance, run_config):
-    run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="resource_pipeline"
-    )
+    run_id = launch_run_over_graphql(dagit_url, run_config=run_config, pipeline_name="resource_job")
 
     # Wait for pipeline run to start
     timeout = datetime.timedelta(0, 120)
@@ -522,7 +520,7 @@ def test_memoization_on_celery_k8s(
             run_id = launch_run_over_graphql(
                 dagit_url,
                 run_config=run_config,
-                pipeline_name="memoization_pipeline",
+                pipeline_name="memoization_job_celery_k8s",
                 mode="celery",
             )
 
@@ -543,9 +541,7 @@ def test_memoization_on_celery_k8s(
         assert len(step_events) == 0
 
     finally:
-        cleanup_memoized_results(
-            define_memoization_pipeline(), "celery", dagster_instance, run_config
-        )
+        cleanup_memoized_results(define_memoization_job(), "celery", dagster_instance, run_config)
 
 
 @pytest.mark.integration
@@ -560,8 +556,7 @@ def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, d
     run_id = launch_run_over_graphql(
         dagit_url,
         run_config=run_config,
-        pipeline_name="volume_mount_pipeline",
-        mode="celery",
+        pipeline_name="celery_volume_mount_job",
     )
 
     result = wait_for_job_and_get_raw_logs(

@@ -3,9 +3,22 @@ import os
 import re
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, NamedTuple, Optional, Sequence, TypeVar
+from signal import Signals
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    NoReturn,
+    Optional,
+    Sequence,
+    TypeVar,
+)
 
 import pendulum
 from typing_extensions import Self
@@ -24,6 +37,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.events import DagsterEvent
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessCodeLocationOrigin,
@@ -33,7 +47,8 @@ from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._legacy import ModeDefinition
 from dagster._serdes import ConfigurableClass
@@ -49,6 +64,10 @@ from .instance_for_test import (
     instance_for_test as instance_for_test,
 )
 
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
+
+T = TypeVar("T")
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
 
@@ -70,7 +89,7 @@ def assert_namedtuples_equal(
             assert getattr(t1, field) == getattr(t2, field)
 
 
-def step_output_event_filter(pipe_iterator):
+def step_output_event_filter(pipe_iterator: Iterator[DagsterEvent]):
     for step_event in pipe_iterator:
         if step_event.is_successful_output:
             yield step_event
@@ -98,12 +117,12 @@ def nesting_graph_job(depth: int, num_children: int, *args: Any, **kwargs: Any) 
 
     @job(*args, **kwargs)
     def nested_job():
-        comp_solid = create_wrap(leaf_node, "layer_%d" % depth)
+        graph_def = create_wrap(leaf_node, "layer_%d" % depth)
 
         for i in range(depth):
-            comp_solid = create_wrap(comp_solid, "layer_%d" % (depth - (i + 1)))
+            graph_def = create_wrap(graph_def, "layer_%d" % (depth - (i + 1)))
 
-        comp_solid.alias("outer")()
+        graph_def.alias("outer")()
 
     return nested_job
 
@@ -181,7 +200,9 @@ def register_managed_run_for_test(
     )
 
 
-def wait_for_runs_to_finish(instance, timeout=20, run_tags=None):
+def wait_for_runs_to_finish(
+    instance: DagsterInstance, timeout: float = 20, run_tags: Optional[Mapping[str, str]] = None
+) -> None:
     total_time = 0
     interval = 0.1
 
@@ -200,7 +221,12 @@ def wait_for_runs_to_finish(instance, timeout=20, run_tags=None):
         interval = interval * 2
 
 
-def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
+def poll_for_finished_run(
+    instance: DagsterInstance,
+    run_id: Optional[str] = None,
+    timeout: float = 20,
+    run_tags: Optional[Mapping[str, str]] = None,
+) -> DagsterRun:
     total_time = 0
     interval = 0.01
 
@@ -225,11 +251,17 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance, run_id, timeout=30):
+def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30):
     poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
 
 
-def poll_for_event(instance, run_id, event_type, message, timeout=30):
+def poll_for_event(
+    instance: DagsterInstance,
+    run_id: str,
+    event_type: str,
+    message: Optional[str],
+    timeout: float = 30,
+) -> None:
     total_time = 0
     backoff = 0.01
 
@@ -237,16 +269,16 @@ def poll_for_event(instance, run_id, event_type, message, timeout=30):
         time.sleep(backoff)
         logs = instance.all_logs(run_id)
         matching_events = [
-            log_record.dagster_event
+            log_record.get_dagster_event()
             for log_record in logs
             if log_record.is_dagster_event
-            and log_record.dagster_event.event_type_value == event_type
+            and log_record.get_dagster_event().event_type_value == event_type
         ]
         if matching_events:
             if message is None:
                 return
             for matching_message in (event.message for event in matching_events):
-                if message in matching_message:
+                if matching_message and message in matching_message:
                     return
 
         total_time += backoff
@@ -256,7 +288,7 @@ def poll_for_event(instance, run_id, event_type, message, timeout=30):
 
 
 @contextmanager
-def new_cwd(path):
+def new_cwd(path: str) -> Iterator[None]:
     old = os.getcwd()
     try:
         os.chdir(path)
@@ -265,7 +297,7 @@ def new_cwd(path):
         os.chdir(old)
 
 
-def today_at_midnight(timezone_name="UTC"):
+def today_at_midnight(timezone_name="UTC") -> "DateTime":
     check.str_param(timezone_name, "timezone_name")
     now = pendulum.now(timezone_name)
     return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
@@ -278,11 +310,11 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> Mapping[str, Any]:
         return {}
 
     @classmethod
@@ -291,10 +323,10 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Self:
         return ExplodingRunLauncher(inst_data=inst_data)
 
-    def launch_run(self, context):
+    def launch_run(self, context) -> NoReturn:
         raise NotImplementedError("The entire purpose of this is to throw on launch")
 
-    def join(self, timeout=30):
+    def join(self, timeout: float = 30) -> None:
         """Nothing to join on since all executions are synchronous."""
 
     def terminate(self, run_id):
@@ -393,23 +425,19 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
 
 class TestSecretsLoader(SecretsLoader, ConfigurableClass):
-    def __init__(
-        self,
-        inst_data,
-        env_vars,
-    ):
+    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: Dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name):
+    def get_secrets_for_environment(self, location_name: str) -> Dict[str, str]:
         return self.env_vars.copy()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> Mapping[str, Any]:
         return {"env_vars": Field(Permissive())}
 
     @classmethod
@@ -419,15 +447,15 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
         return TestSecretsLoader(inst_data=inst_data, **config_value)
 
 
-def get_crash_signals():
+def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
 
 
-_mocked_system_timezone = {"timezone": None}
+_mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
 
 
 @contextmanager
-def mock_system_timezone(override_timezone):
+def mock_system_timezone(override_timezone: str) -> Iterator[None]:
     with mock_pendulum_timezone(override_timezone):
         try:
             _mocked_system_timezone["timezone"] = override_timezone
@@ -436,7 +464,7 @@ def mock_system_timezone(override_timezone):
             _mocked_system_timezone["timezone"] = None
 
 
-def get_mocked_system_timezone():
+def get_mocked_system_timezone() -> Optional[str]:
     return _mocked_system_timezone["timezone"]
 
 
@@ -445,12 +473,16 @@ class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(self, origin: InProcessCodeLocationOrigin):
         self._origin = origin
 
-    def create_origins(self):
+    def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
         return [self._origin]
 
 
 @contextmanager
-def in_process_test_workspace(instance, loadable_target_origin, container_image=None):
+def in_process_test_workspace(
+    instance: DagsterInstance,
+    loadable_target_origin: LoadableTargetOrigin,
+    container_image: Optional[str] = None,
+) -> Iterator[WorkspaceRequestContext]:
     with WorkspaceProcessContext(
         instance,
         InProcessTestWorkspaceLoadTarget(
@@ -467,7 +499,7 @@ def in_process_test_workspace(instance, loadable_target_origin, container_image=
 def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
-) -> Generator[WorkspaceProcessContext, None, None]:
+) -> Iterator[WorkspaceProcessContext]:
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
     """
     from dagster._daemon.controller import create_daemon_grpc_server_registry
@@ -482,7 +514,7 @@ def create_test_daemon_workspace_context(
             yield workspace_process_context
 
 
-def remove_none_recursively(obj):
+def remove_none_recursively(obj: T) -> T:
     """Remove none values from a dict. This can be used to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
     configured.
@@ -502,12 +534,12 @@ def remove_none_recursively(obj):
 default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
-def strip_ansi(input_str):
+def strip_ansi(input_str: str) -> str:
     ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
     return ansi_escape.sub("", input_str)
 
 
-def get_logger_output_from_capfd(capfd, logger_name):
+def get_logger_output_from_capfd(capfd: Any, logger_name: str) -> str:
     return "\n".join(
         [
             line
@@ -517,27 +549,27 @@ def get_logger_output_from_capfd(capfd, logger_name):
     )
 
 
-def _step_events(instance, run):
+def _step_events(instance: DagsterInstance, run: DagsterRun) -> Mapping[str, AbstractSet[str]]:
     events_by_step = defaultdict(set)
     logs = instance.all_logs(run.run_id)
     for record in logs:
         if not record.is_dagster_event or not record.step_key:
             continue
-        events_by_step[record.step_key] = record.dagster_event.event_type_value
+        events_by_step[record.step_key].add(record.get_dagster_event().event_type_value)
     return events_by_step
 
 
-def step_did_not_run(instance, run, step_name):
+def step_did_not_run(instance: DagsterInstance, run: DagsterRun, step_name: str) -> bool:
     step_events = _step_events(instance, run)[step_name]
     return len(step_events) == 0
 
 
-def step_succeeded(instance, run, step_name):
+def step_succeeded(instance: DagsterInstance, run: DagsterRun, step_name: str) -> bool:
     step_events = _step_events(instance, run)[step_name]
     return "STEP_SUCCESS" in step_events
 
 
-def step_failed(instance, run, step_name):
+def step_failed(instance: DagsterInstance, run: DagsterRun, step_name: str) -> bool:
     step_events = _step_events(instance, run)[step_name]
     return "STEP_FAILURE" in step_events
 
@@ -571,7 +603,7 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures, timeout=None):
+def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
     for target_id, future in futures.copy().items():
         if timeout is not None:

@@ -38,7 +38,7 @@ def test_k8s_run_launcher_default(
     check.invariant(not celery_pod_names)
 
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_job"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
@@ -131,7 +131,7 @@ def test_failing_k8s_run_launcher(
 ):
     run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
 
-    pipeline_name = "always_fail_pipeline"
+    pipeline_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
@@ -154,7 +154,7 @@ def test_k8s_run_launcher_terminate(
     user_code_namespace_for_k8s_run_launcher,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_pipeline"
+    pipeline_name = "slow_pipeline_k8s"
 
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_s3.yaml")
@@ -204,7 +204,7 @@ def test_k8s_run_launcher_secret_from_deployment(
     run_config = load_yaml_from_path(
         os.path.join(get_test_project_environments_path(), "env_config_from_secrets.yaml")
     )
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_job"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name

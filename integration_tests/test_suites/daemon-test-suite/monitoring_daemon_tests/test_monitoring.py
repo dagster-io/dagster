@@ -113,9 +113,9 @@ def test_docker_monitoring():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_pipeline_docker_slow", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_job_docker_slow", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker_slow", container_image=docker_image
+            instance, "demo_job_docker_slow", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,
@@ -201,9 +201,9 @@ def test_docker_monitoring_run_out_of_attempts():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_pipeline_docker_slow", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_job_docker_slow", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker_slow", container_image=docker_image
+            instance, "demo_job_docker_slow", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,

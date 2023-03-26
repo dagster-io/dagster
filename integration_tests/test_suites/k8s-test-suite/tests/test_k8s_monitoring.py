@@ -49,7 +49,7 @@ def _launch_run_and_wait_for_resume(
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_pipeline",
+    pipeline_name="slow_pipeline_k8s",
 ):
     run_id = None
 

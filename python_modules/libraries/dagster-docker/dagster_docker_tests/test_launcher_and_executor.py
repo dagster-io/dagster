@@ -73,14 +73,14 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
     ) as instance:
         filename = "pending_repo.py" if from_pending_repository else "repo.py"
         recon_pipeline = get_test_project_recon_job(
-            "demo_pipeline_docker", docker_image, filename=filename
+            "demo_job_docker", docker_image, filename=filename
         )
         repository_load_data = recon_pipeline.repository.get_definition().repository_load_data
         recon_pipeline = recon_pipeline.with_repository_load_data(repository_load_data)
 
         with get_test_project_workspace_and_external_pipeline(
             instance,
-            "demo_pipeline_docker",
+            "demo_job_docker",
             container_image=docker_image,
             filename=filename,
         ) as (
@@ -144,7 +144,7 @@ def test_container_context_on_pipeline(aws_env):
         }
     ) as instance:
         recon_pipeline = get_test_project_recon_job(
-            "demo_pipeline_docker",
+            "demo_job_docker",
             docker_image,
             container_context={
                 "docker": {
@@ -158,7 +158,7 @@ def test_container_context_on_pipeline(aws_env):
             },
         )
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker", container_image=docker_image
+            instance, "demo_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,
@@ -224,9 +224,9 @@ def test_recovery(aws_env):
             "run_monitoring": {"enabled": True},
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_job("demo_pipeline_docker_slow", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_job_docker_slow", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker_slow", container_image=docker_image
+            instance, "demo_job_docker_slow", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,

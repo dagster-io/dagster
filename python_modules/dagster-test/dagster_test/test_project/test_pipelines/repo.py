@@ -4,6 +4,7 @@ import random
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import Mapping, Optional
 
 import boto3
 from dagster import (
@@ -25,13 +26,10 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.decorators import schedule
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.test_utils import nesting_graph_job
-from dagster._legacy import (
-    ModeDefinition,
-    default_executors,
-    pipeline,
-)
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -52,49 +50,39 @@ def image_pull_policy():
         return "IfNotPresent"
 
 
-def celery_mode_defs(resources=None, name="default"):
+_S3_RESOURCES = {
+    "io_manager": s3_pickle_io_manager,
+    "s3": s3_resource,
+}
+
+
+def apply_platform_settings(
+    job_def: JobDefinition,
+    platform: str,
+    resources: Optional[Mapping[str, ResourceDefinition]] = None,
+) -> JobDefinition:
     from dagster_celery import celery_executor
+    from dagster_celery_docker import celery_docker_executor
     from dagster_celery_k8s import celery_k8s_job_executor
-
-    resources = resources if resources else {"s3": s3_resource}
-    resources = merge_dicts(resources, {"io_manager": s3_pickle_io_manager})
-    return [
-        ModeDefinition(
-            name=name,
-            resource_defs=resources
-            if resources
-            else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
-        )
-    ]
-
-
-def k8s_mode_defs(resources=None, name="default"):
+    from dagster_docker import docker_executor
     from dagster_k8s.executor import k8s_job_executor
 
     resources = resources if resources else {"s3": s3_resource}
     resources = merge_dicts(resources, {"io_manager": s3_pickle_io_manager})
+    if platform == "k8s":
+        executor = k8s_job_executor
+    elif platform == "celery":
+        executor = celery_executor
+    elif platform == "celery_docker":
+        executor = celery_docker_executor
+    elif platform == "celery_k8s":
+        executor = celery_k8s_job_executor
+    elif platform == "docker":
+        executor = docker_executor
+    else:
+        raise Exception(f"Unknown platform: {platform}")
 
-    return [
-        ModeDefinition(
-            name=name,
-            resource_defs=resources
-            if resources
-            else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=default_executors + [k8s_job_executor],
-        )
-    ]
-
-
-def docker_mode_defs():
-    from dagster_docker import docker_executor
-
-    return [
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=[docker_executor],
-        )
-    ]
+    return job_def.with_top_level_resources(resources).with_executor_def(executor)
 
 
 @op(
@@ -138,13 +126,8 @@ def count_letters_op(word):
     return dict(counts)
 
 
-@op()
-def error_solid():
-    raise Exception("Unusual error")
-
-
 @op
-def hanging_solid(_):
+def hanging_op(_):
     while True:
         time.sleep(0.1)
 
@@ -154,74 +137,37 @@ def get_environment(context):
     return os.environ.get(context.op_config["looking_for"])
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
-    ]
-)
-def hanging_pipeline():
-    hanging_solid()
+@job(resource_defs=_S3_RESOURCES)
+def hanging_job():
+    hanging_op()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
-def demo_pipeline():
+@job
+def demo_job():
     count_letters(multiply_the_word())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
-def always_fail_pipeline():
+@job
+def demo_job_slow():
+    count_letters(multiply_the_word_slow())
+
+
+@job
+def always_fail_job():
     always_fail(multiply_the_word())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
-    ]
+demo_job_s3 = demo_job.with_top_level_resources(
+    _S3_RESOURCES,
 )
-def demo_pipeline_s3():
-    count_letters(multiply_the_word())
 
 
 def define_demo_job_docker():
-    from dagster_docker import docker_executor
-
-    @job(
-        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        executor_def=docker_executor,
-    )
-    def demo_job_docker():
-        count_letters(multiply_the_word())
-
-    return demo_job_docker
+    return apply_platform_settings(demo_job, "docker")
 
 
 def define_demo_job_docker_slow():
-    from dagster_docker import docker_executor
-
-    @job(
-        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        executor_def=docker_executor,
-    )
-    def demo_job_docker_slow():
-        count_letters(multiply_the_word_slow())
-
-    return demo_job_docker_slow
+    return apply_platform_settings(demo_job_slow, "docker")
 
 
 @op
@@ -235,25 +181,17 @@ def fail_first_time(context):
     raise RetryRequested()
 
 
-def definie_step_retries_pipeline_docker():
-    @pipeline(mode_defs=docker_mode_defs())
-    def step_retries_pipeline_docker():
-        fail_first_time()
+@job
+def step_retries_job():
+    fail_first_time()
 
-    return step_retries_pipeline_docker
+
+def define_step_retries_job_docker():
+    return apply_platform_settings(step_retries_job, "docker")
 
 
 def define_demo_job_celery():
-    from dagster_celery_k8s import celery_k8s_job_executor
-
-    @job(
-        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        executor_def=celery_k8s_job_executor,
-    )
-    def demo_job_celery():
-        count_letters(multiply_the_word())
-
-    return demo_job_celery
+    return apply_platform_settings(demo_job, "celery")
 
 
 @op(required_resource_keys={"buggy_resource"})
@@ -290,47 +228,28 @@ def define_docker_celery_job():
     return docker_celery_job
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},
-        )
-    ]
+demo_job_gcs = demo_job.with_top_level_resources(
+    resource_defs={"gcs": gcs_resource, "io_manager": gcs_pickle_io_manager},
 )
-def demo_pipeline_gcs():
+
+
+def demo_job_gcs():
     count_letters(multiply_the_word())
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
-)
-def demo_error_pipeline():
-    error_solid()
-
-
-@op()
+@op
 def error_op():
     raise Exception("Unusual error")
 
 
 @job
 def demo_error_job():
-    error_solid()
+    error_op()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
-    ]
+demo_error_job_s3 = demo_error_job.with_top_level_resources(
+    _S3_RESOURCES,
 )
-def demo_error_pipeline_s3():
-    error_solid()
 
 
 @op(
@@ -349,7 +268,7 @@ def bar(_, input_arg):
     return input_arg
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])
+@job
 def optional_outputs():
     foo_res = foo()
     bar.alias("first_consumer")(input_arg=foo_res.out_1)
@@ -357,7 +276,7 @@ def optional_outputs():
     bar.alias("third_consumer")(input_arg=foo_res.out_3)
 
 
-def define_long_running_pipeline_celery():
+def define_long_running_job_celery():
     @op
     def long_running_task(context):
         iterations = 20 * 30  # 20 minutes
@@ -379,58 +298,52 @@ def define_long_running_pipeline_celery():
             )
             time.sleep(60)
 
-    @pipeline(mode_defs=celery_mode_defs())
-    def long_running_pipeline_celery():
+    @job
+    def long_running_job_celery():
         for i in range(10):
             t = long_running_task.alias("first_%d" % i)()
             post_process.alias("post_process_%d" % i)(t)
 
-    return long_running_pipeline_celery
+    return apply_platform_settings(long_running_job_celery, "celery_k8s")
 
 
 def define_large_job_celery():
-    return nesting_graph_job(
+    job_def = nesting_graph_job(
         depth=1,
         num_children=6,
-        mode_defs=celery_mode_defs(),
         name="large_job_celery",
     )
+    return apply_platform_settings(job_def, "celery_k8s")
 
 
-@op(
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "250m", "memory": "64Mi"},
-                    "limits": {"cpu": "500m", "memory": "2560Mi"},
-                }
+_resources_limit_tags = {
+    "dagster-k8s/config": {
+        "container_config": {
+            "resources": {
+                "requests": {"cpu": "250m", "memory": "64Mi"},
+                "limits": {"cpu": "500m", "memory": "2560Mi"},
             }
         }
     }
-)
-def resource_req_solid(context):
+}
+
+
+@op(tags=_resources_limit_tags)
+def resource_req_op(context):
     context.log.info("running")
 
 
-def define_resources_limit_pipeline():
-    @pipeline(
-        mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"),
-        tags={
-            "dagster-k8s/config": {
-                "container_config": {
-                    "resources": {
-                        "requests": {"cpu": "250m", "memory": "64Mi"},
-                        "limits": {"cpu": "500m", "memory": "2560Mi"},
-                    }
-                }
-            }
-        },
-    )
-    def resources_limit_pipeline():
-        resource_req_solid()
+@job(tags=_resources_limit_tags)
+def resources_limit_job_k8s():
+    resource_req_op()
 
-    return resources_limit_pipeline
+
+def define_resources_limit_job_k8s():
+    return apply_platform_settings(resources_limit_job_k8s, "k8s")
+
+
+def define_resources_limit_job_celery_k8s():
+    return apply_platform_settings(resources_limit_job_k8s, "celery_k8s")
 
 
 def define_schedules():
@@ -470,27 +383,38 @@ def define_schedules():
     }
 
 
-def define_step_retry_pipeline():
-    @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
-    def retry_pipeline():
-        fail_first_time()
-
-    return retry_pipeline
+@job
+def retry_job():
+    fail_first_time()
 
 
-def define_slow_pipeline():
-    @op
-    def slow_solid(_):
-        time.sleep(100)
-
-    @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
-    def slow_pipeline():
-        slow_solid()
-
-    return slow_pipeline
+def define_retry_job_k8s():
+    return apply_platform_settings(retry_job, "k8s")
 
 
-def define_resource_pipeline():
+def define_retry_job_celery_k8s():
+    return apply_platform_settings(retry_job, "celery_k8s")
+
+
+@op
+def slow_op(_):
+    time.sleep(100)
+
+
+@job
+def slow_job():
+    slow_op()
+
+
+def define_slow_job_k8s():
+    return apply_platform_settings(slow_job, "k8s")
+
+
+def define_slow_job_celery_k8s():
+    return apply_platform_settings(slow_job, "celery_k8s")
+
+
+def define_resource_job():
     @resource
     @contextmanager
     def s3_resource_with_context_manager(context):
@@ -510,22 +434,22 @@ def define_resource_pipeline():
     def super_slow_solid():
         time.sleep(1000)
 
-    @pipeline(
-        mode_defs=celery_mode_defs(
-            resources={
-                "s3": s3_resource,
-                "s3_resource_with_context_manager": s3_resource_with_context_manager,
-                "io_manager": s3_pickle_io_manager,
-            }
-        )
-    )
-    def resource_pipeline():
+    @job
+    def resource_job():
         super_slow_solid()
 
-    return resource_pipeline
+    return apply_platform_settings(
+        resource_job,
+        "celery",
+        resources={
+            "s3": s3_resource,
+            "s3_resource_with_context_manager": s3_resource_with_context_manager,
+            "io_manager": s3_pickle_io_manager,
+        },
+    )
 
 
-def define_fan_in_fan_out_pipeline():
+def define_fan_in_fan_out_job():
     @op
     def return_one(_) -> int:
         return 1
@@ -545,14 +469,14 @@ def define_fan_in_fan_out_pipeline():
 
         return sum_fan_in.alias(f"sum_{level}")(fan_outs)
 
-    @pipeline(mode_defs=celery_mode_defs())
-    def fan_in_fan_out_pipeline():
+    @job
+    def fan_in_fan_out_job():
         return_one_out = return_one()
         prev_level_out = return_one_out
         for level in range(0, 20):
             prev_level_out = construct_fan_in_level(prev_level_out, level, 2)
 
-    return fan_in_fan_out_pipeline
+    return apply_platform_settings(fan_in_fan_out_job, "celery")
 
 
 @op
@@ -582,7 +506,7 @@ def demo_airflow_execution_date_job_s3():
 
 
 def define_hard_failer():
-    @pipeline(mode_defs=celery_mode_defs())
+    @job
     def hard_failer():
         @op(
             config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
@@ -598,17 +522,20 @@ def define_hard_failer():
 
         increment(hard_fail_or_0())
 
-    return hard_failer
+    return apply_platform_settings(hard_failer, "celery")
 
 
-def define_demo_k8s_executor_pipeline():
-    @pipeline(
-        mode_defs=k8s_mode_defs(),
+def define_demo_k8s_executor_job():
+    from dagster_k8s.executor import k8s_job_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=k8s_job_executor,
     )
-    def demo_k8s_executor_pipeline():
+    def demo_k8s_executor_job():
         count_letters(multiply_the_word())
 
-    return demo_k8s_executor_pipeline
+    return demo_k8s_executor_job
 
 
 @op
@@ -621,69 +548,91 @@ def check_volume_mount(context):
         assert contents == "BAR_CONTENTS"
 
 
-def define_volume_mount_pipeline():
-    @pipeline(
-        mode_defs=k8s_mode_defs(name="k8s") + celery_mode_defs(name="celery"),
+def define_k8s_volume_mount_job():
+    from dagster_k8s.executor import k8s_job_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=k8s_job_executor,
     )
-    def volume_mount_pipeline():
+    def volume_mount_job():
         check_volume_mount()
 
-    return volume_mount_pipeline
+    return volume_mount_job
 
 
-def define_memoization_pipeline():
-    @op
-    def foo_solid():
+def define_celery_volume_mount_job():
+    from dagster_celery import celery_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=celery_executor,
+    )
+    def volume_mount_job():
+        check_volume_mount()
+
+    return volume_mount_job
+
+
+@op
+def foo_op():
+    return "foo"
+
+
+class BasicVersionStrategy(VersionStrategy):
+    def get_op_version(self, _):
         return "foo"
 
-    class BasicVersionStrategy(VersionStrategy):
-        def get_op_version(self, _):
-            return "foo"
 
-    @pipeline(
-        mode_defs=k8s_mode_defs(name="k8s") + celery_mode_defs(name="celery"),
-        version_strategy=BasicVersionStrategy(),
-    )
-    def memoization_pipeline():
-        foo_solid()
+@job(version_strategy=BasicVersionStrategy())
+def memoization_job():
+    foo_op()
 
-    return memoization_pipeline
+
+def define_memoization_job_k8s():
+    return apply_platform_settings(memoization_job, "k8s")
+
+
+def define_memoization_job_celery_k8s():
+    return apply_platform_settings(memoization_job, "celery_k8s")
 
 
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
         return {
-            "pipelines": {
-                "always_fail_pipeline": always_fail_pipeline,
-                "step_retries_pipeline_docker": definie_step_retries_pipeline_docker,
-                "large_job_celery": define_large_job_celery,
-                "long_running_pipeline_celery": define_long_running_pipeline_celery,
-                "optional_outputs": optional_outputs,
-                "demo_pipeline": demo_pipeline,
-                "demo_pipeline_s3": demo_pipeline_s3,
-                "demo_pipeline_gcs": demo_pipeline_gcs,
-                "demo_error_pipeline": demo_error_pipeline,
-                "demo_error_pipeline_s3": demo_error_pipeline_s3,
-                "resources_limit_pipeline": define_resources_limit_pipeline,
-                "retry_pipeline": define_step_retry_pipeline,
-                "slow_pipeline": define_slow_pipeline,
-                "fan_in_fan_out_pipeline": define_fan_in_fan_out_pipeline,
-                "resource_pipeline": define_resource_pipeline,
-                "hanging_pipeline": hanging_pipeline,
-                "hard_failer": define_hard_failer,
-                "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
-                "volume_mount_pipeline": define_volume_mount_pipeline,
-                "memoization_pipeline": define_memoization_pipeline,
-            },
             "jobs": {
+                "always_fail_job": always_fail_job,
+                "celery_volume_mount_job": define_celery_volume_mount_job,
+                "demo_job": demo_job,
+                "demo_job_s3": demo_job_s3,
                 "demo_airflow_execution_date_job": demo_airflow_execution_date_job,
                 "demo_airflow_execution_date_job_s3": demo_airflow_execution_date_job_s3,
                 "demo_error_job": demo_error_job,
+                "demo_error_job_s3": demo_error_job_s3,
                 "demo_job_celery": define_demo_job_celery,
                 "demo_job_docker": define_demo_job_docker,
                 "demo_job_docker_slow": define_demo_job_docker_slow,
+                "demo_job_gcs": demo_job_gcs,
+                "demo_k8s_executor_job": define_demo_k8s_executor_job,
                 "docker_celery_job": define_docker_celery_job,
+                "fan_in_fan_out_job": define_fan_in_fan_out_job,
+                "hanging_job": hanging_job,
+                "hard_failer": define_hard_failer,
+                "k8s_volume_mount_job": define_k8s_volume_mount_job,
+                "large_job_celery": define_large_job_celery,
+                "long_running_job_celery": define_long_running_job_celery,
+                "memoization_job_celery_k8s": define_memoization_job_celery_k8s,
+                "memoization_job_k8s": define_memoization_job_k8s,
+                "optional_outputs": optional_outputs,
+                "resources_limit_job_k8s": define_resources_limit_job_k8s,
+                "resources_limit_job_celery_k8s": define_resources_limit_job_celery_k8s,
+                "resource_job": define_resource_job,
+                "retry_job_celery_k8s": define_retry_job_celery_k8s,
+                "retry_job_k8s": define_retry_job_k8s,
+                "slow_job_celery_k8s": define_slow_job_celery_k8s,
+                "slow_job_k8s": define_slow_job_k8s,
+                "step_retries_job_docker": define_step_retries_job_docker,
             },
             "schedules": define_schedules(),
         }
