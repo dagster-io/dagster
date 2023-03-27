@@ -1,15 +1,26 @@
+import sys
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, cast
 
+import dagster._check as check
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.op_decorator import op
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.error import serializable_error_info_from_exc_info
+
+if TYPE_CHECKING:
+    from dagster._grpc.types import ResourceVerificationResult
 
 
 @whitelist_for_serdes
@@ -92,3 +103,32 @@ def create_resource_verification_job(
         resource_verification_op()
 
     return resource_verification_job
+
+
+def launch_resource_verification(
+    repo_def: RepositoryDefinition,
+    instance_ref: Optional[InstanceRef],
+    resource_name: str,
+) -> "ResourceVerificationResult":
+    from dagster._grpc.types import ResourceVerificationResult
+
+    serializable_error_info = None
+    response = VerificationResult(VerificationStatus.FAILURE, "Error executing verification check")
+
+    try:
+        pipeline = cast(
+            JobDefinition,
+            repo_def.get_pipeline(resource_verification_job_name(resource_name)),
+        )
+        with DagsterInstance.from_ref(check.not_none(instance_ref)) as instance:
+            result = pipeline.execute_in_process(
+                instance=instance, resources=repo_def.get_top_level_resources()
+            )
+            if result.success:
+                response = result.output_for_node(resource_verification_op_name(resource_name))
+    except Exception:
+        serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+    return ResourceVerificationResult(
+        response=response, serializable_error_info=serializable_error_info
+    )

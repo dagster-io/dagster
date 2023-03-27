@@ -19,6 +19,7 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._config.structured_config.resource_verification import launch_resource_verification
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -552,6 +553,15 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_dagster_library_versions(self) -> Mapping[str, str]:
         return DagsterLibraryRegistry.get()
+
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        definition = self._get_repo_def(origin.repository_name)
+        return launch_resource_verification(definition, instance_ref, resource_name)
 
 
 class GrpcServerCodeLocation(CodeLocation):

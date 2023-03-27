@@ -17,6 +17,10 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.origin import (
+    ExternalRepositoryOrigin,
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
@@ -204,3 +208,25 @@ def test_resource_not_found(
         "Could not find pipeline '__RESOURCE_VERIFICATION_non_existent_resource'"
         in result.serializable_error_info.message
     )
+
+
+def test_in_process_code_location() -> None:
+    with instance_for_test() as instance:
+        external_repo_origin = ExternalRepositoryOrigin(
+            InProcessCodeLocationOrigin(loadable_target_origin()),
+            SINGLETON_REPOSITORY_NAME,
+        )
+
+        result = external_repo_origin.code_location_origin.create_location().launch_resource_verification(
+            origin=external_repo_origin,
+            instance_ref=instance.get_ref(),
+            resource_name="success_resource",
+        )
+        assert result.response == VerificationResult.success("asdf")
+
+        result = external_repo_origin.code_location_origin.create_location().launch_resource_verification(
+            origin=external_repo_origin,
+            instance_ref=instance.get_ref(),
+            resource_name="failure_resource",
+        )
+        assert result.response == VerificationResult.failure("qwer")
