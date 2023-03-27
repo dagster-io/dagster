@@ -73,6 +73,10 @@ class AirbyteResource:
         self._cancel_sync_on_run_termination = cancel_sync_on_run_termination
 
     @property
+    def log(self) -> logging.Logger:
+        return self._log
+
+    @property
     def api_base_url(self) -> str:
         return (
             ("https://" if self._use_https else "http://")

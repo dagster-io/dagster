@@ -589,6 +589,10 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
 
             workspace_id = workspaces[0].get("workspaceId")
 
+        self._airbyte_instance.log.debug(
+            "Loading Airbyte connections as assets for workspace %s", workspace_id
+        )
+
         connections = cast(
             List[Dict[str, Any]],
             check.not_none(
@@ -597,6 +601,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
                 )
             ).get("connections", []),
         )
+        self._airbyte_instance.log.debug("Found %d Airbyte connections", len(connections))
 
         output_connections: List[Tuple[str, AirbyteConnectionMetadata]] = []
         for connection_json in connections:
@@ -612,6 +617,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
                 ),
             )
             connection = AirbyteConnectionMetadata.from_api_json(connection_json, operations_json)
+            self._airbyte_instance.log.debug("Loaded Airbyte connection %s", connection.name)
 
             # Filter out connections that don't match the filter function
             if self._connection_filter and not self._connection_filter(connection):
@@ -623,6 +629,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
     def build_definitions(
         self, data: Sequence[AssetsDefinitionCacheableData]
     ) -> Sequence[AssetsDefinition]:
+        self._airbyte_instance.log.debug("Building Airbyte assets from metadata")
         return super()._build_definitions_with_resources(
             data, {"airbyte": self._airbyte_resource_def}
         )
