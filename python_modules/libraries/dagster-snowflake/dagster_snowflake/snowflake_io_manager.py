@@ -95,13 +95,13 @@ def build_snowflake_io_manager(
 
     @io_manager(config_schema=SnowflakeIOManager.to_config_schema())
     def snowflake_io_manager(init_context):
-        if init_context.resource_config["time_data_to_string"]:
+        if init_context.resource_config["store_timestamps_as_strings"]:
             deprecation_warning(
-                "Snowflake I/O manager config time_data_to_string",
+                "Snowflake I/O manager config store_timestamps_as_strings",
                 "2.0.0",
                 (
-                    "Convert existing tables to use timestamps and remove time_data_to_string"
-                    " configuration instead."
+                    "Convert existing tables to use timestamps and remove"
+                    " store_timestamps_as_strings configuration instead."
                 ),
             )
         return DbIOManager(
@@ -205,7 +205,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
-    time_data_to_string: bool =  Field(
+    store_timestamps_as_strings: bool =  Field(
         default=False,
         description=(
             "If using Pandas DataFrames, whether to convert time data to strings. If True,"

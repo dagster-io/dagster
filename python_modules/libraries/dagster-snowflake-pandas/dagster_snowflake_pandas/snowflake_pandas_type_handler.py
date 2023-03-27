@@ -35,7 +35,7 @@ def _convert_timestamp_to_string(s: pd.Series, column_types) -> pd.Series:
                 raise DagsterInvariantViolationError(
                     "Snowflake I/O manager configured to convert time data to strings, but the"
                     " corresponding column is not of type VARCHAR, it is of type"
-                    f" {column_types[s.name]}. Please set time_data_to_string=False in the"
+                    f" {column_types[s.name]}. Please set store_timestamps_as_strings=False in the"
                     " Snowflake I/O manager configuration to store time data as TIMESTAMP types."
                 )
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
@@ -111,7 +111,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
         column_types = _get_table_column_types(table_slice, connection)
-        if context.resource_config["time_data_to_string"]:
+        if context.resource_config and context.resource_config["store_timestamps_as_strings"]:
             with_uppercase_cols = with_uppercase_cols.apply(
                 lambda x: _convert_timestamp_to_string(x, column_types),
                 axis="index",
@@ -148,7 +148,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )
-        if context.resource_config["time_data_to_string"]:
+        if context.resource_config and context.resource_config["store_timestamps_as_strings"]:
             result = result.apply(_convert_string_to_timestamp, axis="index")
         result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
         return result
