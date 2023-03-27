@@ -23,22 +23,19 @@ from dagster._check import CheckError
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 
-@op(out=Out(metadata={"schema": "a_df"}))
-def a_df() -> pd.DataFrame:
-    return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-
-@op(out=Out(metadata={"schema": "add_one"}))
-def add_one(df: pd.DataFrame):
-    return df + 1
-
-
-@graph
-def add_one_to_dataframe():
-    add_one(a_df())
-
-
 def test_duckdb_io_manager_with_ops(tmp_path):
+    @op(out=Out(metadata={"schema": "a_df"}))
+    def a_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    @op(out=Out(metadata={"schema": "add_one"}))
+    def add_one(df: pd.DataFrame):
+        return df + 1
+
+    @graph
+    def add_one_to_dataframe():
+        add_one(a_df())
+
     resource_defs = {
         "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -63,17 +60,15 @@ def test_duckdb_io_manager_with_ops(tmp_path):
         duckdb_conn.close()
 
 
-@asset(key_prefix=["my_schema"])
-def b_df() -> pd.DataFrame:
-    return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-
-@asset(key_prefix=["my_schema"])
-def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
-    return b_df + 1
-
-
 def test_duckdb_io_manager_with_assets(tmp_path):
+    @asset(key_prefix=["my_schema"])
+    def b_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    @asset(key_prefix=["my_schema"])
+    def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
+        return b_df + 1
+
     resource_defs = {
         "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -96,12 +91,15 @@ def test_duckdb_io_manager_with_assets(tmp_path):
         duckdb_conn.close()
 
 
-@asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
-def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
-    return b_df + 1
-
-
 def test_loading_columns(tmp_path):
+    @asset(key_prefix=["my_schema"])
+    def b_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    @asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
+    def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
+        return b_df + 1
+
     resource_defs = {
         "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -126,17 +124,15 @@ def test_loading_columns(tmp_path):
         duckdb_conn.close()
 
 
-@op
-def non_supported_type() -> int:
-    return 1
-
-
-@graph
-def not_supported():
-    non_supported_type()
-
-
 def test_not_supported_type(tmp_path):
+    @op
+    def non_supported_type() -> int:
+        return 1
+
+    @graph
+    def not_supported():
+        non_supported_type()
+
     resource_defs = {
         "io_manager": duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
@@ -152,26 +148,25 @@ def test_not_supported_type(tmp_path):
         job.execute_in_process()
 
 
-@asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": "time"},
-    config_schema={"value": str},
-)
-def daily_partitioned(context) -> pd.DataFrame:
-    partition = pd.Timestamp(context.asset_partition_key_for_output())
-    value = context.op_config["value"]
-
-    return pd.DataFrame(
-        {
-            "time": [partition, partition, partition],
-            "a": [value, value, value],
-            "b": [4, 5, 6],
-        }
-    )
-
-
 def test_time_window_partitioned_asset(tmp_path):
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": "time"},
+        config_schema={"value": str},
+    )
+    def daily_partitioned(context) -> pd.DataFrame:
+        partition = pd.Timestamp(context.asset_partition_key_for_output())
+        value = context.op_config["value"]
+
+        return pd.DataFrame(
+            {
+                "time": [partition, partition, partition],
+                "a": [value, value, value],
+                "b": [4, 5, 6],
+            }
+        )
+
     duckdb_io_manager = duckdb_pandas_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
@@ -217,25 +212,24 @@ def test_time_window_partitioned_asset(tmp_path):
     duckdb_conn.close()
 
 
-@asset(
-    partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": "color"},
-    config_schema={"value": str},
-)
-def static_partitioned(context) -> pd.DataFrame:
-    partition = context.asset_partition_key_for_output()
-    value = context.op_config["value"]
-    return pd.DataFrame(
-        {
-            "color": [partition, partition, partition],
-            "a": [value, value, value],
-            "b": [4, 5, 6],
-        }
-    )
-
-
 def test_static_partitioned_asset(tmp_path):
+    @asset(
+        partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": "color"},
+        config_schema={"value": str},
+    )
+    def static_partitioned(context) -> pd.DataFrame:
+        partition = context.asset_partition_key_for_output()
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "color": [partition, partition, partition],
+                "a": [value, value, value],
+                "b": [4, 5, 6],
+            }
+        )
+
     duckdb_io_manager = duckdb_pandas_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
@@ -278,30 +272,29 @@ def test_static_partitioned_asset(tmp_path):
     duckdb_conn.close()
 
 
-@asset(
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
-            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
-        }
-    ),
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
-    config_schema={"value": str},
-)
-def multi_partitioned(context) -> pd.DataFrame:
-    partition = context.partition_key.keys_by_dimension
-    value = context.op_config["value"]
-    return pd.DataFrame(
-        {
-            "color": [partition["color"], partition["color"], partition["color"]],
-            "time": [partition["time"], partition["time"], partition["time"]],
-            "a": [value, value, value],
-        }
-    )
-
-
 def test_multi_partitioned_asset(tmp_path):
+    @asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            }
+        ),
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+        config_schema={"value": str},
+    )
+    def multi_partitioned(context) -> pd.DataFrame:
+        partition = context.partition_key.keys_by_dimension
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "color": [partition["color"], partition["color"], partition["color"]],
+                "time": [partition["time"], partition["time"], partition["time"]],
+                "a": [value, value, value],
+            }
+        )
+
     duckdb_io_manager = duckdb_pandas_io_manager.configured(
         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
     )
@@ -356,27 +349,25 @@ def test_multi_partitioned_asset(tmp_path):
     duckdb_conn.close()
 
 
-dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
-
-
-@asset(
-    partitions_def=dynamic_fruits,
-    key_prefix=["my_schema"],
-    metadata={"partition_expr": "fruit"},
-    config_schema={"value": str},
-)
-def dynamic_partitioned(context) -> pd.DataFrame:
-    partition = context.asset_partition_key_for_output()
-    value = context.op_config["value"]
-    return pd.DataFrame(
-        {
-            "fruit": [partition, partition, partition],
-            "a": [value, value, value],
-        }
-    )
-
-
 def test_dynamic_partition(tmp_path):
+    dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+
+    @asset(
+        partitions_def=dynamic_fruits,
+        key_prefix=["my_schema"],
+        metadata={"partition_expr": "fruit"},
+        config_schema={"value": str},
+    )
+    def dynamic_partitioned(context) -> pd.DataFrame:
+        partition = context.asset_partition_key_for_output()
+        value = context.op_config["value"]
+        return pd.DataFrame(
+            {
+                "fruit": [partition, partition, partition],
+                "a": [value, value, value],
+            }
+        )
+
     with instance_for_test() as instance:
         duckdb_io_manager = duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
