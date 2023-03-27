@@ -338,6 +338,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
         retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
         explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
+        subprocess_shutdown_timeout=check.opt_int_elem(config, "subprocess_shutdown_timeout"),
     )
 
 
@@ -391,6 +392,16 @@ MULTI_PROC_CONFIG = Field(
             ),
         ),
         "retries": get_retries_config(),
+        "subprocess_shutdown_timeout": Field(
+            int,
+            is_required=False,
+            default_value=60,
+            description=(
+                "How long to wait for each subprocess has finished execution to "
+                "fully shutdown before raising an exception. This timeout will surface issues "
+                "with subprocesses hanging on shutdown."
+            ),
+        ),
     },
     description="Execute each step in an individual process.",
 )

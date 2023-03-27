@@ -65,6 +65,12 @@ class ChildProcessCrashException(Exception):
         super().__init__()
 
 
+class ChildProcessHangOnShutdownException(Exception):
+    def __init__(self, pid: int):
+        self.pid = pid
+        super().__init__()
+
+
 def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
     """Wraps the execution of a ChildProcessCommand.
 
@@ -119,7 +125,9 @@ def _poll_for_event(
 
 
 def execute_child_process_command(
-    multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
+    multiprocessing_ctx: MultiprocessingBaseContext,
+    command: ChildProcessCommand,
+    shutdown_timeout: Optional[int],
 ) -> Iterator[Optional["DagsterEvent"]]:
     """Execute a ChildProcessCommand in a new process.
 
@@ -173,6 +181,9 @@ def execute_child_process_command(
             # TODO Figure out what to do about stderr/stdout
             raise ChildProcessCrashException(exit_code=process.exitcode)
 
-        process.join()
+        process.join(timeout=shutdown_timeout)
+        if process.exitcode is None:
+            raise ChildProcessHangOnShutdownException(pid=process.pid)
+
     finally:
         event_queue.close()

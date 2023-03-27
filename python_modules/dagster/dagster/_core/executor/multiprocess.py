@@ -35,6 +35,7 @@ from .child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
     ChildProcessEvent,
+    ChildProcessHangOnShutdownException,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
@@ -108,6 +109,7 @@ class MultiprocessExecutor(Executor):
         tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
+        subprocess_shutdown_timeout: Optional[int] = None,
     ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         if not max_concurrent:
@@ -135,6 +137,7 @@ class MultiprocessExecutor(Executor):
             )
         self._start_method = start_method
         self._explicit_forkserver_preload = explicit_forkserver_preload
+        self._subprocess_shutdown_timeout = subprocess_shutdown_timeout
 
     @property
     def retries(self) -> RetryMode:
@@ -231,6 +234,7 @@ class MultiprocessExecutor(Executor):
                                 self.retries,
                                 active_execution.get_known_state(),
                                 execution_plan.repository_load_data,
+                                self._subprocess_shutdown_timeout,
                             )
 
                     # process active iterators
@@ -244,6 +248,32 @@ class MultiprocessExecutor(Executor):
                                 yield event_or_none
                                 active_execution.handle_event(event_or_none)
 
+                        except ChildProcessHangOnShutdownException as e:
+                            serializable_error = serializable_error_info_from_exc_info(
+                                sys.exc_info()
+                            )
+                            step_context = plan_context.for_step(
+                                active_execution.get_step_by_key(key)
+                            )
+                            yield DagsterEvent.engine_event(
+                                step_context,
+                                (
+                                    f"Multiprocess executor: child process {e.pid} for step"
+                                    f" {key} failed to shut down cleanly after completion."
+                                ),
+                                EngineEventData.engine_error(serializable_error),
+                            )
+                            step_failure_event = DagsterEvent.step_failure_event(
+                                step_context=plan_context.for_step(
+                                    active_execution.get_step_by_key(key)
+                                ),
+                                step_failure_data=StepFailureData(
+                                    error=serializable_error, user_failure_data=None
+                                ),
+                            )
+                            active_execution.handle_event(step_failure_event)
+                            yield step_failure_event
+                            empty_iters.append(key)
                         except ChildProcessCrashException as crash:
                             serializable_error = serializable_error_info_from_exc_info(
                                 sys.exc_info()
@@ -335,6 +365,7 @@ def execute_step_out_of_process(
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: Optional[RepositoryLoadData],
+    shutdown_timeout: Optional[int],
 ) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
@@ -354,7 +385,7 @@ def execute_step_out_of_process(
         metadata_entries=[],
     )
 
-    for ret in execute_child_process_command(multiproc_ctx, command):
+    for ret in execute_child_process_command(multiproc_ctx, command, shutdown_timeout):
         if ret is None or isinstance(ret, DagsterEvent):
             yield ret
         elif isinstance(ret, ChildProcessEvent):

@@ -8,6 +8,7 @@ from dagster._core.executor.child_process_executor import (
     ChildProcessCrashException,
     ChildProcessDoneEvent,
     ChildProcessEvent,
+    ChildProcessHangOnShutdownException,
     ChildProcessStartEvent,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
@@ -48,6 +49,13 @@ class LongRunningCommand(ChildProcessCommand):
     def execute(self):
         time.sleep(0.5)
         yield 1
+
+
+class HangAfterFinishCommand(ChildProcessCommand):
+    def execute(self):
+        # Simulate finishing early
+        yield ChildProcessDoneEvent(pid=os.getpid())
+        time.sleep(30)
 
 
 def test_basic_child_process_command():
@@ -105,3 +113,8 @@ def test_child_process_segfault():
 @pytest.mark.skip("too long")
 def test_long_running_command():
     list(execute_child_process_command(multiprocessing, LongRunningCommand()))
+
+
+def test_child_process_hangy_process():
+    with pytest.raises(ChildProcessHangOnShutdownException):
+        list(execute_child_process_command(multiprocessing, HangAfterFinishCommand(), shutdown_timeout=5))
