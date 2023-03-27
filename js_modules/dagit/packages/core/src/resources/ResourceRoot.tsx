@@ -262,23 +262,34 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                             padding={{vertical: 16, horizontal: 24}}
                             flex={{direction: 'column', gap: 8}}
                           >
-                            <Box flex={{direction: 'row', gap: 8}}>
+                            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                               <Button onClick={() => verify()}>Launch verification</Button>
                               {verificationResult && (
-                                <Tag
-                                  intent={
-                                    verificationResult.status === VerificationStatus.SUCCESS
-                                      ? 'success'
-                                      : 'danger'
+                                <Tooltip
+                                  content={<>{verificationResult?.message}</>}
+                                  canShow={
+                                    verificationResult?.message !== null &&
+                                    verificationResult.message.length > 0
                                   }
                                 >
-                                  {verificationResult.status === VerificationStatus.SUCCESS
-                                    ? 'Success'
-                                    : 'Failure'}
-                                </Tag>
+                                  <Tag
+                                    intent={
+                                      verificationResult.status === VerificationStatus.SUCCESS
+                                        ? 'success'
+                                        : verificationResult.status === VerificationStatus.NOT_RUN
+                                        ? 'none'
+                                        : 'danger'
+                                    }
+                                  >
+                                    {verificationResult.status === VerificationStatus.SUCCESS
+                                      ? 'Success'
+                                      : verificationResult.status === VerificationStatus.NOT_RUN
+                                      ? 'Not yet run'
+                                      : 'Failure'}
+                                  </Tag>
+                                </Tooltip>
                               )}
                             </Box>
-                            <CaptionMono>{verificationResult?.message}</CaptionMono>
                           </Box>
                         </SidebarSection>
                       ) : null}
