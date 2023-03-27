@@ -126,6 +126,44 @@ class PartitionBackfill(
         else:
             return True
 
+    def get_num_partitions_targeted_by_asset(self, workspace: IWorkspace) -> Mapping[AssetKey, int]:
+        if not self.is_valid_serialization(workspace):
+            return {}
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return {}
+
+            return asset_backfill_data.get_num_targeted_partitions_by_asset_key()
+
+        else:
+            return {}
+
+    def get_partition_status_counts_by_asset(
+        self, workspace: IWorkspace
+    ) -> Mapping[AssetKey, Mapping[BulkActionStatus, int]]:
+        if not self.is_valid_serialization(workspace):
+            return {}
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return {}
+
+            return asset_backfill_data.get_partition_status_counts_by_asset_key()
+
+        else:
+            return {}
+
     def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
         if not self.is_valid_serialization(workspace):
             return 0

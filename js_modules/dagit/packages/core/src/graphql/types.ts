@@ -268,6 +268,13 @@ export type AssetNotFoundError = Error & {
 
 export type AssetOrError = Asset | AssetNotFoundError;
 
+export type AssetPartitionStatusCounts = {
+  __typename: 'AssetPartitionStatusCounts';
+  assetKey: AssetKey;
+  numPartitionsTargeted: Scalars['Int'];
+  partitionStatusCounts: Array<PartitionBulkActionStatusCounts>;
+};
+
 export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type AssetWipeMutationResult =
@@ -2230,6 +2237,7 @@ export type PartitionRunsArgs = {
 
 export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
+  assetPartitionStatusCounts: Array<AssetPartitionStatusCounts>;
   assetSelection: Maybe<Array<AssetKey>>;
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
@@ -2267,6 +2275,12 @@ export type PartitionBackfills = {
 };
 
 export type PartitionBackfillsOrError = PartitionBackfills | PythonError;
+
+export type PartitionBulkActionStatusCounts = {
+  __typename: 'PartitionBulkActionStatusCounts';
+  bulkActionStatus: BulkActionStatus;
+  count: Scalars['Int'];
+};
 
 export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
@@ -4512,6 +4526,35 @@ export const buildAssetNotFoundError = (
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
+  };
+};
+
+export const buildAssetPartitionStatusCounts = (
+  overrides?: Partial<AssetPartitionStatusCounts>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetPartitionStatusCounts'} & AssetPartitionStatusCounts => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetPartitionStatusCounts');
+  return {
+    __typename: 'AssetPartitionStatusCounts',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    numPartitionsTargeted:
+      overrides && overrides.hasOwnProperty('numPartitionsTargeted')
+        ? overrides.numPartitionsTargeted!
+        : 893,
+    partitionStatusCounts:
+      overrides && overrides.hasOwnProperty('partitionStatusCounts')
+        ? overrides.partitionStatusCounts!
+        : [
+            relationshipsToOmit.has('PartitionBulkActionStatusCounts')
+              ? ({} as PartitionBulkActionStatusCounts)
+              : buildPartitionBulkActionStatusCounts({}, relationshipsToOmit),
+          ],
   };
 };
 
@@ -8615,6 +8658,14 @@ export const buildPartitionBackfill = (
   relationshipsToOmit.add('PartitionBackfill');
   return {
     __typename: 'PartitionBackfill',
+    assetPartitionStatusCounts:
+      overrides && overrides.hasOwnProperty('assetPartitionStatusCounts')
+        ? overrides.assetPartitionStatusCounts!
+        : [
+            relationshipsToOmit.has('AssetPartitionStatusCounts')
+              ? ({} as AssetPartitionStatusCounts)
+              : buildAssetPartitionStatusCounts({}, relationshipsToOmit),
+          ],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
@@ -8711,6 +8762,22 @@ export const buildPartitionBackfills = (
               ? ({} as PartitionBackfill)
               : buildPartitionBackfill({}, relationshipsToOmit),
           ],
+  };
+};
+
+export const buildPartitionBulkActionStatusCounts = (
+  overrides?: Partial<PartitionBulkActionStatusCounts>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionBulkActionStatusCounts'} & PartitionBulkActionStatusCounts => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionBulkActionStatusCounts');
+  return {
+    __typename: 'PartitionBulkActionStatusCounts',
+    bulkActionStatus:
+      overrides && overrides.hasOwnProperty('bulkActionStatus')
+        ? overrides.bulkActionStatus!
+        : BulkActionStatus.CANCELED,
+    count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 4647,
   };
 };
 

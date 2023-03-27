@@ -45,7 +45,7 @@ from dagster._utils import hash_collection
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
-    from .backfill import PartitionBackfill
+    from .backfill import PartitionBackfill, BulkActionStatus
 
 
 class AssetBackfillData(NamedTuple):
@@ -63,7 +63,7 @@ class AssetBackfillData(NamedTuple):
     def is_complete(self) -> bool:
         return (
             (
-                self.requested_subset | self.failed_and_downstream_subset
+                self.materialized_subset | self.failed_and_downstream_subset
             ).num_partitions_and_non_partitioned_assets
             == self.target_subset.num_partitions_and_non_partitioned_assets
         )
@@ -92,6 +92,42 @@ class AssetBackfillData(NamedTuple):
             return next(iter(asset_partition_nums))
         else:
             return None
+
+    def get_num_targeted_partitions_by_asset_key(self) -> Mapping[AssetKey, int]:
+        return {
+            asset_key: len(subset)
+            for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
+        }
+
+    def get_partition_status_counts_by_asset_key(
+        self,
+    ) -> Mapping[AssetKey, Mapping["BulkActionStatus", int]]:
+        """Returns a mapping from asset key to a mapping from status to count of partitions in that
+        status.
+
+        Only includes assets that are partitioned.
+        """
+        from .backfill import BulkActionStatus
+
+        return {
+            asset_key: {
+                BulkActionStatus.COMPLETED: len(
+                    self.materialized_subset.get_partitions_subset(asset_key)
+                ),
+                BulkActionStatus.FAILED: len(
+                    self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                ),
+                BulkActionStatus.REQUESTED: len(
+                    self.requested_subset.get_partitions_subset(asset_key)
+                )
+                - (
+                    len(self.failed_and_downstream_subset.get_partitions_subset(asset_key))
+                    + len(self.materialized_subset.get_partitions_subset(asset_key))
+                ),
+            }
+            for asset_key in self.target_subset.asset_keys
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
+        }
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
         """Only valid when the same number of partitions are targeted in every asset.
