@@ -3,6 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
+from typing import ContextManager, NoReturn, Tuple
 
 import mock
 import pytest
@@ -26,9 +27,11 @@ from dagster._cli.run import (
     run_migrate_command,
     run_wipe_command,
 )
+from dagster._cli.workspace.cli_target import ClickArgMapping
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
@@ -36,7 +39,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._legacy import (
     ModeDefinition,
-    PartitionSetDefinition,
     PresetDefinition,
     execute_pipeline,
     pipeline,
@@ -44,6 +46,7 @@ from dagster._legacy import (
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
+from typing_extensions import TypeAlias
 
 
 @op
@@ -104,8 +107,38 @@ def define_qux_job():
     return qux_job
 
 
-@pipeline(name="baz", description="Not much tbh")
-def baz_pipeline():
+baz_partitions = StaticPartitionsDefinition(list(string.digits))
+
+baz_config = PartitionedConfig(
+    partitions_def=baz_partitions,
+    run_config_for_partition_fn=lambda partition: {
+        "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+    },
+)
+
+
+@job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
+def baz_job():
+    do_input()
+
+
+def throw_error(*args) -> NoReturn:
+    raise Exception()
+
+
+baz_error_config = PartitionedConfig(
+    partitions_def=baz_partitions,
+    run_config_for_partition_fn=throw_error,
+)
+
+
+@job(
+    name="baz_error_config",
+    description="Not much tbh",
+    partitions_def=baz_partitions,
+    config=baz_error_config,
+)
+def baz_error_config_job():
     do_input()
 
 
@@ -115,9 +148,11 @@ def not_a_repo_or_pipeline_fn():
 
 not_a_repo_or_pipeline = 123
 
+partitioned_job_partitions = StaticPartitionsDefinition(list(string.digits))
 
-@pipeline
-def partitioned_pipeline():
+
+@job(partitions_def=partitioned_job_partitions)
+def partitioned_job():
     do_something()
 
 
@@ -134,40 +169,6 @@ def define_bar_schedules():
             cron_schedule=["* * * * *", "* * * * *"],
             job_name="foo",
             run_config={},
-        ),
-    }
-
-
-def define_bar_partitions():
-    def error_name():
-        raise Exception("womp womp")
-
-    def error_config(_):
-        raise Exception("womp womp")
-
-    return {
-        "partitioned_pipeline_partitions": PartitionSetDefinition(
-            name="partitioned_pipeline_partitions",
-            pipeline_name="partitioned_pipeline",
-            partition_fn=lambda: string.digits,
-        ),
-        "baz_partitions": PartitionSetDefinition(
-            name="baz_partitions",
-            pipeline_name="baz",
-            partition_fn=lambda: string.digits,
-            run_config_fn_for_partition=lambda partition: {
-                "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
-            },
-        ),
-        "error_name_partitions": PartitionSetDefinition(
-            name="error_name_partitions",
-            pipeline_name="baz",
-            partition_fn=error_name,
-        ),
-        "error_config_partitions": PartitionSetDefinition(
-            name="error_config_partitions",
-            pipeline_name="baz",
-            partition_fn=error_config,
         ),
     }
 
@@ -212,13 +213,17 @@ def bar():
     return {
         "pipelines": {
             "foo": foo_pipeline,
-            "baz": baz_pipeline,
-            "partitioned_pipeline": partitioned_pipeline,
             "memoizable": memoizable_pipeline,
         },
-        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable_job": memoizable_job},
+        "jobs": {
+            "qux": qux_job,
+            "quux": quux_job,
+            "memoizable_job": memoizable_job,
+            "partitioned_job": partitioned_job,
+            "baz": baz_job,
+            "baz_error_config": baz_error_config_job,
+        },
         "schedules": define_bar_schedules(),
-        "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
     }
 
@@ -448,6 +453,9 @@ def sensor_command_contexts():
         ),
         grpc_server_scheduler_cli_args(),
     ]
+
+
+BackfillCommandTestContext: TypeAlias = ContextManager[Tuple[ClickArgMapping, DagsterInstance]]
 
 
 # This iterates over a list of contextmanagers that can be used to contruct

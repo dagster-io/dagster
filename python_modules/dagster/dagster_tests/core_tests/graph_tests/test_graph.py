@@ -257,21 +257,22 @@ def test_partitions():
     def config_fn(partition: Partition):
         return {"ops": {"my_op": {"config": {"date": partition.value}}}}
 
-    job = my_graph.to_job(
+    job_def = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
-    partition_set = job.get_partition_set_def()
-    partitions = partition_set.get_partitions()
+    assert job_def.partitions_def
+    assert job_def.partitioned_config
+    partitions = job_def.partitions_def.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"
     assert partitions[0].name == "2020-02-25"
-    assert partition_set.run_config_for_partition(partitions[0]) == {
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name) == {
         "ops": {"my_op": {"config": {"date": "2020-02-25"}}}
     }
-    assert partition_set.run_config_for_partition(partitions[1]) == {
+    assert job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name) == {
         "ops": {"my_op": {"config": {"date": "2020-02-26"}}}
     }
 
@@ -284,20 +285,21 @@ def test_partitions():
         my_config["ops"] = {"my_op": {"config": {"date": partition.value}}}
         return my_config
 
-    job = my_graph.to_job(
+    job_def = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=shared_config_fn,
             partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
-    partition_set = job.get_partition_set_def()
-    partitions = partition_set.get_partitions()
+    assert job_def.partitions_def
+    assert job_def.partitioned_config
+    partitions = job_def.partitions_def.get_partitions()
     assert len(partitions) == 2
     assert partitions[0].value == "2020-02-25"
     assert partitions[0].name == "2020-02-25"
 
-    first_config = partition_set.run_config_for_partition(partitions[0])
-    second_config = partition_set.run_config_for_partition(partitions[1])
+    first_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[0].name)
+    second_config = job_def.partitioned_config.get_run_config_for_partition_key(partitions[1].name)
     assert first_config != second_config
 
     assert first_config == {"ops": {"my_op": {"config": {"date": "2020-02-25"}}}}

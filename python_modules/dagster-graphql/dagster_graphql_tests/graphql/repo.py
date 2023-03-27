@@ -39,10 +39,8 @@ from dagster import (
     Nothing,
     OpExecutionContext,
     Output,
-    Partition,
     PythonObjectDagsterType,
     ScheduleDefinition,
-    ScheduleEvaluationContext,
     SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
@@ -77,15 +75,17 @@ from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.output import DynamicOut, Out
+from dagster._core.definitions.partition import PartitionedConfig
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -93,7 +93,6 @@ from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
     ModeDefinition,
-    PartitionSetDefinition,
     PresetDefinition,
     build_assets_job,
     pipeline,
@@ -438,7 +437,28 @@ def csv_hello_world_df_input():
     sum_sq_solid(sum_solid())
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+integers_partitions = StaticPartitionsDefinition([str(i) for i in range(10)])
+
+integers_config = PartitionedConfig(
+    partitions_def=integers_partitions,
+    run_config_for_partition_fn=lambda partition: {},
+    tags_for_partition_fn=lambda partition: {"foo": partition.name},
+)
+
+
+@job(partitions_def=integers_partitions, config=integers_config)
+def integers():
+    @op
+    def return_integer():
+        return 1
+
+    return_integer()
+
+
+alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
+
+
+@job(partitions_def=alpha_partitions)
 def no_config_pipeline():
     @op
     def return_hello():
@@ -1016,27 +1036,6 @@ def get_retry_multi_execution_params(
     }
 
 
-def last_empty_partition(
-    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[T]
-) -> Optional[Partition[T]]:
-    check.inst_param(context, "context", ScheduleEvaluationContext)
-    partition_set_def = check.inst_param(
-        partition_set_def, "partition_set_def", PartitionSetDefinition
-    )
-
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if not partitions:
-        return None
-    selected = None
-    for partition in reversed(partitions):
-        filters = RunsFilter.for_partition(partition_set_def, partition)
-        matching = context.instance.get_runs(filters)
-        if not any(run.status == DagsterRunStatus.SUCCESS for run in matching):
-            selected = partition
-            break
-    return selected
-
-
 def define_schedules():
     no_config_pipeline_hourly_schedule = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule",
@@ -1174,38 +1173,6 @@ def define_schedules():
     ]
 
 
-def define_partitions():
-    integer_set = PartitionSetDefinition(
-        name="integer_partition",
-        pipeline_name="no_config_pipeline",
-        solid_selection=["return_hello"],
-        mode="default",
-        partition_fn=lambda: [Partition(i) for i in range(10)],
-        tags_fn_for_partition=lambda partition: {"foo": partition.name},
-    )
-
-    enum_set = PartitionSetDefinition(
-        name="enum_partition",
-        pipeline_name="noop_pipeline",
-        partition_fn=lambda: ["one", "two", "three"],
-    )
-
-    chained_partition_set = PartitionSetDefinition(
-        name="chained_integer_partition",
-        pipeline_name="chained_failure_pipeline",
-        mode="default",
-        partition_fn=lambda: [Partition(i) for i in range(10)],
-    )
-
-    alphabet_partition_set = PartitionSetDefinition(
-        name="alpha_partition",
-        pipeline_name="no_config_pipeline",
-        partition_fn=lambda: list(string.ascii_lowercase),
-    )
-
-    return [integer_set, enum_set, chained_partition_set, alphabet_partition_set]
-
-
 def define_sensors():
     @sensor(job_name="no_config_pipeline")
     def always_no_config_sensor(_):
@@ -1300,8 +1267,8 @@ def define_sensors():
     ]
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def chained_failure_pipeline():
+@job(partitions_def=integers_partitions)
+def chained_failure_job():
     @op
     def always_succeed():
         return "hello"
@@ -1843,6 +1810,7 @@ def define_pipelines():
         hard_failer,
         hello_world_with_tags,
         infinite_loop_pipeline,
+        integers,
         materialization_pipeline,
         more_complicated_config,
         more_complicated_nested_config,
@@ -1870,7 +1838,7 @@ def define_pipelines():
         spew_pipeline,
         static_partitioned_job,
         tagged_pipeline,
-        chained_failure_pipeline,
+        chained_failure_job,
         dynamic_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
@@ -1945,22 +1913,22 @@ def define_asset_jobs():
 
 @repository
 def test_repo():
-    return (
-        define_pipelines()
-        + define_schedules()
-        + define_sensors()
-        + define_partitions()
-        + define_asset_jobs()
-    )
+    return define_pipelines() + define_schedules() + define_sensors() + define_asset_jobs()
 
 
 @repository
 def test_dict_repo():
     return {
-        "pipelines": {pipeline.name: pipeline for pipeline in define_pipelines()},
+        "pipelines": {
+            pipeline.name: pipeline
+            for pipeline in define_pipelines()
+            if not isinstance(pipeline, JobDefinition)
+        },
+        "jobs": {
+            pipeline.name: pipeline
+            for pipeline in define_pipelines()
+            if isinstance(pipeline, JobDefinition)
+        },
         "schedules": {schedule.name: schedule for schedule in define_schedules()},
         "sensors": {sensor.name: sensor for sensor in define_sensors()},
-        "partition_sets": {
-            partition_set.name: partition_set for partition_set in define_partitions()
-        },
     }

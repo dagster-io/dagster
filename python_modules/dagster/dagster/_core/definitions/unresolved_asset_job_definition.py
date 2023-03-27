@@ -2,7 +2,7 @@ import operator
 from collections import defaultdict
 from datetime import datetime
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
-        PartitionSetDefinition,
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
@@ -76,34 +75,6 @@ class UnresolvedAssetJobDefinition(
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
         )
 
-    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        from dagster._core.definitions import PartitionedConfig, PartitionSetDefinition
-
-        if self.partitions_def is None:
-            return None
-
-        partitioned_config = PartitionedConfig.from_flexible_config(
-            self.config, self.partitions_def
-        )
-
-        tags_fn = (
-            partitioned_config
-            and partitioned_config.tags_for_partition_fn
-            or (lambda _: cast(Dict[str, str], {}))
-        )
-        run_config_fn = (
-            partitioned_config
-            and partitioned_config.run_config_for_partition_fn
-            or (lambda _: cast(Dict[str, str], {}))
-        )
-        return PartitionSetDefinition(
-            job_name=self.name,
-            name=f"{self.name}_partition_set",
-            partitions_def=self.partitions_def,
-            run_config_fn_for_partition=run_config_fn,
-            tags_fn_for_partition=tags_fn,
-        )
-
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -135,34 +106,43 @@ class UnresolvedAssetJobDefinition(
         """
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
+            PartitionedConfig,
         )
 
-        partition_set = self.get_partition_set_def()
-        if not partition_set:
+        if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
-            if not instance:
-                check.failed(
-                    "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "dynamic partition set"
-                )
+        partitioned_config = PartitionedConfig.from_flexible_config(
+            self.config, self.partitions_def
+        )
 
-        partition = partition_set.get_partition(
+        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+            check.failed(
+                "Must provide a dagster instance when calling run_request_for_partition on a "
+                "dynamic partition set"
+            )
+
+        partition = self.partitions_def.get_partition(
             partition_key, dynamic_partitions_store=instance, current_time=current_time
         )
-        run_request_tags = (
-            {**tags, **partition_set.tags_for_partition(partition)}
-            if tags
-            else partition_set.tags_for_partition(partition)
+        run_config = (
+            run_config
+            if run_config is not None
+            else partitioned_config.get_run_config_for_partition_key(
+                partition.name, instance=instance, current_time=current_time
+            )
         )
+        run_request_tags = {
+            **(tags or {}),
+            **partitioned_config.get_tags_for_partition_key(
+                partition_key, instance, current_time=current_time, job_name=self.name
+            ),
+        }
 
         return RunRequest(
             job_name=self.name,
             run_key=run_key,
-            run_config=run_config
-            if run_config is not None
-            else partition_set.run_config_for_partition(partition),
+            run_config=run_config,
             tags=run_request_tags,
             asset_selection=asset_selection,
         )

@@ -41,7 +41,7 @@ def test_static_partitioned_job():
     assert result.dagster_run.tags["foo"] == "blah"
 
     with pytest.raises(
-        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+        DagsterUnknownPartitionError, match="No partition for partition key `doesnotexist`"
     ):
         result = my_job.execute_in_process(partition_key="doesnotexist")
 
@@ -73,7 +73,7 @@ def test_time_based_partitioned_job():
     assert result.dagster_run.tags["foo"] == "2021-05-05"
 
     with pytest.raises(
-        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+        DagsterUnknownPartitionError, match="No partition for partition key `doesnotexist`"
     ):
         result = my_job.execute_in_process(partition_key="doesnotexist")
 
@@ -102,7 +102,7 @@ def test_dynamic_partitioned_config():
     assert result.dagster_run.tags["foo"] == "blah"
 
     with pytest.raises(
-        DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
+        DagsterUnknownPartitionError, match="No partition for partition key `doesnotexist`"
     ):
         result = my_job.execute_in_process(partition_key="doesnotexist")
 

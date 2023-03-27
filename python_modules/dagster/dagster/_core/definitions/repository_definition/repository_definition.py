@@ -23,7 +23,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -224,13 +223,6 @@ class RepositoryDefinition:
             List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
-
-    @property
-    def partition_set_defs(self) -> Sequence[PartitionSetDefinition]:
-        return self._repository_data.get_all_partition_sets()
-
-    def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
-        return self._repository_data.get_partition_set(name)
 
     @public
     @property

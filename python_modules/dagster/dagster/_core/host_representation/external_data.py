@@ -22,6 +22,7 @@ from typing import (
 )
 
 import pendulum
+from typing_extensions import Final
 
 from dagster import (
     StaticPartitionsDefinition,
@@ -35,7 +36,6 @@ from dagster._config.snap import (
 from dagster._core.definitions import (
     JobDefinition,
     PartitionsDefinition,
-    PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
@@ -1086,8 +1086,17 @@ def external_repository_data_from_def(
             list(map(external_schedule_data_from_def, repository_def.schedule_defs)),
             key=lambda sd: sd.name,
         ),
+        # `PartitionSetDefinition` has been deleted, so we now construct `ExternalPartitonSetData`
+        # from jobs instead of going through the intermediary `PartitionSetDefinition`. Eventually
+        # we will remove `ExternalPartitionSetData` as well.
         external_partition_set_datas=sorted(
-            list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
+            filter(
+                None,
+                [
+                    external_partition_set_data_from_def(job_def)
+                    for job_def in repository_def.get_all_jobs()
+                ],
+            ),
             key=lambda psd: psd.name,
         ),
         external_sensor_datas=sorted(
@@ -1460,11 +1469,13 @@ def external_dynamic_partitions_definition_from_def(
 
 
 def external_partition_set_data_from_def(
-    partition_set_def: PartitionSetDefinition,
-) -> ExternalPartitionSetData:
-    check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
+    job_def: JobDefinition,
+) -> Optional[ExternalPartitionSetData]:
+    check.inst_param(job_def, "job_def", JobDefinition)
 
-    partitions_def = partition_set_def._partitions_def  # noqa: SLF001
+    partitions_def = job_def.partitions_def
+    if partitions_def is None:
+        return None
 
     partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -1481,12 +1492,24 @@ def external_partition_set_data_from_def(
         partitions_def_data = None
 
     return ExternalPartitionSetData(
-        name=partition_set_def.name,
-        pipeline_name=partition_set_def.pipeline_or_job_name,
-        solid_selection=partition_set_def.solid_selection,
-        mode=partition_set_def.mode,
+        name=external_partition_set_name_for_job_name(job_def.name),
+        pipeline_name=job_def.name,
+        solid_selection=None,
+        mode=job_def.get_mode_definition().name,
         external_partitions_data=partitions_def_data,
     )
+
+
+EXTERNAL_PARTITION_SET_NAME_SUFFIX: Final = "_partition_set"
+
+
+def external_partition_set_name_for_job_name(job_name) -> str:
+    return f"{job_name}{EXTERNAL_PARTITION_SET_NAME_SUFFIX}"
+
+
+def job_name_for_external_partition_set_name(name: str) -> str:
+    job_name_len = len(name) - len(EXTERNAL_PARTITION_SET_NAME_SUFFIX)
+    return name[:job_name_len]
 
 
 def external_sensor_data_from_def(
