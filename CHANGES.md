@@ -1,5 +1,33 @@
 # Changelog
 
+
+# 1.2.3 (core) / 0.18.3 (libraries)
+### New
+
+- Jobs defined via `define_asset_job` now auto-infer their partitions definitions if not explicitly defined.
+- Observable source assets can now be run as part of a job via `define_asset_job`. This allows putting them on a schedule/sensor.
+- Added an `instance` property to the `HookContext` object that is passed into [Op Hook](https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#op-hooks) functions, which can be used to access the current `DagsterInstance` object for the hook.
+- (experimental) Dynamic partitions definitions can now exist as dimensions of multi-partitions definitions.
+- [dagster-pandas] New `create_table_schema_metadata_from_dataframe` function to generate a `TableSchemaMetadataValue` from a Pandas DataFrame. Thanks [@AndyBys](https://github.com/AndyBys)!
+- [dagster-airflow] New option for setting `dag_run` configuration on the integration’s database resources.
+- [ui] The asset partitions page now links to the most recent failed or in-progress run for the selected partition.
+- [ui] Asset descriptions have been moved to the top in the asset sidebar.
+- [ui] Log filter switches have been consolidated into a single control, and selected log levels will be persisted locally so that the same selections are used by default when viewing a run.
+- [ui] You can now customize the hour formatting in timestamp display: 12-hour, 24-hour, or automatic (based on your browser locale). This option can be found in User Settings.
+
+### Bugfixes
+
+- In certain situations a few of the first partitions displayed as “unpartitioned” in the health bar despite being materialized. This has now been fixed, but users may need to run `dagster asset wipe-partitions-status-cache` to see the partitions displayed.
+- Starting `1.1.18`, users with a gRPC server that could not access the Dagster instance on user code deployments would see an error when launching backfills as the instance could not instantiate. This has been fixed.
+- Previously, incorrect partition status counts would display for static partitions definitions with duplicate keys. This has been fixed.
+- In some situations, having SourceAssets could prevent the `build_asset_reconciliation_sensor` from kicking off runs of downstream assets. This has been fixed.
+- The `build_asset_reconciliation_sensor` is now much more performant in cases where unpartitioned assets are upstream or downstream of static-partitioned assets with a large number of partitions.
+- [dagster-airflow] Fixed an issue were the persistent Airflow DB resource required the user to set the correct Airflow database URI environment variable.
+- [dagster-celery-k8s] Fixed an issue where run monitoring failed when setting the `jobNamespace` field in the Dagster Helm chart when using the `CeleryK8sRunLauncher`.
+- [ui] Filtering on the asset partitions page no longer results in keys being presented out of order in the left sidebar in some scenarios.
+- [ui] Launching an asset backfill outside an asset job page now supports partition mapping, even if your selection shares a partition space.
+- [ui] In the run timeline, date/time display at the top of the timeline was sometimes broken for users not using the `en-US` browser locale. This has been fixed.
+
 # 1.2.2 (core) / 0.18.2 (libraries)
 
 ### New
@@ -8,7 +36,7 @@
 - Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
 
   ```python
-  @op(required_resource_keys={"foo")
+  @op(required_resource_keys={"foo"})
   def my_op(context)
       print(context.foo)
 
@@ -26,12 +54,13 @@
 - Added `SpecificPartitionsPartitionMapping`, which allows an asset, or all partitions of an asset, to depend on a specific subset of the partitions in an upstream asset.
 - `load_asset_value` now supports `SourceAsset`s.
 - [ui] Ctrl+K has been added as a keyboard shortcut to open global search.
+- [ui] Most pages with search bars now sync the search filter to the URL, so it’s easier to bookmark views of interest.
 - [ui] In the run logs table, the timestamp column has been moved to the far left, which will hopefully allow for better visual alignment with op names and tags.
 - [dagster-dbt] A new `node_info_to_definition_metadata_fn` to `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` allows custom metadata to be attached to the asset definitions generated from these methods.
 - [dagster-celery-k8s] The Kubernetes namespace that runs using the `CeleryK8sRunLauncher` are launched in can now be configured by setting the `jobNamespace` field in the Dagster Helm chart under `celeryK8sRunLauncherConfig`.
 - [dagster-gcp] The BigQuery I/O manager now accepts `timeout` configuration. Currently, this configuration will only be applied when working with Pandas DataFrames, and will set the number of seconds to wait for a request before using a retry.
 - [dagster-gcp] [dagster-snowflake] [dagster-duckdb] The BigQuery, Snowflake, and DuckDB I/O managers now support self-dependent assets. When a partitioned asset depends on a prior partition of itself, the I/O managers will now load that partition as a DataFrame. For the first partition in the dependency sequence, an empty DataFrame will be returned.
-- [dagster-k8s]  `k8s_job_op` now supports running Kubernetes jobs with more than one pod (Thanks @Taadas).
+- [dagster-k8s] `k8s_job_op` now supports running Kubernetes jobs with more than one pod (Thanks @Taadas).
 
 ### Bugfixes
 
@@ -42,7 +71,7 @@
 - Fixed an issue where `AssetValueLoader.load_asset_value()` didn’t load transitive resource dependencies correctly.
 - Fixed an issue where constructing a `RunConfig` object with optional config arguments would lead to an error.
 - Fixed the type annotation on `ScheduleEvaluationContext.scheduled_execution_time` to not be `Optional`.
-- Fixed the type annotation on `OpExecutionContext.partition_time_window` ****(thanks @elben10).
+- Fixed the type annotation on `OpExecutionContext.partition_time_window` \*\*\*\*(thanks @elben10).
 - `InputContext.upstream_output.log` is no longer `None` when loading a source asset.
 - [Pydantic type constraints](https://docs.pydantic.dev/usage/types/#constrained-types) are now supported by the [Pythonic config](https://docs.dagster.io/guides/dagster/pythonic-config) API.
 - An input resolution bug that occurred in certain conditions when composing graphs with same named ops has been fixed.
@@ -50,6 +79,9 @@
 - `async def` ops are now invoked with `asyncio.run`.
 - `TimeWindowPartitionDefinition` now throws an error at definition time when passed an invalid cron schedule instead of at runtime.
 - [ui] Previously, using dynamic partitions with assets that required config would raise an error in the launchpad. This has been fixed.
+- [ui] The lineage tab loads faster and flickers less as you navigate between connected assets in the lineage graph
+- [ui] The config YAML editor no longer offers incorrect autcompletion context when you’re beginning a new indented line.
+- [ui] When viewing the asset details page for a source asset, the button in the top right correctly reads “Observe” instead of “Materialize”
 - [dagster-dbt] Previously, setting a `cron_schedule_timezone` inside of the config for a dbt model would not result in that property being set on the generated `FreshnessPolicy`. This has been fixed.
 - [dagster-gcp] Added a fallback download url for the `GCSComputeLogManager` when the session does not have permissions to generate signed urls.
 - [dagster-snowflake] In a previous release, functionality was added for the Snowflake I/O manager to attempt to create a schema if it did not already exist. This caused an issue when the schema already existed but the account did not have permission to create the schema. We now check if a schema exists before attempting to create it so that accounts with restricted permissions do not error, but schemas can still be created if they do not exist.

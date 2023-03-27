@@ -3,11 +3,23 @@ import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
+import * as CustomAlertProvider from '../../app/CustomAlertProvider';
+import {buildUnauthorizedError} from '../../graphql/types';
 import {CreatePartitionDialog} from '../CreatePartitionDialog';
-import {buildCreatePartitionFixture} from '../__fixtures__/CreatePartitionDialog.fixture';
+import {
+  buildCreatePartitionFixture,
+  buildCreatePartitionMutation,
+} from '../__fixtures__/CreatePartitionDialog.fixture';
 
 let onCloseMock = jest.fn();
 let onCreatedMock = jest.fn();
+
+jest.mock('../../app/CustomAlertProvider', () => ({
+  CustomAlertProvider: jest.fn(({children}) => children),
+  showCustomAlert: jest.fn(),
+}));
+
+const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
 
 function Test({mocks}: {mocks?: MockedResponse[]}) {
   return (
@@ -62,5 +74,34 @@ describe('CreatePartitionDialog', () => {
     expect(screen.queryByTestId('warning-icon')).toBeNull();
     userEvent.type(partitionInput, 'validname');
     expect(screen.queryByTestId('warning-icon')).toBeNull();
+  });
+
+  it('Shows error state when mutation fails', async () => {
+    const createFixture = buildCreatePartitionMutation({
+      variables: {
+        partitionsDefName: 'testPartitionDef',
+        partitionKey: 'testPartitionName',
+        repositorySelector: {
+          repositoryLocationName: 'testing',
+          repositoryName: 'testing',
+        },
+      },
+      data: buildUnauthorizedError({
+        message: 'test message 123',
+      }),
+    });
+    await act(async () => {
+      render(<Test mocks={[createFixture]} />);
+    });
+    const partitionInput = screen.getByTestId('partition-input');
+    userEvent.type(partitionInput, 'testPartitionName');
+    userEvent.click(screen.getByTestId('save-partition-button'));
+    await waitFor(() => {
+      expect(createFixture.result).toHaveBeenCalled();
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Could not add partition',
+        body: 'test message 123',
+      });
+    });
   });
 });

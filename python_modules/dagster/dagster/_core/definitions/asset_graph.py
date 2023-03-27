@@ -86,7 +86,7 @@ class AssetGraph:
 
     @staticmethod
     def from_assets(
-        all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
     ) -> "InternalAssetGraph":
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
@@ -370,6 +370,23 @@ class AssetGraph:
         return [
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
+
+    @cached_method
+    def get_downstream_freshness_policies(
+        self, *, asset_key: AssetKey
+    ) -> AbstractSet[FreshnessPolicy]:
+        downstream_policies = set().union(
+            *(
+                self.get_downstream_freshness_policies(asset_key=child_key)
+                for child_key in self.get_children(asset_key)
+                if child_key != asset_key
+            )
+        )
+        current_policy = self.freshness_policies_by_key.get(asset_key)
+        if self.get_partitions_def(asset_key) is None and current_policy is not None:
+            downstream_policies.add(current_policy)
+
+        return downstream_policies
 
     def has_self_dependency(self, asset_key: AssetKey) -> bool:
         return asset_key in self.get_parents(asset_key)

@@ -3,10 +3,10 @@ import os
 from dagster_snowflake import snowflake_resource
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
-from dagster import Definitions
+from dagster import Definitions, graph
 
 from ..assets import comments, items, stories
-from .clone_and_drop_db import clone_prod
+from .clone_and_drop_db import clone_prod, drop_prod_clone
 
 snowflake_config = {
     "account": {"env": "SNOWFLAKE_ACCOUNT"},
@@ -57,7 +57,10 @@ def get_current_env():
 
 
 # start_repository
-branch_deployment_jobs = [clone_prod.to_job(resource_defs=resources[get_current_env()])]
+branch_deployment_jobs = [
+    clone_prod.to_job(resource_defs=resources[get_current_env()]),
+    drop_prod_clone.to_job(resource_defs=resources[get_current_env()]),
+]
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],

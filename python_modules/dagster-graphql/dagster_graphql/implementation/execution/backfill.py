@@ -52,7 +52,7 @@ def create_and_launch_partition_backfill(
         assert_permission_for_location(
             graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, repository_selector.location_name
         )
-        location = graphene_info.context.get_repository_location(repository_selector.location_name)
+        location = graphene_info.context.get_code_location(repository_selector.location_name)
 
         repository = location.get_repository(repository_selector.repository_name)
         matches = [
@@ -107,8 +107,7 @@ def create_and_launch_partition_backfill(
                     run_id
                     for run_id in submit_backfill_runs(
                         graphene_info.context.instance,
-                        workspace=graphene_info.context,
-                        repo_location=location,
+                        create_workspace=lambda: graphene_info.context,
                         backfill_job=backfill,
                         partition_names=chunk,
                     )
@@ -132,7 +131,7 @@ def create_and_launch_partition_backfill(
         asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
         location_names = set(
-            repo_handle.repository_location_origin.location_name
+            repo_handle.code_location_origin.location_name
             for repo_handle in asset_graph.repository_handles_by_key.values()
         )
 

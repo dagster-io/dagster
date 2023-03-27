@@ -25,10 +25,13 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.storage.pipeline_run import (
+    DagsterRun as DagsterRun,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import AssetGroup, DagsterRun
+from dagster._legacy import AssetGroup
 from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource

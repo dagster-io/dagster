@@ -1,8 +1,19 @@
+import {render} from '@testing-library/react';
+import * as React from 'react';
+
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+
 import {
   DefaultQuerystring,
   decodeRunPageFilters,
   encodeRunPageFilters,
+  useQueryPersistedLogFilter,
+  EnabledRunLogLevelsKey,
 } from './useQueryPersistedLogFilter';
+
+jest.mock('../hooks/useQueryPersistedState', () => ({
+  useQueryPersistedState: jest.fn(),
+}));
 
 describe('encodeRunPageFilters', () => {
   it('serializes log levels,', () => {
@@ -125,6 +136,55 @@ describe('decodeRunPageFilters', () => {
         ERROR: true,
         CRITICAL: true,
         EVENT: true,
+      });
+    });
+
+    describe('localStorage persistence', () => {
+      afterEach(() => {
+        window.localStorage.clear();
+      });
+
+      const Test = () => {
+        useQueryPersistedLogFilter();
+        return <div />;
+      };
+
+      it('falls back to default levels if no levels persisted', () => {
+        render(<Test />);
+        const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
+        expect(mockFn).toHaveBeenCalled();
+        const args = mockFn.mock.calls[0][0];
+        expect(args).toMatchObject({
+          defaults: {
+            levels: 'critical|error|event|info|warning',
+          },
+        });
+      });
+
+      it('uses persisted levels, if any', () => {
+        window.localStorage.setItem(EnabledRunLogLevelsKey, '["EVENT","CRITICAL"]');
+        render(<Test />);
+        const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
+        expect(mockFn).toHaveBeenCalled();
+        const args = mockFn.mock.calls[0][0];
+        expect(args).toMatchObject({
+          defaults: {
+            levels: 'critical|event',
+          },
+        });
+      });
+
+      it('allows setting empty array for levels', () => {
+        window.localStorage.setItem(EnabledRunLogLevelsKey, '[]');
+        render(<Test />);
+        const mockFn = useQueryPersistedState as jest.MockedFunction<typeof useQueryPersistedState>;
+        expect(mockFn).toHaveBeenCalled();
+        const args = mockFn.mock.calls[0][0];
+        expect(args).toMatchObject({
+          defaults: {
+            levels: '',
+          },
+        });
       });
     });
   });

@@ -116,11 +116,6 @@ class SensorEvaluationContext:
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
-
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
@@ -133,26 +128,9 @@ class SensorEvaluationContext:
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
 
-        """
-        This is similar to what we do in e.g. the op context - we set up a resource
-        building context manager, and immediately enter it. This is so that in cases
-        where a user is not using any context-manager based resources, they don't
-        need to enter this SensorEvaluationContext themselves.
-        
-        For example:
-        
-        my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
-        
-        will work ok, but for a CM resource we must do
-
-        with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
-            my_sensor(context)
-        """
-
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
         self._cm_scope_entered = False
 
         self._log_key = (
@@ -171,22 +149,46 @@ class SensorEvaluationContext:
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
-    def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
     @property
     def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            """
+            This is similar to what we do in e.g. the op context - we set up a resource
+            building context manager, and immediately enter it. This is so that in cases
+            where a user is not using any context-manager based resources, they don't
+            need to enter this SensorEvaluationContext themselves.
+
+            For example:
+
+            my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
+
+            will work ok, but for a CM resource we must do
+
+            with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+                my_sensor(context)
+            """
+
+            instance = self.instance if self._instance or self._instance_ref else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
+                )
+
         return self._resources
 
     @public

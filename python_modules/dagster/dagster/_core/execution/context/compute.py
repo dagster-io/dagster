@@ -5,6 +5,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     extract_data_provenance_from_entry,
@@ -15,7 +16,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
@@ -26,7 +26,10 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -270,6 +273,16 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def assets_def(self) -> AssetsDefinition:
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an assets definition."
+            )
+        return assets_def
+
+    @public
+    @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
@@ -496,7 +509,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation, ExpectationResult]): The event to log.
 
         **Examples:**
 
@@ -508,7 +521,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, AssetMaterialization):
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
             )

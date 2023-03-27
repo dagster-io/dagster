@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Set, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Set, Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -15,6 +15,9 @@ from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
 from ..plan.utils import RetryRequestedFromPolicy
 from .system import StepExecutionContext
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -89,6 +92,11 @@ class HookContext:
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
+
+    @public
+    @property
+    def instance(self) -> "DagsterInstance":
+        return self._step_execution_context.instance
 
     @property
     def op(self) -> Node:
@@ -198,6 +206,7 @@ class UnboundHookContext(HookContext):
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
+        instance: Optional["DagsterInstance"],
     ):
         from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
@@ -220,6 +229,7 @@ class UnboundHookContext(HookContext):
         self._run_id = run_id
         self._job_name = job_name
         self._op_exception = op_exception
+        self._instance = instance
 
         self._log = initialize_console_manager(None)
 
@@ -300,6 +310,16 @@ class UnboundHookContext(HookContext):
         """
         raise DagsterInvalidPropertyError(_property_msg("solid_output_values", "method"))
 
+    @property
+    def instance(self) -> "DagsterInstance":
+        if not self._instance:
+            raise DagsterInvariantViolationError(
+                "Tried to access the HookContext instance, but no instance was provided to"
+                " `build_hook_context`."
+            )
+
+        return self._instance
+
 
 class BoundHookContext(HookContext):
     def __init__(
@@ -311,6 +331,7 @@ class BoundHookContext(HookContext):
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
+        instance: Optional["DagsterInstance"],
     ):
         self._hook_def = hook_def
         self._resources = resources
@@ -319,6 +340,7 @@ class BoundHookContext(HookContext):
         self._run_id = run_id
         self._job_name = job_name
         self._op_exception = op_exception
+        self._instance = instance
 
     @property
     def job_name(self) -> str:
@@ -380,6 +402,16 @@ class BoundHookContext(HookContext):
         """
         raise DagsterInvalidPropertyError(_property_msg("solid_output_values", "method"))
 
+    @property
+    def instance(self) -> "DagsterInstance":
+        if not self._instance:
+            raise DagsterInvariantViolationError(
+                "Tried to access the HookContext instance, but no instance was provided to"
+                " `build_hook_context`."
+            )
+
+        return self._instance
+
 
 def build_hook_context(
     resources: Optional[Mapping[str, Any]] = None,
@@ -387,6 +419,7 @@ def build_hook_context(
     run_id: Optional[str] = None,
     job_name: Optional[str] = None,
     op_exception: Optional[Exception] = None,
+    instance: Optional["DagsterInstance"] = None,
 ) -> UnboundHookContext:
     """Builds hook context from provided parameters.
 
@@ -403,6 +436,7 @@ def build_hook_context(
         run_id (Optional[str]): The id of the run in which the hook is invoked (provided for mocking purposes).
         job_name (Optional[str]): The name of the job in which the hook is used (provided for mocking purposes).
         op_exception (Optional[Exception]): The exception that caused the hook to be triggered.
+        instance (Optional[DagsterInstance]): The Dagster instance configured to run the hook.
 
     Examples:
         .. code-block:: python
@@ -415,10 +449,13 @@ def build_hook_context(
     """
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
 
+    from dagster._core.instance import DagsterInstance
+
     return UnboundHookContext(
         resources=check.opt_mapping_param(resources, "resources", key_type=str),
         op=op,
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),
+        instance=check.opt_inst_param(instance, "instance", DagsterInstance),
     )

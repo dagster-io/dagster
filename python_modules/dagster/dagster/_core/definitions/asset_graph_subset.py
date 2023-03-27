@@ -70,14 +70,18 @@ class AssetGraphSubset:
                 partitions_subset is not None and asset_partition.partition_key in partitions_subset
             )
 
-    def to_storage_dict(self) -> Mapping[str, object]:
+    def to_storage_dict(
+        self, dynamic_partitions_store: DynamicPartitionsStore
+    ) -> Mapping[str, object]:
         return {
             "partitions_subsets_by_asset_key": {
                 key.to_user_string(): value.serialize()
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "serializable_partitions_def_ids_by_asset_key": {
-                key.to_user_string(): value.partitions_def.serializable_unique_identifier
+                key.to_user_string(): value.partitions_def.get_serializable_unique_identifier(
+                    dynamic_partitions_store=dynamic_partitions_store
+                )
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "partitions_def_class_names_by_asset_key": {

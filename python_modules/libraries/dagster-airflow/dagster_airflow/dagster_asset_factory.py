@@ -160,10 +160,7 @@ def load_assets_from_airflow_dag(
         dag, graph, mutated_task_ids_by_asset_key, upstream_dependencies_by_asset_key
     )
 
-    new_graph = GraphDefinition(
-        name=graph.name,
-        node_defs=graph.node_defs,
-        dependencies=graph.dependencies,
+    new_graph = graph.copy(
         output_mappings=list(output_mappings),
     )
 

@@ -21,7 +21,6 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.launcher import K8sRunLauncher
@@ -188,7 +187,7 @@ class K8sStepHandler(StepHandler):
         context = context.merge(self._executor_container_context)
 
         user_defined_k8s_config = get_user_defined_k8s_config(
-            frozentags(step_handler_context.step_tags[step_key])
+            step_handler_context.step_tags[step_key]
         )
         return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
 

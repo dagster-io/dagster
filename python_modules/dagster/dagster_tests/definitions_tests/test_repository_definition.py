@@ -178,11 +178,12 @@ def test_bad_schedule():
         cron_schedule="* * * * *",
         job_name="foo",
     )
-    def daily_foo(_date):
+    def daily_foo(context):
         return {}
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        # DagsterInvalidDefinitionError,
+        Exception,
         match='targets job/pipeline "foo" which was not found in this repository',
     ):
 

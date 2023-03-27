@@ -57,6 +57,37 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 ---
 
+## Testing an asset sensor
+
+To write a unit test for an asset sensor, you first need to construct a context object using a test instance that can log <PyObject object="AssetMaterialization" /> events.
+
+You can then directly invoke your asset sensor with that context and evaluate the results.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_asset_sensor_test_marker endbefore=end_asset_sensor_test_marker
+from dagster import DagsterInstance, build_sensor_context, materialize
+
+
+def test_my_asset_sensor():
+    @asset
+    def my_table():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    ctx = build_sensor_context(instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], SkipReason)
+
+    materialize([my_table], instance=instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], RunRequest)
+```
+
+---
+
 ## Freshness policy sensors
 
 <Note>

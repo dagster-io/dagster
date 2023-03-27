@@ -211,7 +211,13 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
     else:
         # Works on all UNIX systems (but not WASI, see: https://docs.python.org/3/library/os.html#os.setpgrp)
         preexec_fn = os.setpgrp
-    return subprocess.Popen(parts, creationflags=creationflags, preexec_fn=preexec_fn, **kwargs)
+    return subprocess.Popen(
+        parts,
+        creationflags=creationflags,
+        preexec_fn=preexec_fn,
+        stdin=subprocess.DEVNULL,  # Prevent terminal signals from hanging the subprocess
+        **kwargs,
+    )
 
 
 def interrupt_ipc_subprocess(proc: Popen[bytes]) -> None:

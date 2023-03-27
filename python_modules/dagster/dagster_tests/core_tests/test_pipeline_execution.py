@@ -185,8 +185,8 @@ def test_external_diamond_toposort():
             python_file=__file__,
             attribute="create_diamond_pipeline",
             working_directory=None,
-        ).create_single_location(instance) as repo_location:
-            external_repo = next(iter(repo_location.get_repositories().values()))
+        ).create_single_location(instance) as code_location:
+            external_repo = next(iter(code_location.get_repositories().values()))
             external_pipeline = next(iter(external_repo.get_all_external_jobs()))
             assert external_pipeline.solid_names_in_topological_order == [
                 "A_source",

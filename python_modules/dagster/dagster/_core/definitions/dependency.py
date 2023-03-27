@@ -21,7 +21,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -30,7 +30,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
-from dagster._utils import frozentags
+from dagster._utils import hash_collection
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -45,6 +45,9 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
     from .resource_requirement import ResourceRequirement
+
+T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
+DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
 
 
 class NodeInvocation(
@@ -98,12 +101,16 @@ class NodeInvocation(
             cls,
             name=check.str_param(name, "name"),
             alias=check.opt_str_param(alias, "alias"),
-            tags=frozentags(check.opt_mapping_param(tags, "tags", value_type=str, key_type=str)),
-            hook_defs=frozenset(
-                check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-            ),
+            tags=check.opt_mapping_param(tags, "tags", value_type=str, key_type=str),
+            hook_defs=check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition),
             retry_policy=check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy),
         )
+
+    # Needs to be hashable because this class is used as a key in dependencies dicts
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class Node(ABC):
@@ -185,9 +192,8 @@ class Node(ABC):
         return self.definition.output_dict
 
     @property
-    def tags(self) -> frozentags:
-        # Type-ignore temporarily pending assessment of right data structure for `tags`
-        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
+    def tags(self) -> Mapping[str, str]:
+        return {**self.definition.tags, **self._additional_tags}
 
     def container_maps_input(self, input_name: str) -> bool:
         return (
@@ -777,7 +783,7 @@ InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
 
 def _create_handle_dict(
     node_dict: Mapping[str, Node],
-    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
+    dep_dict: DependencyMapping[str],
 ) -> InputToOutputMap:
     from .composition import MappedInputPlaceholder
 
@@ -824,7 +830,9 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(nodes: Mapping[str, Node], dep_dict: Mapping[str, Any]):
+    def from_definitions(
+        nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
+    ) -> "DependencyStructure":
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(nodes, dep_dict))
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]

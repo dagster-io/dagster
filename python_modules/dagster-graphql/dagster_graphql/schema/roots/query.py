@@ -4,6 +4,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
@@ -64,7 +65,6 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
-    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -728,7 +728,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         if group is not None:
             group_name = group.groupName
             repo_sel = RepositorySelector.from_graphql_input(group)
-            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes()
             results = (
@@ -748,7 +748,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         elif pipeline is not None:
             pipeline_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
-            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
             results = (

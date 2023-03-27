@@ -139,6 +139,63 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
         return next(iter(records), None)
 
+    def materialization_exists(
+        self,
+        asset_partition: AssetKeyPartitionKey,
+        after_cursor: Optional[int] = None,
+    ) -> bool:
+        """Returns True if there is a materialization record for the given asset partition after
+        the specified cursor. Because this function does not need to return the actual record, it
+        is more efficient than get_latest_materialization_record when partitioned assets involved.
+
+        Args:
+            asset_partition (AssetKeyPartitionKey): The asset partition to query.
+            after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
+                greater than this value will be considered.
+        """
+        if asset_partition.partition_key is not None:
+            partition_counts = self.get_materialized_partition_counts(
+                asset_partition.asset_key, after_cursor=after_cursor
+            )
+            return partition_counts.get(asset_partition.partition_key, 0) > 0
+        else:
+            return (
+                self.get_latest_materialization_record(asset_partition, after_cursor=after_cursor)
+                is not None
+            )
+
+    def _materialization_of_a_exists_after_b(
+        self,
+        a: AssetKeyPartitionKey,
+        b: AssetKeyPartitionKey,
+    ) -> bool:
+        """Returns True if there is a materialization record for asset partition a after the latest
+        materialization record for asset partition b.
+
+        Attempts to optimize cases where exactly one of the inputs is partitioned, and we expect
+        this to be called multiple times for the same inputs, only varying the partitioned asset's key.
+
+        Args:
+            a (AssetKeyPartitionKey): The asset partition that we're looking for new
+                materializations of.
+            b (AssetKeyPartitionKey): The anchor asset partition that we're comparing against.
+        """
+        # For performance, we try to only call get_latest_materialization on unpartitioned
+        # assets. To do so, we reverse the order of operations based on the partitioning of
+        # the inputs.
+        if a.partition_key is None:
+            latest_a = self.get_latest_materialization_record(a)
+            if latest_a is None:
+                return False
+            # if a materialization of b exists after the latest materialization of a, then
+            # a materialization of a cannot exist after the latest materialization of b
+            return not self.materialization_exists(b, after_cursor=latest_a.storage_id)
+        else:
+            latest_b = self.get_latest_materialization_record(b)
+            if latest_b is None:
+                return False
+            return self.materialization_exists(a, after_cursor=latest_b.storage_id)
+
     def get_latest_materialization_record(
         self,
         asset: Union[AssetKey, AssetKeyPartitionKey],
@@ -387,11 +444,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         - One of its parents has been updated more recently than it has
         - One of its parents is unreconciled.
         """
-        latest_materialization_record = self.get_latest_materialization_record(
-            asset_partition, None
-        )
+        # always treat source assets as reconciled
+        if asset_graph.is_source(asset_partition.asset_key):
+            return True
 
-        if latest_materialization_record is None:
+        if not self.materialization_exists(asset_partition):
             return False
 
         for parent in asset_graph.get_parents_partitions(
@@ -402,12 +459,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if asset_graph.is_source(parent.asset_key):
                 continue
 
-            if (
-                self.get_latest_materialization_record(
-                    parent, after_cursor=latest_materialization_record.storage_id
-                )
-                is not None
-            ):
+            if self._materialization_of_a_exists_after_b(a=parent, b=asset_partition):
                 return False
 
             if not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):

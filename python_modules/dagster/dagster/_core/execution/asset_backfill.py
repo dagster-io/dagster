@@ -31,7 +31,10 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
+    IWorkspaceProcessContext,
+)
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
@@ -186,20 +189,30 @@ class AssetBackfillData(NamedTuple):
 
         return cls.empty(target_subset)
 
-    def serialize(self) -> str:
+    def serialize(self, dynamic_partitions_store: DynamicPartitionsStore) -> str:
         storage_dict = {
             "requested_runs_for_target_roots": self.requested_runs_for_target_roots,
-            "serialized_target_subset": self.target_subset.to_storage_dict(),
+            "serialized_target_subset": self.target_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
             "latest_storage_id": self.latest_storage_id,
-            "serialized_requested_subset": self.requested_subset.to_storage_dict(),
-            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(),
-            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(),
+            "serialized_requested_subset": self.requested_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_materialized_subset": self.materialized_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
+            "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
+                dynamic_partitions_store=dynamic_partitions_store
+            ),
         }
         return json.dumps(storage_dict)
 
 
 def execute_asset_backfill_iteration(
-    backfill: "PartitionBackfill", workspace: BaseWorkspaceRequestContext, instance: DagsterInstance
+    backfill: "PartitionBackfill",
+    workspace_process_context: IWorkspaceProcessContext,
+    instance: DagsterInstance,
 ) -> Iterable[None]:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -209,7 +222,9 @@ def execute_asset_backfill_iteration(
     """
     from dagster._core.execution.backfill import BulkActionStatus
 
-    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+    asset_graph = ExternalAssetGraph.from_workspace(
+        workspace_process_context.create_request_context()
+    )
     if backfill.serialized_asset_backfill_data is None:
         check.failed("Asset backfill missing serialized_asset_backfill_data")
 
@@ -233,14 +248,21 @@ def execute_asset_backfill_iteration(
             " AssetBackfillIterationResult"
         )
 
-    updated_backfill = backfill.with_asset_backfill_data(result.backfill_data)
+    updated_backfill = backfill.with_asset_backfill_data(
+        result.backfill_data, dynamic_partitions_store=instance
+    )
     if result.backfill_data.is_complete():
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
     for run_request in result.run_requests:
         yield None
         submit_run_request(
-            run_request=run_request, asset_graph=asset_graph, workspace=workspace, instance=instance
+            run_request=run_request,
+            asset_graph=asset_graph,
+            # create a new request context for each run in case the code location server
+            # is swapped out in the middle of the backfill
+            workspace=workspace_process_context.create_request_context(),
+            instance=instance,
         )
 
     instance.update_backfill(updated_backfill)
@@ -256,10 +278,8 @@ def submit_run_request(
     repo_handle = asset_graph.get_repository_handle(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
-    location_name = repo_handle.repository_location_origin.location_name
-    repo_location = workspace.get_repository_location(
-        repo_handle.repository_location_origin.location_name
-    )
+    location_name = repo_handle.code_location_origin.location_name
+    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
     job_name = _get_implicit_job_name_for_assets(
         asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
     )
@@ -275,9 +295,9 @@ def submit_run_request(
         asset_selection=run_request.asset_selection,
         solid_selection=None,
     )
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         {},
         DEFAULT_MODE_NAME,

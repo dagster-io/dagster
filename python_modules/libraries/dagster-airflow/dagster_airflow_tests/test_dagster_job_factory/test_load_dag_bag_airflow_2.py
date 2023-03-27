@@ -10,7 +10,7 @@ from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
 )
 
-from dagster_airflow_tests.marks import requires_local_db
+from dagster_airflow_tests.marks import requires_local_db, requires_no_db
 
 from ..airflow_utils import (
     test_make_from_dagbag_inputs_airflow_2,
@@ -22,6 +22,7 @@ from ..airflow_utils import (
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_from_dagbag_inputs_airflow_2,
 )
+@requires_no_db
 def test_make_definition(
     path_and_content_tuples,
     fn_arg_path,
@@ -80,6 +81,7 @@ def get_examples_airflow_repo_params():
         "example_subdag_operator",
         # runs slow
         "example_sensors",
+        "example_dynamic_task_mapping",
     ]
     for job_name in repo.job_names:
         params.append(

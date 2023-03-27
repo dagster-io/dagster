@@ -72,4 +72,4 @@ def postgres_airflow_db(
                     "Waiting for Airflow postgres database to start and initialize"
                     + "." * (3 + (now - start_time).seconds // RETRY_DELAY_SEC)
                 )
-            yield uri
+        yield uri

@@ -18,6 +18,7 @@ from dagster._core.definitions.partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
+from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
@@ -51,6 +52,10 @@ def test_static_partitions(partition_keys: Sequence[str]):
 def test_invalid_partition_key():
     with pytest.raises(DagsterInvalidDefinitionError, match="'...'"):
         StaticPartitionsDefinition(["foo", "foo...bar"])
+
+
+def test_count_unique_static_partitions():
+    return StaticPartitionsDefinition(["foo", "foo"]).get_num_partitions() == 1
 
 
 @pytest.mark.parametrize(
@@ -767,13 +772,23 @@ def test_static_partition_keys_in_range():
 
 def test_unique_identifier():
     assert (
-        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
-        != StaticPartitionsDefinition(["a", "b"]).serializable_unique_identifier
+        StaticPartitionsDefinition(["a", "b", "c"]).get_serializable_unique_identifier()
+        != StaticPartitionsDefinition(["a", "b"]).get_serializable_unique_identifier()
     )
     assert (
-        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
-        == StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+        StaticPartitionsDefinition(["a", "b", "c"]).get_serializable_unique_identifier()
+        == StaticPartitionsDefinition(["a", "b", "c"]).get_serializable_unique_identifier()
     )
+
+    with instance_for_test() as instance:
+        dynamic_def = DynamicPartitionsDefinition(name="foo")
+        identifier1 = dynamic_def.get_serializable_unique_identifier(
+            dynamic_partitions_store=instance
+        )
+        instance.add_dynamic_partitions(dynamic_def.name, ["bar"])
+        assert identifier1 != dynamic_def.get_serializable_unique_identifier(
+            dynamic_partitions_store=instance
+        )
 
 
 def test_static_partitions_subset():

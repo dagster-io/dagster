@@ -2,7 +2,6 @@
 
 import os
 import sys
-from contextlib import ExitStack
 from typing import Generator, Optional, Sequence, Union
 
 import pendulum
@@ -10,6 +9,8 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
@@ -255,12 +256,14 @@ def get_external_pipeline_subset_result(
             op_selection=solid_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
+        external_pipeline_data = external_pipeline_data_from_def(definition)
+        return ExternalPipelineSubsetResult(
+            success=True, external_pipeline_data=external_pipeline_data
+        )
     except Exception:
         return ExternalPipelineSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
         )
-    external_pipeline_data = external_pipeline_data_from_def(definition)
-    return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
 def get_external_schedule_execution(
@@ -272,31 +275,32 @@ def get_external_schedule_execution(
 ):
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
-    schedule_def = repo_def.get_schedule_def(schedule_name)
-    scheduled_execution_time = (
-        pendulum.from_timestamp(
-            scheduled_execution_timestamp,
-            tz=check.not_none(scheduled_execution_timezone),
+    try:
+        schedule_def = repo_def.get_schedule_def(schedule_name)
+        scheduled_execution_time = (
+            pendulum.from_timestamp(
+                scheduled_execution_timestamp,
+                tz=check.not_none(scheduled_execution_timezone),
+            )
+            if scheduled_execution_timestamp
+            else None
         )
-        if scheduled_execution_timestamp
-        else None
-    )
 
-    required_resource_keys = get_transitive_required_resource_keys(
-        schedule_def.required_resource_keys, repo_def.get_top_level_resources()
-    )
-    resources_to_build = {
-        k: v for k, v in repo_def.get_top_level_resources().items() if k in required_resource_keys
-    }
-
-    with ScheduleEvaluationContext(
-        instance_ref,
-        scheduled_execution_time,
-        repo_def.name,
-        schedule_name,
-        resources=resources_to_build,
-    ) as schedule_context:
-        try:
+        required_resource_keys = get_transitive_required_resource_keys(
+            schedule_def.required_resource_keys, repo_def.get_top_level_resources()
+        )
+        resources_to_build = {
+            k: v
+            for k, v in repo_def.get_top_level_resources().items()
+            if k in required_resource_keys
+        }
+        with ScheduleEvaluationContext(
+            instance_ref,
+            scheduled_execution_time,
+            repo_def.name,
+            schedule_name,
+            resources=resources_to_build,
+        ) as schedule_context:
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: "Error occurred during the execution function for schedule {schedule_name}".format(
@@ -304,10 +308,10 @@ def get_external_schedule_execution(
                 ),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
-        except Exception:
-            return ExternalScheduleExecutionErrorData(
-                serializable_error_info_from_exc_info(sys.exc_info())
-            )
+    except Exception:
+        return ExternalScheduleExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
+        )
 
 
 def get_external_sensor_execution(
@@ -320,9 +324,9 @@ def get_external_sensor_execution(
 ):
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
-    sensor_def = repo_def.get_sensor_def(sensor_name)
+    try:
+        sensor_def = repo_def.get_sensor_def(sensor_name)
 
-    with ExitStack() as stack:
         required_resource_keys = get_transitive_required_resource_keys(
             sensor_def.required_resource_keys, repo_def.get_top_level_resources()
         )
@@ -331,20 +335,17 @@ def get_external_sensor_execution(
             for k, v in repo_def.get_top_level_resources().items()
             if k in required_resource_keys
         }
-        sensor_context = stack.enter_context(
-            SensorEvaluationContext(
-                instance_ref,
-                last_completion_time=last_completion_timestamp,
-                last_run_key=last_run_key,
-                cursor=cursor,
-                repository_name=repo_def.name,
-                repository_def=repo_def,
-                sensor_name=sensor_name,
-                resources=resources_to_build,
-            )
-        )
 
-        try:
+        with SensorEvaluationContext(
+            instance_ref,
+            last_completion_time=last_completion_timestamp,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            repository_name=repo_def.name,
+            repository_def=repo_def,
+            sensor_name=sensor_name,
+            resources=resources_to_build,
+        ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,
                 lambda: "Error occurred during the execution of evaluation_fn for sensor {sensor_name}".format(
@@ -352,21 +353,46 @@ def get_external_sensor_execution(
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
-        except Exception:
-            return ExternalSensorExecutionErrorData(
-                serializable_error_info_from_exc_info(sys.exc_info())
-            )
+    except Exception:
+        return ExternalSensorExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
+def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDefinition) -> bool:
+    if isinstance(partitions_def, DynamicPartitionsDefinition):
+        return True
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        return any(
+            _partitions_def_contains_dynamic_partitions_def(dimension.partitions_def)
+            for dimension in partitions_def.partitions_defs
+        )
+    return False
 
 
 def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ):
-    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name, instance)
     try:
+        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+
+        # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+        # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+        if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
+            with DagsterInstance.from_ref(
+                instance_ref
+            ) if instance_ref else nullcontext() as instance:
+                partition = partition_set_def.get_partition(
+                    partition_name, dynamic_partitions_store=instance
+                )
+        else:
+            partition = partition_set_def.get_partition(
+                partition_name, dynamic_partitions_store=None
+            )
+
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: "Error occurred during the evaluation of the `run_config_for_partition` function for partition set {partition_set_name}".format(
@@ -392,8 +418,9 @@ def get_partition_names(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
 ):
-    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
     try:
+        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: f"Error occurred during the execution of the partition generation function for {_get_target_for_partition_execution_error(partition_set_def)}",
@@ -411,12 +438,24 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ):
-    partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-
-    partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
     try:
+        partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+
+        # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+        # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+        if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
+            with DagsterInstance.from_ref(
+                instance_ref
+            ) if instance_ref else nullcontext() as instance:
+                partition = partition_set_def.get_partition(
+                    partition_name, dynamic_partitions_store=instance
+                )
+        else:
+            partition = partition_set_def.get_partition(
+                partition_name, dynamic_partitions_store=None
+            )
         with user_code_error_boundary(
             PartitionExecutionError,
             lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for {_get_target_for_partition_execution_error(partition_set_def)}",
@@ -463,7 +502,7 @@ def get_partition_set_execution_param_data(
     repo_definition: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
-    instance: Optional[DagsterInstance] = None,
+    instance_ref: Optional[InstanceRef] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
@@ -471,7 +510,17 @@ def get_partition_set_execution_param_data(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=instance)
+            # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
+            # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
+            if _partitions_def_contains_dynamic_partitions_def(partition_set_def.partitions_def):
+                with DagsterInstance.from_ref(
+                    instance_ref
+                ) if instance_ref else nullcontext() as instance:
+                    all_partitions = partition_set_def.get_partitions(
+                        dynamic_partitions_store=instance
+                    )
+            else:
+                all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=None)
         partitions = [
             partition for partition in all_partitions if partition.name in partition_names
         ]

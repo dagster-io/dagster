@@ -20,7 +20,6 @@ from dagster._core.definitions.dependency import GraphNode, OpNode
 from dagster._core.definitions.events import (
     AssetMaterialization,
     ExpectationResult,
-    Materialization,
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
@@ -424,8 +423,8 @@ class OpExecutionResult:
     @property
     def materializations_during_compute(
         self,
-    ) -> Sequence[Union[Materialization, AssetMaterialization]]:
-        """List[Materialization]: All materializations yielded by the solid."""
+    ) -> Sequence[AssetMaterialization]:
+        """List[AssetMaterialization]: All materializations yielded by the solid."""
         return [
             cast(StepMaterializationData, mat_event.event_specific_data).materialization
             for mat_event in self.materialization_events_during_compute

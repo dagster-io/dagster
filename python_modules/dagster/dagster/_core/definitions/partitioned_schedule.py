@@ -1,9 +1,8 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import Callable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .asset_graph import InternalAssetGraph
 from .decorators.schedule_decorator import schedule
 from .job_definition import JobDefinition
 from .multi_dimensional_partitions import MultiPartitionsDefinition
@@ -34,34 +33,24 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
 
-    def resolve(self, asset_graph: InternalAssetGraph) -> ScheduleDefinition:
-        selected_assets = self.job.selection.resolve(asset_graph)
-        partitions_defs = {
-            cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
-            for asset_key in selected_assets
-            if asset_graph.get_partitions_def(asset_key) is not None
-        }
-        if len(partitions_defs) == 0:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but none of the assets"
-                " are partitioned."
-            )
-        if len(partitions_defs) > 1:
-            raise DagsterInvalidDefinitionError(
-                "Tried to build a partitioned schedule from an asset job, but some of the assets"
-                " have different PartitionsDefinitions."
+    def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
+        partitions_def = resolved_job.partitions_def
+        if partitions_def is None:
+            check.failed(
+                f"Job '{resolved_job.name}' provided to build_schedule_from_partitioned_job must"
+                " contain partitioned assets or a partitions definition."
             )
 
-        partitions_def = _check_valid_schedule_partitions_def(next(iter(partitions_defs)))
+        partitions_def = _check_valid_schedule_partitions_def(partitions_def)
 
         cron_schedule = partitions_def.get_cron_schedule(
             self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
         )
 
         return ScheduleDefinition(
-            job=self.job,
+            job=resolved_job,
             name=self.name,
-            execution_fn=_get_schedule_evaluation_fn(partitions_def, self.job, self.tags),
+            execution_fn=_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags),
             execution_timezone=partitions_def.timezone,
             cron_schedule=cron_schedule,
         )

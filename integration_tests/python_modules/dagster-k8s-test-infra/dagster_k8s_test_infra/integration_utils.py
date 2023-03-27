@@ -144,7 +144,7 @@ def launch_run_over_graphql(
     run_config,
     pipeline_name,
     repository_name="demo_execution_repo",
-    repository_location_name="user-code-deployment-1",
+    code_location_name="user-code-deployment-1",
     mode="default",
     solid_selection=None,
 ):
@@ -152,7 +152,7 @@ def launch_run_over_graphql(
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": repository_location_name,
+                    "repositoryLocationName": code_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
                     "solidSelection": solid_selection,

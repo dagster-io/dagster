@@ -24,12 +24,13 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -158,10 +159,10 @@ class ScheduleEvaluationContext:
         "_log_key",
         "_logger",
         "_repository_name",
+        "_resource_defs",
         "_schedule_name",
         "_resources_cm",
         "_resources",
-        "_resources_contain_cm",
         "_cm_scope_entered",
     ]
 
@@ -173,11 +174,6 @@ class ScheduleEvaluationContext:
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
-
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -198,11 +194,9 @@ class ScheduleEvaluationContext:
         self._repository_name = repository_name
         self._schedule_name = schedule_name
 
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
         self._cm_scope_entered = False
 
     def __enter__(self) -> "ScheduleEvaluationContext":
@@ -210,22 +204,30 @@ class ScheduleEvaluationContext:
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
-    def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
     @property
     def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            instance = self.instance if self._instance or self._instance_ref else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                )
+
         return self._resources
 
     @public
@@ -414,8 +416,6 @@ class ScheduleDefinition:
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
-        environment_vars (Optional[dict[str, str]]): The environment variables to set for the
-            schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -438,7 +438,6 @@ class ScheduleDefinition:
             name=self.name,
             cron_schedule=self._cron_schedule,
             job_name=self.job_name,
-            environment_vars=self.environment_vars,
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
@@ -493,6 +492,15 @@ class ScheduleDefinition:
 
         self._description = check.opt_str_param(description, "description")
 
+        if environment_vars is not None:
+            deprecation_warning(
+                "`environment_vars` parameter to `ScheduleDefinition`",
+                "2.0.0",
+                (
+                    "It is no longer necessary. Schedules will have access to all environment"
+                    " variables set in the containing environment, and can safely be deleted."
+                ),
+            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
@@ -664,6 +672,7 @@ class ScheduleDefinition:
         return self._cron_schedule  # type: ignore
 
     @public
+    @deprecated
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars

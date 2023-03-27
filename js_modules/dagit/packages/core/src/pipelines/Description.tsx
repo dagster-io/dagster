@@ -1,6 +1,7 @@
-import {Markdown} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {Markdown} from '../ui/Markdown';
 
 interface IDescriptionProps {
   description: string | null;

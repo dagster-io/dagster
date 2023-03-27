@@ -18,8 +18,8 @@ from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
+from dagster._core.host_representation.code_location import CodeLocation
 from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -207,9 +207,9 @@ def launch_scheduled_runs(
     error_locations = set()
 
     for location_entry in workspace_snapshot.values():
-        repo_location = location_entry.repository_location
-        if repo_location:
-            for repo in repo_location.get_repositories().values():
+        code_location = location_entry.code_location
+        if code_location:
+            for repo in code_location.get_repositories().values():
                 for schedule in repo.get_external_schedules():
                     selector_id = schedule.selector_id
                     if schedule.get_current_instigator_state(
@@ -234,9 +234,7 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for state in states_to_delete:
-        location_name = (
-            state.origin.external_repository_origin.repository_location_origin.location_name
-        )
+        location_name = state.origin.external_repository_origin.code_location_origin.location_name
         # don't clean up auto running state if its location is an error state
         if location_name not in error_locations:
             logger.info(
@@ -254,26 +252,26 @@ def launch_scheduled_runs(
 
         for schedule_state in unloadable_schedule_states.values():
             schedule_name = schedule_state.origin.instigator_name
-            repo_location_origin = (
-                schedule_state.origin.external_repository_origin.repository_location_origin
+            code_location_origin = (
+                schedule_state.origin.external_repository_origin.code_location_origin
             )
 
-            repo_location_name = repo_location_origin.location_name
+            code_location_name = code_location_origin.location_name
             repo_name = schedule_state.origin.external_repository_origin.repository_name
             if (
-                repo_location_origin.location_name not in workspace_snapshot
-                or not workspace_snapshot[repo_location_origin.location_name].repository_location
+                code_location_origin.location_name not in workspace_snapshot
+                or not workspace_snapshot[code_location_origin.location_name].code_location
             ):
                 logger.warning(
                     f"Schedule {schedule_name} was started from a location "
-                    f"{repo_location_name} that can no longer be found in the workspace. You can "
+                    f"{code_location_name} that can no longer be found in the workspace. You can "
                     "turn off this schedule in the Dagit UI from the Status tab."
                 )
             elif not check.not_none(  # checked in case above
-                workspace_snapshot[repo_location_origin.location_name].repository_location
+                workspace_snapshot[code_location_origin.location_name].code_location
             ).has_repository(repo_name):
                 logger.warning(
-                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    f"Could not find repository {repo_name} in location {code_location_name} to "
                     + f"run schedule {schedule_name}. If this repository no longer exists, you can "
                     + "turn off the schedule in the Dagit UI from the Status tab.",
                 )
@@ -347,7 +345,7 @@ def launch_scheduled_runs(
                 yield
 
             else:
-                # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
+                # evaluate the schedules in a loop, synchronously, yielding to allow the schedule daemon to
                 # heartbeat
                 yield from launch_scheduled_runs_for_schedule_iterator(
                     workspace_process_context,
@@ -587,11 +585,11 @@ def _schedule_runs_at_time(
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
-    repo_location = workspace_process_context.create_request_context().get_repository_location(
-        schedule_origin.external_repository_origin.repository_location_origin.location_name
+    code_location = workspace_process_context.create_request_context().get_code_location(
+        schedule_origin.external_repository_origin.code_location_origin.location_name
     )
 
-    schedule_execution_data = repo_location.get_external_schedule_execution_data(
+    schedule_execution_data = code_location.get_external_schedule_execution_data(
         instance=instance,
         repository_handle=repository_handle,
         schedule_name=external_schedule.name,
@@ -630,13 +628,13 @@ def _schedule_runs_at_time(
             run_request = raw_run_request
 
         pipeline_selector = PipelineSelector(
-            location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
+            location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:
@@ -661,7 +659,7 @@ def _schedule_runs_at_time(
             run = _create_scheduler_run(
                 instance,
                 schedule_time,
-                repo_location,
+                code_location,
                 external_schedule,
                 external_pipeline,
                 run_request,
@@ -726,7 +724,7 @@ def _get_existing_run_for_request(
 def _create_scheduler_run(
     instance: DagsterInstance,
     schedule_time: datetime.datetime,
-    repo_location: RepositoryLocation,
+    code_location: CodeLocation,
     external_schedule: ExternalSchedule,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
@@ -736,7 +734,7 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    external_execution_plan = repo_location.get_external_execution_plan(
+    external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_config,
         check.not_none(external_schedule.mode),
@@ -760,7 +758,7 @@ def _create_scheduler_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
-            "repo_hash": hash_name(repo_location.name),
+            "repo_hash": hash_name(code_location.name),
             "pipeline_name_hash": hash_name(external_pipeline.name),
         },
     )

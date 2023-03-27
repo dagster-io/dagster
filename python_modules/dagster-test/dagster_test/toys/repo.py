@@ -14,9 +14,9 @@ from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.conditional_assets import get_conditional_assets_repo
 from dagster_test.toys.cross_repo_assets import (
-    downstream_asset_group1,
-    downstream_asset_group2,
-    upstream_asset_group,
+    downstream_repo1_assets,
+    downstream_repo2_assets,
+    upstream_repo_assets,
 )
 from dagster_test.toys.dynamic import dynamic_job
 from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
@@ -133,6 +133,13 @@ def asset_groups_repository():
 
 
 @repository
+def basic_assets_repository():
+    from . import basic_assets
+
+    return [load_assets_from_modules([basic_assets]), basic_assets.basic_assets_job]
+
+
+@repository
 def nothing_repository():
     from .nothing_assets import nothing_job
 
@@ -158,17 +165,17 @@ def big_honkin_assets_repository():
 
 @repository
 def upstream_assets_repository():
-    return [upstream_asset_group]
+    return upstream_repo_assets
 
 
 @repository
 def downstream_assets_repository1():
-    return [downstream_asset_group1]
+    return downstream_repo1_assets
 
 
 @repository
 def downstream_assets_repository2():
-    return [downstream_asset_group2]
+    return downstream_repo2_assets
 
 
 @repository

@@ -13,7 +13,6 @@ from .events import (
     AssetObservation,
     DynamicOutput,
     ExpectationResult,
-    Materialization,
     Output,
 )
 from .output import DynamicOutputDefinition
@@ -221,7 +220,7 @@ def _type_check_output_wrapper(
             async for event in async_gen:
                 if isinstance(
                     event,
-                    (AssetMaterialization, AssetObservation, Materialization, ExpectationResult),
+                    (AssetMaterialization, AssetObservation, ExpectationResult),
                 ):
                     yield event
                 else:
@@ -268,7 +267,7 @@ def _type_check_output_wrapper(
             for event in gen:
                 if isinstance(
                     event,
-                    (AssetMaterialization, AssetObservation, Materialization, ExpectationResult),
+                    (AssetMaterialization, AssetObservation, ExpectationResult),
                 ):
                     yield event
                 else:
