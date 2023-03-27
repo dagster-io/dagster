@@ -254,7 +254,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
 
         """
-        return self._step_execution_context.pipeline_def.get_solid(self.node_handle)
+        return self._step_execution_context.pipeline_def.get_node(self.node_handle)
 
     @property
     def op(self) -> Node:

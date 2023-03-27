@@ -58,7 +58,7 @@ class DescentStack(
     @property
     def current_node(self) -> Node:
         assert self.handle is not None
-        return self.pipeline_def.get_solid(self.handle)
+        return self.pipeline_def.get_node(self.handle)
 
     @property
     def current_handle_str(self) -> str:

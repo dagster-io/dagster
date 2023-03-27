@@ -167,8 +167,8 @@ class PipelineSnapshot(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
                 ),
-                node_selection=sorted(pipeline_def.solid_selection),
-                nodes_to_execute=pipeline_def.solids_to_execute,
+                node_selection=sorted(pipeline_def.node_selection),
+                nodes_to_execute=pipeline_def.nodes_to_execute,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
             lineage = PipelineSnapshotLineage(

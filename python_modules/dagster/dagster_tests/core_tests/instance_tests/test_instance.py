@@ -61,7 +61,7 @@ def test_get_run_by_id():
 
 def do_test_single_write_read(instance):
     run_id = "some_run_id"
-    pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+    pipeline_def = PipelineDefinition(name="some_pipeline", node_defs=[])
     instance.create_run_for_pipeline(pipeline_def=pipeline_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id

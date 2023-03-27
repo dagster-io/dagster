@@ -67,7 +67,7 @@ def test_execute_pipeline_iterator():
 
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -104,7 +104,7 @@ def test_execute_run_iterator():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -217,7 +217,7 @@ def test_restart_running_run_worker():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -254,7 +254,7 @@ def test_start_run_worker_after_run_failure():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -284,7 +284,7 @@ def test_execute_canceled_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -340,7 +340,7 @@ def test_execute_run_bad_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -374,7 +374,7 @@ def test_execute_plan_iterator():
     with instance_for_test() as instance:
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},

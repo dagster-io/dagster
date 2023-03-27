@@ -27,7 +27,7 @@ def test_successful_expectation_in_compute_step():
 
     pipeline_def = PipelineDefinition(
         name="success_expectation_in_compute_pipeline",
-        solid_defs=[success_expectation_solid],
+        node_defs=[success_expectation_solid],
     )
 
     result = execute_pipeline(pipeline_def)
@@ -50,7 +50,7 @@ def test_failed_expectation_in_compute_step():
 
     pipeline_def = PipelineDefinition(
         name="failure_expectation_in_compute_pipeline",
-        solid_defs=[failure_expectation_solid],
+        node_defs=[failure_expectation_solid],
     )
 
     result = execute_pipeline(pipeline_def)
@@ -72,7 +72,7 @@ def test_return_expectation_failure():
 
     pipeline_def = PipelineDefinition(
         name="success_expectation_in_compute_pipeline",
-        solid_defs=[return_expectation_failure],
+        node_defs=[return_expectation_failure],
     )
 
     with pytest.raises(
