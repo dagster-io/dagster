@@ -239,5 +239,10 @@ const SlashShortcut = styled.div`
 const PopoverStyle = createGlobalStyle`
   .filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown {
     margin-left: 16px !important;
+    border-radius: 8px;
+    .bp3-popover2-content {
+      border-radius: 8px;
+    }
   }
+  
 `;

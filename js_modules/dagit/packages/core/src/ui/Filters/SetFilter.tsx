@@ -1,4 +1,4 @@
-import {Box, IconName, Popover} from '@dagster-io/ui';
+import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui';
 import React from 'react';
 
 import {Filter, FilterListenerCallback, FilterTag, FilterTagHighlightedText} from './Filter';
@@ -115,6 +115,7 @@ function SetFilterActiveState({
           is any of{' '}
           <Popover
             interactionKind="hover"
+            position="bottom"
             content={
               <Box
                 padding={{vertical: 8, horizontal: 12}}
@@ -172,5 +173,20 @@ function SetFilterLabel(props: SetFilterLabelProps) {
     return filter.subscribe(listener);
   }, [filter, value]);
 
-  return renderLabel({value, isActive});
+  const labelRef = React.useRef<HTMLDivElement>(null);
+
+  return (
+    // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
+    // SVG it contains with size="small"
+    <Box flex={{direction: 'row', gap: 6}} ref={labelRef} margin={{left: 4}}>
+      <Checkbox
+        checked={isActive}
+        onChange={(_) => {
+          labelRef.current?.click();
+        }}
+        size="small"
+      />
+      {renderLabel({value, isActive})}
+    </Box>
+  );
 }
