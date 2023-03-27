@@ -1812,3 +1812,14 @@ def test_aliased_field_structured_resource():
 
     assert prefix_job.execute_in_process().success
     assert out_txt == ["greeting: hello, world!"]
+
+    out_txt.clear()
+
+    @job(resource_defs={"writer": WriterResource.configure_at_launch()})
+    def prefix_job_at_runtime():
+        hello_world_op()
+
+    assert prefix_job_at_runtime.execute_in_process(
+        {"resources": {"writer": {"config": {"prefix": "runtime: "}}}}
+    ).success
+    assert out_txt == ["runtime: hello, world!"]
