@@ -134,7 +134,10 @@ class Config(MakeConfigCacheable):
             field = self.__fields__.get(key)
             if field and value is None and not _is_pydantic_field_required(field):
                 continue
-            output[key] = value
+            if field:
+                output[field.alias] = value
+            else:
+                output[key] = value
         return output
 
 
