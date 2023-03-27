@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional
 
 import pendulum
 
@@ -8,7 +8,6 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.schedules import (
-    cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
 )
@@ -34,8 +33,7 @@ class FreshnessPolicy(
         ],
     )
 ):
-    """
-    A FreshnessPolicy specifies how up-to-date you want a given asset to be.
+    """A FreshnessPolicy specifies how up-to-date you want a given asset to be.
 
     Attaching a FreshnessPolicy to an asset definition encodes an expectation on the upstream data
     that you expect to be incorporated into the current state of that asset at certain points in time.
@@ -137,8 +135,7 @@ class FreshnessPolicy(
 
     @classmethod
     def _create(cls, *args):
-        """
-        Pickle requires a method with positional arguments to construct
+        """Pickle requires a method with positional arguments to construct
         instances of a class. Since the constructor for this class has
         keyword arguments only, we define this method to be used by pickle.
         """
@@ -151,76 +148,23 @@ class FreshnessPolicy(
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)
 
-    def constraints_for_time_window(
-        self,
-        window_start: datetime.datetime,
-        window_end: datetime.datetime,
-        upstream_keys: FrozenSet[AssetKey],
-    ) -> AbstractSet[FreshnessConstraint]:
-        """For a given time window, calculate a set of FreshnessConstraints that this asset must
-        satisfy.
-
-        Args:
-            window_start (datetime): The start time of the window that constraints will be
-                calculated for. Generally, this is the current time.
-            window_start (datetime): The end time of the window that constraints will be
-                calculated for.
-            upstream_keys (FrozenSet[AssetKey]): The relevant upstream keys for this policy.
-        """
-        constraints = set()
-
-        # get an iterator of times to evaluate these constraints at
-        if self.cron_schedule:
-            constraint_ticks = cron_string_iterator(
-                start_timestamp=window_start.timestamp(),
-                cron_string=self.cron_schedule,
-                execution_timezone=self.cron_schedule_timezone,
-            )
-        else:
-            # this constraint must be satisfied at all points in time, so generate a series of
-            # many constraints (10 per maximum lag window)
-            period = pendulum.period(pendulum.instance(window_start), pendulum.instance(window_end))
-            # old versions of pendulum return a list, so ensure this is an iterator
-            constraint_ticks = iter(
-                period.range("minutes", (self.maximum_lag_minutes / 10.0) + 0.1)
-            )
-
-        # iterate over each schedule tick in the provided time window
-        evaluation_tick = next(constraint_ticks, None)
-        while evaluation_tick is not None and evaluation_tick < window_end:
-            required_data_time = evaluation_tick - self.maximum_lag_delta
-            required_by_time = evaluation_tick
-
-            constraints.add(
-                FreshnessConstraint(
-                    asset_keys=upstream_keys,
-                    required_data_time=required_data_time,
-                    required_by_time=required_by_time,
-                )
-            )
-
-            evaluation_tick = next(constraint_ticks, None)
-            # fallback if the user selects a very small maximum_lag_minutes value
-            if len(constraints) > 100:
-                break
-        return constraints
-
     def minutes_late(
         self,
+        data_time: Optional[datetime.datetime],
         evaluation_time: datetime.datetime,
-        used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Optional[float]:
         """Returns a number of minutes past the specified freshness policy that this asset currently
         is. If the asset is missing upstream data, or is not materialized at all, then it is unknown
         how late it is, and this will return None.
 
         Args:
+            data_time (Optional[datetime]): The timestamp of the data that was used to create the
+                current version of this asset.
             evaluation_time (datetime): The time at which we're evaluating the lateness of this
                 asset. Generally, this is the current time.
-            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the data that was used to create the current
-                version of this asset.
         """
+        if data_time is None:
+            return None
         if self.cron_schedule:
             # most recent cron schedule tick
             schedule_ticks = reverse_cron_string_iterator(
@@ -232,15 +176,5 @@ class FreshnessPolicy(
         else:
             evaluation_tick = evaluation_time
 
-        minutes_late = 0.0
-        for used_data_time in used_data_times.values():
-            # upstream data was not used, undefined how out of date you are
-            if used_data_time is None:
-                return None
-
-            required_time = evaluation_tick - self.maximum_lag_delta
-            if used_data_time < required_time:
-                minutes_late = max(
-                    minutes_late, (required_time - used_data_time).total_seconds() / 60
-                )
-        return minutes_late
+        required_time = evaluation_tick - self.maximum_lag_delta
+        return max(0.0, (required_time - data_time).total_seconds() / 60)

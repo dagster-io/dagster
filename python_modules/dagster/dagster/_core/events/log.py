@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, NamedTuple, Optional, Union
+from typing import Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -7,10 +7,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
     deserialize_value,
-    register_serdes_tuple_fallbacks,
     serialize_value,
     whitelist_for_serdes,
 )
@@ -23,21 +20,14 @@ from dagster._utils.log import (
 )
 
 
-class EventLogEntrySerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage_dict = super().value_to_storage_dict(value, whitelist_map, descent_path)
-        # include an empty string for the message field to allow older versions of dagster to load the events
-        storage_dict["message"] = ""
-        return storage_dict
-
-
-@whitelist_for_serdes(serializer=EventLogEntrySerializer)
+@whitelist_for_serdes(
+    # These were originally distinguished from each other but ended up being empty subclasses
+    # of EventLogEntry -- instead of using the subclasses we were relying on
+    # EventLogEntry.is_dagster_event to distinguish events that originate in the logging
+    # machinery from events that are yielded by user code
+    old_storage_names={"DagsterEventRecord", "LogMessageRecord", "EventRecord"},
+    old_fields={"message": ""},
+)
 class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",
@@ -141,8 +131,7 @@ class EventLogEntry(
     @public
     @property
     def message(self) -> str:
-        """
-        Return the message from the structured DagsterEvent if present, fallback to user_message.
+        """Return the message from the structured DagsterEvent if present, fallback to user_message.
         """
         if self.is_dagster_event:
             msg = self.get_dagster_event().message
@@ -204,9 +193,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
 
 
 def construct_event_logger(event_record_callback):
-    """
-    Callback receives a stream of event_records. Piggybacks on the logging machinery.
-    """
+    """Callback receives a stream of event_records. Piggybacks on the logging machinery."""
     check.callable_param(event_record_callback, "event_record_callback")
 
     return construct_single_handler_logger(
@@ -237,17 +224,3 @@ def construct_json_event_logger(json_path):
             ),
         ),
     )
-
-
-register_serdes_tuple_fallbacks(
-    {
-        # These were originally distinguished from each other but ended up being empty subclasses
-        # of EventLogEntry -- instead of using the subclasses we were relying on
-        # EventLogEntry.is_dagster_event to distinguish events that originate in the logging
-        # machinery from events that are yielded by user code
-        "DagsterEventRecord": EventLogEntry,
-        "LogMessageRecord": EventLogEntry,
-        # renamed EventRecord -> EventLogEntry
-        "EventRecord": EventLogEntry,
-    }
-)

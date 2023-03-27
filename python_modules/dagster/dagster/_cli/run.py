@@ -8,9 +8,7 @@ from dagster._core.instance import DagsterInstance
 
 @click.group(name="run")
 def run_cli():
-    """
-    Commands for working with Dagster job runs.
-    """
+    """Commands for working with Dagster job runs."""
 
 
 @run_cli.command(name="list", help="List the runs in the current Dagster instance.")

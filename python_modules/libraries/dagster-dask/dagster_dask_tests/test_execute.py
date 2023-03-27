@@ -93,7 +93,7 @@ def test_composite_execute():
 
 
 @op(ins={"df": In(dagster_pd.DataFrame)})
-def pandas_solid(_, df):  # pylint: disable=unused-argument
+def pandas_solid(_, df):
     pass
 
 
@@ -132,7 +132,7 @@ def test_pandas_dask():
 
 
 @op(ins={"df": In(DataFrame)})
-def dask_solid(_, df):  # pylint: disable=unused-argument
+def dask_solid(_, df):
     pass
 
 
@@ -186,7 +186,7 @@ def test_execute_on_dask_local_without_io_manager():
 
 
 @op(ins={"df": In(DataFrame)})
-def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
+def sleepy_dask_solid(_, df):
     start_time = time.time()
     while True:
         time.sleep(0.1)

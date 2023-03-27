@@ -485,11 +485,11 @@ class DagsterGrpcClient:
                     health_pb2.HealthCheckRequest(service="DagsterApi")
                 )
         except grpc.RpcError as e:
-            print(e)  # pylint: disable=print-call
-            return health_pb2.HealthCheckResponse.UNKNOWN  # pylint: disable=no-member
+            print(e)  # noqa: T201
+            return health_pb2.HealthCheckResponse.UNKNOWN
 
         status_number = response.status
-        # pylint: disable=no-member
+
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
 
@@ -498,9 +498,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     context manager.
     """
 
-    def __init__(
-        self, server_process=None, *args, **kwargs
-    ):  # pylint: disable=keyword-arg-before-vararg
+    def __init__(self, server_process=None, *args, **kwargs):
         self._server_process = check.inst_param(server_process, "server_process", subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 

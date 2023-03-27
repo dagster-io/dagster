@@ -1,5 +1,4 @@
-"""
-This module contains the mlflow resource provided by the MlFlow
+"""This module contains the mlflow resource provided by the MlFlow
 class. This resource provides an easy way to configure mlflow for logging various
 things from dagster runs.
 """
@@ -93,8 +92,7 @@ class MlFlow(metaclass=MlflowMeta):
         self._setup()
 
     def _setup(self):
-        """
-        Sets the active run and tags. If an Mlflow run_id exists then the
+        """Sets the active run and tags. If an Mlflow run_id exists then the
         active run is set to it. This way a single Dagster run outputs data
         to the same Mlflow run, even when multiprocess executors are used.
         """
@@ -137,8 +135,7 @@ class MlFlow(metaclass=MlflowMeta):
                 return current_run_df.run_id.values[0]
 
     def _set_active_run(self, run_id=None):
-        """
-        This method sets the active run to be that of the specified
+        """This method sets the active run to be that of the specified
         run_id. If None is passed then a new run is started. The new run also
         takes care of nested runs.
 
@@ -152,9 +149,7 @@ class MlFlow(metaclass=MlflowMeta):
         self._start_run(run_id=run_id, run_name=self.run_name, nested=nested_run)
 
     def _start_run(self, **kwargs):
-        """
-        Catches the Mlflow exception if a run is already active.
-        """
+        """Catches the Mlflow exception if a run is already active."""
         try:
             run = mlflow.start_run(**kwargs)
             self.log.info(
@@ -225,8 +220,7 @@ class MlFlow(metaclass=MlflowMeta):
 
 @resource(config_schema=CONFIG_SCHEMA)
 def mlflow_tracking(context):
-    """
-    This resource initializes an MLflow run that's used for all steps within a Dagster run.
+    """This resource initializes an MLflow run that's used for all steps within a Dagster run.
 
     This resource provides access to all of mlflow's methods as well as the mlflow tracking client's
     methods.

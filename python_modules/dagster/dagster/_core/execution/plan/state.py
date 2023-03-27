@@ -62,8 +62,7 @@ class PastExecutionState(
         ],
     )
 ):
-    """
-    Information relevant to execution about the parent run, notably which outputs
+    """Information relevant to execution about the parent run, notably which outputs
     were produced by which run ids, allowing for the proper ones to be loaded.
     """
 
@@ -100,8 +99,7 @@ class KnownExecutionState(
         ],
     )
 ):
-    """
-    A snapshot for the parts of an on going execution that need to be handed down when delegating
+    """A snapshot for the parts of an on going execution that need to be handed down when delegating
     step execution to another machine/process. This includes things like previous retries and
     resolved dynamic outputs.
     """

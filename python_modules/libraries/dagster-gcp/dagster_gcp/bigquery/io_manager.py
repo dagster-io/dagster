@@ -26,8 +26,7 @@ BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 def build_bigquery_io_manager(
     type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
 ) -> IOManagerDefinition:
-    """
-    Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
+    """Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
@@ -154,7 +153,7 @@ def build_bigquery_io_manager(
         }
     )
     def bigquery_io_manager(init_context):
-        """I/O Manager for storing outputs in a BigQuery database
+        """I/O Manager for storing outputs in a BigQuery database.
 
         Assets will be stored in the dataset and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.
@@ -239,8 +238,7 @@ class BigQueryClient(DbClient):
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
-    """
-    Returns a SQL statement that deletes data in the given table to make way for the output data
+    """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
     if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:

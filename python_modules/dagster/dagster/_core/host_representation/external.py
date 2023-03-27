@@ -48,7 +48,6 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
-from dagster._utils import iter_to_list
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -76,8 +75,7 @@ if TYPE_CHECKING:
 
 
 class ExternalRepository:
-    """
-    ExternalRepository is a object that represents a loaded repository definition that
+    """ExternalRepository is a object that represents a loaded repository definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -144,7 +142,7 @@ class ExternalRepository:
         return self._external_schedules[schedule_name]
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
-        return iter_to_list(self._external_schedules.values())
+        return list(self._external_schedules.values())
 
     @property
     @cached_method
@@ -187,7 +185,7 @@ class ExternalRepository:
         return self._external_sensors[sensor_name]
 
     def get_external_sensors(self) -> Sequence[ExternalSensor]:
-        return iter_to_list(self._external_sensors.values())
+        return list(self._external_sensors.values())
 
     @property
     @cached_method
@@ -206,7 +204,7 @@ class ExternalRepository:
         return self._external_partition_sets[partition_set_name]
 
     def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
-        return iter_to_list(self._external_partition_sets.values())
+        return list(self._external_partition_sets.values())
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
@@ -259,8 +257,7 @@ class ExternalRepository:
         return self.handle.get_python_origin()
 
     def get_external_origin_id(self) -> str:
-        """
-        A means of identifying the repository this ExternalRepository represents based on
+        """A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
         return self.get_external_origin().get_id()
@@ -287,8 +284,7 @@ class ExternalRepository:
 
 
 class ExternalPipeline(RepresentedPipeline):
-    """
-    ExternalPipeline is a object that represents a loaded job definition that
+    """ExternalPipeline is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
@@ -463,8 +459,7 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
-    """
-    ExternalExecution is a object that represents an execution plan that
+    """ExternalExecution is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
     """
 
@@ -551,8 +546,7 @@ class ExternalExecutionPlan:
 
 
 class ExternalResource:
-    """
-    Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
+    """Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
     """
 
     def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):

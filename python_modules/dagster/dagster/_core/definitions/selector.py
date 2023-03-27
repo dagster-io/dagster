@@ -18,9 +18,7 @@ class PipelineSelector(
         ],
     )
 ):
-    """
-    The information needed to resolve a job within a host process.
-    """
+    """The information needed to resolve a job within a host process."""
 
     def __new__(
         cls,
@@ -272,9 +270,7 @@ class GraphSelector(
         "_GraphSelector", [("location_name", str), ("repository_name", str), ("graph_name", str)]
     )
 ):
-    """
-    The information needed to resolve a graph within a host process.
-    """
+    """The information needed to resolve a graph within a host process."""
 
     def __new__(cls, location_name: str, repository_name: str, graph_name: str):
         return super(GraphSelector, cls).__new__(
@@ -299,9 +295,7 @@ class PartitionSetSelector(
         [("location_name", str), ("repository_name", str), ("partition_set_name", str)],
     )
 ):
-    """
-    The information needed to resolve a partition set within a host process.
-    """
+    """The information needed to resolve a partition set within a host process."""
 
     def __new__(cls, location_name: str, repository_name: str, partition_set_name: str):
         return super(PartitionSetSelector, cls).__new__(

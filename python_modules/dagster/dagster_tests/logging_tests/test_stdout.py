@@ -25,7 +25,7 @@ SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n
 
 @resource
 def resource_a(_):
-    print(HELLO_RESOURCE)  # pylint: disable=print-call
+    print(HELLO_RESOURCE)  # noqa: T201
     return "A"
 
 
@@ -36,7 +36,7 @@ def spawn(_):
 
 @op(ins={"num": In(int)}, required_resource_keys={"a"})
 def spew(_, num):
-    print(HELLO_SOLID)  # pylint: disable=print-call
+    print(HELLO_SOLID)  # noqa: T201
     return num
 
 
@@ -230,7 +230,7 @@ def test_compute_log_manager_subscription_updates():
         assert last_chunk.cursor == 0
 
         with open(stdout_path, "a+", encoding="utf8") as f:
-            print(HELLO_SOLID, file=f)  # pylint:disable=print-call
+            print(HELLO_SOLID, file=f)
 
         # wait longer than the watchdog timeout
         time.sleep(1)
@@ -287,9 +287,9 @@ def execute_inner(step_key, pipeline_run, instance_ref):
 def inner_step(instance, pipeline_run, step_key):
     with instance.compute_log_manager.watch(pipeline_run, step_key=step_key):
         time.sleep(0.1)
-        print(step_key, "inner 1")  # pylint: disable=print-call
-        print(step_key, "inner 2")  # pylint: disable=print-call
-        print(step_key, "inner 3")  # pylint: disable=print-call
+        print(step_key, "inner 1")  # noqa: T201
+        print(step_key, "inner 2")  # noqa: T201
+        print(step_key, "inner 3")  # noqa: T201
         time.sleep(0.1)
 
 
@@ -314,9 +314,9 @@ def test_single():
         step_keys = ["A", "B", "C"]
 
         with instance.compute_log_manager.watch(pipeline_run):
-            print("outer 1")  # pylint: disable=print-call
-            print("outer 2")  # pylint: disable=print-call
-            print("outer 3")  # pylint: disable=print-call
+            print("outer 1")  # noqa: T201
+            print("outer 2")  # noqa: T201
+            print("outer 3")  # noqa: T201
 
             for step_key in step_keys:
                 inner_step(instance, pipeline_run, step_key)
@@ -355,9 +355,9 @@ def test_compute_log_base_with_spaces():
             step_keys = ["A", "B", "C"]
 
             with instance.compute_log_manager.watch(pipeline_run):
-                print("outer 1")  # pylint: disable=print-call
-                print("outer 2")  # pylint: disable=print-call
-                print("outer 3")  # pylint: disable=print-call
+                print("outer 1")  # noqa: T201
+                print("outer 2")  # noqa: T201
+                print("outer 3")  # noqa: T201
 
                 for step_key in step_keys:
                     inner_step(instance, pipeline_run, step_key)
@@ -388,9 +388,9 @@ def test_multi():
         step_keys = ["A", "B", "C"]
 
         with instance.compute_log_manager.watch(pipeline_run):
-            print("outer 1")  # pylint: disable=print-call
-            print("outer 2")  # pylint: disable=print-call
-            print("outer 3")  # pylint: disable=print-call
+            print("outer 1")  # noqa: T201
+            print("outer 2")  # noqa: T201
+            print("outer 3")  # noqa: T201
 
             for step_key in step_keys:
                 process = ctx.Process(

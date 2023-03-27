@@ -2,9 +2,10 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 from sqlalchemy.pool import NullPool
+from typing_extensions import Self
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
@@ -50,7 +51,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     The ``base_dir`` param tells the event log storage where on disk to store the database.
     """
 
-    def __init__(self, base_dir, inst_data=None):
+    def __init__(self, base_dir, inst_data: Optional[ConfigurableClassData] = None):
         self._base_dir = check.str_param(base_dir, "base_dir")
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
         self._secondary_index_cache = {}
@@ -71,8 +72,10 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def config_type(cls):
         return {"base_dir": StringSource}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return ConsolidatedSqliteEventLogStorage(inst_data=inst_data, **config_value)
 
     def _init_db(self):

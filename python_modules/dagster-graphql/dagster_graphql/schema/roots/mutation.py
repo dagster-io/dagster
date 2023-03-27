@@ -514,7 +514,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
 
-        if not graphene_info.context.has_repository_location_name(repositoryLocationName):
+        if not graphene_info.context.has_code_location_name(repositoryLocationName):
             return GrapheneRepositoryLocationNotFound(repositoryLocationName)
 
         if not graphene_info.context.is_reload_supported(repositoryLocationName):
@@ -525,7 +525,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # request. Reloading a repository location modifies the IWorkspaceProcessContext, rendeirng
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
-        new_context = graphene_info.context.reload_repository_location(repositoryLocationName)
+        new_context = graphene_info.context.reload_code_location(repositoryLocationName)
         return GrapheneWorkspaceLocationEntry(
             check.not_none(new_context.get_location_entry(repositoryLocationName))
         )
@@ -550,7 +550,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
         assert_permission_for_location(
             graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, repositoryLocationName
         )
-        if not graphene_info.context.has_repository_location_name(repositoryLocationName):
+        if not graphene_info.context.has_code_location_name(repositoryLocationName):
             return GrapheneRepositoryLocationNotFound(repositoryLocationName)
 
         if not graphene_info.context.is_shutdown_supported(repositoryLocationName):
@@ -558,7 +558,7 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
                 f"Location {repositoryLocationName} does not support shutting down via GraphQL"
             )
 
-        graphene_info.context.shutdown_repository_location(repositoryLocationName)
+        graphene_info.context.shutdown_code_location(repositoryLocationName)
         return GrapheneShutdownRepositoryLocationSuccess(
             repositoryLocationName=repositoryLocationName
         )
@@ -681,7 +681,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
 
 
 class GrapheneSetNuxSeenMutation(graphene.Mutation):
-    """Store whether we've shown the nux to any user and they've dismissed or submitted it"""
+    """Store whether we've shown the nux to any user and they've dismissed or submitted it."""
 
     Output = graphene.NonNull(graphene.Boolean)
 

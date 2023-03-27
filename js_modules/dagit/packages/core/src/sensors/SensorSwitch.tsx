@@ -28,7 +28,10 @@ interface Props {
 
 export const SensorSwitch: React.FC<Props> = (props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {canStartSensor, canStopSensor} = usePermissionsForLocation(repoAddress.location);
+  const {
+    permissions: {canStartSensor, canStopSensor},
+    disabledReasons,
+  } = usePermissionsForLocation(repoAddress.location);
 
   const {jobOriginId, name, sensorState} = sensor;
   const {status, selectorId} = sensorState;
@@ -60,7 +63,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSensor.enabled && canStopSensor.enabled) {
+  if (canStartSensor && canStopSensor) {
     return (
       <Checkbox
         format="switch"
@@ -72,8 +75,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     );
   }
 
-  const lacksPermission =
-    (running && !canStartSensor.enabled) || (!running && !canStopSensor.enabled);
+  const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -88,7 +90,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   return lacksPermission ? (
     <Tooltip
-      content={running ? canStartSensor.disabledReason : canStopSensor.disabledReason}
+      content={running ? disabledReasons.canStartSensor : disabledReasons.canStopSensor}
       display="flex"
     >
       {switchElement}

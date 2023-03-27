@@ -53,7 +53,7 @@ from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
@@ -74,7 +74,6 @@ from dagster._utils import datetime_as_float
 TEST_TIMEOUT = 5
 
 # py36 & 37 list.append not hashable
-# pylint: disable=unnecessary-lambda
 
 
 @contextmanager
@@ -88,7 +87,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
                 run_id=run_id,
                 external_pipeline_origin=ExternalPipelineOrigin(
                     ExternalRepositoryOrigin(
-                        InProcessRepositoryLocationOrigin(
+                        InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(
                                 executable_path=sys.executable,
                                 module_name="fake",
@@ -353,8 +352,7 @@ def _get_cached_status_for_asset(storage, asset_key):
 
 
 class TestEventLogStorage:
-    """
-    You can extend this class to easily run these set of tests on any event log storage. When extending,
+    """You can extend this class to easily run these set of tests on any event log storage. When extending,
     you simply need to override the `event_log_storage` fixture and return your implementation of
     `EventLogStorage`.
 
@@ -365,7 +363,7 @@ class TestEventLogStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def event_log_storage(self):  # pylint: disable=arguments-differ
+        def event_log_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -381,7 +379,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(self, request) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
+    def instance(self, request) -> Optional[DagsterInstance]:
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -473,7 +471,7 @@ class TestEventLogStorage:
             pytest.skip("storage cannot watch runs")
 
         watched = []
-        watcher = lambda x, y: watched.append(x)  # pylint: disable=unnecessary-lambda
+        watcher = lambda x, y: watched.append(x)
 
         assert len(storage.get_logs_for_run(test_run_id)) == 0
 
@@ -2353,7 +2351,7 @@ class TestEventLogStorage:
             return 1
 
         @asset
-        def second_asset(my_asset):  # pylint: disable=unused-argument
+        def second_asset(my_asset):
             return 2
 
         with instance_for_test() as created_instance:
@@ -3157,8 +3155,15 @@ class TestEventLogStorage:
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
                 serialized_failed_partition_subset="baz",
+                serialized_in_progress_partition_subset="qux",
                 earliest_in_progress_materialization_event_id=42,
             )
+
+            # Check that AssetStatusCacheValue has all fields set. This ensures that we test that the
+            # cloud gql representation is complete.
+            for field in cache_value._fields:
+                assert getattr(cache_value, field) is not None
+
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
@@ -3173,6 +3178,25 @@ class TestEventLogStorage:
             assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
             if self.can_wipe():
+                cache_value = AssetStatusCacheValue(
+                    latest_storage_id=1,
+                    partitions_def_id=None,
+                    serialized_materialized_partition_subset=None,
+                )
+                storage.update_asset_cached_status_data(
+                    asset_key=asset_key, cache_values=cache_value
+                )
+                assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+                record = storage.get_asset_records([asset_key])[0]
+                storage.wipe_asset_cached_status(asset_key)
+                assert _get_cached_status_for_asset(storage, asset_key) is None
+                post_wipe_record = storage.get_asset_records([asset_key])[0]
+                assert (
+                    record.asset_entry.last_materialization_record
+                    == post_wipe_record.asset_entry.last_materialization_record
+                )
+                assert record.asset_entry.last_run_id == post_wipe_record.asset_entry.last_run_id
+
                 storage.wipe_asset(asset_key)
                 assert storage.get_asset_records() == []
 

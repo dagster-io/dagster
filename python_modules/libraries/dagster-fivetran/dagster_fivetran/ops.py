@@ -59,8 +59,7 @@ from dagster_fivetran.utils import generate_materializations
     tags={"kind": "fivetran"},
 )
 def fivetran_sync_op(context):
-    """
-    Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
+    """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
     the details of the Fivetran connector after the sync successfully completes, as well as details
     about which tables the sync updates.
@@ -167,8 +166,7 @@ def fivetran_sync_op(context):
     tags={"kind": "fivetran"},
 )
 def fivetran_resync_op(context):
-    """
-    Executes a Fivetran historical resync for a given ``connector_id``, and polls until that resync
+    """Executes a Fivetran historical resync for a given ``connector_id``, and polls until that resync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
     the details of the Fivetran connector after the resync successfully completes, as well as details
     about which tables the resync updates.

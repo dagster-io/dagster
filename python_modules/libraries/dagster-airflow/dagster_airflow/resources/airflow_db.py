@@ -15,24 +15,19 @@ from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
 )
 
-# pylint: disable=no-name-in-module,import-error
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
     from airflow.utils.state import State
 
-    # pylint: enable=no-name-in-module,import-error
-
 
 class AirflowDatabase:
-    """
-    Airflow database Dagster resource.
+    """Airflow database Dagster resource."""
 
-    """
-
-    def __init__(self, dagster_run: DagsterRun):
+    def __init__(self, dagster_run: DagsterRun, dag_run_config: Optional[dict] = None):
         self.dagster_run = dagster_run
+        self.dag_run_config = dag_run_config
 
     def _parse_execution_date_for_job(
         self, dag: DAG, run_tags: Mapping[str, str]
@@ -93,11 +88,13 @@ class AirflowDatabase:
                     state=DagRunState.RUNNING,
                     execution_date=execution_date,
                     run_type=DagRunType.MANUAL,
+                    conf=self.dag_run_config,
                 )
             else:
                 dagrun = dag.create_dagrun(
                     run_id=f"dagster_airflow_run_{execution_date}",
                     state=State.RUNNING,
                     execution_date=execution_date,
+                    conf=self.dag_run_config,
                 )
         return dagrun

@@ -1,5 +1,11 @@
 import {MockedResponse} from '@apollo/client/testing';
 
+import {
+  PartitionDefinitionType,
+  buildAssetNode,
+  buildDefaultPartitions,
+  buildDimensionPartitionKeys,
+} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
@@ -18,22 +24,20 @@ export const buildPartitionHealthMock = (
   result: {
     data: {
       __typename: 'DagitQuery',
-      assetNodeOrError: {
+      assetNodeOrError: buildAssetNode({
         id: `assets_dynamic_partitions.__repository__.["${assetKey}"]`,
         partitionKeysByDimension: [
-          {
+          buildDimensionPartitionKeys({
             name: 'default',
             partitionKeys: empty ? [] : ['test1', 'test2'],
-            __typename: 'DimensionPartitionKeys',
-          },
+            type: PartitionDefinitionType.DYNAMIC,
+          }),
         ],
-        assetPartitionStatuses: {
+        assetPartitionStatuses: buildDefaultPartitions({
           materializedPartitions: ['test1'],
           failedPartitions: [],
-          __typename: 'DefaultPartitions',
-        },
-        __typename: 'AssetNode',
-      },
+        }),
+      }),
     },
   },
 });

@@ -1,4 +1,5 @@
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional, cast
 from unittest import mock
 
 import pytest
@@ -35,12 +36,15 @@ from dagster import (
     multi_asset_sensor,
     op,
     repository,
+    resource,
     run_failure_sensor,
     run_status_sensor,
     sensor,
 )
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 
 
@@ -78,9 +82,7 @@ def test_sensor_invocation_args():
         DagsterInvalidInvocationError,
         match="Sensor invocation expected argument '_arbitrary_context'.",
     ):
-        basic_sensor_with_context(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            bad_context=context
-        )
+        basic_sensor_with_context(bad_context=context)
 
     # pass context with no args
     with pytest.raises(
@@ -90,7 +92,7 @@ def test_sensor_invocation_args():
             "provided when invoking."
         ),
     ):
-        basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
+        basic_sensor_with_context()
 
     # pass context with too many args
     with pytest.raises(
@@ -100,9 +102,77 @@ def test_sensor_invocation_args():
             "parameter should be provided when invoking."
         ),
     ):
-        basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
-            context, _arbitrary_context=None
+        basic_sensor_with_context(context, _arbitrary_context=None)
+
+
+def test_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            " provided."
+        ),
+    ):
+        basic_sensor_resource_req()
+
+    # Just need to pass context, which splats out into resource parameters
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_context_manager() -> None:
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_str_resource_req(my_resource: Resource[str]):
+        return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
+
+    @resource
+    @contextmanager
+    def my_cm_resource(_) -> Iterator[str]:
+        yield "foo"
+
+    # Fails bc resource is a contextmanager and sensor context is not entered
+    with pytest.raises(
+        DagsterInvariantViolationError, match="At least one provided resource is a generator"
+    ):
+        basic_sensor_str_resource_req(
+            build_sensor_context(resources={"my_resource": my_cm_resource})
         )
+
+    with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+        assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_deferred() -> None:
+    class MyResource(ConfigurableResource):
+        def create_resource(self, context) -> None:
+            raise Exception()
+
+    @sensor(job_name="foo_pipeline", required_resource_keys={"my_resource"})
+    def basic_sensor_resource_req() -> RunRequest:
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    context = build_sensor_context(resources={"my_resource": MyResource()})
+
+    # Resource isn't created until sensor is invoked
+    with pytest.raises(Exception):
+        basic_sensor_resource_req(context)
+
+    # Same goes for context manager
+    with context as open_context:
+        with pytest.raises(Exception):
+            basic_sensor_resource_req(open_context)
 
 
 def test_instance_access_built_sensor():
@@ -110,7 +180,7 @@ def test_instance_access_built_sensor():
         DagsterInvariantViolationError,
         match="Attempted to initialize dagster instance, but no instance reference was provided.",
     ):
-        build_sensor_context().instance  # pylint: disable=expression-not-assigned
+        build_sensor_context().instance
 
     with instance_for_test() as instance:
         assert isinstance(build_sensor_context(instance).instance, DagsterInstance)
@@ -356,7 +426,7 @@ def test_multi_asset_sensor_selection():
         return 1, 2
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a")])
-    def passing_sensor(context):  # pylint: disable=unused-argument
+    def passing_sensor(context):
         pass
 
     @repository
@@ -371,18 +441,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_a")
-            ]
-            == two_assets
-        )
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_b")
-            ]
-            == two_assets
-        )
+        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
         assert len(context.assets_defs_by_key) == 2
 
     @repository
@@ -608,7 +668,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
             )
         },
     )
-    def downstream_daily_partitions(upstream):  # pylint: disable=unused-argument
+    def downstream_daily_partitions(upstream):
         return 1
 
     @repository
@@ -682,9 +742,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
             context.advance_cursor({august_asset.key: materialization})
 
             assert (
-                context._get_cursor(  # pylint: disable=protected-access
-                    july_asset.key
-                ).latest_consumed_event_partition
+                context._get_cursor(july_asset.key).latest_consumed_event_partition  # noqa: SLF001
                 == "2022-07-10"
             )
 
@@ -735,6 +793,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
         bob,
         candace,
         danny,
+        earth,
         edgar,
         fiona,
         george,
@@ -748,7 +807,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
 
     @repository
     def my_repo():
-        return [alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
+        return [earth, alice, bob, candace, danny, edgar, fiona, george, asset_selection_sensor]
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
@@ -803,7 +862,7 @@ def test_multi_asset_sensor_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_2022_07_10_mat < july_asset_cursor.latest_consumed_event_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
         # Second materialization for 2022-07-10 is after cursor so should not be unconsumed
@@ -816,7 +875,7 @@ def test_multi_asset_sensor_unconsumed_events():
         # no longer show up in the cursor. The storage ID of the cursor should stay the same.
         invocation_num += 1
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-10"
         assert (
             second_july_cursor.latest_consumed_event_id
@@ -860,7 +919,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         first_storage_id = july_asset_cursor.latest_consumed_event_id
         assert first_storage_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
@@ -876,7 +935,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
             instance=instance,
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-06"
         assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {}
         assert july_asset_cursor.latest_consumed_event_id > first_storage_id
@@ -903,7 +962,7 @@ def test_error_when_max_num_unconsumed_events():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert july_asset_cursor.latest_consumed_event_id
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-25"
         assert len(july_asset_cursor.trailing_unconsumed_partitioned_event_ids) == 24
@@ -962,7 +1021,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_july_cursor.latest_consumed_event_id
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-03"
         assert len(first_july_cursor.trailing_unconsumed_partitioned_event_ids) == 2
@@ -975,7 +1034,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
                 instance=instance,
             )
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-02"
         assert (
             second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
@@ -1012,7 +1071,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        first_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert first_july_cursor.latest_consumed_event_id
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-05"
 
@@ -1044,7 +1103,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
             monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
-        second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
+        second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert (
             second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
         )
@@ -1062,7 +1121,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_sensor(context):
-        my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
+        my_asset_cursor = context._get_cursor(my_asset.key)  # noqa: SLF001
         assert my_asset_cursor.latest_consumed_event_id is not None
 
     @repository
@@ -1083,9 +1142,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == records.storage_id
         )
         my_sensor(ctx)
@@ -1130,9 +1187,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == records.storage_id
         )
         my_sensor(ctx)
@@ -1179,15 +1234,11 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
             repository_def=my_repo,
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
             == my_asset_cursor
         )
         assert (
-            ctx._get_cursor(  # pylint: disable=protected-access
-                my_asset_2.key
-            ).latest_consumed_event_id
+            ctx._get_cursor(my_asset_2.key).latest_consumed_event_id  # noqa: SLF001
             == my_asset_2_cursor
         )
 

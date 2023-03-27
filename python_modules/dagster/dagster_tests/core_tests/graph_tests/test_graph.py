@@ -1,6 +1,7 @@
 import enum
 import json
 from datetime import datetime
+from itertools import count
 from typing import Any, List, Optional
 
 import pendulum
@@ -1431,3 +1432,30 @@ def test_input_manager_key_and_custom_dagster_type_resolved():
         resource_defs={"data_input_manager": data_input_manager},
     )
     assert local_target_extractor_job.execute_in_process().success
+
+
+def test_collision():
+    numbers = count()
+
+    @op
+    def next_num():
+        return next(numbers)
+
+    @op
+    def echo(context, value):
+        return value
+
+    @graph
+    def composed(value):
+        echo(value)
+        return next_num()
+
+    @graph
+    def collision_test():
+        starting_value = next_num()
+        composed(starting_value)
+        composed(starting_value)
+
+    result = collision_test.execute_in_process()
+    assert result.output_for_node("composed.echo") == 0
+    assert result.output_for_node("composed_2.echo") == 0

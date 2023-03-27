@@ -1,7 +1,7 @@
 import datetime
 import json
 import os
-from typing import Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from dagster import (
@@ -22,6 +22,7 @@ from dagster._core.storage.local_compute_log_manager import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
 from google.cloud import storage
+from typing_extensions import Self
 
 
 class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
@@ -58,7 +59,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self,
         bucket,
         local_dir=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         prefix="dagster",
         json_credentials_envvar=None,
         upload_interval=None,
@@ -68,7 +69,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
 
         if json_credentials_envvar:
             json_info_str = os.environ.get(json_credentials_envvar)
-            credentials_info = json.loads(json_info_str)
+            credentials_info = json.loads(json_info_str)  # type: ignore  # (possible none)
             self._bucket = (
                 storage.Client()
                 .from_service_account_info(credentials_info)
@@ -103,8 +104,10 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return GCSComputeLogManager(inst_data=inst_data, **config_value)
 
     @property

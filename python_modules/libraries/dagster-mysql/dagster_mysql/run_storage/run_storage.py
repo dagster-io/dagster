@@ -115,9 +115,9 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
         return row[0]
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLRunStorage":
         return MySQLRunStorage(inst_data=inst_data, mysql_url=mysql_url_from_config(config_value))
 

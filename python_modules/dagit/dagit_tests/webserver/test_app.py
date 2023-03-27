@@ -42,7 +42,7 @@ query RunQuery($runId: ID!) {
 def _add_run(instance):
     @op
     def my_op():
-        print("STDOUT RULEZ")  # pylint: disable=print-call
+        print("STDOUT RULEZ")  # noqa: T201
 
     @job
     def _simple_job():
@@ -79,7 +79,7 @@ def test_static_resources(test_client: TestClient):
 # https://graphql.org/learn/serving-over-http/
 
 
-def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unused-argument
+def test_graphql_get(instance, test_client: TestClient):
     # base case
     response = test_client.get(
         "/graphql",
@@ -112,15 +112,13 @@ def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unus
     assert response.status_code == 400, response.text
 
 
-def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
+def test_graphql_invalid_json(instance, test_client: TestClient):
     # base case
     response = test_client.post(
         "/graphql",
         content='{"query": "foo}',
         headers={"Content-Type": "application/json"},
     )
-
-    print(str(response.text))
 
     assert response.status_code == 400, response.text
     assert 'GraphQL request is invalid JSON:\n{"query": "foo}' in response.text
@@ -197,7 +195,7 @@ def test_graphql_error(test_client: TestClient):
 
 def test_graphql_ws_error(test_client: TestClient):
     # wtf pylint
-    # pylint: disable=not-context-manager
+
     with test_client.websocket_connect("/graphql", str(GraphQLWS.PROTOCOL)) as ws:
         ws.send_json({"type": GraphQLWS.CONNECTION_INIT})
         ws.send_json(
@@ -224,7 +222,7 @@ def test_graphql_ws_success(instance, test_client: TestClient):
 
     run_id = _add_run(instance)
     # wtf pylint
-    # pylint: disable=not-context-manager
+
     with test_client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
         ws.send_json({"type": GraphQLWS.CONNECTION_INIT})
         ws.send_json(

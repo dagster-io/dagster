@@ -1,5 +1,5 @@
 import logging
-from distutils import core as distutils_core  # pylint: disable=deprecated-module
+from distutils import core as distutils_core
 from importlib import reload
 from pathlib import Path
 from typing import Dict, Optional, Set

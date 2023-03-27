@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {PartitionRangeStatus} from '../../graphql/types';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
@@ -48,6 +48,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               new Date('2022-05-31'),
               new Date('2023-02-05'),
             ),
+            type: PartitionDefinitionType.TIME_WINDOW,
             __typename: 'DimensionPartitionKeys',
           },
         ],
@@ -1589,6 +1590,7 @@ export const SingleDimensionStaticPartitionHealthQuery: MockedResponse<Partition
             name: 'default',
             partitionKeys: ['TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV'],
             __typename: 'DimensionPartitionKeys',
+            type: PartitionDefinitionType.STATIC,
           },
         ],
         assetPartitionStatuses: {
@@ -1616,11 +1618,13 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
           {
             name: 'month',
             partitionKeys: ['April', 'May', 'June'],
+            type: PartitionDefinitionType.STATIC,
             __typename: 'DimensionPartitionKeys',
           },
           {
             name: 'state',
             partitionKeys: ['TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV'],
+            type: PartitionDefinitionType.STATIC,
             __typename: 'DimensionPartitionKeys',
           },
         ],
@@ -1689,12 +1693,14 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               new Date('2021-05-05'),
               new Date('2023-02-05'),
             ),
+            type: PartitionDefinitionType.TIME_WINDOW,
             __typename: 'DimensionPartitionKeys',
           },
           {
             name: 'zstate',
             partitionKeys: ['TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV'],
             __typename: 'DimensionPartitionKeys',
+            type: PartitionDefinitionType.STATIC,
           },
         ],
         assetPartitionStatuses: {
@@ -1843,6 +1849,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
           {
             name: 'astate',
             partitionKeys: ['TN', 'VA', 'GA', 'KY', 'PA', 'NC', 'SC', 'FL', 'OH', 'IL', 'WV'],
+            type: PartitionDefinitionType.STATIC,
             __typename: 'DimensionPartitionKeys',
           },
           {
@@ -1851,6 +1858,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               new Date('2021-05-05'),
               new Date('2023-02-05'),
             ),
+            type: PartitionDefinitionType.TIME_WINDOW,
 
             __typename: 'DimensionPartitionKeys',
           },

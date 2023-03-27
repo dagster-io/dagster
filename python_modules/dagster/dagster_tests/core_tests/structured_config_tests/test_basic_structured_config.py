@@ -27,9 +27,11 @@ from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
-from dagster._legacy import pipeline
 from dagster._utils.cached_method import cached_method
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    Field as PyField,
+)
 
 
 def test_disallow_config_schema_conflict():
@@ -345,7 +347,7 @@ def test_validate_run_config():
     def requires_config(config: MyBasicOpConfig):
         pass
 
-    @pipeline
+    @job
     def pipeline_requires_config():
         requires_config()
 
@@ -355,7 +357,11 @@ def test_validate_run_config():
 
     assert result == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
@@ -370,14 +376,18 @@ def test_validate_run_config():
     )
     assert result_with_structured_in == result
 
-    result_with_storage = validate_run_config(
+    result_with_dict_config = validate_run_config(
         pipeline_requires_config,
         {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
-    assert result_with_storage == {
+    assert result_with_dict_config == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
@@ -658,6 +668,31 @@ def test_structured_run_config_ops():
     assert executed["yes"]
 
 
+def test_structured_run_config_optional() -> None:
+    class ANewConfigOpConfig(Config):
+        a_string: Optional[str]
+        an_int: Optional[int] = None
+        a_float: float = PyField(None)
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: ANewConfigOpConfig):
+        executed["yes"] = True
+        assert config.a_string is None
+        assert config.an_int is None
+        assert config.a_float is None
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string=None)})  # type: ignore
+    )
+    assert executed["yes"]
+
+
 def test_structured_run_config_multi_asset():
     class AMultiAssetConfig(Config):
         a_string: str
@@ -737,6 +772,32 @@ def test_structured_run_config_assets():
         run_config=RunConfig(
             ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+            }
+        ),
+    )
+    assert asset_result.success
+    assert executed["yes"]
+
+
+def test_structured_run_config_assets_optional() -> None:
+    class AnAssetConfig(Config):
+        a_string: str = PyField(None)
+        an_int: Optional[int] = None
+
+    executed = {}
+
+    @asset
+    def my_asset(config: AnAssetConfig):
+        assert config.a_string is None
+        assert config.an_int is None
+        executed["yes"] = True
+
+    # materialize
+    asset_result = materialize(
+        [my_asset],
+        run_config=RunConfig(
+            ops={
+                "my_asset": AnAssetConfig(),  # type: ignore
             }
         ),
     )

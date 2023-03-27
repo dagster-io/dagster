@@ -16,8 +16,6 @@ down_revision = "05844c702676"
 branch_labels = None
 depends_on = None
 
-# pylint: disable=no-member
-
 
 def upgrade():
     add_run_record_start_end_timestamps()

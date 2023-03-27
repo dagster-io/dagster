@@ -60,7 +60,6 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
     )
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     try:
-        print(table_name)
         yield table_name
     finally:
         bq_client.query(

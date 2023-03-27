@@ -122,7 +122,7 @@ class DagsterGraphQLClient:
         run_config: Optional[Mapping[str, Any]] = None,
         mode: Optional[str] = None,
         preset: Optional[str] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         solid_selection: Optional[List[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
@@ -435,8 +435,7 @@ class DagsterGraphQLClient:
             raise Exception(f"Unexpected query result type {query_result_type}")
 
     def terminate_run(self, run_id: str):
-        """
-        Terminates a pipeline run. This method it is useful when you would like to stop a pipeline run
+        """Terminates a pipeline run. This method it is useful when you would like to stop a pipeline run
         based on a external event.
 
         Args:

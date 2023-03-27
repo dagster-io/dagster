@@ -25,9 +25,7 @@ from .utils import get_instance_for_service
 
 @click.group(name="asset")
 def asset_cli():
-    """
-    Commands for working with Dagster assets.
-    """
+    """Commands for working with Dagster assets."""
 
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
@@ -48,7 +46,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     repo_def = recon_repo.get_definition()
 
     asset_keys = parse_asset_selection(
-        assets_defs=list(repo_def._assets_defs_by_key.values()),
+        assets_defs=list(repo_def.assets_defs_by_key.values()),
         source_assets=list(repo_def.source_assets_by_key.values()),
         asset_selection=kwargs["select"].split(","),
     )
@@ -95,7 +93,7 @@ def asset_list_command(**kwargs):
     select = kwargs.get("select")
     if select is not None:
         asset_keys = parse_asset_selection(
-            assets_defs=list(repo_def._assets_defs_by_key.values()),
+            assets_defs=list(repo_def.assets_defs_by_key.values()),
             source_assets=list(repo_def.source_assets_by_key.values()),
             asset_selection=select.split(","),
             raise_on_clause_has_no_matches=False,
@@ -103,12 +101,12 @@ def asset_list_command(**kwargs):
     else:
         asset_keys = [
             asset_key
-            for assets_def in repo_def._assets_defs_by_key.values()
+            for assets_def in repo_def.assets_defs_by_key.values()
             for asset_key in assets_def.keys
         ]
 
     for asset_key in sorted(asset_keys):
-        print(asset_key.to_user_string())
+        print(asset_key.to_user_string())  # noqa: T201
 
 
 @asset_cli.command(name="wipe")
@@ -116,8 +114,7 @@ def asset_list_command(**kwargs):
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
 @click.option("--noprompt", is_flag=True)
 def asset_wipe_command(key, **cli_args):
-    r"""
-    Eliminate asset key indexes from event logs.
+    r"""Eliminate asset key indexes from event logs.
 
     Warning: Cannot be undone.
 
@@ -157,8 +154,65 @@ def asset_wipe_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            with DagsterInstance.get() as instance:
-                instance.wipe_assets(asset_keys)
-                click.echo("Removed asset indexes from event logs")
+            instance.wipe_assets(asset_keys)
+            click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")
+
+
+@asset_cli.command(name="wipe-partitions-status-cache")
+@click.argument("key", nargs=-1)
+@click.option("--all", is_flag=True, help="Wipe partitions status cache of all asset keys")
+@click.option("--noprompt", is_flag=True)
+def asset_wipe_cache_command(key, **cli_args):
+    r"""Clears the asset partitions status cache, which is used by Dagit to load partition
+    pages more quickly. The cache will be rebuilt the next time the partition pages are loaded,
+    if caching is enabled.
+
+    \b
+    Usage:
+      dagster asset wipe-cache --all
+      dagster asset wipe-cache <unstructured_asset_key_name>
+      dagster asset wipe-cache <json_string_of_structured_asset_key>
+    """
+    if not cli_args.get("all") and len(key) == 0:
+        raise click.UsageError(
+            "Error, you must specify an asset key or use `--all` to clear the partitions status"
+            " cache of all asset keys."
+        )
+
+    if cli_args.get("all") and len(key) > 0:
+        raise click.UsageError("Error, cannot use more than one of: asset key, `--all`.")
+
+    noprompt = cli_args.get("noprompt")
+
+    with DagsterInstance.get() as instance:
+        if instance.can_cache_asset_status_data() is False:
+            raise click.UsageError(
+                "Error, the instance does not support caching asset status. Wiping the cache is not"
+                " supported."
+            )
+
+        if len(key) > 0:
+            asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
+            prompt = (
+                "Are you sure you want to wipe the partitions status cache for these"
+                f" keys {asset_keys} from the event logs? Type DELETE"
+            )
+        else:
+            asset_keys = instance.all_asset_keys()
+            prompt = (
+                "Are you sure you want to wipe the partitions status cache for all asset keys?"
+                " Type DELETE"
+            )
+
+        if noprompt:
+            confirmation = "DELETE"
+        else:
+            confirmation = click.prompt(prompt)
+
+        if confirmation == "DELETE":
+            instance.wipe_asset_cached_status(asset_keys)
+            click.echo("Cleared the partitions status cache")
+        else:
+            click.echo("Exiting without wiping the partitions status cache")

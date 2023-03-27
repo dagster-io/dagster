@@ -384,7 +384,7 @@ def execute_solid(
         PipelineDefinition(
             name="ephemeral_{}_solid_pipeline".format(solid_def.name),
             solid_defs=solid_defs,
-            dependencies=dependencies,  # type: ignore
+            dependencies=dependencies,
             mode_defs=[mode_def] if mode_def else None,
         ),
         run_config=run_config,
@@ -423,9 +423,9 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def config_type(cls):
         return {"base_dir": str}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: object, config_value: Mapping[str, object]
+        cls, inst_data: object, config_value: Mapping[str, object]
     ) -> "FilesystemTestScheduler":
         artifacts_dir = cast(str, config_value["base_dir"])
         return FilesystemTestScheduler(artifacts_dir=artifacts_dir, inst_data=inst_data)

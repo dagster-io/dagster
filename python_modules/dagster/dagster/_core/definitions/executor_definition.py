@@ -32,8 +32,7 @@ if TYPE_CHECKING:
 
 
 class ExecutorRequirement(PyEnum):
-    """
-    An ExecutorDefinition can include a list of requirements that the system uses to
+    """An ExecutorDefinition can include a list of requirements that the system uses to
     check whether the executor will be able to work for a particular job/pipeline execution.
     """
 
@@ -64,7 +63,8 @@ ExecutorRequirementsFunction: TypeAlias = Callable[[ExecutorConfig], Sequence[Ex
 
 
 class ExecutorDefinition(NamedConfigurableDefinition):
-    """
+    """An executor is responsible for executing the steps of a job.
+
     Args:
         name (str): The name of the executor.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
@@ -158,8 +158,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
     ) -> Self:
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
+        """Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
         Using ``configured`` may result in config values being displayed in
@@ -256,7 +255,8 @@ class _ExecutorDecoratorCallable:
             requirements=self.requirements,
         )
 
-        update_wrapper(executor_def, wrapped=fn)
+        # `update_wrapper` typing cannot currently handle a Union of Callables correctly
+        update_wrapper(executor_def, wrapped=fn)  # type: ignore
 
         return executor_def
 

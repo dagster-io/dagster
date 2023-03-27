@@ -1,11 +1,14 @@
 import tempfile
 from contextlib import contextmanager
+from typing import Any, Mapping
 
 import mock
 import pytest
 from dagster._core.storage.legacy_storage import LegacyRunStorage
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
 
@@ -27,8 +30,10 @@ class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
     def supports_bucket_queries(self):
         return False
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return NonBucketQuerySqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
 

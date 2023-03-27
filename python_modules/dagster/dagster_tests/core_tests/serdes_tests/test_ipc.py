@@ -116,7 +116,7 @@ def test_interrupt_ipc_subprocess_grandchild():
 
 
 def test_interrupt_compute_log_tail_child(
-    windows_legacy_stdio_env,  # pylint: disable=redefined-outer-name, unused-argument
+    windows_legacy_stdio_env,
 ):
     with ExitStack() as context_stack:
         (stdout_pids_file, stderr_pids_file, opened_sentinel, interrupt_sentinel) = [
@@ -177,7 +177,7 @@ def test_interrupt_compute_log_tail_child(
 
 
 def test_segfault_compute_log_tail(
-    windows_legacy_stdio_env,  # pylint: disable=redefined-outer-name, unused-argument
+    windows_legacy_stdio_env,
 ):
     with safe_tempfile_path() as stdout_pids_file:
         with safe_tempfile_path() as stderr_pids_file:
@@ -223,8 +223,15 @@ def test_segfault_compute_log_tail(
                     wait_for_process(stderr_pid)
 
 
+def test_input_signal_hang():
+    please_dont_hang = open_ipc_subprocess(
+        [sys.executable, file_relative_path(__file__, "import_readline.py")],
+    )
+    please_dont_hang.communicate(timeout=10)
+
+
 def test_interrupt_compute_log_tail_grandchild(
-    windows_legacy_stdio_env,  # pylint: disable=redefined-outer-name, unused-argument
+    windows_legacy_stdio_env,
 ):
     with ExitStack() as context_stack:
         (

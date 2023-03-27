@@ -31,8 +31,7 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
 
 
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
-    """
-    Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
+    """Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
 
     Examples:
         .. code-block:: python

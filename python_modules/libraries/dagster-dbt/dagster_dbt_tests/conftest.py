@@ -1,6 +1,6 @@
 import os
 import subprocess
-from distutils import spawn  # pylint: disable=deprecated-module
+from distutils import spawn
 
 import psycopg2
 import pytest
@@ -73,7 +73,7 @@ def conn_string():
 
 
 @pytest.fixture(scope="session")
-def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-outer-name
+def prepare_dbt_cli(conn_string):
     if not spawn.find_executable(DBT_EXECUTABLE):
         raise Exception("executable not found in path for `dbt`")
 
@@ -82,16 +82,12 @@ def prepare_dbt_cli(conn_string):  # pylint: disable=unused-argument, redefined-
 
 
 @pytest.fixture(scope="session")
-def dbt_seed(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
+def dbt_seed(prepare_dbt_cli, dbt_executable, dbt_config_dir):
     subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
 
 
 @pytest.fixture(scope="session")
-def dbt_build(
-    prepare_dbt_cli, dbt_executable, dbt_config_dir
-):  # pylint: disable=unused-argument, redefined-outer-name
+def dbt_build(prepare_dbt_cli, dbt_executable, dbt_config_dir):
     subprocess.run([dbt_executable, "seed", "--profiles-dir", dbt_config_dir], check=True)
     subprocess.run([dbt_executable, "run", "--profiles-dir", dbt_config_dir], check=True)
 

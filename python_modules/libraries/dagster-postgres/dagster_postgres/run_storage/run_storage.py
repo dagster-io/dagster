@@ -128,9 +128,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ):
         return PostgresRunStorage(
             inst_data=inst_data,
@@ -175,7 +175,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
                 db_dialects.postgresql.insert(DaemonHeartbeatsTable)
-                .values(  # pylint: disable=no-value-for-parameter
+                .values(
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,

@@ -1,4 +1,4 @@
-from azure.identity.aio import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import Field, Permissive, Selector, StringSource, resource
 from dagster._utils.merger import merge_dicts
@@ -131,8 +131,7 @@ class ADLS2Resource:
 
 
 def _adls2_resource_from_config(config):
-    """
-    Args:
+    """Args:
         config: A configuration containing the fields in ADLS2_CLIENT_CONFIG.
 
     Returns: An adls2 client.

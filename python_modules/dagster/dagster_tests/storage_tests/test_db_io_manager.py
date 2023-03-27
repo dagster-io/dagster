@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 from unittest.mock import MagicMock
 
 import pytest
@@ -370,13 +369,13 @@ def test_asset_schema_defaults():
 
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "schema1"
 
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "public"
 
@@ -399,7 +398,7 @@ def test_asset_schema_defaults():
     output_context = build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
-    table_slice = manager_w_schema._get_table_slice(output_context, output_context)
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "my_schema"
 
@@ -408,7 +407,9 @@ def test_asset_schema_defaults():
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
     with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager_w_schema._get_table_slice(output_context, output_context)
+        table_slice = manager_w_schema._get_table_slice(  # noqa: SLF001
+            output_context, output_context
+        )
 
 
 def test_output_schema_defaults():
@@ -418,12 +419,12 @@ def test_output_schema_defaults():
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
     )
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "schema1"
 
     output_context = build_output_context(name="table1", resource_config=resource_config)
-    table_slice = manager._get_table_slice(output_context, output_context)
+    table_slice = manager._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "public"
 
@@ -443,7 +444,7 @@ def test_output_schema_defaults():
     )
 
     output_context = build_output_context(name="table1", resource_config=resource_config_w_schema)
-    table_slice = manager_w_schema._get_table_slice(output_context, output_context)
+    table_slice = manager_w_schema._get_table_slice(output_context, output_context)  # noqa: SLF001
 
     assert table_slice.schema == "my_schema"
 
@@ -451,7 +452,9 @@ def test_output_schema_defaults():
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config_w_schema
     )
     with pytest.raises(DagsterInvalidDefinitionError):
-        table_slice = manager_w_schema._get_table_slice(output_context, output_context)
+        table_slice = manager_w_schema._get_table_slice(  # noqa: SLF001
+            output_context, output_context
+        )
 
 
 def test_handle_none_output():
@@ -530,14 +533,14 @@ def test_default_load_type_determination():
     manager = DbIOManager(
         type_handlers=[int_handler], database=resource_config["database"], db_client=db_client
     )
-    assert manager._default_load_type == int
+    assert manager._default_load_type == int  # noqa: SLF001
 
     manager = DbIOManager(
         type_handlers=[int_handler, string_handler],
         database=resource_config["database"],
         db_client=db_client,
     )
-    assert manager._default_load_type is None
+    assert manager._default_load_type is None  # noqa: SLF001
 
     manager = DbIOManager(
         type_handlers=[int_handler, string_handler],
@@ -545,4 +548,4 @@ def test_default_load_type_determination():
         db_client=db_client,
         default_load_type=int,
     )
-    assert manager._default_load_type == int
+    assert manager._default_load_type == int  # noqa: SLF001

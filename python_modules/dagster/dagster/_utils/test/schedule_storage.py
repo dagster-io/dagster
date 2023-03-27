@@ -6,7 +6,7 @@ import pytest
 
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -22,8 +22,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:
-    """
-    You can extend this class to easily run these set of tests on any schedule storage. When extending,
+    """You can extend this class to easily run these set of tests on any schedule storage. When extending,
     you simply need to override the `schedule_storage` fixture and return your implementation of
     `ScheduleStorage`.
 
@@ -34,7 +33,7 @@ class TestScheduleStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def schedule_storage(self):  # pylint: disable=arguments-differ
+        def schedule_storage(self):
             return MyStorageImplementation()
     ```
     """
@@ -56,7 +55,7 @@ class TestScheduleStorage:
     @staticmethod
     def fake_repo_target():
         return ExternalRepositoryOrigin(
-            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            ManagedGrpcPythonEnvCodeLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),

@@ -31,13 +31,23 @@ from dagster import (
     multi_asset,
     repository,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.partition import DefaultPartitionsSubset, DynamicPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
+    PartitionsSubset,
+)
+from dagster._core.definitions.time_window_partitions import (
+    HourlyPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
+from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -56,6 +66,7 @@ class AssetReconciliationScenario(NamedTuple):
     cursor_from: Optional["AssetReconciliationScenario"] = None
     current_time: Optional[datetime.datetime] = None
     asset_selection: Optional[AssetSelection] = None
+    active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
 
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
@@ -67,6 +78,38 @@ class AssetReconciliationScenario(NamedTuple):
             @repository
             def repo():
                 return self.assets
+
+            # add any backfills to the instance
+            for i, target in enumerate(self.active_backfill_targets or []):
+                target_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key=target,
+                    non_partitioned_asset_keys=set(),
+                )
+                empty_subset = AssetGraphSubset(
+                    asset_graph=repo.asset_graph,
+                    partitions_subsets_by_asset_key={},
+                    non_partitioned_asset_keys=set(),
+                )
+                asset_backfill_data = AssetBackfillData(
+                    latest_storage_id=0,
+                    target_subset=target_subset,
+                    requested_runs_for_target_roots=False,
+                    materialized_subset=empty_subset,
+                    requested_subset=empty_subset,
+                    failed_and_downstream_subset=empty_subset,
+                )
+                backfill = PartitionBackfill(
+                    backfill_id=f"backfill{i}",
+                    status=BulkActionStatus.REQUESTED,
+                    from_failure=False,
+                    tags={},
+                    backfill_timestamp=test_time.timestamp(),
+                    serialized_asset_backfill_data=asset_backfill_data.serialize(
+                        dynamic_partitions_store=instance
+                    ),
+                )
+                instance.add_backfill(backfill)
 
             if self.cursor_from is not None:
                 run_requests, cursor = self.cursor_from.do_scenario(instance)
@@ -338,6 +381,7 @@ freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
 freshness_1d = FreshnessPolicy(maximum_lag_minutes=24 * 60)
 freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+freshness_cron = FreshnessPolicy(cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60)
 
 # basics
 one_asset = [asset_def("asset1")]
@@ -352,6 +396,10 @@ one_asset_depends_on_two = [
     asset_def("parent1"),
     asset_def("parent2"),
     asset_def("child", ["parent1", "parent2"]),
+]
+two_assets_one_source = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1", "source_asset"]),
 ]
 
 diamond = [
@@ -419,6 +467,12 @@ overlapping_freshness_inf = diamond + [
 overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
+]
+
+overlapping_freshness_cron = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], freshness_policy=freshness_30m),
+    asset_def("asset3", ["asset1"], freshness_policy=freshness_cron),
 ]
 
 non_subsettable_multi_asset_on_top = [
@@ -575,6 +629,11 @@ scenarios = {
         assets=two_assets_depend_on_one,
         unevaluated_runs=[single_asset_run(asset_key="asset1")],
         expected_run_requests=[run_request(asset_keys=["asset2", "asset3"])],
+    ),
+    "parent_materialized_with_source_asset_launch_child": AssetReconciliationScenario(
+        assets=two_assets_one_source,
+        unevaluated_runs=[single_asset_run(asset_key="asset1")],
+        expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
     "parent_rematerialized_after_tick": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
@@ -807,6 +866,86 @@ scenarios = {
                 PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
             )
         ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_independent": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("daily"): TimeWindowPartitionsSubset(
+                    daily_partitions_def, num_partitions=1, included_partition_keys={"2013-01-06"}
+                )
+            },
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=3,
+                    included_partition_keys={
+                        "2013-01-06-01:00",
+                        "2013-01-06-02:00",
+                        "2013-01-06-03:00",
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_intersecting": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=3,
+                    included_partition_keys={
+                        "2013-01-06-04:00",
+                        "2013-01-06-05:00",
+                        "2013-01-06-06:00",
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-07:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_with_active_backfill_superceding": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        active_backfill_targets=[
+            {
+                AssetKey("hourly"): TimeWindowPartitionsSubset(
+                    hourly_partitions_def,
+                    num_partitions=len(
+                        {
+                            partition_key
+                            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                            )
+                        },
+                    ),
+                    included_partition_keys={
+                        partition_key
+                        for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                            PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-07-03:00")
+                        )
+                    },
+                )
+            },
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[],
     ),
     ################################################################################################
     # Exotic partition-mappings
@@ -1123,11 +1262,10 @@ scenarios = {
             assets=overlapping_freshness_inf,
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
-        # change at the top, doesn't need to be propagated to 1, 3, 5 as freshness policy will
-        # handle it, but assets 2, 4, 6 will not recieve an update in the plan window. 2 can be
-        # updated immediately, but 4 and 6 depend on 3, so will be defered
+        # change at the top, will not propagate immediately as freshness policies will handle it
+        # (even though it will take awhile)
         unevaluated_runs=[run(["asset1"])],
-        expected_run_requests=[run_request(asset_keys=["asset2"])],
+        expected_run_requests=[],
     ),
     "freshness_overlapping_defer_propagate2": AssetReconciliationScenario(
         assets=overlapping_freshness_none,
@@ -1135,9 +1273,23 @@ scenarios = {
             assets=overlapping_freshness_inf,
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
         ),
-        # same as above
+        # change at the top, doesn't need to be propagated to 1, 3, 5 as freshness policy will
+        # handle it, but assets 2, 4, 6 will not recieve an update because they are not
+        # upstream of a freshness policy. 2 can be updated immediately, but 4 and 6 depend on
+        # 3, so will be defered
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
+    ),
+    "freshness_overlapping_defer_propagate_with_cron": AssetReconciliationScenario(
+        assets=overlapping_freshness_cron,
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=6, tz="UTC"),
+        evaluation_delta=datetime.timedelta(minutes=90),
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3"]),
+            run(["asset1"]),
+        ],
+        # don't run asset 3 even though its parent updated as freshness policy will handle it
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
     ),
     "freshness_non_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=non_subsettable_multi_asset_on_top,

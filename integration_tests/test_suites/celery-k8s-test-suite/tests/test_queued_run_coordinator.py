@@ -30,7 +30,7 @@ def assert_events_in_order(logs, expected_events):
 
 
 @mark_daemon
-def test_execute_queued_run_on_celery_k8s(  # pylint: disable=redefined-outer-name
+def test_execute_queued_run_on_celery_k8s(
     dagster_docker_image,
     dagster_instance_for_daemon,
     helm_namespace_for_daemon,

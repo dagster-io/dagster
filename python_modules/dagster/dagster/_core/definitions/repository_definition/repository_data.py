@@ -22,14 +22,13 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
+from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._utils.merger import merge_dicts
 
 from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import RepositoryListDefinition
@@ -43,8 +42,7 @@ Resolvable = Callable[[], T]
 
 
 class RepositoryData(ABC):
-    """
-    Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
+    """Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
     subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
@@ -60,8 +58,7 @@ class RepositoryData(ABC):
 
     @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
-        """
-        Return all top-level resources in the repository as a list,
+        """Return all top-level resources in the repository as a list,
         such as those provided to the Definitions constructor.
 
         Returns:
@@ -387,13 +384,9 @@ class CachingRepositoryData(RepositoryData):
             schedules,
             self._validate_schedule,
         )
-        schedule_partition_sets = filter(
-            None,
-            [
-                _get_partition_set_from_schedule(schedule)
-                for schedule in self._schedules.get_all_definitions()
-            ],
-        )
+        # load all schedules to force validation
+        self._schedules.get_all_definitions()
+
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
         self._top_level_resources = top_level_resources
@@ -416,10 +409,7 @@ class CachingRepositoryData(RepositoryData):
             PartitionSetDefinition,
             "PartitionSetDefinition",
             "partition set",
-            merge_dicts(
-                {partition_set.name: partition_set for partition_set in schedule_partition_sets},
-                partition_sets,
-            ),
+            partition_sets,
             self._validate_partition_set,
             load_partition_sets_from_pipelines,
         )
@@ -770,27 +760,3 @@ class CachingRepositoryData(RepositoryData):
         self, partition_set: PartitionSetDefinition
     ) -> PartitionSetDefinition:
         return partition_set
-
-
-def _get_partition_set_from_schedule(
-    schedule: ScheduleDefinition,
-) -> Optional[PartitionSetDefinition]:
-    """With the legacy APIs, partition sets can live on schedules. With the non-legacy APIs,
-    they live on jobs. Pulling partition sets from schedules causes problems with unresolved asset
-    jobs, because two different instances of the same logical partition set end up getting created
-    - one on the schedule and one on the the resolved job.
-
-    To avoid this problem, we avoid pulling partition sets off of schedules that target unresolved
-    asset jobs. This works, because the partition set still gets pulled directly off the asset job
-    elsewhere.
-
-    When we remove the legacy APIs, we should be able to stop pulling partition sets off of
-    schedules entirely and remove this entire code path.
-    """
-    if (
-        isinstance(schedule, PartitionScheduleDefinition)
-        and not schedule.targets_unresolved_asset_job
-    ):
-        return schedule.get_partition_set()
-    else:
-        return None

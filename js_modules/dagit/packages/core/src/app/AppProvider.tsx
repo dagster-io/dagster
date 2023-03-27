@@ -38,7 +38,7 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
-import {TimezoneProvider} from './time/TimezoneContext';
+import {TimeProvider} from './time/TimeContext';
 
 import './blueprint.css';
 
@@ -198,7 +198,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
           <PermissionsProvider>
             <BrowserRouter basename={basePath || ''}>
               <CompatRouter>
-                <TimezoneProvider>
+                <TimeProvider>
                   <WorkspaceProvider>
                     <DeploymentStatusProvider include={deploymentStatuses}>
                       <CustomConfirmationProvider>
@@ -212,7 +212,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                       <CustomAlertProvider />
                     </DeploymentStatusProvider>
                   </WorkspaceProvider>
-                </TimezoneProvider>
+                </TimeProvider>
               </CompatRouter>
             </BrowserRouter>
           </PermissionsProvider>

@@ -98,7 +98,7 @@ class GrapheneSchedule(graphene.ObjectType):
         if self._external_schedule.partition_set_name is None:
             return None
 
-        repository = graphene_info.context.get_repository_location(
+        repository = graphene_info.context.get_code_location(
             self._external_schedule.handle.location_name
         ).get_repository(self._external_schedule.handle.repository_name)
         external_partition_set = repository.get_external_partition_set(

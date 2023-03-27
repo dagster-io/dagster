@@ -1,5 +1,7 @@
 import time
-from typing import cast
+from typing import Any, Mapping, Optional, cast
+
+from typing_extensions import Self
 
 import dagster._seven as seven
 from dagster import (
@@ -7,6 +9,7 @@ from dagster import (
     Field,
     _check as check,
 )
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -14,6 +17,7 @@ from dagster._serdes import (
     ConfigurableClass,
     deserialize_value,
 )
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
@@ -23,7 +27,9 @@ from .base import LaunchRunContext, RunLauncher
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
-    def __init__(self, inst_data=None, wait_for_processes=False):
+    def __init__(
+        self, inst_data: Optional[ConfigurableClassData] = None, wait_for_processes: bool = False
+    ):
         self._inst_data = inst_data
 
         # Whether to wait for any processes that were used to launch runs to finish
@@ -39,15 +45,17 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {"wait_for_processes": Field(Bool, is_required=False)}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return DefaultRunLauncher(
             inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
         )
@@ -93,8 +101,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
         )
 
         run = context.dagster_run
@@ -107,24 +115,24 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         external_pipeline_origin = check.not_none(run.external_pipeline_origin)
-        repository_location = context.workspace.get_repository_location(
-            external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+        code_location = context.workspace.get_code_location(
+            external_pipeline_origin.external_repository_origin.code_location_origin.location_name
         )
 
         check.inst(
-            repository_location,
-            GrpcServerRepositoryLocation,
+            code_location,
+            GrpcServerCodeLocation,
             "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
 
         DefaultRunLauncher.launch_run_from_grpc_client(
-            self._instance, run, cast(GrpcServerRepositoryLocation, repository_location).client
+            self._instance, run, cast(GrpcServerCodeLocation, code_location).client
         )
 
         self._run_ids.add(run.run_id)
 
         if self._wait_for_processes:
-            self._locations_to_wait_for.append(repository_location)
+            self._locations_to_wait_for.append(code_location)
 
     def _get_grpc_client_for_termination(self, run_id):
         # defer for perf
@@ -213,16 +221,16 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def dispose(self):
         # defer for perf
-        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-        from dagster._core.host_representation.repository_location import (
-            GrpcServerRepositoryLocation,
+        from dagster._core.host_representation.code_location import (
+            GrpcServerCodeLocation,
         )
+        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 
         if not self._wait_for_processes:
             return
 
         for location in self._locations_to_wait_for:
-            if isinstance(location, GrpcServerRepositoryLocation) and isinstance(
+            if isinstance(location, GrpcServerCodeLocation) and isinstance(
                 location.grpc_server_registry, GrpcServerRegistry
             ):
                 location.grpc_server_registry.wait_for_processes()

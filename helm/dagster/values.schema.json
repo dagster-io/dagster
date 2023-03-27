@@ -334,6 +334,17 @@
                     "title": "Nameoverride",
                     "type": "string"
                 },
+                "pathPrefix": {
+                    "title": "Pathprefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -1907,6 +1918,17 @@
                 },
                 "schedulerName": {
                     "title": "Schedulername",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "jobNamespace": {
+                    "title": "Jobnamespace",
                     "anyOf": [
                         {
                             "type": "string"

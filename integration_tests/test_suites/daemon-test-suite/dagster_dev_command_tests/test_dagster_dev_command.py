@@ -19,7 +19,7 @@ def _wait_for_dagit_running(dagit_port):
             if dagit_json:
                 return
         except:
-            print("Waiting for Dagit to be ready..")
+            print("Waiting for Dagit to be ready..")  # noqa: T201
 
         if time.time() - start_time > 30:
             raise Exception("Timed out waiting for Dagit to serve requests")

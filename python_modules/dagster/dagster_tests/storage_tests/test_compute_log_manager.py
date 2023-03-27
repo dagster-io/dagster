@@ -30,7 +30,7 @@ from dagster._core.test_utils import environ, instance_for_test
 def test_compute_log_manager_instance():
     with instance_for_test() as instance:
         assert instance.compute_log_manager
-        assert instance.compute_log_manager._instance  # pylint: disable=protected-access
+        assert instance.compute_log_manager._instance  # noqa: SLF001
 
 
 class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
@@ -210,14 +210,14 @@ def _has_teardown_exception(execute_result):
 @op
 def yay(context):
     context.log.info("yay")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     return "yay"
 
 
 @op
 def boo(context):
     context.log.info("boo")
-    print("HELLOOO")  # pylint: disable=print-call
+    print("HELLOOO")  # noqa: T201
     raise Exception("booo")
 
 

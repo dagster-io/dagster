@@ -30,7 +30,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
     ExternalRepository,
     ExternalRepositoryOrigin,
-    InProcessRepositoryLocationOrigin,
+    InProcessCodeLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -45,7 +45,7 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._legacy import ModeDefinition, pipeline
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
-from dagster._utils import len_iter, touch_file
+from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
@@ -183,7 +183,7 @@ large_partition_set = PartitionSetDefinition(
 def _unloadable_partition_set_origin():
     working_directory = os.path.dirname(__file__)
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(
+        InProcessCodeLocationOrigin(
             LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=__file__,
@@ -703,10 +703,10 @@ def test_backfill_with_asset_selection(
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
 
 def test_pure_asset_backfill(
@@ -724,7 +724,7 @@ def test_pure_asset_backfill(
                 workspace_context.create_request_context()
             ),
             backfill_id="backfill_with_asset_selection",
-            tags={},
+            tags={"custom_tag_key": "custom_tag_value"},
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_name_list,
@@ -746,15 +746,16 @@ def test_pure_asset_backfill(
     runs = reversed(list(instance.get_runs()))
     for run in runs:
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
         assert step_succeeded(instance, run, "foo")
         assert step_succeeded(instance, run, "reusable")
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len_iter(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill

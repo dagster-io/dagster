@@ -1,5 +1,5 @@
-import {MockedProvider} from '@apollo/client/testing';
-import {act, render, screen, waitFor} from '@testing-library/react';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {act, getByTestId, render, screen, waitFor} from '@testing-library/react';
 import userEvent, {specialChars} from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
@@ -11,6 +11,7 @@ import {AssetViewParams} from '../AssetView';
 import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
+  MultiDimensionTimeFirstPartitionHealthQuery,
 } from '../__fixtures__/PartitionHealthSummary.mocks';
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
@@ -20,8 +21,12 @@ jest.mock('../AssetPartitionList', () => ({
   AssetPartitionList: (props: AssetPartitionListProps) => (
     <div>
       <div data-testid="focused-partition">{props.focusedDimensionKey}</div>
-      {props.partitions.slice(0, 50).map((p) => (
-        <div key={p} onClick={() => props.setFocusedDimensionKey?.(p)}>
+      {props.partitions.map((p, index) => (
+        <div
+          key={p}
+          onClick={() => props.setFocusedDimensionKey?.(p)}
+          data-testid={`asset-partition-row-${p}-index-${index}`}
+        >
           {p}
         </div>
       ))}
@@ -29,12 +34,19 @@ jest.mock('../AssetPartitionList', () => ({
   ),
 }));
 
-const SingleDimensionAssetPartitions: React.FC<{assetKey: AssetKeyInput}> = ({assetKey}) => {
+const SingleDimensionAssetPartitions: React.FC<{
+  assetKey: AssetKeyInput;
+  mocks?: MockedResponse[];
+}> = ({assetKey, mocks}) => {
   const [params, setParams] = React.useState<AssetViewParams>({});
   return (
     <MemoryRouter>
       <MockedProvider
-        mocks={[SingleDimensionTimePartitionHealthQuery, SingleDimensionStaticPartitionHealthQuery]}
+        mocks={[
+          SingleDimensionTimePartitionHealthQuery,
+          SingleDimensionStaticPartitionHealthQuery,
+          ...(mocks || []),
+        ]}
       >
         <AssetPartitions
           assetKey={assetKey}
@@ -128,6 +140,62 @@ describe('AssetPartitions', () => {
 
     // verify that filtering by state updates the left sidebar
     expect(screen.queryByText('2022-08-31-00:00')).toBeVisible();
+  });
+
+  it('should support reverse sorting individual dimensions', async () => {
+    const Component = () => {
+      const [params, setParams] = React.useState<AssetViewParams>({});
+      return (
+        <MemoryRouter>
+          <MockedProvider mocks={[MultiDimensionTimeFirstPartitionHealthQuery]}>
+            <AssetPartitions
+              assetKey={{path: ['multi_dimension_time_first']}}
+              params={params}
+              setParams={setParams}
+              paramsTimeWindowOnly={false}
+              assetPartitionDimensions={['date', 'zstate']}
+              dataRefreshHint={undefined}
+            />
+          </MockedProvider>
+        </MemoryRouter>
+      );
+    };
+    await act(async () => {
+      render(<Component />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-date')).toBeVisible();
+      expect(screen.getByTestId('partitions-zstate')).toBeVisible();
+    });
+
+    expect(
+      getByTestId(screen.getByTestId('partitions-date'), 'asset-partition-row-2023-02-05-index-0'),
+    ).toBeVisible();
+    expect(
+      getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+    ).toBeVisible();
+
+    userEvent.click(screen.getByTestId('sort-0'));
+
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2021-05-06-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+
+    userEvent.click(screen.getByTestId('sort-1'));
+    await waitFor(() => {
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-WV-index-0'),
+      ).toBeVisible();
+    });
   });
 
   it('should set the focused partition when you click a list element', async () => {

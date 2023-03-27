@@ -119,7 +119,7 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
 def define_execution_field(executor_defs: Sequence[ExecutorDefinition], description: str) -> Field:
     default_in_process = False
     for executor_def in executor_defs:
-        if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
+        if executor_def == in_process_executor:
             default_in_process = True
 
     selector = selector_for_named_defs(executor_defs)
@@ -130,11 +130,7 @@ def define_execution_field(executor_defs: Sequence[ExecutorDefinition], descript
         )
 
     # If we are using the execute_in_process executor, then ignore all executor config.
-    if (
-        len(executor_defs) == 1
-        and executor_defs[0]  # pylint: disable=comparison-with-callable
-        == execute_in_process_executor
-    ):
+    if len(executor_defs) == 1 and executor_defs[0] == execute_in_process_executor:
         return Field(Permissive(), is_required=False, default_value={}, description=description)
 
     return Field(selector, description=description)
@@ -543,22 +539,21 @@ def define_solid_dictionary_cls(
     node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]],
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
-    """
-    Examples of what this method is used to generate the schema for:
-      1.
-          inputs: ...
-          ops:
-        >    op1: ...
-        >    op2: ...
+    """Examples of what this method is used to generate the schema for:
+    1.
+        inputs: ...
+        ops:
+      >    op1: ...
+      >    op2: ...
 
-      2.
-          inputs:
-          ops:
-            graph1: ...
-              inputs: ...
-              ops:
-        >       op1: ...
-        >       inner_graph: ...
+    2.
+        inputs:
+        ops:
+          graph1: ...
+            inputs: ...
+            ops:
+      >       op1: ...
+      >       inner_graph: ...
 
 
     """
@@ -656,7 +651,7 @@ def construct_config_type_dictionary(
 
 def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     return {
-        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}
+        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}  # noqa: SLF001
         for k, v in configs.items()
     }
 
@@ -686,8 +681,8 @@ CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]
 T = TypeVar("T")
 
 
-def convert_config_input(input: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
-    if isinstance(input, RunConfig):
-        return input.to_config_dict()
+def convert_config_input(inp: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
+    if isinstance(inp, RunConfig):
+        return inp.to_config_dict()
     else:
-        return input
+        return inp

@@ -126,7 +126,7 @@ def celery_k8s_job_executor(init_context):
         include=include,
         retries=retries,
         job_config=job_config,
-        job_namespace=exc_cfg.get("job_namespace"),
+        job_namespace=exc_cfg.get("job_namespace", run_launcher.job_namespace),
         load_incluster_config=exc_cfg.get("load_incluster_config"),
         kubeconfig_file=exc_cfg.get("kubeconfig_file"),
         repo_location_name=exc_cfg.get("repo_location_name"),
@@ -165,7 +165,7 @@ class CeleryK8sJobExecutor(Executor):
             dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
         self.job_config = check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace", default="default")
+        self.job_namespace = check.opt_str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = check.bool_param(
             load_incluster_config, "load_incluster_config"

@@ -242,7 +242,7 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
             if permission_result:
                 pass
 
-        permission_result.enabled  # pylint: disable=pointless-statement
+        permission_result.enabled
 
 
 class TestWorkspacePermissionsQuery(NonLaunchableGraphQLContextTestMatrix):

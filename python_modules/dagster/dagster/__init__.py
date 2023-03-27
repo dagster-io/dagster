@@ -152,6 +152,7 @@ from dagster._core.definitions.decorators.source_asset_decorator import (
     observable_source_asset as observable_source_asset,
 )
 from dagster._core.definitions.definitions_class import (
+    BindResourcesToJobs as BindResourcesToJobs,
     Definitions as Definitions,
     create_repository_using_definitions_args as create_repository_using_definitions_args,
 )
@@ -268,6 +269,7 @@ from dagster._core.definitions.partition_mapping import (
     LastPartitionMapping as LastPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
+    SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,
     StaticPartitionMapping as StaticPartitionMapping,
 )
 from dagster._core.definitions.partitioned_schedule import (

@@ -4,6 +4,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
@@ -30,7 +31,6 @@ from .sensor_definition import (
     SensorEvaluationContext,
     SensorType,
     SkipReason,
-    has_at_least_one_parameter,
 )
 
 if TYPE_CHECKING:
@@ -140,8 +140,7 @@ def build_freshness_policy_sensor_context(
     previous_minutes_late: Optional[float] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> FreshnessPolicySensorContext:
-    """
-    Builds freshness policy sensor context from provided parameters.
+    """Builds freshness policy sensor context from provided parameters.
 
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@freshness_policy_sensor`, such as when writing unit tests.
@@ -177,8 +176,7 @@ def build_freshness_policy_sensor_context(
 
 
 class FreshnessPolicySensorDefinition(SensorDefinition):
-    """
-    Define a sensor that reacts to the status of a given set of asset freshness policies,
+    """Define a sensor that reacts to the status of a given set of asset freshness policies,
     where the decorated function will be evaluated on every sensor tick.
 
     Args:
@@ -230,9 +228,11 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 return
 
             evaluation_time = pendulum.now("UTC")
-            instance_queryer = CachingInstanceQueryer(context.instance)
-            data_time_resolver = CachingDataTimeResolver(instance_queryer)
             asset_graph = context.repository_def.asset_graph
+            instance_queryer = CachingInstanceQueryer(context.instance)
+            data_time_resolver = CachingDataTimeResolver(
+                instance_queryer=instance_queryer, asset_graph=asset_graph
+            )
             monitored_keys = asset_selection.resolve(asset_graph)
 
             # get the previous status from the cursor
@@ -247,11 +247,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     continue
 
                 # get the current minutes_late value for this asset
-                minutes_late_by_key[
-                    asset_key
-                ] = data_time_resolver.get_current_minutes_late_for_key(
+                minutes_late_by_key[asset_key] = data_time_resolver.get_current_minutes_late(
                     evaluation_time=evaluation_time,
-                    asset_graph=asset_graph,
                     asset_key=asset_key,
                 )
 
@@ -345,8 +342,7 @@ def freshness_policy_sensor(
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[Callable[[FreshnessPolicySensorContext], None]], FreshnessPolicySensorDefinition,]:
-    """
-    Define a sensor that reacts to the status of a given set of asset freshness policies, where the
+    """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.
 

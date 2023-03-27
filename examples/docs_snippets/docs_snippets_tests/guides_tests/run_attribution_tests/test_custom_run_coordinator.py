@@ -51,7 +51,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             "hello@elementl.com",
         )
         MockRequest = namedtuple("MockRequest", ["headers"])
-        workspace._source = MockRequest(
+        workspace._source = MockRequest(  # noqa: SLF001
             headers={
                 "X-Amzn-Trace-Id": "some_info",
                 "X-Amzn-Oidc-Data": jwt_header,

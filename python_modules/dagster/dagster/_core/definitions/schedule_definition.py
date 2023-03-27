@@ -4,14 +4,17 @@ from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterator,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     TypeVar,
     Union,
     cast,
@@ -21,14 +24,17 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
-from ..decorator_utils import get_function_params, has_at_least_one_parameter
+from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -47,6 +53,8 @@ from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name, validate_tags
 
+if TYPE_CHECKING:
+    from dagster import ResourceDefinition
 T = TypeVar("T")
 
 RunConfig: TypeAlias = Mapping[str, Any]
@@ -55,10 +63,7 @@ RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
     RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest]
 ]
-RawScheduleEvaluationFunction: TypeAlias = Union[
-    Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
-    Callable[[], ScheduleEvaluationFunctionReturn],
-]
+RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
 ScheduleRunConfigFunction: TypeAlias = Union[
     Callable[["ScheduleEvaluationContext"], RunConfig],
@@ -77,6 +82,46 @@ ScheduleExecutionFunction: TypeAlias = Union[
 class DefaultScheduleStatus(Enum):
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
+
+
+def get_or_create_schedule_context(
+    fn: Callable, *args: Any, **kwargs: Any
+) -> "ScheduleEvaluationContext":
+    """Based on the passed resource function and the arguments passed to it, returns the
+    user-passed ScheduleEvaluationContext or creates one if it is not passed.
+
+    Raises an exception if the user passes more than one argument or if the user-provided
+    function requires a context parameter but none is passed.
+    """
+    from dagster._core.definitions.sensor_definition import get_context_param_name
+
+    context_param_name = get_context_param_name(fn)
+
+    if len(args) + len(kwargs) > 1:
+        raise DagsterInvalidInvocationError(
+            "Schedule invocation received multiple arguments. Only a first "
+            "positional context parameter should be provided."
+        )
+
+    context: Optional[ScheduleEvaluationContext] = None
+
+    if len(args) > 0:
+        context = check.opt_inst(args[0], ScheduleEvaluationContext)
+    elif len(kwargs) > 0:
+        if context_param_name and context_param_name not in kwargs:
+            raise DagsterInvalidInvocationError(
+                f"Schedule invocation expected argument '{context_param_name}'."
+            )
+        context_param_name = context_param_name or list(kwargs.keys())[0]
+        context = check.opt_inst(kwargs.get(context_param_name), ScheduleEvaluationContext)
+    elif context_param_name:
+        # If the context parameter is present but no value was provided, we error
+        raise DagsterInvalidInvocationError(
+            "Schedule evaluation function expected context argument, but no context argument "
+            "was provided when invoking."
+        )
+
+    return context or build_schedule_context()
 
 
 class ScheduleEvaluationContext:
@@ -114,7 +159,11 @@ class ScheduleEvaluationContext:
         "_log_key",
         "_logger",
         "_repository_name",
+        "_resource_defs",
         "_schedule_name",
+        "_resources_cm",
+        "_resources",
+        "_cm_scope_entered",
     ]
 
     def __init__(
@@ -123,6 +172,7 @@ class ScheduleEvaluationContext:
         scheduled_execution_time: Optional[datetime],
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
+        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
         self._exit_stack = ExitStack()
         self._instance = None
@@ -144,12 +194,41 @@ class ScheduleEvaluationContext:
         self._repository_name = repository_name
         self._schedule_name = schedule_name
 
-    def __enter__(self):
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
+        self._cm_scope_entered = False
+
+    def __enter__(self) -> "ScheduleEvaluationContext":
+        self._cm_scope_entered = True
         return self
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
+    def __exit__(self, *exc) -> None:
         self._exit_stack.close()
         self._logger = None
+
+    @property
+    def resources(self) -> Resources:
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            instance = self.instance if self._instance or self._instance_ref else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                )
+
+        return self._resources
 
     @public
     @property
@@ -165,6 +244,10 @@ class ScheduleEvaluationContext:
                 DagsterInstance.from_ref(self._instance_ref)
             )
         return cast(DagsterInstance, self._instance)
+
+    @property
+    def instance_ref(self) -> Optional[InstanceRef]:
+        return self._instance_ref
 
     @public
     @property
@@ -220,7 +303,9 @@ class DecoratedScheduleFunction(NamedTuple):
 
 
 def build_schedule_context(
-    instance: Optional[DagsterInstance] = None, scheduled_execution_time: Optional[datetime] = None
+    instance: Optional[DagsterInstance] = None,
+    scheduled_execution_time: Optional[datetime] = None,
+    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -241,11 +326,13 @@ def build_schedule_context(
 
     """
     check.opt_inst_param(instance, "instance", DagsterInstance)
+
     return ScheduleEvaluationContext(
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
         scheduled_execution_time=check.opt_inst_param(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
+        resources=resources,
     )
 
 
@@ -278,6 +365,21 @@ class ScheduleExecutionData(
             skip_message=skip_message,
             captured_log_key=captured_log_key,
         )
+
+
+def validate_and_get_schedule_resource_dict(
+    resources: Resources, schedule_name: str, required_resource_keys: Set[str]
+) -> Dict[str, Any]:
+    """Validates that the context has all the required resources and returns a dictionary of
+    resource key to resource object.
+    """
+    for k in required_resource_keys:
+        if not hasattr(resources, k):
+            raise DagsterInvalidDefinitionError(
+                f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
+            )
+
+    return {k: getattr(resources, k) for k in required_resource_keys}
 
 
 class ScheduleDefinition:
@@ -314,8 +416,6 @@ class ScheduleDefinition:
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
-        environment_vars (Optional[dict[str, str]]): The environment variables to set for the
-            schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -324,7 +424,26 @@ class ScheduleDefinition:
             schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
+
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
+        """Returns a copy of this schedule with the job replaced.
+
+        Args:
+            job (ExecutableDefinition): The job that should execute when this
+                schedule runs.
+        """
+        return ScheduleDefinition(
+            name=self.name,
+            cron_schedule=self._cron_schedule,
+            job_name=self.job_name,
+            execution_timezone=self.execution_timezone,
+            execution_fn=self._execution_fn,
+            description=self.description,
+            job=new_job,
+            default_status=self.default_status,
+        )
 
     def __init__(
         self,
@@ -343,6 +462,7 @@ class ScheduleDefinition:
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+        required_resource_keys: Optional[Set[str]] = None,
     ):
         self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(self._cron_schedule, str):
@@ -372,9 +492,19 @@ class ScheduleDefinition:
 
         self._description = check.opt_str_param(description, "description")
 
+        if environment_vars is not None:
+            deprecation_warning(
+                "`environment_vars` parameter to `ScheduleDefinition`",
+                "2.0.0",
+                (
+                    "It is no longer necessary. Schedules will have access to all environment"
+                    " variables set in the containing environment, and can safely be deleted."
+                ),
+            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
+
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
         if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
@@ -398,7 +528,6 @@ class ScheduleDefinition:
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
-            # pylint: disable=unused-argument
             def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
                 return check.opt_dict_param(run_config, "run_config")
 
@@ -418,6 +547,8 @@ class ScheduleDefinition:
                 tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
+            self._tags_fn = tags_fn
+            self._tags = tags
 
             _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
@@ -476,7 +607,28 @@ class ScheduleDefinition:
             default_status, "default_status", DefaultScheduleStatus
         )
 
-    def __call__(self, *args, **kwargs):
+        resource_arg_names: Set[str] = (
+            {arg.name for arg in get_resource_args(self._execution_fn.decorated_fn)}
+            if isinstance(self._execution_fn, DecoratedScheduleFunction)
+            else set()
+        )
+
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
+            (
+                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+                " the decorated function"
+            ),
+        )
+
+        self._required_resource_keys = (
+            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
+            or resource_arg_names
+        )
+
+    def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
+        from dagster._core.definitions.sensor_definition import get_context_param_name
+
         from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         if not isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -484,43 +636,15 @@ class ScheduleDefinition:
                 "Schedule invocation is only supported for schedules created via the schedule "
                 "decorators."
             )
-        result = None
-        if self._execution_fn.has_context_arg:
-            if len(args) == 0 and len(kwargs) == 0:
-                raise DagsterInvalidInvocationError(
-                    "Schedule decorated function has context argument, but no context argument was "
-                    "provided when invoking."
-                )
-            if len(args) + len(kwargs) > 1:
-                raise DagsterInvalidInvocationError(
-                    "Schedule invocation received multiple arguments. Only a first "
-                    "positional context parameter should be provided when invoking."
-                )
 
-            context_param_name = get_function_params(self._execution_fn.decorated_fn)[0].name
+        context_param_name = get_context_param_name(self._execution_fn.decorated_fn)
+        context = get_or_create_schedule_context(self._execution_fn.decorated_fn, *args, **kwargs)
+        context_param = {context_param_name: context} if context_param_name else {}
 
-            if args:
-                context = check.opt_inst_param(
-                    args[0], context_param_name, ScheduleEvaluationContext
-                )
-            else:
-                if context_param_name not in kwargs:
-                    raise DagsterInvalidInvocationError(
-                        f"Schedule invocation expected argument '{context_param_name}'."
-                    )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, ScheduleEvaluationContext
-                )
-
-            context = context if context else build_schedule_context()
-
-            result = self._execution_fn.decorated_fn(context)
-        else:
-            if len(args) + len(kwargs) > 0:
-                raise DagsterInvalidInvocationError(
-                    "Decorated schedule function takes no arguments, but arguments were provided."
-                )
-            result = self._execution_fn.decorated_fn()
+        resources = validate_and_get_schedule_resource_dict(
+            context.resources, self._name, self._required_resource_keys
+        )
+        result = self._execution_fn.decorated_fn(**context_param, **resources)
 
         if isinstance(result, dict):
             return copy.deepcopy(result)
@@ -548,9 +672,15 @@ class ScheduleDefinition:
         return self._cron_schedule  # type: ignore
 
     @public
+    @deprecated
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
+
+    @public
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        return self._required_resource_keys
 
     @public
     @property
@@ -575,12 +705,12 @@ class ScheduleDefinition:
 
         """
         check.inst_param(context, "context", ScheduleEvaluationContext)
-        execution_fn: Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"]
+        execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
             execution_fn = self._execution_fn.wrapped_fn
         else:
             execution_fn = cast(
-                Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"],
+                Callable[..., "ScheduleEvaluationFunctionReturn"],
                 self._execution_fn,
             )
 

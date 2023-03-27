@@ -58,8 +58,7 @@ class HNSnapshotClient(HNClient):
 
 
 class HNAPISubsampleClient(HNClient):
-    """
-    This client gets real data from the web API, but is much faster than the normal implementation,
+    """This client gets real data from the web API, but is much faster than the normal implementation,
     which is useful for testing / demoing purposes.
     """
 

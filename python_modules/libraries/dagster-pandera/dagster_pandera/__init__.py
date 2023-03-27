@@ -55,8 +55,7 @@ VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> DagsterType:
-    """
-    Convert a Pandera dataframe schema to a `DagsterType`.
+    """Convert a Pandera dataframe schema to a `DagsterType`.
 
     The generated Dagster type will be given an automatically generated `name`. The schema's `title`
     property, `name` property, or class name (in that order) will be used. If neither `title` or
@@ -219,7 +218,8 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
         unique=pa_column.unique,
         other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name: str = check.not_none(pa_column.name, "name")
+    name = check.not_none(pa_column.name, "name")
+    name = name if isinstance(name, str) else "/".join(name)
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),

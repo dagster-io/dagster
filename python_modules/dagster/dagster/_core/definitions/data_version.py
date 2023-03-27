@@ -28,7 +28,6 @@ if TYPE_CHECKING:
         AssetKey,
         AssetMaterialization,
         AssetObservation,
-        Materialization,
     )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
@@ -225,7 +224,7 @@ def _extract_event_data_from_entry(
     from dagster._core.events import AssetObservationData, StepMaterializationData
 
     data = check.not_none(entry.dagster_event).event_specific_data
-    event_data: Union[Materialization, AssetMaterialization, AssetObservation]
+    event_data: Union[AssetMaterialization, AssetObservation]
     if isinstance(data, StepMaterializationData):
         event_data = data.materialization
     elif isinstance(data, AssetObservationData):
@@ -256,8 +255,7 @@ class StaleCause(NamedTuple):
 
 
 class CachingStaleStatusResolver:
-    """
-    Used to resolve data version information. Avoids redundant database
+    """Used to resolve data version information. Avoids redundant database
     calls that would otherwise occur. Intended for use within the scope of a
     single "request" (e.g. GQL request, RunRequest resolution).
     """

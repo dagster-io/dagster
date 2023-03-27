@@ -770,8 +770,7 @@ as_dagster_type are registered here so that we can remap the Python types to run
 def make_python_type_usable_as_dagster_type(
     python_type: TypingType[t.Any], dagster_type: DagsterType
 ) -> None:
-    """
-    Take any existing python type and map it to a dagster type (generally created with
+    """Take any existing python type and map it to a dagster type (generally created with
     :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once
     on a given python type.
     """
@@ -943,9 +942,7 @@ def is_generic_output_annotation(dagster_type: object) -> bool:
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
-    """
-    Resolves a Python type to a Dagster type.
-    """
+    """Resolves a Python type to a Dagster type."""
     check.inst_param(python_type, "python_type", type)
 
     if python_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:

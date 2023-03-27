@@ -5,6 +5,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     extract_data_provenance_from_entry,
@@ -15,7 +16,6 @@ from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
-    Materialization,
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
@@ -26,7 +26,10 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidPropertyError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -37,7 +40,7 @@ from dagster._utils.forked_pdb import ForkedPdb
 from .system import StepExecutionContext
 
 
-class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
+class AbstractComputeExecutionContext(ABC):
     """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
     """
 
@@ -270,6 +273,16 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @property
+    def assets_def(self) -> AssetsDefinition:
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            raise DagsterInvalidPropertyError(
+                f"Op '{self.op.name}' does not have an assets definition."
+            )
+        return assets_def
+
+    @public
+    @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
@@ -496,7 +509,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation, ExpectationResult]): The event to log.
 
         **Examples:**
 
@@ -508,7 +521,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, AssetMaterialization):
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
             )
@@ -584,8 +597,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def retry_number(self) -> int:
-        """
-        Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
+        """Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
         """
         return self._step_execution_context.previous_attempt_count
 
@@ -594,16 +606,14 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def get_mapping_key(self) -> Optional[str]:
-        """
-        Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
+        """Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
 
     @public
     @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
-        """
-        Return the provenance information for the most recent materialization of an asset.
+        """Return the provenance information for the most recent materialization of an asset.
 
         Args:
             asset_key (AssetKey): Key of the asset for which to retrieve provenance.

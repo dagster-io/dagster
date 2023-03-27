@@ -20,8 +20,7 @@ SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 def build_snowflake_io_manager(
     type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
 ) -> IOManagerDefinition:
-    """
-    Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
+    """Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
@@ -193,8 +192,7 @@ class SnowflakeDbClient(DbClient):
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
-    """
-    Returns a SQL statement that deletes data in the given table to make way for the output data
+    """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
     if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:

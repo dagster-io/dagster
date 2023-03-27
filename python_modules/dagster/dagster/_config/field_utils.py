@@ -63,7 +63,7 @@ def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
         return FIELD_HASH_CACHE[key]
 
     defined_cls_inst = super(defined_cls, passed_cls).__new__(defined_cls)
-    defined_cls_inst._initialized = False  # pylint: disable=protected-access
+    defined_cls_inst._initialized = False  # noqa: SLF001
     FIELD_HASH_CACHE[key] = defined_cls_inst
     return defined_cls_inst
 
@@ -136,7 +136,7 @@ class Shape(_ConfigHasFields):
         field_aliases=None,
     ):
         # if we hit in the field cache - skip double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)
@@ -253,7 +253,7 @@ class Permissive(_ConfigHasFields):
 
     def __init__(self, fields=None, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields) if fields else None
@@ -320,7 +320,7 @@ class Selector(_ConfigHasFields):
 
     def __init__(self, fields, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)
@@ -470,7 +470,8 @@ def _config_dictionary_from_values_inner(obj: Any):
         return {"env": str(obj)}
     elif isinstance(obj, Config):
         return {
-            k: _config_dictionary_from_values_inner(v) for k, v in obj._as_config_dict().items()
+            k: _config_dictionary_from_values_inner(v)
+            for k, v in obj._as_config_dict().items()  # noqa: SLF001
         }
 
     return obj
@@ -479,8 +480,7 @@ def _config_dictionary_from_values_inner(obj: Any):
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
-    """
-    Converts a set of config values into a dictionary representation,
+    """Converts a set of config values into a dictionary representation,
     in particular converting EnvVar objects into Dagster config inputs
     and processing data structures such as dicts, lists, and structured Config classes.
     """

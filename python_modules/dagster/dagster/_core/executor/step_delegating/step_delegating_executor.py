@@ -98,7 +98,7 @@ class StepDelegatingExecutor(Executor):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        self._event_cursor = -1  # pylint: disable=attribute-defined-outside-init
+        self._event_cursor = -1
 
         DagsterEvent.engine_event(
             plan_context,

@@ -22,7 +22,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         CommandStepBuilder("docs code snippets")
         .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
         .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.V3_7)
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         # Make sure the docs site can build end-to-end.
         CommandStepBuilder("docs next")
@@ -33,7 +33,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "yarn build-master",
         )
         .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.V3_7)
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         # Make sure docs sphinx build runs.
         CommandStepBuilder("docs apidoc build")
@@ -45,7 +45,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             # "git diff --exit-code --ignore-all-space --no-patch",
         )
         .with_skip(skip_if_no_docs_changes())
-        .on_test_image(AvailablePythonVersion.V3_9)
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         # Verify screenshot integrity.
         build_tox_step("docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()),

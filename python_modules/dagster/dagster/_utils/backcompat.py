@@ -24,8 +24,7 @@ def canonicalize_backcompat_args(
     # stacklevel=3 punches up to the caller of canonicalize_backcompat_args
     stacklevel: int = 3,
 ) -> T:
-    """
-    Utility for managing backwards compatibility of two related arguments.
+    """Utility for managing backwards compatibility of two related arguments.
 
     For example if you had an existing function
 
@@ -103,9 +102,7 @@ def rename_warning(
     additional_warn_txt: Optional[str] = None,
     stacklevel: int = 3,
 ) -> None:
-    """
-    Common utility for managing backwards compatibility of renaming.
-    """
+    """Common utility for managing backwards compatibility of renaming."""
     warnings.warn(
         '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}"'
         " instead.".format(

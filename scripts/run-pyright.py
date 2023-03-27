@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: T201
 
 import argparse
 import json
@@ -283,6 +284,11 @@ def normalize_env(env: str, rebuild: bool, update_pins: bool) -> None:
                         "install",
                         "-r",
                         dest_requirements_path,
+                        # editable-mode=compat ensures dagster-internal editable installs are done
+                        # in a way that is legible to pyright (i.e. not using import hooks). See:
+                        #  https://github.com/microsoft/pyright/blob/main/docs/import-resolution.md#editable-installs
+                        "--config-settings",
+                        "editable-mode=compat",
                         *extra_pip_install_args,
                     ]
                 ),

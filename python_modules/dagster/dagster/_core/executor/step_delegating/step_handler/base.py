@@ -76,7 +76,7 @@ class CheckStepHealthResult(
         return CheckStepHealthResult(is_healthy=False, unhealthy_reason=reason)
 
 
-class StepHandler(ABC):  # pylint: disable=no-init
+class StepHandler(ABC):
     @property
     @abstractmethod
     def name(self) -> str:

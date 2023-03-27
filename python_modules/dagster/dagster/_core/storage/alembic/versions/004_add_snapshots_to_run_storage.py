@@ -11,7 +11,7 @@ from dagster._core.storage.migration.utils import has_column, has_table
 from sqlalchemy import inspect
 
 # alembic magic breaks pylint
-# pylint: disable=no-member
+
 
 # revision identifiers, used by Alembic.
 revision = "c63a27054f08"

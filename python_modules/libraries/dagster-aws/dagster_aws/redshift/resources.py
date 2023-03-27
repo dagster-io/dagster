@@ -17,7 +17,7 @@ class RedshiftError(Exception):
 
 
 class _BaseRedshiftResource(abc.ABC):
-    def __init__(self, context):  # pylint: disable=too-many-locals
+    def __init__(self, context):
         # Extract parameters from resource config
         self.conn_args = {
             k: context.resource_config.get(k)
@@ -273,7 +273,9 @@ class FakeRedshiftResource(_BaseRedshiftResource):
 
 
 def define_redshift_config():
-    """Redshift configuration. See the Redshift documentation for reference:
+    """Redshift configuration.
+
+    See the Redshift documentation for reference:
 
     https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-to-cluster.html
     """

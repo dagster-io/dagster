@@ -92,7 +92,7 @@ class SnapshotType(Enum):
     EXECUTION_PLAN = "EXECUTION_PLAN"
 
 
-class SqlRunStorage(RunStorage):  # pylint: disable=no-init
+class SqlRunStorage(RunStorage):
     """Base class for SQL based run storages."""
 
     @abstractmethod
@@ -137,7 +137,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
 
-        runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
+        runs_insert = RunsTable.insert().values(
             run_id=pipeline_run.run_id,
             pipeline_name=pipeline_run.pipeline_name,
             status=pipeline_run.status.value,
@@ -155,7 +155,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             tags_to_insert = pipeline_run.tags_for_storage()
             if tags_to_insert:
                 conn.execute(
-                    RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    RunTagsTable.insert(),
                     [
                         dict(run_id=pipeline_run.run_id, key=k, value=v)
                         for k, v in tags_to_insert.items()
@@ -198,7 +198,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             conn.execute(
-                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
                 .values(
                     run_body=serialize_value(run.with_status(new_pipeline_status)),
@@ -574,7 +574,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             conn.execute(
-                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
                 .values(
                     run_body=serialize_value(run.with_tags(merge_dicts(current_tags, new_tags))),
@@ -592,18 +592,18 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
             for tag in existing_tags:
                 conn.execute(
-                    RunTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    RunTagsTable.update()
                     .where(db.and_(RunTagsTable.c.run_id == run_id, RunTagsTable.c.key == tag))
                     .values(value=new_tags[tag])
                 )
 
             if added_tags:
                 conn.execute(
-                    RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    RunTagsTable.insert(),
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Tuple[str, Iterable[DagsterRun]]:
+    def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
         pipeline_run = self._get_run_by_id(run_id)
         if not pipeline_run:
@@ -858,12 +858,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.inst_param(snapshot_type, "snapshot_type", SnapshotType)
 
         with self.connect() as conn:
-            snapshot_insert = (
-                SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    snapshot_id=snapshot_id,
-                    snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
-                    snapshot_type=snapshot_type.value,
-                )
+            snapshot_insert = SnapshotsTable.insert().values(
+                snapshot_id=snapshot_id,
+                snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),
+                snapshot_type=snapshot_type.value,
             )
             conn.execute(snapshot_insert)
             return snapshot_id
@@ -1003,18 +1001,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return len(results) > 0
 
     def mark_index_built(self, migration_name: str) -> None:
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=migration_name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=migration_name,
+            migration_completed=datetime.now(),
         )
         with self.connect() as conn:
             try:
                 conn.execute(query)
             except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)
                     .values(migration_completed=datetime.now())
                 )
@@ -1040,7 +1036,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # insert, or update if already present
             try:
                 conn.execute(
-                    DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    DaemonHeartbeatsTable.insert().values(
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
@@ -1049,9 +1045,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             except db_exc.IntegrityError:
                 conn.execute(
-                    DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
+                    DaemonHeartbeatsTable.update()
                     .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
-                    .values(  # pylint: disable=no-value-for-parameter
+                    .values(
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_value(daemon_heartbeat),
@@ -1070,16 +1066,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         """Clears the run storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(RunsTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(BulkActionsTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(RunsTable.delete())
+            conn.execute(RunTagsTable.delete())
+            conn.execute(SnapshotsTable.delete())
+            conn.execute(DaemonHeartbeatsTable.delete())
+            conn.execute(BulkActionsTable.delete())
 
     def wipe_daemon_heartbeats(self) -> None:
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
-            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(DaemonHeartbeatsTable.delete())
 
     def get_backfills(
         self,
@@ -1122,9 +1118,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             values["action_type"] = partition_backfill.bulk_action_type.value
 
         with self.connect() as conn:
-            conn.execute(
-                BulkActionsTable.insert().values(**values)  # pylint: disable=no-value-for-parameter
-            )
+            conn.execute(BulkActionsTable.insert().values(**values))
 
     def update_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
@@ -1135,7 +1129,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
         with self.connect() as conn:
             conn.execute(
-                BulkActionsTable.update()  # pylint: disable=no-value-for-parameter
+                BulkActionsTable.update()
                 .where(BulkActionsTable.c.key == backfill_id)
                 .values(
                     status=partition_backfill.status.value,
@@ -1166,7 +1160,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 conn.execute(KeyValueStoreTable.insert().values(db_values))
             except db_exc.IntegrityError:
                 conn.execute(
-                    KeyValueStoreTable.update()  # pylint: disable=no-value-for-parameter
+                    KeyValueStoreTable.update()
                     .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
                     .values(value=db.sql.case(pairs, value=KeyValueStoreTable.c.key))
                 )
@@ -1176,14 +1170,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         new_label = job_origin.external_repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(
-                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                RunsTable.update()
                 .where(RunsTable.c.run_id == run.run_id)
                 .values(
                     run_body=serialize_value(run.with_job_origin(job_origin)),
                 )
             )
             conn.execute(
-                RunTagsTable.update()  # pylint: disable=no-value-for-parameter
+                RunTagsTable.update()
                 .where(RunTagsTable.c.run_id == run.run_id)
                 .where(RunTagsTable.c.key == REPOSITORY_LABEL_TAG)
                 .values(value=new_label)

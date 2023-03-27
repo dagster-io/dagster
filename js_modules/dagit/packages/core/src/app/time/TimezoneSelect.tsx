@@ -1,7 +1,7 @@
 import {MenuDivider, MenuItem, Menu, Select} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {TimezoneContext} from './TimezoneContext';
+import {TimeContext} from './TimeContext';
 import {browserTimezone, browserTimezoneAbbreviation} from './browserTimezone';
 
 /**
@@ -57,7 +57,9 @@ interface Props {
  * - Everything else
  */
 export const TimezoneSelect: React.FC<Props> = ({trigger}) => {
-  const [timezone, setTimezone] = React.useContext(TimezoneContext);
+  const {
+    timezone: [timezone, setTimezone],
+  } = React.useContext(TimeContext);
 
   const allTimezoneItems = React.useMemo(() => {
     const date = new Date();

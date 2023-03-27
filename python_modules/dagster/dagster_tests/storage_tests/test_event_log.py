@@ -25,7 +25,7 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):  # pylint: disable=arguments-differ
+    def event_log_storage(self):
         storage = InMemoryEventLogStorage()
         try:
             yield storage
@@ -37,7 +37,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):  # pylint: disable=arguments-differ
+    def event_log_storage(self):
         # make the temp dir in the cwd since default temp roots
         # have issues with FS notif based event log watching
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
@@ -49,7 +49,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
-        # pylint: disable=protected-access
+
         with open(
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
@@ -60,10 +60,8 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
         SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("foo")))
         with storage.run_connection("foo") as conn:
-            event_insert = (
-                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
-                )
+            event_insert = SqlEventLogStorageTable.insert().values(
+                run_id="foo", event="{bar}", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
 
@@ -73,10 +71,8 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         SqlEventLogStorageMetadata.create_all(create_engine(storage.conn_string_for_shard("bar")))
 
         with storage.run_connection("bar") as conn:
-            event_insert = (
-                SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    run_id="bar", event="3", dagster_event_type=None, timestamp=None
-                )
+            event_insert = SqlEventLogStorageTable.insert().values(
+                run_id="bar", event="3", dagster_event_type=None, timestamp=None
             )
             conn.execute(event_insert)
         with pytest.raises(DagsterEventLogInvalidForRun):
@@ -92,7 +88,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             traceback.print_tb(exc_info[2])
 
     def test_concurrent_sqlite_event_log_connections(self, storage):
-        tmpdir_path = storage._base_dir  # pylint: disable=protected-access
+        tmpdir_path = storage._base_dir  # noqa: SLF001
         ctx = multiprocessing.get_context("spawn")
         exceptions = ctx.Queue()
         ps = []
@@ -118,7 +114,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):  # pylint: disable=arguments-differ
+    def event_log_storage(self):
         # make the temp dir in the cwd since default temp roots
         # have issues with FS notif based event log watching
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
@@ -133,7 +129,7 @@ class TestLegacyStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self):  # pylint: disable=arguments-differ
+    def event_log_storage(self):
         # make the temp dir in the cwd since default temp roots
         # have issues with FS notif based event log watching
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:

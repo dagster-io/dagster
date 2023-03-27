@@ -237,7 +237,7 @@ def test_partitions_key():
     @op
     def my_op(context):
         assert (
-            context._step_execution_context.plan_data.dagster_run.tags[  # pylint: disable=protected-access
+            context._step_execution_context.plan_data.dagster_run.tags[  # noqa: SLF001
                 "dagster/partition"
             ]
             == "2020-01-01"
@@ -382,7 +382,6 @@ def test_retries_exceeded():
 
 
 def test_execute_in_process_defaults_override():
-    # pylint: disable=comparison-with-callable
     @op
     def some_op(context):
         assert context.job_def.resource_defs["io_manager"] == mem_io_manager

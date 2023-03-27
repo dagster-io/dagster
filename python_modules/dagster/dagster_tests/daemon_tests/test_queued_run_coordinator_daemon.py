@@ -1,11 +1,12 @@
-# pylint: disable=redefined-outer-name
-
 import time
 from contextlib import contextmanager
+from typing import Iterator
 
 import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.host_representation.code_location import GrpcServerCodeLocation
+from dagster._core.host_representation.handle import JobHandle
+from dagster._core.host_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import (
@@ -61,18 +62,18 @@ def workspace_fixture(instance):
 
 
 @pytest.fixture(scope="module")
-def pipeline_handle():
+def pipeline_handle() -> Iterator[JobHandle]:
     with get_foo_job_handle() as handle:
         yield handle
 
 
 @pytest.fixture(scope="module")
-def other_location_pipeline_handle(pipeline_handle):
+def other_location_pipeline_handle(pipeline_handle: JobHandle) -> JobHandle:
+    code_location_origin = pipeline_handle.repository_handle.code_location_origin
+    assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
     return pipeline_handle._replace(
         repository_handle=pipeline_handle.repository_handle._replace(
-            repository_location_origin=pipeline_handle.repository_handle.repository_location_origin._replace(
-                location_name="other_location_name"
-            )
+            code_location_origin=code_location_origin._replace(location_name="other_location_name")
         )
     )
 
@@ -582,9 +583,7 @@ def test_limits_per_unique_value_overlapping_limits(
 
 
 def test_locations_not_created(instance, monkeypatch, workspace_context, daemon, pipeline_handle):
-    """
-    Verifies that no repository location is created when runs are dequeued.
-    """
+    """Verifies that no repository location is created when runs are dequeued."""
     create_queued_run(
         instance,
         pipeline_handle,
@@ -597,7 +596,7 @@ def test_locations_not_created(instance, monkeypatch, workspace_context, daemon,
         run_id="queued-run-2",
     )
 
-    original_method = GrpcServerRepositoryLocation.__init__
+    original_method = GrpcServerCodeLocation.__init__
 
     method_calls = []
 
@@ -626,7 +625,7 @@ def test_locations_not_created(instance, monkeypatch, workspace_context, daemon,
         )
 
     monkeypatch.setattr(
-        GrpcServerRepositoryLocation,
+        GrpcServerCodeLocation,
         "__init__",
         mocked_location_init,
     )

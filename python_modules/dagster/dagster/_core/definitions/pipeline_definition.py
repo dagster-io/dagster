@@ -27,13 +27,13 @@ from dagster._core.errors import (
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
+    DependencyMapping,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
     GraphNode,
@@ -51,7 +51,7 @@ from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .preset import PresetDefinition
-from .resource_requirement import ensure_requirements_satisfied
+from .resource_requirement import ResourceRequirement, ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -178,7 +178,7 @@ class PipelineDefinition:
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
         ] = None,
         mode_defs: Optional[Sequence[ModeDefinition]] = None,
         preset_defs: Optional[Sequence[PresetDefinition]] = None,
@@ -193,6 +193,7 @@ class PipelineDefinition:
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        _should_validate_resource_requirements: bool = True,
     ):
         # If a graph is specified directly use it
         if isinstance(graph_def, GraphDefinition):
@@ -278,7 +279,7 @@ class PipelineDefinition:
         resource_requirements = {}
         for mode_def in self._mode_definitions:
             resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(
-                mode_def
+                mode_def, _should_validate_resource_requirements
             )
         self._resource_requirements = resource_requirements
 
@@ -299,9 +300,24 @@ class PipelineDefinition:
 
         self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
 
-    def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
+    def _get_resource_requirements_for_mode(
+        self, mode_def: ModeDefinition, validate_requirements: bool = False
+    ) -> Set[str]:
         from ..execution.resources_init import get_transitive_required_resource_keys
 
+        requirements = self._get_mode_requirements(mode_def)
+        if validate_requirements:
+            ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
+        required_keys = {requirement.key for requirement in requirements}
+
+        if validate_requirements:
+            return required_keys.union(
+                get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
+            )
+        else:
+            return required_keys
+
+    def _get_mode_requirements(self, mode_def: ModeDefinition) -> Sequence[ResourceRequirement]:
         requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
         for hook_def in self._hook_defs:
             requirements += list(
@@ -309,11 +325,20 @@ class PipelineDefinition:
                     outer_context=f"{self.target_type} '{self._name}'"
                 )
             )
-        ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
-        required_keys = {requirement.key for requirement in requirements}
-        return required_keys.union(
-            get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
-        )
+        return requirements
+
+    def validate_resource_requirements_satisfied(self) -> None:
+        for mode_def in self._mode_definitions:
+            requirements = self._get_mode_requirements(mode_def)
+            ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
+
+    def is_missing_required_resources(self) -> bool:
+        for mode_def in self._mode_definitions:
+            requirements = self._get_mode_requirements(mode_def)
+            for requirement in requirements:
+                if not requirement.resources_contain_key(mode_def.resource_defs):
+                    return True
+        return False
 
     @property
     def name(self) -> str:
@@ -332,7 +357,7 @@ class PipelineDefinition:
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
+        return merge_dicts(self._graph_def.tags, self._tags)
 
     @property
     def metadata(self) -> Sequence[MetadataEntry]:
@@ -351,9 +376,7 @@ class PipelineDefinition:
         return self._graph_def.dependency_structure
 
     @property
-    def dependencies(
-        self,
-    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+    def dependencies(self) -> DependencyMapping[NodeInvocation]:
         return self._graph_def.dependencies
 
     def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
@@ -684,8 +707,7 @@ def _get_pipeline_subset_def(
     pipeline_def: PipelineDefinition,
     solids_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
-    """
-    Build a pipeline which is a subset of another pipeline.
+    """Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -708,7 +730,7 @@ def _get_pipeline_subset_def(
     )
 
     deps: Dict[
-        Union[str, NodeInvocation],
+        NodeInvocation,
         Dict[str, IDependencyDefinition],
     ] = {_dep_key_of(solid): {} for solid in solids}
 

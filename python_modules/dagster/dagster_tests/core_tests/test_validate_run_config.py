@@ -1,8 +1,6 @@
 import pytest
-from dagster import validate_run_config
-from dagster._core.definitions.decorators import op
+from dagster import job, op, validate_run_config
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._legacy import pipeline
 
 
 def test_validate_run_config():
@@ -10,7 +8,7 @@ def test_validate_run_config():
     def basic():
         pass
 
-    @pipeline
+    @job
     def basic_pipeline():
         basic()
 
@@ -20,7 +18,7 @@ def test_validate_run_config():
     def requires_config(_):
         pass
 
-    @pipeline
+    @job
     def pipeline_requires_config():
         requires_config()
 
@@ -30,19 +28,11 @@ def test_validate_run_config():
 
     assert result == {
         "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
-        "resources": {"io_manager": {"config": None}},
-        "loggers": {},
-    }
-
-    result_with_storage = validate_run_config(
-        pipeline_requires_config,
-        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
-    )
-
-    assert result_with_storage == {
-        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
-        "execution": {"in_process": {"retries": {"enabled": {}}}},
+        "execution": {
+            "multi_or_in_process_executor": {
+                "multiprocess": {"max_concurrent": 0, "retries": {"enabled": {}}}
+            }
+        },
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }

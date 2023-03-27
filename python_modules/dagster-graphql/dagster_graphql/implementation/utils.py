@@ -53,9 +53,7 @@ def assert_permission_for_location(
 
 def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        def _fn(
-            self, graphene_info, *args: P.args, **kwargs: P.kwargs
-        ):  # pylint: disable=unused-argument
+        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             result = fn(self, graphene_info, *args, **kwargs)
 
             if not graphene_info.context.was_permission_checked(permission):
@@ -70,9 +68,7 @@ def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
     def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
-        def _fn(
-            self, graphene_info, *args: P.args, **kwargs: P.kwargs
-        ):  # pylint: disable=unused-argument
+        def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
             assert_permission(graphene_info, permission)
 
             return fn(self, graphene_info, *args, **kwargs)

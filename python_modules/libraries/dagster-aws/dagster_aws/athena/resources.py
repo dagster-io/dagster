@@ -109,7 +109,7 @@ class FakeAthenaResource(AthenaResource):
 
     def execute_query(
         self, query, fetch_results=False, expected_states=None, expected_results=None
-    ):  # pylint: disable=arguments-differ
+    ):
         """Fake for execute_query; stubs the expected Athena endpoints, polls against the provided
         expected query execution states, and returns the provided results as a list of tuples.
 

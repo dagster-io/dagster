@@ -56,9 +56,7 @@ class ConfigTypeKind(PythonEnum):
 
 
 class ConfigType:
-    """
-    The class backing DagsterTypes as they are used processing configuration data.
-    """
+    """The class backing DagsterTypes as they are used processing configuration data."""
 
     def __init__(
         self,
@@ -91,8 +89,7 @@ class ConfigType:
         return _CONFIG_MAP[builtin_enum]
 
     def post_process(self, value):
-        """
-        Implement this in order to take a value provided by the user
+        """Implement this in order to take a value provided by the user
         and perform computation on it. This can be done to coerce data types,
         fetch things from the environment (e.g. environment variables), or
         to do custom validation. If the value is not valid, throw a
@@ -326,8 +323,7 @@ class Enum(ConfigType):
 
     @classmethod
     def from_python_enum(cls, enum, name=None):
-        """
-        Create a Dagster enum corresponding to an existing Python enum.
+        """Create a Dagster enum corresponding to an existing Python enum.
 
         Args:
             enum (enum.EnumMeta):

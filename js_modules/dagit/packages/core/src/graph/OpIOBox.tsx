@@ -206,7 +206,6 @@ export function metadataForIO(
       jumpTargetOp = others.length === 1 ? others[0].solid.name : null;
       edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
-    console.log({title});
     edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_OUT});
   }
 

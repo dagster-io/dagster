@@ -10,7 +10,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 
 
 def get_previous_state_path():
-    """Make sure we're providing a compatible previous manifest.json object"""
+    """Make sure we're providing a compatible previous manifest.json object."""
     import dbt.version
     from packaging import version
 
@@ -102,7 +102,8 @@ def test_dbt_asset_selection(select, exclude, expected_asset_names):
 
 
 def test_dbt_asset_selection_with_state():
-    """Changes from previous state to sample_manifest.json:
+    """Changes from previous state to sample_manifest.json.
+
     - sort_cold_cereals_by_calories has an updated definition
     - added subdir/least_caloric
 

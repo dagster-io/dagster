@@ -135,9 +135,7 @@ class FromSourceAsset(
     ),
     StepInputSource,
 ):
-    """
-    Load input value from an asset.
-    """
+    """Load input value from an asset."""
 
     def load_input_object(
         self,
@@ -283,9 +281,7 @@ class FromRootInputManager(
     ),
     StepInputSource,
 ):
-    """
-    Load input value via a RootInputManager.
-    """
+    """Load input value via a RootInputManager."""
 
     def load_input_object(
         self,
@@ -414,8 +410,7 @@ class FromStepOutput(
     ),
     StepInputSource,
 ):
-    """
-    This step input source is the output of a previous step.
+    """This step input source is the output of a previous step.
     Source handle may refer to graph in case of input mapping.
     """
 
@@ -564,8 +559,7 @@ class FromConfig(
     ),
     StepInputSource,
 ):
-    """
-    This step input source is configuration to be passed to a type loader.
+    """This step input source is configuration to be passed to a type loader.
 
     A None solid_handle implies the inputs were provided at the root graph level.
     """
@@ -578,8 +572,7 @@ class FromConfig(
         )
 
     def get_associated_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        """
-        Returns the InputDefinition along the potential composition InputMapping chain
+        """Returns the InputDefinition along the potential composition InputMapping chain
         that the config was provided at.
         """
         if self.solid_handle:
@@ -588,8 +581,7 @@ class FromConfig(
             return pipeline_def.graph.input_def_named(self.input_name)
 
     def get_associated_config(self, resolved_run_config: ResolvedRunConfig):
-        """
-        Returns the config specified, potentially specified at any point along graph composition
+        """Returns the config specified, potentially specified at any point along graph composition
         including the root.
         """
         if self.solid_handle:
@@ -685,9 +677,7 @@ class FromDefaultValue(
     ),
     StepInputSource,
 ):
-    """
-    This step input source is the default value declared on an InputDefinition.
-    """
+    """This step input source is the default value declared on an InputDefinition."""
 
     def __new__(cls, solid_handle: NodeHandle, input_name: str):
         return super(FromDefaultValue, cls).__new__(cls, solid_handle, input_name)
@@ -853,8 +843,7 @@ class FromPendingDynamicStepOutput(
         ],
     ),
 ):
-    """
-    This step input source models being directly downstream of a step with dynamic output.
+    """This step input source models being directly downstream of a step with dynamic output.
     Once that step completes successfully, this will resolve once per DynamicOutput.
     """
 
@@ -919,8 +908,7 @@ class FromUnresolvedStepOutput(
         ],
     ),
 ):
-    """
-    This step input source models being downstream of another unresolved step,
+    """This step input source models being downstream of another unresolved step,
     for example indirectly downstream from a step with dynamic output.
     """
 
@@ -1100,6 +1088,4 @@ class FromRootInputConfig(
     NamedTuple("_FromRootInputConfig", [("input_name", str)]),
     StepInputSource,
 ):
-    """
-    DEPRECATED replaced by FromConfig with None node handle.
-    """
+    """DEPRECATED replaced by FromConfig with None node handle."""

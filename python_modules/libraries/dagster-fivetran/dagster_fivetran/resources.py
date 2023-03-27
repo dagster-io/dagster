@@ -32,9 +32,7 @@ DEFAULT_POLL_INTERVAL = 10
 
 
 class FivetranResource:
-    """
-    This class exposes methods on top of the Fivetran REST API.
-    """
+    """This class exposes methods on top of the Fivetran REST API."""
 
     def __init__(
         self,
@@ -69,8 +67,7 @@ class FivetranResource:
     def make_request(
         self, method: str, endpoint: str, data: Optional[str] = None
     ) -> Mapping[str, Any]:
-        """
-        Creates and sends a request to the desired Fivetran Connector API endpoint.
+        """Creates and sends a request to the desired Fivetran Connector API endpoint.
 
         Args:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
@@ -109,8 +106,7 @@ class FivetranResource:
         raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
     def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
-        """
-        Gets details about a given connector from the Fivetran Connector API.
+        """Gets details about a given connector from the Fivetran Connector API.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -122,8 +118,7 @@ class FivetranResource:
         return self.make_connector_request(method="GET", endpoint=connector_id)
 
     def _assert_syncable_connector(self, connector_id: str):
-        """
-        Confirms that a given connector is eligible to sync. Will raise a Failure in the event that
+        """Confirms that a given connector is eligible to sync. Will raise a Failure in the event that
         the connector is either paused or not fully setup.
 
         Args:
@@ -137,8 +132,7 @@ class FivetranResource:
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
     def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
-        """
-        Gets details about the status of the most recent Fivetran sync operation for a given
+        """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
         Args:
@@ -165,8 +159,7 @@ class FivetranResource:
     def update_connector(
         self, connector_id: str, properties: Optional[Mapping[str, Any]] = None
     ) -> Mapping[str, Any]:
-        """
-        Updates properties of a Fivetran Connector.
+        """Updates properties of a Fivetran Connector.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -184,8 +177,7 @@ class FivetranResource:
     def update_schedule_type(
         self, connector_id: str, schedule_type: Optional[str] = None
     ) -> Mapping[str, Any]:
-        """
-        Updates the schedule type property of the connector to either "auto" or "manual".
+        """Updates the schedule type property of the connector to either "auto" or "manual".
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -204,8 +196,7 @@ class FivetranResource:
         return self.make_connector_request("GET", endpoint=f"{connector_id}/schemas")
 
     def start_sync(self, connector_id: str) -> Mapping[str, Any]:
-        """
-        Initiates a sync of a Fivetran connector.
+        """Initiates a sync of a Fivetran connector.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -230,8 +221,7 @@ class FivetranResource:
     def start_resync(
         self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
     ) -> Mapping[str, Any]:
-        """
-        Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
+        """Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -269,8 +259,7 @@ class FivetranResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
-        """
-        Given a Fivetran connector and the timestamp at which the previous sync completed, poll
+        """Given a Fivetran connector and the timestamp at which the previous sync completed, poll
         until the next sync completes.
 
         The previous sync completion time is necessary because the only way to tell when a sync
@@ -328,8 +317,7 @@ class FivetranResource:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
     ) -> FivetranOutput:
-        """
-        Initializes a sync operation for the given connector, and polls until it completes.
+        """Initializes a sync operation for the given connector, and polls until it completes.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -360,8 +348,7 @@ class FivetranResource:
         poll_timeout: Optional[float] = None,
         resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> FivetranOutput:
-        """
-        Initializes a historical resync operation for the given connector, and polls until it completes.
+        """Initializes a historical resync operation for the given connector, and polls until it completes.
 
         Args:
             connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
@@ -432,8 +419,7 @@ class FivetranResource:
     description="This resource helps manage Fivetran connectors",
 )
 def fivetran_resource(context) -> FivetranResource:
-    """
-    This resource allows users to programatically interface with the Fivetran REST API to launch
+    """This resource allows users to programatically interface with the Fivetran REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
     exposed by the API.
 

@@ -1,5 +1,4 @@
-"""
-This module contains data objects meant to be serialized between
+"""This module contains data objects meant to be serialized between
 host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
@@ -55,7 +54,6 @@ from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
-    PartitionScheduleDefinition,
     ScheduleType,
 )
 from dagster._core.definitions.partition_mapping import (
@@ -74,7 +72,7 @@ from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import PipelineSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -348,13 +346,7 @@ class ExternalPresetData(
         )
 
 
-class ExternalScheduleDataSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"default_status"}  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=ExternalScheduleDataSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"default_status"})
 class ExternalScheduleData(
     NamedTuple(
         "_ExternalScheduleData",
@@ -451,16 +443,7 @@ class ExternalSensorMetadata(
         )
 
 
-class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {
-            "default_status",
-            "sensor_type",
-        }  # Maintain stable snapshot ID for back-compat purposes
-
-
-@whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
+@whitelist_for_serdes(skip_when_empty_fields={"default_status", "sensor_type"})
 class ExternalSensorData(
     NamedTuple(
         "_ExternalSensorData",
@@ -929,8 +912,7 @@ class ExternalResourceData(
         ],
     )
 ):
-    """
-    Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
+    """Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
 
     Includes information about the resource definition and config schema, user-passed values, etc.
     """
@@ -1400,12 +1382,10 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         pipeline_name=schedule_def.job_name,
-        solid_selection=schedule_def._target.solid_selection,  # pylint: disable=protected-access
-        mode=schedule_def._target.mode,  # pylint: disable=protected-access
+        solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
+        mode=schedule_def._target.mode,  # noqa: SLF001
         environment_vars=schedule_def.environment_vars,
-        partition_set_name=schedule_def.get_partition_set().name
-        if isinstance(schedule_def, PartitionScheduleDefinition)
-        else None,
+        partition_set_name=None,
         execution_timezone=schedule_def.execution_timezone,
         description=schedule_def.description,
         default_status=schedule_def.default_status,
@@ -1457,19 +1437,6 @@ def external_multi_partitions_definition_from_def(
 ) -> ExternalMultiPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
 
-    if any(
-        [
-            not isinstance(
-                dimension.partitions_def,
-                (TimeWindowPartitionsDefinition, StaticPartitionsDefinition),
-            )
-            for dimension in partitions_def.partitions_defs
-        ]
-    ):
-        raise DagsterInvalidDefinitionError(
-            "Only static and time window partition dimensions are currently supported."
-        )
-
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(
@@ -1497,7 +1464,7 @@ def external_partition_set_data_from_def(
 ) -> ExternalPartitionSetData:
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
-    partitions_def = partition_set_def._partitions_def  # pylint: disable=protected-access
+    partitions_def = partition_set_def._partitions_def  # noqa: SLF001
 
     partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):

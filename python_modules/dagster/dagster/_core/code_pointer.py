@@ -10,7 +10,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import get_import_error_message, import_module_from_path
-from dagster._utils import alter_sys_path, frozenlist
+from dagster._utils import alter_sys_path, hash_collection
 
 
 class CodePointer(ABC):
@@ -53,8 +53,7 @@ class CodePointer(ABC):
 
 
 def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
-    """
-    In config files, you often put file paths that are meant to be relative
+    """In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.
     """
     check.str_param(relative_path_in_file, "relative_path_in_file")
@@ -65,9 +64,7 @@ def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
 
 
 def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
-    """
-    Takes a path to a python file and returns a loaded module.
-    """
+    """Takes a path to a python file and returns a loaded module."""
     check.str_param(python_file, "python_file")
     check.opt_str_param(working_directory, "working_directory")
 
@@ -299,13 +296,6 @@ class CustomPointer(
                 ),
             )
 
-        # These are frozenlists, rather than lists, so that they can be hashed and the pointer
-        # stored in the lru_cache on the repository and pipeline get_definition methods
-        reconstructable_args = frozenlist(reconstructable_args)
-        reconstructable_kwargs = frozenlist(
-            [frozenlist(reconstructable_kwarg) for reconstructable_kwarg in reconstructable_kwargs]
-        )
-
         return super(CustomPointer, cls).__new__(
             cls,
             reconstructor_pointer,
@@ -324,3 +314,13 @@ class CustomPointer(
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `CodePointer` attribute
+    # - `CustomCodePointer` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash

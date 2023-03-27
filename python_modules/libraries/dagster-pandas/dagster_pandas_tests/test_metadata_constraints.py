@@ -104,15 +104,11 @@ def test_multi_val_constraint():
 
 def test_multi_column_constraint():
     def col_val_three(value):
-        """
-        returns values greater than or equal to 3.
-        """
+        """returns values greater than or equal to 3."""  # noqa: D403
         return (value >= 2, {})
 
     def col_val_two(value):
-        """
-        returns values less than 2.
-        """
+        """returns values less than 2."""  # noqa: D403
         return (value < 2, {})
 
     df = DataFrame({"foo": [1, 2, 3], "bar": [3, 2, 1], "baz": [1, 4, 5]})
@@ -163,11 +159,11 @@ def test_aggregate_constraint():
 
 def test_multi_agg_constraint():
     def column_val_1(data):
-        """checks column mean equal to 1."""
+        """Checks column mean equal to 1."""
         return (data.mean() == 1, {})
 
     def column_val_2(data):
-        """checks column mean equal to 1.5."""
+        """Checks column mean equal to 1.5."""
         return (data.mean() == 1.5, {})
 
     df = DataFrame(
@@ -177,15 +173,15 @@ def test_multi_agg_constraint():
         }
     )
     aggregate_val = MultiAggregateConstraintWithMetadata(
-        "Confirms column means equal to 1",
+        "Confirms column means equal to 1.",
         dict([("bar", [column_val_1, column_val_2]), ("foo", [column_val_1, column_val_2])]),
         ConstraintWithMetadataException,
         raise_or_typecheck=False,
     )
     val = aggregate_val.validate(df).metadata_entries[0].value.data
     assert val["expected"] == {
-        "bar": {"column_val_2": "checks column mean equal to 1.5."},
-        "foo": {"column_val_1": "checks column mean equal to 1."},
+        "bar": {"column_val_2": "Checks column mean equal to 1.5."},
+        "foo": {"column_val_1": "Checks column mean equal to 1."},
     }
     assert val["offending"] == {
         "bar": {"column_val_2": "a violation"},

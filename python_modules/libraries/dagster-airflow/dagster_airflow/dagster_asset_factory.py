@@ -19,14 +19,13 @@ from dagster_airflow.utils import (
 )
 
 
-# pylint: enable=no-name-in-module,import-error
 def _build_asset_dependencies(
     dag: DAG,
     graph: GraphDefinition,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
     upstream_dependencies_by_asset_key: Mapping[AssetKey, AbstractSet[AssetKey]],
 ) -> Tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
-    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph
+    """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph.
     """
     output_mappings = set()
     keys_by_output_name = {}
@@ -36,8 +35,8 @@ def _build_asset_dependencies(
     upstream_deps = set()
 
     def find_upstream_dependency(node_name: str) -> None:
-        """find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies
-        as described in task_ids_by_asset_key
+        """Uses Depth-Firs-Search to find all upstream asset dependencies
+        as described in task_ids_by_asset_key.
         """
         # node has been visited
         if visited_nodes[node_name]:
@@ -125,7 +124,7 @@ def load_assets_from_airflow_dag(
         )
 
     job = make_dagster_job_from_airflow_dag(dag, connections=connections)
-    graph = job._graph_def
+    graph = job._graph_def  # noqa: SLF001
     start_date = dag.start_date if dag.start_date else dag.default_args.get("start_date")
     if start_date is None:
         raise DagsterAirflowError("Invalid start_date: {} in DAG {}".format(start_date, dag.dag_id))
@@ -161,10 +160,7 @@ def load_assets_from_airflow_dag(
         dag, graph, mutated_task_ids_by_asset_key, upstream_dependencies_by_asset_key
     )
 
-    new_graph = GraphDefinition(
-        name=graph.name,
-        node_defs=graph.node_defs,
-        dependencies=graph.dependencies,
+    new_graph = graph.copy(
         output_mappings=list(output_mappings),
     )
 

@@ -26,7 +26,7 @@ def test_validators_basic() -> None:
 
     @op
     def greet_user(config: UserConfig) -> None:
-        print(f"Hello {config.name}!")
+        print(f"Hello {config.name}!")  # noqa: T201
         executed["greet_user"] = True
 
     @job

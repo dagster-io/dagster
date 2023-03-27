@@ -67,14 +67,14 @@ def workspace_fixture(instance):
         yield workspace_process_context.create_request_context()
 
 
-@pytest.fixture(name="repo_location", scope="module")
-def repo_location_fixture(workspace):
-    return workspace.get_repository_location("repo_loc")
+@pytest.fixture(name="code_location", scope="module")
+def code_location_fixture(workspace):
+    return workspace.get_code_location("repo_loc")
 
 
 @pytest.fixture(name="external_pipeline", scope="module")
-def external_pipeline_fixture(repo_location):
-    return repo_location.get_repository("repo").get_full_external_job("conditional_fail_job")
+def external_pipeline_fixture(code_location):
+    return code_location.get_repository("repo").get_full_external_job("conditional_fail_job")
 
 
 @pytest.fixture(name="failed_run", scope="module")
@@ -95,13 +95,13 @@ def failed_run_fixture(instance):
 def test_create_reexecuted_run_from_failure(
     instance: DagsterInstance,
     workspace,
-    repo_location,
+    code_location,
     external_pipeline,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
@@ -120,13 +120,13 @@ def test_create_reexecuted_run_from_failure(
 
 def test_create_reexecuted_run_from_failure_tags(
     instance: DagsterInstance,
-    repo_location,
+    code_location,
     external_pipeline,
     failed_run,
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
     )
@@ -136,7 +136,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
@@ -147,7 +147,7 @@ def test_create_reexecuted_run_from_failure_tags(
 
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.FROM_FAILURE,
         use_parent_run_tags=True,
@@ -159,11 +159,11 @@ def test_create_reexecuted_run_from_failure_tags(
 
 
 def test_create_reexecuted_run_all_steps(
-    instance: DagsterInstance, workspace, repo_location, external_pipeline, failed_run
+    instance: DagsterInstance, workspace, code_location, external_pipeline, failed_run
 ):
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
-        repo_location=repo_location,
+        code_location=code_location,
         external_pipeline=external_pipeline,
         strategy=ReexecutionStrategy.ALL_STEPS,
     )

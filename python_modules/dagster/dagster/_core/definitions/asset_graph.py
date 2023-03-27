@@ -86,7 +86,7 @@ class AssetGraph:
 
     @staticmethod
     def from_assets(
-        all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+        all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
     ) -> "InternalAssetGraph":
         assets_defs: List[AssetsDefinition] = []
         source_assets: List[SourceAsset] = []
@@ -185,8 +185,7 @@ class AssetGraph:
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns every partition in every of the given asset's children that depends on the given
+        """Returns every partition in every of the given asset's children that depends on the given
         partition of that asset.
         """
         result: Set[AssetKeyPartitionKey] = set()
@@ -207,8 +206,7 @@ class AssetGraph:
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition keys in a downstream
+        """Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
 
         Args:
@@ -254,8 +252,7 @@ class AssetGraph:
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns every partition in every of the given asset's parents that the given partition of
+        """Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
         result: Set[AssetKeyPartitionKey] = set()
@@ -279,8 +276,7 @@ class AssetGraph:
         child_asset_key: AssetKey,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
-        """
-        Converts a partition key from one asset to the corresponding partition keys in one of its
+        """Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
 
@@ -321,7 +317,7 @@ class AssetGraph:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys
 
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
-        """Determines if an asset has any parents which are not source assets"""
+        """Determines if an asset has any parents which are not source assets."""
         if self.is_source(asset_key):
             return False
         return any(
@@ -375,6 +371,23 @@ class AssetGraph:
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
 
+    @cached_method
+    def get_downstream_freshness_policies(
+        self, *, asset_key: AssetKey
+    ) -> AbstractSet[FreshnessPolicy]:
+        downstream_policies = set().union(
+            *(
+                self.get_downstream_freshness_policies(asset_key=child_key)
+                for child_key in self.get_children(asset_key)
+                if child_key != asset_key
+            )
+        )
+        current_policy = self.freshness_policies_by_key.get(asset_key)
+        if self.get_partitions_def(asset_key) is None and current_policy is not None:
+            downstream_policies.add(current_policy)
+
+        return downstream_policies
+
     def has_self_dependency(self, asset_key: AssetKey) -> bool:
         return asset_key in self.get_parents(asset_key)
 
@@ -384,11 +397,11 @@ class AssetGraph:
         condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
         initial_subset: "AssetGraphSubset",
     ) -> "AssetGraphSubset":
-        """
-        Returns asset partitions within the graph that
+        """Returns asset partitions within the graph that satisfy supplied criteria.
+
         - Are >= initial_asset_partitions
         - Asset matches the condition_fn
-        - Any of their ancestors >= initial_asset_partitions match the condition_fn
+        - Any of their ancestors >= initial_asset_partitions match the condition_fn.
 
         Visits parents before children.
         """
@@ -462,8 +475,8 @@ class AssetGraph:
         ],
         initial_asset_partitions: Iterable[AssetKeyPartitionKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
-        """
-        Returns asset partitions within the graph that
+        """Returns asset partitions within the graph that satisfy supplied criteria.
+
         - Are >= initial_asset_partitions
         - Match the condition_fn
         - Any of their ancestors >= initial_asset_partitions match the condition_fn
@@ -542,7 +555,7 @@ class InternalAssetGraph(AssetGraph):
 
 
 class ToposortedPriorityQueue:
-    """Queue that returns parents before their children"""
+    """Queue that returns parents before their children."""
 
     @functools.total_ordering
     class QueueItem(NamedTuple):

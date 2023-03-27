@@ -3,9 +3,7 @@ from marks import mark_daemon
 
 
 @mark_daemon
-def test_annotations(  # pylint: disable=redefined-outer-name,unused-argument
-    dagster_instance_for_daemon, helm_namespace_for_daemon
-):
+def test_annotations(dagster_instance_for_daemon, helm_namespace_for_daemon):
     core_api = kubernetes.client.CoreV1Api()
 
     pods = core_api.list_namespaced_pod(namespace=helm_namespace_for_daemon).items

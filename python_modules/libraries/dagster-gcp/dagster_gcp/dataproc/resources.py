@@ -35,7 +35,6 @@ class DataprocResource:
     def dataproc_clusters(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            # pylint: disable=no-member
             self.dataproc.projects()
             .regions()
             .clusters()
@@ -45,7 +44,6 @@ class DataprocResource:
     def dataproc_jobs(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            # pylint: disable=no-member
             self.dataproc.projects()
             .regions()
             .jobs()
@@ -98,7 +96,7 @@ class DataprocResource:
         ).execute()
 
     def wait_for_job(self, job_id, wait_timeout=TWENTY_MINUTES):
-        """This method polls job status every 5 seconds."""  # noqa: D202
+        """This method polls job status every 5 seconds."""
 
         # TODO: Add logging here print('Waiting for job ID {} to finish...'.format(job_id))
         def iter_fn():
@@ -137,10 +135,12 @@ class DataprocResource:
 
     @contextmanager
     def cluster_context_manager(self):
-        """This context manager gives syntactic sugar so you can run:
+        """Context manager allowing execution with a dataproc cluster.
 
-        with context.resources.dataproc.cluster as cluster:
-            # do stuff...
+        Example:
+        .. code-block::
+            with context.resources.dataproc.cluster as cluster:
+                # do stuff...
         """
         self.create_cluster()
         try:

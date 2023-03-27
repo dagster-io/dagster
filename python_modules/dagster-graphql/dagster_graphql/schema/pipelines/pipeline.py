@@ -109,6 +109,7 @@ class GrapheneDefaultPartitions(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
     failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
+    materializingPartitions = non_null_list(graphene.String)
 
     class Meta:
         name = "DefaultPartitions"
@@ -121,8 +122,7 @@ class GraphenePartitionStatus1D(graphene.Union):
 
 
 class GrapheneMultiPartitionRange(graphene.ObjectType):
-    """
-    The primary dimension of a multipartitioned asset is the time-partitioned dimension.
+    """The primary dimension of a multipartitioned asset is the time-partitioned dimension.
     If both dimensions of the asset are static or time-partitioned, the primary dimension is
     the first defined dimension.
     """
@@ -155,6 +155,7 @@ class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
     numFailed = graphene.NonNull(graphene.Int)
+    numMaterializing = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"
@@ -872,7 +873,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
         handle = self._external_pipeline.repository_handle
-        location = graphene_info.context.get_repository_location(handle.location_name)
+        location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
 
@@ -880,7 +881,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         from ..external import GrapheneRepository
 
         handle = self._external_pipeline.repository_handle
-        location = graphene_info.context.get_repository_location(handle.location_name)
+        location = graphene_info.context.get_code_location(handle.location_name)
         return GrapheneRepository(
             graphene_info.context.instance,
             location.get_repository(handle.repository_name),

@@ -8,8 +8,7 @@ from dagster._serdes.serdes import deserialize_value
 
 @whitelist_for_serdes
 class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional[float])])):
-    """
-    Set of asset fields that do not change with every materialization.  These are generally updated
+    """Set of asset fields that do not change with every materialization.  These are generally updated
     on some non-materialization action (e.g. wipe).
     """
 

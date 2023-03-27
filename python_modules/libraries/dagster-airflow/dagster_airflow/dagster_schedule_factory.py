@@ -19,7 +19,6 @@ def _is_dag_is_schedule(dag: DAG) -> bool:
     )
 
 
-# pylint: enable=no-name-in-module,import-error
 def make_dagster_schedule_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,

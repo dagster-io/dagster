@@ -9,8 +9,8 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -18,7 +18,7 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .dependency import (
-    DependencyDefinition,
+    DependencyMapping,
     DependencyStructure,
     GraphNode,
     IDependencyDefinition,
@@ -31,15 +31,15 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
 
+T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 
-def validate_dependency_dict(
-    dependencies: Optional[
-        Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
-    ],
-) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+
+def normalize_dependency_dict(
+    dependencies: Optional[Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]]
+) -> DependencyMapping[NodeInvocation]:
     prelude = (
-        'The expected type for "dependencies" is Dict[Union[str, NodeInvocation], Dict[str, '
-        "DependencyDefinition]]. "
+        'The expected type for "dependencies" is Union[Mapping[str, Mapping[str, '
+        "DependencyDefinition]], Mapping[NodeInvocation, Mapping[str, DependencyDefinition]]]. "
     )
 
     if dependencies is None:
@@ -50,13 +50,8 @@ def validate_dependency_dict(
             prelude + "Received value {dependencies} of type {type(dependencies)} at the top level."
         )
 
+    normalized_dependencies: Dict[NodeInvocation, Mapping[str, IDependencyDefinition]] = {}
     for key, dep_dict in dependencies.items():
-        if not isinstance(key, (str, NodeInvocation)):
-            raise DagsterInvalidDefinitionError(
-                prelude
-                + "Expected str or NodeInvocation key in the top level dict. "
-                "Received value {key} of type {type(key)}"
-            )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
@@ -86,12 +81,23 @@ def validate_dependency_dict(
                     f"Received value {dep} of type {type(dep)}."
                 )
 
-    return dependencies
+        if isinstance(key, str):
+            normalized_dependencies[NodeInvocation(key)] = dep_dict
+        elif isinstance(key, NodeInvocation):
+            normalized_dependencies[key] = dep_dict
+        else:
+            raise DagsterInvalidDefinitionError(
+                prelude
+                + "Expected str or NodeInvocation key in the top level dict. "
+                "Received value {key} of type {type(key)}"
+            )
+
+    return normalized_dependencies
 
 
 def create_execution_structure(
     node_defs: Sequence["NodeDefinition"],
-    dependencies_dict: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
+    dependencies_dict: DependencyMapping[NodeInvocation],
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
@@ -150,26 +156,24 @@ def create_execution_structure(
     # Same as dep_dict but with NodeInvocation replaced by alias string
     aliased_dependencies_dict: Dict[str, Mapping[str, IDependencyDefinition]] = {}
 
-    # Keep track of solid name -> all aliases used and alias -> name
+    # Keep track of node name -> all aliases used and alias -> name
     name_to_aliases: DefaultDict[str, Set[str]] = defaultdict(set)
-    alias_to_solid_instance: Dict[str, NodeInvocation] = {}
+    alias_to_node_invocation: Dict[str, NodeInvocation] = {}
     alias_to_name: Dict[str, str] = {}
 
-    for solid_key, input_dep_dict in dependencies_dict.items():
+    for node_invocation, input_dep_dict in dependencies_dict.items():
         # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
         # Here, we replace 'foo' with NodeInvocation('foo')
-        if not isinstance(solid_key, NodeInvocation):
-            solid_key = NodeInvocation(solid_key)
 
-        alias = solid_key.alias or solid_key.name
+        alias = node_invocation.alias or node_invocation.name
 
-        name_to_aliases[solid_key.name].add(alias)
-        alias_to_solid_instance[alias] = solid_key
-        alias_to_name[alias] = solid_key.name
+        name_to_aliases[node_invocation.name].add(alias)
+        alias_to_node_invocation[alias] = node_invocation
+        alias_to_name[alias] = node_invocation.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
     node_dict = _build_graph_node_dict(
-        node_defs, name_to_aliases, alias_to_solid_instance, graph_definition
+        node_defs, name_to_aliases, alias_to_node_invocation, graph_definition
     )
 
     _validate_dependencies(aliased_dependencies_dict, node_dict, alias_to_name)
@@ -226,13 +230,12 @@ def _build_graph_node_dict(
 
 
 def _validate_dependencies(
-    dependencies: Mapping[str, Mapping[str, IDependencyDefinition]],
+    dependencies: DependencyMapping[str],
     node_dict: Mapping[str, Node],
     alias_to_name: Mapping[str, str],
 ) -> None:
     for from_node, dep_by_input in dependencies.items():
         for from_input, dep_def in dep_by_input.items():
-            dep_def = cast(DependencyDefinition, dep_def)
             for dep in dep_def.get_node_dependencies():
                 if from_node == dep.node:
                     raise DagsterInvalidDefinitionError(

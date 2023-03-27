@@ -1,4 +1,4 @@
-# pylint: disable=print-call
+# ruff: noqa: T201
 import subprocess
 import sys
 from datetime import datetime, timezone

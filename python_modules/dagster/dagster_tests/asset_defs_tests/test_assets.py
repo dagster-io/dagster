@@ -23,6 +23,7 @@ from dagster import (
     fs_io_manager,
     graph,
     io_manager,
+    job,
     materialize,
     materialize_to_memory,
     op,
@@ -31,7 +32,11 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidPropertyError,
+)
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
 
@@ -86,7 +91,7 @@ def test_subset_for(subset, expected_keys, expected_inputs, expected_outputs):
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
     subbed = abc_.subset_for({AssetKey(key) for key in subset.split(",")})
@@ -206,7 +211,7 @@ def test_retain_partition_mappings():
         ins={"input_last": AssetIn(["input_last"], partition_mapping=LastPartitionMapping())},
         partitions_def=DailyPartitionsDefinition(datetime.datetime(2022, 1, 1)),
     )
-    def bar_(input_last):  # pylint: disable=unused-argument
+    def bar_(input_last):
         pass
 
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
@@ -232,7 +237,7 @@ def test_chain_replace_and_subset_for():
         },
         can_subset=True,
     )
-    def abc_(context, in1, in2, in3):  # pylint: disable=unused-argument
+    def abc_(context, in1, in2, in3):
         pass
 
     replaced_1 = abc_.with_prefix_or_group(
@@ -298,7 +303,7 @@ def test_chain_replace_and_subset_for():
 
 def test_fail_on_subset_for_nonsubsettable():
     @multi_asset(outs={"a": AssetOut(), "b": AssetOut(), "c": AssetOut()})
-    def abc_(context, start):  # pylint: disable=unused-argument
+    def abc_(context, start):
         pass
 
     with pytest.raises(CheckError, match="can_subset=False"):
@@ -1175,7 +1180,7 @@ def test_graph_backed_asset_reused():
         return 1
 
     @op
-    def foo(upstream):  # pylint: disable=unused-argument
+    def foo(upstream):
         return 1
 
     @graph
@@ -1290,3 +1295,35 @@ def test_self_dependency():
     resources = {"io_manager": MyIOManager()}
     materialize([a], partition_key="2020-01-01", resources=resources)
     materialize([a], partition_key="2020-01-02", resources=resources)
+
+
+def test_context_assets_def():
+    @asset
+    def a(context):
+        assert context.assets_def == a
+        return 1
+
+    @asset
+    def b(context, a):
+        assert context.assets_def == b
+        return 2
+
+    asset_job = define_asset_job("yay", [a, b]).resolve(
+        [a, b],
+        [],
+    )
+
+    asset_job.execute_in_process()
+
+
+def test_invalid_context_assets_def():
+    @op
+    def my_op(context):
+        context.assets_def
+
+    @job
+    def my_job():
+        my_op()
+
+    with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
+        my_job.execute_in_process()

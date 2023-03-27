@@ -209,15 +209,15 @@ def test_statement_timeouts(hostname):
         instance.upgrade()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._run_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage._connect() as conn:  # pylint: disable=protected-access
+            with instance._event_storage._connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
 
@@ -253,11 +253,10 @@ def test_specify_pg_params(hostname):
         overrides=yaml.safe_load(params_specified_pg_config(hostname))
     ) as instance:
         postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
-        # pylint: disable=protected-access
-        assert instance._event_storage.postgres_url == postgres_url
-        assert instance._run_storage.postgres_url == postgres_url
-        assert instance._schedule_storage.postgres_url == postgres_url
-        # pylint: enable=protected-access
+
+        assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001
+        assert instance._schedule_storage.postgres_url == postgres_url  # noqa: SLF001
 
 
 def test_conn_str():

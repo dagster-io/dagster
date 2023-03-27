@@ -1,5 +1,5 @@
 # pylint doesn't know about pytest fixtures
-# pylint: disable=unused-argument
+
 
 import os
 import re
@@ -353,7 +353,7 @@ def test_cant_combine_network_and_networks(aws_env):
                 }
             }
         ) as instance:
-            print(instance.run_launcher)  # pylint: disable=print-call
+            print(instance.run_launcher)  # noqa: T201
 
 
 def test_terminate(aws_env):

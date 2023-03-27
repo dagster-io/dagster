@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
@@ -34,8 +35,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
     def handle_updated_runs_fns(
         self,
     ) -> Sequence[Callable[[IWorkspaceProcessContext, Sequence[RunRecord]], Iterator]]:
-        """
-        List of functions that will be called with the list of run records that have new events.
+        """List of functions that will be called with the list of run records that have new events.
         """
         return [consume_new_runs_for_automatic_reexecution]
 
@@ -94,14 +94,14 @@ class EventLogConsumerDaemon(IntervalDaemon):
         _persist_cursors(instance, new_cursors)
 
 
-def _create_cursor_key(event_type: DagsterEventType):
+def _create_cursor_key(event_type: DagsterEventType) -> str:
     check.inst_param(event_type, "event_type", DagsterEventType)
 
     return f"EVENT_LOG_CONSUMER_CURSOR-{event_type.value}"
 
 
 def _fetch_persisted_cursors(
-    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger
+    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger: logging.Logger
 ) -> Dict[DagsterEventType, Optional[int]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
@@ -150,9 +150,9 @@ def get_new_cursor(
     fetch_limit: int,
     new_event_ids: Sequence[int],
 ) -> int:
-    """
-    Return the new cursor value for an event type, or None if one shouldn't be persisted. The cursor
-    is guaranteed to be:
+    """Return the new cursor value for an event type, or None if one shouldn't be persisted.
+
+    The cursor is guaranteed to be:
 
     - greater than or equal to any id in new_event_ids (otherwise we could process an event twice)
     - less than the id of any event of the desired type that hasn't been fetched yet (otherwise we

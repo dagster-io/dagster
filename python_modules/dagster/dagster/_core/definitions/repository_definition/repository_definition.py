@@ -34,13 +34,14 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import make_readonly_value
+from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
     SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
     VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
-    RepositoryListDefinition,
+    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
+    RepositoryListDefinition as RepositoryListDefinition,
 )
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class RepositoryLoadData(
     def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=make_readonly_value(
+            cached_data_by_key=(
                 check.mapping_param(
                     cached_data_by_key,
                     "cached_data_by_key",
@@ -70,6 +71,16 @@ class RepositoryLoadData(
                 )
             ),
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
+    # - `RepositoryLoadData` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class RepositoryDefinition:
@@ -252,7 +263,7 @@ class RepositoryDefinition:
         return self._repository_data.get_source_assets_by_key()
 
     @property
-    def _assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+    def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._repository_data.get_assets_defs_by_key()
 
     def has_implicit_global_asset_job_def(self) -> bool:
@@ -282,8 +293,7 @@ class RepositoryDefinition:
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        """
-        Returns the asset base job that contains all the given assets, or None if there is no such
+        """Returns the asset base job that contains all the given assets, or None if there is no such
         job.
         """
         if self.has_job(ASSET_BASE_JOB_PREFIX):
@@ -333,8 +343,7 @@ class RepositoryDefinition:
         partition_key: Optional[str] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
-        """
-        Load the contents of an asset as a Python object.
+        """Load the contents of an asset as a Python object.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the asset.
 
@@ -355,7 +364,9 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        with AssetValueLoader(self._assets_defs_by_key, instance=instance) as loader:
+        with AssetValueLoader(
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
+        ) as loader:
             return loader.load_asset_value(
                 asset_key,
                 python_type=python_type,
@@ -367,8 +378,7 @@ class RepositoryDefinition:
     def get_asset_value_loader(
         self, instance: Optional[DagsterInstance] = None
     ) -> "AssetValueLoader":
-        """
-        Returns an object that can load the contents of assets as Python objects.
+        """Returns an object that can load the contents of assets as Python objects.
 
         Invokes `load_input` on the :py:class:`IOManager` associated with the assets. Avoids
         spinning up resources separately for each asset.
@@ -384,12 +394,14 @@ class RepositoryDefinition:
         """
         from dagster._core.storage.asset_value_loader import AssetValueLoader
 
-        return AssetValueLoader(self._assets_defs_by_key, instance=instance)
+        return AssetValueLoader(
+            self.assets_defs_by_key, self.source_assets_by_key, instance=instance
+        )
 
     @property
     def asset_graph(self) -> InternalAssetGraph:
         return AssetGraph.from_assets(
-            [*set(self._assets_defs_by_key.values()), *self.source_assets_by_key.values()]
+            [*set(self.assets_defs_by_key.values()), *self.source_assets_by_key.values()]
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be

@@ -19,7 +19,6 @@ from dagster._core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    Materialization,
 )
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -43,8 +42,7 @@ RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
-    """
-    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
+    """The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
     Users should not instantiate this object directly. To construct an
     `OutputContext` for testing an IO Manager's `handle_output` method, use
@@ -100,7 +98,7 @@ class OutputContext:
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
     _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
+    _user_events: List[Union[AssetMaterialization, AssetObservation]]
     _metadata_entries: Optional[Sequence[MetadataEntry]]
 
     def __init__(
@@ -153,7 +151,7 @@ class OutputContext:
             self._resources_cm = build_resources(
                 check.opt_mapping_param(resources, "resources", key_type=str)
             )
-            self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+            self._resources = self._resources_cm.__enter__()
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
@@ -168,7 +166,7 @@ class OutputContext:
 
     def __exit__(self, *exc):
         if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._resources_cm.__exit__(*exc)
 
     def __del__(self):
         if (
@@ -177,7 +175,7 @@ class OutputContext:
             and self._resources_contain_cm
             and not self._cm_scope_entered
         ):
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
 
     @public
     @property
@@ -586,15 +584,13 @@ class OutputContext:
         return self.get_asset_identifier()
 
     @public
-    def log_event(
-        self, event: Union[AssetObservation, AssetMaterialization, Materialization]
-    ) -> None:
+    def log_event(self, event: Union[AssetObservation, AssetMaterialization]) -> None:
         """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
+            event (Union[AssetMaterialization, AssetObservation]): The event to log.
 
         Examples:
         .. code-block:: python
@@ -607,7 +603,7 @@ class OutputContext:
         """
         from dagster._core.events import DagsterEvent
 
-        if isinstance(event, (AssetMaterialization, Materialization)):
+        if isinstance(event, (AssetMaterialization)):
             if self._step_context:
                 self._events.append(DagsterEvent.asset_materialization(self._step_context, event))
             self._user_events.append(event)
@@ -629,7 +625,7 @@ class OutputContext:
 
     def get_logged_events(
         self,
-    ) -> Sequence[Union[AssetMaterialization, Materialization, AssetObservation]]:
+    ) -> Sequence[Union[AssetMaterialization, AssetObservation]]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 
@@ -715,10 +711,9 @@ def get_output_context(
     version: Optional[str],
     warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
-    """
-    Args:
-        run_id (str): The run ID of the run that produced the output, not necessarily the run that
-            the context will be used in.
+    """Args:
+    run_id (str): The run ID of the run that produced the output, not necessarily the run that
+        the context will be used in.
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config

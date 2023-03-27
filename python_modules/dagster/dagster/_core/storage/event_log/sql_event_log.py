@@ -28,7 +28,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, Materialization
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
     DagsterInvalidInvocationError,
@@ -132,7 +132,7 @@ class SqlEventLogStorage(EventLogStorage):
                 partition = event.dagster_event.partition
 
         # https://stackoverflow.com/a/54386260/324449
-        return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+        return SqlEventLogStorageTable.insert().values(
             run_id=event.run_id,
             event=serialize_value(event),
             dagster_event_type=dagster_event_type,
@@ -291,7 +291,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             for tag in existing_tags:
                 conn.execute(
-                    AssetEventTagsTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.update()
                     .where(
                         db.and_(
                             AssetEventTagsTable.c.event_id == event_id,
@@ -304,7 +304,7 @@ class SqlEventLogStorage(EventLogStorage):
 
             if added_tags:
                 conn.execute(
-                    AssetEventTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    AssetEventTagsTable.insert(),
                     [
                         dict(
                             event_id=event_id,
@@ -615,28 +615,24 @@ class SqlEventLogStorage(EventLogStorage):
 
         # https://stackoverflow.com/a/54386260/324449
         with self.run_connection(run_id=None) as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
         with self.index_connection() as conn:
-            conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SqlEventLogStorageTable.delete())
+            conn.execute(AssetKeyTable.delete())
 
             if self.has_table("asset_event_tags"):
-                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+                conn.execute(AssetEventTagsTable.delete())
 
             if self.has_table("dynamic_partitions"):
-                conn.execute(
-                    DynamicPartitionsTable.delete()
-                )  # pylint: disable=no-value-for-parameter
+                conn.execute(DynamicPartitionsTable.delete())
 
     def delete_events(self, run_id: str) -> None:
         with self.run_connection(run_id) as conn:
@@ -647,10 +643,8 @@ class SqlEventLogStorage(EventLogStorage):
     def delete_events_for_run(self, conn: Connection, run_id: str) -> None:
         check.str_param(run_id, "run_id")
 
-        delete_statement = (
-            SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                SqlEventLogStorageTable.c.run_id == run_id
-            )
+        delete_statement = SqlEventLogStorageTable.delete().where(
+            SqlEventLogStorageTable.c.run_id == run_id
         )
         removed_asset_key_query = (
             db.select([SqlEventLogStorageTable.c.asset_key])
@@ -680,9 +674,7 @@ class SqlEventLogStorage(EventLogStorage):
                 keys_to_remove = []
                 keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
                 conn.execute(
-                    AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-                        AssetKeyTable.c.asset_key.in_(keys_to_remove)
-                    )
+                    AssetKeyTable.delete().where(AssetKeyTable.c.asset_key.in_(keys_to_remove))
                 )
 
     @property
@@ -703,7 +695,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.run_connection(run_id=event.run_id) as conn:
             conn.execute(
-                SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.update()
                 .where(SqlEventLogStorageTable.c.id == record_id)
                 .values(
                     event=serialize_value(event),
@@ -747,18 +739,16 @@ class SqlEventLogStorage(EventLogStorage):
         """This method marks an event_log data migration as complete, to indicate that a summary
         data migration is complete.
         """
-        query = (
-            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
-                name=name,
-                migration_completed=datetime.now(),
-            )
+        query = SecondaryIndexMigrationTable.insert().values(
+            name=name,
+            migration_completed=datetime.now(),
         )
         with self.index_connection() as conn:
             try:
                 conn.execute(query)
             except db_exc.IntegrityError:
                 conn.execute(
-                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    SecondaryIndexMigrationTable.update()
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
@@ -880,7 +870,7 @@ class SqlEventLogStorage(EventLogStorage):
         event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
-    ) -> Iterable[EventLogRecord]:
+    ) -> Sequence[EventLogRecord]:
         """Returns a list of (record_id, record)."""
         check.inst_param(event_records_filter, "event_records_filter", EventRecordsFilter)
         check.opt_int_param(limit, "limit")
@@ -1108,9 +1098,21 @@ class SqlEventLogStorage(EventLogStorage):
     def can_cache_asset_status_data(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
+    def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
+        if self.can_cache_asset_status_data():
+            check.inst_param(asset_key, "asset_key", AssetKey)
+            with self.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(dict(cached_status_data=None))
+                    .where(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                    )
+                )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Iterable[AssetRecord]:
+    ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
         can_cache_asset_status_data = self.can_cache_asset_status_data()
@@ -1144,7 +1146,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
-    ) -> Iterable[AssetKey]:
+    ) -> Sequence[AssetKey]:
         rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
         asset_keys = [AssetKey.from_db_string(row[1]) for row in sorted(rows, key=lambda x: x[1])]
         return [asset_key for asset_key in asset_keys if asset_key]
@@ -1303,7 +1305,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.can_cache_asset_status_data():
             with self.index_connection() as conn:
                 conn.execute(
-                    AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                    AssetKeyTable.update()
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
@@ -1434,8 +1436,7 @@ class SqlEventLogStorage(EventLogStorage):
         filter_tags: Optional[Mapping[str, str]] = None,
         filter_event_id: Optional[int] = None,
     ) -> Sequence[Mapping[str, str]]:
-        """
-        Fetches asset event tags for the given asset key.
+        """Fetches asset event tags for the given asset key.
 
         If filter_tags is provided, searches for events containing all of the filter tags. Then,
         returns all tags for those events. This enables searching for multipartitioned asset
@@ -1567,7 +1568,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _asset_materialization_from_json_column(
         self, json_str: str
-    ) -> Optional[Union[Materialization, AssetMaterialization]]:
+    ) -> Optional[AssetMaterialization]:
         if not json_str:
             return None
 
@@ -1618,7 +1619,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.index_connection() as conn:
             conn.execute(
-                AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
+                AssetKeyTable.update()
                 .values(**wiped_values)
                 .where(
                     AssetKeyTable.c.asset_key == asset_key.to_string(),
@@ -1673,8 +1674,7 @@ class SqlEventLogStorage(EventLogStorage):
     def get_latest_asset_partition_materialization_attempts_without_materializations(
         self, asset_key: AssetKey
     ) -> Mapping[str, Tuple[str, int]]:
-        """
-        Fetch the latest materialzation and materialization planned events for each partition of the given asset.
+        """Fetch the latest materialzation and materialization planned events for each partition of the given asset.
         Return the partitions that have a materialization planned event but no matching (same run) materialization event.
         These materializations could be in progress, or they could have failed. A separate query checking the run status
         is required to know.

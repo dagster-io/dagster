@@ -10,7 +10,7 @@ from pandas import (
 )
 from pyspark.sql import DataFrame as SparkDataFrame
 from snowflake.connector.pandas_tools import pd_writer
-from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+from snowflake.sqlalchemy import URL
 from sqlalchemy import create_engine
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -38,8 +38,7 @@ def connect_snowflake(config, schema="public"):
 
 
 class SnowflakeIOManager(ConfigurableIOManager):
-    """
-    This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
+    """This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
@@ -92,7 +91,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _handle_pandas_output(
         self, obj: PandasDataFrame, schema: str, table: str
     ) -> Mapping[str, Any]:
-        from snowflake import connector  # pylint: disable=no-name-in-module
+        from snowflake import connector
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -146,8 +145,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _get_cleanup_statement(
         self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
     ) -> str:
-        """
-        Returns a SQL statement that deletes data in the given table to make way for the output data
+        """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
         """
         if time_window:

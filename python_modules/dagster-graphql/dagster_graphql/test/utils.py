@@ -76,11 +76,7 @@ def define_out_of_process_context(python_file, fn_name, instance, read_only=Fals
     with define_out_of_process_workspace(
         python_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
-        x = workspace_process_context.create_request_context()
-        print(python_file)
-        print(x.repository_locations)
-        print(x.repository_location_errors())
-        yield x
+        yield workspace_process_context.create_request_context()
 
 
 def define_out_of_process_workspace(python_file, fn_name, instance, read_only=False):
@@ -98,30 +94,30 @@ def define_out_of_process_workspace(python_file, fn_name, instance, read_only=Fa
 
 
 def infer_repository(graphql_context):
-    if len(graphql_context.repository_locations) == 1:
+    if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
-        repository_location = graphql_context.repository_locations[0]
-        repositories = repository_location.get_repositories()
+        code_location = graphql_context.code_locations[0]
+        repositories = code_location.get_repositories()
         assert len(repositories) == 1
         return next(iter(repositories.values()))
 
-    repository_location = graphql_context.get_repository_location("test")
-    return repository_location.get_repository("test_repo")
+    code_location = graphql_context.get_code_location("test")
+    return code_location.get_repository("test_repo")
 
 
 def infer_repository_selector(graphql_context):
-    if len(graphql_context.repository_locations) == 1:
+    if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
-        repository_location = graphql_context.repository_locations[0]
-        repositories = repository_location.get_repositories()
+        code_location = graphql_context.code_locations[0]
+        repositories = code_location.get_repositories()
         assert len(repositories) == 1
         repository = next(iter(repositories.values()))
     else:
-        repository_location = graphql_context.get_repository_location("test")
-        repository = repository_location.get_repository("test_repo")
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
 
     return {
-        "repositoryLocationName": repository_location.name,
+        "repositoryLocationName": code_location.name,
         "repositoryName": repository.name,
     }
 

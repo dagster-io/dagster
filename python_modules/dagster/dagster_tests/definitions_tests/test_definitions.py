@@ -98,7 +98,7 @@ def test_solid_def():
 
 def test_solid_def_bad_input_name():
     with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
-        # pylint: disable=unused-variable
+
         @op(ins={"context": In(String)})
         def op_one(_, _context):
             pass

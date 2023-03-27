@@ -9,7 +9,6 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import nullcontext
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -40,7 +39,6 @@ from dagster._serdes import deserialize_value, serialize_value, whitelist_for_se
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster._utils import (
     find_free_port,
-    frozenlist,
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
@@ -238,7 +236,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._serializable_load_error = None
 
         self._entry_point = (
-            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+            check.sequence_param(entry_point, "entry_point", of_type=str)
             if entry_point is not None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
@@ -449,15 +447,14 @@ class DagsterApiServer(DagsterApiServicer):
 
         instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
 
-        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
-            serialized_data = serialize_value(
-                get_partition_set_execution_param_data(
-                    self._get_repo_for_origin(args.repository_origin),
-                    partition_set_name=args.partition_set_name,
-                    partition_names=args.partition_names,
-                    instance=instance,
-                )
+        serialized_data = serialize_value(
+            get_partition_set_execution_param_data(
+                self._get_repo_for_origin(args.repository_origin),
+                partition_set_name=args.partition_set_name,
+                partition_names=args.partition_names,
+                instance_ref=instance_ref,
             )
+        )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
@@ -466,15 +463,14 @@ class DagsterApiServer(DagsterApiServicer):
 
         instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
 
-        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
-            serialized_data = serialize_value(
-                get_partition_config(
-                    self._get_repo_for_origin(args.repository_origin),
-                    args.partition_set_name,
-                    args.partition_name,
-                    instance=instance,
-                )
+        serialized_data = serialize_value(
+            get_partition_config(
+                self._get_repo_for_origin(args.repository_origin),
+                args.partition_set_name,
+                args.partition_name,
+                instance_ref=instance_ref,
             )
+        )
 
         return api_pb2.ExternalPartitionConfigReply(
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
@@ -487,15 +483,14 @@ class DagsterApiServer(DagsterApiServicer):
             partition_args.instance_ref if partition_args.instance_ref else self._instance_ref
         )
 
-        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
-            serialized_data = serialize_value(
-                get_partition_tags(
-                    self._get_repo_for_origin(partition_args.repository_origin),
-                    partition_args.partition_set_name,
-                    partition_args.partition_name,
-                    instance=instance,
-                )
+        serialized_data = serialize_value(
+            get_partition_tags(
+                self._get_repo_for_origin(partition_args.repository_origin),
+                partition_args.partition_set_name,
+                partition_args.partition_name,
+                instance_ref=instance_ref,
             )
+        )
 
         return api_pb2.ExternalPartitionTagsReply(  # type: ignore
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
@@ -1008,7 +1003,7 @@ class DagsterGrpcServer:
         self.server.start()
 
         # Note: currently this is hardcoded as serving, since both services are cohosted
-        # pylint: disable=no-member
+
         self._health_servicer.set("DagsterApi", health_pb2.HealthCheckResponse.SERVING)
 
         if self._ipc_output_file:
@@ -1096,24 +1091,24 @@ def open_server_process(
 
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
-    subprocess_args = (
-        get_python_environment_entry_point(executable_path or sys.executable)
-        + ["api", "grpc"]
-        + ["--lazy-load-user-code"]
-        + (["--port", str(port)] if port else [])
-        + (["--socket", socket] if socket else [])
-        + (["-n", str(max_workers)] if max_workers else [])
-        + (["--heartbeat"] if heartbeat else [])
-        + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
-        + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
-        + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
-        + (["--log-level", log_level])
-        # only use the Python environment if it has been explicitly set in the workspace
-        + (["--use-python-environment-entry-point"] if executable_path else [])
-        + (["--inject-env-vars-from-instance"])
-        + (["--instance-ref", serialize_value(instance_ref)])
-        + (["--location-name", location_name] if location_name else [])
-    )
+    subprocess_args = [
+        *get_python_environment_entry_point(executable_path or sys.executable),
+        *["api", "grpc"],
+        *["--lazy-load-user-code"],
+        *(["--port", str(port)] if port else []),
+        *(["--socket", socket] if socket else []),
+        *(["-n", str(max_workers)] if max_workers else []),
+        *(["--heartbeat"] if heartbeat else []),
+        *(["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else []),
+        *(["--fixed-server-id", fixed_server_id] if fixed_server_id else []),
+        *(["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else []),
+        *(["--log-level", log_level]),
+        # only use the Python environment if it has been explicitly set in the workspace,
+        *(["--use-python-environment-entry-point"] if executable_path else []),
+        *(["--inject-env-vars-from-instance"]),
+        *(["--instance-ref", serialize_value(instance_ref)]),
+        *(["--location-name", location_name] if location_name else []),
+    ]
 
     if loadable_target_origin:
         subprocess_args += loadable_target_origin.get_cli_args()

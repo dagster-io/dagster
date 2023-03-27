@@ -1,5 +1,4 @@
-"""
-This file contains a set of utilities for dealing with test
+"""This file contains a set of utilities for dealing with test
 environments where we want to go back and forth between
 abstractions that reside in user process (e.g. definitions and
 reconstructables) and abstractions that reside in host processes

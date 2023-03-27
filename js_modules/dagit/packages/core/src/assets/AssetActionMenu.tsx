@@ -18,9 +18,9 @@ interface Props {
 
 export const AssetActionMenu: React.FC<Props> = (props) => {
   const {repoAddress, asset, onWipe} = props;
-  const {canWipeAssets, canLaunchPipelineExecution} = usePermissionsForLocation(
-    repoAddress?.location,
-  );
+  const {
+    permissions: {canWipeAssets, canLaunchPipelineExecution},
+  } = usePermissionsForLocation(repoAddress?.location);
   const {path} = asset.key;
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();
@@ -33,7 +33,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
           <Menu>
             <Tooltip
               content={
-                !canLaunchPipelineExecution.enabled
+                !canLaunchPipelineExecution
                   ? 'You do not have permission to materialize assets'
                   : 'Shift+click to add configuration'
               }
@@ -44,7 +44,7 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
               <MenuItem
                 text="Materialize"
                 icon={loading ? <Spinner purpose="body-text" /> : 'materialization'}
-                disabled={!canLaunchPipelineExecution.enabled || loading}
+                disabled={!canLaunchPipelineExecution || loading}
                 onClick={(e) => onClick([asset.key], e)}
               />
             </Tooltip>
@@ -82,9 +82,9 @@ export const AssetActionMenu: React.FC<Props> = (props) => {
             <MenuItem
               text="Wipe materializations"
               icon="delete"
-              disabled={!onWipe || !canWipeAssets.enabled}
+              disabled={!onWipe || !canWipeAssets}
               intent="danger"
-              onClick={() => canWipeAssets.enabled && onWipe && onWipe([asset])}
+              onClick={() => canWipeAssets && onWipe && onWipe([asset])}
             />
           </Menu>
         }

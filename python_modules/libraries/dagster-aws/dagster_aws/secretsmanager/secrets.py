@@ -24,8 +24,7 @@ def construct_secretsmanager_client(
 
 
 def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[str, str]:
-    """
-    Return a dictionary of AWS Secrets Manager names to arns
+    """Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
     """
     secrets = {}
@@ -46,9 +45,7 @@ def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[
 
 
 def get_secrets_from_arns(secrets_manager, secret_arns: Sequence[str]) -> Mapping[str, str]:
-    """
-    Return a dictionary of AWS Secrets Manager names to arns.
-    """
+    """Return a dictionary of AWS Secrets Manager names to arns."""
     secrets = {}
     for arn in secret_arns:
         name = secrets_manager.describe_secret(SecretId=arn)["Name"]

@@ -3,7 +3,7 @@ import isEqual from 'lodash/isEqual';
 import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
-import {PartitionRangeStatus} from '../graphql/types';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 
@@ -45,6 +45,7 @@ export interface PartitionHealthData {
 
 export interface PartitionHealthDimension {
   name: string;
+  type: PartitionDefinitionType;
   partitionKeys: string[];
 }
 
@@ -180,7 +181,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 
   const result: PartitionHealthData = {
     assetKey: loadKey,
-    dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys})),
+    dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys, type: d.type})),
 
     stateForKey,
 
@@ -532,6 +533,7 @@ export const PARTITION_HEALTH_QUERY = gql`
         id
         partitionKeysByDimension {
           name
+          type
           partitionKeys
         }
         assetPartitionStatuses {

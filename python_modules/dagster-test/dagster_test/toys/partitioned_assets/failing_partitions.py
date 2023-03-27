@@ -7,6 +7,8 @@ from dagster import (
     asset,
 )
 
+from .dynamic_asset_partitions import multipartition_w_dynamic_partitions_def
+
 FAILURE_RATE = 0.5
 
 
@@ -45,8 +47,7 @@ def failing_multi_partitioned(context):
 
 @asset(partitions_def=composite)
 def failing_pattern_multi_partitioned(context):
-    """
-    Fail in different patterns for different partitions.
+    """Fail in different patterns for different partitions.
 
     2022-01: fail d
     2022-03: fail even days
@@ -79,3 +80,9 @@ def failing_pattern_multi_partitioned(context):
     if date.startswith("2022-07"):
         if random() < FAILURE_RATE:
             raise ValueError("Failed")
+
+
+@asset(partitions_def=multipartition_w_dynamic_partitions_def)
+def multipartitioned_with_dynamic_dimension_random_failures():
+    if random() < FAILURE_RATE:
+        raise ValueError("Failed")

@@ -1,7 +1,10 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {CREATE_PARTITION_MUTATION} from '../CreatePartitionDialog';
-import {AddDynamicPartitionMutation} from '../types/CreatePartitionDialog.types';
+import {
+  AddDynamicPartitionMutation,
+  AddDynamicPartitionMutationVariables,
+} from '../types/CreatePartitionDialog.types';
 
 export function buildCreatePartitionFixture({
   partitionsDefName,
@@ -30,6 +33,27 @@ export function buildCreatePartitionFixture({
           partitionsDefName: partitionKey,
           partitionKey,
         },
+      },
+    })),
+  };
+}
+
+export function buildCreatePartitionMutation({
+  variables,
+  data,
+}: {
+  variables: AddDynamicPartitionMutationVariables;
+  data: AddDynamicPartitionMutation['addDynamicPartition'];
+}): MockedResponse<AddDynamicPartitionMutation> {
+  return {
+    request: {
+      query: CREATE_PARTITION_MUTATION,
+      variables,
+    },
+    result: jest.fn(() => ({
+      data: {
+        __typename: 'DagitMutation',
+        addDynamicPartition: data,
       },
     })),
   };

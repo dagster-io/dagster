@@ -1,4 +1,3 @@
-# pylint: disable=no-member
 # alembic dynamically populates the alembic.context module
 
 from alembic import context

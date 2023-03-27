@@ -1,5 +1,6 @@
 import itertools
 from datetime import datetime
+from functools import reduce
 from typing import (
     Dict,
     Iterable,
@@ -29,6 +30,7 @@ from dagster._core.storage.tags import (
 
 from .partition import (
     DefaultPartitionsSubset,
+    DynamicPartitionsDefinition,
     Partition,
     PartitionsDefinition,
     PartitionsSubset,
@@ -44,9 +46,7 @@ MULTIPARTITION_KEY_DELIMITER = "|"
 class PartitionDimensionKey(
     NamedTuple("_PartitionDimensionKey", [("dimension_name", str), ("partition_key", str)])
 ):
-    """
-    Representation of a single dimension of a multi-dimensional partition key.
-    """
+    """Representation of a single dimension of a multi-dimensional partition key."""
 
     def __new__(cls, dimension_name: str, partition_key: str):
         return super(PartitionDimensionKey, cls).__new__(
@@ -57,8 +57,7 @@ class PartitionDimensionKey(
 
 
 class MultiPartitionKey(str):
-    """
-    A multi-dimensional partition key stores the partition key for each dimension.
+    """A multi-dimensional partition key stores the partition key for each dimension.
     Subclasses the string class to keep partition key type as a string.
 
     Contains additional methods to access the partition key for each dimension.
@@ -119,7 +118,7 @@ class PartitionDimensionDefinition(
             partitions_def=check.inst_param(partitions_def, "partitions_def", PartitionsDefinition),
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, PartitionDimensionDefinition)
             and self.name == other.name
@@ -127,13 +126,46 @@ class PartitionDimensionDefinition(
         )
 
 
-ALLOWED_PARTITION_DIMENSION_TYPES = (StaticPartitionsDefinition, TimeWindowPartitionsDefinition)
+ALLOWED_PARTITION_DIMENSION_TYPES = (
+    StaticPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+    DynamicPartitionsDefinition,
+)
+
+
+def _check_valid_partitions_dimensions(
+    partitions_dimensions: Mapping[str, PartitionsDefinition]
+) -> None:
+    for dim_name, partitions_def in partitions_dimensions.items():
+        if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):
+            raise DagsterInvalidDefinitionError(
+                f"Invalid partitions definition type {type(partitions_def)}. "
+                "Only the following partitions definition types are supported: "
+                f"{ALLOWED_PARTITION_DIMENSION_TYPES}."
+            )
+        if isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name is None:
+            raise DagsterInvalidDefinitionError(
+                "DynamicPartitionsDefinition must have a name to be used in a"
+                " MultiPartitionsDefinition."
+            )
+
+        if isinstance(partitions_def, StaticPartitionsDefinition):
+            if any(
+                [
+                    INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
+                    for key in partitions_def.get_partition_keys()
+                ]
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid character in partition key for dimension {dim_name}. "
+                    "A multi-partitions definition cannot contain partition keys with "
+                    "the following characters: |, [, ], ,"
+                )
 
 
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
-    """
-    Takes the cross-product of partitions from two partitions definitions.
+    """Takes the cross-product of partitions from two partitions definitions.
 
     For example, with a static partitions definition where the partitions are ["a", "b", "c"]
     and a daily partitions definition, this partitions definition will have the following
@@ -170,26 +202,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             partitions_defs, "partitions_defs", key_type=str, value_type=PartitionsDefinition
         )
 
-        for dim_name, partitions_def in partitions_defs.items():
-            if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):
-                raise DagsterInvalidDefinitionError(
-                    f"Invalid partitions definition for dimension {dim_name}. "
-                    "A multi-partitions definition can only contain partitions definitions of types"
-                    f" {ALLOWED_PARTITION_DIMENSION_TYPES}."
-                )
-
-            if isinstance(partitions_def, StaticPartitionsDefinition):
-                if any(
-                    [
-                        INVALID_STATIC_PARTITIONS_KEY_CHARACTERS & set(key)
-                        for key in partitions_def.get_partition_keys()
-                    ]
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid character in partition key for dimension {dim_name}. "
-                        "A multi-partitions definition cannot contain partition keys with "
-                        "the following characters: |, [, ], ,"
-                    )
+        _check_valid_partitions_dimensions(partitions_defs)
 
         self._partitions_defs: List[PartitionDimensionDefinition] = sorted(
             [
@@ -308,9 +321,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
 
     def get_partition_key_from_str(self, partition_key_str: str) -> str:
-        """
-        Given a string representation of a partition key, returns a MultiPartitionKey object.
-        """
+        """Given a string representation of a partition key, returns a MultiPartitionKey object."""
         check.str_param(partition_key_str, "partition_key_str")
 
         partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
@@ -363,6 +374,96 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         tags = {**super().get_tags_for_partition_key(partition_key)}
         tags.update(get_tags_from_multi_partition_key(partition_key))
         return tags
+
+    @property
+    def time_window_dimension(self) -> PartitionDimensionDefinition:
+        time_window_dims = [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        check.invariant(
+            len(time_window_dims) == 1, "Expected exactly one time window partitioned dimension"
+        )
+        return next(iter(time_window_dims))
+
+    def get_cron_schedule(
+        self,
+        minute_of_hour: Optional[int] = None,
+        hour_of_day: Optional[int] = None,
+        day_of_week: Optional[int] = None,
+        day_of_month: Optional[int] = None,
+    ) -> str:
+        return cast(
+            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
+        ).get_cron_schedule(minute_of_hour, hour_of_day, day_of_week, day_of_month)
+
+    @property
+    def timezone(self) -> Optional[str]:
+        return cast(
+            TimeWindowPartitionsDefinition, self.time_window_dimension.partitions_def
+        ).timezone
+
+    def get_multipartition_keys_with_dimension_value(
+        self,
+        dimension_name: str,
+        dimension_partition_key: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
+    ) -> Sequence[MultiPartitionKey]:
+        check.str_param(dimension_name, "dimension_name")
+        check.str_param(dimension_partition_key, "dimension_partition_key")
+
+        matching_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name == dimension_name
+        ]
+        other_dimensions = [
+            dimension for dimension in self.partitions_defs if dimension.name != dimension_name
+        ]
+
+        check.invariant(
+            len(matching_dimensions) == 1,
+            (
+                f"Dimension {dimension_name} not found in MultiPartitionsDefinition with dimensions"
+                f" {[dim.name for dim in self.partitions_defs]}"
+            ),
+        )
+
+        partition_sequences = [
+            partition_dim.partitions_def.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for partition_dim in other_dimensions
+        ] + [[dimension_partition_key]]
+
+        # Names of partitions dimensions in the same order as partition_sequences
+        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+
+        return [
+            MultiPartitionKey(
+                {
+                    partition_dim_names[i]: partition_key
+                    for i, partition_key in enumerate(partitions_tuple)
+                }
+            )
+            for partitions_tuple in itertools.product(*partition_sequences)
+        ]
+
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        # Static partitions definitions can contain duplicate keys (will throw error in 1.3.0)
+        # In the meantime, relying on get_num_partitions to handle duplicates to display
+        # correct counts in Dagit
+        dimension_counts = [
+            dim.partitions_def.get_num_partitions(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            for dim in self.partitions_defs
+        ]
+        return reduce(lambda x, y: x * y, dimension_counts, 1)
 
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):

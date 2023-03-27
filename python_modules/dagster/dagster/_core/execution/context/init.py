@@ -139,7 +139,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._instance_cm = ephemeral_instance_if_missing(instance)
         # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
         # so ignore lint error
-        instance = self._instance_cm.__enter__()  # pylint: disable=no-member
+        instance = self._instance_cm.__enter__()
 
         if isinstance(resources, Resources):
             check.failed("Should not have a Resources object directly from this initialization")
@@ -149,7 +149,7 @@ class UnboundInitResourceContext(InitResourceContext):
         )
 
         self._resources_cm = build_resources(self._resource_defs, instance=instance)
-        resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+        resources = self._resources_cm.__enter__()
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
@@ -167,15 +167,15 @@ class UnboundInitResourceContext(InitResourceContext):
         return self
 
     def __exit__(self, *exc):
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        self._resources_cm.__exit__(*exc)
         if self._instance_provided:
-            self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
+            self._instance_cm.__exit__(*exc)
 
     def __del__(self):
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._resources_cm.__exit__(None, None, None)
         if self._instance_provided and not self._cm_scope_entered:
-            self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
+            self._instance_cm.__exit__(None, None, None)
 
     @property
     def resource_config(self) -> Any:

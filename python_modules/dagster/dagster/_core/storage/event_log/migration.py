@@ -18,15 +18,14 @@ ASSET_DATA_MIGRATIONS = {ASSET_KEY_INDEX_COLS: lambda: migrate_asset_keys_index_
 
 
 def migrate_event_log_data(instance=None):
-    """
-    Utility method to migrate the data in the existing event log records.  Reads every event log row
+    """Utility method to migrate the data in the existing event log records.  Reads every event log row
     reachable from the instance and reserializes it to event log storage.  Deserializing and then
     reserializing the event from storage allows for things like SQL column extraction, filling
     explicit default values, etc.
     """
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 
-    event_log_storage = instance._event_storage  # pylint: disable=protected-access
+    event_log_storage = instance._event_storage  # noqa: SLF001
 
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return
@@ -37,8 +36,7 @@ def migrate_event_log_data(instance=None):
 
 
 def migrate_asset_key_data(event_log_storage, print_fn=None):
-    """
-    Utility method to build an asset key index from the data in existing event log records.
+    """Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
     from dagster._core.definitions.events import AssetKey
@@ -65,7 +63,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
         for (asset_key,) in to_insert:
             try:
                 conn.execute(
-                    AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    AssetKeyTable.insert().values(
                         asset_key=AssetKey.from_db_string(asset_key).to_string()
                     )
                 )
@@ -127,15 +125,15 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                     .order_by(SqlEventLogStorageTable.c.timestamp.desc())
                     .limit(1)
                 )
-                row = conn.execute(materialization_query).fetchone()
-                if row:
-                    event = deserialize_value(row[0], NamedTuple)
+                materialization_row = conn.execute(materialization_query).fetchone()
+                if materialization_row:
+                    event = deserialize_value(materialization_row[0], NamedTuple)
 
             if not event:
                 # this must be a wiped asset
                 conn.execute(
                     AssetKeyTable.update()
-                    .values(  # pylint: disable=no-value-for-parameter
+                    .values(
                         last_materialization=None,
                         last_materialization_timestamp=None,
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
@@ -149,7 +147,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
             else:
                 conn.execute(
                     AssetKeyTable.update()
-                    .values(  # pylint: disable=no-value-for-parameter
+                    .values(
                         last_materialization=serialize_value(event),
                         last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)

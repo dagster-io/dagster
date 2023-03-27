@@ -24,8 +24,7 @@ if TYPE_CHECKING:
 
 
 class DagsterTypeLoader(ABC):
-    """
-    Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
+    """Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
     to.
 
     The recommended way to define a type loader is with the
@@ -47,9 +46,7 @@ class DagsterTypeLoader(ABC):
     def construct_from_config_value(
         self, _context: "DagsterTypeLoaderContext", config_value: object
     ) -> object:
-        """
-        How to create a runtime value from config data.
-        """
+        """How to create a runtime value from config data."""
         return config_value
 
     def required_resource_keys(self) -> AbstractSet[str]:

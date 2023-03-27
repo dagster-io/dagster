@@ -1,3 +1,4 @@
+import {PartitionDefinitionType} from '../graphql/types';
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {
@@ -64,6 +65,7 @@ export function mergedAssetHealth(
     dimensions: dimensions.map((dimension) => ({
       name: dimension.name,
       partitionKeys: dimension.partitionKeys,
+      type: dimension.type,
     })),
     stateForKey: (dimensionKeys: string[]) =>
       mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
@@ -224,7 +226,7 @@ export function explodePartitionKeysInSelection(
 }
 
 export const placeholderDimensionSelection = (name: string): PartitionDimensionSelection => ({
-  dimension: {name, partitionKeys: []},
+  dimension: {name, partitionKeys: [], type: PartitionDefinitionType.STATIC},
   selectedKeys: [],
   selectedRanges: [],
 });

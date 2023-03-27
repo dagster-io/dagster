@@ -33,9 +33,10 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
-from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_pipeline, execute_run_iterator
@@ -65,6 +66,8 @@ def check_experimental_warnings():
                 "resource_defs" in w.message.args[0]
                 or "io_manager_def" in w.message.args[0]
                 or "build_assets_job" in w.message.args[0]
+                or "source_asset" in w.message.args[0]
+                or "SQLAlchemy" in w.message.args[0]  # deprecation API usage warnings
             ):
                 continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
@@ -100,8 +103,8 @@ def test_two_asset_pipeline():
     job = build_assets_job("a", [asset1, asset2])
     assert job.graph.node_defs == [asset1.op, asset2.op]
     assert job.dependencies == {
-        "asset1": {},
-        "asset2": {"asset1": DependencyDefinition("asset1", "result")},
+        NodeInvocation("asset1"): {},
+        NodeInvocation("asset2"): {"asset1": DependencyDefinition("asset1", "result")},
     }
     assert job.execute_in_process().success
 
@@ -134,9 +137,9 @@ def test_fork():
     job = build_assets_job("a", [asset1, asset2, asset3])
     assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
-        "asset1": {},
-        "asset2": {"asset1": DependencyDefinition("asset1", "result")},
-        "asset3": {"asset1": DependencyDefinition("asset1", "result")},
+        NodeInvocation("asset1"): {},
+        NodeInvocation("asset2"): {"asset1": DependencyDefinition("asset1", "result")},
+        NodeInvocation("asset3"): {"asset1": DependencyDefinition("asset1", "result")},
     }
     assert job.execute_in_process().success
 
@@ -158,9 +161,9 @@ def test_join():
     job = build_assets_job("a", [asset1, asset2, asset3])
     assert job.graph.node_defs == [asset1.op, asset2.op, asset3.op]
     assert job.dependencies == {
-        "asset1": {},
-        "asset2": {},
-        "asset3": {
+        NodeInvocation("asset1"): {},
+        NodeInvocation("asset2"): {},
+        NodeInvocation("asset3"): {
             "asset1": DependencyDefinition("asset1", "result"),
             "asset2": DependencyDefinition("asset2", "result"),
         },
@@ -672,7 +675,7 @@ def test_nasty_nested_graph_assets():
 
 def test_internal_asset_deps():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     with pytest.raises(Exception, match="output_name non_exist_output_name"):
@@ -693,7 +696,7 @@ def test_internal_asset_deps():
 
 def test_asset_def_from_op_inputs():
     @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
-    def my_op(my_input, other_input):  # pylint: disable=unused-argument
+    def my_op(my_input, other_input):
         pass
 
     assets_def = AssetsDefinition.from_op(
@@ -709,7 +712,7 @@ def test_asset_def_from_op_inputs():
 
 def test_asset_def_from_op_outputs():
     @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
-    def x_op(my_input, other_input):  # pylint: disable=unused-argument
+    def x_op(my_input, other_input):
         pass
 
     assets_def = AssetsDefinition.from_op(
@@ -725,7 +728,7 @@ def test_asset_def_from_op_outputs():
 
 def test_asset_from_op_no_args():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     assets_def = AssetsDefinition.from_op(
@@ -739,7 +742,7 @@ def test_asset_from_op_no_args():
 
 def test_asset_def_from_graph_inputs():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     @graph(ins={"x": GraphIn(), "y": GraphIn()})
@@ -779,7 +782,7 @@ def test_asset_def_from_graph_outputs():
 
 def test_graph_asset_decorator_no_args():
     @op
-    def my_op(x, y):  # pylint: disable=unused-argument
+    def my_op(x, y):
         return x
 
     @graph
@@ -797,7 +800,7 @@ def test_graph_asset_decorator_no_args():
 
 def test_graph_asset_group_name():
     @op
-    def my_op1(x):  # pylint: disable=unused-argument
+    def my_op1(x):
         return x
 
     @op
@@ -886,7 +889,7 @@ def test_all_assets_job():
         return 1
 
     @asset
-    def a2(a1):  # pylint: disable=unused-argument
+    def a2(a1):
         return 2
 
     job = build_assets_job("graph_asset_job", [a1, a2])
@@ -911,7 +914,7 @@ def test_basic_graph():
     def thing():
         da = get_string()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
+        o1, o2 = combine_strings_and_split(da, db)
         return o1
 
     @asset
@@ -1000,7 +1003,7 @@ def test_nested_graph():
     def thing():
         da = inside_thing()
         db = get_string()
-        o1, o2 = combine_strings_and_split(da, db)  # pylint: disable=unused-variable
+        o1, o2 = combine_strings_and_split(da, db)
         return o1
 
     thing_asset = AssetsDefinition(
@@ -1170,7 +1173,7 @@ def test_internal_asset_deps_assets():
             "my_other_out_name": {AssetKey("thing")},
         },
     )
-    def multi_asset_with_internal_deps(thing):  # pylint: disable=unused-argument
+    def multi_asset_with_internal_deps(thing):
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
@@ -1358,11 +1361,12 @@ dbt_asset_def = AssetsDefinition(
 )
 
 my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
-    with_resources(
-        [dbt_asset_def, fivetran_asset],
-        resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
-    ),
-    [],
+    asset_graph=AssetGraph.from_assets(
+        with_resources(
+            [dbt_asset_def, fivetran_asset],
+            resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
+        ),
+    )
 )
 
 
@@ -1406,11 +1410,11 @@ def test_job_preserved_with_asset_subset():
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": int})
-    def two(context, one):  # pylint: disable=unused-argument
+    def two(context, one):
         assert context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": int})
-    def three(context, two):  # pylint: disable=unused-argument
+    def three(context, two):
         assert context.op_config["baz"] == 3
 
     foo_job = define_asset_job(
@@ -1424,7 +1428,7 @@ def test_job_preserved_with_asset_subset():
         },
         description="my cool job",
         tags={"yay": 1},
-    ).resolve([asset_one, two, three], [])
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_one, two, three]))
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1441,14 +1445,16 @@ def test_job_default_config_preserved_with_asset_subset():
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": Field(int, default_value=2)})
-    def two(context, one):  # pylint: disable=unused-argument
+    def two(context, one):
         assert context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": Field(int, default_value=3)})
-    def three(context, two):  # pylint: disable=unused-argument
+    def three(context, two):
         assert context.op_config["baz"] == 3
 
-    foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
+    foo_job = define_asset_job("foo_job").resolve(
+        asset_graph=AssetGraph.from_assets([asset_one, two, three])
+    )
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
@@ -1466,8 +1472,9 @@ def test_empty_asset_job():
     empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
     assert empty_selection.resolve([a, b]) == set()
 
-    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve([a, b], [])
-    print(vars(empty_job))
+    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve(
+        asset_graph=AssetGraph.from_assets([a, b])
+    )
     assert empty_job.all_node_defs == []
 
     result = empty_job.execute_in_process()
@@ -1838,7 +1845,7 @@ def test_transitive_io_manager_dep_not_provided():
     )
 
     @asset
-    def my_derived_asset(my_source_asset):  # pylint: disable=unused-argument
+    def my_derived_asset(my_source_asset):
         pass
 
     with pytest.raises(

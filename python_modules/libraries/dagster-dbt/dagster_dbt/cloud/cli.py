@@ -27,9 +27,7 @@ def cache_compile_references(
         help="The id of your dbt Cloud project, that corresponds to the dbt project managed in git",
     ),
 ) -> None:
-    """
-    Cache the latest dbt cloud compile run id for a given project.
-    """
+    """Cache the latest dbt cloud compile run id for a given project."""
     dbt_cloud_resource = DbtCloudResource(
         auth_token=auth_token, account_id=account_id, disable_schedule_on_trigger=False
     )

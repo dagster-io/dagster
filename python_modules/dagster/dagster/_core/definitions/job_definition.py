@@ -173,6 +173,7 @@ class JobDefinition(PipelineDefinition):
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
 
+        did_user_provide_resources = bool(resource_defs)
         if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
@@ -253,6 +254,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
+            _should_validate_resource_requirements=did_user_provide_resources,
         )
 
     @property
@@ -303,9 +305,9 @@ class JobDefinition(PipelineDefinition):
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        resources: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
-        """
-        Execute the Job in-process, gathering results in-memory.
+        """Execute the Job in-process, gathering results in-memory.
 
         The `executor_def` on the Job will be ignored, and replaced with the in-process executor.
         If using the default `io_manager`, it will switch from filesystem to in-memory.
@@ -331,6 +333,9 @@ class JobDefinition(PipelineDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+            resources (Optional[Mapping[str, Any]]):
+                The resources needed if any are required. Can provide resource instances directly,
+                or resource definitions.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -338,11 +343,15 @@ class JobDefinition(PipelineDefinition):
         """
         from dagster._core.definitions.executor_definition import execute_in_process_executor
         from dagster._core.definitions.run_config import convert_config_input
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
         asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
+        resources = check.opt_mapping_param(resources, "resources", key_type=str)
+
+        resource_defs = wrap_resources_for_execution(resources)
 
         check.invariant(
             not (op_selection and asset_selection),
@@ -360,12 +369,12 @@ class JobDefinition(PipelineDefinition):
         # execute_in_process will override those provided on the definition.
         input_values = merge_dicts(self.input_values, input_values)
 
-        resource_defs = dict(self.resource_defs)
+        bound_resource_defs = dict(self.resource_defs)
         logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            resource_defs=_swap_default_io_man(resource_defs, self),
+            resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
             executor_def=execute_in_process_executor,
             logger_defs=logger_defs,
             hook_defs=self.hook_defs,
@@ -598,8 +607,7 @@ class JobDefinition(PipelineDefinition):
         instance: Optional["DagsterInstance"] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
-        """
-        Creates a RunRequest object for a run that processes the given partition.
+        """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
             partition_key: The key of the partition to request a run for.
@@ -675,6 +683,49 @@ class JobDefinition(PipelineDefinition):
 
         return job_def
 
+    @public
+    def with_top_level_resources(
+        self, resource_defs: Mapping[str, ResourceDefinition]
+    ) -> "JobDefinition":
+        """Apply a set of resources to all op instances within the job."""
+        resource_defs = check.dict_param(resource_defs, "resource_defs", key_type=str)
+
+        merged_resource_defs = {
+            **resource_defs,
+            **self.resource_defs,
+        }
+
+        # If we are using the default io_manager, we want to replace it with the one
+        # provided at the top level
+        if (
+            "io_manager" in resource_defs
+            and self.resource_defs.get("io_manager") == default_job_io_manager
+        ):
+            merged_resource_defs["io_manager"] = resource_defs["io_manager"]
+
+        job_def = JobDefinition(
+            name=self._name,
+            graph_def=self._graph_def,
+            resource_defs=merged_resource_defs,
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            config=self.partitioned_config or self.config_mapping,
+            description=self._description,
+            tags=self._tags,
+            hook_defs=self._hook_defs,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self._asset_layer,
+            _metadata_entries=self._metadata_entries,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
+        )
+
+        update_wrapper(job_def, self, updated=())
+
+        return job_def
+
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
@@ -741,14 +792,12 @@ class JobDefinition(PipelineDefinition):
 
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):
-    """
-    Used to create the user facing experience of the default io_manager
+    """Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
     """
     from dagster._core.storage.mem_io_manager import mem_io_manager
 
     if (
-        # pylint: disable=comparison-with-callable
         resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
         and job.version_strategy is None
     ):
@@ -775,7 +824,7 @@ def get_subselected_graph_definition(
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
-        Union[str, NodeInvocation],
+        NodeInvocation,
         Dict[str, IDependencyDefinition],
     ] = {}
 
@@ -845,14 +894,14 @@ def get_subselected_graph_definition(
         filter(
             lambda input_mapping: input_mapping.maps_to.node_name
             in [name for name, _ in selected_nodes],
-            graph._input_mappings,  # pylint: disable=protected-access
+            graph._input_mappings,  # noqa: SLF001
         )
     )
     new_output_mappings = list(
         filter(
             lambda output_mapping: output_mapping.maps_from.node_name
             in [name for name, _ in selected_nodes],
-            graph._output_mappings,  # pylint: disable=protected-access
+            graph._output_mappings,  # noqa: SLF001
         )
     )
 
@@ -867,7 +916,7 @@ def get_subselected_graph_definition(
 
 def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
     if target.is_job:
-        return cast(JobDefinition, target).input_values  # pylint: disable=protected-access
+        return cast(JobDefinition, target).input_values
     else:
         return {}
 
@@ -1028,8 +1077,7 @@ def get_run_config_schema_for_job(
 
 
 def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
-    """
-    For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
+    """For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
     AssetLayer that includes those SourceAssets.
     """
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}

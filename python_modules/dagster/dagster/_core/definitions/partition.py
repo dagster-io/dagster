@@ -33,38 +33,28 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.target import ExecutableDefinition
-from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
+from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
-from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
 )
 from ..storage.pipeline_run import DagsterRun
 from .config import ConfigMapping
 from .mode import DEFAULT_MODE_NAME
-from .run_request import RunRequest, SkipReason
+from .run_request import SkipReason
 from .schedule_definition import (
-    DefaultScheduleStatus,
-    ScheduleDefinition,
     ScheduleEvaluationContext,
-    ScheduleExecutionFunction,
-    ScheduleRunConfigFunction,
-    ScheduleShouldExecuteFunction,
-    ScheduleTagsFunction,
 )
 from .utils import check_valid_name, validate_tags
 
@@ -93,8 +83,7 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 
 
 class Partition(Generic[T_cov]):
-    """
-    A Partition represents a single slice of the entire set of a job's possible work. It consists
+    """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
     used to label the partition in a human-readable way.
 
@@ -223,8 +212,7 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T_cov]):
-    """
-    Defines a set of partitions, which can be attached to a software-defined asset or job.
+    """Defines a set of partitions, which can be attached to a software-defined asset or job.
 
     Abstract class with implementations for different kinds of partitions.
     """
@@ -349,9 +337,14 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
             serialized_partitions_def_class_name,
         )
 
-    @property
-    def serializable_unique_identifier(self) -> str:
-        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+    def get_serializable_unique_identifier(
+        self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> str:
+        return hashlib.sha1(
+            json.dumps(
+                self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+            ).encode("utf-8")
+        ).hexdigest()
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -378,11 +371,8 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
             )
 
 
-class StaticPartitionsDefinition(
-    PartitionsDefinition[str]
-):  # pylint: disable=unsubscriptable-object
-    """
-    A statically-defined set of partitions.
+class StaticPartitionsDefinition(PartitionsDefinition[str]):
+    """A statically-defined set of partitions.
 
     Example:
         .. code-block:: python
@@ -401,13 +391,14 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
+        # TODO 1.3.0 enforce that partition keys are unique
         raise_error_on_invalid_partition_key_substring(partition_keys)
 
         self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
         self,
-        current_time: Optional[datetime] = None,  # pylint: disable=unused-argument
+        current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition[str]]:
         return self._partitions
@@ -423,9 +414,19 @@ class StaticPartitionsDefinition(
     def __repr__(self) -> str:
         return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
 
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        # We don't currently throw an error when a duplicate partition key is defined
+        # in a static partitions definition, though we will at 1.3.0.
+        # This ensures that partition counts are correct in Dagit.
+        return len(set(self.get_partition_keys(current_time, dynamic_partitions_store)))
+
 
 class ScheduleTimeBasedPartitionsDefinition(
-    PartitionsDefinition[datetime],  # pylint: disable=unsubscriptable-object
+    PartitionsDefinition[datetime],
     NamedTuple(
         "_ScheduleTimeBasedPartitionsDefinition",
         [
@@ -442,7 +443,7 @@ class ScheduleTimeBasedPartitionsDefinition(
 ):
     """Computes the partitions backwards from the scheduled execution times."""
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         schedule_type: ScheduleType,
         start: datetime,
@@ -562,6 +563,19 @@ class ScheduleTimeBasedPartitionsDefinition(
             check.assert_never(self.schedule_type)
 
 
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
+    """A batch loader that caches the partition keys for a given dynamic partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
+    """
+
+    def __init__(self, instance: DagsterInstance):
+        self._instance = instance
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
+
+
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
@@ -579,8 +593,7 @@ class DynamicPartitionsDefinition(
         ],
     ),
 ):
-    """
-    A partitions definition whose partition keys can be dynamically added and removed.
+    """A partitions definition whose partition keys can be dynamically added and removed.
 
     This is useful for cases where the set of partitions is not known at definition time,
     but is instead determined at runtime.
@@ -606,7 +619,7 @@ class DynamicPartitionsDefinition(
 
     """
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         partition_fn: Optional[
             Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
@@ -663,13 +676,6 @@ class DynamicPartitionsDefinition(
         else:
             return super().__str__()
 
-    @property
-    def serializable_unique_identifier(self) -> str:
-        if not self.name:
-            return super().serializable_unique_identifier
-
-        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
-
     def get_partitions(
         self,
         current_time: Optional[datetime] = None,
@@ -700,8 +706,7 @@ class DynamicPartitionsDefinition(
 
 
 class PartitionSetDefinition(Generic[T_cov]):
-    """
-    Defines a partition set, representing the set of slices making up an axis of a pipeline.
+    """Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
     Args:
         name (str): Name for this partition set
@@ -743,9 +748,7 @@ class PartitionSetDefinition(Generic[T_cov]):
         tags_fn_for_partition: Callable[
             [Partition[T_cov]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
-        partitions_def: Optional[
-            PartitionsDefinition[T_cov]  # pylint: disable=unsubscriptable-object
-        ] = None,
+        partitions_def: Optional[PartitionsDefinition[T_cov]] = None,
         job_name: Optional[str] = None,
     ):
         check.invariant(
@@ -887,212 +890,6 @@ class PartitionSetDefinition(Generic[T_cov]):
     ) -> Sequence[str]:
         return [part.name for part in self.get_partitions(current_time, dynamic_partitions_store)]
 
-    def create_schedule_definition(
-        self,
-        schedule_name: str,
-        cron_schedule: str,
-        partition_selector: PartitionSelectorFunction,
-        should_execute: Optional[Callable[..., bool]] = None,
-        environment_vars: Optional[Mapping[str, str]] = None,
-        execution_timezone: Optional[str] = None,
-        description: Optional[str] = None,
-        decorated_fn: Optional[PartitionScheduleFunction] = None,
-        job: Optional[ExecutableDefinition] = None,
-        default_status=DefaultScheduleStatus.STOPPED,
-    ) -> "PartitionScheduleDefinition":
-        """Create a ScheduleDefinition from a PartitionSetDefinition.
-
-        Arguments:
-            schedule_name (str): The name of the schedule.
-            cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, Sequence[Partition]]]):
-                Function that determines the partition to use at a given execution time. Can return
-                either a single Partition or a list of Partitions. For time-based partition sets,
-                will likely be either `identity_partition_selector` or a selector returned by
-                `create_offset_partition_selector`.
-            should_execute (Optional[function]): Function that runs at schedule execution time that
-                determines whether a schedule should execute. Defaults to a function that always returns
-                ``True``.
-            environment_vars (Optional[dict]): The environment variables to set for the schedule.
-            execution_timezone (Optional[str]): Timezone in which the schedule should run.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            description (Optional[str]): A human-readable description of the schedule.
-            default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-                status can be overridden from Dagit or via the GraphQL API.
-
-        Returns:
-            PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
-                selector
-        """
-        check.str_param(schedule_name, "schedule_name")
-        check.str_param(cron_schedule, "cron_schedule")
-        check.opt_callable_param(should_execute, "should_execute")
-        check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-        check.callable_param(partition_selector, "partition_selector")
-        check.opt_str_param(execution_timezone, "execution_timezone")
-        check.opt_str_param(description, "description")
-        check.inst_param(default_status, "default_status", DefaultScheduleStatus)
-
-        def _execution_fn(context):
-            check.inst_param(context, "context", ScheduleEvaluationContext)
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",
-            ):
-                selector_result = partition_selector(context, self)
-
-            if isinstance(selector_result, SkipReason):
-                yield selector_result
-                return
-
-            selected_partitions = (
-                selector_result
-                if isinstance(selector_result, (frozenlist, list))
-                else [selector_result]
-            )
-
-            check.is_list(selected_partitions, of_type=Partition)
-
-            if not selected_partitions:
-                yield SkipReason("Partition selector returned an empty list of partitions.")
-                return
-
-            partition_names = self.get_partition_names(context.scheduled_execution_time)
-
-            missing_partition_names = [
-                partition.name
-                for partition in selected_partitions
-                if partition.name not in partition_names
-            ]
-
-            if missing_partition_names:
-                yield SkipReason(
-                    "Partition selector returned partition"
-                    + ("s" if len(missing_partition_names) > 1 else "")
-                    + f" not in the partition set: {', '.join(missing_partition_names)}."
-                )
-                return
-
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
-            ):
-                if should_execute and not should_execute(context):
-                    yield SkipReason(
-                        "should_execute function for {schedule_name} returned false.".format(
-                            schedule_name=schedule_name
-                        )
-                    )
-                    return
-
-            for selected_partition in selected_partitions:
-                with user_code_error_boundary(
-                    ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
-                ):
-                    run_config = self.run_config_for_partition(selected_partition)
-
-                with user_code_error_boundary(
-                    ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of tags_fn for schedule {schedule_name}",
-                ):
-                    tags = self.tags_for_partition(selected_partition)
-                yield RunRequest(
-                    run_key=selected_partition.name if len(selected_partitions) > 0 else None,
-                    run_config=run_config,
-                    tags=tags,
-                )
-
-        return PartitionScheduleDefinition(
-            name=schedule_name,
-            cron_schedule=cron_schedule,
-            pipeline_name=self._pipeline_name,
-            tags_fn=None,
-            should_execute=None,
-            environment_vars=environment_vars,
-            partition_set=self,
-            execution_timezone=execution_timezone,
-            execution_fn=_execution_fn,
-            description=description,
-            decorated_fn=decorated_fn,
-            job=job,
-            default_status=default_status,
-        )
-
-
-class PartitionScheduleDefinition(ScheduleDefinition):
-    __slots__ = ["_partition_set"]
-
-    def __init__(
-        self,
-        name: str,
-        cron_schedule: str,
-        pipeline_name: Optional[str],
-        tags_fn: Optional[ScheduleTagsFunction],
-        should_execute: Optional[ScheduleShouldExecuteFunction],
-        partition_set: PartitionSetDefinition,
-        environment_vars: Optional[Mapping[str, str]] = None,
-        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        execution_timezone: Optional[str] = None,
-        execution_fn: Optional[ScheduleExecutionFunction] = None,
-        description: Optional[str] = None,
-        decorated_fn: Optional[PartitionScheduleFunction] = None,
-        job: Optional[ExecutableDefinition] = None,
-        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    ):
-        super(PartitionScheduleDefinition, self).__init__(
-            name=check_valid_name(name),
-            cron_schedule=cron_schedule,
-            job_name=pipeline_name,
-            run_config_fn=run_config_fn,
-            tags_fn=tags_fn,
-            should_execute=should_execute,
-            environment_vars=environment_vars,
-            execution_timezone=execution_timezone,
-            execution_fn=execution_fn,
-            description=description,
-            job=job,
-            default_status=default_status,
-        )
-        self._partition_set = check.inst_param(
-            partition_set, "partition_set", PartitionSetDefinition
-        )
-        self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
-
-    def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
-        if not self._decorated_fn:
-            raise DagsterInvalidInvocationError(
-                "Only partition schedules created using one of the partition schedule decorators "
-                "can be directly invoked."
-            )
-        if len(args) == 0 and len(kwargs) == 0:
-            raise DagsterInvalidInvocationError(
-                "Schedule decorated function has date argument, but no date argument was "
-                "provided when invoking."
-            )
-        if len(args) + len(kwargs) > 1:
-            raise DagsterInvalidInvocationError(
-                "Schedule invocation received multiple arguments. Only a first "
-                "positional date parameter should be provided when invoking."
-            )
-
-        date_param_name = get_function_params(self._decorated_fn)[0].name
-
-        if args:
-            date = check.opt_inst_param(args[0], date_param_name, datetime)
-        else:
-            if date_param_name not in kwargs:
-                raise DagsterInvalidInvocationError(
-                    f"Schedule invocation expected argument '{date_param_name}'."
-                )
-            date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
-
-        return self._decorated_fn(date)  # type: ignore
-
-    def get_partition_set(self) -> PartitionSetDefinition:
-        return self._partition_set
-
 
 class PartitionedConfig(Generic[T_cov]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
@@ -1104,7 +901,7 @@ class PartitionedConfig(Generic[T_cov]):
 
     def __init__(
         self,
-        partitions_def: PartitionsDefinition[T_cov],  # pylint: disable=unsubscriptable-object
+        partitions_def: PartitionsDefinition[T_cov],
         run_config_for_partition_fn: Callable[[Partition[T_cov]], Mapping[str, Any]],
         decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
         tags_for_partition_fn: Optional[Callable[[Partition[T_cov]], Mapping[str, str]]] = None,
@@ -1122,7 +919,7 @@ class PartitionedConfig(Generic[T_cov]):
     @property
     def partitions_def(
         self,
-    ) -> PartitionsDefinition[T_cov]:  # pylint: disable=unsubscriptable-object
+    ) -> PartitionsDefinition[T_cov]:
         return self._partitions
 
     @public
@@ -1485,8 +1282,8 @@ class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, DefaultPartitionsSubset)
-            and self._partitions_def == other._partitions_def
-            and self._subset == other._subset
+            and self._partitions_def == other._partitions_def  # noqa: SLF001
+            and self._subset == other._subset  # noqa: SLF001
         )
 
     def __len__(self) -> int:

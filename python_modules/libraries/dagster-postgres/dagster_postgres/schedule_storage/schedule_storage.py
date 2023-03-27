@@ -119,9 +119,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ) -> "PostgresScheduleStorage":
         return PostgresScheduleStorage(
             inst_data=inst_data,
@@ -154,7 +154,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         selector_id = state.selector_id
         conn.execute(
             db_dialects.postgresql.insert(InstigatorsTable)
-            .values(  # pylint: disable=no-value-for-parameter
+            .values(
                 selector_id=selector_id,
                 repository_selector_id=state.repository_selector_id,
                 status=state.status.value,

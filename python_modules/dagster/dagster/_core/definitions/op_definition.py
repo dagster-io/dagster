@@ -54,8 +54,7 @@ OpComputeFunction: TypeAlias = Callable[..., Any]
 
 
 class OpDefinition(NodeDefinition):
-    """
-    Defines an op, the functional unit of user-defined computation.
+    """Defines an op, the functional unit of user-defined computation.
 
     For more details on what a op is, refer to the
     `Ops Overview <../../concepts/ops-jobs-graphs/ops>`_ .
@@ -129,7 +128,7 @@ class OpDefinition(NodeDefinition):
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
-            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda input: input[0])
+            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda inp: inp[0])
         ]  # sort so that input definition order is deterministic
 
         if isinstance(compute_fn, DecoratedOpFunction):

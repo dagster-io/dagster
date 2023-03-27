@@ -1,5 +1,5 @@
 import dagster
-import dagster._legacy as legacy  # pylint: disable=protected-access
+import dagster._legacy as legacy
 
 
 @dagster.op

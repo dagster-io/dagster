@@ -13,7 +13,7 @@ from dagster import (
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation import CodeLocation, ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import TickStatus
@@ -62,7 +62,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
                             .get_workspace_snapshot()
                             .values()
                         )
-                    ).repository_location
+                    ).code_location
                 ).get_repository(attribute),
             )
 
@@ -71,7 +71,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
     repositories: Dict[str, ExternalRepository]
-    repository_location: RepositoryLocation
+    code_location: CodeLocation
 
     def get_single_repository(self) -> ExternalRepository:
         assert len(self.repositories) == 1
@@ -102,17 +102,15 @@ def instance_with_multiple_code_locations(
         ) as workspace_context:
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
-            for repository_location_entry in (
+            for code_location_entry in (
                 workspace_context.create_request_context().get_workspace_snapshot().values()
             ):
-                repository_location: RepositoryLocation = check.not_none(
-                    repository_location_entry.repository_location
-                )
-                location_infos[repository_location.name] = CodeLocationInfoForSensorTest(
+                code_location: CodeLocation = check.not_none(code_location_entry.code_location)
+                location_infos[code_location.name] = CodeLocationInfoForSensorTest(
                     instance=instance,
                     context=workspace_context,
-                    repositories={**repository_location.get_repositories()},
-                    repository_location=repository_location,
+                    repositories={**code_location.get_repositories()},
+                    code_location=code_location,
                 )
 
             yield location_infos

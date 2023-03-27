@@ -3,19 +3,20 @@ import {
   Button,
   Checkbox,
   Colors,
+  TagSelectorDropdownProps,
   Icon,
   Menu,
   MenuDivider,
   MenuItem,
   TagSelectorWithSearch,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {StateDot} from '../assets/AssetPartitionList';
-import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {partitionStateAtIndex, Range} from '../assets/usePartitionHealthData';
+import {PartitionDefinitionType} from '../graphql/types';
+import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {CreatePartitionDialog} from './CreatePartitionDialog';
@@ -27,7 +28,7 @@ export const DimensionRangeWizard: React.FC<{
   setSelected: (selected: string[]) => void;
   partitionKeys: string[];
   health: PartitionStatusHealthSource;
-  isDynamic?: boolean;
+  dimensionType: PartitionDefinitionType;
   partitionDefinitionName?: string | null;
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
@@ -36,52 +37,44 @@ export const DimensionRangeWizard: React.FC<{
   setSelected,
   partitionKeys,
   health,
-  isDynamic = false,
+  dimensionType,
   partitionDefinitionName,
   repoAddress,
   refetch,
 }) => {
-  const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
+  const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
+  const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
 
   const [showCreatePartition, setShowCreatePartition] = React.useState(false);
-
-  const didSetInitialPartition = React.useRef(false);
-  React.useEffect(() => {
-    if (didSetInitialPartition.current || !partitionKeys.length) {
-      return;
-    }
-    didSetInitialPartition.current = true;
-    const query = qs.parse(window.location.search, {ignoreQueryPrefix: true});
-    const partition = query.partition as string;
-    if (partition && partitionKeys.includes(partition)) {
-      setSelected([partition]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partitionKeys]);
 
   return (
     <>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
         <Box flex={{direction: 'column'}} style={{flex: 1}}>
-          {isDynamic ? (
-            <DynamicPartitionSelector
-              allPartitions={partitionKeys}
-              selectedPartitions={selected}
-              setSelectedPartitions={setSelected}
-              health={health}
-              setShowCreatePartition={setShowCreatePartition}
-            />
-          ) : (
+          {isTimeseries ? (
             <DimensionRangeInput
               value={selected}
               partitionKeys={partitionKeys}
               onChange={setSelected}
               isTimeseries={isTimeseries}
             />
+          ) : (
+            <OrdinalPartitionSelector
+              allPartitions={partitionKeys}
+              selectedPartitions={selected}
+              setSelectedPartitions={setSelected}
+              health={health}
+              setShowCreatePartition={setShowCreatePartition}
+              isDynamic={isDynamic}
+            />
           )}
         </Box>
-        {isTimeseries && !isDynamic && (
-          <Button small={true} onClick={() => setSelected(partitionKeys.slice(-1))}>
+        {isTimeseries && (
+          <Button
+            small={true}
+            onClick={() => setSelected(partitionKeys.slice(-1))}
+            data-testid={testId('latest-partition-button')}
+          >
             Latest
           </Button>
         )}
@@ -90,7 +83,7 @@ export const DimensionRangeWizard: React.FC<{
         </Button>
       </Box>
       <Box margin={{bottom: 8}}>
-        {isDynamic ? (
+        {isDynamic && (
           <LinkText
             flex={{direction: 'row', alignItems: 'center', gap: 8}}
             onClick={() => {
@@ -100,7 +93,8 @@ export const DimensionRangeWizard: React.FC<{
             <StyledIcon name="add" size={24} />
             <div>Add a partition</div>
           </LinkText>
-        ) : (
+        )}
+        {isTimeseries && (
           <PartitionStatus
             partitionNames={partitionKeys}
             health={health}
@@ -129,27 +123,32 @@ export const DimensionRangeWizard: React.FC<{
   );
 };
 
-const DynamicPartitionSelector: React.FC<{
+const OrdinalPartitionSelector: React.FC<{
   allPartitions: string[];
   selectedPartitions: string[];
   setSelectedPartitions: (tags: string[]) => void;
   health: PartitionStatusHealthSource;
   setShowCreatePartition: (show: boolean) => void;
+  isDynamic: boolean;
 }> = ({
   allPartitions,
   selectedPartitions,
   setSelectedPartitions,
   setShowCreatePartition,
+  isDynamic,
   health,
 }) => {
-  const statusForPartitionKey = (partitionKey: string) => {
-    const index = allPartitions.indexOf(partitionKey);
-    if ('ranges' in health) {
-      return partitionStateAtIndex(health.ranges as Range[], index);
-    } else {
-      return health.partitionStateForKey(partitionKey, index);
-    }
-  };
+  const statusForPartitionKey = React.useCallback(
+    (partitionKey: string) => {
+      const index = allPartitions.indexOf(partitionKey);
+      if ('ranges' in health) {
+        return partitionStateAtIndex(health.ranges as Range[], index);
+      } else {
+        return health.partitionStateForKey(partitionKey, index);
+      }
+    },
+    [allPartitions, health],
+  );
 
   return (
     <>
@@ -158,78 +157,88 @@ const DynamicPartitionSelector: React.FC<{
         selectedTags={selectedPartitions}
         setSelectedTags={setSelectedPartitions}
         placeholder="Select a partition or create one"
-        renderDropdownItem={(tag, dropdownItemProps) => {
-          return (
-            <label>
-              <MenuItem
-                tagName="div"
-                text={
-                  <Box flex={{alignItems: 'center', gap: 12}}>
-                    <Checkbox
-                      checked={dropdownItemProps.selected}
-                      onChange={dropdownItemProps.toggle}
-                    />
-                    <StateDot state={statusForPartitionKey(tag)} />
-                    <span>{tag}</span>
-                  </Box>
-                }
-              />
-            </label>
-          );
-        }}
-        renderDropdown={(dropdown, {width, allTags}) => {
-          const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
-          return (
-            <Menu style={{width}}>
-              <Box padding={4}>
-                <Box flex={{direction: 'column'}}>
-                  <MenuItem
-                    tagName="div"
-                    text={
-                      <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-                        <StyledIcon name="add" size={24} />
-                        <span>Add partition</span>
-                      </Box>
-                    }
-                    onClick={() => {
-                      setShowCreatePartition(true);
-                    }}
-                  />
-                </Box>
-                <MenuDivider />
-                {allTags.length ? (
-                  <>
-                    <label>
-                      <MenuItem
-                        tagName="div"
-                        text={
-                          <Box flex={{alignItems: 'center', gap: 12}}>
-                            <Checkbox
-                              checked={isAllSelected}
-                              onChange={() => {
-                                if (isAllSelected) {
-                                  setSelectedPartitions([]);
-                                } else {
-                                  setSelectedPartitions(allTags);
-                                }
-                              }}
-                            />
-                            <span>Select all ({allTags.length})</span>
-                          </Box>
-                        }
+        renderDropdownItem={React.useCallback(
+          (tag, dropdownItemProps) => {
+            return (
+              <label>
+                <MenuItem
+                  tagName="div"
+                  text={
+                    <Box flex={{alignItems: 'center', gap: 12}}>
+                      <Checkbox
+                        checked={dropdownItemProps.selected}
+                        onChange={dropdownItemProps.toggle}
                       />
-                    </label>
-                    {dropdown}
-                  </>
-                ) : (
-                  <div style={{padding: '6px 6px 0px 6px', color: Colors.Gray700}}>
-                    No matching partitions found
-                  </div>
-                )}
-              </Box>
-            </Menu>
-          );
-        }}
+                      <StateDot state={statusForPartitionKey(tag)} />
+                      <span>{tag}</span>
+                    </Box>
+                  }
+                />
+              </label>
+            );
+          },
+          [statusForPartitionKey],
+        )}
+        renderDropdown={React.useCallback(
+          (dropdown, {width, allTags}: TagSelectorDropdownProps) => {
+            const isAllSelected = allTags.every((t) => selectedPartitions.includes(t));
+            return (
+              <Menu style={{width}}>
+                <Box padding={4}>
+                  {isDynamic && (
+                    <>
+                      <Box flex={{direction: 'column'}}>
+                        <MenuItem
+                          tagName="div"
+                          text={
+                            <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+                              <StyledIcon name="add" size={24} />
+                              <span>Add partition</span>
+                            </Box>
+                          }
+                          onClick={() => {
+                            setShowCreatePartition(true);
+                          }}
+                        />
+                      </Box>
+                      <MenuDivider />
+                    </>
+                  )}
+                  {allTags.length ? (
+                    <>
+                      <label>
+                        <MenuItem
+                          tagName="div"
+                          text={
+                            <Box flex={{alignItems: 'center', gap: 12}}>
+                              <Checkbox
+                                checked={isAllSelected}
+                                onChange={() => {
+                                  if (isAllSelected) {
+                                    setSelectedPartitions([]);
+                                  } else {
+                                    setSelectedPartitions(allTags);
+                                  }
+                                }}
+                              />
+                              <span>Select all ({allTags.length})</span>
+                            </Box>
+                          }
+                        />
+                      </label>
+                      {dropdown}
+                    </>
+                  ) : (
+                    <div style={{padding: '6px 6px 0px 6px', color: Colors.Gray700}}>
+                      No matching partitions found
+                    </div>
+                  )}
+                </Box>
+              </Menu>
+            );
+          },
+          [isDynamic, selectedPartitions, setSelectedPartitions, setShowCreatePartition],
+        )}
         renderTagList={(tags) => {
           if (tags.length > 4) {
             return <span>{tags.length} partitions selected</span>;

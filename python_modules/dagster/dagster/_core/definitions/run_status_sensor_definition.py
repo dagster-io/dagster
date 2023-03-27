@@ -18,6 +18,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -33,7 +34,7 @@ from dagster._serdes import (
     whitelist_for_serdes,
 )
 from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value, register_serdes_tuple_fallbacks
+from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.backcompat import deprecation_warning
@@ -51,7 +52,6 @@ from .sensor_definition import (
     SensorEvaluationContext,
     SensorType,
     SkipReason,
-    has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
@@ -73,7 +73,7 @@ RunFailureSensorEvaluationFn: TypeAlias = Union[
 ]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"PipelineSensorCursor"})
 class RunStatusSensorCursor(
     NamedTuple(
         "_RunStatusSensorCursor",
@@ -101,10 +101,6 @@ class RunStatusSensorCursor(
     @staticmethod
     def from_json(json_str: str) -> "RunStatusSensorCursor":
         return deserialize_value(json_str, RunStatusSensorCursor)
-
-
-# handle backcompat
-register_serdes_tuple_fallbacks({"PipelineSensorCursor": RunStatusSensorCursor})
 
 
 class RunStatusSensorContext:
@@ -197,8 +193,7 @@ def build_run_status_sensor_context(
     dagster_run: DagsterRun,
     context: Optional[SensorEvaluationContext] = None,
 ) -> RunStatusSensorContext:
-    """
-    Builds run status sensor context from provided parameters.
+    """Builds run status sensor context from provided parameters.
 
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@run_status_sensor` or `@run_failure_sensor`, such as when writing unit tests.
@@ -313,8 +308,7 @@ def run_failure_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
-    """
-    Creates a sensor that reacts to job failure events, where the decorated function will be
+    """Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
 
     Takes a :py:class:`~dagster.RunFailureSensorContext`.
@@ -381,8 +375,7 @@ def run_failure_sensor(
 
 
 class RunStatusSensorDefinition(SensorDefinition):
-    """
-    Define a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Define a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be evaluated when a run is at the given status.
 
     Args:
@@ -589,7 +582,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         pipeline_run.external_pipeline_origin
                     ).external_repository_origin
                     run_job_selector = JobSelector(
-                        location_name=external_repository_origin.repository_location_origin.location_name,
+                        location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
                         job_name=pipeline_run.pipeline_name,
                     )
@@ -598,7 +591,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                     # make a RepositorySelector for the run in question
                     run_repo_selector = RepositorySelector(
-                        location_name=external_repository_origin.repository_location_origin.location_name,
+                        location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
                     )
                     if run_repo_selector in other_repos:
@@ -620,16 +613,20 @@ class RunStatusSensorDefinition(SensorDefinition):
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
-                        # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(
-                            RunStatusSensorContext(  # type: ignore
-                                sensor_name=name,
-                                dagster_run=pipeline_run,
-                                dagster_event=event_log_entry.dagster_event,
-                                instance=context.instance,
-                                context=context,
+                        if has_at_least_one_parameter(run_status_sensor_fn):
+                            # one user code invocation maps to one failure event
+                            sensor_return = run_status_sensor_fn(
+                                RunStatusSensorContext(
+                                    sensor_name=name,
+                                    dagster_run=pipeline_run,
+                                    dagster_event=event_log_entry.dagster_event,
+                                    instance=context.instance,
+                                    context=context,
+                                )
                             )
-                        )
+                        else:
+                            sensor_return = run_status_sensor_fn()  # type: ignore
+
                         if sensor_return is not None:
                             context.update_cursor(
                                 RunStatusSensorCursor(
@@ -758,8 +755,7 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
-    """
-    Creates a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Creates a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
 
     Takes a :py:class:`~dagster.RunStatusSensorContext`.

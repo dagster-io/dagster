@@ -411,7 +411,7 @@ assert (
 
 The `upstream_asset` becomes a mapping from partition keys to partition values. This is a property of the default IO manager or any IO manager inheriting from the <PyObject module="dagster" object="UPathIOManager" />.
 
-A custom <PyObject object="PartitionMapping" /> instance can be provided to `In` to configure the mapped upstream partitions.
+A <PyObject object="PartitionMapping" /> can be provided to <PyObject object="AssetIn" /> to configure the mapped upstream partitions.
 
 When writing a custom IO Manager for loading multiple upstream partitions, the mapped keys can be accessed using <PyObject object="InputContext" method="asset_partition_keys" />, <PyObject object="InputContext" method="asset_partition_key_range" />, or <PyObject object="InputContext" method="asset_partitions_time_window" />.
 
@@ -656,12 +656,12 @@ For example, if your job produces DataFrames to populate tables in a data wareho
 ```python file=/concepts/io_management/metadata.py startafter=ops_start_marker endbefore=ops_end_marker
 @op(out=Out(metadata={"schema": "some_schema", "table": "some_table"}))
 def op_1():
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 
 
 @op(out=Out(metadata={"schema": "other_schema", "table": "other_table"}))
 def op_2(_input_dataframe):
-    """Return a Pandas DataFrame"""
+    """Return a Pandas DataFrame."""
 ```
 
 The IO manager can then access this metadata when storing or retrieving data, via the <PyObject module="dagster" object="OutputContext" />.

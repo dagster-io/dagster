@@ -138,13 +138,13 @@ def test_statement_timeouts(conn_string):
         instance.upgrade()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._run_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._run_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._event_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._event_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()
 
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
-            with instance._schedule_storage.connect() as conn:  # pylint: disable=protected-access
+            with instance._schedule_storage.connect() as conn:  # noqa: SLF001
                 conn.execute("select pg_sleep(1)").fetchone()

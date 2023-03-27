@@ -29,8 +29,7 @@ def key_from_str(key_str):
 
 
 class SSHResource:
-    """
-    Resource for ssh remote execution using Paramiko.
+    """Resource for ssh remote execution using Paramiko.
 
     ref: https://github.com/paramiko/paramiko
     """
@@ -91,8 +90,7 @@ class SSHResource:
                     self.key_file = host_info.get("identityfile")[0]
 
     def get_connection(self):
-        """
-        Opens a SSH connection to the remote host.
+        """Opens a SSH connection to the remote host.
 
         :rtype: paramiko.client.SSHClient
         """

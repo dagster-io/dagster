@@ -22,9 +22,7 @@ from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 
 @click.group(name="schedule")
 def schedule_cli():
-    """
-    Commands for working with Dagster schedules.
-    """
+    """Commands for working with Dagster schedules."""
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
@@ -242,7 +240,7 @@ def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) ->
 def schedule_start_command(schedule_name, start_all, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None and start_all is False:
-        print(  # pylint: disable=print-call
+        print(  # noqa: T201
             "Noop: dagster schedule start was called without any arguments specifying which "
             "schedules to start. Pass a schedule name or the --start-all flag to start schedules."
         )
@@ -314,7 +312,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 def schedule_logs_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None:
-        print(  # pylint: disable=print-call
+        print(  # noqa: T201
             "Noop: dagster schedule logs was called without any arguments specifying which "
             "schedules to retrieve logs for. Pass a schedule name"
         )

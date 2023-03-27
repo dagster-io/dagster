@@ -21,7 +21,6 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.launcher import K8sRunLauncher
@@ -59,8 +58,7 @@ _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     requirements=multiple_process_executor_requirements(),
 )
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
-    """
-    Executor which launches steps as Kubernetes Jobs.
+    """Executor which launches steps as Kubernetes Jobs.
 
     To use the `k8s_job_executor`, set it as the `executor_def` when defining a job:
 
@@ -189,7 +187,7 @@ class K8sStepHandler(StepHandler):
         context = context.merge(self._executor_container_context)
 
         user_defined_k8s_config = get_user_defined_k8s_config(
-            frozentags(step_handler_context.step_tags[step_key])
+            step_handler_context.step_tags[step_key]
         )
         return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
 
