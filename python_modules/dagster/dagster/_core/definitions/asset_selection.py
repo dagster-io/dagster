@@ -55,6 +55,9 @@ class AssetSelection(ABC):
 
             # Select all assets except for those in group "marketing"
             AssetSelection.all() - AssetSelection.groups("marketing")
+
+            # Select all assets which are materialized by the same op as "projections":
+            AssetSelection.keys("projections").required_neighbors()
     """
 
     @public
@@ -154,6 +157,14 @@ class AssetSelection(ABC):
         The sink asset can have downstream dependencies outside of the asset selection.
         """
         return SinkAssetSelection(self)
+
+    @public
+    def required_neighbors(self) -> "RequiredNeighborsAssetSelection":
+        """Given an asset selection in which some assets are output from a mutli-asset compute op
+        which cannot be subset, returns a new asset selection that contains all of the assets
+        required to execute the original asset selection.
+        """
+        return RequiredNeighborsAssetSelection(self)
 
     @public
     def roots(self) -> "RootAssetSelection":
@@ -299,6 +310,18 @@ class SinkAssetSelection(AssetSelection):
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self._child.resolve_inner(asset_graph)
         return fetch_sinks(asset_graph.asset_dep_graph, selection)
+
+
+class RequiredNeighborsAssetSelection(AssetSelection):
+    def __init__(self, child: AssetSelection):
+        self._child = child
+
+    def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        selection = self._child.resolve_inner(asset_graph)
+        output = set(selection)
+        for asset_key in selection:
+            output.update(asset_graph.get_required_multi_asset_keys(asset_key))
+        return output
 
 
 class RootAssetSelection(AssetSelection):
