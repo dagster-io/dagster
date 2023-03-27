@@ -63,7 +63,11 @@ class AssetReconciliationCursor(NamedTuple):
         return asset_key in self.materialized_or_requested_root_asset_keys
 
     def get_never_requested_never_materialized_partitions(
-        self, asset_key: AssetKey, asset_graph, dynamic_partitions_store: "DynamicPartitionsStore"
+        self,
+        asset_key: AssetKey,
+        asset_graph,
+        dynamic_partitions_store: "DynamicPartitionsStore",
+        evaluation_time: datetime.datetime,
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
@@ -74,7 +78,9 @@ class AssetReconciliationCursor(NamedTuple):
         )
 
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+            allowable_time_window = allowable_time_window_for_partitions_def(
+                partitions_def, evaluation_time
+            )
             if allowable_time_window is None:
                 return []
             # for performance, only iterate over keys within the allowable time window
@@ -298,6 +304,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
+    evaluation_time: datetime.datetime,
 ) -> Tuple[
     Iterable[AssetKeyPartitionKey], AbstractSet[AssetKey], Mapping[AssetKey, AbstractSet[str]]
 ]:
@@ -318,7 +325,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
     for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
         if asset_graph.is_partitioned(asset_key):
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
-                asset_key, asset_graph, instance_queryer
+                asset_key, asset_graph, instance_queryer, evaluation_time
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
                 if instance_queryer.get_latest_materialization_record(asset_partition, None):
@@ -342,15 +349,18 @@ def find_never_materialized_or_requested_root_asset_partitions(
 
 def allowable_time_window_for_partitions_def(
     partitions_def: TimeWindowPartitionsDefinition,
+    evaluation_time: datetime.datetime,
 ) -> Optional[TimeWindow]:
     """Returns a time window encompassing the partitions that the reconciliation sensor is currently
     allowed to materialize for this partitions_def.
     """
-    latest_partition_window = partitions_def.get_last_partition_window()
+    latest_partition_window = partitions_def.get_last_partition_window(current_time=evaluation_time)
     if latest_partition_window is None:
         return None
 
-    earliest_partition_window = partitions_def.get_first_partition_window()
+    earliest_partition_window = partitions_def.get_first_partition_window(
+        current_time=evaluation_time
+    )
     if earliest_partition_window is None:
         return None
 
@@ -368,7 +378,9 @@ def allowable_time_window_for_partitions_def(
 
 
 def candidates_unit_within_allowable_time_window(
-    asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
+    asset_graph: AssetGraph,
+    candidates_unit: Iterable[AssetKeyPartitionKey],
+    evaluation_time: datetime.datetime,
 ):
     """A given time-window partition may only be materialized if its window ends within 1 day of the
     latest window for that partition.
@@ -384,7 +396,9 @@ def candidates_unit_within_allowable_time_window(
 
     partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
 
-    allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+    allowable_time_window = allowable_time_window_for_partitions_def(
+        partitions_def, evaluation_time
+    )
     if allowable_time_window is None:
         return False
 
@@ -401,6 +415,7 @@ def determine_asset_partitions_to_reconcile(
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
     eventual_asset_partitions_to_reconcile_for_freshness: AbstractSet[AssetKeyPartitionKey],
+    evaluation_time: datetime.datetime,
 ) -> Tuple[
     AbstractSet[AssetKeyPartitionKey],
     AbstractSet[AssetKey],
@@ -416,6 +431,7 @@ def determine_asset_partitions_to_reconcile(
         cursor=cursor,
         target_asset_selection=target_asset_selection,
         asset_graph=asset_graph,
+        evaluation_time=evaluation_time,
     )
 
     stale_candidates, latest_storage_id = find_parent_materialized_asset_partitions(
@@ -459,7 +475,9 @@ def determine_asset_partitions_to_reconcile(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
-        if not candidates_unit_within_allowable_time_window(asset_graph, candidates_unit):
+        if not candidates_unit_within_allowable_time_window(
+            asset_graph, candidates_unit, evaluation_time
+        ):
             return False
 
         if any(
@@ -559,6 +577,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
     target_asset_selection: AssetSelection,
+    evaluation_time: datetime.datetime,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies, as well as a set of AssetKeyPartitionKeys which will be materialized at
@@ -566,8 +585,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-    evaluation_time = pendulum.now(tz=pendulum.UTC)
-
     # get the set of asset keys we're allowed to execute
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
@@ -656,6 +673,8 @@ def reconcile(
 ):
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
+    current_time = pendulum.now("UTC")
+
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
@@ -675,6 +694,7 @@ def reconcile(
         ),
         asset_graph=asset_graph,
         target_asset_selection=asset_selection,
+        evaluation_time=current_time,
     )
 
     (
@@ -688,6 +708,7 @@ def reconcile(
         cursor=cursor,
         target_asset_selection=asset_selection,
         eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
+        evaluation_time=current_time,
     )
 
     run_requests = build_run_requests(

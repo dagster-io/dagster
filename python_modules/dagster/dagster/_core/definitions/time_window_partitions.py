@@ -1,3 +1,4 @@
+import functools
 import hashlib
 import json
 import re
@@ -280,11 +281,15 @@ class TimeWindowPartitionsDefinition(
     def __hash__(self):
         return hash(tuple(self.__repr__()))
 
-    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+    @functools.lru_cache(maxsize=100)
+    def _time_window_for_partition_key(self, *, partition_key: str) -> TimeWindow:
         partition_key_dt = pendulum.instance(
             datetime.strptime(partition_key, self.fmt), tz=self.timezone
         )
         return next(iter(self._iterate_time_windows(partition_key_dt)))
+
+    def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
+        return self._time_window_for_partition_key(partition_key=partition_key)
 
     def time_windows_for_partition_keys(
         self,
@@ -379,15 +384,8 @@ class TimeWindowPartitionsDefinition(
         else:
             return prev_window
 
-    def get_first_partition_window(
-        self, current_time: Optional[datetime] = None
-    ) -> Optional[TimeWindow]:
-        current_time = cast(
-            datetime,
-            pendulum.instance(current_time, tz=self.timezone)
-            if current_time
-            else pendulum.now(self.timezone),
-        )
+    @functools.lru_cache(maxsize=5)
+    def _get_first_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         current_timestamp = current_time.timestamp()
 
         time_window = next(iter(self._iterate_time_windows(self.start)))
@@ -419,9 +417,19 @@ class TimeWindowPartitionsDefinition(
                 time_window if time_window.end.timestamp() <= end_window.start.timestamp() else None
             )
 
-    def get_last_partition_window(
+    def get_first_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
+        current_time = cast(
+            datetime,
+            pendulum.instance(current_time, tz=self.timezone)
+            if current_time
+            else pendulum.now(self.timezone),
+        )
+        return self._get_first_partition_window(current_time=current_time)
+
+    @functools.lru_cache(maxsize=5)
+    def _get_last_partition_window(self, *, current_time: datetime) -> Optional[TimeWindow]:
         if self.get_first_partition_window(current_time) is None:
             return None
 
@@ -432,7 +440,7 @@ class TimeWindowPartitionsDefinition(
         )
 
         if self.end_offset == 0:
-            return next(iter(self._reverse_iterate_time_windows(current_time)))  # type: ignore
+            return next(iter(self._reverse_iterate_time_windows(current_time)))
         else:
             # TODO: make this efficient
             last_partition_key = super().get_last_partition_key(current_time)
@@ -441,6 +449,17 @@ class TimeWindowPartitionsDefinition(
                 if last_partition_key
                 else None
             )
+
+    def get_last_partition_window(
+        self, current_time: Optional[datetime] = None
+    ) -> Optional[TimeWindow]:
+        current_time = cast(
+            datetime,
+            pendulum.instance(current_time, tz=self.timezone)
+            if current_time
+            else pendulum.now(self.timezone),
+        )
+        return self._get_last_partition_window(current_time=current_time)
 
     def get_first_partition_key(
         self,
