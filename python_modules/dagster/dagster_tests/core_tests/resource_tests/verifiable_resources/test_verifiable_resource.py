@@ -16,18 +16,18 @@ from dagster._core.test_utils import environ
 
 
 def test_config_verifiable_job_basic() -> None:
-    class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
+    class FailureToggleVerificableResource(ConfigurableResource, ConfigVerifiable):
         a_str: str
 
         def verify_config(self) -> VerificationResult:
             if self.a_str == "foo":
-                return VerificationResult(VerificationStatus.SUCCESS, "asdf")
+                return VerificationResult.success("asdf")
             else:
-                return VerificationResult(VerificationStatus.FAILURE, "qwer")
+                return VerificationResult.failure("qwer")
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResource(a_str="foo"),
+            "my_resource": FailureToggleVerificableResource(a_str="foo"),
         },
     )
 
@@ -48,7 +48,7 @@ def test_config_verifiable_job_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResource(a_str="bar"),
+            "my_resource": FailureToggleVerificableResource(a_str="bar"),
         },
     )
 
@@ -69,18 +69,18 @@ def test_config_verifiable_job_basic() -> None:
 
 
 def test_config_verifiable_job_env_var() -> None:
-    class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
+    class FailureToggleVerifiableResource(ConfigurableResource, ConfigVerifiable):
         a_str: str
 
         def verify_config(self) -> VerificationResult:
             if self.a_str == "foo":
-                return VerificationResult(VerificationStatus.SUCCESS, "asdf")
+                return VerificationResult.success("asdf")
             else:
-                return VerificationResult(VerificationStatus.FAILURE, "qwer")
+                return VerificationResult.failure("qwer")
 
     defs = Definitions(
         resources={
-            "my_resource": MyVerifiableResource(a_str=EnvVar("ENV_VARIABLE_FOR_TEST")),
+            "my_resource": FailureToggleVerifiableResource(a_str=EnvVar("ENV_VARIABLE_FOR_TEST")),
         },
     )
 

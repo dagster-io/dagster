@@ -102,9 +102,9 @@ class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
 
     def verify_config(self) -> VerificationResult:
         if self.a_str == "foo":
-            return VerificationResult(VerificationStatus.SUCCESS, "asdf")
+            return VerificationResult.success("asdf")
         else:
-            return VerificationResult(VerificationStatus.FAILURE, "qwer")
+            return VerificationResult.failure("qwer")
 
 
 class MyUnverifiableResource(ConfigurableResource, ConfigVerifiable):
@@ -122,7 +122,7 @@ the_repo = Definitions(
 )
 
 
-def test_resources(
+def test_base_resource(
     caplog,
     instance: DagsterInstance,
     workspace_context: IWorkspaceProcessContext,
@@ -146,14 +146,14 @@ def test_resources(
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "success_resource"
     )
-    assert result.response == VerificationResult(VerificationStatus.SUCCESS, "asdf")
+    assert result.response == VerificationResult.success("asdf")
     assert [run.status for run in instance.get_runs()] == [DagsterRunStatus.SUCCESS]
 
     # A failed (non-exception) verification should still create a successful run
     result = code_location.launch_resource_verification(
         external_repo.get_external_origin(), instance.get_ref(), "failure_resource"
     )
-    assert result.response == VerificationResult(VerificationStatus.FAILURE, "qwer")
+    assert result.response == VerificationResult.failure("qwer")
     assert [run.status for run in instance.get_runs()] == [
         DagsterRunStatus.SUCCESS,
         DagsterRunStatus.SUCCESS,
@@ -172,3 +172,35 @@ def test_resources(
         DagsterRunStatus.SUCCESS,
         DagsterRunStatus.SUCCESS,
     ]
+
+
+def test_resource_not_found(
+    caplog,
+    instance: DagsterInstance,
+    workspace_context: IWorkspaceProcessContext,
+    external_repo: ExternalRepository,
+) -> None:
+    instance = workspace_context.instance
+
+    workspace_snapshot = {
+        location_entry.origin.location_name: location_entry
+        for location_entry in workspace_context.create_request_context()
+        .get_workspace_snapshot()
+        .values()
+    }
+
+    location_entry = list(workspace_snapshot.values())[0]
+    code_location = location_entry.code_location
+    assert code_location
+
+    assert instance.get_runs() == []
+
+    result = code_location.launch_resource_verification(
+        external_repo.get_external_origin(), instance.get_ref(), "non_existent_resource"
+    )
+
+    assert result.serializable_error_info is not None
+    assert (
+        "Could not find pipeline '__RESOURCE_VERIFICATION_non_existent_resource'"
+        in result.serializable_error_info.message
+    )

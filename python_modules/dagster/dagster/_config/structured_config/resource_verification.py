@@ -25,14 +25,12 @@ class VerificationResult(NamedTuple):
 
     @classmethod
     def success(cls, message: Optional[str] = None):
-        """Create a successful verification result.
-        """
+        """Create a successful verification result."""
         return cls(VerificationStatus.SUCCESS, message)
 
     @classmethod
     def failure(cls, message: Optional[str] = None):
-        """Create a failed verification result.
-        """
+        """Create a failed verification result."""
         return cls(VerificationStatus.FAILURE, message)
 
 
