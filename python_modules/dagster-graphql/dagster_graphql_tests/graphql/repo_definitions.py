@@ -20,6 +20,9 @@ def my_asset():
     pass
 
 
+count = 0
+
+
 class MyResource(ConfigurableResource, ConfigVerifiable):
     """My description."""
 
@@ -27,7 +30,12 @@ class MyResource(ConfigurableResource, ConfigVerifiable):
     an_unset_string: str = "defaulted"
 
     def verify_config(self) -> VerificationResult:
-        return VerificationResult(VerificationStatus.SUCCESS, "foobar")
+        global count  # noqa: PLW0603
+        count += 1
+        if count % 2 == 0:
+            return VerificationResult(VerificationStatus.FAILURE, "even")
+        else:
+            return VerificationResult(VerificationStatus.SUCCESS, "odd")
 
 
 class MyInnerResource(ConfigurableResource):

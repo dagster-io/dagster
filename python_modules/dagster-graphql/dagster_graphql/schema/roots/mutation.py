@@ -727,7 +727,7 @@ class GrapheneLaunchResourceVerificationMutation(graphene.Mutation):
         res = resource_verification(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
         )
-        return GrapheneResourceVerificationResult(status=res.status, message=res.message or "")
+        return GrapheneResourceVerificationResult(res)
 
 
 class GrapheneDagitMutation(graphene.ObjectType):
