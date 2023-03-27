@@ -45,8 +45,7 @@ class CachingDataTimeResolver:
         At a high level, this algorithm works as follows:
 
         First, calculate the subset of partitions that have been materialized up until this point
-        in time (ignoring the cursor). This is done by querying the asset status cache if it is
-        available, otherwise by using a (slower) get_materialization_count_by_partition query.
+        in time (ignoring the cursor). This is done using the get_materialized_partitions query,
 
         Next, we calculate the set of partitions that are net-new since the cursor. This is done by
         comparing the count of materializations before after the cursor to the total count of
@@ -57,30 +56,12 @@ class CachingDataTimeResolver:
         beginning of that time window, or all data up until the end of the first filled time window
         in the total set, whichever is less.
         """
-        from dagster._core.storage.partition_status_cache import (
-            get_and_update_asset_status_cache_value,
+        # the total set of materialized partitions
+        partition_subset = partitions_def.empty_subset().with_partition_keys(
+            partition_key
+            for partition_key in self._instance_queryer.get_materialized_partitions(asset_key)
+            if partitions_def.is_valid_partition_key(partition_key)
         )
-
-        if self.instance_queryer.instance.can_cache_asset_status_data():
-            # this is the current state of the asset, not the state of the asset at the time of record_id
-            status_cache_value = get_and_update_asset_status_cache_value(
-                instance=self.instance_queryer.instance,
-                asset_key=asset_key,
-                partitions_def=partitions_def,
-            )
-            partition_subset = (
-                status_cache_value.deserialize_materialized_partition_subsets(
-                    partitions_def=partitions_def
-                )
-                if status_cache_value
-                else partitions_def.empty_subset()
-            )
-        else:
-            # if we can't use the asset status cache, then we get the subset by querying for the
-            # existing partitions
-            partition_subset = partitions_def.empty_subset().with_partition_keys(
-                self._instance_queryer.get_materialized_partitions(asset_key)
-            )
 
         if not isinstance(partition_subset, TimeWindowPartitionsSubset):
             check.failed(f"Invalid partition subset {type(partition_subset)}")
