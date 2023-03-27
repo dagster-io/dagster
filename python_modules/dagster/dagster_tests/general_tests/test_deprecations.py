@@ -8,6 +8,7 @@ from dagster._core.definitions.events import Output
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.definitions.output import OutputDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.types.dagster_type import DagsterType
 
 # ########################
@@ -38,3 +39,18 @@ def test_arbitrary_metadata():
 def test_metadata_entry_description():
     with pytest.warns(DeprecationWarning, match=re.escape('"description" attribute')):
         MetadataEntry("foo", "bar", MetadataValue.text("baz"))
+
+
+# ########################
+# ##### SCHEDULE ENV VARS
+# ########################
+
+
+def test_schedule_environment_vars():
+    with pytest.warns(DeprecationWarning, match=re.escape("environment_vars")):
+        ScheduleDefinition(
+            name="foo",
+            cron_schedule="@daily",
+            job_name="bar",
+            environment_vars={"foo": "bar"},
+        )

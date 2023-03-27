@@ -824,7 +824,7 @@ def get_subselected_graph_definition(
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
-        Union[str, NodeInvocation],
+        NodeInvocation,
         Dict[str, IDependencyDefinition],
     ] = {}
 

@@ -18,12 +18,12 @@ from typing import (
 )
 
 from toposort import CircularDependencyError, toposort_flatten
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -35,9 +35,9 @@ from dagster._core.types.dagster_type import (
 )
 
 from .dependency import (
+    DependencyMapping,
     DependencyStructure,
     GraphNode,
-    IDependencyDefinition,
     Node,
     NodeHandle,
     NodeInput,
@@ -47,8 +47,8 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue
-from .node_container import create_execution_structure, validate_dependency_dict
+from .metadata import MetadataEntry, RawMetadataValue
+from .node_container import create_execution_structure, normalize_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
@@ -178,7 +178,7 @@ class GraphDefinition(NodeDefinition):
 
     _node_defs: Sequence[NodeDefinition]
     _dagster_type_dict: Mapping[str, DagsterType]
-    _dependencies: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    _dependencies: DependencyMapping[NodeInvocation]
     _dependency_structure: DependencyStructure
     _node_dict: Mapping[str, Node]
     _input_mappings: Sequence[InputMapping]
@@ -199,7 +199,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         node_defs: Optional[Sequence[NodeDefinition]] = None,
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
         ] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
@@ -209,7 +209,10 @@ class GraphDefinition(NodeDefinition):
         **kwargs: object,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
-        self._dependencies = validate_dependency_dict(dependencies)
+
+        # `dependencies` will be converted to `dependency_structure` and `node_dict`, which may
+        # alternatively be passed directly (useful when copying)
+        self._dependencies = normalize_dependency_dict(dependencies)
         self._dependency_structure, self._node_dict = create_execution_structure(
             self._node_defs, self._dependencies, graph_definition=self
         )
@@ -470,9 +473,7 @@ class GraphDefinition(NodeDefinition):
         return mapped_node.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(
-        self,
-    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+    def dependencies(self) -> DependencyMapping[NodeInvocation]:
         return self._dependencies
 
     @property
@@ -498,6 +499,28 @@ class GraphDefinition(NodeDefinition):
             mapping.maps_to.input_name
         )
 
+    def copy(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
+        config: Optional[ConfigMapping] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
+    ) -> Self:
+        return GraphDefinition(
+            node_defs=self.node_defs,
+            dependencies=self.dependencies,
+            name=name or self.name,
+            description=description or self.description,
+            input_mappings=input_mappings or self._input_mappings,
+            output_mappings=output_mappings or self._output_mappings,
+            config=config or self.config_mapping,
+            tags=tags or self.tags,
+            node_input_source_assets=node_input_source_assets or self.node_input_source_assets,
+        )
+
     def copy_for_configured(
         self,
         name: str,
@@ -511,13 +534,9 @@ class GraphDefinition(NodeDefinition):
                 "configured.".format(graph_name=self.name)
             )
         config_mapping = cast(ConfigMapping, self.config_mapping)
-        return GraphDefinition(
+        return self.copy(
             name=name,
             description=check.opt_str_param(description, "description", default=self.description),
-            node_defs=self._node_defs,
-            dependencies=self._dependencies,
-            input_mappings=self._input_mappings,
-            output_mappings=self._output_mappings,
             config=ConfigMapping(
                 config_mapping.config_fn,
                 config_schema=config_schema,
@@ -797,7 +816,10 @@ class SubselectedGraphDefinition(GraphDefinition):
         parent_graph_def: GraphDefinition,
         node_defs: Optional[Sequence[NodeDefinition]],
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+            Union[
+                DependencyMapping[str],
+                DependencyMapping[NodeInvocation],
+            ]
         ],
         input_mappings: Optional[Sequence[InputMapping]],
         output_mappings: Optional[Sequence[OutputMapping]],

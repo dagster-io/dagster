@@ -8,7 +8,7 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Iterator, List, Mapping, NoReturn, Optional, Sequence, Tuple, TypeVar
+from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 from dagster import (
     Any,
@@ -87,7 +87,7 @@ from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
+from dagster._core.test_utils import default_mode_def_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
@@ -96,11 +96,7 @@ from dagster._legacy import (
     PartitionSetDefinition,
     PresetDefinition,
     build_assets_job,
-    daily_schedule,
-    hourly_schedule,
-    monthly_schedule,
     pipeline,
-    weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
@@ -110,6 +106,7 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+from typing_extensions import Literal, Never
 
 T = TypeVar("T")
 
@@ -1040,17 +1037,7 @@ def last_empty_partition(
     return selected
 
 
-def define_schedules() -> Sequence[ScheduleDefinition]:
-    def throw_error() -> NoReturn:
-        raise Exception("This is an error")
-
-    integer_partition_set = PartitionSetDefinition(
-        name="scheduled_integer_partitions",
-        pipeline_name="no_config_pipeline",
-        partition_fn=lambda: [Partition(x) for x in range(1, 10)],
-        tags_fn_for_partition=lambda _partition: {"test": "1234"},
-    )
-
+def define_schedules():
     no_config_pipeline_hourly_schedule = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule",
         cron_schedule="0 0 * * *",
@@ -1076,104 +1063,54 @@ def define_schedules() -> Sequence[ScheduleDefinition]:
         job_name="no_config_pipeline",
     )
 
-    partition_based = integer_partition_set.create_schedule_definition(
-        schedule_name="partition_based",
-        cron_schedule="0 0 * * *",
-        partition_selector=last_empty_partition,  # type: ignore
-    )
+    def get_cron_schedule(
+        delta: datetime.timedelta, schedule_type: Literal["daily", "hourly"] = "daily"
+    ) -> str:
+        time = (datetime.datetime.now() + delta).time()
+        hour = time.hour if schedule_type == "daily" else "*"
+        return f"{time.minute} {hour} * * *"
 
-    @daily_schedule(
-        job_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-    )
-    def partition_based_decorator(_date):
-        return {}
+    def throw_error() -> Never:
+        raise Exception("This is an error")
 
-    @daily_schedule(
+    @schedule(
+        cron_schedule=get_cron_schedule(datetime.timedelta(hours=2)),
         job_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         default_status=DefaultScheduleStatus.RUNNING,
     )
-    def running_in_code_schedule(_date):
-        return {}
-
-    @daily_schedule(
-        job_name="multi_mode_with_loggers",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        mode="foo_mode",
-    )
-    def partition_based_multi_mode_decorator(_date):
-        return {}
-
-    @hourly_schedule(
-        job_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_hourly_decorator(_date):
-        return {}
-
-    @daily_schedule(
-        job_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=2),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_daily_decorator(_date):
-        return {}
-
-    @monthly_schedule(
-        job_name="no_config_chain_pipeline",
-        start_date=(today_at_midnight().subtract(days=100)).replace(day=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_monthly_decorator(_date):
-        return {}
-
-    @weekly_schedule(
-        job_name="no_config_chain_pipeline",
-        start_date=today_at_midnight().subtract(days=50),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
-        solid_selection=["return_foo"],
-    )
-    def solid_selection_weekly_decorator(_date):
+    def running_in_code_schedule(_context):
         return {}
 
     # Schedules for testing the user error boundary
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         job_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
         should_execute=lambda _: throw_error(),
     )
-    def should_execute_error_schedule(_date):
+    def should_execute_error_schedule(_context):
         return {}
 
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         job_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: throw_error(),
+        tags_fn=lambda _: throw_error(),
     )
-    def tags_error_schedule(_date):
+    def tags_error_schedule(_context):
         return {}
 
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         job_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
     )
-    def run_config_error_schedule(_date):
+    def run_config_error_schedule(_context):
         throw_error()
 
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         job_name="no_config_pipeline",
-        start_date=today_at_midnight("US/Central") - datetime.timedelta(days=1),
         execution_timezone="US/Central",
     )
-    def timezone_schedule(_date):
+    def timezone_schedule(_context):
         return {}
 
     tagged_pipeline_schedule = ScheduleDefinition(
@@ -1223,13 +1160,6 @@ def define_schedules() -> Sequence[ScheduleDefinition]:
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
         dynamic_config,
-        partition_based,
-        partition_based_decorator,
-        partition_based_multi_mode_decorator,
-        solid_selection_hourly_decorator,
-        solid_selection_daily_decorator,
-        solid_selection_monthly_decorator,
-        solid_selection_weekly_decorator,
         should_execute_error_schedule,
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
@@ -1631,6 +1561,29 @@ fail_partition_materialization_job = build_assets_job(
 )
 
 
+@asset(
+    partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    required_resource_keys={"hanging_asset_resource"},
+)
+def hanging_partition_asset(context):
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+hanging_partition_asset_job = build_assets_job(
+    "hanging_partition_asset_job",
+    assets=[hanging_partition_asset],
+    executor_def=in_process_executor,
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
+)
+
+
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
@@ -1931,6 +1884,7 @@ def define_pipelines():
         time_partitioned_assets_job,
         partition_materialization_job,
         fail_partition_materialization_job,
+        hanging_partition_asset_job,
         observation_job,
         failure_assets_job,
         asset_group_job,

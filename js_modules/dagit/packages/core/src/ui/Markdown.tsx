@@ -1,10 +1,11 @@
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
 import gfm from 'remark-gfm';
 import styled from 'styled-components/macro';
 
-import {Colors} from './Colors';
-import {FontFamily} from './styles';
+import 'highlight.js/styles/github.css';
 
 interface Props {
   children: string;
@@ -13,7 +14,7 @@ interface Props {
 export const Markdown: React.FC<Props> = (props) => {
   return (
     <Container>
-      <ReactMarkdown remarkPlugins={[gfm]} {...props} />
+      <ReactMarkdown remarkPlugins={[gfm]} rehypePlugins={[rehypeHighlight]} {...props} />
     </Container>
   );
 };

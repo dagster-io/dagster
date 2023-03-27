@@ -212,7 +212,7 @@ export const LaunchAssetExecutionButton: React.FC<{
                 onClick={(e: React.MouseEvent<any>) => {
                   onClick(firstOption.assetKeys, e, true);
                 }}
-                text="Open in lanchpad"
+                text="Open in launchpad"
               />
               {options.slice(1).map((option) => (
                 <MenuItem
@@ -230,7 +230,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             role="button"
             style={{minWidth: 'initial', borderTopLeftRadius: 0, borderBottomLeftRadius: 0}}
             icon={<Icon name="arrow_drop_down" />}
-            disabled={options.slice(1).every((o) => o.assetKeys.length === 0)}
+            disabled={!firstOption.assetKeys.length}
             intent={intent}
           />
         </Popover>
@@ -654,6 +654,7 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     name
     dimensionTypes {
       name
+      dynamicPartitionsDefinitionName
     }
   }
 

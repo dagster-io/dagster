@@ -491,7 +491,7 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "ScheduleNotFoundError"
 
-    schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
+    schedule_selector = infer_schedule_selector(context, "no_config_pipeline_hourly_schedule")
 
     # fetch schedule before reconcile
     result = execute_dagster_graphql(
@@ -500,15 +500,6 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["scheduleState"]
-
-    result = execute_dagster_graphql(
-        context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
-    )
-
-    assert result.data
-
-    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
-    assert result.data["scheduleOrError"]["partitionSet"]
     assert result.data["scheduleOrError"]["executionTimezone"] == "UTC"
 
     future_ticks = result.data["scheduleOrError"]["futureTicks"]

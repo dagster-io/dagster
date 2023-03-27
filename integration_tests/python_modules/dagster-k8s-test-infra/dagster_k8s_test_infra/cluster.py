@@ -17,7 +17,7 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
 from dagster._core.scheduler import DagsterDaemonScheduler
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.root import LocalArtifactStorage, TemporaryLocalArtifactStorage
 from dagster._core.test_utils import ExplodingRunLauncher, environ
 from dagster._utils import find_free_port
 from dagster_k8s.client import DagsterKubernetesClient
@@ -196,11 +196,9 @@ def helm_postgres_url_for_user_deployments_subchart_disabled(
 def dagster_instance_for_user_deployments_subchart_disabled(
     helm_postgres_url_for_user_deployments_subchart_disabled,
 ):
-    tempdir = DagsterInstance.temp_storage()
-
     with DagsterInstance(
         instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
+        local_artifact_storage=TemporaryLocalArtifactStorage(),
         run_storage=PostgresRunStorage(helm_postgres_url_for_user_deployments_subchart_disabled),
         event_storage=PostgresEventLogStorage(
             helm_postgres_url_for_user_deployments_subchart_disabled
@@ -228,11 +226,9 @@ def helm_postgres_url_for_daemon(helm_namespace_for_daemon):
 def dagster_instance_for_daemon(
     helm_postgres_url_for_daemon,
 ):
-    tempdir = DagsterInstance.temp_storage()
-
     with DagsterInstance(
         instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
+        local_artifact_storage=TemporaryLocalArtifactStorage(),
         run_storage=PostgresRunStorage(helm_postgres_url_for_daemon),
         event_storage=PostgresEventLogStorage(helm_postgres_url_for_daemon),
         schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_daemon),
@@ -250,24 +246,23 @@ def dagster_instance_for_daemon(
 def dagster_instance_for_k8s_run_launcher(
     helm_postgres_url_for_k8s_run_launcher,
 ):
-    tempdir = DagsterInstance.temp_storage()
+    with tempfile.TemporaryDirectory() as tempdir:
+        instance_ref = InstanceRef.from_dir(tempdir)
 
-    instance_ref = InstanceRef.from_dir(tempdir)
+        with DagsterInstance(
+            instance_type=InstanceType.PERSISTENT,
+            local_artifact_storage=LocalArtifactStorage(tempdir),
+            run_storage=PostgresRunStorage(helm_postgres_url_for_k8s_run_launcher),
+            event_storage=PostgresEventLogStorage(helm_postgres_url_for_k8s_run_launcher),
+            schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_k8s_run_launcher),
+            compute_log_manager=NoOpComputeLogManager(),
+            run_coordinator=DefaultRunCoordinator(),
+            run_launcher=ExplodingRunLauncher(),
+            ref=instance_ref,
+        ) as instance:
+            yield instance
 
-    with DagsterInstance(
-        instance_type=InstanceType.PERSISTENT,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=PostgresRunStorage(helm_postgres_url_for_k8s_run_launcher),
-        event_storage=PostgresEventLogStorage(helm_postgres_url_for_k8s_run_launcher),
-        schedule_storage=PostgresScheduleStorage(helm_postgres_url_for_k8s_run_launcher),
-        compute_log_manager=NoOpComputeLogManager(),
-        run_coordinator=DefaultRunCoordinator(),
-        run_launcher=ExplodingRunLauncher(),
-        ref=instance_ref,
-    ) as instance:
-        yield instance
-
-        check_export_runs(instance)
+            check_export_runs(instance)
 
 
 @pytest.fixture(scope="session")

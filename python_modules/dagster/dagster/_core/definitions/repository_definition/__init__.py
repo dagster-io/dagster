@@ -9,4 +9,6 @@ from .repository_definition import (
 from .valid_definitions import (
     SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
     VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
+    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
+    RepositoryListDefinition as RepositoryListDefinition,
 )

@@ -334,6 +334,17 @@
                     "title": "Nameoverride",
                     "type": "string"
                 },
+                "pathPrefix": {
+                    "title": "Pathprefix",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },

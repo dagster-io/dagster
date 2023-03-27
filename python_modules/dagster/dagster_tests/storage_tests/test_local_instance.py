@@ -1,3 +1,4 @@
+import gc
 import os
 import tempfile
 import time
@@ -115,7 +116,7 @@ def test_get_run_by_id():
         pipeline_run = DagsterRun("foo_pipeline", "new_run")
         assert instance.get_run_by_id(pipeline_run.run_id) is None
 
-        instance._run_storage.add_run(pipeline_run)  # noqa: SLF001
+        instance.add_run(pipeline_run)
 
         assert instance.get_runs() == [pipeline_run]
 
@@ -247,12 +248,6 @@ def test_run_step_stats_with_retries():
         assert not _called
 
 
-@pytest.mark.skip(
-    reason=(
-        "Flakey test. See"
-        " https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes"
-    )
-)
 def test_threaded_ephemeral_instance(caplog):
     def _instantiate_ephemeral_instance():
         with DagsterInstance.ephemeral() as instance:
@@ -268,3 +263,40 @@ def test_threaded_ephemeral_instance(caplog):
         "SQLite objects created in a thread can only be used in that same thread."
         not in caplog.text
     )
+
+
+def test_threadsafe_ephemeral_instance():
+    n = 100
+    shared = DagsterInstance.ephemeral()
+
+    def _run(_):
+        shared.root_directory
+        with DagsterInstance.ephemeral() as instance:
+            instance.root_directory
+        return True
+
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        results = executor.map(_run, range(n))
+        assert all(results)
+
+
+def test_threadsafe_local_temp_instance():
+    n = 25
+    gc.collect()
+    baseline = len(DagsterInstance._TEMP_DIRS)  # noqa: SLF001
+    shared = DagsterInstance.local_temp()
+
+    def _run(_):
+        shared.root_directory
+        with DagsterInstance.local_temp() as instance:
+            instance.root_directory
+        return True
+
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        results = executor.map(_run, range(n))
+        assert all(results)
+
+    shared = None
+    gc.collect()
+
+    assert baseline == len(DagsterInstance._TEMP_DIRS)  # noqa: SLF001

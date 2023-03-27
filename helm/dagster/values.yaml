@@ -41,6 +41,9 @@ dagit:
   # Support overriding the name prefix of the Dagit pods
   nameOverride: "dagit"
 
+  # Support path prefix (i.e. /dagster)
+  pathPrefix: ~
+
   service:
     type: ClusterIP
     # Defines the port where Dagit will serve requests; if changed, don't forget to update the

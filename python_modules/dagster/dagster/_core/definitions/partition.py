@@ -33,39 +33,28 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.target import ExecutableDefinition
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
-from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
-    ScheduleExecutionError,
-    user_code_error_boundary,
 )
 from ..storage.pipeline_run import DagsterRun
 from .config import ConfigMapping
 from .mode import DEFAULT_MODE_NAME
-from .run_request import RunRequest, SkipReason
+from .run_request import SkipReason
 from .schedule_definition import (
-    DefaultScheduleStatus,
-    ScheduleDefinition,
     ScheduleEvaluationContext,
-    ScheduleExecutionFunction,
-    ScheduleRunConfigFunction,
-    ScheduleShouldExecuteFunction,
-    ScheduleTagsFunction,
 )
 from .utils import check_valid_name, validate_tags
 
@@ -900,212 +889,6 @@ class PartitionSetDefinition(Generic[T_cov]):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
         return [part.name for part in self.get_partitions(current_time, dynamic_partitions_store)]
-
-    def create_schedule_definition(
-        self,
-        schedule_name: str,
-        cron_schedule: str,
-        partition_selector: PartitionSelectorFunction,
-        should_execute: Optional[Callable[..., bool]] = None,
-        environment_vars: Optional[Mapping[str, str]] = None,
-        execution_timezone: Optional[str] = None,
-        description: Optional[str] = None,
-        decorated_fn: Optional[PartitionScheduleFunction] = None,
-        job: Optional[ExecutableDefinition] = None,
-        default_status=DefaultScheduleStatus.STOPPED,
-    ) -> "PartitionScheduleDefinition":
-        """Create a ScheduleDefinition from a PartitionSetDefinition.
-
-        Arguments:
-            schedule_name (str): The name of the schedule.
-            cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, Sequence[Partition]]]):
-                Function that determines the partition to use at a given execution time. Can return
-                either a single Partition or a list of Partitions. For time-based partition sets,
-                will likely be either `identity_partition_selector` or a selector returned by
-                `create_offset_partition_selector`.
-            should_execute (Optional[function]): Function that runs at schedule execution time that
-                determines whether a schedule should execute. Defaults to a function that always returns
-                ``True``.
-            environment_vars (Optional[dict]): The environment variables to set for the schedule.
-            execution_timezone (Optional[str]): Timezone in which the schedule should run.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            description (Optional[str]): A human-readable description of the schedule.
-            default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-                status can be overridden from Dagit or via the GraphQL API.
-
-        Returns:
-            PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
-                selector
-        """
-        check.str_param(schedule_name, "schedule_name")
-        check.str_param(cron_schedule, "cron_schedule")
-        check.opt_callable_param(should_execute, "should_execute")
-        check.opt_mapping_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-        check.callable_param(partition_selector, "partition_selector")
-        check.opt_str_param(execution_timezone, "execution_timezone")
-        check.opt_str_param(description, "description")
-        check.inst_param(default_status, "default_status", DefaultScheduleStatus)
-
-        def _execution_fn(context):
-            check.inst_param(context, "context", ScheduleEvaluationContext)
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of partition_selector for schedule {schedule_name}",
-            ):
-                selector_result = partition_selector(context, self)
-
-            if isinstance(selector_result, SkipReason):
-                yield selector_result
-                return
-
-            selected_partitions = (
-                selector_result
-                if isinstance(selector_result, (frozenlist, list))
-                else [selector_result]
-            )
-
-            check.is_list(selected_partitions, of_type=Partition)
-
-            if not selected_partitions:
-                yield SkipReason("Partition selector returned an empty list of partitions.")
-                return
-
-            partition_names = self.get_partition_names(context.scheduled_execution_time)
-
-            missing_partition_names = [
-                partition.name
-                for partition in selected_partitions
-                if partition.name not in partition_names
-            ]
-
-            if missing_partition_names:
-                yield SkipReason(
-                    "Partition selector returned partition"
-                    + ("s" if len(missing_partition_names) > 1 else "")
-                    + f" not in the partition set: {', '.join(missing_partition_names)}."
-                )
-                return
-
-            with user_code_error_boundary(
-                ScheduleExecutionError,
-                lambda: f"Error occurred during the execution of should_execute for schedule {schedule_name}",
-            ):
-                if should_execute and not should_execute(context):
-                    yield SkipReason(
-                        "should_execute function for {schedule_name} returned false.".format(
-                            schedule_name=schedule_name
-                        )
-                    )
-                    return
-
-            for selected_partition in selected_partitions:
-                with user_code_error_boundary(
-                    ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of run_config_fn for schedule {schedule_name}",
-                ):
-                    run_config = self.run_config_for_partition(selected_partition)
-
-                with user_code_error_boundary(
-                    ScheduleExecutionError,
-                    lambda: f"Error occurred during the execution of tags_fn for schedule {schedule_name}",
-                ):
-                    tags = self.tags_for_partition(selected_partition)
-                yield RunRequest(
-                    run_key=selected_partition.name if len(selected_partitions) > 0 else None,
-                    run_config=run_config,
-                    tags=tags,
-                )
-
-        return PartitionScheduleDefinition(
-            name=schedule_name,
-            cron_schedule=cron_schedule,
-            pipeline_name=self._pipeline_name,
-            tags_fn=None,
-            should_execute=None,
-            environment_vars=environment_vars,
-            partition_set=self,
-            execution_timezone=execution_timezone,
-            execution_fn=_execution_fn,
-            description=description,
-            decorated_fn=decorated_fn,
-            job=job,
-            default_status=default_status,
-        )
-
-
-class PartitionScheduleDefinition(ScheduleDefinition):
-    __slots__ = ["_partition_set"]
-
-    def __init__(
-        self,
-        name: str,
-        cron_schedule: str,
-        pipeline_name: Optional[str],
-        tags_fn: Optional[ScheduleTagsFunction],
-        should_execute: Optional[ScheduleShouldExecuteFunction],
-        partition_set: PartitionSetDefinition,
-        environment_vars: Optional[Mapping[str, str]] = None,
-        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        execution_timezone: Optional[str] = None,
-        execution_fn: Optional[ScheduleExecutionFunction] = None,
-        description: Optional[str] = None,
-        decorated_fn: Optional[PartitionScheduleFunction] = None,
-        job: Optional[ExecutableDefinition] = None,
-        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-    ):
-        super(PartitionScheduleDefinition, self).__init__(
-            name=check_valid_name(name),
-            cron_schedule=cron_schedule,
-            job_name=pipeline_name,
-            run_config_fn=run_config_fn,
-            tags_fn=tags_fn,
-            should_execute=should_execute,
-            environment_vars=environment_vars,
-            execution_timezone=execution_timezone,
-            execution_fn=execution_fn,
-            description=description,
-            job=job,
-            default_status=default_status,
-        )
-        self._partition_set = check.inst_param(
-            partition_set, "partition_set", PartitionSetDefinition
-        )
-        self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
-
-    def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
-        if not self._decorated_fn:
-            raise DagsterInvalidInvocationError(
-                "Only partition schedules created using one of the partition schedule decorators "
-                "can be directly invoked."
-            )
-        if len(args) == 0 and len(kwargs) == 0:
-            raise DagsterInvalidInvocationError(
-                "Schedule decorated function has date argument, but no date argument was "
-                "provided when invoking."
-            )
-        if len(args) + len(kwargs) > 1:
-            raise DagsterInvalidInvocationError(
-                "Schedule invocation received multiple arguments. Only a first "
-                "positional date parameter should be provided when invoking."
-            )
-
-        date_param_name = get_function_params(self._decorated_fn)[0].name
-
-        if args:
-            date = check.opt_inst_param(args[0], date_param_name, datetime)
-        else:
-            if date_param_name not in kwargs:
-                raise DagsterInvalidInvocationError(
-                    f"Schedule invocation expected argument '{date_param_name}'."
-                )
-            date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
-
-        return self._decorated_fn(date)  # type: ignore
-
-    def get_partition_set(self) -> PartitionSetDefinition:
-        return self._partition_set
 
 
 class PartitionedConfig(Generic[T_cov]):

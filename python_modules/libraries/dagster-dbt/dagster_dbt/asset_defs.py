@@ -208,7 +208,8 @@ def _get_deps(
             if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
-                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
+                # make a copy to avoid mutating the actual dictionary
+                queue = list(parent_node_info.get("depends_on", {}).get("nodes", []))
                 while queue:
                     candidate_parent_id = queue.pop()
                     if candidate_parent_id in visited:

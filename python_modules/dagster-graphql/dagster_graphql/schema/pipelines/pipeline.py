@@ -109,6 +109,7 @@ class GrapheneDefaultPartitions(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
     failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
+    materializingPartitions = non_null_list(graphene.String)
 
     class Meta:
         name = "DefaultPartitions"
@@ -154,6 +155,7 @@ class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
     numFailed = graphene.NonNull(graphene.Int)
+    numMaterializing = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"

@@ -144,12 +144,12 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
                             "dagster.AssetMaterialization.tags", new_callable=mock.PropertyMock
                         ) as tags_property:
                             tags_property.return_value = None
-                            upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                            upstream_data_times = data_time_queryer.get_data_times_by_key(
                                 asset_graph=asset_graph,
                                 record=latest_asset_record,
                             )
                     else:
-                        upstream_data_times = data_time_queryer.get_used_data_times_for_record(
+                        upstream_data_times = data_time_queryer.get_data_times_by_key(
                             asset_graph=asset_graph,
                             record=latest_asset_record,
                         )
@@ -272,6 +272,6 @@ def test_partitioned_data_time(scenario):
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
         data_time_queryer = CachingInstanceQueryer(instance)
-        assert data_time_queryer.get_used_data_times_for_record(
+        assert data_time_queryer.get_data_times_by_key(
             asset_graph=partition_repo.asset_graph, record=record
         ) == {AssetKey("partitioned_asset"): scenario.expected_time}

@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
+from typing import Callable, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
@@ -28,8 +28,10 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.workspace.context import (
+    BaseWorkspaceRequestContext,
+    IWorkspaceProcessContext,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -44,7 +46,7 @@ CHECKPOINT_COUNT = 25
 def execute_job_backfill_iteration(
     backfill: PartitionBackfill,
     logger: logging.Logger,
-    workspace: BaseWorkspaceRequestContext,
+    workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
@@ -56,13 +58,7 @@ def execute_job_backfill_iteration(
             f" {backfill.last_submitted_partition_name}"
         )
 
-    origin = cast(
-        ExternalPartitionSetOrigin, backfill.partition_set_origin
-    ).external_repository_origin.code_location_origin
-
-    code_location = workspace.get_code_location(origin.location_name)
-
-    _check_repo_has_partition_set(code_location, backfill)
+    _check_repo_has_partition_set(workspace_process_context, backfill)
 
     has_more = True
     while has_more:
@@ -76,7 +72,10 @@ def execute_job_backfill_iteration(
 
         if chunk:
             for _run_id in submit_backfill_runs(
-                instance, workspace, code_location, backfill, chunk
+                instance,
+                lambda: workspace_process_context.create_request_context(),
+                backfill,
+                chunk,
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
@@ -103,9 +102,14 @@ def execute_job_backfill_iteration(
 
 
 def _check_repo_has_partition_set(
-    code_location: CodeLocation, backfill_job: PartitionBackfill
+    workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
 ) -> None:
     origin = cast(ExternalPartitionSetOrigin, backfill_job.partition_set_origin)
+
+    location_name = origin.external_repository_origin.code_location_origin.location_name
+
+    workspace = workspace_process_context.create_request_context()
+    code_location = workspace.get_code_location(location_name)
 
     repo_name = origin.external_repository_origin.repository_name
     if not code_location.has_repository(repo_name):
@@ -166,8 +170,7 @@ def _get_partitions_chunk(
 
 def submit_backfill_runs(
     instance: DagsterInstance,
-    workspace: IWorkspace,
-    code_location: CodeLocation,
+    create_workspace: Callable[[], BaseWorkspaceRequestContext],
     backfill_job: PartitionBackfill,
     partition_names: Optional[Sequence[str]] = None,
 ) -> Iterable[Optional[str]]:
@@ -176,9 +179,13 @@ def submit_backfill_runs(
 
     repository_origin = origin.external_repository_origin
     repo_name = repository_origin.repository_name
+    location_name = repository_origin.code_location_origin.location_name
 
     if not partition_names:
         partition_names = cast(Sequence[str], backfill_job.partition_names)
+
+    workspace = create_workspace()
+    code_location = workspace.get_code_location(location_name)
 
     check.invariant(
         code_location.has_repository(repo_name),
@@ -208,6 +215,10 @@ def submit_backfill_runs(
             external_partition_set.pipeline_name
         )
     for partition_data in result.partition_data:
+        # Refresh the code location in case the workspace has reloaded mid-backfill
+        workspace = create_workspace()
+        code_location = workspace.get_code_location(location_name)
+
         dagster_run = create_backfill_run(
             instance,
             code_location,

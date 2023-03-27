@@ -1,4 +1,3 @@
-import datetime
 import math
 import os
 import random
@@ -25,7 +24,7 @@ from dagster import (
     repository,
     resource,
 )
-from dagster._core.definitions.decorators import daily_schedule, schedule
+from dagster._core.definitions.decorators import schedule
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
@@ -273,6 +272,7 @@ def define_docker_celery_pipeline():
     @resource
     def resource_with_output():
         print("writing to stdout")  # noqa: T201
+        print("{}")  # noqa: T201
         return 42
 
     @op(required_resource_keys={"resource_with_output"})
@@ -461,12 +461,12 @@ def define_resources_limit_pipeline():
 
 
 def define_schedules():
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         name="daily_optional_outputs",
         job_name=optional_outputs.name,
-        start_date=datetime.datetime(2020, 1, 1),
     )
-    def daily_optional_outputs(_date):
+    def daily_optional_outputs(_context):
         return {}
 
     @schedule(

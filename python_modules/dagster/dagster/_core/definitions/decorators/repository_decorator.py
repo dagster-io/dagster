@@ -28,8 +28,10 @@ from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
     CachingRepositoryData,
     PendingRepositoryDefinition,
+    PendingRepositoryListDefinition,
     RepositoryData,
     RepositoryDefinition,
+    RepositoryListDefinition,
 )
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
@@ -68,8 +70,20 @@ class _Repository:
             top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
         )
 
+    @overload
     def __call__(
-        self, fn: Callable[[], Sequence[Any]]
+        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+    ) -> PendingRepositoryDefinition:
+        ...
+
+    @overload
+    def __call__(
+        self, fn: Callable[[], Sequence[RepositoryListDefinition]]
+    ) -> RepositoryDefinition:
+        ...
+
+    def __call__(
+        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -180,7 +194,16 @@ class _Repository:
 
 
 @overload
-def repository(definitions_fn: Callable[..., Sequence[Any]]) -> RepositoryDefinition:
+def repository(
+    definitions_fn: Callable[..., Sequence[RepositoryListDefinition]]
+) -> RepositoryDefinition:
+    ...
+
+
+@overload
+def repository(
+    definitions_fn: Callable[..., Sequence[PendingRepositoryListDefinition]]
+) -> PendingRepositoryDefinition:
     ...
 
 
