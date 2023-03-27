@@ -46,13 +46,12 @@ export const FilterDropdown = ({filters, setIsOpen, setContentToDisplay}: Filter
 
   const selectValue = React.useCallback(
     (filter: Filter<any, any>, value: any) => {
-      const contentToDisplay = filter.onSelect(value);
+      const contentToDisplay = filter.onSelect(value, setIsOpen);
       setSearch('');
       setSelectedFilter(null);
       if (contentToDisplay) {
         setContentToDisplay(contentToDisplay);
       }
-      setIsOpen(false);
     },
     [setContentToDisplay, setIsOpen],
   );
@@ -158,6 +157,7 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
             />
           )
         }
+        canEscapeKeyClose
         popoverClassName="filter-dropdown"
         isOpen={isOpen || !!contentToDisplay}
         position="bottom"

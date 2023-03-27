@@ -36,6 +36,5 @@ export const useFilters = ({filters, activeFilters, setActiveFilters}: UseFilter
   return {
     button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
     activeFiltersJsx: activeFilterJsx,
-    activeFilters,
   };
 };

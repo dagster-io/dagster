@@ -26,7 +26,6 @@ export abstract class Filter<TState, TValue> {
   public abstract onSelect(value: TValue): JSX.Element | null;
 
   public setState(state: TState) {
-    console.log('set state', state);
     const previousActive = this.isActive();
     this.state = state;
     this.listeners.forEach((l) =>
