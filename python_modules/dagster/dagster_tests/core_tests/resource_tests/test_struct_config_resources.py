@@ -46,6 +46,7 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
+from pydantic import Field as PyField
 
 
 def test_basic_structured_resource():
@@ -1781,3 +1782,44 @@ def test_bind_io_manager_override() -> None:
 
     assert defs.get_job_def("hello_world_job").execute_in_process().success
     assert outputs == ["foo"]
+
+
+def test_aliased_field_structured_resource():
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix_: str = PyField(..., alias="prefix")
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix_}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job(resource_defs={"writer": WriterResource(prefix="")})
+    def no_prefix_job():
+        hello_world_op()
+
+    assert no_prefix_job.execute_in_process().success
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    @job(resource_defs={"writer": WriterResource(prefix="greeting: ")})
+    def prefix_job():
+        hello_world_op()
+
+    assert prefix_job.execute_in_process().success
+    assert out_txt == ["greeting: hello, world!"]
+
+    out_txt.clear()
+
+    @job(resource_defs={"writer": WriterResource.configure_at_launch()})
+    def prefix_job_at_runtime():
+        hello_world_op()
+
+    assert prefix_job_at_runtime.execute_in_process(
+        {"resources": {"writer": {"config": {"prefix": "runtime: "}}}}
+    ).success
+    assert out_txt == ["runtime: hello, world!"]
