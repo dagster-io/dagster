@@ -17,17 +17,17 @@ from dagster._core.test_utils import environ
 
 def test_config_verifiable_job_basic() -> None:
     class FailureToggleVerificableResource(ConfigurableResource, ConfigVerifiable):
-        a_str: str
+        should_pass_verification: bool
 
         def verify_config(self) -> VerificationResult:
-            if self.a_str == "foo":
+            if self.should_pass_verification:
                 return VerificationResult.success("asdf")
             else:
                 return VerificationResult.failure("qwer")
 
     defs = Definitions(
         resources={
-            "my_resource": FailureToggleVerificableResource(a_str="foo"),
+            "my_resource": FailureToggleVerificableResource(should_pass_verification=True),
         },
     )
 
@@ -48,7 +48,7 @@ def test_config_verifiable_job_basic() -> None:
 
     defs = Definitions(
         resources={
-            "my_resource": FailureToggleVerificableResource(a_str="bar"),
+            "my_resource": FailureToggleVerificableResource(should_pass_verification=False),
         },
     )
 
@@ -70,17 +70,19 @@ def test_config_verifiable_job_basic() -> None:
 
 def test_config_verifiable_job_env_var() -> None:
     class FailureToggleVerifiableResource(ConfigurableResource, ConfigVerifiable):
-        a_str: str
+        succeed_if_foo: str
 
         def verify_config(self) -> VerificationResult:
-            if self.a_str == "foo":
+            if self.succeed_if_foo == "foo":
                 return VerificationResult.success("asdf")
             else:
                 return VerificationResult.failure("qwer")
 
     defs = Definitions(
         resources={
-            "my_resource": FailureToggleVerifiableResource(a_str=EnvVar("ENV_VARIABLE_FOR_TEST")),
+            "my_resource": FailureToggleVerifiableResource(
+                succeed_if_foo=EnvVar("ENV_VARIABLE_FOR_TEST")
+            ),
         },
     )
 
