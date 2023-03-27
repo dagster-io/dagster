@@ -23,6 +23,16 @@ from dagster._check import CheckError
 from dagster_duckdb_pandas import ConfigurableDuckDBPandasIOManager, duckdb_pandas_io_manager
 
 
+@pytest.fixture
+def io_managers(tmp_path):
+    return [
+        duckdb_pandas_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        ),
+        ConfigurableDuckDBPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
+    ]
+
+
 @op(out=Out(metadata={"schema": "a_df"}))
 def a_df() -> pd.DataFrame:
     return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -36,16 +46,6 @@ def add_one(df: pd.DataFrame):
 @graph
 def add_one_to_dataframe():
     add_one(a_df())
-
-
-@pytest.fixture
-def io_managers(tmp_path):
-    return [
-        duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
-        ConfigurableDuckDBPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
-    ]
 
 
 def test_duckdb_io_manager_with_ops(tmp_path, io_managers):
