@@ -25,7 +25,7 @@ def test_scalars():
 def test_basic_ops_config(snapshot):
     pipeline_def = PipelineDefinition(
         name="BasicSolidsConfigPipeline",
-        solid_defs=[
+        node_defs=[
             OpDefinition(
                 name="required_field_solid",
                 config_schema={"required_int": Int},
@@ -66,7 +66,7 @@ def dummy_resource(config_field):
 def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name="TwoModePipelines",
-        solid_defs=[],
+        node_defs=[],
         mode_defs=[
             ModeDefinition(
                 "mode_one",

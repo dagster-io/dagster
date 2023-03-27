@@ -41,7 +41,7 @@ def create_root_fn_failure_solid(name):
 
 def test_compute_failure_pipeline():
     pipeline_def = PipelineDefinition(
-        solid_defs=[create_root_fn_failure_solid("failing")],
+        node_defs=[create_root_fn_failure_solid("failing")],
         name="test",
     )
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
@@ -204,7 +204,7 @@ def test_user_error_propogation():
 
     pipeline_def = PipelineDefinition(
         name="test_user_error_propogation",
-        solid_defs=[throws_user_error, return_one, add_one],
+        node_defs=[throws_user_error, return_one, add_one],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 

@@ -578,7 +578,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
-            self.pipeline_def.get_solid(step_output.node_handle)
+            self.pipeline_def.get_node(step_output.node_handle)
             .output_def_named(step_output.name)
             .io_manager_key
         )
