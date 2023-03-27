@@ -2,6 +2,41 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.3.0
+
+
+### Breaking Changes
+
+#### Extension Libraries
+[dagster-snowflake-pandas] Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. The I/O manager now ensures timestamp data has a timezone attached and stores the data as TIMESTAMP_NTZ(9) type. If you used the Snowflake I/O manager prior to version `0.19.0` you can set the `time_data_to_string=True` configuration value for the Snowflake I/O manager to continue storing time data as strings while you do table migrations.
+
+To migrate a table created prior to `0.19.0` to one with a TIMESTAMP_NTZ(9) type, you can run the follow SQL queries in Snowflake. In the example, our table is located at `database.schema.table` and the column we want to migrate is called `time`:
+
+```sql
+
+// Add a column of type TIMESTAMP_NTZ(9)
+ALTER TABLE database.schema.table
+ADD COLUMN time_copy TIMESTAMP_NTZ(9)
+
+// copy the data from time and convert to timestamp data
+UPDATE database.schema.table
+SET time_copy = to_timestamp_ntz(time)
+
+// drop the time column
+ALTER TABLE database.schema.table
+DROP COLUMN time
+
+// rename the time_copy column to time
+ALTER TABLER database.schema.table
+RENAME COLUMN time_copy TO time
+
+```
+
+<Note>
+The <code>time_data_to_string</code> configuration value will be deprecated in version X.Y.Z of the <code>dagster-snowflake</code> library. At that point, all timestamp data will be stored as TIMESTAMP_NTZ(9) type.
+</Note>
+
+
 ## Migrating to 1.2.0
 
 ### Database migration

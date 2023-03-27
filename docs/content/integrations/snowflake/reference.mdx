@@ -332,34 +332,14 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 ---
 
 ## Storing timestamp data in Pandas DataFrames
-Due to a longstanding bug in the Snowflake Pandas connector, loading timestamp data from a Pandas DataFrame to Snowflake sometimes causes the data to be corrupted. Prior to `dagster-snowflake` version `0.19.0` we solved this issue by converting all timestamp data to strings before loading the data in Snowflake, and doing the opposite conversion when fetching a DataFrame from Snowflake. However, we can also avoid this issue by ensuring that all timestamp data has a timezone. This allows us to store the data as TIMESTAMP_NTZ(9) type in Snowflake.
-
-To specify how you would like timestamp data to be handled, use the `time_data_to_string` configuration value for the Snowflake I/O manager. If `True`, the I/O manager will convert timestamp data to a string before loading it into Snowflake. If `False` the I/O manager will ensure the data has a timezone (attaching the UTC timezone if necessary) before loading it into Snowflake.
-
-If you would like to migrate a table created prior to `0.19.0` to one with a TIMESTAMP_NTZ(9) type, you can run the follow SQL queries in Snowflake. In the example, our table is located at `database.schema.table` and the column we want to migrate is called `time`:
-
-```sql
-
-// Add a column of type TIMESTAMP_NTZ(9)
-ALTER TABLE database.schema.table
-ADD COLUMN time_copy TIMESTAMP_NTZ(9)
-
-// copy the data from time and convert to timestamp data
-UPDATE database.schema.table
-SET time_copy = to_timestamp_ntz(time)
-
-// drop the time column
-ALTER TABLE database.schema.table
-DROP COLUMN time
-
-// rename the time_copy column to time
-ALTER TABLER database.schema.table
-RENAME COLUMN time_copy TO time
-
-```
+Due to a longstanding [issue](https://github.com/snowflakedb/snowflake-connector-python/issues/319) with the Snowflake Pandas connector, loading timestamp data from a Pandas DataFrame to Snowflake sometimes causes the data to be corrupted. In order to store timestamp data properly, it must have a timezone attached. When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager will check if timestamp data has a timezone attached, and if not, **it will assign the UTC timezone**. In Snowflake, you will see the timestamp data stored as the TIMESTAMP_NTZ(9) type, as this is the type assigned by the Snowflake Pandas connector.
 
 <Note>
-The <code>time_data_to_string</code> configuration value will be deprecated in version X.Y.Z of the <code>dagster-snowflake</code> library.
+Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0` please see the{" "}
+  <a href="/migration#extension-libraries">
+    Migration Guide
+  </a>{" "}
+for information about migrating you database tables.
 </Note>
 
 ---
