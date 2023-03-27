@@ -21,7 +21,9 @@ const TestComponent: React.FC = () => {
         name: 'User',
         icon: 'account_circle',
         allValues: [value('marco'), value('polo'), value('hi')],
-        renderLabel: (value) => <div>{value}</div>,
+        renderLabel: ({value, isActive}) => (
+          <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
+        ),
         getStringValue: (value) => value,
       }),
       new TimeRangeFilter('Timestamp', 'account_tree'),

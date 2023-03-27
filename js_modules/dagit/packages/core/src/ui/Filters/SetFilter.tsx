@@ -1,6 +1,7 @@
-import {Box, IconName, Popover, Tooltip} from '@dagster-io/ui';
-import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
+import {Box, IconName, Popover} from '@dagster-io/ui';
 import React from 'react';
+
+import {Filter, FilterListenerCallback, FilterTag, FilterTagHighlightedText} from './Filter';
 
 type SetFilterValue<T> = {
   value: T;
@@ -8,7 +9,7 @@ type SetFilterValue<T> = {
 };
 export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
   public readonly allValues: SetFilterValue<TValue>[];
-  private readonly renderLabel: (value: TValue) => JSX.Element;
+  private readonly renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   private readonly getStringValue: (value: TValue) => string;
 
   constructor({
@@ -21,7 +22,7 @@ export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
   }: {
     name: string;
     icon: IconName;
-    renderLabel: (value: TValue) => JSX.Element;
+    renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
     getStringValue: (value: TValue) => string;
     allValues: SetFilterValue<TValue>[];
     initialState?: Set<TValue> | TValue[];
@@ -53,19 +54,19 @@ export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
   getResults(query: string): {label: JSX.Element; value: TValue}[] {
     if (query === '') {
       return this.allValues.map(({value}) => ({
-        label: this.renderLabel(value),
+        label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
         value,
       }));
     }
     return this.allValues
       .filter(({match}) => match.some((value) => value.toLowerCase().includes(query.toLowerCase())))
       .map(({value}) => ({
-        label: this.renderLabel(value),
+        label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
         value,
       }));
   }
 
-  onSelect(value: TValue): JSX.Element | null {
+  onSelect(value: TValue, _: (isOpen: boolean) => void): JSX.Element | null {
     if (this.getState().has(value)) {
       const nextState = new Set(this.getState());
       nextState.delete(value);
@@ -121,7 +122,7 @@ function SetFilterActiveState({
                 style={{maxHeight: '300px', overflow: 'auto'}}
               >
                 {arr.map((value) => (
-                  <div>{renderLabel(value)}</div>
+                  <div key={value}>{renderLabel({value, isActive: true})}</div>
                 ))}
               </Box>
             }
@@ -134,7 +135,8 @@ function SetFilterActiveState({
       );
     }
     return null;
-  }, [arr]);
+  }, [arr, getStringValue, name, renderLabel]);
+
   if (arr.length === 0) {
     return null;
   }
@@ -153,4 +155,22 @@ function SetFilterActiveState({
 
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+type SetFilterLabelProps = {
+  value: any;
+  filter: SetFilter<any>;
+  renderLabel: (value: any) => JSX.Element;
+};
+function SetFilterLabel(props: SetFilterLabelProps) {
+  const {value, filter, renderLabel} = props;
+  const [isActive, setIsActive] = React.useState(filter.getState().has(value));
+  React.useEffect(() => {
+    const listener: FilterListenerCallback<any> = () => {
+      setIsActive(filter.getState().has(value));
+    };
+    return filter.subscribe(listener);
+  }, [filter, value]);
+
+  return renderLabel({value, isActive});
 }

@@ -1,6 +1,7 @@
-import {IconName, Box, Icon, Colors, BaseTag} from '@dagster-io/ui';
+import {IconName, Box, Icon, Colors} from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import React from 'react';
+
 import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
 
 function calculateTimeRanges() {
@@ -76,7 +77,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
       }));
   }
 
-  onSelect(key: TimeRangeKey): JSX.Element | null {
+  onSelect(key: TimeRangeKey, setIsDropdownOpen: (isOpen: boolean) => void): JSX.Element | null {
     if (key === 'CUSTOM') {
       // TODO add date range selector component
       return <div />;
@@ -85,6 +86,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
       const value = TimeRanges[key].range;
       this.setState(value);
     }
+    setIsDropdownOpen(false);
     return null;
   }
 }

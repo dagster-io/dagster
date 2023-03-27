@@ -46,9 +46,13 @@ export const FilterDropdown = ({filters, setIsOpen, setContentToDisplay}: Filter
 
   const selectValue = React.useCallback(
     (filter: Filter<any, any>, value: any) => {
-      const contentToDisplay = filter.onSelect(value, setIsOpen);
-      setSearch('');
-      setSelectedFilter(null);
+      const contentToDisplay = filter.onSelect(value, (isOpen) => {
+        if (!isOpen) {
+          setSearch('');
+          setSelectedFilter(null);
+          setIsOpen(false);
+        }
+      });
       if (contentToDisplay) {
         setContentToDisplay(contentToDisplay);
       }
@@ -137,6 +141,34 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
   const [contentToDisplay, setContentToDisplay] = React.useState<JSX.Element | null>(null);
 
   const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useLayoutEffect(() => {
+    const listener = (e: MouseEvent) => {
+      if (
+        buttonRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node) ||
+        !document.contains(e.target as Node)
+      ) {
+        return;
+      }
+      setIsOpen(false);
+    };
+    document.body.addEventListener('click', listener);
+    return () => {
+      document.body.removeEventListener('click', listener);
+    };
+  }, []);
+
+  const keyRef = React.useRef(0);
+  const prevOpenRef = React.useRef(isOpen);
+  prevOpenRef.current = isOpen;
+  if (isOpen && !prevOpenRef.current) {
+    // Reset the key when the dropdown is opened
+    // But not when its closed because of the closing animation
+    keyRef.current++;
+  }
+
   return (
     <ShortcutHandler
       shortcutLabel="⌥F"
@@ -149,12 +181,14 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
           contentToDisplay ? (
             contentToDisplay
           ) : (
-            <FilterDropdown
-              filters={filters}
-              setIsOpen={setIsOpen}
-              setContentToDisplay={setContentToDisplay}
-              key={isOpen ? '1' : '0'}
-            />
+            <div ref={dropdownRef}>
+              <FilterDropdown
+                filters={filters}
+                setIsOpen={setIsOpen}
+                setContentToDisplay={setContentToDisplay}
+                key={keyRef.current}
+              />
+            </div>
           )
         }
         canEscapeKeyClose

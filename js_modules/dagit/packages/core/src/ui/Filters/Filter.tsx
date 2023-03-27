@@ -2,14 +2,14 @@ import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-type ListenerCallback<TState> = (value: {
+export type FilterListenerCallback<TState> = (value: {
   state: TState;
   previousActive: boolean;
   active: boolean;
 }) => void;
 
 export abstract class Filter<TState, TValue> {
-  private listeners: ListenerCallback<TState>[];
+  private listeners: FilterListenerCallback<TState>[];
 
   constructor(public readonly name: string, public readonly icon: IconName, private state: TState) {
     this.name = name;
@@ -23,7 +23,10 @@ export abstract class Filter<TState, TValue> {
   public abstract renderActiveFilterState(): JSX.Element | null;
   public abstract getResults(query: string): {label: JSX.Element; value: TValue}[];
 
-  public abstract onSelect(value: TValue): JSX.Element | null;
+  public abstract onSelect(
+    value: TValue,
+    setIsDropdownOpen: (isOpen: boolean) => void,
+  ): JSX.Element | null;
 
   public setState(state: TState) {
     const previousActive = this.isActive();
@@ -40,7 +43,7 @@ export abstract class Filter<TState, TValue> {
     return this.state;
   }
 
-  public subscribe(callback: ListenerCallback<TState>): () => void {
+  public subscribe(callback: FilterListenerCallback<TState>): () => void {
     this.listeners.push(callback);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== callback);
