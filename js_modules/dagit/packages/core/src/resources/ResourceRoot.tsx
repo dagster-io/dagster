@@ -677,21 +677,6 @@ const RESOURCE_ROOT_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-// const SECTION_HEADER_HEIGHT = 48;
-// const SectionHeader = styled.div`
-//   background-color: ${Colors.Gray50};
-//   border: 0;
-//   box-shadow: inset 0px -1px 0 ${Colors.KeylineGray}, inset 0px 1px 0 ${Colors.KeylineGray};
-//   cursor: pointer;
-//   display: block;
-//   width: 100%;
-//   margin: 0;
-//   height: ${SECTION_HEADER_HEIGHT}px;
-//   line-height: ${SECTION_HEADER_HEIGHT}px;
-//   text-align: left;
-//   padding-left: 24px;
-//   font-weight: bold;
-// `;
 const VERIFY_MUTATION = gql`
   mutation Verification(
     $repositoryName: String!
