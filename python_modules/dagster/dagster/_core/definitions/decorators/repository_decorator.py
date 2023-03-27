@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import (
-    Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -12,6 +12,8 @@ from typing import (
     Union,
     overload,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -37,6 +39,8 @@ from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T")
+
+RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryListDefinition]]
 
 
 def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
@@ -71,18 +75,26 @@ class _Repository:
 
     @overload
     def __call__(
-        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
-    ) -> PendingRepositoryDefinition:
+        self,
+        fn: Union[
+            Callable[[], Sequence[RepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
+    ) -> RepositoryDefinition:
         ...
 
     @overload
     def __call__(
-        self, fn: Callable[[], Sequence[RepositoryListDefinition]]
-    ) -> RepositoryDefinition:
+        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+    ) -> PendingRepositoryDefinition:
         ...
 
     def __call__(
-        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+        self,
+        fn: Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -171,7 +183,7 @@ class _Repository:
                 "details and examples".format(type_=type(repository_definitions)),
             )
 
-        if repository_data is None:
+        if isinstance(repository_definitions, list) and repository_data is None:
             return PendingRepositoryDefinition(
                 self.name,
                 repository_definitions=list(_flatten(repository_definitions)),
@@ -193,7 +205,9 @@ class _Repository:
 
 @overload
 def repository(
-    definitions_fn: Callable[..., Sequence[RepositoryListDefinition]]
+    definitions_fn: Union[
+        Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
+    ],
 ) -> RepositoryDefinition:
     ...
 
@@ -218,7 +232,12 @@ def repository(
 
 
 def repository(
-    definitions_fn: Optional[Callable[..., Sequence[Any]]] = None,
+    definitions_fn: Optional[
+        Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ]
+    ] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
