@@ -474,9 +474,11 @@ def test_struct_config_optional_map() -> None:
         {"ops": {"a_struct_config_op": {"config": {"an_optional_dict": {"foo": 1, "bar": 2}}}}}
     )
     assert executed["yes"]
+    executed.clear()
 
     a_job.execute_in_process()
     assert executed["yes"]
+    executed.clear()
 
     a_job.execute_in_process(
         {"ops": {"a_struct_config_op": {"config": {"an_optional_dict": None}}}}
@@ -513,9 +515,11 @@ def test_struct_config_optional_array() -> None:
         {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar"]}}}}
     )
     assert executed["yes"]
+    executed.clear()
 
     a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_string_list": None}}}})
     assert executed["yes"]
+    executed.clear()
 
     a_job.execute_in_process()
     assert executed["yes"]
@@ -523,4 +527,75 @@ def test_struct_config_optional_array() -> None:
     with pytest.raises(DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
+        )
+
+
+def test_struct_config_non_optional_none_input_errors() -> None:
+    executed = {}
+
+    class AnOpListConfig(Config):
+        a_string_list: List[str]
+
+    @op
+    def a_list_op(config: AnOpListConfig):
+        executed["yes"] = True
+
+    class AnOpMapConfig(Config):
+        a_string_list: Dict[str, str]
+
+    @op
+    def a_map_op(config: AnOpMapConfig):
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_map_op()
+        a_list_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_map_op": {"config": {"a_string_list": {"foo": "bar"}}},
+                "a_list_op": {"config": {"a_string_list": ["foo", "bar"]}},
+            }
+        }
+    )
+    assert executed["yes"]
+    executed.clear()
+
+    # Validate that we error when we pass None to a non-optional field
+    # or when we omit the field entirely
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_map_op": {"config": {"a_string_list": None}},
+                    "a_list_op": {"config": {"a_string_list": ["foo", "bar"]}},
+                }
+            }
+        )
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_list_op": {"config": {"a_string_list": ["foo", "bar"]}},
+                }
+            }
+        )
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_map_op": {"config": {"a_string_list": {"foo": "bar"}}},
+                    "a_list_op": {"config": {"a_string_list": None}},
+                }
+            }
+        )
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_map_op": {"config": {"a_string_list": {"foo": "bar"}}},
+                }
+            }
         )
