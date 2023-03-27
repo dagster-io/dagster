@@ -2,12 +2,13 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Iterator, Optional, Sequence, Tuple
+from typing import Any, Iterator, Optional, Sequence, Tuple, Type
 
 import grpc
 from google.protobuf.reflection import GeneratedProtocolMessageType
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
+from pytest_mock import TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
@@ -35,6 +36,9 @@ from .types import (
     ResourceVerificationRequest,
     ResourceVerificationResult,
     SensorExecutionArgs,
+    UserCodeExecutionRequest,
+    UserCodeExecutionResult,
+    UserCodeExecutionType,
 )
 from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
 
@@ -53,6 +57,9 @@ def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) 
             client.heartbeat("ping")
         except DagsterUserCodeUnreachableError:
             continue
+
+
+T = TypeVar("T")
 
 
 class DagsterGrpcClient:
@@ -493,19 +500,30 @@ class DagsterGrpcClient:
 
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
+    def user_code_execution(
+        self, execution_type: UserCodeExecutionType, request: Any, response_type: Type[T]
+    ) -> T:
+        res = self._query(
+            "UserCodeExecution",
+            api_pb2.UserCodeExecutionRequest,
+            serialized_user_code_execution_request=serialize_value(
+                UserCodeExecutionRequest(execution_type, request)
+            ),
+        )
+        return deserialize_value(
+            res.serialized_user_code_execution_result, UserCodeExecutionResult
+        ).unpack_as(response_type)
+
     def resource_verification(
         self, resource_verification: ResourceVerificationRequest
     ) -> ResourceVerificationResult:
         check.inst_param(
             resource_verification, "resource_verification", ResourceVerificationRequest
         )
-        res = self._query(
-            "ResourceVerification",
-            api_pb2.ResourceVerificationRequest,
-            serialized_resource_verification_request=serialize_value(resource_verification),
-        )
-        return deserialize_value(
-            res.serialized_resource_verification_result, ResourceVerificationResult
+        return self.user_code_execution(
+            UserCodeExecutionType.RESOURCE_VERIFICATION,
+            resource_verification,
+            ResourceVerificationResult,
         )
 
 

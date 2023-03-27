@@ -89,6 +89,9 @@ from .types import (
     SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
+    UserCodeExecutionRequest,
+    UserCodeExecutionResult,
+    UserCodeExecutionType,
 )
 from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
 
@@ -839,17 +842,15 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def ResourceVerification(self, request: Any, _context) -> api_pb2.ResourceVerificationResult:
+    def _resource_verification(
+        self, resource_verification_request: ResourceVerificationRequest
+    ) -> ResourceVerificationResult:
         serializable_error_info = None
         response = VerificationResult(
             VerificationStatus.FAILURE, "Error executing verification check"
         )
 
         try:
-            resource_verification_request = deserialize_value(
-                request.serialized_resource_verification_request, ResourceVerificationRequest
-            )
-
             definition = self._get_repo_for_origin(resource_verification_request.repository_origin)
 
             pipeline = cast(
@@ -869,10 +870,30 @@ class DagsterApiServer(DagsterApiServicer):
         except Exception:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-        return api_pb2.ResourceVerificationResult(
-            serialized_resource_verification_result=serialize_value(
-                ResourceVerificationResult(
-                    response=response, serializable_error_info=serializable_error_info
+        return ResourceVerificationResult(
+            response=response, serializable_error_info=serializable_error_info
+        )
+
+    def UserCodeExecution(self, request: Any, _context) -> api_pb2.UserCodeExecutionResult:
+        user_code_execution_request = deserialize_value(
+            request.serialized_user_code_execution_request, UserCodeExecutionRequest
+        )
+        if (
+            user_code_execution_request.execution_type
+            == UserCodeExecutionType.RESOURCE_VERIFICATION
+        ):
+            result = self._resource_verification(
+                user_code_execution_request.unpack_as(ResourceVerificationRequest)
+            )
+        else:
+            raise NotImplementedError(
+                "Unsupported user code execution type:"
+                f" {user_code_execution_request.execution_type}"
+            )
+        return api_pb2.UserCodeExecutionResult(
+            serialized_user_code_execution_result=serialize_value(
+                UserCodeExecutionResult(
+                    execution_type=user_code_execution_request.execution_type, data=result
                 )
             )
         )

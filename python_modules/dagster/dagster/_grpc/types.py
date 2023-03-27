@@ -1,6 +1,7 @@
 import base64
 import zlib
-from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
+from enum import Enum
+from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence, Type, TypeVar
 
 import dagster._check as check
 from dagster._config.structured_config.resource_verification import VerificationResult
@@ -782,3 +783,102 @@ class ResourceVerificationResult(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),
         )
+
+
+@whitelist_for_serdes
+class UserCodeExecutionType(Enum):
+    """Represents the type of user code execution request.
+
+    This is used to determine and verify specific request and result types when unpacking the generic
+    UserCodeExecutionRequest and UserCodeExecutionResult types.
+    """
+
+    RESOURCE_VERIFICATION = "resource_verification"
+
+
+T = TypeVar("T")
+
+EXECUTION_TYPE_TO_DATA_MAP = {
+    UserCodeExecutionType.RESOURCE_VERIFICATION: (
+        ResourceVerificationRequest,
+        ResourceVerificationResult,
+    ),
+}
+REQUEST_CLASS_TO_EXECUTION_TYPE = {v[0]: k for k, v in EXECUTION_TYPE_TO_DATA_MAP.items()}
+RESULT_CLASS_TO_EXECUTION_TYPE = {v[1]: k for k, v in EXECUTION_TYPE_TO_DATA_MAP.items()}
+
+
+@whitelist_for_serdes
+class UserCodeExecutionRequest(
+    NamedTuple(
+        "_UserCodeExecutionRequest",
+        [("execution_type", UserCodeExecutionType), ("data", Any)],
+    )
+):
+    """Represents a request to execute user code in the GRPC server.
+
+    This is a generic wrapper around the specific request types, existing to prevent us from
+    having to add a new GRPC method for every new type of request. This is important for Cloud because
+    the agent needs to broker requests to the GRPC server, and we don't want to have to require the user
+    to bump the agent version every time we add a new request type. Instead, the agent can just shuttle
+    the serialized request data through to the GRPC server, which can then unpack it into the correct
+    request type.
+    """
+
+    def __new__(cls, execution_type: UserCodeExecutionType, data: Any):
+        return super(UserCodeExecutionRequest, cls).__new__(
+            cls,
+            execution_type=check.inst_param(execution_type, "type", UserCodeExecutionType),
+            data=data,
+        )
+
+    def unpack_as(self, unpack_class: Type[T]) -> T:
+        """Unpacks the request data into the given type, verifying that the request kind matches the
+        expected type for the given class.
+        """
+        check.inst(self.data, unpack_class)
+        check.invariant(
+            unpack_class in REQUEST_CLASS_TO_EXECUTION_TYPE,
+            f"Unpack class {unpack_class} does not match any known request type",
+        )
+        check.invariant(
+            REQUEST_CLASS_TO_EXECUTION_TYPE.get(unpack_class) == self.execution_type,
+            f"Unpack class {unpack_class} does not match request type {self.execution_type}",
+        )
+        return self.data
+
+
+@whitelist_for_serdes
+class UserCodeExecutionResult(
+    NamedTuple(
+        "_UserCodeExecutionResult",
+        [("execution_type", UserCodeExecutionType), ("data", Any)],
+    )
+):
+    """Represents the result of executing user code in the GRPC server.
+
+    This is a generic wrapper around the specific result types - see the comment on
+    UserCodeExecutionRequest for more details.
+    """
+
+    def __new__(cls, execution_type: UserCodeExecutionType, data: Any):
+        return super(UserCodeExecutionResult, cls).__new__(
+            cls,
+            execution_type=check.inst_param(execution_type, "type", UserCodeExecutionType),
+            data=data,
+        )
+
+    def unpack_as(self, unpack_class: Type[T]) -> T:
+        """Unpacks the result data into the given type, verifying that the result kind matches the
+        expected type for the given class.
+        """
+        check.inst(self.data, unpack_class)
+        check.invariant(
+            unpack_class in RESULT_CLASS_TO_EXECUTION_TYPE,
+            f"Unpack class {unpack_class} does not match any known request type",
+        )
+        check.invariant(
+            RESULT_CLASS_TO_EXECUTION_TYPE.get(unpack_class) == self.execution_type,
+            f"Unpack class {unpack_class} does not match result type {self.execution_type}",
+        )
+        return self.data

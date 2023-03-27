@@ -135,10 +135,10 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.Empty.SerializeToString,
             response_deserializer=api__pb2.GetCurrentRunsReply.FromString,
         )
-        self.ResourceVerification = channel.unary_unary(
-            "/api.DagsterApi/ResourceVerification",
-            request_serializer=api__pb2.ResourceVerificationRequest.SerializeToString,
-            response_deserializer=api__pb2.ResourceVerificationResult.FromString,
+        self.UserCodeExecution = channel.unary_unary(
+            "/api.DagsterApi/UserCodeExecution",
+            request_serializer=api__pb2.UserCodeExecutionRequest.SerializeToString,
+            response_deserializer=api__pb2.UserCodeExecutionResult.FromString,
         )
 
 
@@ -283,7 +283,7 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
-    def ResourceVerification(self, request, context):
+    def UserCodeExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
@@ -407,10 +407,10 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.Empty.FromString,
             response_serializer=api__pb2.GetCurrentRunsReply.SerializeToString,
         ),
-        "ResourceVerification": grpc.unary_unary_rpc_method_handler(
-            servicer.ResourceVerification,
-            request_deserializer=api__pb2.ResourceVerificationRequest.FromString,
-            response_serializer=api__pb2.ResourceVerificationResult.SerializeToString,
+        "UserCodeExecution": grpc.unary_unary_rpc_method_handler(
+            servicer.UserCodeExecution,
+            request_deserializer=api__pb2.UserCodeExecutionRequest.FromString,
+            response_serializer=api__pb2.UserCodeExecutionResult.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler("api.DagsterApi", rpc_method_handlers)
@@ -1089,7 +1089,7 @@ class DagsterApi(object):
         )
 
     @staticmethod
-    def ResourceVerification(
+    def UserCodeExecution(
         request,
         target,
         options=(),
@@ -1104,9 +1104,9 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/api.DagsterApi/ResourceVerification",
-            api__pb2.ResourceVerificationRequest.SerializeToString,
-            api__pb2.ResourceVerificationResult.FromString,
+            "/api.DagsterApi/UserCodeExecution",
+            api__pb2.UserCodeExecutionRequest.SerializeToString,
+            api__pb2.UserCodeExecutionResult.FromString,
             options,
             channel_credentials,
             insecure,

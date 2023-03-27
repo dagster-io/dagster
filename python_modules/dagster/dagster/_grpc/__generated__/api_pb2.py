@@ -70,12 +70,11 @@ DESCRIPTOR = _descriptor.FileDescriptor(
         b" \x01(\t\x12\x10\n\x08job_name\x18\x02"
         b' \x01(\t"I\n\x10\x45xternalJobReply\x12\x1b\n\x13serialized_job_data\x18\x01'
         b" \x01(\t\x12\x18\n\x10serialized_error\x18\x02"
-        b' \x01(\t"O\n\x1bResourceVerificationRequest\x12\x30\n(serialized_resource_verification_request\x18\x01'
-        b" \x01(\t\"M\n\x1aResourceVerificationResult\x12/\n'serialized_resource_verification_result\x18\x01"
-        b' \x01(\t2\xb0\x0f\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent"\x00\x30\x01\x12\x32\n\x0bGetServerId\x12\n.api.Empty\x1a\x15.api.GetServerIdReply"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply"\x00\x12`\n\x16\x45xternalPartitionNames\x12".api.ExternalPartitionNamesRequest\x1a'
+        b' \x01(\t"J\n\x18UserCodeExecutionRequest\x12.\n&serialized_user_code_execution_request\x18\x01'
+        b' \x01(\t"H\n\x17UserCodeExecutionResult\x12-\n%serialized_user_code_execution_result\x18\x01'
+        b' \x01(\t2\xa7\x0f\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent"\x00\x30\x01\x12\x32\n\x0bGetServerId\x12\n.api.Empty\x1a\x15.api.GetServerIdReply"\x00\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply"\x00\x12`\n\x16\x45xternalPartitionNames\x12".api.ExternalPartitionNamesRequest\x1a'
         b' .api.ExternalPartitionNamesReply"\x00\x12Z\n\x14\x45xternalNotebookData\x12'
-        b' .api.ExternalNotebookDataRequest\x1a\x1e.api.ExternalNotebookDataReply"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply"\x00\x12t\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply"\x00\x12?\n\x0b\x45xternalJob\x12\x17.api.ExternalJobRequest\x1a\x15.api.ExternalJobReply"\x00\x12h\n\x1bStreamingExternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a%.api.StreamingExternalRepositoryEvent"\x00\x30\x01\x12`\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\\\n\x17\x45xternalSensorExecution\x12#.api.ExternalSensorExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply"\x00\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply"\x00\x12\x38\n\x0eGetCurrentRuns\x12\n.api.Empty\x1a\x18.api.GetCurrentRunsReply"\x00\x12[\n\x14ResourceVerification\x12'
-        b' .api.ResourceVerificationRequest\x1a\x1f.api.ResourceVerificationResult"\x00\x62\x06proto3'
+        b' .api.ExternalNotebookDataRequest\x1a\x1e.api.ExternalNotebookDataReply"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply"\x00\x12t\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply"\x00\x12?\n\x0b\x45xternalJob\x12\x17.api.ExternalJobRequest\x1a\x15.api.ExternalJobReply"\x00\x12h\n\x1bStreamingExternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a%.api.StreamingExternalRepositoryEvent"\x00\x30\x01\x12`\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\\\n\x17\x45xternalSensorExecution\x12#.api.ExternalSensorExecutionRequest\x1a\x18.api.StreamingChunkEvent"\x00\x30\x01\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply"\x00\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply"\x00\x12\x38\n\x0eGetCurrentRuns\x12\n.api.Empty\x1a\x18.api.GetCurrentRunsReply"\x00\x12R\n\x11UserCodeExecution\x12\x1d.api.UserCodeExecutionRequest\x1a\x1c.api.UserCodeExecutionResult"\x00\x62\x06proto3'
     ),
 )
 
@@ -1739,17 +1738,17 @@ _EXTERNALJOBREPLY = _descriptor.Descriptor(
 )
 
 
-_RESOURCEVERIFICATIONREQUEST = _descriptor.Descriptor(
-    name="ResourceVerificationRequest",
-    full_name="api.ResourceVerificationRequest",
+_USERCODEEXECUTIONREQUEST = _descriptor.Descriptor(
+    name="UserCodeExecutionRequest",
+    full_name="api.UserCodeExecutionRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name="serialized_resource_verification_request",
-            full_name="api.ResourceVerificationRequest.serialized_resource_verification_request",
+            name="serialized_user_code_execution_request",
+            full_name="api.UserCodeExecutionRequest.serialized_user_code_execution_request",
             index=0,
             number=1,
             type=9,
@@ -1776,21 +1775,21 @@ _RESOURCEVERIFICATIONREQUEST = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[],
     serialized_start=2705,
-    serialized_end=2784,
+    serialized_end=2779,
 )
 
 
-_RESOURCEVERIFICATIONRESULT = _descriptor.Descriptor(
-    name="ResourceVerificationResult",
-    full_name="api.ResourceVerificationResult",
+_USERCODEEXECUTIONRESULT = _descriptor.Descriptor(
+    name="UserCodeExecutionResult",
+    full_name="api.UserCodeExecutionResult",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name="serialized_resource_verification_result",
-            full_name="api.ResourceVerificationResult.serialized_resource_verification_result",
+            name="serialized_user_code_execution_result",
+            full_name="api.UserCodeExecutionResult.serialized_user_code_execution_result",
             index=0,
             number=1,
             type=9,
@@ -1816,8 +1815,8 @@ _RESOURCEVERIFICATIONRESULT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=2786,
-    serialized_end=2863,
+    serialized_start=2781,
+    serialized_end=2853,
 )
 
 DESCRIPTOR.message_types_by_name["Empty"] = _EMPTY
@@ -1868,8 +1867,8 @@ DESCRIPTOR.message_types_by_name["GetCurrentImageReply"] = _GETCURRENTIMAGEREPLY
 DESCRIPTOR.message_types_by_name["GetCurrentRunsReply"] = _GETCURRENTRUNSREPLY
 DESCRIPTOR.message_types_by_name["ExternalJobRequest"] = _EXTERNALJOBREQUEST
 DESCRIPTOR.message_types_by_name["ExternalJobReply"] = _EXTERNALJOBREPLY
-DESCRIPTOR.message_types_by_name["ResourceVerificationRequest"] = _RESOURCEVERIFICATIONREQUEST
-DESCRIPTOR.message_types_by_name["ResourceVerificationResult"] = _RESOURCEVERIFICATIONRESULT
+DESCRIPTOR.message_types_by_name["UserCodeExecutionRequest"] = _USERCODEEXECUTIONREQUEST
+DESCRIPTOR.message_types_by_name["UserCodeExecutionResult"] = _USERCODEEXECUTIONRESULT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Empty = _reflection.GeneratedProtocolMessageType(
@@ -2290,27 +2289,27 @@ ExternalJobReply = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(ExternalJobReply)
 
-ResourceVerificationRequest = _reflection.GeneratedProtocolMessageType(
-    "ResourceVerificationRequest",
+UserCodeExecutionRequest = _reflection.GeneratedProtocolMessageType(
+    "UserCodeExecutionRequest",
     (_message.Message,),
     {
-        "DESCRIPTOR": _RESOURCEVERIFICATIONREQUEST,
+        "DESCRIPTOR": _USERCODEEXECUTIONREQUEST,
         "__module__": "api_pb2"
-        # @@protoc_insertion_point(class_scope:api.ResourceVerificationRequest)
+        # @@protoc_insertion_point(class_scope:api.UserCodeExecutionRequest)
     },
 )
-_sym_db.RegisterMessage(ResourceVerificationRequest)
+_sym_db.RegisterMessage(UserCodeExecutionRequest)
 
-ResourceVerificationResult = _reflection.GeneratedProtocolMessageType(
-    "ResourceVerificationResult",
+UserCodeExecutionResult = _reflection.GeneratedProtocolMessageType(
+    "UserCodeExecutionResult",
     (_message.Message,),
     {
-        "DESCRIPTOR": _RESOURCEVERIFICATIONRESULT,
+        "DESCRIPTOR": _USERCODEEXECUTIONRESULT,
         "__module__": "api_pb2"
-        # @@protoc_insertion_point(class_scope:api.ResourceVerificationResult)
+        # @@protoc_insertion_point(class_scope:api.UserCodeExecutionResult)
     },
 )
-_sym_db.RegisterMessage(ResourceVerificationResult)
+_sym_db.RegisterMessage(UserCodeExecutionResult)
 
 
 _DAGSTERAPI = _descriptor.ServiceDescriptor(
@@ -2320,8 +2319,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     index=0,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_start=2866,
-    serialized_end=4834,
+    serialized_start=2856,
+    serialized_end=4815,
     methods=[
         _descriptor.MethodDescriptor(
             name="Ping",
@@ -2554,12 +2553,12 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name="ResourceVerification",
-            full_name="api.DagsterApi.ResourceVerification",
+            name="UserCodeExecution",
+            full_name="api.DagsterApi.UserCodeExecution",
             index=23,
             containing_service=None,
-            input_type=_RESOURCEVERIFICATIONREQUEST,
-            output_type=_RESOURCEVERIFICATIONRESULT,
+            input_type=_USERCODEEXECUTIONREQUEST,
+            output_type=_USERCODEEXECUTIONRESULT,
             serialized_options=None,
             create_key=_descriptor._internal_create_key,
         ),

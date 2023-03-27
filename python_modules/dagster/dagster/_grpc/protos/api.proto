@@ -28,7 +28,7 @@ service DagsterApi {
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
-  rpc ResourceVerification (ResourceVerificationRequest) returns (ResourceVerificationResult) {}
+  rpc UserCodeExecution (UserCodeExecutionRequest) returns (UserCodeExecutionResult) {}
 }
 
 message Empty {}
@@ -187,10 +187,10 @@ message ExternalJobReply {
   string serialized_error = 2;
 }
 
-message ResourceVerificationRequest {
-  string serialized_resource_verification_request = 1;
+message UserCodeExecutionRequest {
+  string serialized_user_code_execution_request = 1;
 }
 
-message ResourceVerificationResult {
-  string serialized_resource_verification_result = 1;
+message UserCodeExecutionResult {
+  string serialized_user_code_execution_result = 1;
 }
