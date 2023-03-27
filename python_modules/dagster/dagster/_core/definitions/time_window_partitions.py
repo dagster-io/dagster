@@ -440,7 +440,7 @@ class TimeWindowPartitionsDefinition(
         )
 
         if self.end_offset == 0:
-            return next(iter(self._reverse_iterate_time_windows(current_time)))  # type: ignore
+            return next(iter(self._reverse_iterate_time_windows(current_time)))
         else:
             # TODO: make this efficient
             last_partition_key = super().get_last_partition_key(current_time)
