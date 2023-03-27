@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Callable,
     Dict,
     Iterable,
     Mapping,
@@ -243,6 +244,7 @@ def find_parent_materialized_asset_partitions(
     latest_storage_id: Optional[int],
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
+    can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
     """Finds asset partitions in the given selection whose parents have been materialized since
     latest_storage_id.
@@ -298,7 +300,7 @@ def find_parent_materialized_asset_partitions(
                     # expensive, so we try to avoid doing so in as many situations as possible
                     if child.asset_key not in target_asset_keys:
                         continue
-                    elif not candidates_unit_within_allowable_time_window(asset_graph, [child]):
+                    elif not can_reconcile_fn(child):
                         continue
                     elif partition_key != child.partition_key:
                         result_asset_partitions.add(child)
@@ -452,11 +454,22 @@ def determine_asset_partitions_to_reconcile(
         evaluation_time=evaluation_time,
     )
 
+    # a quick filter for eliminating some stale candidates
+    def can_reconcile_fn(candidate: AssetKeyPartitionKey) -> bool:
+        if candidate.partition_key is None:
+            return True
+        return candidates_unit_within_allowable_time_window(
+            asset_graph=asset_graph,
+            candidates_unit=[candidate],
+            evaluation_time=evaluation_time,
+        )
+
     stale_candidates, latest_storage_id = find_parent_materialized_asset_partitions(
         instance_queryer=instance_queryer,
         latest_storage_id=cursor.latest_storage_id,
         target_asset_selection=target_asset_selection,
         asset_graph=asset_graph,
+        can_reconcile_fn=can_reconcile_fn,
     )
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
