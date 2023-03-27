@@ -100,6 +100,43 @@ def test_duckdb_io_manager_with_assets(tmp_path, io_managers):
             duckdb_conn.close()
 
 
+def test_duckdb_io_manager_with_schema(tmp_path):
+    @asset
+    def my_df() -> pd.DataFrame:
+        return pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    @asset
+    def my_df_plus_one(my_df: pd.DataFrame) -> pd.DataFrame:
+        return my_df + 1
+
+    schema_io_managers = [
+        duckdb_pandas_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb"), "schema": "custom_schema"}
+        ),
+        ConfigurableDuckDBPandasIOManager(
+            database=os.path.join(tmp_path, "unit_test.duckdb"), schema="custom_schema"
+        ),
+    ]
+
+    for io_manager in schema_io_managers:
+        resource_defs = {"io_manager": io_manager}
+
+        # materialize asset twice to ensure that tables get properly deleted
+        for _ in range(2):
+            res = materialize([my_df, my_df_plus_one], resources=resource_defs)
+            assert res.success
+
+            duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+            out_df = duckdb_conn.execute("SELECT * FROM custom_schema.my_df").fetch_df()
+            assert out_df["a"].tolist() == [1, 2, 3]
+
+            out_df = duckdb_conn.execute("SELECT * FROM custom_schema.my_df_plus_one").fetch_df()
+            assert out_df["a"].tolist() == [2, 3, 4]
+
+            duckdb_conn.close()
+
+
 @asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
 def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
@@ -429,7 +466,7 @@ def test_dynamic_partition(tmp_path, io_managers):
             duckdb_conn.close()
 
 
-def test_self_dependent_asset(tmp_path):
+def test_self_dependent_asset(tmp_path, io_managers):
     daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
     @asset(
@@ -464,45 +501,43 @@ def test_self_dependent_asset(tmp_path):
 
         return pd_df
 
-    duckdb_io_manager = duckdb_pandas_io_manager.configured(
-        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-    )
-    resource_defs = {"io_manager": duckdb_io_manager}
+    for io_manager in io_managers:
+        resource_defs = {"io_manager": io_manager}
 
-    materialize(
-        [self_dependent_asset],
-        partition_key="2023-01-01",
-        resources=resource_defs,
-        run_config={
-            "ops": {
-                "my_schema__self_dependent_asset": {
-                    "config": {"value": "1", "last_partition_key": "NA"}
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-01",
+            resources=resource_defs,
+            run_config={
+                "ops": {
+                    "my_schema__self_dependent_asset": {
+                        "config": {"value": "1", "last_partition_key": "NA"}
+                    }
                 }
-            }
-        },
-    )
+            },
+        )
 
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
 
-    assert out_df["a"].tolist() == ["1", "1", "1"]
-    duckdb_conn.close()
+        assert out_df["a"].tolist() == ["1", "1", "1"]
+        duckdb_conn.close()
 
-    materialize(
-        [self_dependent_asset],
-        partition_key="2023-01-02",
-        resources=resource_defs,
-        run_config={
-            "ops": {
-                "my_schema__self_dependent_asset": {
-                    "config": {"value": "2", "last_partition_key": "2023-01-01"}
+        materialize(
+            [self_dependent_asset],
+            partition_key="2023-01-02",
+            resources=resource_defs,
+            run_config={
+                "ops": {
+                    "my_schema__self_dependent_asset": {
+                        "config": {"value": "2", "last_partition_key": "2023-01-01"}
+                    }
                 }
-            }
-        },
-    )
+            },
+        )
 
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
 
-    assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
-    duckdb_conn.close()
+        assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
+        duckdb_conn.close()

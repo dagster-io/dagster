@@ -115,9 +115,8 @@ class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
         ...
 
     @staticmethod
-    @abstractmethod
     def default_load_type() -> Optional[Type]:
-        ...
+        return None
 
     def create_io_manager(self, context) -> DbIOManager:
         return DbIOManager(
