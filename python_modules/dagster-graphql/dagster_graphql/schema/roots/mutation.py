@@ -727,7 +727,7 @@ class GrapheneLaunchResourceReadinessCheckMutation(graphene.Mutation):
         res = resource_readiness_check(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
         )
-        return GrapheneResourceReadinessCheckResult(status=res.status, message=res.message or "")
+        return GrapheneResourceReadinessCheckResult(res)
 
 
 class GrapheneDagitMutation(graphene.ObjectType):
