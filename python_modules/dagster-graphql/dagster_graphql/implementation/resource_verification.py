@@ -16,23 +16,9 @@ def resource_verification(
 
     context: WorkspaceRequestContext = graphene_info.context
 
-    # context.get_repository_location(execution_params.selector.location_name)
     location = context.get_code_location(resource_selector.location_name)
     repository = location.get_repository(resource_selector.repository_name)
 
-    # origin = ExternalInstigatorOrigin(
-    #     external_repository_origin=repository.get_external_origin(),
-    #     instigator_name="resource_verification",
-    # )
-    # state = InstigatorState(
-    #     origin=origin,
-    #     instigator_type=InstigatorType.SCHEDULE,
-    #     status=InstigatorStatus.RUNNING,
-    #     instigator_data=None,
-    # )
-    # # print("OK2")
-    # # instance.schedule_storage.add_instigator_state(state)
-    # print("OK")
     res = location.launch_resource_verification(
         origin=repository.get_external_origin(),
         instance_ref=instance.get_ref(),
