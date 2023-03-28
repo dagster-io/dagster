@@ -20,7 +20,30 @@ const TestComponent: React.FC = () => {
       new SetFilter({
         name: 'User',
         icon: 'account_circle',
-        allValues: [value('marco'), value('polo'), value('hi')],
+        allValues: [
+          value('marco'),
+          value('polo'),
+          value('hi'),
+          value('test'),
+          value('today'),
+          value('yesterday'),
+        ],
+        renderLabel: ({value, isActive}) => (
+          <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
+        ),
+        getStringValue: (value) => value,
+      }),
+      new SetFilter({
+        name: 'Test',
+        icon: 'account_tree',
+        allValues: [
+          value('marco'),
+          value('polo'),
+          value('hi'),
+          value('test'),
+          value('today'),
+          value('yesterday'),
+        ],
         renderLabel: ({value, isActive}) => (
           <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
         ),
