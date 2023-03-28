@@ -61,7 +61,10 @@ def test_error_repo_in_registry(instance):
         ),
     )
     with GrpcServerRegistry(
-        instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+        instance=instance,
+        reload_interval=5,
+        heartbeat_ttl=10,
+        startup_timeout=5,
     ) as registry:
         # Repository with a loading error does not raise an exception
         endpoint = registry.get_grpc_endpoint(error_origin)
@@ -101,7 +104,10 @@ def test_server_registry(instance):
     )
 
     with GrpcServerRegistry(
-        instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
+        instance=instance,
+        reload_interval=5,
+        heartbeat_ttl=10,
+        startup_timeout=5,
     ) as registry:
         endpoint_one = registry.get_grpc_endpoint(origin)
         endpoint_two = registry.get_grpc_endpoint(origin)
@@ -146,7 +152,6 @@ def test_server_registry(instance):
                 assert _can_connect(origin, endpoint_four)
                 break
 
-    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_three)
     assert not _can_connect(origin, endpoint_four)
 
@@ -166,7 +171,10 @@ def test_registry_multithreading(instance):
     )
 
     with GrpcServerRegistry(
-        instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
+        instance=instance,
+        reload_interval=300,
+        heartbeat_ttl=600,
+        startup_timeout=30,
     ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
 
@@ -189,7 +197,6 @@ def test_registry_multithreading(instance):
 
         assert _can_connect(origin, endpoint)
 
-    registry.wait_for_processes()
     assert not _can_connect(origin, endpoint)
 
 

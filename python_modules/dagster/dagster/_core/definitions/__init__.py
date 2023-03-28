@@ -154,7 +154,6 @@ from .partition import (
     Partition as Partition,
     PartitionedConfig as PartitionedConfig,
     PartitionsDefinition as PartitionsDefinition,
-    PartitionSetDefinition as PartitionSetDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
@@ -164,6 +163,7 @@ from .partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiPartitionMapping as MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
 )

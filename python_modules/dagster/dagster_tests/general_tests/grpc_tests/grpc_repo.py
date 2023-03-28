@@ -1,11 +1,20 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
+from dagster import (
+    Int,
+    ScheduleDefinition,
+    SkipReason,
+    job,
+    repository,
+    sensor,
+    usable_as_dagster_type,
+)
 from dagster._core.definitions import op
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster._legacy import PartitionSetDefinition, pipeline
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._legacy import pipeline
 
 
 @op
@@ -23,7 +32,18 @@ def foo_pipeline():
     do_input(do_something())
 
 
-@pipeline(name="baz", description="Not much tbh")
+baz_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
+
+baz_config = PartitionedConfig(
+    partitions_def=baz_partitions,
+    run_config_for_partition_fn=lambda partition: {
+        "ops": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
+    },
+    tags_for_partition_fn=lambda _partition: {"foo": "bar"},
+)
+
+
+@job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
 def baz_pipeline():
     do_input()
 
@@ -81,39 +101,6 @@ def error_partition_tags_fn(_partition):
     raise Exception("womp womp")
 
 
-def define_baz_partitions():
-    return {
-        "baz_partitions": PartitionSetDefinition(
-            name="baz_partitions",
-            pipeline_name="baz",
-            partition_fn=lambda: string.ascii_lowercase,
-            run_config_fn_for_partition=lambda partition: {
-                "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
-            },
-            tags_fn_for_partition=lambda _partition: {"foo": "bar"},
-        ),
-        "error_partitions": PartitionSetDefinition(
-            name="error_partitions",
-            pipeline_name="baz",
-            partition_fn=error_partition_fn,
-            run_config_fn_for_partition=lambda partition: {},
-        ),
-        "error_partition_config": PartitionSetDefinition(
-            name="error_partition_config",
-            pipeline_name="baz",
-            partition_fn=lambda: string.ascii_lowercase,
-            run_config_fn_for_partition=error_partition_config_fn,
-        ),
-        "error_partition_tags": PartitionSetDefinition(
-            name="error_partition_tags",
-            pipeline_name="baz",
-            partition_fn=lambda: string.ascii_lowercase,
-            run_config_fn_for_partition=lambda partition: {},
-            tags_fn_for_partition=error_partition_tags_fn,
-        ),
-    }
-
-
 @repository
 def bar_repo():
     return {
@@ -126,5 +113,4 @@ def bar_repo():
         "sensors": {
             "slow_sensor": lambda: slow_sensor,
         },
-        "partition_sets": define_baz_partitions(),
     }

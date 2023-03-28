@@ -68,7 +68,7 @@ from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
+from .partition import PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -84,7 +84,6 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
-    _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -231,7 +230,6 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=partitioned_config,
         )
 
-        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values
         for input_name in sorted(list(self.input_values.keys())):
@@ -395,23 +393,21 @@ class JobDefinition(PipelineDefinition):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            if not self.partitioned_config:
-                check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
-                    " partitioned config"
-                )
-            partition_set = self.get_partition_set_def()
-            if not partition_set:
-                check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
-                    " partitioned config"
-                )
+            if not (self.partitions_def and self.partitioned_config):
+                check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
-            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
-                run_config if run_config else partition_set.run_config_for_partition(partition)
+                run_config
+                if run_config
+                else self.partitioned_config.get_run_config_for_partition_key(
+                    partition_key, instance
+                )
             )
-            merged_tags.update(partition_set.tags_for_partition(partition))
+            merged_tags.update(
+                self.partitioned_config.get_tags_for_partition_key(
+                    partition_key, instance, job_name=self.name
+                )
+            )
 
         return core_execute_in_process(
             ephemeral_pipeline=ephemeral_job,
@@ -567,26 +563,6 @@ class JobDefinition(PipelineDefinition):
                 f"{self.graph.name} results in an invalid graph."
             ) from exc
 
-    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        mode = self.get_mode_definition()
-        if not mode.partitioned_config:
-            return None
-
-        if not self._cached_partition_set:
-            tags_fn = mode.partitioned_config.tags_for_partition_fn
-            if not tags_fn:
-                tags_fn = lambda _: {}
-            self._cached_partition_set = PartitionSetDefinition(
-                job_name=self.name,
-                name=f"{self.name}_partition_set",
-                partitions_def=mode.partitioned_config.partitions_def,
-                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
-                tags_fn_for_partition=tags_fn,
-                mode=mode.name,
-            )
-
-        return self._cached_partition_set
-
     @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
@@ -626,31 +602,35 @@ class JobDefinition(PipelineDefinition):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        partition_set = self.get_partition_set_def()
-        if not partition_set:
+        if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
-            if not instance:
-                check.failed(
-                    "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "dynamic partition set"
-                )
+        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+            check.failed(
+                "Must provide a dagster instance when calling run_request_for_partition on a "
+                "dynamic partition set"
+            )
 
-        partition = partition_set.get_partition(
+        partition = self.partitions_def.get_partition(
             partition_key, dynamic_partitions_store=instance, current_time=current_time
         )
-        run_request_tags = (
-            {**tags, **partition_set.tags_for_partition(partition)}
-            if tags
-            else partition_set.tags_for_partition(partition)
+        run_config = (
+            run_config
+            if run_config is not None
+            else self.partitioned_config.get_run_config_for_partition_key(
+                partition.name, instance=instance, current_time=current_time
+            )
         )
+        run_request_tags = {
+            **(tags or {}),
+            **self.partitioned_config.get_tags_for_partition_key(
+                partition_key, instance=instance, current_time=current_time, job_name=self.name
+            ),
+        }
 
         return RunRequest(
             run_key=run_key,
-            run_config=run_config
-            if run_config is not None
-            else partition_set.run_config_for_partition(partition),
+            run_config=run_config,
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,

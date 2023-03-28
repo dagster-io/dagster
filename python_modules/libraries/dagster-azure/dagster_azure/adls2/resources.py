@@ -1,4 +1,4 @@
-from azure.identity.aio import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import Field, Permissive, Selector, StringSource, resource
 from dagster._utils.merger import merge_dicts

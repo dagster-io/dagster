@@ -224,6 +224,12 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def partitions_defs(self) -> Sequence[PartitionDimensionDefinition]:
         return self._partitions_defs
 
+    def get_partitions_def_for_dimension(self, dimension_name: str) -> PartitionsDefinition:
+        for dim_def in self._partitions_defs:
+            if dim_def.name == dimension_name:
+                return dim_def.partitions_def
+        check.failed(f"Invalid dimension name {dimension_name}")
+
     def get_partition(
         self,
         partition_key: str,

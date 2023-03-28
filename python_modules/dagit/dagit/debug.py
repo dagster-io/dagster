@@ -44,13 +44,14 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    host_dagit_ui_with_workspace_process_context(
-        workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
-        port=port,
-        host=DEFAULT_DAGIT_HOST,
-        path_prefix="",
-        log_level="debug",
-    )
+    with WorkspaceProcessContext(instance, None, version=__version__) as workspace_process_context:
+        host_dagit_ui_with_workspace_process_context(
+            workspace_process_context=workspace_process_context,
+            port=port,
+            host=DEFAULT_DAGIT_HOST,
+            path_prefix="",
+            log_level="debug",
+        )
 
 
 def main():

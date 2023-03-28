@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import (
-    Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -13,6 +13,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -21,7 +23,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
-from ..partition import PartitionSetDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
@@ -38,6 +39,8 @@ from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T")
+
+RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryListDefinition]]
 
 
 def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
@@ -72,18 +75,26 @@ class _Repository:
 
     @overload
     def __call__(
-        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
-    ) -> PendingRepositoryDefinition:
+        self,
+        fn: Union[
+            Callable[[], Sequence[RepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
+    ) -> RepositoryDefinition:
         ...
 
     @overload
     def __call__(
-        self, fn: Callable[[], Sequence[RepositoryListDefinition]]
-    ) -> RepositoryDefinition:
+        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+    ) -> PendingRepositoryDefinition:
         ...
 
     def __call__(
-        self, fn: Callable[[], Sequence[PendingRepositoryListDefinition]]
+        self,
+        fn: Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -107,7 +118,6 @@ class _Repository:
                     definition,
                     (
                         PipelineDefinition,
-                        PartitionSetDefinition,
                         ScheduleDefinition,
                         UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
@@ -132,7 +142,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, "
+                    "ScheduleDefinition, SensorDefinition, "
                     "AssetsDefinition, or SourceAsset."
                     f"Got {bad_definitions_str}."
                 )
@@ -152,7 +162,7 @@ class _Repository:
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'jobs'}}: found "
+                    "keys other than {{'pipelines', 'schedules', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
@@ -173,7 +183,7 @@ class _Repository:
                 "details and examples".format(type_=type(repository_definitions)),
             )
 
-        if repository_data is None:
+        if isinstance(repository_definitions, list) and repository_data is None:
             return PendingRepositoryDefinition(
                 self.name,
                 repository_definitions=list(_flatten(repository_definitions)),
@@ -195,7 +205,9 @@ class _Repository:
 
 @overload
 def repository(
-    definitions_fn: Callable[..., Sequence[RepositoryListDefinition]]
+    definitions_fn: Union[
+        Callable[[], Sequence[RepositoryListDefinition]], Callable[[], RepositoryDictSpec]
+    ],
 ) -> RepositoryDefinition:
     ...
 
@@ -220,7 +232,12 @@ def repository(
 
 
 def repository(
-    definitions_fn: Optional[Callable[..., Sequence[Any]]] = None,
+    definitions_fn: Optional[
+        Union[
+            Callable[[], Sequence[PendingRepositoryListDefinition]],
+            Callable[[], RepositoryDictSpec],
+        ]
+    ] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
