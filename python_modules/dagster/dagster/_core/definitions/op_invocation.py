@@ -2,7 +2,9 @@ import inspect
 from typing import TYPE_CHECKING, Any, Mapping, Optional, TypeVar, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -46,10 +48,6 @@ def op_invocation_result(
 
     _check_invocation_requirements(op_def, context)
 
-    bound_context = (context or build_op_context()).bind(op_def_or_invocation)
-
-    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
-
     compute_fn = op_def.compute_fn
     if not isinstance(compute_fn, DecoratedOpFunction):
         check.failed("op invocation only works with decorated op fns")
@@ -58,12 +56,44 @@ def op_invocation_result(
 
     from ..execution.plan.compute_generator import invoke_compute_fn
 
+    context = context or build_op_context()
+
+    resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
+    resource_args_from_kwargs = {}
+    for resource_arg in resource_arg_mapping:
+        if resource_arg in kwargs:
+            resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
+            del kwargs[resource_arg]
+
+    resources_provided_in_multiple_places = (resource_args_from_kwargs) and (context.resource_keys)
+    if resources_provided_in_multiple_places:
+        raise DagsterInvalidInvocationError("Cannot provide resources in both context and kwargs")
+
+    if resource_args_from_kwargs:
+        context = context.replace_resources(resource_args_from_kwargs)
+
+    try:
+        bound_context = context.bind(op_def_or_invocation)
+    except DagsterInvalidDefinitionError as e:
+        if any(isinstance(arg, ResourceDefinition) for arg in args):
+            raise DagsterInvalidInvocationError(
+                str(e)
+                + "\n\nIf directly invoking an op/asset, you may not provide resources as"
+                " positional"
+                " arguments, only as keyword arguments."
+            ) from e
+        raise
+    input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
+
     result = invoke_compute_fn(
-        compute_fn.decorated_fn,
-        bound_context,
-        input_dict,
-        compute_fn.has_context_arg(),
-        compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None,
+        fn=compute_fn.decorated_fn,
+        context=bound_context,
+        kwargs=input_dict,
+        context_arg_provided=compute_fn.has_context_arg(),
+        config_arg_cls=compute_fn.get_config_arg().annotation
+        if compute_fn.has_config_arg()
+        else None,
+        resource_args=resource_arg_mapping,
     )
 
     return _type_check_output_wrapper(op_def, result, bound_context)

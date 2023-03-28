@@ -41,9 +41,14 @@ from dagster._core.definitions.repository_definition.repository_data_builder imp
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+)
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.execution.context.invocation import build_op_context
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
@@ -1904,3 +1909,280 @@ def test_aliased_field_structured_resource():
         {"resources": {"writer": {"config": {"prefix": "runtime: "}}}}
     ).success
     assert out_txt == ["runtime: hello, world!"]
+
+
+def test_direct_op_invocation() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(context, my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use the resource from the context
+    assert my_op(build_op_context(resources={"my_resource": MyResource(a_str="foo")})) == "foo"
+
+    # Providing both context and resource is not ok, because we don't know which one to use
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Cannot provide resources in both context and kwargs",
+    ):
+        assert (
+            my_op(
+                context=build_op_context(resources={"my_resource": MyResource(a_str="foo")}),
+                my_resource=MyResource(a_str="foo"),
+            )
+            == "foo"
+        )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert my_op(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
+
+    # We don't allow providing resources as args, this adds too much complexity
+    # They must be kwargs, and we will error accordingly
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking an op/asset, you may not provide resources as positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        assert my_op(build_op_context(), MyResource(a_str="foo")) == "foo"
+
+    @op
+    def my_op_no_context(my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_op_no_context(build_op_context(resources={"my_resource": MyResource(a_str="foo")}))
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert my_op_no_context(my_resource=MyResource(a_str="foo")) == "foo"
+
+
+def test_direct_op_invocation_multiple_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(context, my_resource: MyResource, my_other_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        assert my_other_resource.a_str == "bar"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use both resources from the context
+    assert (
+        my_op(
+            build_op_context(
+                resources={
+                    "my_resource": MyResource(a_str="foo"),
+                    "my_other_resource": MyResource(a_str="bar"),
+                }
+            )
+        )
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert (
+        my_op(
+            context=build_op_context(),
+            my_resource=MyResource(a_str="foo"),
+            my_other_resource=MyResource(a_str="bar"),
+        )
+        == "foo"
+    )
+
+    @op
+    def my_op_no_context(my_resource: MyResource, my_other_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        assert my_other_resource.a_str == "bar"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_op_no_context(
+            build_op_context(
+                resources={
+                    "my_resource": MyResource(a_str="foo"),
+                    "my_other_resource": MyResource(a_str="bar"),
+                }
+            )
+        )
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert (
+        my_op_no_context(
+            my_resource=MyResource(a_str="foo"), my_other_resource=MyResource(a_str="bar")
+        )
+        == "foo"
+    )
+
+
+def test_direct_op_invocation_with_inputs() -> None:
+    class MyResource(ConfigurableResource):
+        z: int
+
+    @op
+    def my_wacky_addition_op(context, my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Just providing context is ok, we'll use the resource from the context
+    # We are successfully able to input x and y as args
+    assert (
+        my_wacky_addition_op(build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5)
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_op(build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2)
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    # We can input x and y as args
+    assert my_wacky_addition_op(build_op_context(), 10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_op(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+    @op
+    def my_wacky_addition_op_no_context(my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    # We can input x and y as args
+    assert (
+        my_wacky_addition_op_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5
+        )
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_op_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    # We can input x and y as args
+    assert my_wacky_addition_op_no_context(10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_op_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+
+def test_direct_asset_invocation() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset
+    def my_asset(context, my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use the resource from the context
+    assert my_asset(build_op_context(resources={"my_resource": MyResource(a_str="foo")})) == "foo"
+
+    # Providing both context and resource is not ok, because we don't know which one to use
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Cannot provide resources in both context and kwargs",
+    ):
+        assert (
+            my_asset(
+                context=build_op_context(resources={"my_resource": MyResource(a_str="foo")}),
+                my_resource=MyResource(a_str="foo"),
+            )
+            == "foo"
+        )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert my_asset(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
+
+    # We don't allow providing resources as args, this adds too much complexity
+    # They must be kwargs, and we will error accordingly
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking an op/asset, you may not provide resources as positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        assert my_asset(build_op_context(), MyResource(a_str="foo")) == "foo"
+
+    @asset
+    def my_asset_no_context(my_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_asset_no_context(build_op_context(resources={"my_resource": MyResource(a_str="foo")}))
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert my_asset_no_context(my_resource=MyResource(a_str="foo")) == "foo"
+
+
+def test_direct_asset_invocation_with_inputs() -> None:
+    class MyResource(ConfigurableResource):
+        z: int
+
+    @asset
+    def my_wacky_addition_asset(context, my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Just providing context is ok, we'll use the resource from the context
+    # We are successfully able to input x and y as args
+    assert (
+        my_wacky_addition_asset(build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5)
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_asset(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    # We can input x and y as args
+    assert my_wacky_addition_asset(build_op_context(), 10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_asset(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+    @asset
+    def my_wacky_addition_asset_no_context(my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    # We can input x and y as args
+    assert (
+        my_wacky_addition_asset_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5
+        )
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_asset_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    # We can input x and y as args
+    assert my_wacky_addition_asset_no_context(10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_asset_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
