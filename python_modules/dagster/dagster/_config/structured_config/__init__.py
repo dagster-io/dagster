@@ -19,7 +19,7 @@ from typing import (
 from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
-from dagster import Enum as DagEnum
+from dagster import Enum as DagsterEnum
 from dagster._annotations import experimental
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, EnumValue, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
@@ -103,7 +103,7 @@ class MakeConfigCacheable(BaseModel):
 class Config(MakeConfigCacheable):
     """Base class for Dagster configuration models."""
 
-    def __init__(self, **config_dict):
+    def __init__(self, **config_dict) -> None:
         """This constructor is overridden to handle any remapping of raw config dicts to
         the appropriate config classes. For example, discriminated unions are represented
         in Dagster config as dicts with a single key, which is the discriminator value.
@@ -415,11 +415,16 @@ class ConfigurableResource(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
-        # Resolve e.g. EnvVar values
-        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
-        curried_schema = _curry_config_schema(schema, resolved_config_dict)
-
+        # Populate config values
         Config.__init__(self, **{**data_without_resources, **resource_pointers})
+
+        # We pull the values from the Pydantic config object, which may cast values
+        # to the correct type under the hood - useful in particular for enums
+        casted_data_without_resources = {
+            k: v for k, v in self._as_config_dict().items() if k in data_without_resources
+        }
+        resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
@@ -777,7 +782,7 @@ def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> Conf
         return IntSource
 
     if safe_is_subclass(potential_dagster_type, Enum):
-        return DagEnum(
+        return DagsterEnum(
             potential_dagster_type.__name__,
             [
                 EnumValue(v.name, python_value=v.value)

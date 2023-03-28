@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 import re
@@ -6,7 +7,7 @@ import sys
 import tempfile
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Mapping, cast
+from typing import Any, Callable, List, Mapping, Optional, cast
 
 import pytest
 from dagster import (
@@ -46,7 +47,10 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.test_utils import environ
 from dagster._utils.cached_method import cached_method
-from pydantic import Field as PyField
+from pydantic import (
+    Field as PyField,
+    ValidationError,
+)
 
 
 def test_basic_structured_resource():
@@ -79,13 +83,14 @@ def test_basic_structured_resource():
     assert out_txt == ["greeting: hello, world!"]
 
 
-def test_invalid_config():
+def test_invalid_config() -> None:
     class MyResource(ConfigurableResource):
         foo: int
 
     with pytest.raises(
-        DagsterInvalidConfigError,
+        ValidationError,
     ):
+        # pyright: reportGeneralTypeIssues=false
         MyResource(foo="why")
 
 
@@ -1245,6 +1250,82 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_using_enum() -> None:
+    executed = {}
+
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class MyResource(ConfigurableResource):
+        an_enum: MyEnum
+
+    @asset
+    def an_asset(my_resource: MyResource):
+        assert my_resource.an_enum == MyEnum.FOO
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "my_resource": MyResource(
+                an_enum=MyEnum.FOO,
+            )
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+    executed.clear()
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "my_resource": MyResource.configure_at_launch(),
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {"resources": {"my_resource": {"config": {"an_enum": MyEnum.FOO.name}}}}
+        )
+        .success
+    )
+    assert executed["yes"]
+
+
+def test_using_enum_complex() -> None:
+    executed = {}
+
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class MyResource(ConfigurableResource):
+        list_of_enums: List[MyEnum]
+        optional_enum: Optional[MyEnum] = None
+
+    @asset
+    def an_asset(my_resource: MyResource):
+        assert my_resource.optional_enum is None
+        assert my_resource.list_of_enums == [MyEnum.FOO, MyEnum.BAR]
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "my_resource": MyResource(
+                list_of_enums=[MyEnum.FOO, MyEnum.BAR],
+            )
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert executed["yes"]
+    executed.clear()
 
 
 def test_resource_defs_on_asset() -> None:
