@@ -92,7 +92,16 @@ def execute_run_iterator(
 
     if not resume_from_failure:
         if dagster_run.status not in (DagsterRunStatus.NOT_STARTED, DagsterRunStatus.STARTING):
-            if instance.run_monitoring_enabled:
+            if dagster_run.is_finished:
+
+                def gen_ignore_duplicate_run_worker():
+                    yield instance.report_engine_event(
+                        "Ignoring a run worker that started after the run had already finished.",
+                        dagster_run,
+                    )
+
+                return gen_ignore_duplicate_run_worker()
+            elif instance.run_monitoring_enabled:
                 # This can happen if the pod was unexpectedly restarted by the cluster - ignore it since
                 # the run monitoring daemon will also spin up a new pod
                 def gen_ignore_duplicate_run_worker():
@@ -101,15 +110,6 @@ def execute_run_iterator(
                             "Ignoring a duplicate run that was started from somewhere other than"
                             " the run monitor daemon"
                         ),
-                        dagster_run,
-                    )
-
-                return gen_ignore_duplicate_run_worker()
-            elif dagster_run.is_finished:
-
-                def gen_ignore_duplicate_run_worker():
-                    yield instance.report_engine_event(
-                        "Ignoring a run worker that started after the run had already finished.",
                         dagster_run,
                     )
 

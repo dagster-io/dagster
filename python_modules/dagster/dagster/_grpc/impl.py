@@ -127,13 +127,12 @@ def core_execute_run(
         raise
 
     # Reload the run to verify that its status didn't change while the pipeline was loaded
-    dagster_run = check.not_none(
+    pipeline_run = check.not_none(
         instance.get_run_by_id(pipeline_run.run_id),
         f"Pipeline run with id '{pipeline_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
-        dagster_run = check.not_none(instance.get_run_by_id(dagster_run.run_id))
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
         )
