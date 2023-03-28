@@ -1,3 +1,4 @@
+import enum
 from typing import Any, Dict, List, Mapping, Optional, Type, Union
 
 import pytest
@@ -527,6 +528,68 @@ def test_struct_config_optional_array() -> None:
     with pytest.raises(DagsterInvalidConfigError):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
+        )
+
+
+def test_str_enum_value() -> None:
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class AnOpConfig(Config):
+        an_enum: MyEnum
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.an_enum == MyEnum.FOO
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "FOO"}}}})
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "BAZ"}}}})
+
+    # must pass enum name, not value
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"an_enum": "foo"}}}})
+
+
+def test_enum_complex() -> None:
+    class MyEnum(enum.Enum):
+        FOO = "foo"
+        BAR = "bar"
+
+    class AnOpConfig(Config):
+        an_optional_enum: Optional[MyEnum]
+        an_enum_list: List[MyEnum]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.an_optional_enum is None
+        assert config.an_enum_list == [MyEnum.FOO, MyEnum.BAR]
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"an_enum_list": ["FOO", "BAR"]}}}}
+    )
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"an_enum_list": ["FOO", "BAZ"]}}}}
         )
 
 
