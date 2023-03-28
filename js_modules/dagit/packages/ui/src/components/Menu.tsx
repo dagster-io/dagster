@@ -69,15 +69,13 @@ interface ItemProps
 
 export const MenuItem: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
-  const wrapperRef = React.useRef<HTMLDivElement>(null);
   return (
     <div
-      onKeyUp={(e) => {
+      onKeyUp={(e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' || e.key === ' ') {
-          wrapperRef.current?.querySelector('a')?.click();
+          e.currentTarget.querySelector('a')?.click();
         }
       }}
-      ref={wrapperRef}
     >
       <StyledMenuItem
         {...rest}
