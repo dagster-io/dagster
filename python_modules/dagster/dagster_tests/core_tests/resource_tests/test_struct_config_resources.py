@@ -2026,6 +2026,59 @@ def test_direct_op_invocation_multiple_resources() -> None:
     )
 
 
+def test_direct_op_invocation_with_inputs() -> None:
+    class MyResource(ConfigurableResource):
+        z: int
+
+    @op
+    def my_wacky_addition_op(context, my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Just providing context is ok, we'll use the resource from the context
+    # We are successfully able to input x and y as args
+    assert (
+        my_wacky_addition_op(build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5)
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_op(build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2)
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    # We can input x and y as args
+    assert my_wacky_addition_op(build_op_context(), 10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_op(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+    @op
+    def my_wacky_addition_op_no_context(my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    # We can input x and y as args
+    assert (
+        my_wacky_addition_op_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5
+        )
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_op_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    # We can input x and y as args
+    assert my_wacky_addition_op_no_context(10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_op_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+
 def test_direct_asset_invocation() -> None:
     class MyResource(ConfigurableResource):
         a_str: str
@@ -2078,3 +2131,58 @@ def test_direct_asset_invocation() -> None:
 
     # Providing resource only as kwarg is ok, we'll use that
     assert my_asset_no_context(my_resource=MyResource(a_str="foo")) == "foo"
+
+
+def test_direct_asset_invocation_with_inputs() -> None:
+    class MyResource(ConfigurableResource):
+        z: int
+
+    @asset
+    def my_wacky_addition_asset(context, my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Just providing context is ok, we'll use the resource from the context
+    # We are successfully able to input x and y as args
+    assert (
+        my_wacky_addition_asset(build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5)
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_asset(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    # We can input x and y as args
+    assert my_wacky_addition_asset(build_op_context(), 10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_asset(build_op_context(), y=1, x=2, my_resource=MyResource(z=3)) == 6
+
+    @asset
+    def my_wacky_addition_asset_no_context(my_resource: MyResource, x: int, y: int) -> int:
+        return x + y + my_resource.z
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    # We can input x and y as args
+    assert (
+        my_wacky_addition_asset_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5
+        )
+        == 11
+    )
+    # We can also input x and y as kwargs
+    assert (
+        my_wacky_addition_asset_no_context(
+            build_op_context(resources={"my_resource": MyResource(z=3)}), y=1, x=2
+        )
+        == 6
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    # We can input x and y as args
+    assert my_wacky_addition_asset_no_context(10, 20, my_resource=MyResource(z=30)) == 60
+    # We can also input x and y as kwargs in this case
+    assert my_wacky_addition_asset_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6

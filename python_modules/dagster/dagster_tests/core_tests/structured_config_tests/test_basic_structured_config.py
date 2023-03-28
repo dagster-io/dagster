@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional
+from typing import List, Optional
 
 import dagster
 import pydantic
@@ -321,7 +321,7 @@ def test_nested_struct_config():
     assert executed["yes"]
 
 
-def test_direct_op_invocation():
+def test_direct_op_invocation() -> None:
     class MyBasicOpConfig(Config):
         foo: str
 
@@ -348,6 +348,48 @@ def test_direct_op_invocation():
 
     with pytest.raises(DagsterInvalidConfigError):
         basic_op_no_context(build_op_context(op_config={"baz": "qux"}))
+
+
+def test_direct_op_invocation_complex_config() -> None:
+    class MyBasicOpConfig(Config):
+        foo: str
+        bar: bool
+        baz: int
+        qux: List[str]
+
+    @op
+    def basic_op(context, config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op(build_op_context(op_config={"foo": "bar", "bar": True, "baz": 1, "qux": ["a", "b"]}))
+
+    with pytest.raises(AssertionError):
+        basic_op(
+            build_op_context(op_config={"foo": "qux", "bar": True, "baz": 1, "qux": ["a", "b"]})
+        )
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op(
+            build_op_context(op_config={"foo": "bar", "bar": "true", "baz": 1, "qux": ["a", "b"]})
+        )
+
+    @op
+    def basic_op_no_context(config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op_no_context(
+        build_op_context(op_config={"foo": "bar", "bar": True, "baz": 1, "qux": ["a", "b"]})
+    )
+
+    with pytest.raises(AssertionError):
+        basic_op_no_context(
+            build_op_context(op_config={"foo": "qux", "bar": True, "baz": 1, "qux": ["a", "b"]})
+        )
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op_no_context(
+            build_op_context(op_config={"foo": "bar", "bar": "true", "baz": 1, "qux": ["a", "b"]})
+        )
 
 
 def test_validate_run_config():
