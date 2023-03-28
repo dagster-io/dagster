@@ -14,7 +14,7 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.scheduler.instigation import InstigatorType
+from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -107,6 +107,7 @@ from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
     GrapheneInstigationStatesOrError,
+    GrapheneInstigationStatus,
     GrapheneInstigationType,
 )
 from ..logs.compute_logs import (
@@ -208,6 +209,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     schedulesOrError = graphene.Field(
         graphene.NonNull(GrapheneSchedulesOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        scheduleStatus=graphene.Argument(GrapheneInstigationStatus),
         description="Retrieve all the schedules.",
     )
 
@@ -240,6 +242,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     sensorsOrError = graphene.Field(
         graphene.NonNull(GrapheneSensorsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        sensorStatus=graphene.Argument(GrapheneInstigationStatus),
         description="Retrieve all the sensors.",
     )
 
@@ -529,11 +532,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
     def resolve_schedulesOrError(
-        self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
+        schedule_status = InstigatorStatus(scheduleStatus) if scheduleStatus else None
         return get_schedules_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(repositorySelector),
+            schedule_status,
         )
 
     def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
@@ -558,10 +566,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
     ):
         return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
-    def resolve_sensorsOrError(self, graphene_info, repositorySelector: GrapheneRepositorySelector):
+    def resolve_sensorsOrError(
+        self,
+        graphene_info,
+        repositorySelector: GrapheneRepositorySelector,
+        sensorStatus: Optional[GrapheneInstigationStatus] = None,
+    ):
+        sensor_status = InstigatorStatus(sensorStatus) if sensorStatus else None
         return get_sensors_or_error(
-            graphene_info,
-            RepositorySelector.from_graphql_input(repositorySelector),
+            graphene_info, RepositorySelector.from_graphql_input(repositorySelector), sensor_status
         )
 
     def resolve_instigationStateOrError(

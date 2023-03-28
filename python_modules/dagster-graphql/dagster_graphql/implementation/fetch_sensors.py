@@ -3,7 +3,12 @@ from typing import TYPE_CHECKING, Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
-from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
+from dagster._core.host_representation.external import ExternalSensor
+from dagster._core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    SensorInstigatorData,
+)
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
@@ -28,7 +33,9 @@ if TYPE_CHECKING:
 
 @capture_error
 def get_sensors_or_error(
-    graphene_info: ResolveInfo, repository_selector: RepositorySelector
+    graphene_info: ResolveInfo,
+    repository_selector: RepositorySelector,
+    sensor_status: Optional[InstigatorStatus] = None,
 ) -> "GrapheneSensors":
     from ..schema.sensors import GrapheneSensor, GrapheneSensors
 
@@ -38,19 +45,57 @@ def get_sensors_or_error(
     repository = location.get_repository(repository_selector.repository_name)
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     sensors = repository.get_external_sensors()
-    sensor_states_by_name = {
-        state.name: state
-        for state in graphene_info.context.instance.all_instigator_state(
+    if sensor_status == InstigatorStatus.RUNNING:
+        sensor_states = graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
             repository_selector_id=repository_selector.selector_id,
             instigator_type=InstigatorType.SENSOR,
+            instigator_status=InstigatorStatus.RUNNING,
+        ) + graphene_info.context.instance.all_instigator_state(
+            repository_origin_id=repository.get_external_origin_id(),
+            repository_selector_id=repository_selector.selector_id,
+            instigator_type=InstigatorType.SENSOR,
+            instigator_status=InstigatorStatus.AUTOMATICALLY_RUNNING,
         )
-    }
+    else:
+        sensor_states = graphene_info.context.instance.all_instigator_state(
+            repository_origin_id=repository.get_external_origin_id(),
+            repository_selector_id=repository_selector.selector_id,
+            instigator_type=InstigatorType.SENSOR,
+            instigator_status=sensor_status,
+        )
+
+    sensor_states_by_name = {state.name: state for state in sensor_states}
+    if sensor_status:
+        filtered = [
+            sensor
+            for sensor in sensors
+            if _apply_status_filter(
+                sensor,
+                sensor_states_by_name.get(sensor.name),
+                sensor_status,
+            )
+        ]
+    else:
+        filtered = sensors
+
     return GrapheneSensors(
         results=[
             GrapheneSensor(sensor, sensor_states_by_name.get(sensor.name), batch_loader)
-            for sensor in sensors
+            for sensor in filtered
         ]
+    )
+
+
+def _apply_status_filter(
+    sensor: ExternalSensor,
+    stored_state: Optional[InstigatorState],
+    filter_status: InstigatorStatus,
+):
+    sensor_state = sensor.get_current_instigator_state(stored_state)
+    return (filter_status == InstigatorStatus.STOPPED and sensor_state.status == filter_status) or (
+        filter_status == InstigatorStatus.RUNNING
+        and sensor_state.status != InstigatorStatus.STOPPED
     )
 
 
