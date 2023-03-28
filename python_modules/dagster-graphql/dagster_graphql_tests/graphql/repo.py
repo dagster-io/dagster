@@ -411,7 +411,7 @@ def hello_world_with_tags():
 
 
 @op(name="solid_with_list", config_schema=[int], out={})
-def solid_def(_):
+def op_def(_):
     return None
 
 
@@ -429,7 +429,7 @@ def pipeline_with_input_output_metadata():
 
 @pipeline
 def pipeline_with_list():
-    solid_def()
+    op_def()
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])

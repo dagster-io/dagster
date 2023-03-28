@@ -46,7 +46,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionSetExecutionParamData,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster._core.snap import NodeInvocationSnap, PipelineSnapshot
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
@@ -110,7 +110,7 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.pipeline_snapshot.solid_names_in_topological_order:
+                for solid_name in job.pipeline_snapshot.node_names_in_topological_order:
                     print_fn("    " + solid_name)
 
 
@@ -178,9 +178,9 @@ def print_ops(
     printer.line(f"Job: {pipeline_snapshot.name}")
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            printer.line(f"Op: {solid.solid_name}")
+            printer.line(f"Op: {solid.node_name}")
 
 
 def print_job(
@@ -194,7 +194,7 @@ def print_job(
     print_description(printer, pipeline_snapshot.description)
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
             print_op(printer, pipeline_snapshot, solid)
 
@@ -220,11 +220,11 @@ def format_description(desc: str, indent: str):
 def print_op(
     printer: IndentingPrinter,
     pipeline_snapshot: PipelineSnapshot,
-    solid_invocation_snap: SolidInvocationSnap,
+    solid_invocation_snap: NodeInvocationSnap,
 ) -> None:
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", SolidInvocationSnap)
-    printer.line(f"Op: {solid_invocation_snap.solid_name}")
+    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
+    printer.line(f"Op: {solid_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
         for input_dep_snap in solid_invocation_snap.input_dep_snaps:
@@ -233,7 +233,7 @@ def print_op(
 
         printer.line("Outputs:")
         for output_def_snap in pipeline_snapshot.get_node_def_snap(
-            solid_invocation_snap.solid_def_name
+            solid_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
 
