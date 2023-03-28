@@ -110,7 +110,7 @@ class JobDefinition(PipelineDefinition):
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
-        _did_user_provide_resources: Optional[bool] = None,
+        _was_explicitly_provided_resources: Optional[bool] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers
@@ -173,10 +173,10 @@ class JobDefinition(PipelineDefinition):
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
 
-        did_user_provide_resources = (
+        was_provided_resources = (
             bool(resource_defs)
-            if _did_user_provide_resources is None
-            else _did_user_provide_resources
+            if _was_explicitly_provided_resources is None
+            else _was_explicitly_provided_resources
         )
         if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
@@ -215,7 +215,7 @@ class JobDefinition(PipelineDefinition):
                         executor_def,
                         logger_defs,
                         asset_layer,
-                        did_user_provide_resources=did_user_provide_resources,
+                        was_explicitly_provided_resources=was_provided_resources,
                     ),
                     config,
                     name,
@@ -258,7 +258,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
-            _should_validate_resource_requirements=did_user_provide_resources,
+            _should_validate_resource_requirements=was_provided_resources,
         )
 
     @property
@@ -1047,7 +1047,7 @@ def get_run_config_schema_for_job(
     executor_def: "ExecutorDefinition",
     logger_defs: Mapping[str, LoggerDefinition],
     asset_layer: Optional[AssetLayer],
-    did_user_provide_resources: bool = False,
+    was_explicitly_provided_resources: bool = False,
 ) -> ConfigType:
     return (
         JobDefinition(
@@ -1057,7 +1057,7 @@ def get_run_config_schema_for_job(
             executor_def=executor_def,
             logger_defs=logger_defs,
             asset_layer=asset_layer,
-            _did_user_provide_resources=did_user_provide_resources,
+            _was_explicitly_provided_resources=was_explicitly_provided_resources,
         )
         .get_run_config_schema("default")
         .run_config_schema_type
