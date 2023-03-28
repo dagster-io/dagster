@@ -10205,6 +10205,14 @@ export const buildResourceDetails = (
   relationshipsToOmit.add('ResourceDetails');
   return {
     __typename: 'ResourceDetails',
+    assetKeysUsing:
+      overrides && overrides.hasOwnProperty('assetKeysUsing')
+        ? overrides.assetKeysUsing!
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     configFields:
       overrides && overrides.hasOwnProperty('configFields')
         ? overrides.configFields!
