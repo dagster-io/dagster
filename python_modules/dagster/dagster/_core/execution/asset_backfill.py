@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -45,7 +46,13 @@ from dagster._utils import hash_collection
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
-    from .backfill import PartitionBackfill, BulkActionStatus
+    from .backfill import PartitionBackfill
+
+
+class BackfillPartitionsStatus(Enum):
+    REQUESTED = "REQUESTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class AssetBackfillData(NamedTuple):
@@ -61,6 +68,11 @@ class AssetBackfillData(NamedTuple):
     failed_and_downstream_subset: AssetGraphSubset
 
     def is_complete(self) -> bool:
+        """The asset backfill is complete when all runs to be requested have finished (success,
+        failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        per asset partition, the daemon continues to update the backfill data until all runs have
+        finished in order to display the final partition statuses in the UI.
+        """
         return (
             (
                 self.materialized_subset | self.failed_and_downstream_subset
@@ -99,25 +111,23 @@ class AssetBackfillData(NamedTuple):
             for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
         }
 
-    def get_partition_status_counts_by_asset_key(
+    def get_partitions_status_counts_by_asset_key(
         self,
-    ) -> Mapping[AssetKey, Mapping["BulkActionStatus", int]]:
+    ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:
         """Returns a mapping from asset key to a mapping from status to count of partitions in that
         status.
 
         Only includes assets that are partitioned.
         """
-        from .backfill import BulkActionStatus
-
         return {
             asset_key: {
-                BulkActionStatus.COMPLETED: len(
+                BackfillPartitionsStatus.COMPLETED: len(
                     self.materialized_subset.get_partitions_subset(asset_key)
                 ),
-                BulkActionStatus.FAILED: len(
+                BackfillPartitionsStatus.FAILED: len(
                     self.failed_and_downstream_subset.get_partitions_subset(asset_key)
                 ),
-                BulkActionStatus.REQUESTED: len(
+                BackfillPartitionsStatus.REQUESTED: len(
                     self.requested_subset.get_partitions_subset(asset_key)
                 )
                 - (
@@ -295,6 +305,10 @@ def execute_asset_backfill_iteration(
         result.backfill_data, dynamic_partitions_store=instance
     )
     if result.backfill_data.is_complete():
+        # The asset backfill is complete when all runs to be requested have finished (success,
+        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        # per asset partition, the daemon continues to update the backfill data until all runs have
+        # finished in order to display the final partition statuses in the UI.
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
     pipeline_and_execution_plan_cache: Dict[

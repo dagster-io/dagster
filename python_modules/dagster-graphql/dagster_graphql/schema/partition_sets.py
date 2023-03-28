@@ -14,7 +14,6 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._utils.merger import merge_dicts
-from .asset_key import GrapheneAssetKey
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -26,7 +25,8 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 
-from .backfill import GraphenePartitionBackfill, GrapheneBulkActionStatus
+from .asset_key import GrapheneAssetKey
+from .backfill import GraphenePartitionBackfill
 from .errors import (
     GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
@@ -122,21 +122,15 @@ class GraphenePartitionStatusesOrError(graphene.Union):
         name = "PartitionStatusesOrError"
 
 
-class GrapheneBulkActionStatusPartitionCounts(graphene.ObjectType):
-    bulkActionStatus = graphene.NonNull(GrapheneBulkActionStatus)
-    count = graphene.NonNull(graphene.Int)
-
+class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
     class Meta:
-        name = "PartitionBulkActionStatusCounts"
-
-
-class GrapheneAssetPartitionStatusCounts(graphene.ObjectType):
-    class Meta:
-        name = "AssetPartitionStatusCounts"
+        name = "AssetPartitionsStatusCounts"
 
     assetKey = graphene.NonNull(GrapheneAssetKey)
     numPartitionsTargeted = graphene.NonNull(graphene.Int)
-    partitionStatusCounts = non_null_list(GrapheneBulkActionStatusPartitionCounts)
+    numPartitionsRequested = graphene.NonNull(graphene.Int)
+    numPartitionsCompleted = graphene.NonNull(graphene.Int)
+    numPartitionsFailed = graphene.NonNull(graphene.Int)
 
 
 class GraphenePartitionTagsOrError(graphene.Union):
