@@ -69,12 +69,23 @@ interface ItemProps
 
 export const MenuItem: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
   return (
-    <StyledMenuItem
-      {...rest}
-      $textColor={intentToTextColor(intent)}
-      icon={iconWithColor(icon, intent)}
-    />
+    <div
+      onKeyUp={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          wrapperRef.current?.querySelector('a')?.click();
+        }
+      }}
+      ref={wrapperRef}
+    >
+      <StyledMenuItem
+        {...rest}
+        $textColor={intentToTextColor(intent)}
+        icon={iconWithColor(icon, intent)}
+        tabIndex={0}
+      />
+    </div>
   );
 };
 
