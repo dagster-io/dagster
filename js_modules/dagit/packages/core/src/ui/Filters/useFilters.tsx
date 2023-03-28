@@ -31,7 +31,7 @@ export const useFilters = ({filters, activeFilters, setActiveFilters}: UseFilter
       <React.Fragment key={index}>{filter.renderActiveFilterState()}</React.Fragment>
     ));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...filters.map((filter) => filter.getState(), activeFilters)]);
+  }, [...filters.map((filter) => filter.getState())]);
 
   return {
     button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),
