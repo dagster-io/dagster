@@ -1,8 +1,13 @@
-import {IconName, Box, Icon, Colors} from '@dagster-io/ui';
+import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter, TextInput} from '@dagster-io/ui';
 import dayjs from 'dayjs';
+import isEqual from 'lodash/isEqual';
 import React from 'react';
+import Calendar from 'react-calendar';
 
 import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
+
+import 'react-calendar/dist/Calendar.css';
+import styled from 'styled-components';
 
 function calculateTimeRanges() {
   return {
@@ -77,10 +82,20 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
       }));
   }
 
-  onSelect(key: TimeRangeKey, setIsDropdownOpen: (isOpen: boolean) => void): JSX.Element | null {
+  onSelect(
+    key: TimeRangeKey,
+    setIsDropdownOpen: (isOpen: boolean) => void,
+    createPortal: (element: JSX.Element) => () => void,
+  ) {
     if (key === 'CUSTOM') {
-      // TODO add date range selector component
-      return <div />;
+      const closeRef = {
+        current: () => {
+          debugger;
+        },
+      };
+      closeRef.current = createPortal(
+        <CustomTimeRangeFilterDialog filter={this} closeRef={closeRef} />,
+      );
     } else {
       TimeRanges = calculateTimeRanges();
       const value = TimeRanges[key].range;
@@ -108,29 +123,26 @@ const L_FORMAT = new Intl.DateTimeFormat(navigator.language, {
 });
 
 function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () => void}) {
-  if (!state[0] && !state[1]) {
-    return null;
-  }
   const dateLabel = React.useMemo(() => {
-    if (areEqual(state, TimeRanges.TODAY.range)) {
+    if (isEqual(state, TimeRanges.TODAY.range)) {
       return (
         <>
           is <FilterTagHighlightedText>Today</FilterTagHighlightedText>
         </>
       );
-    } else if (areEqual(state, TimeRanges.YESTERDAY.range)) {
+    } else if (isEqual(state, TimeRanges.YESTERDAY.range)) {
       return (
         <>
           is <FilterTagHighlightedText>Yesterday</FilterTagHighlightedText>
         </>
       );
-    } else if (areEqual(state, TimeRanges.LAST_7_DAYS.range)) {
+    } else if (isEqual(state, TimeRanges.LAST_7_DAYS.range)) {
       return (
         <>
           is within <FilterTagHighlightedText>Last 7 days</FilterTagHighlightedText>
         </>
       );
-    } else if (areEqual(state, TimeRanges.LAST_30_DAYS.range)) {
+    } else if (isEqual(state, TimeRanges.LAST_30_DAYS.range)) {
       return (
         <>
           is within <FilterTagHighlightedText>Last 30 days</FilterTagHighlightedText>
@@ -162,10 +174,123 @@ function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () =
         </>
       );
     }
-  }, [TimeRanges, state]);
+  }, [state]);
 
   return <FilterTag iconName="date" label={<span>Timestamp {dateLabel}</span>} onRemove={remove} />;
 }
-function areEqual(state1: TimeRangeState, state2: TimeRangeState) {
-  return state1[0] === state2[0] && state1[1] === state2[1];
+
+function CustomTimeRangeFilterDialog({
+  filter,
+  closeRef,
+}: {
+  filter: TimeRangeFilter;
+  closeRef: {current: () => void};
+}) {
+  const [startDate, setStartDate] = React.useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = React.useState<string | undefined>(undefined);
+
+  const [isOpen, setIsOpen] = React.useState(true);
+
+  return (
+    <Dialog
+      isOpen={isOpen}
+      title="Select a date range"
+      onClosed={() => {
+        // close the portal after the animation is done
+        closeRef.current();
+      }}
+      style={{minWidth: '600px'}}
+    >
+      <Container>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={16}>
+          <TextInput
+            placeholder="Start date"
+            type="date"
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              if (endDate && new Date(endDate) < new Date(e.target.value)) {
+                setEndDate(e.target.value);
+              }
+            }}
+          />
+          {' - '}
+          <TextInput
+            placeholder="End date"
+            type="date"
+            value={endDate}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              if (startDate && new Date(startDate) > new Date(e.target.value)) {
+                setStartDate(e.target.value);
+              }
+            }}
+          />
+        </Box>
+        <Box flex={{direction: 'row', gap: 8}} padding={16}>
+          <Calendar
+            value={startDate ? createDateLocalTimezone(startDate) : undefined}
+            onChange={(value) => setStartDate(formatDate(value as Date))}
+            maxDate={endDate ? new Date(endDate) : undefined}
+          />
+          <Calendar
+            value={endDate ? createDateLocalTimezone(endDate) : undefined}
+            onChange={(value) => setEndDate(formatDate(value as Date))}
+            minDate={startDate ? new Date(startDate) : undefined}
+          />
+        </Box>
+      </Container>
+      <DialogFooter topBorder>
+        <Button
+          onClick={() => {
+            setIsOpen(false);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          intent="primary"
+          onClick={() => {
+            filter.setState([
+              createDateLocalTimezone(startDate).getTime(),
+              createDateLocalTimezone(endDate).getTime(),
+            ]);
+            setIsOpen(false);
+          }}
+        >
+          Apply
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+}
+
+function formatDate(date: Date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so we need to add 1
+  const dd = String(date.getDate()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+const Container = styled.div`
+  /* Hide the default date picker for Chrome, Edge, and Safari */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+
+  /* Hide the default date picker for Firefox */
+  input[type='date']::-moz-calendar-picker-indicator {
+    display: none;
+  }
+
+  /* Hide the default date picker for Internet Explorer */
+  input[type='date']::-ms-calendar-picker-indicator {
+    display: none;
+  }
+`;
+
+function createDateLocalTimezone(dateString) {
+  const [year, month, day] = dateString.split('-');
+  return new Date(year, month - 1, day);
 }

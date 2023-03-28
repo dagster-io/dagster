@@ -26,7 +26,8 @@ export abstract class Filter<TState, TValue> {
   public abstract onSelect(
     value: TValue,
     setIsDropdownOpen: (isOpen: boolean) => void,
-  ): JSX.Element | null;
+    createPortal: (element: JSX.Element) => () => void,
+  ): void;
 
   public setState(state: TState) {
     const previousActive = this.isActive();

@@ -10,7 +10,7 @@ import {useFilters} from '../useFilters';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'FilterDropdown',
+  title: 'Filters',
   component: FilterDropdown,
 } as Meta;
 

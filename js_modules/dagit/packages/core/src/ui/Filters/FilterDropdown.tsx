@@ -1,5 +1,3 @@
-// FilterDropdown.tsx
-
 import {
   Box,
   Button,
@@ -12,6 +10,7 @@ import {
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState} from 'react';
+import ReactDOM from 'react-dom';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
@@ -21,10 +20,10 @@ import {Filter} from './Filter';
 interface FilterDropdownProps {
   filters: Filter<any, any>[];
   setIsOpen: (isOpen: boolean) => void;
-  setContentToDisplay: (content: JSX.Element) => void;
+  setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
 
-export const FilterDropdown = ({filters, setIsOpen, setContentToDisplay}: FilterDropdownProps) => {
+export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<Filter<any, any> | null>(null);
 
@@ -46,18 +45,29 @@ export const FilterDropdown = ({filters, setIsOpen, setContentToDisplay}: Filter
 
   const selectValue = React.useCallback(
     (filter: Filter<any, any>, value: any) => {
-      const contentToDisplay = filter.onSelect(value, (isOpen) => {
-        if (!isOpen) {
-          setSearch('');
-          setSelectedFilter(null);
-          setIsOpen(false);
-        }
-      });
-      if (contentToDisplay) {
-        setContentToDisplay(contentToDisplay);
-      }
+      filter.onSelect(
+        value,
+        (isOpen) => {
+          if (!isOpen) {
+            setSearch('');
+            setSelectedFilter(null);
+            setIsOpen(false);
+          }
+        },
+        (portaledElement) => {
+          const portalElement = (
+            <React.Fragment key={filter.name}>{portaledElement}</React.Fragment>
+          );
+          setPortaledElements((portaledElements) => [...portaledElements, portalElement]);
+          return () => {
+            setPortaledElements((portaledElements) =>
+              portaledElements.filter((element) => element !== portalElement),
+            );
+          };
+        },
+      );
     },
-    [setContentToDisplay, setIsOpen],
+    [setIsOpen, setPortaledElements],
   );
 
   const allResultsJsx = React.useMemo(() => {
@@ -137,8 +147,7 @@ type FilterDropdownButtonProps = {
 };
 export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const [contentToDisplay, setContentToDisplay] = React.useState<JSX.Element | null>(null);
+  const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
 
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -178,31 +187,36 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
       <PopoverStyle />
       <Popover
         content={
-          contentToDisplay ? (
-            contentToDisplay
-          ) : (
-            <div ref={dropdownRef}>
-              <FilterDropdown
-                filters={filters}
-                setIsOpen={setIsOpen}
-                setContentToDisplay={setContentToDisplay}
-                key={keyRef.current}
-              />
-            </div>
-          )
+          <div ref={dropdownRef}>
+            <FilterDropdown
+              filters={filters}
+              setIsOpen={setIsOpen}
+              key={keyRef.current}
+              setPortaledElements={setPortaledElements}
+            />
+          </div>
         }
         canEscapeKeyClose
         popoverClassName="filter-dropdown"
-        isOpen={isOpen || !!contentToDisplay}
+        isOpen={isOpen}
         position="bottom"
       >
-        <Button
-          ref={buttonRef}
-          icon={<Icon name="filter_alt" />}
-          onClick={() => {
-            setIsOpen((isOpen) => !isOpen);
-          }}
-        />
+        <div>
+          <Popover
+            content={<>{portaledElements}</>}
+            canEscapeKeyClose
+            isOpen={!!portaledElements.length}
+            position="bottom"
+          >
+            <Button
+              ref={buttonRef}
+              icon={<Icon name="filter_alt" />}
+              onClick={() => {
+                setIsOpen((isOpen) => !isOpen);
+              }}
+            />
+          </Popover>
+        </div>
       </Popover>
     </ShortcutHandler>
   );
@@ -244,5 +258,4 @@ const PopoverStyle = createGlobalStyle`
       border-radius: 8px;
     }
   }
-  
 `;

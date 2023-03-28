@@ -66,7 +66,7 @@ export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
       }));
   }
 
-  onSelect(value: TValue, _: (isOpen: boolean) => void): JSX.Element | null {
+  onSelect(value: TValue, _: (isOpen: boolean) => void) {
     if (this.getState().has(value)) {
       const nextState = new Set(this.getState());
       nextState.delete(value);
@@ -178,7 +178,7 @@ function SetFilterLabel(props: SetFilterLabelProps) {
   return (
     // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
     // SVG it contains with size="small"
-    <Box flex={{direction: 'row', gap: 6}} ref={labelRef} margin={{left: 4}}>
+    <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}} ref={labelRef} margin={{left: 4}}>
       <Checkbox
         checked={isActive}
         onChange={(_) => {
