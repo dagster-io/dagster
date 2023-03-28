@@ -3,6 +3,7 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
@@ -111,8 +112,11 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(
-    pipeline_name, container_image=None, container_context=None, filename=None
+def get_test_project_recon_job(
+    job_name: str,
+    container_image: Optional[str] = None,
+    container_context: Optional[str] = None,
+    filename: Optional[str] = None,
 ):
     filename = filename or "repo.py"
     return ReOriginatedReconstructablePipelineForTest(
@@ -121,7 +125,7 @@ def get_test_project_recon_pipeline(
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
-        ).get_reconstructable_pipeline(pipeline_name)
+        ).get_reconstructable_pipeline(job_name)
     )
 
 

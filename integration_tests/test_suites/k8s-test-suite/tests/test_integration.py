@@ -90,10 +90,10 @@ def test_k8s_run_launcher_with_celery_executor_fails(
         ),
     )
 
-    pipeline_name = "demo_pipeline_celery"
+    job_name = "demo_job_celery"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
     )
 
     timeout = datetime.timedelta(0, 120)

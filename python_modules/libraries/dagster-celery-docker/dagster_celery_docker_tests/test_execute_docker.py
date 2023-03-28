@@ -13,7 +13,7 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_pipeline,
+    get_test_project_recon_job,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -69,7 +69,7 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
 
     with celery_docker_postgres_instance() as instance:
         result = execute_pipeline(
-            get_test_project_recon_pipeline("docker_celery_pipeline"),
+            get_test_project_recon_job("docker_celery_job"),
             run_config=run_config,
             instance=instance,
         )
@@ -119,7 +119,7 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
 
     with celery_docker_postgres_instance() as instance:
         result = execute_pipeline(
-            get_test_project_recon_pipeline("docker_celery_pipeline", docker_image),
+            get_test_project_recon_job("docker_celery_pipeline", docker_image),
             run_config=run_config,
             instance=instance,
         )

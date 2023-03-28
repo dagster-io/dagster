@@ -12,7 +12,7 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_pipeline,
+    get_test_project_recon_job,
 )
 
 from . import IS_BUILDKITE, docker_postgres_instance
@@ -48,7 +48,7 @@ def test_docker_executor(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker", docker_image)
+            recon_pipeline = get_test_project_recon_job("demo_pipeline_docker", docker_image)
             assert execute_pipeline(
                 recon_pipeline, run_config=run_config, instance=instance
             ).success
@@ -86,7 +86,7 @@ def test_docker_executor_check_step_health(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker", docker_image)
+            recon_pipeline = get_test_project_recon_job("demo_pipeline_docker", docker_image)
             assert not execute_pipeline(
                 recon_pipeline, run_config=run_config, instance=instance
             ).success
@@ -116,7 +116,7 @@ def test_docker_executor_config_on_container_context(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_pipeline(
+            recon_pipeline = get_test_project_recon_job(
                 "demo_pipeline_docker",
                 docker_image,
                 container_context={
@@ -160,7 +160,7 @@ def test_docker_executor_retries(aws_env):
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:
-            recon_pipeline = get_test_project_recon_pipeline(
+            recon_pipeline = get_test_project_recon_job(
                 "step_retries_pipeline_docker", docker_image
             )
             result = execute_pipeline(recon_pipeline, run_config=run_config, instance=instance)

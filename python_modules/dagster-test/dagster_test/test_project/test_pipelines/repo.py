@@ -130,13 +130,6 @@ def always_fail(context, word: str):
     raise Exception("Op Exception Message")
 
 
-@op(
-    config_schema={"factor": IntSource},
-)
-def multiply_the_word_op(context, word: str) -> str:
-    return word * context.op_config["factor"]
-
-
 @op(ins={"word": In()})
 def count_letters_op(word):
     counts = defaultdict(int)
@@ -157,7 +150,7 @@ def hanging_solid(_):
 
 
 @op(config_schema={"looking_for": str})
-def get_environment_solid(context):
+def get_environment(context):
     return os.environ.get(context.op_config["looking_for"])
 
 
@@ -205,12 +198,30 @@ def demo_pipeline_s3():
     count_letters(multiply_the_word())
 
 
-def define_demo_pipeline_docker():
-    @pipeline(mode_defs=docker_mode_defs())
-    def demo_pipeline_docker():
+def define_demo_job_docker():
+    from dagster_docker import docker_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=docker_executor,
+    )
+    def demo_job_docker():
         count_letters(multiply_the_word())
 
-    return demo_pipeline_docker
+    return demo_job_docker
+
+
+def define_demo_job_docker_slow():
+    from dagster_docker import docker_executor
+
+    @job(
+        resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+        executor_def=docker_executor,
+    )
+    def demo_job_docker_slow():
+        count_letters(multiply_the_word_slow())
+
+    return demo_job_docker_slow
 
 
 @op
@@ -232,22 +243,6 @@ def definie_step_retries_pipeline_docker():
     return step_retries_pipeline_docker
 
 
-def define_demo_pipeline_docker_slow():
-    @pipeline(mode_defs=docker_mode_defs())
-    def demo_pipeline_docker_slow():
-        count_letters(multiply_the_word_slow())
-
-    return demo_pipeline_docker_slow
-
-
-def define_demo_pipeline_celery():
-    @pipeline(mode_defs=celery_mode_defs())
-    def demo_pipeline_celery():
-        count_letters(multiply_the_word())
-
-    return demo_pipeline_celery
-
-
 def define_demo_job_celery():
     from dagster_celery_k8s import celery_k8s_job_executor
 
@@ -256,7 +251,7 @@ def define_demo_job_celery():
         executor_def=celery_k8s_job_executor,
     )
     def demo_job_celery():
-        count_letters_op.alias("count_letters")(multiply_the_word_op.alias("multiply_the_word")())
+        count_letters(multiply_the_word())
 
     return demo_job_celery
 
@@ -266,7 +261,7 @@ def hello(context):
     context.log.info("Hello, world from IMAGE 1")
 
 
-def define_docker_celery_pipeline():
+def define_docker_celery_job():
     from dagster_celery_docker import celery_docker_executor
 
     @resource
@@ -276,27 +271,23 @@ def define_docker_celery_pipeline():
         return 42
 
     @op(required_resource_keys={"resource_with_output"})
-    def use_resource_with_output_solid():
+    def use_resource_with_output():
         pass
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "s3": s3_resource,
-                    "io_manager": s3_pickle_io_manager,
-                    "resource_with_output": resource_with_output,
-                },
-                executor_defs=default_executors + [celery_docker_executor],
-            )
-        ]
+    @job(
+        resource_defs={
+            "s3": s3_resource,
+            "io_manager": s3_pickle_io_manager,
+            "resource_with_output": resource_with_output,
+        },
+        executor_def=celery_docker_executor,
     )
-    def docker_celery_pipeline():
+    def docker_celery_job():
         count_letters(multiply_the_word())
-        get_environment_solid()
-        use_resource_with_output_solid()
+        get_environment()
+        use_resource_with_output()
 
-    return docker_celery_pipeline
+    return docker_celery_job
 
 
 @pipeline(
@@ -321,19 +312,6 @@ def demo_error_pipeline():
     error_solid()
 
 
-# TODO: migrate test_project to crag
-@op
-def emit_airflow_execution_date_op(context):
-    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
-    yield AssetMaterialization(
-        asset_key="airflow_execution_date",
-        metadata={
-            "airflow_execution_date": airflow_execution_date,
-        },
-    )
-    yield Output(airflow_execution_date)
-
-
 @op()
 def error_op():
     raise Exception("Unusual error")
@@ -342,11 +320,6 @@ def error_op():
 @job
 def demo_error_job():
     error_solid()
-
-
-@job
-def demo_airflow_execution_date_job():
-    emit_airflow_execution_date_op()
 
 
 @pipeline(
@@ -470,7 +443,7 @@ def define_schedules():
         return {}
 
     @schedule(
-        job_name="demo_pipeline_celery",
+        job_name="demo_job_celery",
         cron_schedule="* * * * *",
     )
     def frequent_celery():
@@ -594,25 +567,17 @@ def emit_airflow_execution_date(context):
     yield Output(airflow_execution_date)
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-        )
-    ]
+@job(
+    resource_defs={"io_manager": fs_io_manager},
 )
-def demo_airflow_execution_date_pipeline():
+def demo_airflow_execution_date_job():
     emit_airflow_execution_date()
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-        )
-    ]
+@job(
+    resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
 )
-def demo_airflow_execution_date_pipeline_s3():
+def demo_airflow_execution_date_job_s3():
     emit_airflow_execution_date()
 
 
@@ -691,9 +656,6 @@ def define_demo_execution_repo():
         return {
             "pipelines": {
                 "always_fail_pipeline": always_fail_pipeline,
-                "demo_pipeline_celery": define_demo_pipeline_celery,
-                "demo_pipeline_docker": define_demo_pipeline_docker,
-                "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "step_retries_pipeline_docker": definie_step_retries_pipeline_docker,
                 "large_job_celery": define_large_job_celery,
                 "long_running_pipeline_celery": define_long_running_pipeline_celery,
@@ -708,9 +670,6 @@ def define_demo_execution_repo():
                 "slow_pipeline": define_slow_pipeline,
                 "fan_in_fan_out_pipeline": define_fan_in_fan_out_pipeline,
                 "resource_pipeline": define_resource_pipeline,
-                "docker_celery_pipeline": define_docker_celery_pipeline,
-                "demo_airflow_execution_date_pipeline": demo_airflow_execution_date_pipeline,
-                "demo_airflow_execution_date_pipeline_s3": demo_airflow_execution_date_pipeline_s3,
                 "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
                 "demo_k8s_executor_pipeline": define_demo_k8s_executor_pipeline,
@@ -718,9 +677,13 @@ def define_demo_execution_repo():
                 "memoization_pipeline": define_memoization_pipeline,
             },
             "jobs": {
-                "demo_error_job": demo_error_job,
                 "demo_airflow_execution_date_job": demo_airflow_execution_date_job,
+                "demo_airflow_execution_date_job_s3": demo_airflow_execution_date_job_s3,
+                "demo_error_job": demo_error_job,
                 "demo_job_celery": define_demo_job_celery,
+                "demo_job_docker": define_demo_job_docker,
+                "demo_job_docker_slow": define_demo_job_docker_slow,
+                "docker_celery_job": define_docker_celery_job,
             },
             "schedules": define_schedules(),
         }

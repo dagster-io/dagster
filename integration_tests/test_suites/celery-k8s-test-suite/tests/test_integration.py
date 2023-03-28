@@ -93,7 +93,7 @@ def test_execute_on_celery_k8s_default(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_pipeline_celery"
+        dagit_url, run_config=run_config, pipeline_name="demo_job_celery"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -186,7 +186,7 @@ def test_execute_on_celery_k8s_image_from_origin(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url, run_config=run_config, pipeline_name="demo_pipeline_celery"
+        dagit_url, run_config=run_config, pipeline_name="demo_job_celery"
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -215,7 +215,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
     run_id = launch_run_over_graphql(
         dagit_url,
         run_config=run_config,
-        pipeline_name="demo_pipeline_celery",
+        pipeline_name="demo_job_celery",
         solid_selection=["count_letters"],
     )
 
