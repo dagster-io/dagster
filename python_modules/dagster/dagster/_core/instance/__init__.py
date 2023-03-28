@@ -118,6 +118,7 @@ if TYPE_CHECKING:
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
         InstigatorState,
+        InstigatorStatus,
         InstigatorTick,
         TickData,
         TickStatus,
@@ -2313,11 +2314,12 @@ class DagsterInstance(DynamicPartitionsStore):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
+        instigator_status: Optional[InstigatorStatus] = None,
     ):
         if not self._schedule_storage:
             check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type
+            repository_origin_id, repository_selector_id, instigator_type, instigator_status
         )
 
     @traced

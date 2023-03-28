@@ -23,6 +23,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (
     InstigatorState,
+    InstigatorStatus,
     InstigatorTick,
     TickData,
     TickStatus,
@@ -69,6 +70,7 @@ class SqlScheduleStorage(ScheduleStorage):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
+        instigator_status: Optional[InstigatorStatus] = None,
     ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
@@ -80,12 +82,17 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             if instigator_type:
                 query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
+            if instigator_status:
+                query = query.where(InstigatorsTable.c.status == instigator_status.value)
+
         else:
             query = db.select([JobTable.c.job_body]).select_from(JobTable)
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
                 query = query.where(JobTable.c.job_type == instigator_type.value)
+            if instigator_status:
+                query = query.where(JobTable.c.status == instigator_status.value)
 
         rows = self.execute(query)
         return self._deserialize_rows(rows, InstigatorState)

@@ -5,6 +5,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
+    InstigatorStatus,
     InstigatorTick,
     TickData,
     TickStatus,
@@ -26,6 +27,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
+        instigator_status: Optional[InstigatorStatus] = None,
     ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 
@@ -33,6 +35,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
             repository_selector_id (Optional[str]): The repository selector id to scope results to
             instigator_type (Optional[InstigatorType]): The InstigatorType to scope results to
+            instigator_status (Optional[InstigatorStatus]): The InstigatorStatus to scope results to
         """
 
     @abc.abstractmethod
