@@ -521,7 +521,7 @@
                   },
                   {
                     "title": "Setting environment variables",
-                    "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                    "path": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents"
                   }
                 ]
               }
@@ -574,11 +574,11 @@
           },
           {
             "title": "Managing deployments",
-            "path": "/dagster-cloud/developing-testing",
+            "path": "/dagster-cloud/managing-deployments",
             "children": [
               {
                 "title": "Management",
-                "path": "/dagster-cloud/developing-testing/managing-deployments"
+                "path": "/dagster-cloud/managing-deployments/managing-deployments"
               },
               {
                 "title": "Alerts",
@@ -589,33 +589,33 @@
                 "children": [
                   {
                     "title": "Overview and setup",
-                    "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
+                    "path": "/dagster-cloud/managing-deployments/environment-variables-and-secrets"
                   },
                   {
                     "title": "Setup for Hybrid agents",
-                    "path": "/dagster-cloud/developing-testing/setting-environment-variables-dagster-cloud-agents"
+                    "path": "/dagster-cloud/managing-deployments/setting-environment-variables-dagster-cloud-agents"
                   }
                 ]
               },
               {
                 "title": "Settings",
-                "path": "/dagster-cloud/developing-testing/deployment-settings-reference"
+                "path": "/dagster-cloud/managing-deployments/deployment-settings-reference"
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/developing-testing/code-locations"
+                "path": "/dagster-cloud/managing-deployments/code-locations"
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing/branch-deployments",
+                "path": "/dagster-cloud/managing-deployments/branch-deployments",
                 "children": [
                   {
                     "title": "Using with GitHub",
-                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+                    "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github"
                   },
                   {
                     "title": "Using with dagster-cloud CLI",
-                    "path": "/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
+                    "path": "/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments"
                   }
                 ]
               }
@@ -623,7 +623,7 @@
           },
           {
             "title": "dagster-cloud CLI",
-            "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
+            "path": "/dagster-cloud/managing-deployments/dagster-cloud-cli"
           }
         ]
       },

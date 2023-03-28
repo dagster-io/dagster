@@ -7,14 +7,14 @@ description: Develop and test in the cloud.
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) with GitHub Actions.
+In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/managing-deployments/branch-deployments) with GitHub Actions.
 
 Using this approach to branch deployments may be a good fit if:
 
 - You use GitHub for version control
 - You want Dagster to fully automate Branch Deployments
 
-**If you don't use GitHub for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
+**If you don't use GitHub for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments).
 
 ---
 
@@ -24,7 +24,7 @@ To complete the steps in this guide, you'll need:
 
 - **Editor** or **Admin** permissions in Dagster Cloud
 - **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-cloud/deployment/serverless).
-- **The ability to configure GitHub Actions for your repository**. This isn't required if you used the Dagster Cloud GitHub app to connect your repository as a [code location](/dagster-cloud/developing-testing/code-locations).
+- **The ability to configure GitHub Actions for your repository**. This isn't required if you used the Dagster Cloud GitHub app to connect your repository as a [code location](/dagster-cloud/managing-deployments/code-locations).
 
 ---
 
@@ -99,7 +99,7 @@ locations:
   isn't required.
   <br></br>
   <br></br>
-  <strong>Want to use secrets in your Dagster code?</strong> Check out the <a href="/dagster-cloud/developing-testing/environment-variables-and-secrets">
+  <strong>Want to use secrets in your Dagster code?</strong> Check out the <a href="/dagster-cloud/managing-deployments/environment-variables-and-secrets">
     Dagster Cloud environment variables and secrets guide
   </a> for more info.
 </Note>

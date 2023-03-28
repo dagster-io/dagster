@@ -51,7 +51,7 @@ To use Branch Deployments, you'll need a [Dagster Cloud account](https://dagster
 
 ### Supported platforms
 
-Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
+Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
 
 ### Limitations
 
@@ -101,7 +101,7 @@ There are currently two ways to set up Branch Deployments for Dagster Cloud. In 
   <tbody>
     <tr>
       <td>
-        <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github">
+        <a href="/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments-with-github">
           GitHub
         </a>
       </td>
@@ -125,12 +125,12 @@ There are currently two ways to set up Branch Deployments for Dagster Cloud. In 
     </tr>
     <tr>
       <td>
-        <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments">
+        <a href="/dagster-cloud/managing-deployments/branch-deployments/using-branch-deployments">
           Other git/CI platform
         </a>
       </td>
       <td>
-        <a href="/dagster-cloud/developing-testing/dagster-cloud-cli">
+        <a href="/dagster-cloud/managing-deployments/dagster-cloud-cli">
           dagster-cloud CLI
         </a>
       </td>
@@ -203,7 +203,7 @@ height={311}
 
 To ensure the best experience when using Branch Deployments, we recommend:
 
-- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, databases, and so on. This practice will allow you to use Branch Deployments without impacting production data.
+- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/dagster-cloud/managing-deployments/environment-variables-and-secrets#built-in-environment-variables) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, databases, and so on. This practice will allow you to use Branch Deployments without impacting production data.
 
 - **Creating jobs to automate output cleanup.** As Branch Deployments don't automatically remove [the output they create](#output-handling), you may want to create an additional Dagster job to perform the cleanup.
 
