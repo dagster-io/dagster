@@ -1,5 +1,4 @@
 import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter, TextInput} from '@dagster-io/ui';
-import {DateRangePicker} from '@react-spectrum/datepicker';
 import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
