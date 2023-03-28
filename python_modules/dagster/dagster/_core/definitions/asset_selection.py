@@ -285,7 +285,7 @@ class GroupsAssetSelection(AssetSelection):
         return {
             asset_key
             for asset_key, group in asset_graph.group_names_by_key.items()
-            if group in self._groups
+            if group in self._groups and asset_key not in asset_graph.source_asset_keys
         }
 
 
