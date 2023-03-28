@@ -1518,6 +1518,54 @@ def test_bind_resource_to_job_at_defn_time() -> None:
     assert out_txt == ["msg: hello, world!"]
 
 
+def test_bind_resource_to_job_with_job_config() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class OpConfig(Config):
+        message: str = "hello, world!"
+
+    @op
+    def hello_world_op(writer: WriterResource, config: OpConfig):
+        writer.output(config.message)
+
+    @job(config={})
+    def hello_world_job() -> None:
+        hello_world_op()
+
+    @job(config={"ops": {"hello_world_op": {"config": {"message": "hello, earth!"}}}})
+    def hello_earth_job() -> None:
+        hello_world_op()
+
+    defs = Definitions(
+        jobs=BindResourcesToJobs([hello_world_job, hello_earth_job]),
+        resources={
+            "writer": WriterResource(prefix="msg: "),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert out_txt == ["msg: hello, world!"]
+    out_txt.clear()
+
+    assert defs.get_job_def("hello_earth_job").execute_in_process().success
+    assert out_txt == ["msg: hello, earth!"]
+
+    # Validate that we correctly error
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+        Definitions(
+            jobs=BindResourcesToJobs([hello_world_job]),
+        )
+
+
 def test_execute_in_process() -> None:
     out_txt = []
 
