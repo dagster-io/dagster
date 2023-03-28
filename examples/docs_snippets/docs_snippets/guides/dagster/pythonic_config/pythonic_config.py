@@ -271,3 +271,91 @@ def execute_with_bad_config() -> None:
     )
 
     # end_execute_with_bad_config
+
+
+def enum_schema_config() -> None:
+    # start_enum_schema_config
+
+    from dagster import Config, RunConfig, op, job
+    from enum import Enum
+
+    class UserPermissions(Enum):
+        GUEST = "guest"
+        MEMBER = "member"
+        ADMIN = "admin"
+
+    class ProcessUsersConfig(Config):
+        users_list: Dict[str, UserPermissions]
+
+    @op
+    def process_users(config: ProcessUsersConfig):
+        for user, permission in config.users_list.items():
+            if permission == UserPermissions.ADMIN:
+                print(f"{user} is an admin")
+
+    @job
+    def process_users_job():
+        process_users()
+
+    op_result = process_users_job.execute_in_process(
+        run_config=RunConfig(
+            {
+                "process_users": ProcessUsersConfig(
+                    users_list={
+                        "Bob": UserPermissions.GUEST,
+                        "Alice": UserPermissions.ADMIN,
+                    }
+                )
+            }
+        ),  # type: ignore
+    )
+    # end_enum_schema_config
+
+
+def validated_schema_config() -> None:
+    # start_validated_schema_config
+
+    from dagster import Config, RunConfig, op, job
+    from pydantic import validator
+
+    class UserConfig(Config):
+        name: str
+        username: str
+
+        @validator("name")
+        def name_must_contain_space(cls, v):
+            if " " not in v:
+                raise ValueError("must contain a space")
+            return v.title()
+
+        @validator("username")
+        def username_alphanumeric(cls, v):
+            assert v.isalnum(), "must be alphanumeric"
+            return v
+
+    executed = {}
+
+    @op
+    def greet_user(config: UserConfig) -> None:
+        print(f"Hello {config.name}!")  # noqa: T201
+        executed["greet_user"] = True
+
+    @job
+    def greet_user_job() -> None:
+        greet_user()
+
+    # Input is valid, so this will work
+    op_result = greet_user_job.execute_in_process(
+        run_config=RunConfig(
+            {"greet_user": UserConfig(name="Alice Smith", username="alice123")}
+        ),  # type: ignore
+    )
+
+    # Name has no space, so this will fail
+    op_result = greet_user_job.execute_in_process(
+        run_config=RunConfig(
+            {"greet_user": UserConfig(name="John", username="johndoe44")}
+        ),  # type: ignore
+    )
+
+    # end_validated_schema_config
