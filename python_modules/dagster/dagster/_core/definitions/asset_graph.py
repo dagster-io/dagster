@@ -31,6 +31,7 @@ from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_mapping import PartitionMapping, infer_partition_mapping
+from .reconciliation_policy import ReconciliationPolicy
 from .source_asset import SourceAsset
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -47,6 +48,7 @@ class AssetGraph:
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        reconciliation_policies_by_key: Mapping[AssetKey, Optional[ReconciliationPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
@@ -57,6 +59,7 @@ class AssetGraph:
         self._partition_mappings_by_key = partition_mappings_by_key
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
+        self._reconciliation_policies_by_key = reconciliation_policies_by_key
         self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
@@ -84,6 +87,10 @@ class AssetGraph:
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
         return self._freshness_policies_by_key
 
+    @property
+    def reconciliation_policies_by_key(self) -> Mapping[AssetKey, Optional[ReconciliationPolicy]]:
+        return self._reconciliation_policies_by_key
+
     @staticmethod
     def from_assets(
         all_assets: Iterable[Union[AssetsDefinition, SourceAsset]]
@@ -96,6 +103,7 @@ class AssetGraph:
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
+        reconciliation_policies_by_key: Dict[AssetKey, Optional[ReconciliationPolicy]] = {}
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
@@ -114,6 +122,7 @@ class AssetGraph:
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
+                reconciliation_policies_by_key.update(asset.reconciliation_policies_by_key)
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
@@ -126,6 +135,7 @@ class AssetGraph:
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            reconciliation_policies_by_key=reconciliation_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
             source_assets=source_assets,
@@ -525,6 +535,7 @@ class InternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        reconciliation_policies_by_key: Mapping[AssetKey, Optional[ReconciliationPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
@@ -538,6 +549,7 @@ class InternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            reconciliation_policies_by_key=reconciliation_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,

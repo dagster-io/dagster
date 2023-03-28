@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import datetime
 import itertools
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
@@ -42,6 +43,7 @@ from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
     PartitionsSubset,
 )
+from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -50,6 +52,22 @@ from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
+
+
+def with_reconciliation_policy(
+    assets_defs: Sequence[AssetsDefinition], reconciliation_policy: ReconciliationPolicy
+) -> Sequence[AssetsDefinition]:
+    """Note: this should be implemented in core dagster at some point, and this implementation is
+    a lazy hack.
+    """
+    ret = []
+    for assets_def in assets_defs:
+        new_assets_def = copy.copy(assets_def)
+        new_assets_def._reconciliation_policies_by_key = {  # noqa: SLF001
+            asset_key: reconciliation_policy for asset_key in new_assets_def.asset_keys
+        }
+        ret.append(new_assets_def)
+    return ret
 
 
 class RunSpec(NamedTuple):
@@ -242,6 +260,7 @@ def asset_def(
     deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    reconciliation_policy: Optional[ReconciliationPolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = set()
@@ -263,6 +282,7 @@ def asset_def(
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
+        reconciliation_policy=reconciliation_policy,
     )
     def _asset(context, **kwargs):
         del kwargs
@@ -596,6 +616,9 @@ two_dynamic_assets = [
     asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
     asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
+
+# reconciliation policies
+
 
 scenarios = {
     ################################################################################################
@@ -1343,6 +1366,76 @@ scenarios = {
                 ]
             ),
         ],
+        expected_run_requests=[],
+    ),
+    # reconciliation policies
+    "reconciliation_policy_eager_with_freshness_policies": AssetReconciliationScenario(
+        assets=with_reconciliation_policy(overlapping_freshness_inf, ReconciliationPolicy.eager()),
+        cursor_from=AssetReconciliationScenario(
+            assets=overlapping_freshness_inf,
+            unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
+        ),
+        # change at the top, should be immediately propagated as all assets have eager reconciliation
+        unevaluated_runs=[run(["asset1"])],
+        expected_run_requests=[
+            run_request(asset_keys=["asset2", "asset3", "asset4", "asset5", "asset6"])
+        ],
+    ),
+    "reconciliation_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=with_reconciliation_policy(
+            hourly_to_daily_partitions,
+            ReconciliationPolicy.eager(),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            # with default scope, only the last partition is materialized
+            run_request(
+                asset_keys=["hourly"],
+                partition_key=hourly_partitions_def.get_last_partition_key(
+                    current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4)
+                ),
+            )
+        ],
+    ),
+    "reconciliation_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=with_reconciliation_policy(
+            hourly_to_daily_partitions,
+            ReconciliationPolicy.eager(time_window_partition_scope=datetime.timedelta(days=2)),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "reconciliation_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+        assets=with_reconciliation_policy(
+            hourly_to_daily_partitions,
+            ReconciliationPolicy.lazy(time_window_partition_scope=datetime.timedelta(days=2)),
+        ),
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-05-04:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "reconciliation_policy_lazy_parent_rematerialized_one_partition": AssetReconciliationScenario(
+        assets=with_reconciliation_policy(
+            two_assets_in_sequence_one_partition,
+            ReconciliationPolicy.lazy(),
+        ),
+        unevaluated_runs=[
+            run(["asset1", "asset2"], partition_key="a"),
+            single_asset_run(asset_key="asset1", partition_key="a"),
+        ],
+        # no need to rematerialize as this is a lazy policy
         expected_run_requests=[],
     ),
 }

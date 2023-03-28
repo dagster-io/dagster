@@ -21,6 +21,7 @@ from .events import AssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
 from .partition_mapping import PartitionMapping
+from .reconciliation_policy import ReconciliationPolicy
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external_data import ExternalAssetNode
@@ -35,6 +36,7 @@ class ExternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        reconciliation_policies_by_key: Mapping[AssetKey, Optional[ReconciliationPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
@@ -48,6 +50,7 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            reconciliation_policies_by_key=reconciliation_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
@@ -170,6 +173,7 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            reconciliation_policies_by_key={},  # todo
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,

@@ -20,6 +20,7 @@ from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -72,6 +73,7 @@ def asset(
     group_name: Optional[str] = ...,
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
+    reconciliation_policy: Optional[ReconciliationPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -99,6 +101,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
+    reconciliation_policy: Optional[ReconciliationPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -192,6 +195,7 @@ def asset(
             group_name=group_name,
             output_required=output_required,
             freshness_policy=freshness_policy,
+            reconciliation_policy=reconciliation_policy,
             retry_policy=retry_policy,
             code_version=code_version,
         )
@@ -238,6 +242,7 @@ class _Asset:
         group_name: Optional[str] = None,
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
+        reconciliation_policy: Optional[ReconciliationPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
@@ -263,6 +268,7 @@ class _Asset:
         self.group_name = group_name
         self.output_required = output_required
         self.freshness_policy = freshness_policy
+        self.reconciliation_policy = reconciliation_policy
         self.retry_policy = retry_policy
         self.code_version = code_version
 
@@ -347,6 +353,9 @@ class _Asset:
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
             freshness_policies_by_key={out_asset_key: self.freshness_policy}
             if self.freshness_policy
+            else None,
+            reconciliation_policies_by_key={out_asset_key: self.reconciliation_policy}
+            if self.reconciliation_policy
             else None,
         )
 
