@@ -377,7 +377,7 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
     external_repo_data = external_repository_data_from_def(repo)
     assert external_repo_data.external_resource_data
 
-    assert len(external_repo_data.external_resource_data) == 2
+    assert len(external_repo_data.external_resource_data) == 3
 
     foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
     assert len(foo) == 1
