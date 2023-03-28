@@ -110,7 +110,7 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.pipeline_snapshot.solid_names_in_topological_order:
+                for solid_name in job.pipeline_snapshot.node_names_in_topological_order:
                     print_fn("    " + solid_name)
 
 
@@ -178,7 +178,7 @@ def print_ops(
     printer.line(f"Job: {pipeline_snapshot.name}")
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
             printer.line(f"Op: {solid.node_name}")
 
@@ -194,7 +194,7 @@ def print_job(
     print_description(printer, pipeline_snapshot.description)
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
             print_op(printer, pipeline_snapshot, solid)
 

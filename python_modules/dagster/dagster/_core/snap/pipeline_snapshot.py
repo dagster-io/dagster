@@ -47,9 +47,9 @@ from .dep_snapshot import (
 from .mode import ModeDefSnap, build_mode_def_snap
 from .node import (
     GraphDefSnap,
-    NodeDefsSnap,
+    NodeDefsSnapshot,
     OpDefSnap,
-    build_node_defs_snap,
+    build_node_defs_snapshot,
 )
 
 
@@ -83,7 +83,11 @@ class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
         return unpacked
 
 
-@whitelist_for_serdes(serializer=PipelineSnapshotSerializer, skip_when_empty_fields={"metadata"})
+@whitelist_for_serdes(
+    serializer=PipelineSnapshotSerializer,
+    skip_when_empty_fields={"metadata"},
+    storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
+)
 class PipelineSnapshot(
     NamedTuple(
         "_PipelineSnapshot",
@@ -93,7 +97,7 @@ class PipelineSnapshot(
             ("tags", Mapping[str, Any]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
-            ("solid_definitions_snapshot", NodeDefsSnap),
+            ("node_defs_snapshot", NodeDefsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
             ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
@@ -109,7 +113,7 @@ class PipelineSnapshot(
         tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
-        solid_definitions_snapshot: NodeDefsSnap,
+        node_defs_snapshot: NodeDefsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
@@ -129,8 +133,8 @@ class PipelineSnapshot(
                 "dagster_type_namespace_snapshot",
                 DagsterTypeNamespaceSnapshot,
             ),
-            solid_definitions_snapshot=check.inst_param(
-                solid_definitions_snapshot, "solid_definitions_snapshot", NodeDefsSnap
+            node_defs_snapshot=check.inst_param(
+                node_defs_snapshot, "node_defs_snapshot", NodeDefsSnapshot
             ),
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
@@ -154,16 +158,16 @@ class PipelineSnapshot(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
                 ),
-                solid_selection=sorted(pipeline_def.solid_selection),
-                solids_to_execute=pipeline_def.solids_to_execute,
+                node_selection=sorted(pipeline_def.solid_selection),
+                nodes_to_execute=pipeline_def.solids_to_execute,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
                 ),
-                solid_selection=sorted(pipeline_def.op_selection_data.op_selection),
-                solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
+                node_selection=sorted(pipeline_def.op_selection_data.op_selection),
+                nodes_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.asset_selection_data:
             lineage = PipelineSnapshotLineage(
@@ -180,7 +184,7 @@ class PipelineSnapshot(
             metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
-            solid_definitions_snapshot=build_node_defs_snap(pipeline_def),
+            node_defs_snapshot=build_node_defs_snapshot(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(pipeline_def.graph),
             mode_def_snaps=[
                 build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
@@ -190,32 +194,32 @@ class PipelineSnapshot(
             graph_def_name=pipeline_def.graph.name,
         )
 
-    def get_node_def_snap(self, solid_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
-        check.str_param(solid_def_name, "solid_def_name")
-        for solid_def_snap in self.solid_definitions_snapshot.op_def_snaps:
-            if solid_def_snap.name == solid_def_name:
-                return solid_def_snap
+    def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
+        check.str_param(node_def_name, "node_def_name")
+        for node_def_snap in self.node_defs_snapshot.op_def_snaps:
+            if node_def_snap.name == node_def_name:
+                return node_def_snap
 
-        for comp_solid_def_snap in self.solid_definitions_snapshot.graph_def_snaps:
-            if comp_solid_def_snap.name == solid_def_name:
-                return comp_solid_def_snap
+        for graph_def_snap in self.node_defs_snapshot.graph_def_snaps:
+            if graph_def_snap.name == node_def_name:
+                return graph_def_snap
 
         check.failed("not found")
 
-    def has_solid_name(self, solid_name: str) -> bool:
-        check.str_param(solid_name, "solid_name")
-        for solid_snap in self.dep_structure_snapshot.solid_invocation_snaps:
-            if solid_snap.node_name == solid_name:
+    def has_node_name(self, node_name: str) -> bool:
+        check.str_param(node_name, "node_name")
+        for node_invocation_snap in self.dep_structure_snapshot.node_invocation_snaps:
+            if node_invocation_snap.node_name == node_name:
                 return True
         return False
 
-    def get_config_type_from_solid_def_snap(
+    def get_config_type_from_node_def_snap(
         self,
-        solid_def_snap: Union[OpDefSnap, GraphDefSnap],
+        node_def_snap: Union[OpDefSnap, GraphDefSnap],
     ) -> Optional[ConfigType]:
-        check.inst_param(solid_def_snap, "solid_def_snap", (OpDefSnap, GraphDefSnap))
-        if solid_def_snap.config_field_snap:
-            config_type_key = solid_def_snap.config_field_snap.type_key
+        check.inst_param(node_def_snap, "node_def_snap", (OpDefSnap, GraphDefSnap))
+        if node_def_snap.config_field_snap:
+            config_type_key = node_def_snap.config_field_snap.type_key
             if self.config_schema_snapshot.has_config_snap(config_type_key):
                 return construct_config_type_from_snap(
                     self.config_schema_snapshot.get_config_snap(config_type_key),
@@ -224,18 +228,18 @@ class PipelineSnapshot(
         return None
 
     @property
-    def solid_names(self) -> Sequence[str]:
-        return [ss.node_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
+    def node_names(self) -> Sequence[str]:
+        return [ss.node_name for ss in self.dep_structure_snapshot.node_invocation_snaps]
 
     @property
-    def solid_names_in_topological_order(self) -> Sequence[str]:
+    def node_names_in_topological_order(self) -> Sequence[str]:
         upstream_outputs = {}
 
-        for solid_invocation_snap in self.dep_structure_snapshot.solid_invocation_snaps:
-            solid_name = solid_invocation_snap.node_name
-            upstream_outputs[solid_name] = {
-                upstream_output_snap.solid_name
-                for input_dep_snap in solid_invocation_snap.input_dep_snaps
+        for node_invocation_snap in self.dep_structure_snapshot.node_invocation_snaps:
+            node_name = node_invocation_snap.node_name
+            upstream_outputs[node_name] = {
+                upstream_output_snap.node_name
+                for input_dep_snap in node_invocation_snap.input_dep_snaps
                 for upstream_output_snap in input_dep_snap.upstream_output_snaps
             }
 
@@ -398,14 +402,19 @@ def construct_config_type_from_snap(
     check.failed("Could not evaluate config type snap kind: {}".format(config_type_snap.kind))
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "node_selection": "solid_selection",
+        "nodes_to_execute": "solids_to_execute",
+    },
+)
 class PipelineSnapshotLineage(
     NamedTuple(
         "_PipelineSnapshotLineage",
         [
             ("parent_snapshot_id", str),
-            ("solid_selection", Optional[Sequence[str]]),
-            ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("node_selection", Optional[Sequence[str]]),
+            ("nodes_to_execute", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     )
@@ -413,15 +422,15 @@ class PipelineSnapshotLineage(
     def __new__(
         cls,
         parent_snapshot_id: str,
-        solid_selection: Optional[Sequence[str]] = None,
-        solids_to_execute: Optional[AbstractSet[str]] = None,
+        node_selection: Optional[Sequence[str]] = None,
+        nodes_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_set_param(nodes_to_execute, "nodes_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
             cls,
             check.str_param(parent_snapshot_id, parent_snapshot_id),
-            solid_selection,
-            solids_to_execute,
+            node_selection,
+            nodes_to_execute,
             asset_selection,
         )

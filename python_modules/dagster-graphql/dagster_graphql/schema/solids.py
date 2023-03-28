@@ -165,7 +165,7 @@ class GrapheneInput(graphene.ObjectType):
             GrapheneOutput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                output_handle_snap.solid_name,
+                output_handle_snap.node_name,
                 output_handle_snap.output_name,
             )
             for output_handle_snap in self._current_dep_structure.get_upstream_outputs(
@@ -219,7 +219,7 @@ class GrapheneOutput(graphene.ObjectType):
             GrapheneInput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                input_handle_snap.solid_name,
+                input_handle_snap.node_name,
                 input_handle_snap.input_name,
             )
             for input_handle_snap in self._current_dep_structure.get_downstream_inputs(
@@ -329,7 +329,7 @@ def build_solids(represented_pipeline, current_dep_index):
     return sorted(
         [
             GrapheneSolid(represented_pipeline, solid_name, current_dep_index)
-            for solid_name in current_dep_index.solid_invocation_names
+            for solid_name in current_dep_index.node_invocation_names
         ],
         key=lambda solid: solid.name,
     )
@@ -343,7 +343,7 @@ def _build_solid_handles(
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
     all_handle: List[GrapheneSolidHandle] = []
-    for solid_invocation in current_dep_index.solid_invocations:
+    for solid_invocation in current_dep_index.node_invocations:
         solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(
             solid=GrapheneSolid(represented_pipeline, solid_name, current_dep_index),

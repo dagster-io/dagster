@@ -346,7 +346,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names_in_topological_order(self):
-        return self._pipeline_index.pipeline_snapshot.solid_names_in_topological_order
+        return self._pipeline_index.pipeline_snapshot.node_names_in_topological_order
 
     @property
     def external_pipeline_data(self):
@@ -365,7 +365,7 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -373,7 +373,7 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -392,7 +392,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names(self) -> Sequence[str]:
-        return self._pipeline_index.pipeline_snapshot.solid_names
+        return self._pipeline_index.pipeline_snapshot.node_names
 
     def has_solid_invocation(self, solid_name: str):
         check.str_param(solid_name, "solid_name")

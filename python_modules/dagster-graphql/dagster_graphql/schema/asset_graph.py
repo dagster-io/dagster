@@ -411,7 +411,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if isinstance(node_def_snap, GraphDefSnap):
             constituent_node_names = [
                 inv.node_def_name
-                for inv in node_def_snap.dep_structure_snapshot.solid_invocation_snaps
+                for inv in node_def_snap.dep_structure_snapshot.node_invocation_snaps
             ]
             external_pipeline = self.get_external_pipeline()
             constituent_resource_key_sets = [

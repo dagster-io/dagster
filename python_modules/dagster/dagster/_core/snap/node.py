@@ -187,7 +187,7 @@ def _check_node_def_header_args(
         input_def_snaps=check.sequence_param(input_def_snaps, "input_def_snaps", InputDefSnap),
         output_def_snaps=check.sequence_param(output_def_snaps, "output_def_snaps", OutputDefSnap),
         description=check.opt_str_param(description, "description"),
-        tags=check.mapping_param(tags, "tags"),  # validate using validate_tags?
+        tags=check.mapping_param(tags, "tags"),
         config_field_snap=check.opt_inst_param(
             config_field_snap, "config_field_snap", ConfigFieldSnap
         ),
@@ -305,7 +305,7 @@ class OpDefSnap(
         "graph_def_snaps": "composite_solid_def_snaps",
     },
 )
-class NodeDefsSnap(
+class NodeDefsSnapshot(
     NamedTuple(
         "_NodeDefsSnapshot",
         [
@@ -319,11 +319,11 @@ class NodeDefsSnap(
         op_def_snaps: Sequence[OpDefSnap],
         graph_def_snaps: Sequence[GraphDefSnap],
     ):
-        return super(NodeDefsSnap, cls).__new__(
+        return super(NodeDefsSnapshot, cls).__new__(
             cls,
             op_def_snaps=sorted(
                 check.sequence_param(op_def_snaps, "op_def_snaps", of_type=OpDefSnap),
-                key=lambda solid_def: solid_def.name,
+                key=lambda op_def: op_def.name,
             ),
             graph_def_snaps=sorted(
                 check.sequence_param(
@@ -331,26 +331,25 @@ class NodeDefsSnap(
                     "graph_def_snaps",
                     of_type=GraphDefSnap,
                 ),
-                key=lambda comp_def: comp_def.name,
+                key=lambda graph_def: graph_def.name,
             ),
         )
 
 
-def build_node_defs_snap(pipeline_def: PipelineDefinition) -> NodeDefsSnap:
+def build_node_defs_snapshot(pipeline_def: PipelineDefinition) -> NodeDefsSnapshot:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    solid_def_snaps = []
+    op_def_snaps = []
     graph_def_snaps = []
     for node_def in pipeline_def.all_node_defs:
         if isinstance(node_def, OpDefinition):
-            solid_def_snaps.append(build_op_def_snap(node_def))
+            op_def_snaps.append(build_op_def_snap(node_def))
         elif isinstance(node_def, GraphDefinition):
             graph_def_snaps.append(build_graph_def_snap(node_def))
         else:
             check.failed(f"Unexpected NodeDefinition type {node_def}")
 
-    return NodeDefsSnap(
-        op_def_snaps=solid_def_snaps,
-        # update when snapshot renames happen
+    return NodeDefsSnapshot(
+        op_def_snaps=op_def_snaps,
         graph_def_snaps=graph_def_snaps,
     )
 
@@ -408,4 +407,4 @@ def _get_output_snap(node_def: Union[GraphDefSnap, OpDefSnap], name: str) -> Out
         if out.name == name:
             return out
 
-    check.failed(f"Could not find output {name} in solid def {node_def.name}")
+    check.failed(f"Could not find output {name} in node def {node_def.name}")

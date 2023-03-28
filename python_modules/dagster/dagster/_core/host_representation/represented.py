@@ -56,7 +56,7 @@ class RepresentedPipeline(ABC):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -64,7 +64,7 @@ class RepresentedPipeline(ABC):
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
