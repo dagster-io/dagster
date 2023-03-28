@@ -57,6 +57,7 @@
     "children": [
       {
         "title": "Development environment",
+        "path": "/guides/development",
         "children": [
           {
             "title": "Running Dagster locally",
@@ -78,6 +79,7 @@
       },
       {
         "title": "Working with data assets",
+        "path": "/guides/assets",
         "children": [
           {
             "title": "Understanding assets, ops, and graphs",
@@ -107,6 +109,7 @@
       },
       {
         "title": "Working with tasks",
+        "path": "/guides/tasks",
         "children": [
           {
             "title": "Intro to ops and jobs",
@@ -117,12 +120,12 @@
                 "path": "/guides/dagster/intro-to-ops-jobs/single-op-job"
               },
               {
-                "title": "Connecting ops in jobs",
-                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
-              },
-              {
                 "title": "Testing ops and jobs",
                 "path": "/guides/dagster/intro-to-ops-jobs/testable"
+              },
+              {
+                "title": "Connecting ops in jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
               }
             ]
           },
@@ -148,6 +151,7 @@
       },
       {
         "title": "Best practices",
+        "path": "/guides/best-practices",
         "children": [
           {
             "title": "Structuring your project",
