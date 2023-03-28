@@ -173,7 +173,26 @@ export const MetadataEntry: React.FC<{
     case 'TableMetadataEntry':
       return null;
     case 'TableSchemaMetadataEntry':
-      return <TableSchema schema={entry.schema} />;
+      return expandSmallValues && entry.schema.columns.length < 5 ? (
+        <TableSchema schema={entry.schema} />
+      ) : (
+        <MetadataEntryModalAction
+          label={entry.label}
+          copyContent={() => JSON.stringify(entry.schema, null, 2)}
+          content={() => (
+            <Box
+              padding={{vertical: 16, horizontal: 20}}
+              background={Colors.White}
+              style={{overflow: 'auto'}}
+              margin={{bottom: 12}}
+            >
+              <TableSchema schema={entry.schema} />
+            </Box>
+          )}
+        >
+          [Show Table Schema]
+        </MetadataEntryModalAction>
+      );
     case 'NotebookMetadataEntry':
       if (repoLocation) {
         return <NotebookButton path={entry.path} repoLocation={repoLocation} />;
