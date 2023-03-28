@@ -657,7 +657,7 @@ const UpstreamUnavailableWarning: React.FC<{
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
+      return a.dimensions.length && a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
     });
 
   const upstreamUnavailableSpans =
