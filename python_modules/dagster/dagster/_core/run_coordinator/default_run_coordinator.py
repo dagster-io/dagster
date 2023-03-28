@@ -49,5 +49,5 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
         return run
 
-    def cancel_run(self, run_id: str) -> None:
-        return self._instance.run_launcher.terminate(run_id)  # type: ignore
+    def cancel_run(self, run_id: str) -> bool:
+        return self._instance.run_launcher.terminate(run_id)
