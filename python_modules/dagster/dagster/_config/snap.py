@@ -161,7 +161,7 @@ class ConfigTypeSnap(
     def get_field(self, name: str) -> "ConfigFieldSnap":
         field = self._get_field(name)
         if not field:
-            check.failed("Field {name} not found".format(name=name))
+            check.failed(f"Field {name} not found")
         return field
 
     def has_field(self, name: str) -> bool:

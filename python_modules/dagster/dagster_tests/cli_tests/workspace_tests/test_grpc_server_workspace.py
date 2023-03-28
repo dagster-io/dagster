@@ -55,7 +55,7 @@ load_from:
                 }
                 assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
+                default_location_name = f"grpc:localhost:{first_socket}"
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
@@ -185,7 +185,7 @@ load_from:
                 }
                 assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{port}".format(port=first_port)
+                default_location_name = f"grpc:localhost:{first_port}"
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 

@@ -40,9 +40,7 @@ from dagster.version import __version__ as dagster_version
 
 
 def _get_ipc_output_file():
-    return os.path.join(
-        get_system_temp_directory(), "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
-    )
+    return os.path.join(get_system_temp_directory(), f"grpc-server-startup-{uuid.uuid4().hex}")
 
 
 def test_load_grpc_server(capfd):

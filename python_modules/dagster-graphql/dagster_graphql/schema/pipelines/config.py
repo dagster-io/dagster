@@ -206,9 +206,7 @@ class GraphenePipelineConfigValidationError(graphene.Interface):
                 incoming_fields=error.error_data.incoming_fields,
             )
         else:
-            check.failed(
-                "Error type not supported {error_data}".format(error_data=repr(error.error_data))
-            )
+            check.failed(f"Error type not supported {repr(error.error_data)}")
 
 
 class GrapheneRuntimeMismatchConfigError(graphene.ObjectType):

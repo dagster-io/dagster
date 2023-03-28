@@ -79,7 +79,7 @@ class RedshiftResource(_BaseRedshiftResource):
         with self._get_conn() as conn:
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 try:
-                    self.log.info("Executing query '{query}'".format(query=query))
+                    self.log.info(f"Executing query '{query}'")
                     cursor.execute(query)
 
                     if fetch_results and cursor.rowcount > 0:
@@ -141,7 +141,7 @@ class RedshiftResource(_BaseRedshiftResource):
             with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
                 for query in queries:
                     try:
-                        self.log.info("Executing query '{query}'".format(query=query))
+                        self.log.info(f"Executing query '{query}'")
                         cursor.execute(query)
 
                         if fetch_results and cursor.rowcount > 0:
@@ -233,7 +233,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         )
         check.opt_callable_param(error_callback, "error_callback")
 
-        self.log.info("Executing query '{query}'".format(query=query))
+        self.log.info(f"Executing query '{query}'")
         if fetch_results:
             return self.QUERY_RESULT
 
@@ -267,7 +267,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         check.opt_callable_param(error_callback, "error_callback")
 
         for query in queries:
-            self.log.info("Executing query '{query}'".format(query=query))
+            self.log.info(f"Executing query '{query}'")
         if fetch_results:
             return [self.QUERY_RESULT] * 3
 

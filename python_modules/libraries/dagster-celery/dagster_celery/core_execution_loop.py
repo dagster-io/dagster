@@ -164,10 +164,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
             raise DagsterSubprocessError(
                 "During celery execution errors occurred in workers:\n{error_list}".format(
                     error_list="\n".join(
-                        [
-                            "[{step}]: {err}".format(step=key, err=err.to_string())
-                            for key, err in step_errors.items()
-                        ]
+                        [f"[{key}]: {err.to_string()}" for key, err in step_errors.items()]
                     )
                 ),
                 subprocess_error_infos=list(step_errors.values()),

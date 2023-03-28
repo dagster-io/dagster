@@ -187,13 +187,13 @@ class DagsterKubernetesClient:
         while not job:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name} to launch".format(job_name=job_name)
+                    f"Timed out while waiting for job {job_name} to launch"
                 )
 
             # Get all jobs in the namespace and find the matching job
             def _get_jobs_for_namespace():
                 jobs = self.batch_api.list_namespaced_job(
-                    namespace=namespace, field_selector="metadata.name={}".format(job_name)
+                    namespace=namespace, field_selector=f"metadata.name={job_name}"
                 )
                 if jobs.items:
                     check.invariant(
@@ -210,7 +210,7 @@ class DagsterKubernetesClient:
             )
 
             if not job:
-                self.logger('Job "{job_name}" not yet launched, waiting'.format(job_name=job_name))
+                self.logger(f'Job "{job_name}" not yet launched, waiting')
                 self.sleeper(wait_time_between_attempts)
 
     def wait_for_job_to_have_pods(
@@ -239,9 +239,7 @@ class DagsterKubernetesClient:
             if pod_list:
                 return pod_list
 
-            self.logger(
-                'Job "{job_name}" does not yet have pods, waiting'.format(job_name=job_name)
-            )
+            self.logger(f'Job "{job_name}" does not yet have pods, waiting')
             self.sleeper(wait_time_between_attempts)
 
     def wait_for_job_success(
@@ -433,7 +431,7 @@ class DagsterKubernetesClient:
         check.str_param(namespace, "namespace")
 
         return self.core_api.list_namespaced_pod(
-            namespace=namespace, label_selector="job-name={}".format(job_name)
+            namespace=namespace, label_selector=f"job-name={job_name}"
         ).items
 
     def get_pod_names_in_job(self, job_name, namespace):
@@ -573,7 +571,7 @@ class DagsterKubernetesClient:
                         f'and pod logs: "{raw_logs}"'
                     )
                 else:
-                    self.logger("Pod {pod_name} exitted successfully".format(pod_name=pod_name))
+                    self.logger(f"Pod {pod_name} exitted successfully")
                 break
 
             else:

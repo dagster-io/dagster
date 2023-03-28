@@ -602,7 +602,7 @@ def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigTy
             yield from iterate_node_def_config_types(solid.definition)
 
     else:
-        check.invariant("Unexpected NodeDefinition type {type}".format(type=type(node_def)))
+        check.invariant(f"Unexpected NodeDefinition type {type(node_def)}")
 
 
 def _gather_all_schemas(node_defs: Sequence[NodeDefinition]) -> Iterator[ConfigType]:

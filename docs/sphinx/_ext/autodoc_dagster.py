@@ -43,7 +43,7 @@ def type_repr(config_type: ConfigType) -> str:
         return "Enum{" + ", ".join(str(val) for val in config_type.config_values) + "}"
     elif config_type.kind == ConfigTypeKind.ARRAY:
         config_type = cast(Array, config_type)
-        return "List[{}]".format(type_repr(config_type.inner_type))
+        return f"List[{type_repr(config_type.inner_type)}]"
     elif config_type.kind == ConfigTypeKind.SELECTOR:
         return "selector"
     elif config_type.kind == ConfigTypeKind.STRICT_SHAPE:

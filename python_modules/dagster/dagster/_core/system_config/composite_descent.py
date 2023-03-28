@@ -186,7 +186,7 @@ def _apply_top_level_config_mapping(
         mapped_config_evr = graph_def.apply_config_mapping(outer_config)
         if not mapped_config_evr.success:
             raise DagsterInvalidConfigError(
-                "Error in config for graph {}".format(graph_def.name),
+                f"Error in config for graph {graph_def.name}",
                 mapped_config_evr.errors,
                 outer_config,
             )
@@ -246,7 +246,7 @@ def _get_mapped_solids_dict(
     config_mapped_solid_config = graph_def.apply_config_mapping(current_solid_config)
     if not config_mapped_solid_config.success:
         raise DagsterInvalidConfigError(
-            "Error in config for composite solid {}".format(composite.name),
+            f"Error in config for composite solid {composite.name}",
             config_mapped_solid_config.errors,
             config_mapped_solid_config,
         )

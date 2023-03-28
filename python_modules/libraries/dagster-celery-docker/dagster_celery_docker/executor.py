@@ -208,7 +208,7 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key="{queue}.execute_step_docker".format(queue=queue),
+        routing_key=f"{queue}.execute_step_docker",
     )
 
 
@@ -235,7 +235,7 @@ def create_docker_task(celery_app, **task_kwargs):
         check.inst(
             pipeline_run,
             DagsterRun,
-            "Could not load run {}".format(execute_step_args.pipeline_run_id),
+            f"Could not load run {execute_step_args.pipeline_run_id}",
         )
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
@@ -259,7 +259,7 @@ def create_docker_task(celery_app, **task_kwargs):
 
         # Post event for starting execution
         engine_event = instance.report_engine_event(
-            "Executing steps {} in Docker container {}".format(step_keys_str, docker_image),
+            f"Executing steps {step_keys_str} in Docker container {docker_image}",
             pipeline_run,
             EngineEventData(
                 [
@@ -315,7 +315,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 entries.append(MetadataEntry("Docker stderr", value=err.stderr))
 
             instance.report_engine_event(
-                "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
+                f"Failed to run steps {step_keys_str} in Docker container {docker_image}",
                 pipeline_run,
                 EngineEventData(entries),
                 CeleryDockerExecutor,

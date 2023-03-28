@@ -1195,7 +1195,7 @@ def defensively_unpack_execution_plan_snapshot_query(
     # implementation detail
 
     def _warn(msg: str) -> None:
-        logger.warning("get-pipeline-snapshot: {msg}".format(msg=msg))
+        logger.warning(f"get-pipeline-snapshot: {msg}")
 
     if not isinstance(row[0], bytes):
         _warn("First entry in row is not a binary type.")

@@ -50,7 +50,7 @@ def is_config_scalar_valid(config_type_snap: ConfigTypeSnap, config_value: objec
         # historical snapshot without scalar kind. do no validation
         return True
     else:
-        check.failed("Not a supported scalar {}".format(config_type_snap))
+        check.failed(f"Not a supported scalar {config_type_snap}")
 
 
 def validate_config(config_schema: object, config_value: T) -> EvaluateValueResult[T]:
@@ -116,7 +116,7 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
     elif kind == ConfigTypeKind.SCALAR_UNION:
         return _validate_scalar_union_config(context, config_value)
     else:
-        check.failed("Unsupported ConfigTypeKind {}".format(kind))
+        check.failed(f"Unsupported ConfigTypeKind {kind}")
 
 
 def _validate_scalar_union_config(

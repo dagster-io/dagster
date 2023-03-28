@@ -743,7 +743,7 @@ class MultiDependencyDefinition(
             elif dep is MappedInputPlaceholder:
                 pass
             else:
-                check.failed("Unexpected dependencies entry {}".format(dep))
+                check.failed(f"Unexpected dependencies entry {dep}")
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 

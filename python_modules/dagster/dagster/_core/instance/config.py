@@ -55,7 +55,7 @@ def dagster_instance_config(
         )
         if not validate_custom_config.success:
             raise DagsterInvalidConfigError(
-                "Errors whilst loading dagster custom class config at {}".format(config_filename),
+                f"Errors whilst loading dagster custom class config at {config_filename}",
                 validate_custom_config.errors,
                 custom_instance_class_data,
             )
@@ -106,7 +106,7 @@ def dagster_instance_config(
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
-            "Errors whilst loading dagster instance config at {}.".format(config_filename),
+            f"Errors whilst loading dagster instance config at {config_filename}.",
             dagster_config.errors,
             dagster_config_dict,
         )

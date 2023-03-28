@@ -66,9 +66,7 @@ def shell_op(context, shell_command):
     output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
 
     if return_code:
-        raise Failure(
-            description="Shell command execution failed with output: {output}".format(output=output)
-        )
+        raise Failure(description=f"Shell command execution failed with output: {output}")
 
     return output
 

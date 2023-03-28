@@ -1032,11 +1032,7 @@ class CouldNotStartServerProcess(Exception):
     def __init__(self, port=None, socket=None):
         super(CouldNotStartServerProcess, self).__init__(
             "Could not start server with "
-            + (
-                "port {port}".format(port=port)
-                if port is not None
-                else "socket {socket}".format(socket=socket)
-            )
+            + (f"port {port}" if port is not None else f"socket {socket}")
         )
 
 

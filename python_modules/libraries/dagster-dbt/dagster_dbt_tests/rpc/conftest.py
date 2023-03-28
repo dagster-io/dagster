@@ -15,7 +15,7 @@ TEST_PORT = 8580
 RPC_ESTABLISH_RETRIES = 10
 RPC_ESTABLISH_RETRY_INTERVAL_S = 1.5
 
-RPC_ENDPOINT = "http://{hostname}:{port}/jsonrpc".format(hostname=TEST_HOSTNAME, port=TEST_PORT)
+RPC_ENDPOINT = f"http://{TEST_HOSTNAME}:{TEST_PORT}/jsonrpc"
 
 # ======= SOLIDS I ========
 

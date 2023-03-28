@@ -612,7 +612,7 @@ class OutputContext:
                 self._events.append(DagsterEvent.asset_observation(self._step_context, event))
             self._user_events.append(event)
         else:
-            check.failed("Unexpected event {event}".format(event=event))
+            check.failed(f"Unexpected event {event}")
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
         """Pops and yields all user-generated events that have been recorded from this context.

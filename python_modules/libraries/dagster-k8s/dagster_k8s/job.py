@@ -157,7 +157,7 @@ def get_k8s_resource_requirements(tags: Mapping[str, str]):
 
     if not result.success:
         raise DagsterInvalidConfigError(
-            "Error in tags for {}".format(K8S_RESOURCE_REQUIREMENTS_KEY),
+            f"Error in tags for {K8S_RESOURCE_REQUIREMENTS_KEY}",
             result.errors,
             result,
         )
@@ -179,7 +179,7 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
         if not result.success:
             raise DagsterInvalidConfigError(
-                "Error in tags for {}".format(USER_DEFINED_K8S_CONFIG_KEY),
+                f"Error in tags for {USER_DEFINED_K8S_CONFIG_KEY}",
                 result.errors,
                 result,
             )
@@ -206,8 +206,8 @@ def get_user_defined_k8s_config(tags: Mapping[str, str]):
 
 
 def get_job_name_from_run_id(run_id, resume_attempt_number=None):
-    return "dagster-run-{}".format(run_id) + (
-        "" if not resume_attempt_number else "-{}".format(resume_attempt_number)
+    return f"dagster-run-{run_id}" + (
+        "" if not resume_attempt_number else f"-{resume_attempt_number}"
     )
 
 

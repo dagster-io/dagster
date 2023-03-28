@@ -119,15 +119,13 @@ def load_assets_from_airflow_dag(
     """
     cron_schedule = dag.normalized_schedule_interval
     if cron_schedule is not None and not is_valid_cron_schedule(str(cron_schedule)):
-        raise DagsterAirflowError(
-            "Invalid cron schedule: {} in DAG {}".format(cron_schedule, dag.dag_id)
-        )
+        raise DagsterAirflowError(f"Invalid cron schedule: {cron_schedule} in DAG {dag.dag_id}")
 
     job = make_dagster_job_from_airflow_dag(dag, connections=connections)
     graph = job._graph_def  # noqa: SLF001
     start_date = dag.start_date if dag.start_date else dag.default_args.get("start_date")
     if start_date is None:
-        raise DagsterAirflowError("Invalid start_date: {} in DAG {}".format(start_date, dag.dag_id))
+        raise DagsterAirflowError(f"Invalid start_date: {start_date} in DAG {dag.dag_id}")
 
     # leaf nodes have no downstream nodes
     forward_edges, _ = create_adjacency_lists(graph.nodes, graph.dependency_structure)

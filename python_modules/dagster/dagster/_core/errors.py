@@ -119,7 +119,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
                 current_value=repr(current_value),
-                reason_str=" Reason: {reason}.".format(reason=reason) if reason else "",
+                reason_str=f" Reason: {reason}." if reason else "",
             ),
             **kwargs,
         )
@@ -504,7 +504,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
     def __init__(self, run_id):
         self.run_id = check.str_param(run_id, "run_id")
         super(DagsterEventLogInvalidForRun, self).__init__(
-            "Event logs invalid for run id {}".format(run_id)
+            f"Event logs invalid for run id {run_id}"
         )
 
 

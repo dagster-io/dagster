@@ -494,7 +494,7 @@ class PendingNodeInvocation:
                 output_node,
                 input_name,
                 input_bindings,
-                "(at position {idx})".format(idx=idx),
+                f"(at position {idx})",
             )
 
         # then **kwargs
@@ -547,7 +547,7 @@ class PendingNodeInvocation:
                 )
 
         return namedtuple(
-            "_{node_def}_outputs".format(node_def=self.node_def.name),
+            f"_{self.node_def.name}_outputs",
             " ".join([output_def.name for output_def in outputs]),
         )(**invoked_output_handles)
 

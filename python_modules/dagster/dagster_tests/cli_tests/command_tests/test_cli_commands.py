@@ -925,7 +925,7 @@ def runner_job_execute(runner, cli_args):
 
 
 def test_use_env_vars_for_cli_option():
-    env_key = "{}_VERSION".format(ENV_PREFIX)
+    env_key = f"{ENV_PREFIX}_VERSION"
     runner = CliRunner(env={env_key: "1"})
     # use `debug` subcommand to trigger the cli group option flag `--version`
     # see issue: https://github.com/pallets/click/issues/1694

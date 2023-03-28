@@ -170,7 +170,7 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
         printer.append("Field(")
         with printer.with_indent():
             printer.line("")
-            printer.line("{config_type},".format(config_type=config_type))
+            printer.line(f"{config_type},")
             printer.append('description="""')
             printer.append(self.meaning)
             printer.line('""",')
@@ -210,7 +210,7 @@ class SparkConfigNode:
                     with printer.with_indent():
                         for k, v in retdict.items():
                             with printer.with_indent():
-                                printer.append('"{}": '.format(k))
+                                printer.append(f'"{k}": ')
                             v.write(printer)
 
                             printer.line(",")

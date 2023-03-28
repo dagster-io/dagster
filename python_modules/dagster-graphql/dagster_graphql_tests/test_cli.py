@@ -159,7 +159,7 @@ def test_start_execution_text():
                 result_data["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             )
         except Exception as e:
-            raise Exception("Failed with {} Exception: {}".format(result.output, e))
+            raise Exception(f"Failed with {result.output} Exception: {e}")
 
 
 def test_start_execution_file():

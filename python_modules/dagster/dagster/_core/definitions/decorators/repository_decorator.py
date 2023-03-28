@@ -134,10 +134,7 @@ class _Repository:
 
             if bad_defns:
                 bad_definitions_str = ", ".join(
-                    [
-                        "value of type {type_} at index {i}".format(type_=type_, i=i)
-                        for i, type_ in bad_defns
-                    ]
+                    [f"value of type {type_} at index {i}" for i, type_ in bad_defns]
                 )
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
@@ -166,7 +163,7 @@ class _Repository:
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
-                                "'{key}'".format(key=key)
+                                f"'{key}'"
                                 for key in repository_definitions.keys()
                                 if key not in VALID_REPOSITORY_DATA_DICT_KEYS
                             ]

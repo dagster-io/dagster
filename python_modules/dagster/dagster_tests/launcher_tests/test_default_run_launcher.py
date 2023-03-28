@@ -358,7 +358,7 @@ def test_crashy_run(instance, workspace, run_config):
     if _is_multiprocess(run_config):
         message = "Multiprocess executor: child process for step crashy_solid unexpectedly exited"
     else:
-        message = "Run execution process for {run_id} unexpectedly exited".format(run_id=run_id)
+        message = f"Run execution process for {run_id} unexpectedly exited"
 
     assert _message_exists(event_records, message)
 

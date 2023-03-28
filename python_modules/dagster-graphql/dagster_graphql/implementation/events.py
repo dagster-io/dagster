@@ -161,7 +161,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
         else:
             # skip rest for now
             check.not_implemented(
-                "{} unsupported metadata entry for now".format(type(metadata_entry.value))
+                f"{type(metadata_entry.value)} unsupported metadata entry for now"
             )
 
 

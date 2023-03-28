@@ -124,7 +124,7 @@ def terminate_pipeline_execution(graphene_info: "ResolveInfo", run_id, terminate
         return GrapheneTerminateRunSuccess(graphene_run)
 
     return GrapheneTerminateRunFailure(
-        run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
+        run=graphene_run, message=f"Unable to terminate run {run.run_id}"
     )
 
 
@@ -183,7 +183,7 @@ async def gen_events_for_run(
     if not record:
         yield GraphenePipelineRunLogsSubscriptionFailure(
             missingRunId=run_id,
-            message="Could not load run with id {}".format(run_id),
+            message=f"Could not load run with id {run_id}",
         )
         return
 

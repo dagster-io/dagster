@@ -19,14 +19,14 @@ def _recent_failed_runs_text(instance):
     if len(runs) <= 0:
         return ""
     for run in runs:
-        lines.append("{:<50}{:<50}{:<20}".format(run.run_id, run.pipeline_name, run.status))
+        lines.append(f"{run.run_id:<50}{run.pipeline_name:<50}{run.status:<20}")
     return "Recently failed runs:\n{}".format("\n".join(lines))
 
 
 def export_run(instance, run, output_file):
     debug_payload = DebugRunPayload.build(instance, run)
     with GzipFile(output_file, "wb") as file:
-        click.echo("Exporting run_id '{}' to gzip output file {}.".format(run.run_id, output_file))
+        click.echo(f"Exporting run_id '{run.run_id}' to gzip output file {output_file}.")
         debug_payload.write(file)
 
 

@@ -415,13 +415,13 @@ def _migration_regex(current_revision, expected_revision=None):
 
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            f"Database is at revision {current_revision}, head is {expected_revision}."
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
+        revision = f"Database is at revision {current_revision}, head is [a-z0-9]+."
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
-    return "{} {} {}".format(warning, revision, instruction)
+    return f"{warning} {revision} {instruction}"
 
 
 def get_the_job():

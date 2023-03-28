@@ -325,9 +325,9 @@ class SnowflakeConnection:
         check.str_param(table, "table")
 
         sql_queries = [
-            "CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);".format(table=table),
+            f"CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);",
             "CREATE OR REPLACE FILE FORMAT parquet_format TYPE = 'parquet';",
-            "PUT {src} @%{table};".format(src=src, table=table),
+            f"PUT {src} @%{table};",
             "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');"
             .format(table=table),
         ]

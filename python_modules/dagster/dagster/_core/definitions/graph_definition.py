@@ -88,9 +88,7 @@ def _check_node_defs_arg(
                 )
             )
         else:
-            raise DagsterInvalidDefinitionError(
-                "Invalid item in node list: {item}".format(item=repr(node_def))
-            )
+            raise DagsterInvalidDefinitionError(f"Invalid item in node list: {repr(node_def)}")
 
     return node_defs
 
@@ -327,7 +325,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
-            "{graph_name} has no op named {name}.".format(graph_name=self._name, name=name),
+            f"{self._name} has no op named {name}.",
         )
 
         return self._node_dict[name]

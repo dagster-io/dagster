@@ -143,7 +143,7 @@ class DagsterType(RequiresResources):
         self.is_builtin = check.bool_param(is_builtin, "is_builtin")
         check.invariant(
             self.display_name is not None,
-            "All types must have a valid display name, got None for key {}".format(key),
+            f"All types must have a valid display name, got None for key {key}",
         )
 
         self.kind = check.inst_param(kind, "kind", DagsterTypeKind)
@@ -209,7 +209,7 @@ class DagsterType(RequiresResources):
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(
             self._name is not None,
-            "unique_name requested but is None for type {}".format(self.display_name),
+            f"unique_name requested but is None for type {self.display_name}",
         )
         return self._name
 
@@ -460,7 +460,7 @@ class _Nothing(DagsterType):
         if value is not None:
             return TypeCheck(
                 success=False,
-                description="Value must be None, got a {value_type}".format(value_type=type(value)),
+                description=f"Value must be None, got a {type(value)}",
             )
 
         return TypeCheck(success=True)
@@ -852,7 +852,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
-        "Do not pass runtime type classes. Got {}".format(dagster_type),
+        f"Do not pass runtime type classes. Got {dagster_type}",
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
@@ -922,7 +922,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
-        "Do not pass runtime type classes. Got {}".format(dagster_type),
+        f"Do not pass runtime type classes. Got {dagster_type}",
     )
 
     if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:

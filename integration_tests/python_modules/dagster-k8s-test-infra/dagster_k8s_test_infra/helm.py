@@ -467,7 +467,7 @@ def _helm_chart_helper(
     check.bool_param(should_cleanup, "should_cleanup")
     check.str_param(helm_install_name, "helm_install_name")
 
-    print("--- \033[32m:helm: Installing Helm chart {}\033[0m".format(helm_install_name))
+    print(f"--- \033[32m:helm: Installing Helm chart {helm_install_name}\033[0m")
 
     try:
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
@@ -1051,7 +1051,7 @@ def _port_forward_dagit(namespace):
                 "--namespace",
                 namespace,
                 dagit_pod_name,
-                "{forward_port}:80".format(forward_port=forward_port),
+                f"{forward_port}:80",
             ],
             # Squelch the verbose "Handling connection for..." messages
             stdout=subprocess.DEVNULL,

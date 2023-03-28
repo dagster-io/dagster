@@ -808,4 +808,4 @@ def get_external_job_from_kwargs(instance: DagsterInstance, version: str, kwargs
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:
-    return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
+    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"

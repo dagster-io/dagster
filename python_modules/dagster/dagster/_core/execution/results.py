@@ -137,9 +137,7 @@ class GraphExecutionResult:
         self, node: Node, handle: NodeHandle
     ) -> Union["CompositeSolidExecutionResult", "OpExecutionResult"]:
         if not node:
-            raise DagsterInvariantViolationError(
-                "Can not find solid handle {handle_str}.".format(handle_str=handle.to_string())
-            )
+            raise DagsterInvariantViolationError(f"Can not find solid handle {handle.to_string()}.")
 
         events_by_kind: DefaultDict[StepKind, List[DagsterEvent]] = defaultdict(list)
 
@@ -459,7 +457,7 @@ class OpExecutionResult:
             if step_event.event_type == DagsterEventType.STEP_SUCCESS:
                 return step_event
 
-        check.failed("Step success not found for solid {}".format(self.node.name))
+        check.failed(f"Step success not found for solid {self.node.name}")
 
     @property
     def compute_step_failure_event(self) -> DagsterEvent:

@@ -52,7 +52,7 @@ DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:
-    return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
+    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
 
 
 def create_daemons_from_instance(instance: DagsterInstance) -> Sequence[DagsterDaemon]:
@@ -178,7 +178,7 @@ class DagsterDaemonController(AbstractContextManager):
                     heartbeat_interval_seconds,
                     error_interval_seconds,
                 ),
-                name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
+                name=f"dagster-daemon-{daemon_type}",
                 daemon=True,  # Individual daemons should not outlive controller process
             )
             self._last_healthy_heartbeat_times[daemon_type] = time.time()

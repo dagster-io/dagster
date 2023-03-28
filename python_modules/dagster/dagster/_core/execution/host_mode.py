@@ -47,7 +47,7 @@ def _get_host_mode_executor(
     config_evr = process_config(execution_config_type, execution_config)  # type: ignore  # (config typing)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error processing execution config {}".format(execution_config),
+            f"Error processing execution config {execution_config}",
             config_evr.errors,
             execution_config,
         )

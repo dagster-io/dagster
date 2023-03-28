@@ -62,7 +62,7 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
 
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         return ComputeLogFileData(
-            path="{}.{}".format(key, io_type), data=None, cursor=0, size=0, download_url=None
+            path=f"{key}.{io_type}", data=None, cursor=0, size=0, download_url=None
         )
 
     def on_subscribe(self, subscription):

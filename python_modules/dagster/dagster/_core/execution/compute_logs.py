@@ -93,9 +93,7 @@ def execute_windows_tail(path, stream):
     stream = stream if _fileno(stream) else None
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        ipc_output_file = os.path.join(
-            temp_dir, "execute-windows-tail-{uuid}".format(uuid=uuid.uuid4().hex)
-        )
+        ipc_output_file = os.path.join(temp_dir, f"execute-windows-tail-{uuid.uuid4().hex}")
 
         try:
             tail_process = open_ipc_subprocess(
