@@ -665,11 +665,11 @@ def graph_asset(
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function. The asset's name must be a valid name in Dagster (ie only contains
-            letters, numbers, and underscore) and may not contain Python reserved keywords.
+            letters, numbers, and underscores) and may not contain Python reserved keywords.
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
             the decorated function. Each item in key_prefix must be a valid name in Dagster (ie only
-            contains letters, numbers, and underscore) and may not contain Python reserved keywords.
+            contains letters, numbers, and underscores) and may not contain Python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
