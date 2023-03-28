@@ -5,10 +5,10 @@ on:
       - master
       - 'release-*'
     paths:
-      - docs/next/**
+      - docs/**
   pull_request:
     paths:
-      - docs/next/**
+      - docs/**
 jobs:
   deploy:
     runs-on: ubuntu-latest
