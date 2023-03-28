@@ -14,7 +14,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
-earth = SourceAsset("earth")
+earth = SourceAsset("earth", group_name="planets")
 
 
 @asset(group_name="ladies")
@@ -97,7 +97,8 @@ def test_asset_selection_downstream(all_assets: _AssetList):
 
 
 def test_asset_selection_groups(all_assets: _AssetList):
-    sel = AssetSelection.groups("ladies")
+    sel = AssetSelection.groups("ladies", "planets")
+    # should not include source assets
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
 
 
