@@ -1,5 +1,6 @@
 # encoding: utf-8
 import hashlib
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
 
 import dagster._check as check
@@ -473,6 +474,8 @@ def _config_dictionary_from_values_inner(obj: Any):
             k: _config_dictionary_from_values_inner(v)
             for k, v in obj._as_config_dict().items()  # noqa: SLF001
         }
+    elif isinstance(obj, Enum):
+        return obj.name
 
     return obj
 
