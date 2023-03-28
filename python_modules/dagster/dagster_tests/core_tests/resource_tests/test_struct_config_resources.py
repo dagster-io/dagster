@@ -1939,6 +1939,17 @@ def test_direct_op_invocation() -> None:
     # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
     assert my_op(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
 
+    # We don't allow providing resources as args, this adds too much complexity
+    # They must be kwargs, and we will error accordingly
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking an op/asset, you may not provide resources as positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        assert my_op(build_op_context(), MyResource(a_str="foo")) == "foo"
+
     @op
     def my_op_no_context(my_resource: MyResource) -> str:
         assert my_resource.a_str == "foo"
@@ -1952,6 +1963,67 @@ def test_direct_op_invocation() -> None:
 
     # Providing resource only as kwarg is ok, we'll use that
     assert my_op_no_context(my_resource=MyResource(a_str="foo")) == "foo"
+
+
+def test_direct_op_invocation_multiple_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(context, my_resource: MyResource, my_other_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        assert my_other_resource.a_str == "bar"
+        return my_resource.a_str
+
+    # Just providing context is ok, we'll use both resources from the context
+    assert (
+        my_op(
+            build_op_context(
+                resources={
+                    "my_resource": MyResource(a_str="foo"),
+                    "my_other_resource": MyResource(a_str="bar"),
+                }
+            )
+        )
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
+    assert (
+        my_op(
+            context=build_op_context(),
+            my_resource=MyResource(a_str="foo"),
+            my_other_resource=MyResource(a_str="bar"),
+        )
+        == "foo"
+    )
+
+    @op
+    def my_op_no_context(my_resource: MyResource, my_other_resource: MyResource) -> str:
+        assert my_resource.a_str == "foo"
+        assert my_other_resource.a_str == "bar"
+        return my_resource.a_str
+
+    # Providing context is ok, we just discard it and use the resource from the context
+    assert (
+        my_op_no_context(
+            build_op_context(
+                resources={
+                    "my_resource": MyResource(a_str="foo"),
+                    "my_other_resource": MyResource(a_str="bar"),
+                }
+            )
+        )
+        == "foo"
+    )
+
+    # Providing resource only as kwarg is ok, we'll use that
+    assert (
+        my_op_no_context(
+            my_resource=MyResource(a_str="foo"), my_other_resource=MyResource(a_str="bar")
+        )
+        == "foo"
+    )
 
 
 def test_direct_asset_invocation() -> None:
@@ -1981,6 +2053,17 @@ def test_direct_asset_invocation() -> None:
 
     # Providing resource only as kwarg is ok, we'll use that (we still need a context though)
     assert my_asset(context=build_op_context(), my_resource=MyResource(a_str="foo")) == "foo"
+
+    # We don't allow providing resources as args, this adds too much complexity
+    # They must be kwargs, and we will error accordingly
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking an op/asset, you may not provide resources as positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        assert my_asset(build_op_context(), MyResource(a_str="foo")) == "foo"
 
     @asset
     def my_asset_no_context(my_resource: MyResource) -> str:

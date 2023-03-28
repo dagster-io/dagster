@@ -2,7 +2,9 @@ import inspect
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -68,7 +70,17 @@ def op_invocation_result(
     if resource_args_from_kwargs:
         context = context.replace_resources(resource_args_from_kwargs)
 
-    bound_context = context.bind(op_def_or_invocation)
+    try:
+        bound_context = context.bind(op_def_or_invocation)
+    except DagsterInvalidDefinitionError as e:
+        if any(isinstance(arg, ResourceDefinition) for arg in args):
+            raise DagsterInvalidInvocationError(
+                str(e)
+                + "\n\nIf directly invoking an op/asset, you may not provide resources as"
+                " positional"
+                " arguments, only as keyword arguments."
+            ) from e
+        raise
     input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
 
     result = invoke_compute_fn(

@@ -339,6 +339,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
             instance=self._instance,
             partition_key=self._partition_key,
             mapping_key=self._mapping_key,
+            assets_def=self._assets_def,
         )
 
 
