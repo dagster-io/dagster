@@ -10,7 +10,6 @@ import {
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState} from 'react';
-import ReactDOM from 'react-dom';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
