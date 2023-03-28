@@ -56,7 +56,7 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
-from dagster._grpc.client import EphemeralDagsterGrpcClient
+from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
@@ -1914,21 +1914,19 @@ def test_large_schedule(
 @contextmanager
 def _grpc_server_external_repo(port: int, instance: DagsterInstance):
     server_process = open_server_process(
-        instance.get_ref(),
+        instance_ref=instance.get_ref(),
         port=port,
         socket=None,
         loadable_target_origin=loadable_target_origin(),
     )
     try:
-        # shuts down server when it leaves this contextmanager
-        with EphemeralDagsterGrpcClient(port=port, socket=None, server_process=server_process):
-            location_origin = GrpcServerCodeLocationOrigin(
-                host="localhost", port=port, location_name="test_location"
-            )
-            with GrpcServerCodeLocation(origin=location_origin) as location:
-                yield location.get_repository("the_repo")
-
+        location_origin: GrpcServerCodeLocationOrigin = GrpcServerCodeLocationOrigin(
+            host="localhost", port=port, location_name="test_location"
+        )
+        with GrpcServerCodeLocation(origin=location_origin) as location:
+            yield location.get_repository("the_repo")
     finally:
+        DagsterGrpcClient(port=port, socket=None).shutdown_server()
         if server_process.poll() is None:
             wait_for_process(server_process, timeout=30)
 

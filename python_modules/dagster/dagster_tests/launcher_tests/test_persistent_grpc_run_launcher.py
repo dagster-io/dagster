@@ -28,12 +28,12 @@ def test_run_always_finishes():
             attribute="nope",
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         )
-        server_process = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=loadable_target_origin,
             max_workers=4,
-        )
-        with server_process.create_ephemeral_client():  # Shuts down when leaves context
+            wait_on_exit=False,
+        ) as server_process:
             with WorkspaceProcessContext(
                 instance,
                 GrpcServerTarget(
@@ -88,12 +88,12 @@ def test_run_from_pending_repository():
             attribute="pending",
             python_file=file_relative_path(__file__, "pending_repository.py"),
         )
-        server_process = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=loadable_target_origin,
             max_workers=4,
-        )
-        with server_process.create_ephemeral_client():  # Shuts down when leaves context
+            wait_on_exit=False,
+        ) as server_process:
             with WorkspaceProcessContext(
                 instance,
                 GrpcServerTarget(
@@ -258,14 +258,14 @@ def test_server_down():
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         )
 
-        server_process = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=loadable_target_origin,
             max_workers=4,
             force_port=True,
-        )
-
-        with server_process.create_ephemeral_client() as api_client:
+            wait_on_exit=True,
+        ) as server_process:
+            api_client = server_process.create_client()
             with WorkspaceProcessContext(
                 instance,
                 GrpcServerTarget(
@@ -316,5 +316,3 @@ def test_server_down():
                 )
 
                 assert launcher.terminate(pipeline_run.run_id)
-
-        server_process.wait()
