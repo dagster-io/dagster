@@ -34,7 +34,7 @@ const TestComponent: React.FC = () => {
         getStringValue: (value) => value,
       }),
       new SetFilter({
-        name: 'Test',
+        name: 'Test set filter',
         icon: 'account_tree',
         allValues: [
           value('marco'),
@@ -48,6 +48,27 @@ const TestComponent: React.FC = () => {
           <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
         ),
         getStringValue: (value) => value,
+      }),
+
+      new SetFilter({
+        name: 'Deployment',
+        icon: 'workspaces',
+        allValues: [value('prod'), value('dev'), value('staging')],
+        getStringValue: (value) => value,
+        renderLabel: ({value}) => (
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                backgroundColor: 'black',
+                borderRadius: '50%',
+                margin: '4px',
+              }}
+            />
+            <span>{value}</span>
+          </Box>
+        ),
       }),
       new TimeRangeFilter('Timestamp', 'account_tree'),
     ],
