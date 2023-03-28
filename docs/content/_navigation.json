@@ -582,7 +582,7 @@
               },
               {
                 "title": "Alerts",
-                "path": "/dagster-cloud/account/setting-up-alerts"
+                "path": "/dagster-cloud/managing-deployments/setting-up-alerts"
               },
               {
                 "title": "Environment variables & secrets",
