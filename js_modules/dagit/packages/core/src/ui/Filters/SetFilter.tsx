@@ -66,7 +66,7 @@ export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
       }));
   }
 
-  onSelect(value: TValue, _: (isOpen: boolean) => void) {
+  onSelect(value: TValue, _: () => void) {
     if (this.getState().has(value)) {
       const nextState = new Set(this.getState());
       nextState.delete(value);

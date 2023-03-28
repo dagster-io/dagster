@@ -82,7 +82,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
 
   onSelect(
     key: TimeRangeKey,
-    setIsDropdownOpen: (isOpen: boolean) => void,
+    close: () => void,
     createPortal: (element: JSX.Element) => () => void,
   ) {
     if (key === 'CUSTOM') {
@@ -99,7 +99,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
       const value = TimeRanges[key].range;
       this.setState(value);
     }
-    setIsDropdownOpen(false);
+    close();
     return null;
   }
 }

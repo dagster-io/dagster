@@ -47,12 +47,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     (filter: Filter<any, any>, value: any) => {
       filter.onSelect(
         value,
-        (isOpen) => {
-          if (!isOpen) {
-            setSearch('');
-            setSelectedFilter(null);
-            setIsOpen(false);
-          }
+        () => {
+          setSearch('');
+          setSelectedFilter(null);
+          setIsOpen(false);
         },
         (portaledElement) => {
           const portalElement = (

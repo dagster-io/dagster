@@ -25,7 +25,7 @@ export abstract class Filter<TState, TValue> {
 
   public abstract onSelect(
     value: TValue,
-    setIsDropdownOpen: (isOpen: boolean) => void,
+    close: () => void,
     createPortal: (element: JSX.Element) => () => void,
   ): void;
 
