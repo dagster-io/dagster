@@ -116,13 +116,6 @@ def _core_execute_cli(
     json_log_format: bool,
 ) -> Iterator[Union[DbtCliEvent, int]]:
     """Runs a dbt command in a subprocess and yields parsed output line by line."""
-    try:
-        import dbt  # noqa: F401
-    except ImportError as e:
-        raise check.CheckError(
-            "You must have `dbt-core` installed in order to execute dbt CLI commands."
-        ) from e
-
     # Execute the dbt CLI command in a subprocess.
     messages: List[str] = []
 
