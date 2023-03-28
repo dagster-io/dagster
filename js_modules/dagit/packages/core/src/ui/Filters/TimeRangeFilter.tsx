@@ -1,11 +1,16 @@
-import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter, TextInput} from '@dagster-io/ui';
+import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
+// eslint-disable-next-line no-restricted-imports
+import moment from 'moment';
 import React from 'react';
-import Calendar from 'react-calendar';
+import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components/macro';
 
 import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
+
+import 'react-dates/initialize';
+import 'react-dates/lib/css/_datepicker.css';
 
 function calculateTimeRanges() {
   return {
@@ -184,8 +189,9 @@ function CustomTimeRangeFilterDialog({
   filter: TimeRangeFilter;
   closeRef: {current: () => void};
 }) {
-  const [startDate, setStartDate] = React.useState<string | undefined>(undefined);
-  const [endDate, setEndDate] = React.useState<string | undefined>(undefined);
+  const [startDate, setStartDate] = React.useState<moment.Moment | null>(null);
+  const [endDate, setEndDate] = React.useState<moment.Moment | null>(null);
+  const [focusedInput, setFocusedInput] = React.useState<'startDate' | 'endDate'>('startDate');
 
   const [isOpen, setIsOpen] = React.useState(true);
 
@@ -197,50 +203,26 @@ function CustomTimeRangeFilterDialog({
         // close the portal after the animation is done
         closeRef.current();
       }}
-      style={{minWidth: '600px'}}
+      style={{width: '652px'}}
     >
       <Container>
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} padding={16}>
-          <TextInput
-            placeholder="Start date"
-            type="date"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              if (endDate && new Date(endDate) <= new Date(e.target.value)) {
-                setEndDate(e.target.value);
-              }
-            }}
-          />
-          {' - '}
-          <TextInput
-            placeholder="End date"
-            type="date"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              if (startDate && new Date(startDate) >= new Date(e.target.value)) {
-                setStartDate(e.target.value);
-              }
-            }}
-          />
-        </Box>
         <Box flex={{direction: 'row', gap: 8}} padding={16}>
-          <Calendar
-            value={startDate ? createDateLocalTimezone(startDate) : undefined}
-            onChange={(value) => setStartDate(formatDate(value as Date))}
-            maxDate={
-              endDate ? new Date(createDateLocalTimezone(endDate).getTime() - MS_IN_DAY) : undefined
-            }
-          />
-          <Calendar
-            value={endDate ? createDateLocalTimezone(endDate) : undefined}
-            onChange={(value) => setEndDate(formatDate(value as Date))}
-            minDate={
-              startDate
-                ? new Date(createDateLocalTimezone(startDate).getTime() + MS_IN_DAY)
-                : undefined
-            }
+          <DateRangePicker
+            onDatesChange={({startDate, endDate}) => {
+              setStartDate(startDate);
+              setEndDate(endDate);
+            }}
+            onFocusChange={(focusedInput) => {
+              focusedInput && setFocusedInput(focusedInput);
+            }}
+            startDate={startDate}
+            endDate={endDate}
+            startDateId="start"
+            endDateId="end"
+            focusedInput={focusedInput}
+            withPortal={false}
+            keepOpenOnDateSelect
+            isOutsideRange={() => false}
           />
         </Box>
       </Container>
@@ -256,10 +238,7 @@ function CustomTimeRangeFilterDialog({
           intent="primary"
           disabled={!startDate || !endDate}
           onClick={() => {
-            filter.setState([
-              createDateLocalTimezone(startDate!).getTime(),
-              createDateLocalTimezone(endDate!).getTime(),
-            ]);
+            filter.setState([startDate!.valueOf(), endDate!.valueOf()]);
             setIsOpen(false);
           }}
         >
@@ -270,15 +249,9 @@ function CustomTimeRangeFilterDialog({
   );
 }
 
-function formatDate(date: Date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so we need to add 1
-  const dd = String(date.getDate()).padStart(2, '0');
-
-  return `${yyyy}-${mm}-${dd}`;
-}
-
 const Container = styled.div`
+  height: 430px;
+
   /* Hide the default date picker for Chrome, Edge, and Safari */
   input[type='date']::-webkit-calendar-picker-indicator {
     display: none;
@@ -294,147 +267,26 @@ const Container = styled.div`
     display: none;
   }
 
-  .react-calendar {
-    width: 350px;
-    max-width: 100%;
-    background: ${Colors.White};
-    border: 1px solid ${Colors.Gray300};
-    font-family: Arial, Helvetica, sans-serif;
-    line-height: 1.125em;
+  .DayPickerKeyboardShortcuts_show {
+    display: none;
   }
 
-  .react-calendar--doubleView {
-    width: 700px;
+  .CalendarDay__hovered_span,
+  .CalendarDay__hovered_span:hover,
+  .CalendarDay__selected_span,
+  .CalendarDay__selected_span:hover {
+    background: ${Colors.Blue50};
+    color: ${Colors.Blue700};
+    border: 1px solid #e4e7e7;
   }
-
-  .react-calendar--doubleView .react-calendar__viewContainer {
-    display: flex;
-    margin: -0.5em;
-  }
-
-  .react-calendar--doubleView .react-calendar__viewContainer > * {
-    width: 50%;
-    margin: 0.5em;
-  }
-
-  .react-calendar,
-  .react-calendar *,
-  .react-calendar *:before,
-  .react-calendar *:after {
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-  }
-
-  .react-calendar button {
-    margin: 0;
-    border: 0;
-    outline: none;
-  }
-
-  .react-calendar button:enabled:hover {
-    cursor: pointer;
-  }
-
-  .react-calendar__navigation {
-    display: flex;
-    height: 44px;
-    margin-bottom: 1em;
-  }
-
-  .react-calendar__navigation button {
-    min-width: 44px;
-    background: none;
-  }
-
-  .react-calendar__navigation button:disabled {
-    background-color: ${Colors.Gray200};
-  }
-
-  .react-calendar__navigation button:enabled:hover,
-  .react-calendar__navigation button:enabled:focus {
-    background-color: ${Colors.Gray300};
-  }
-
-  .react-calendar__month-view__weekdays {
-    text-align: center;
-    text-transform: uppercase;
-    font-weight: bold;
-    font-size: 0.75em;
-  }
-
-  .react-calendar__month-view__weekdays__weekday {
-    padding: 0.5em;
-  }
-
-  .react-calendar__month-view__weekNumbers .react-calendar__tile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75em;
-    font-weight: bold;
-  }
-
-  .react-calendar__month-view__days__day--weekend {
-  }
-
-  .react-calendar__month-view__days__day--neighboringMonth {
-    color: ${Colors.Gray500};
-  }
-
-  .react-calendar__year-view .react-calendar__tile,
-  .react-calendar__decade-view .react-calendar__tile,
-  .react-calendar__century-view .react-calendar__tile {
-    padding: 2em 0.5em;
-  }
-
-  .react-calendar__tile {
-    max-width: 100%;
-    padding: 10px 6.6667px;
-    background: none;
-    text-align: center;
-    line-height: 16px;
-  }
-
-  .react-calendar__tile:disabled {
-    background-color: ${Colors.Gray200};
-  }
-
-  .react-calendar__tile:enabled:hover,
-  .react-calendar__tile:enabled:focus {
-    background-color: ${Colors.Gray300};
-  }
-
-  .react-calendar__tile--now {
-    background: inherit;
-  }
-
-  .react-calendar__tile--now:enabled:hover,
-  .react-calendar__tile--now:enabled:focus {
-    background: ${Colors.Yellow500};
-  }
-
-  .react-calendar__tile--hasActive {
+  .CalendarDay__selected,
+  .CalendarDay__selected:active,
+  .CalendarDay__selected:hover {
     background: ${Colors.Blue200};
+    border: 1px solid #e4e7e7;
   }
-
-  .react-calendar__tile--hasActive:enabled:hover,
-  .react-calendar__tile--hasActive:enabled:focus {
-    background: ${Colors.Blue500};
-  }
-
-  .react-calendar__tile--active {
-    background: ${Colors.Blue500};
-    color: ${Colors.White};
-  }
-
-  .react-calendar__tile--active:enabled:hover,
-  .react-calendar__tile--active:enabled:focus {
-    background: ${Colors.Blue500};
-  }
-
-  .react-calendar--selectRange .react-calendar__tile--hover {
-    background-color: ${Colors.Gray200};
+  .DateInput_input__focused {
+    border-color: ${Colors.Blue500};
   }
 `;
 
@@ -442,5 +294,3 @@ function createDateLocalTimezone(dateString: string) {
   const [year, month, day] = dateString.split('-');
   return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 }
-
-const MS_IN_DAY = 1000 * 60 * 60 * 24;
