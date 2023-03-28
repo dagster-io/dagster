@@ -363,8 +363,7 @@ class GraphDefinition(NodeDefinition):
         for node in self.node_dict.values():
             cur_node_handle = NodeHandle(node.name, parent_node_handle)
             if isinstance(node, GraphNode):
-                graph_def = node.definition.ensure_graph_def()
-                yield from graph_def.iterate_node_handles(cur_node_handle)
+                yield from node.definition.iterate_node_handles(cur_node_handle)
             yield cur_node_handle
 
     @public

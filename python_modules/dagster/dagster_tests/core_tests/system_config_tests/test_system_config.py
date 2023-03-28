@@ -20,7 +20,7 @@ from dagster._config import ConfigTypeKind, process_config
 from dagster._core.definitions import create_run_config_schema
 from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
-    define_solid_dictionary_cls,
+    define_node_shape,
 )
 from dagster._core.system_config.objects import OpConfig, ResolvedRunConfig, ResourceConfig
 from dagster._loggers import default_loggers
@@ -33,7 +33,7 @@ def create_creation_data(job_def):
         job_def.dependency_structure,
         job_def.mode_definition,
         logger_defs=default_loggers(),
-        ignored_solids=[],
+        ignored_nodes=[],
         required_resources=set(),
         is_using_graph_job_op_apis=job_def.is_job,
         direct_inputs=job_def._input_values if job_def.is_job else {},  # noqa: SLF001
@@ -274,9 +274,9 @@ def test_whole_environment():
 
 def test_solid_config_error():
     job_def = define_test_solids_config_pipeline()
-    solid_dict_type = define_solid_dictionary_cls(
-        solids=job_def.solids,
-        ignored_solids=None,
+    solid_dict_type = define_node_shape(
+        nodes=job_def.solids,
+        ignored_nodes=None,
         dependency_structure=job_def.dependency_structure,
         parent_handle=None,
         resource_defs={},

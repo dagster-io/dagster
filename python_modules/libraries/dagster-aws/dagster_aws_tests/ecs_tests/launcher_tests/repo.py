@@ -3,13 +3,13 @@ import dagster._legacy as legacy
 
 
 @dagster.op
-def solid(_):
+def node(_):
     pass
 
 
 @legacy.pipeline
 def pipeline():
-    solid()
+    node()
 
 
 @dagster.repository
