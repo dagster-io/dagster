@@ -54,6 +54,7 @@ import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 
 interface Props {
   assetKey: AssetKey;
@@ -106,7 +107,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   // Some tabs make expensive queries that should be refreshed after materializations or failures.
   // We build a hint string from the live summary info and refresh the views when the hint changes.
-  const dataRefreshHint = `${lastMaterializedAt},${liveDataForAsset?.runWhichFailedToMaterialize?.id}`;
+  const dataRefreshHint = liveDataForAsset
+    ? healthRefreshHintFromLiveData(liveDataForAsset)
+    : lastMaterialization?.timestamp;
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(definitionQueryResult, FIFTEEN_SECONDS),
