@@ -3,11 +3,11 @@ import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import Calendar from 'react-calendar';
+import styled from 'styled-components/macro';
 
 import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
 
 import 'react-calendar/dist/Calendar.css';
-import styled from 'styled-components';
 
 function calculateTimeRanges() {
   return {
