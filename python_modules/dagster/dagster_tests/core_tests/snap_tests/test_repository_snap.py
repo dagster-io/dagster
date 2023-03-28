@@ -366,7 +366,11 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
 
     defs = Definitions(
         assets=[my_asset, my_other_asset, my_third_asset],
-        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+        resources={
+            "foo": MyResource(a_str="foo"),
+            "bar": MyResource(a_str="bar"),
+            "baz": MyResource(a_str="baz"),
+        },
     )
 
     repo = resolve_pending_repo_if_required(defs)
@@ -389,6 +393,11 @@ def test_repository_snap_definitions_resources_assets_usage() -> None:
     assert bar[0].asset_keys_using == [
         AssetKey("my_other_asset"),
     ]
+
+    baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
+    assert len(baz) == 1
+
+    assert baz[0].asset_keys_using == []
 
 
 def test_repository_snap_definitions_function_style_resources_assets_usage() -> None:
