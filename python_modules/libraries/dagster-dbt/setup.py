@@ -45,7 +45,9 @@ setup(
         "test": [
             "Jinja2",
             "dbt-rpc<0.3.0",
-            "dbt-postgres",
+            "dbt-duckdb",
+            "dagster-duckdb",
+            "dagster-duckdb-pandas",
         ]
     },
     entry_points={
