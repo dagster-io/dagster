@@ -15,7 +15,7 @@ from dagster import (
     op,
     validate_run_config,
 )
-from dagster._config.config_type import ConfigTypeKind
+from dagster._config.config_type import ConfigTypeKind, Noneable
 from dagster._config.field_utils import convert_potential_field
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
@@ -518,12 +518,12 @@ def test_int_source_default():
     )
 
 
-def test_optional_string_source_default():
+def test_optional_string_source_default() -> None:
     class RawStringConfigSchema(Config):
         a_str: Optional[str]
 
     assert print_config_type_to_string(
-        {"a_str": dagster.Field(StringSource, is_required=False)}
+        {"a_str": dagster.Field(Noneable(StringSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
@@ -531,12 +531,12 @@ def test_optional_string_source_default():
     assert RawStringConfigSchema(a_str=None).a_str is None
 
 
-def test_optional_string_source_with_default_none():
+def test_optional_string_source_with_default_none() -> None:
     class RawStringConfigSchema(Config):
         a_str: Optional[str] = None
 
     assert print_config_type_to_string(
-        {"a_str": dagster.Field(StringSource, is_required=False)}
+        {"a_str": dagster.Field(Noneable(StringSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
@@ -545,23 +545,23 @@ def test_optional_string_source_with_default_none():
     assert RawStringConfigSchema(a_str=None).a_str is None
 
 
-def test_optional_bool_source_default():
+def test_optional_bool_source_default() -> None:
     class RawBoolConfigSchema(Config):
         a_bool: Optional[bool]
 
     assert print_config_type_to_string(
-        {"a_bool": dagster.Field(BoolSource, is_required=False)}
+        {"a_bool": dagster.Field(Noneable(BoolSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawBoolConfigSchema).config_type
     )
 
 
-def test_optional_int_source_default():
+def test_optional_int_source_default() -> None:
     class OptionalInt(Config):
         an_int: Optional[int]
 
     assert print_config_type_to_string(
-        {"an_int": dagster.Field(IntSource, is_required=False)}
+        {"an_int": dagster.Field(Noneable(IntSource))}
     ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
 
 

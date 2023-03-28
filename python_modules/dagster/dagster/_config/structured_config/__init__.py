@@ -18,7 +18,7 @@ from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
 from dagster._annotations import experimental
-from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
+from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType, Noneable
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
@@ -747,6 +747,8 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
+        if pydantic_field.allow_none:
+            wrapped_config_type = Noneable(wrapped_config_type)
         return Field(
             config=wrapped_config_type,
             description=pydantic_field.field_info.description,
