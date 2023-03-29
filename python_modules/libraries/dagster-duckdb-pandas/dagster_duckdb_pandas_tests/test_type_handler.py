@@ -540,7 +540,6 @@ def test_self_dependent_asset(tmp_path, io_managers):
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.self_dependent_asset").fetch_df()
 
         assert out_df["a"].tolist() == ["1", "1", "1", "2", "2", "2"]
-        duckdb_conn.close()
 
         # drop table so we start with an empty db for the next io manager
         duckdb_conn.execute("DELETE FROM my_schema.dynamic_partitioned")
