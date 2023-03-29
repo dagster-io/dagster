@@ -45,7 +45,10 @@ from ...implementation.fetch_pipelines import (
     get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
-from ...implementation.fetch_resources import get_resource_or_error, get_resources_or_error
+from ...implementation.fetch_resources import (
+    get_resource_or_error,
+    get_top_level_resources_or_error,
+)
 from ...implementation.fetch_runs import (
     get_execution_plan,
     get_logs_for_run,
@@ -539,7 +542,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
     def resolve_allTopLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, **kwargs):
-        return get_resources_or_error(
+        return get_top_level_resources_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )

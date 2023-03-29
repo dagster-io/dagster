@@ -56,6 +56,10 @@ class RepositoryData(ABC):
         """
 
     @abstractmethod
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        pass
+
+    @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         """Return all top-level resources in the repository as a list,
         such as those provided to the Definitions constructor.
@@ -247,6 +251,7 @@ class CachingRepositoryData(RepositoryData):
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
+        resource_key_mapping: Mapping[int, str],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -300,6 +305,9 @@ class CachingRepositoryData(RepositoryData):
             "utilized_resources",
             key_type=str,
         )
+        check.mapping_param(
+            resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
+        )
 
         self._pipelines = CacheingDefinitionIndex(
             PipelineDefinition,
@@ -331,6 +339,7 @@ class CachingRepositoryData(RepositoryData):
         self._assets_defs_by_key = assets_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
+        self._resource_key_mapping = resource_key_mapping
 
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
@@ -373,6 +382,7 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_key_mapping: Optional[Mapping[int, str]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -390,6 +400,7 @@ class CachingRepositoryData(RepositoryData):
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
+            resource_key_mapping=resource_key_mapping,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
@@ -402,6 +413,9 @@ class CachingRepositoryData(RepositoryData):
             List[str]
         """
         return [*self._pipelines.get_definition_names(), *self.get_job_names()]
+
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        return self._resource_key_mapping
 
     def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.

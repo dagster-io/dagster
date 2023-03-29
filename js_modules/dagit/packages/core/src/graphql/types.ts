@@ -2844,6 +2844,7 @@ export type ResourceDetails = {
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
+  isTopLevel: Scalars['Boolean'];
   name: Scalars['String'];
 };
 
@@ -10184,6 +10185,7 @@ export const buildResourceDetails = (
           ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
+    isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
   };
 };

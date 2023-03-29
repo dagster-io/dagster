@@ -1913,6 +1913,7 @@ type ResourceDetails {
   description: String
   configFields: [ConfigTypeField!]!
   configuredValues: [ConfiguredValue!]!
+  isTopLevel: Boolean!
 }
 
 type ConfiguredValue {

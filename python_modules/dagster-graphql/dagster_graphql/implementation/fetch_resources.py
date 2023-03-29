@@ -7,7 +7,7 @@ from .utils import UserFacingGraphQLError, capture_error
 
 
 @capture_error
-def get_resources_or_error(graphene_info, repository_selector):
+def get_top_level_resources_or_error(graphene_info, repository_selector):
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -20,7 +20,9 @@ def get_resources_or_error(graphene_info, repository_selector):
     external_resources = repository.get_external_resources()
 
     results = [
-        GrapheneResourceDetails(external_resource) for external_resource in external_resources
+        GrapheneResourceDetails(external_resource)
+        for external_resource in external_resources
+        if external_resource.is_top_level
     ]
 
     return GrapheneResourceDetailsList(results=results)
