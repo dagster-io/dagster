@@ -149,10 +149,10 @@ Dagster validates any provided run config against the corresponding Pydantic mod
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_bad_config endbefore=end_execute_with_bad_config dedent=4
 @job
-def example_job():
-    op_using_config()
+def greeting_job():
+    print_greeting()
 
-op_result = example_job.execute_in_process(
+op_result = greeting_job.execute_in_process(
     run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_param=1)}),
 )
 
@@ -175,7 +175,9 @@ job_result = greeting_job.execute_in_process(
 
 asset_result = materialize(
     [greeting],
-    run_config=RunConfig({"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}),
+    run_config=RunConfig(
+        {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+    ),
 )
 ```
 
