@@ -651,7 +651,7 @@ def construct_config_type_dictionary(
     return type_dict_by_name, type_dict_by_key
 
 
-def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+def convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     return {
         k: {"config": v._as_config_dict() if isinstance(v, Config) else v}  # noqa: SLF001
         for k, v in configs.items()
@@ -673,8 +673,8 @@ class RunConfig:
     def to_config_dict(self):
         return {
             "loggers": self.loggers,
-            "resources": _convert_config_classes(self.resources),
-            "ops": _convert_config_classes(self.ops),
+            "resources": convert_config_classes(self.resources),
+            "ops": convert_config_classes(self.ops),
         }
 
 

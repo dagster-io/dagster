@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, NamedTuple, Optional, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -15,6 +15,9 @@ from dagster._core.definitions.definition_config_schema import IDefinitionConfig
 from dagster._core.errors import DagsterInvalidConfigError
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
+
+if TYPE_CHECKING:
+    from dagster._config.structured_config import Config
 
 ConfigMappingFn: TypeAlias = Callable[[Any], Any]
 
@@ -108,3 +111,18 @@ class ConfigMapping(
             )
 
         return self.config_fn(config)
+
+    @classmethod
+    def from_op_config(cls, config: Dict[str, "Config"]) -> "ConfigMapping":
+        """Generates a suitable ConfigMapping for a graph given a set of
+        config entries for each of its ops.
+
+        Args:
+            config (Dict[str, Config]): A dictionary of config entries for each op in the graph.
+        """
+        from dagster._core.definitions.run_config import convert_config_classes
+
+        return ConfigMapping(
+            config_fn=lambda _: convert_config_classes(config),
+            config_schema=None,
+        )
