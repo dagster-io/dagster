@@ -69,7 +69,9 @@ export const AssetMaterializationUpstreamData: React.FC<{
                 timeFormat={{showSeconds: true, showTimezone: false}}
               />
             </Link>
-            <span>({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)</span>
+            <span style={{opacity: 0.7}}>
+              ({dayjs(Number(entry.timestamp)).from(Number(timestamp), true)} earlier)
+            </span>
           </Box>
         </td>
       </tr>,
