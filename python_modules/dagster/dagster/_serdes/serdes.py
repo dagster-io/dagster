@@ -409,11 +409,9 @@ class NamedTupleSerializer(Serializer, Generic[T_NamedTuple]):
     def get_storage_name(self) -> str:
         return self.storage_name or self.klass.__name__
 
-    @cached_method
     def get_storage_field_name(self, field: str) -> str:
         return self.storage_field_names.get(field, field)
 
-    @cached_method
     def get_loaded_field_name(self, field: str) -> str:
         for k, v in self.storage_field_names.items():
             if v == field:
