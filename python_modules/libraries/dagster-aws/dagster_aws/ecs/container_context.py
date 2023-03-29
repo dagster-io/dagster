@@ -44,6 +44,11 @@ SHARED_ECS_SCHEMA = {
                     is_required=False,
                     description="The memory override to use for the launched task.",
                 ),
+                "ephemeral_storage": Field(
+                    int,
+                    is_required=False,
+                    description="The ephemeral storage, in GiB, to use for the launched task.",
+                ),
             }
         )
     ),
@@ -89,6 +94,11 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
                     str,
                     is_required=False,
                     description="The memory override to use for the launched task.",
+                ),
+                "ephemeral_storage": Field(
+                    int,
+                    is_required=False,
+                    description="The ephemeral storage, in GiB, to use for the launched task.",
                 ),
             }
         )
@@ -137,8 +147,8 @@ class EcsContainerContext(
             ("env_vars", Sequence[str]),
             ("task_definition_arn", Optional[str]),
             ("container_name", Optional[str]),
-            ("server_resources", Mapping[str, str]),
-            ("run_resources", Mapping[str, str]),
+            ("server_resources", Mapping[str, Any]),
+            ("run_resources", Mapping[str, Any]),
             ("task_role_arn", Optional[str]),
             ("execution_role_arn", Optional[str]),
             ("runtime_platform", Mapping[str, Any]),

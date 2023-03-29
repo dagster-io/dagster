@@ -416,6 +416,14 @@ class StubbedEcs:
                     "memory": task_definition["memory"],
                 }
 
+                if kwargs.get("launchType"):
+                    task["launchType"] = kwargs["launchType"]
+
+                if kwargs.get("capacityProviderStrategy"):
+                    task["capacityProviderName"] = kwargs["capacityProviderStrategy"][0][
+                        "capacityProvider"
+                    ]
+
                 if vpc_configuration:
                     for subnet_name in vpc_configuration["subnets"]:
                         ec2 = boto3.resource("ec2", region_name=self.client.meta.region_name)
