@@ -77,7 +77,7 @@ def _build_slack_blocks_and_text(
 
     if dagit_base_url:
         if isinstance(context, RunFailureSensorContext):
-            url = f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}"
+            url = f"{dagit_base_url}/runs/{context.pipeline_run.run_id}"
         else:
             url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(

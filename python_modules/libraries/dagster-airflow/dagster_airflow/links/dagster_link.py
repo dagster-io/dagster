@@ -1,6 +1,6 @@
 from airflow.models import BaseOperatorLink, TaskInstance
 
-LINK_FMT = "https://dagster.cloud/{organization_id}/{deployment_name}/instance/runs/{run_id}"
+LINK_FMT = "https://dagster.cloud/{organization_id}/{deployment_name}/runs/{run_id}"
 
 
 class DagsterLink(BaseOperatorLink):

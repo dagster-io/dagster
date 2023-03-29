@@ -192,7 +192,7 @@ def make_email_on_run_failure_sensor(
         email_body = email_body_fn(context)
         if dagit_base_url:
             email_body += (
-                f'<p><a href="{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}">View in'
+                f'<p><a href="{dagit_base_url}/runs/{context.pipeline_run.run_id}">View in'
                 " Dagit</a></p>"
             )
 
