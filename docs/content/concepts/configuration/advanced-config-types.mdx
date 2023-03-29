@@ -131,7 +131,9 @@ result = materialize(
 )
 ```
 
-### Union types
+---
+
+## Union types
 
 Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject object="Config"/>. The `discriminator` argument to <PyObject object="Field"/> specifies the field that will be used to determine which union type to use.
 
