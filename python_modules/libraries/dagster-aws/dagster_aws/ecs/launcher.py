@@ -373,6 +373,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(container_context, run)
 
+        # Set ephemeral storage overrides
+        ephemeral_storage_overrides = self._get_task_ephemeral_storage_from_tags(run)
+
         task_overrides = self._get_task_overrides(run)
 
         container_overrides: List[Dict[str, Any]] = [
@@ -389,11 +392,22 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             # taskOverrides expects cpu/memory as strings
             **cpu_and_memory_overrides,
             **task_overrides,
+            # Add ephemeral storage to overrides
+            **ephemeral_storage_overrides,
         }
         run_task_kwargs["tags"] = [
             *run_task_kwargs.get("tags", []),
             *self.build_ecs_tags_for_run_task(run),
         ]
+
+        # Capacity provider can also be specified as tag in the task
+        capacity_provider_overrides = self._get_task_capacity_provider_from_tags(run)
+        if capacity_provider_overrides:
+            run_task_kwargs.update(capacity_provider_overrides)
+            # Also remove LaunchType when set, just in case it was inherited from
+            # the current task
+            if "launchType" in run_task_kwargs:
+                del run_task_kwargs["launchType"]
 
         # Run a task using the same network configuration as this processes's
         # task.
@@ -450,11 +464,35 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return overrides
 
+    def _get_task_ephemeral_storage_from_tags(self, run: DagsterRun) -> Mapping[str, Any]:
+        overrides = {}
+
+        ephemeral_storage = run.tags.get("ecs/ephemeralStorage")
+
+        if ephemeral_storage:
+            overrides["ephemeralStorage"] = {
+                "sizeInGiB": int(ephemeral_storage)
+            }
+
+        return overrides
+
     def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)
         return {}
+
+    def _get_task_capacity_provider_from_tags(self, run: DagsterRun) -> Mapping[str, Any]:
+        capacity_tag = run.tags.get("ecs/capacityProvider")
+        returnDict = {}
+        if capacity_tag:
+            returnDict["capacityProviderStrategy"] = [{
+                   "capacityProvider": capacity_tag,
+                   # Assume weight and base at 1, since Dagster is our orchestrator
+                   "weight": 1,
+                   "base": 1
+                }]
+        return returnDict
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)
