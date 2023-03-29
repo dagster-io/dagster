@@ -8,51 +8,23 @@ export type FilterListenerCallback<TState> = (value: {
   state: TState;
   previousActive: boolean;
   active: boolean;
+  name: string;
 }) => void;
 
-export abstract class Filter<TState, TValue> {
-  private listeners: FilterListenerCallback<TState>[];
-
-  constructor(public readonly name: string, public readonly icon: IconName, private state: TState) {
-    this.name = name;
-    this.icon = icon;
-    this.state = state;
-    this.listeners = [];
-  }
-
-  public abstract isActive(): boolean;
-
-  public abstract renderActiveFilterState(): JSX.Element | null;
-  public abstract getResults(query: string): {label: JSX.Element; key: string; value: TValue}[];
-
-  public abstract onSelect(selectArg: {
-    value: TValue;
+export type FilterObject<TState> = {
+  isActive: boolean;
+  activeJSX: JSX.Element;
+  icon: IconName;
+  name: string;
+  getResults: (query: string) => {label: JSX.Element; key: string; value: any}[];
+  onSelect: (selectArg: {
+    value: any;
     close: () => void;
     createPortal: (element: JSX.Element) => () => void;
-  }): void;
-
-  public setState(state: TState) {
-    const previousActive = this.isActive();
-    this.state = state;
-    this.listeners.forEach((l) =>
-      l({
-        state,
-        previousActive,
-        active: this.isActive(),
-      }),
-    );
-  }
-  public getState(): TState {
-    return this.state;
-  }
-
-  public subscribe(callback: FilterListenerCallback<TState>): () => void {
-    this.listeners.push(callback);
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== callback);
-    };
-  }
-}
+  }) => void;
+  state: TState;
+  setState: (state: TState) => void;
+};
 
 export const FilterTag = ({
   iconName,

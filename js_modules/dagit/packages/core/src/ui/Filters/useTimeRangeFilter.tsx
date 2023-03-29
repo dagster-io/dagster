@@ -6,13 +6,15 @@ import React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components/macro';
 
-import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 
+type TimeRangeState = [number | null, number | null];
+
 function calculateTimeRanges(timezone: string) {
-  return {
+  const obj = {
     TODAY: {
       label: 'Today',
       range: [moment().tz(timezone).startOf('day').toDate().valueOf(), null] as TimeRangeState,
@@ -37,81 +39,87 @@ function calculateTimeRanges(timezone: string) {
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
   };
+  const array = Object.keys(obj).map((key) => ({
+    key: key as keyof typeof obj,
+    label: obj[key].label,
+    range: obj[key].range,
+  }));
+  return {timeRanges: obj, timeRangesArray: array};
 }
-type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>;
-type TimeRangeState = [number | null, number | null];
-let TimeRanges: Record<TimeRangeKey, {label: string; range: TimeRangeState}> = calculateTimeRanges(
-  'UTC',
-); // This will get overriden when actually used, but we want to set an initial value for the type checker.
 
-const timeRangesArray = Object.keys(TimeRanges).map((key) => ({
-  key: key as TimeRangeKey,
-  label: TimeRanges[key].label,
-  range: TimeRanges[key].range,
-}));
+type TimeRangeFilter = FilterObject<[number | null, number | null]>;
+type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
+type Args = {
+  name: string;
+  icon: IconName;
+  timezone: string;
+  initialState?: TimeRangeState;
+};
+export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): TimeRangeFilter {
+  const [state, setState] = React.useState(initialState || [null, null]);
 
-export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
-  constructor(
-    name: string,
-    icon: IconName,
-    public readonly timezone: string,
-    initialState?: TimeRangeState,
-  ) {
-    super(name, icon, initialState || [null, null]);
-    this.timezone = timezone;
-  }
+  const {timeRanges, timeRangesArray} = React.useMemo(() => calculateTimeRanges(timezone), [
+    timezone,
+    // Recalculate once an hour
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    Math.floor(Date.now() / (1000 * 60 * 60)),
+  ]);
 
-  renderActiveFilterState(): JSX.Element | null {
-    return (
+  const onReset = () => {
+    setState([null, null]);
+  };
+
+  const filterObj = {
+    name,
+    icon,
+    state,
+    setState,
+    isActive: !isEqual(state, initialState),
+    getResults: React.useCallback((query: string): {
+      label: JSX.Element;
+      key: string;
+      value: TimeRangeKey;
+    }[] => {
+      return timeRangesArray
+        .filter(({label}) => query === '' || label.toLowerCase().includes(query.toLowerCase()))
+        .map(({label, key}) => ({
+          label: <TimeRangeResult range={label} />,
+          key,
+          value: key,
+        }));
+    }, []),
+    onSelect: ({
+      value,
+      close,
+      createPortal,
+    }: {
+      value: TimeRangeKey;
+      close: () => void;
+      createPortal: (element: JSX.Element) => () => void;
+    }) => {
+      if (value === 'CUSTOM') {
+        const closeRef = {
+          current: () => {},
+        };
+        closeRef.current = createPortal(
+          <CustomTimeRangeFilterDialog filter={filterObj} closeRef={closeRef} />,
+        );
+      } else {
+        const nextState = timeRanges[value].range;
+        setState(nextState);
+      }
+      close();
+    },
+    activeJSX: (
       <ActiveFilterState
-        state={this.getState()}
-        remove={() => {
-          this.setState([null, null]);
-        }}
-        timezone={this.timezone}
+        timeRanges={timeRanges}
+        state={state}
+        timezone={timezone}
+        remove={onReset}
       />
-    );
-  }
-
-  isActive(): boolean {
-    const [start, end] = this.getState();
-    return start !== null || end !== null;
-  }
-
-  getResults(query: string): {label: JSX.Element; key: string; value: TimeRangeKey}[] {
-    return timeRangesArray
-      .filter(({label}) => query === '' || label.toLowerCase().includes(query.toLowerCase()))
-      .map(({label, key}) => ({
-        label: <TimeRangeResult range={label} />,
-        key,
-        value: key,
-      }));
-  }
-
-  onSelect({
-    value,
-    close,
-    createPortal,
-  }: {
-    value: TimeRangeKey;
-    close: () => void;
-    createPortal: (element: JSX.Element) => () => void;
-  }) {
-    if (value === 'CUSTOM') {
-      const closeRef = {
-        current: () => {},
-      };
-      closeRef.current = createPortal(
-        <CustomTimeRangeFilterDialog filter={this} closeRef={closeRef} />,
-      );
-    } else {
-      TimeRanges = calculateTimeRanges(this.timezone);
-      const nextState = TimeRanges[value].range;
-      this.setState(nextState);
-    }
-    close();
-    return null;
-  }
+    ),
+  };
+  return filterObj;
 }
 
 function TimeRangeResult({range}: {range: string}) {
@@ -127,10 +135,12 @@ function ActiveFilterState({
   state,
   remove,
   timezone,
+  timeRanges,
 }: {
   state: TimeRangeState;
   remove: () => void;
   timezone: string;
+  timeRanges: ReturnType<typeof calculateTimeRanges>['timeRanges'];
 }) {
   const L_FORMAT = React.useMemo(
     () =>
@@ -143,25 +153,25 @@ function ActiveFilterState({
     [timezone],
   );
   const dateLabel = React.useMemo(() => {
-    if (isEqual(state, TimeRanges.TODAY.range)) {
+    if (isEqual(state, timeRanges.TODAY.range)) {
       return (
         <>
           is <FilterTagHighlightedText>Today</FilterTagHighlightedText>
         </>
       );
-    } else if (isEqual(state, TimeRanges.YESTERDAY.range)) {
+    } else if (isEqual(state, timeRanges.YESTERDAY.range)) {
       return (
         <>
           is <FilterTagHighlightedText>Yesterday</FilterTagHighlightedText>
         </>
       );
-    } else if (isEqual(state, TimeRanges.LAST_7_DAYS.range)) {
+    } else if (isEqual(state, timeRanges.LAST_7_DAYS.range)) {
       return (
         <>
           is within <FilterTagHighlightedText>Last 7 days</FilterTagHighlightedText>
         </>
       );
-    } else if (isEqual(state, TimeRanges.LAST_30_DAYS.range)) {
+    } else if (isEqual(state, timeRanges.LAST_30_DAYS.range)) {
       return (
         <>
           is within <FilterTagHighlightedText>Last 30 days</FilterTagHighlightedText>
@@ -193,7 +203,7 @@ function ActiveFilterState({
         </>
       );
     }
-  }, [L_FORMAT, state]);
+  }, [L_FORMAT, state, timeRanges]);
 
   return (
     <FilterTag

@@ -15,17 +15,17 @@ import styled, {createGlobalStyle} from 'styled-components/macro';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 
-import {Filter} from './Filter';
+import {FilterObject} from './useFilter';
 
 interface FilterDropdownProps {
-  filters: Filter<any, any>[];
+  filters: FilterObject<any>[];
   setIsOpen: (isOpen: boolean) => void;
   setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
 
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
   const [search, setSearch] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<Filter<any, any> | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
 
   const {results, filteredFilters} = React.useMemo(() => {
     const filteredFilters = selectedFilter
@@ -44,7 +44,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   }, [search, filters, selectedFilter]);
 
   const selectValue = React.useCallback(
-    (filter: Filter<any, any>, value: any) => {
+    (filter: FilterObject<any>, value: any) => {
       filter.onSelect({
         value,
         close: () => {
@@ -144,7 +144,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 };
 
 type FilterDropdownButtonProps = {
-  filters: Filter<any, any>[];
+  filters: FilterObject<any>[];
 };
 export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
   const keyRef = React.useRef(0);

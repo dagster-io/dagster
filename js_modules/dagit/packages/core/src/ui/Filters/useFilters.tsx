@@ -1,47 +1,18 @@
 import React from 'react';
 
-import {Filter} from './Filter';
 import {FilterDropdownButton} from './FilterDropdown';
+import {FilterObject} from './useFilter';
 
 interface UseFiltersProps {
-  filters: Filter<any, any>[];
-  setActiveFilters: (next: React.SetStateAction<Filter<any, any>[]>) => void;
+  filters: FilterObject<any>[];
 }
 
-export const useFilters = ({filters, setActiveFilters}: UseFiltersProps) => {
-  const filterStates = React.useMemo(() => {
-    return filters.map((filter) => filter.getState());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...filters.map((filter) => filter.getState())]);
-
-  const activeFilters = React.useMemo(() => {
-    return filters.filter((filter) => filter.isActive());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStates]);
-
-  React.useEffect(() => {
-    filters.forEach((filter) => {
-      filter.subscribe(({previousActive, active}) => {
-        if (active !== previousActive) {
-          if (active) {
-            setActiveFilters((prev) => [...prev, filter]);
-          } else {
-            setActiveFilters((prev) => prev.filter((f) => f !== filter));
-          }
-        } else {
-          setActiveFilters((prev) => [...prev]);
-        }
-      });
-    });
-  }, [filters, setActiveFilters]);
-
+export const useFilters = ({filters}: UseFiltersProps) => {
   const activeFilterJsx = React.useMemo(() => {
-    return activeFilters.map((filter, index) => (
-      <React.Fragment key={index}>{filter.renderActiveFilterState()}</React.Fragment>
-    ));
-  }, [activeFilters]);
-
-  console.log({activeFilters, filterStates, activeFilterJsx});
+    return filters
+      .filter((filter) => filter.isActive)
+      .map((filter, index) => <React.Fragment key={index}>{filter.activeJSX}</React.Fragment>);
+  }, [filters]);
 
   return {
     button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),

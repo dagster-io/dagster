@@ -1,83 +1,88 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui';
 import React from 'react';
 
-import {Filter, FilterListenerCallback, FilterTag, FilterTagHighlightedText} from './Filter';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
-export class StaticSetFilter<TValue> extends Filter<Set<TValue>, TValue> {
-  public readonly allValues: SetFilterValue<TValue>[];
-  private readonly renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
-  private readonly getStringValue: (value: TValue) => string;
+type Args<TValue> = {
+  name: string;
+  icon: IconName;
+  renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
+  getStringValue: (value: TValue) => string;
+  allValues: SetFilterValue<TValue>[];
+  initialState?: Set<TValue> | TValue[];
+};
 
-  constructor({
+type StaticSetFilter<TValue> = FilterObject<Set<TValue>>;
+
+export function useStaticSetFilter<TValue>({
+  name,
+  icon,
+  allValues,
+  renderLabel,
+  initialState,
+  getStringValue,
+}: Args<TValue>): StaticSetFilter<TValue> {
+  const [state, setState] = React.useState(new Set(initialState || []));
+
+  const filterObj: StaticSetFilter<TValue> = {
     name,
     icon,
-    allValues,
-    renderLabel,
-    initialState,
-    getStringValue,
-  }: {
-    name: string;
-    icon: IconName;
-    renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
-    getStringValue: (value: TValue) => string;
-    allValues: SetFilterValue<TValue>[];
-    initialState?: Set<TValue> | TValue[];
-  }) {
-    super(name, icon, new Set(initialState || []));
-    this.allValues = allValues;
-    this.renderLabel = renderLabel;
-    this.getStringValue = getStringValue;
-  }
-  renderActiveFilterState() {
-    return (
+    state,
+    setState,
+    isActive: state.size > 0,
+    getResults: (query) => {
+      if (query === '') {
+        return allValues.map(({value}) => ({
+          label: (
+            <SetFilterLabel value={value} renderLabel={renderLabel} filter={filterObjRef.current} />
+          ),
+          key: getStringValue(value),
+          value,
+        }));
+      }
+      return allValues
+        .filter(({match}) =>
+          match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
+        )
+        .map(({value}) => ({
+          label: (
+            <SetFilterLabel value={value} renderLabel={renderLabel} filter={filterObjRef.current} />
+          ),
+          key: getStringValue(value),
+          value,
+        }));
+    },
+    onSelect: ({value}) => {
+      const newState = new Set(filterObjRef.current.state);
+      if (newState.has(value)) {
+        newState.delete(value);
+      } else {
+        newState.add(value);
+      }
+      setState(newState);
+    },
+
+    activeJSX: (
       <SetFilterActiveState
-        name={this.name}
-        state={this.getState()}
-        getStringValue={this.getStringValue}
-        renderLabel={this.renderLabel}
+        name={name}
+        state={state}
+        getStringValue={getStringValue}
+        renderLabel={renderLabel}
         onRemove={() => {
-          this.setState(new Set());
+          setState(new Set());
         }}
-        icon={this.icon}
+        icon={icon}
       />
-    );
-  }
-
-  isActive(): boolean {
-    return this.getState().size > 0;
-  }
-
-  getResults(query: string): {label: JSX.Element; key: string; value: TValue}[] {
-    if (query === '') {
-      return this.allValues.map(({value}) => ({
-        label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
-        key: this.getStringValue(value),
-        value,
-      }));
-    }
-    return this.allValues
-      .filter(({match}) => match.some((value) => value.toLowerCase().includes(query.toLowerCase())))
-      .map(({value}) => ({
-        label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
-        key: this.getStringValue(value),
-        value,
-      }));
-  }
-
-  onSelect({value}: {value: TValue}) {
-    if (this.getState().has(value)) {
-      const nextState = new Set(this.getState());
-      nextState.delete(value);
-      this.setState(nextState);
-    } else {
-      this.setState(new Set(this.getState()).add(value));
-    }
-    return null;
-  }
+    ),
+  };
+  const filterObjRef = useUpdatingRef(filterObj);
+  return filterObj;
 }
 
 const MAX_VALUES_TO_SHOW = 3;
@@ -174,13 +179,7 @@ type SetFilterLabelProps = {
 };
 function SetFilterLabel(props: SetFilterLabelProps) {
   const {value, filter, renderLabel} = props;
-  const [isActive, setIsActive] = React.useState(filter.getState().has(value));
-  React.useEffect(() => {
-    const listener: FilterListenerCallback<any> = () => {
-      setIsActive(filter.getState().has(value));
-    };
-    return filter.subscribe(listener);
-  }, [filter, value]);
+  const isActive = filter.state.has(value);
 
   const labelRef = React.useRef<HTMLDivElement>(null);
 
