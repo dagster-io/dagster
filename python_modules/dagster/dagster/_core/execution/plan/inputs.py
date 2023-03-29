@@ -123,12 +123,12 @@ class StepInputSource(ABC):
         raise NotImplementedError()
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromSourceAsset(
     NamedTuple(
         "_FromSourceAsset",
         [
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -148,7 +148,7 @@ class FromSourceAsset(
         asset_layer = step_context.pipeline_def.asset_layer
 
         input_asset_key = asset_layer.asset_key_for_input(
-            self.solid_handle, input_name=self.input_name
+            self.node_handle, input_name=self.input_name
         )
         assert input_asset_key is not None
 
@@ -158,7 +158,7 @@ class FromSourceAsset(
             else asset_layer.io_manager_key_for_asset(input_asset_key)
         )
 
-        op_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
+        op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
@@ -204,7 +204,7 @@ class FromSourceAsset(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        op = pipeline_def.get_solid(self.solid_handle)
+        op = pipeline_def.get_solid(self.node_handle)
         input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
         io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             input_manager_key
@@ -243,7 +243,7 @@ class FromSourceAsset(
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_asset_key = pipeline_def.asset_layer.asset_key_for_input(
-            self.solid_handle, self.input_name
+            self.node_handle, self.input_name
         )
         if input_asset_key is None:
             check.failed(
@@ -253,7 +253,7 @@ class FromSourceAsset(
                 ),
             )
 
-        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+        input_def = pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
@@ -267,12 +267,12 @@ class FromSourceAsset(
         return {input_manager_key}
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromRootInputManager(
     NamedTuple(
         "_FromRootInputManager",
         [
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -288,17 +288,17 @@ class FromRootInputManager(
         from dagster._core.events import DagsterEvent
 
         check.invariant(
-            step_context.node_handle == self.solid_handle and input_def.name == self.input_name,
+            step_context.node_handle == self.node_handle and input_def.name == self.input_name,
             (
                 "RootInputManager source must be op input and not one along composition mapping. "
                 f"Loading for op {step_context.node_handle}.{input_def.name} "
-                f"but source is {self.solid_handle}.{self.input_name}."
+                f"but source is {self.node_handle}.{self.input_name}."
             ),
         )
 
         input_def = step_context.op_def.input_def_named(input_def.name)
 
-        solid_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
+        solid_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         input_manager_key = check.not_none(
@@ -337,7 +337,7 @@ class FromRootInputManager(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        solid = pipeline_def.get_solid(self.solid_handle)
+        solid = pipeline_def.get_solid(self.node_handle)
         input_manager_key: str = check.not_none(
             solid.input_def_named(self.input_name).root_manager_key
             if solid.input_def_named(self.input_name).root_manager_key
@@ -380,7 +380,7 @@ class FromRootInputManager(
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+        input_def = pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
 
         input_manager_key: str = check.not_none(
             input_def.root_manager_key
@@ -391,7 +391,7 @@ class FromRootInputManager(
         return {input_manager_key}
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromStepOutput(
     NamedTuple(
         "_FromStepOutput",
@@ -399,7 +399,7 @@ class FromStepOutput(
             ("step_output_handle", StepOutputHandle),
             ("fan_in", bool),
             # deprecated, preserved for back-compat
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -414,7 +414,7 @@ class FromStepOutput(
         step_output_handle: StepOutputHandle,
         fan_in: bool,
         # deprecated, preserved for back-compat
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
         return super().__new__(
@@ -424,8 +424,8 @@ class FromStepOutput(
             ),
             fan_in=check.bool_param(fan_in, "fan_in"),
             # add placeholder values for back-compat
-            solid_handle=check.opt_inst_param(
-                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
@@ -541,12 +541,12 @@ class FromStepOutput(
         return set()
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromConfig(
     NamedTuple(
         "_FromConfig",
         [
-            ("solid_handle", Optional[NodeHandle]),
+            ("node_handle", Optional[NodeHandle]),
             ("input_name", str),
         ],
     ),
@@ -554,13 +554,13 @@ class FromConfig(
 ):
     """This step input source is configuration to be passed to a type loader.
 
-    A None solid_handle implies the inputs were provided at the root graph level.
+    A None node_handle implies the inputs were provided at the root graph level.
     """
 
-    def __new__(cls, solid_handle: Optional[NodeHandle], input_name: str):
+    def __new__(cls, node_handle: Optional[NodeHandle], input_name: str):
         return super(FromConfig, cls).__new__(
             cls,
-            solid_handle=solid_handle,
+            node_handle=node_handle,
             input_name=input_name,
         )
 
@@ -568,8 +568,8 @@ class FromConfig(
         """Returns the InputDefinition along the potential composition InputMapping chain
         that the config was provided at.
         """
-        if self.solid_handle:
-            return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+        if self.node_handle:
+            return pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
         else:
             return pipeline_def.graph.input_def_named(self.input_name)
 
@@ -577,8 +577,8 @@ class FromConfig(
         """Returns the config specified, potentially specified at any point along graph composition
         including the root.
         """
-        if self.solid_handle:
-            op_config = resolved_run_config.ops.get(str(self.solid_handle))
+        if self.node_handle:
+            op_config = resolved_run_config.ops.get(str(self.node_handle))
             return op_config.inputs.get(self.input_name) if op_config else None
         else:
             input_config = resolved_run_config.inputs
@@ -619,7 +619,7 @@ class FromConfig(
         return loader.compute_loaded_input_version(config_data)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromDirectInputValue(
     NamedTuple(
         "_FromDirectInputValue",
@@ -659,12 +659,12 @@ class FromDirectInputValue(
         return str(self.input_name)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromDefaultValue(
     NamedTuple(
         "_FromDefaultValue",
         [
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -672,11 +672,11 @@ class FromDefaultValue(
 ):
     """This step input source is the default value declared on an InputDefinition."""
 
-    def __new__(cls, solid_handle: NodeHandle, input_name: str):
-        return super(FromDefaultValue, cls).__new__(cls, solid_handle, input_name)
+    def __new__(cls, node_handle: NodeHandle, input_name: str):
+        return super(FromDefaultValue, cls).__new__(cls, node_handle, input_name)
 
     def _load_value(self, pipeline_def: PipelineDefinition):
-        return pipeline_def.get_solid(self.solid_handle).definition.default_value_for_input(
+        return pipeline_def.get_solid(self.node_handle).definition.default_value_for_input(
             self.input_name
         )
 
@@ -696,14 +696,14 @@ class FromDefaultValue(
         return join_and_hash(repr(self._load_value(pipeline_def)))
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromMultipleSources(
     NamedTuple(
         "_FromMultipleSources",
         [
             ("sources", Sequence[StepInputSource]),
             # deprecated, preserved for back-compat
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -716,7 +716,7 @@ class FromMultipleSources(
         cls,
         sources: Sequence[StepInputSource],
         # deprecated, preserved for back-compat
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
         check.sequence_param(sources, "sources", StepInputSource)
@@ -729,8 +729,8 @@ class FromMultipleSources(
             cls,
             sources=sources,
             # add placeholder values for back-compat
-            solid_handle=check.opt_inst_param(
-                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
@@ -824,14 +824,14 @@ def _load_input_with_input_manager(
     yield value
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromPendingDynamicStepOutput(
     NamedTuple(
         "_FromPendingDynamicStepOutput",
         [
             ("step_output_handle", StepOutputHandle),
             # deprecated, preserved for back-compat
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -844,7 +844,7 @@ class FromPendingDynamicStepOutput(
         cls,
         step_output_handle: StepOutputHandle,
         # deprecated, preserved for back-compat
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
         # Model the unknown mapping key from known execution step
@@ -856,8 +856,8 @@ class FromPendingDynamicStepOutput(
             cls,
             step_output_handle=step_output_handle,
             # add placeholder values for back-compat
-            solid_handle=check.opt_inst_param(
-                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
@@ -889,14 +889,14 @@ class FromPendingDynamicStepOutput(
         return set()
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromUnresolvedStepOutput(
     NamedTuple(
         "_FromUnresolvedStepOutput",
         [
             ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
             # deprecated, preserved for back-compat
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -909,7 +909,7 @@ class FromUnresolvedStepOutput(
         cls,
         unresolved_step_output_handle: UnresolvedStepOutputHandle,
         # deprecated, preserved for back-compat
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
         return super().__new__(
@@ -920,8 +920,8 @@ class FromUnresolvedStepOutput(
                 UnresolvedStepOutputHandle,
             ),
             # add placeholder values for back-compat
-            solid_handle=check.opt_inst_param(
-                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
@@ -948,14 +948,14 @@ class FromUnresolvedStepOutput(
         return set()
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class FromDynamicCollect(
     NamedTuple(
         "_FromDynamicCollect",
         [
             ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
             # deprecated, preserved for back-compat
-            ("solid_handle", NodeHandle),
+            ("node_handle", NodeHandle),
             ("input_name", str),
         ],
     ),
@@ -964,15 +964,15 @@ class FromDynamicCollect(
         cls,
         source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
         # deprecated, preserved for back-compat
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         input_name: Optional[str] = None,
     ):
         return super().__new__(
             cls,
             source=source,
             # add placeholder values for back-compat
-            solid_handle=check.opt_inst_param(
-                solid_handle, "solid_handle", NodeHandle, default=NodeHandle("", None)
+            node_handle=check.opt_inst_param(
+                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
             ),
             input_name=check.opt_str_param(input_name, "input_handle", default=""),
         )
