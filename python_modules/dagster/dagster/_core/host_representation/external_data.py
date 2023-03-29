@@ -947,9 +947,9 @@ class ExternalResourceData(
         configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
-        nested_resources: Mapping[str, NestedResource],
-        parent_resources: Mapping[str, str],
-        resource_type: str,
+        nested_resources: Optional[Mapping[str, NestedResource]] = None,
+        parent_resources: Optional[Mapping[str, str]] = None,
+        resource_type: str = "Unknown",
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
     ):
@@ -977,11 +977,13 @@ class ExternalResourceData(
                 check.opt_mapping_param(
                     nested_resources, "nested_resources", key_type=str, value_type=NestedResource
                 )
+                or {}
             ),
             parent_resources=dict(
                 check.opt_mapping_param(
                     parent_resources, "parent_resources", key_type=str, value_type=str
                 )
+                or {}
             ),
             is_top_level=check.bool_param(is_top_level, "is_top_level"),
             resource_type=check.str_param(resource_type, "resource_type"),
