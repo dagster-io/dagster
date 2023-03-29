@@ -649,7 +649,7 @@ def test_output_sent_multiple_times():
         ("pipeline_def", None),
         ("pipeline_name", None),
         ("mode_def", None),
-        ("solid_handle", None),
+        ("node_handle", None),
         ("solid", None),
         ("get_step_execution_context", None),
     ],

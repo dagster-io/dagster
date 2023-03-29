@@ -23,7 +23,7 @@ def test_construct_log_string_for_event():
         event_type_value="STEP_OUTPUT",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=NodeHandle("solid2", None),
+        node_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("solid2", "result")),
@@ -62,7 +62,7 @@ def make_log_string(error, error_source=None):
         event_type_value="STEP_FAILURE",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=NodeHandle("solid2", None),
+        node_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepFailureData(

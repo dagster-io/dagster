@@ -101,7 +101,7 @@ def _step_output_error_checked_user_event_sequence(
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
-        output_def = step_context.pipeline_def.get_solid(step_output.solid_handle).output_def_named(
+        output_def = step_context.pipeline_def.get_solid(step_output.node_handle).output_def_named(
             step_output.name
         )
 

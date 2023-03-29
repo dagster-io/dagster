@@ -65,7 +65,7 @@ class ExecutionResult(ABC):
         def _is_event_from_node(event: DagsterEvent) -> bool:
             if not event.is_step_event:
                 return False
-            node_handle = cast(NodeHandle, event.solid_handle)
+            node_handle = cast(NodeHandle, event.node_handle)
             return node_handle.is_or_descends_from(handle)
 
         return self.filter_events(_is_event_from_node)

@@ -68,7 +68,7 @@ def create_step_outputs(
         asset_info = asset_layer.asset_info_for_output(handle, name)
         step_outputs.append(
             StepOutput(
-                solid_handle=handle,
+                node_handle=handle,
                 name=output_def.name,
                 dagster_type_key=output_def.dagster_type.key,
                 properties=StepOutputProperties(

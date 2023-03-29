@@ -734,7 +734,7 @@ def get_output_context(
         output_config = None
 
     step_output = execution_plan.get_step_output(step_output_handle)
-    output_def = pipeline_def.get_solid(step_output.solid_handle).output_def_named(step_output.name)
+    output_def = pipeline_def.get_solid(step_output.node_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
