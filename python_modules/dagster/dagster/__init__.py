@@ -105,6 +105,7 @@ from dagster._config.structured_config import (
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
     ConfigurableResource as ConfigurableResource,
+    ConfigurableResourceFactory as ConfigurableResourceFactory,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )
