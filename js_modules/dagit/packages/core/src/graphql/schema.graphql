@@ -1917,6 +1917,7 @@ type ResourceDetails {
   nestedResources: [NestedResourceEntry!]!
   parentResources: [NestedResourceEntry!]!
   resourceType: String!
+  assetKeysUsing: [AssetKey!]!
 }
 
 type ConfiguredValue {

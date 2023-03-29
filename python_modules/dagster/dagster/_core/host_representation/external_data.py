@@ -57,6 +57,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
     ScheduleType,
@@ -930,6 +931,7 @@ class ExternalResourceData(
             ("parent_resources", Dict[str, str]),
             ("resource_type", str),
             ("is_top_level", bool),
+            ("asset_keys_using", List[AssetKey]),
         ],
     )
 ):
@@ -949,6 +951,7 @@ class ExternalResourceData(
         parent_resources: Mapping[str, str],
         resource_type: str,
         is_top_level: bool = True,
+        asset_keys_using: Optional[Sequence[AssetKey]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -982,6 +985,10 @@ class ExternalResourceData(
             ),
             is_top_level=check.bool_param(is_top_level, "is_top_level"),
             resource_type=check.str_param(resource_type, "resource_type"),
+            asset_keys_using=list(
+                check.opt_sequence_param(asset_keys_using, "asset_keys_using", of_type=AssetKey)
+            )
+            or [],
         )
 
 
@@ -1015,6 +1022,7 @@ class ExternalAssetNode(
             # have the same atomic_execution_unit_id. This ID should be stable across reloads and
             # unique deployment-wide.
             ("atomic_execution_unit_id", Optional[str]),
+            ("required_top_level_resources", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -1045,6 +1053,7 @@ class ExternalAssetNode(
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         atomic_execution_unit_id: Optional[str] = None,
+        required_top_level_resources: Optional[Sequence[str]] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1092,6 +1101,9 @@ class ExternalAssetNode(
             atomic_execution_unit_id=check.opt_str_param(
                 atomic_execution_unit_id, "atomic_execution_unit_id"
             ),
+            required_top_level_resources=check.opt_sequence_param(
+                required_top_level_resources, "required_top_level_resources", of_type=str
+            ),
         )
 
 
@@ -1116,6 +1128,10 @@ def external_repository_data_from_def(
         job_refs = None
 
     resource_datas = repository_def.get_top_level_resources()
+    asset_graph = external_asset_graph_from_defs(
+        pipelines,
+        source_assets_by_key=repository_def.source_assets_by_key,
+    )
 
     nested_resource_map = _get_nested_resources_map(
         resource_datas, repository_def.get_resource_key_mapping()
@@ -1125,6 +1141,12 @@ def external_repository_data_from_def(
         for attribute, nested_resource in nested_resources.items():
             if nested_resource.type == NestedResourceType.TOP_LEVEL:
                 inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
+
+    resource_asset_usage_map = defaultdict(list)
+    for asset in asset_graph:
+        if asset.required_top_level_resources:
+            for resource_key in asset.required_top_level_resources:
+                resource_asset_usage_map[resource_key].append(asset.asset_key)
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1152,9 +1174,7 @@ def external_repository_data_from_def(
             ],
             key=lambda sd: sd.name,
         ),
-        external_asset_graph_data=external_asset_graph_from_defs(
-            pipelines, source_assets_by_key=repository_def.source_assets_by_key
-        ),
+        external_asset_graph_data=asset_graph,
         external_pipeline_datas=pipeline_datas,
         external_job_refs=job_refs,
         external_resource_data=sorted(
@@ -1164,6 +1184,7 @@ def external_repository_data_from_def(
                     res_data,
                     nested_resource_map[res_name],
                     inverted_nested_resources_map[res_name],
+                    resource_asset_usage_map,
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1180,7 +1201,8 @@ def external_repository_data_from_def(
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
+    pipelines: Sequence[PipelineDefinition],
+    source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
@@ -1295,6 +1317,10 @@ def external_asset_graph_from_defs(
 
         asset_info = asset_info_by_asset_key[asset_key]
 
+        required_top_level_resources: List[str] = []
+        if isinstance(node_def, OpDefinition):
+            required_top_level_resources = list(node_def.required_resource_keys)
+
         asset_metadata_entries = (
             cast(
                 Sequence,
@@ -1348,6 +1374,7 @@ def external_asset_graph_from_defs(
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
+                required_top_level_resources=required_top_level_resources,
             )
         )
 
@@ -1436,6 +1463,7 @@ def external_resource_data_from_def(
     resource_def: ResourceDefinition,
     nested_resources: Mapping[str, NestedResource],
     parent_resources: Mapping[str, str],
+    resource_asset_usage_map: Mapping[str, List[AssetKey]],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1480,6 +1508,7 @@ def external_resource_data_from_def(
         nested_resources=nested_resources,
         parent_resources=parent_resources,
         is_top_level=True,
+        asset_keys_using=resource_asset_usage_map.get(name, []),
         resource_type=resource_type,
     )
 

@@ -2853,6 +2853,7 @@ export type Resource = {
 
 export type ResourceDetails = {
   __typename: 'ResourceDetails';
+  assetKeysUsing: Array<AssetKey>;
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
@@ -10204,6 +10205,14 @@ export const buildResourceDetails = (
   relationshipsToOmit.add('ResourceDetails');
   return {
     __typename: 'ResourceDetails',
+    assetKeysUsing:
+      overrides && overrides.hasOwnProperty('assetKeysUsing')
+        ? overrides.assetKeysUsing!
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     configFields:
       overrides && overrides.hasOwnProperty('configFields')
         ? overrides.configFields!

@@ -594,6 +594,10 @@ class ExternalResource:
     def is_top_level(self) -> bool:
         return self._external_resource_data.is_top_level
 
+    @property
+    def asset_keys_using(self) -> List[AssetKey]:
+        return self._external_resource_data.asset_keys_using
+
 
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
