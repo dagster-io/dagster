@@ -83,7 +83,9 @@ def execute_with_config() -> None:
 
     asset_result = materialize(
         [greeting],
-        run_config=RunConfig({"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}),
+        run_config=RunConfig(
+            {"greeting": MyAssetConfig(person_name=EnvVar("PERSON_NAME"))}
+        ),
     )
 
     # end_execute_with_config_envvar
@@ -199,7 +201,9 @@ def metadata_config() -> None:
     class MyMetadataConfig(Config):
         # Here, the ellipses `...` indicates that the field is required and has no default value.
         person_name: str = Field(..., description="The name of the person to greet")
-        age: int = Field(..., gt=0, lt=100, description="The age of the person to greet")
+        age: int = Field(
+            ..., gt=0, lt=100, description="The age of the person to greet"
+        )
 
     # errors!
     MyMetadataConfig(person_name="Alice", age=200)
@@ -254,10 +258,10 @@ def execute_with_bad_config() -> None:
     # start_execute_with_bad_config
 
     @job
-    def example_job():
-        op_using_config()
+    def greeting_job():
+        print_greeting()
 
-    op_result = example_job.execute_in_process(
+    op_result = greeting_job.execute_in_process(
         run_config=RunConfig({"print_greeting": MyOpConfig(nonexistent_config_param=1)}),  # type: ignore
     )
 
