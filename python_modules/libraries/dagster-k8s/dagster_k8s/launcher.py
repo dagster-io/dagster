@@ -298,7 +298,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
             return False
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.CANCELING:
             return False
         return True
 
