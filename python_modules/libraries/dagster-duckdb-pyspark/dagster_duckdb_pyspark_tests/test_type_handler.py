@@ -116,7 +116,7 @@ def test_duckdb_io_manager_with_schema(tmp_path):
         return spark.createDataFrame(data)
 
     @asset
-    def my_df_plus_one(my_df: pd.DataFrame) -> pd.DataFrame:
+    def my_df_plus_one(my_df: SparkDF) -> SparkDF:
         return my_df.withColumn("_1", b_df._1 + 1)  # noqa: SLF001
 
     schema_io_managers = [
