@@ -583,6 +583,10 @@ class ExternalResource:
         return self._external_resource_data.nested_resources
 
     @property
+    def parent_resources(self) -> Dict[str, str]:
+        return self._external_resource_data.parent_resources
+
+    @property
     def resource_type(self) -> str:
         return self._external_resource_data.resource_type
 

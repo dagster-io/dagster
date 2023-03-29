@@ -1915,6 +1915,7 @@ type ResourceDetails {
   configuredValues: [ConfiguredValue!]!
   isTopLevel: Boolean!
   nestedResources: [NestedResourceEntry!]!
+  parentResources: [NestedResourceEntry!]!
   resourceType: String!
 }
 

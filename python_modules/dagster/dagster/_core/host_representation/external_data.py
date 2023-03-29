@@ -927,6 +927,7 @@ class ExternalResourceData(
             ("config_field_snaps", List[ConfigFieldSnap]),
             ("config_schema_snap", ConfigSchemaSnapshot),
             ("nested_resources", Dict[str, NestedResource]),
+            ("parent_resources", Dict[str, str]),
             ("resource_type", str),
             ("is_top_level", bool),
         ],
@@ -945,6 +946,7 @@ class ExternalResourceData(
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
         nested_resources: Mapping[str, NestedResource],
+        parent_resources: Mapping[str, str],
         resource_type: str,
         is_top_level: bool = True,
     ):
@@ -971,6 +973,11 @@ class ExternalResourceData(
             nested_resources=dict(
                 check.opt_mapping_param(
                     nested_resources, "nested_resources", key_type=str, value_type=NestedResource
+                )
+            ),
+            parent_resources=dict(
+                check.opt_mapping_param(
+                    parent_resources, "parent_resources", key_type=str, value_type=str
                 )
             ),
             is_top_level=check.bool_param(is_top_level, "is_top_level"),
@@ -1110,6 +1117,15 @@ def external_repository_data_from_def(
 
     resource_datas = repository_def.get_top_level_resources()
 
+    nested_resource_map = _get_nested_resources_map(
+        resource_datas, repository_def.get_resource_key_mapping()
+    )
+    inverted_nested_resources_map: Dict[str, Dict[str, str]] = defaultdict(dict)
+    for resource_key, nested_resources in nested_resource_map.items():
+        for attribute, nested_resource in nested_resources.items():
+            if nested_resource.type == NestedResourceType.TOP_LEVEL:
+                inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
+
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
@@ -1146,7 +1162,8 @@ def external_repository_data_from_def(
                 external_resource_data_from_def(
                     res_name,
                     res_data,
-                    repository_def.get_resource_key_mapping(),
+                    nested_resource_map[res_name],
+                    inverted_nested_resources_map[res_name],
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1378,6 +1395,15 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
     return json.dumps(v)
 
 
+def _get_nested_resources_map(
+    resource_datas: Mapping[str, ResourceDefinition], resource_key_mapping: Mapping[int, str]
+) -> Mapping[str, Mapping[str, NestedResource]]:
+    out_map: Mapping[str, Mapping[str, NestedResource]] = {}
+    for resource_name, resource_def in resource_datas.items():
+        out_map[resource_name] = _get_nested_resources(resource_def, resource_key_mapping)
+    return out_map
+
+
 def _get_nested_resources(
     resource_def: ResourceDefinition, resource_key_mapping: Mapping[int, str]
 ) -> Mapping[str, NestedResource]:
@@ -1408,7 +1434,8 @@ def _get_nested_resources(
 def external_resource_data_from_def(
     name: str,
     resource_def: ResourceDefinition,
-    resource_key_mapping: Mapping[int, str],
+    nested_resources: Mapping[str, NestedResource],
+    parent_resources: Mapping[str, str],
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1439,8 +1466,6 @@ def external_resource_data_from_def(
         k: external_resource_value_from_raw(v) for k, v in config_schema_default.items()
     }
 
-    nested_resources = _get_nested_resources(resource_def, resource_key_mapping)
-
     resource_type_def = resource_def
     if isinstance(resource_type_def, ResourceWithKeyMapping):
         resource_type_def = resource_type_def.wrapped_resource
@@ -1453,6 +1478,7 @@ def external_resource_data_from_def(
         config_field_snaps=unconfigured_config_type_snap.fields or [],
         config_schema_snap=config_type.get_schema_snapshot(),
         nested_resources=nested_resources,
+        parent_resources=parent_resources,
         is_top_level=True,
         resource_type=resource_type,
     )
