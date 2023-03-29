@@ -7,8 +7,11 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 <Note>
   This guide covers using the new Pythonic config system introduced in Dagster
-  1.3. If your code is still using the legacy config system, see the [legacy
-  configuration guide](/concepts/configuration/config-schema-legacy).
+  1.3. If your code is still using the legacy config system, see the{" "}
+  <a href="/concepts/configuration/config-schema-legacy">
+    legacy configuration guide
+  </a>
+  .
 </Note>
 
 Run configuration allows providing parameters to jobs at the time they're executed.
@@ -63,12 +66,14 @@ def print_greeting(config: MyOpConfig):
     print(f"hello {config.person_name}")  # noqa: T201
 ```
 
+You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+
 </TabItem>
 </TabGroup>
 
-You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+---
 
-### Defining and accessing Pythonic configuration for a resource
+## Defining and accessing Pythonic configuration for a resource
 
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource.
 
@@ -94,9 +99,12 @@ To execute a job or materialize an asset that specifies config, you'll need to p
 - [Dagit](#dagit)
 - [Command line](#command-line)
 
+<TabGroup persistentKey="configtype">
+<TabItem name="Python">
+
 ### Python
 
-When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
+When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a <PyObject object="RunConfig"/> object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
 from dagster import job, materialize, op, RunConfig
@@ -115,9 +123,12 @@ asset_result = materialize(
 )
 ```
 
+</TabItem>
+<TabItem name="Dagit">
+
 ### Dagit
 
-From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. Here, the YAML schema matches the layout of the config class we defined. The editor has typeahead, schema validation, and schema documentation. You can also click the "Scaffold Missing Config" button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config`.
+From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad-tab), we supply config as YAML using the config editor. Here, the YAML schema matches the layout of the config class we defined. The editor has typeahead, schema validation, and schema documentation. You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config`.
 
 <Image
 alt="Config in Dagit"
@@ -125,6 +136,9 @@ src="/images/concepts/config-dagit.png"
 width={3808}
 height={2414}
 />
+
+</TabItem>
+<TabItem name="Command line">
 
 ### Command line
 
@@ -140,6 +154,8 @@ ops:
 ```bash
 dagster job execute --config my_config.yaml
 ```
+
+</TabItem>
 
 ---
 
@@ -180,11 +196,3 @@ asset_result = materialize(
     ),
 )
 ```
-
----
-
-## See it in action
-
-For more examples of jobs, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
-
-- [Config schema on a resource](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
