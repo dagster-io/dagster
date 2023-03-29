@@ -142,7 +142,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
+            cls, start_dt, timezone, fmt, end_offset, cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -516,13 +516,13 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def schedule_type(self) -> Optional[ScheduleType]:
-        if re.match(r"\d+ \* \* \* \*", self.cron_schedule):
+        if re.fullmatch(r"\d+ \* \* \* \*", self.cron_schedule):
             return ScheduleType.HOURLY
-        elif re.match(r"\d+ \d+ \* \* \*", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \* \* \*", self.cron_schedule):
             return ScheduleType.DAILY
-        elif re.match(r"\d+ \d+ \* \* \d+", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \* \* \d+", self.cron_schedule):
             return ScheduleType.WEEKLY
-        elif re.match(r"\d+ \d+ \d+ \* \*", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \d+ \* \*", self.cron_schedule):
             return ScheduleType.MONTHLY
         else:
             return None
@@ -530,7 +530,7 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def minute_offset(self) -> int:
-        match = re.match(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
+        match = re.fullmatch(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no minute offset")
         return int(match.groups()[0])
@@ -538,7 +538,7 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def hour_offset(self) -> int:
-        match = re.match(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
+        match = re.fullmatch(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no hour offset")
         return int(match.groups()[1])
@@ -548,12 +548,12 @@ class TimeWindowPartitionsDefinition(
     def day_offset(self) -> int:
         schedule_type = self.schedule_type
         if schedule_type == ScheduleType.WEEKLY:
-            match = re.match(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
+            match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
             if match is None:
                 check.failed(f"{self.cron_schedule} has no day offset")
             return int(match.groups()[4])
         elif schedule_type == ScheduleType.MONTHLY:
-            match = re.match(r"(\d+|\*) (\d+|\*) (\d+) (\d+|\*) (\d+|\*)", self.cron_schedule)
+            match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+) (\d+|\*) (\d+|\*)", self.cron_schedule)
             if match is None:
                 check.failed(f"{self.cron_schedule} has no day offset")
             return int(match.groups()[2])
