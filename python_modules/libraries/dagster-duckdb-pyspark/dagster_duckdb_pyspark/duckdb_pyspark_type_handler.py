@@ -5,8 +5,8 @@ import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import (
-    ConfigurableDuckDBIOManager,
     DuckDbClient,
+    DuckDBIOManager,
     build_duckdb_io_manager,
 )
 from pyspark.sql import SparkSession
@@ -147,7 +147,7 @@ Examples:
 """
 
 
-class DuckDBPySparkIOManager(ConfigurableDuckDBIOManager):
+class DuckDBPySparkIOManager(DuckDBIOManager):
     """An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
     using the DuckDBPySparkIOManager, any inputs and outputs without type annotations will be loaded
     as PySpark DataFrames.
