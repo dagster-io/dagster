@@ -26,7 +26,9 @@ from pydantic import Field
 class MyMetadataConfig(Config):
     # Here, the ellipses `...` indicates that the field is required and has no default value.
     person_name: str = Field(..., description="The name of the person to greet")
-    age: int = Field(..., gt=0, lt=100, description="The age of the person to greet")
+    age: int = Field(
+        ..., gt=0, lt=100, description="The age of the person to greet"
+    )
 
 # errors!
 MyMetadataConfig(person_name="Alice", age=200)
@@ -188,7 +190,7 @@ class ProcessUsersConfig(Config):
 def process_users(config: ProcessUsersConfig):
     for user, permission in config.users_list.items():
         if permission == UserPermissions.ADMIN:
-            print(f"{user} is an admin")
+            print(f"{user} is an admin")  # noqa: T201
 
 @job
 def process_users_job():
