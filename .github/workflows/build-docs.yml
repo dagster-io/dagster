@@ -1,5 +1,14 @@
 name: Deploy Docs
-on: push
+on:
+  push:
+    branches:
+      - master
+      - 'release-*'
+    paths:
+      - docs/**
+  pull_request:
+    paths:
+      - docs/**
 jobs:
   deploy:
     runs-on: ubuntu-latest
