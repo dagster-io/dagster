@@ -11,36 +11,38 @@ import {Filter, FilterTag, FilterTagHighlightedText} from './Filter';
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 
-function calculateTimeRanges() {
+function calculateTimeRanges(timezone: string) {
   return {
     TODAY: {
       label: 'Today',
-      range: [moment().startOf('day').toDate().valueOf(), null] as TimeRangeState,
+      range: [moment().tz(timezone).startOf('day').toDate().valueOf(), null] as TimeRangeState,
     },
     YESTERDAY: {
       label: 'Yesterday',
       range: [
-        moment().subtract(1, 'day').startOf('day').toDate().valueOf(),
-        moment().subtract(1, 'day').endOf('day').toDate().valueOf(),
+        moment().tz(timezone).subtract(1, 'day').startOf('day').toDate().valueOf(),
+        moment().tz(timezone).subtract(1, 'day').endOf('day').toDate().valueOf(),
       ] as TimeRangeState,
     },
     LAST_7_DAYS: {
       label: 'Within last 7 days',
-      range: [moment().subtract(7, 'days').toDate().valueOf(), null] as TimeRangeState,
+      range: [moment().tz(timezone).subtract(7, 'days').toDate().valueOf(), null] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
-      range: [moment().subtract(30, 'days').toDate().valueOf(), null] as TimeRangeState,
+      range: [
+        moment().tz(timezone).subtract(30, 'days').toDate().valueOf(),
+        null,
+      ] as TimeRangeState,
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
   };
 }
 type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>;
 type TimeRangeState = [number | null, number | null];
-let TimeRanges: Record<
-  TimeRangeKey,
-  {label: string; range: TimeRangeState}
-> = calculateTimeRanges();
+let TimeRanges: Record<TimeRangeKey, {label: string; range: TimeRangeState}> = calculateTimeRanges(
+  'UTC',
+); // This will get overriden when actually used, but we want to set an initial value for the type checker.
 
 const timeRangesArray = Object.keys(TimeRanges).map((key) => ({
   key: key as TimeRangeKey,
@@ -49,8 +51,14 @@ const timeRangesArray = Object.keys(TimeRanges).map((key) => ({
 }));
 
 export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
-  constructor(name: string, icon: IconName, initialState?: TimeRangeState) {
+  constructor(
+    name: string,
+    icon: IconName,
+    public readonly timezone: string,
+    initialState?: TimeRangeState,
+  ) {
     super(name, icon, initialState || [null, null]);
+    this.timezone = timezone;
   }
 
   renderActiveFilterState(): JSX.Element | null {
@@ -60,6 +68,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
         remove={() => {
           this.setState([null, null]);
         }}
+        timezone={this.timezone}
       />
     );
   }
@@ -96,7 +105,7 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
         <CustomTimeRangeFilterDialog filter={this} closeRef={closeRef} />,
       );
     } else {
-      TimeRanges = calculateTimeRanges();
+      TimeRanges = calculateTimeRanges(this.timezone);
       const nextState = TimeRanges[value].range;
       this.setState(nextState);
     }
@@ -114,7 +123,25 @@ function TimeRangeResult({range}: {range: string}) {
   );
 }
 
-function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () => void}) {
+function ActiveFilterState({
+  state,
+  remove,
+  timezone,
+}: {
+  state: TimeRangeState;
+  remove: () => void;
+  timezone: string;
+}) {
+  const L_FORMAT = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(navigator.language, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        timeZone: timezone === 'Automatic' ? undefined : timezone,
+      }),
+    [timezone],
+  );
   const dateLabel = React.useMemo(() => {
     if (isEqual(state, TimeRanges.TODAY.range)) {
       return (
@@ -145,7 +172,7 @@ function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () =
         return (
           <>
             is before{' '}
-            <FilterTagHighlightedText>{moment(state[1]!).format('L')}</FilterTagHighlightedText>
+            <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
           </>
         );
       }
@@ -153,25 +180,27 @@ function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () =
         return (
           <>
             is after{' '}
-            <FilterTagHighlightedText>{moment(state[0]!).format('L')}</FilterTagHighlightedText>
+            <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           </>
         );
       }
       return (
         <>
           is in range{' '}
-          <FilterTagHighlightedText>{moment(state[0]!).format('L')}</FilterTagHighlightedText>
+          <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
           {' - '}
-          <FilterTagHighlightedText>{moment(state[1]!).format('L')}</FilterTagHighlightedText>
+          <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
         </>
       );
     }
-  }, [state]);
+  }, [L_FORMAT, state]);
 
   return (
     <FilterTag
       iconName="date"
-      label={<Box flex={{direction: 'row', gap: 4}}>Timestamp {dateLabel}</Box>}
+      label={
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>Timestamp {dateLabel}</Box>
+      }
       onRemove={remove}
     />
   );
