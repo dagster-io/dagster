@@ -128,10 +128,12 @@ def test_duckdb_io_manager_with_schema(tmp_path):
 
             duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-            out_df = duckdb_conn.execute("SELECT * FROM custom_schema.my_df").arrow()
+            out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM custom_schema.my_df").arrow())
             assert out_df["a"].to_list() == [1, 2, 3]
 
-            out_df = duckdb_conn.execute("SELECT * FROM custom_schema.my_df_plus_one").arrow()
+            out_df = pl.DataFrame(
+                duckdb_conn.execute("SELECT * FROM custom_schema.my_df_plus_one").arrow()
+            )
             assert out_df["a"].to_list() == [2, 3, 4]
 
             duckdb_conn.close()
