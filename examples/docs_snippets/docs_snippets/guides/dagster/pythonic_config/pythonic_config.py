@@ -291,7 +291,7 @@ def enum_schema_config() -> None:
     def process_users(config: ProcessUsersConfig):
         for user, permission in config.users_list.items():
             if permission == UserPermissions.ADMIN:
-                print(f"{user} is an admin")
+                print(f"{user} is an admin")  # noqa: T201
 
     @job
     def process_users_job():
