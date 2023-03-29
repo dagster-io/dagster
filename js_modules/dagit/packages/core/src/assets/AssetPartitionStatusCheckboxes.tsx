@@ -1,10 +1,9 @@
 import {Box, Checkbox} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {partitionStatusToText} from '../partitions/PartitionStatus';
 import {testId} from '../testing/testId';
 
-import {AssetPartitionStatus} from './usePartitionHealthData';
+import {AssetPartitionStatus, assetPartitionStatusToText} from './usePartitionHealthData';
 
 export function countsByState(
   partitionKeysForCounts: {partitionKey: string; state: AssetPartitionStatus}[],
@@ -36,7 +35,7 @@ export const AssetPartitionStatusCheckboxes: React.FC<{
           disabled={disabled}
           style={{marginBottom: 0, marginLeft: 10, minWidth: 200}}
           checked={value.includes(state) && !disabled}
-          label={`${partitionStatusToText(state)} (${counts[state]})`}
+          label={`${assetPartitionStatusToText(state)} (${counts[state]})`}
           onChange={() =>
             onChange(value.includes(state) ? value.filter((v) => v !== state) : [...value, state])
           }

@@ -2,7 +2,7 @@ import {Box, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {partitionStateToStyle} from '../partitions/PartitionStatus';
+import {PartitionState, partitionStateToStyle} from '../partitions/PartitionStatus';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
@@ -108,7 +108,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   );
 };
 
-export const StateDot = ({state}: {state: AssetPartitionStatus}) => (
+export const StateDot = ({state}: {state: PartitionState | AssetPartitionStatus}) => (
   <div
     key={state}
     style={{

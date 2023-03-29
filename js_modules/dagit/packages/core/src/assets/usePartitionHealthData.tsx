@@ -38,6 +38,21 @@ export enum AssetPartitionStatus {
   MISSING = 'MISSING',
 }
 
+export const assetPartitionStatusToText = (status: AssetPartitionStatus) => {
+  switch (status) {
+    case AssetPartitionStatus.MATERIALIZED:
+      return 'Materialized';
+    case AssetPartitionStatus.MATERIALIZING:
+      return 'Materializing';
+    case AssetPartitionStatus.FAILED:
+      return 'Failed';
+    case AssetPartitionStatus.MISSING:
+      return 'Missing';
+    default:
+      assertUnreachable(status);
+  }
+};
+
 export interface PartitionHealthData {
   assetKey: AssetKey;
   dimensions: PartitionHealthDimension[];
