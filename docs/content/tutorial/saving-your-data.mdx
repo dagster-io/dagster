@@ -107,7 +107,7 @@ duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()]).configu
 
 # Update your Definitions
 defs = Definitions(
-    assets=[*hackernews_assets],
+    assets=hackernews_assets,
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
