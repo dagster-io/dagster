@@ -23,6 +23,7 @@ export type ResourceRootQuery = {
         __typename: 'ResourceDetails';
         name: string;
         description: string | null;
+        resourceType: string;
         configFields: Array<{
           __typename: 'ConfigTypeField';
           name: string;
@@ -36,6 +37,12 @@ export type ResourceRootQuery = {
           key: string;
           value: string;
           type: Types.ConfiguredValueType;
+        }>;
+        nestedResources: Array<{
+          __typename: 'NestedResourceEntry';
+          name: string;
+          type: Types.NestedResourceType;
+          resource: {__typename: 'ResourceDetails'; name: string; resourceType: string} | null;
         }>;
       }
     | {__typename: 'ResourceNotFoundError'};

@@ -2072,6 +2072,18 @@ export type MultiPartitions = {
   ranges: Array<MaterializedPartitionRange2D>;
 };
 
+export type NestedResourceEntry = {
+  __typename: 'NestedResourceEntry';
+  name: Scalars['String'];
+  resource: Maybe<ResourceDetails>;
+  type: NestedResourceType;
+};
+
+export enum NestedResourceType {
+  ANONYMOUS = 'ANONYMOUS',
+  TOP_LEVEL = 'TOP_LEVEL',
+}
+
 export type NoModeProvidedError = Error & {
   __typename: 'NoModeProvidedError';
   message: Scalars['String'];
@@ -2846,6 +2858,8 @@ export type ResourceDetails = {
   description: Maybe<Scalars['String']>;
   isTopLevel: Scalars['Boolean'];
   name: Scalars['String'];
+  nestedResources: Array<NestedResourceEntry>;
+  resourceType: Scalars['String'];
 };
 
 export type ResourceDetailsList = {
@@ -8171,6 +8185,28 @@ export const buildMultiPartitions = (
   };
 };
 
+export const buildNestedResourceEntry = (
+  overrides?: Partial<NestedResourceEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'NestedResourceEntry'} & NestedResourceEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NestedResourceEntry');
+  return {
+    __typename: 'NestedResourceEntry',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quia',
+    resource:
+      overrides && overrides.hasOwnProperty('resource')
+        ? overrides.resource!
+        : relationshipsToOmit.has('ResourceDetails')
+        ? ({} as ResourceDetails)
+        : buildResourceDetails({}, relationshipsToOmit),
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : NestedResourceType.ANONYMOUS,
+  };
+};
+
 export const buildNoModeProvidedError = (
   overrides?: Partial<NoModeProvidedError>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10187,6 +10223,16 @@ export const buildResourceDetails = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
     isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
+    nestedResources:
+      overrides && overrides.hasOwnProperty('nestedResources')
+        ? overrides.nestedResources!
+        : [
+            relationshipsToOmit.has('NestedResourceEntry')
+              ? ({} as NestedResourceEntry)
+              : buildNestedResourceEntry({}, relationshipsToOmit),
+          ],
+    resourceType:
+      overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
   };
 };
 

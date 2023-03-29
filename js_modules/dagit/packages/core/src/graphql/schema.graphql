@@ -1914,6 +1914,8 @@ type ResourceDetails {
   configFields: [ConfigTypeField!]!
   configuredValues: [ConfiguredValue!]!
   isTopLevel: Boolean!
+  nestedResources: [NestedResourceEntry!]!
+  resourceType: String!
 }
 
 type ConfiguredValue {
@@ -1925,6 +1927,17 @@ type ConfiguredValue {
 enum ConfiguredValueType {
   VALUE
   ENV_VAR
+}
+
+type NestedResourceEntry {
+  name: String!
+  type: NestedResourceType!
+  resource: ResourceDetails
+}
+
+enum NestedResourceType {
+  ANONYMOUS
+  TOP_LEVEL
 }
 
 type RepositoryConnection {
