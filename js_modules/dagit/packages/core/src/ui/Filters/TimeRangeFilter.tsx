@@ -1,8 +1,7 @@
 import {IconName, Box, Icon, Colors, Dialog, Button, DialogFooter} from '@dagster-io/ui';
-import dayjs from 'dayjs';
 import isEqual from 'lodash/isEqual';
 // eslint-disable-next-line no-restricted-imports
-import moment from 'moment';
+import moment from 'moment-timezone';
 import React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components/macro';
@@ -16,22 +15,22 @@ function calculateTimeRanges() {
   return {
     TODAY: {
       label: 'Today',
-      range: [dayjs().startOf('day').toDate().getTime(), null] as TimeRangeState,
+      range: [moment().startOf('day').toDate().valueOf(), null] as TimeRangeState,
     },
     YESTERDAY: {
       label: 'Yesterday',
       range: [
-        dayjs().subtract(1, 'day').startOf('day').toDate().getTime(),
-        dayjs().subtract(1, 'day').endOf('day').toDate().getTime(),
+        moment().subtract(1, 'day').startOf('day').toDate().valueOf(),
+        moment().subtract(1, 'day').endOf('day').toDate().valueOf(),
       ] as TimeRangeState,
     },
     LAST_7_DAYS: {
       label: 'Within last 7 days',
-      range: [dayjs().subtract(7, 'days').toDate().getTime(), null] as TimeRangeState,
+      range: [moment().subtract(7, 'days').toDate().valueOf(), null] as TimeRangeState,
     },
     LAST_30_DAYS: {
       label: 'Within last 30 days',
-      range: [dayjs().subtract(30, 'days').toDate().getTime(), null] as TimeRangeState,
+      range: [moment().subtract(30, 'days').toDate().valueOf(), null] as TimeRangeState,
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
   };
@@ -70,39 +69,36 @@ export class TimeRangeFilter extends Filter<TimeRangeState, TimeRangeKey> {
     return start !== null || end !== null;
   }
 
-  getResults(query: string): {label: JSX.Element; value: TimeRangeKey}[] {
-    if (query === '') {
-      return timeRangesArray.map(({label, key}) => ({
-        label: <TimeRangeResult range={label} />,
-        value: key,
-      }));
-    }
+  getResults(query: string): {label: JSX.Element; key: string; value: TimeRangeKey}[] {
     return timeRangesArray
-      .filter(({label}) => label.toLowerCase().includes(query.toLowerCase()))
+      .filter(({label}) => query === '' || label.toLowerCase().includes(query.toLowerCase()))
       .map(({label, key}) => ({
         label: <TimeRangeResult range={label} />,
+        key,
         value: key,
       }));
   }
 
-  onSelect(
-    key: TimeRangeKey,
-    close: () => void,
-    createPortal: (element: JSX.Element) => () => void,
-  ) {
-    if (key === 'CUSTOM') {
+  onSelect({
+    value,
+    close,
+    createPortal,
+  }: {
+    value: TimeRangeKey;
+    close: () => void;
+    createPortal: (element: JSX.Element) => () => void;
+  }) {
+    if (value === 'CUSTOM') {
       const closeRef = {
-        current: () => {
-          debugger;
-        },
+        current: () => {},
       };
       closeRef.current = createPortal(
         <CustomTimeRangeFilterDialog filter={this} closeRef={closeRef} />,
       );
     } else {
       TimeRanges = calculateTimeRanges();
-      const value = TimeRanges[key].range;
-      this.setState(value);
+      const nextState = TimeRanges[value].range;
+      this.setState(nextState);
     }
     close();
     return null;
@@ -117,13 +113,6 @@ function TimeRangeResult({range}: {range: string}) {
     </Box>
   );
 }
-
-const L_FORMAT = new Intl.DateTimeFormat(navigator.language, {
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-  timeZone: 'UTC',
-});
 
 function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () => void}) {
   const dateLabel = React.useMemo(() => {
@@ -156,7 +145,7 @@ function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () =
         return (
           <>
             is before{' '}
-            <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
+            <FilterTagHighlightedText>{moment(state[1]!).format('L')}</FilterTagHighlightedText>
           </>
         );
       }
@@ -164,22 +153,28 @@ function ActiveFilterState({state, remove}: {state: TimeRangeState; remove: () =
         return (
           <>
             is after{' '}
-            <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
+            <FilterTagHighlightedText>{moment(state[0]!).format('L')}</FilterTagHighlightedText>
           </>
         );
       }
       return (
         <>
           is in range{' '}
-          <FilterTagHighlightedText>{L_FORMAT.format(state[0]!)}</FilterTagHighlightedText>
+          <FilterTagHighlightedText>{moment(state[0]!).format('L')}</FilterTagHighlightedText>
           {' - '}
-          <FilterTagHighlightedText>{L_FORMAT.format(state[1]!)}</FilterTagHighlightedText>
+          <FilterTagHighlightedText>{moment(state[1]!).format('L')}</FilterTagHighlightedText>
         </>
       );
     }
   }, [state]);
 
-  return <FilterTag iconName="date" label={<span>Timestamp {dateLabel}</span>} onRemove={remove} />;
+  return (
+    <FilterTag
+      iconName="date"
+      label={<Box flex={{direction: 'row', gap: 4}}>Timestamp {dateLabel}</Box>}
+      onRemove={remove}
+    />
+  );
 }
 
 function CustomTimeRangeFilterDialog({

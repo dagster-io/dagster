@@ -51,6 +51,7 @@
     "lodash": "^4.17.15",
     "lru-cache": "^6.0.0",
     "moment": "^2.29.4",
+    "moment-timezone": "^0.5.42",
     "qs": "^6.10.3",
     "react-chartjs-2": "^3.0.3",
     "react-codemirror2": "^7.2.1",

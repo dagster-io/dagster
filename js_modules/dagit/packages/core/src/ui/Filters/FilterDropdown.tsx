@@ -34,7 +34,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       ? filters.filter((filter) => filter.name.toLowerCase().includes(search.toLowerCase()))
       : filters;
 
-    const results: Record<string, {label: JSX.Element; value: any}[]> = {};
+    const results: Record<string, {label: JSX.Element; key: string; value: any}[]> = {};
     if (search) {
       filters.forEach((filter) => {
         results[filter.name] = filter.getResults(search);
@@ -45,14 +45,14 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
   const selectValue = React.useCallback(
     (filter: Filter<any, any>, value: any) => {
-      filter.onSelect(
+      filter.onSelect({
         value,
-        () => {
+        close: () => {
           setSearch('');
           setSelectedFilter(null);
           setIsOpen(false);
         },
-        (portaledElement) => {
+        createPortal: (portaledElement) => {
           const portalElement = (
             <React.Fragment key={filter.name}>{portaledElement}</React.Fragment>
           );
@@ -63,7 +63,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             );
           };
         },
-      );
+      });
     },
     [setIsOpen, setPortaledElements],
   );
@@ -72,20 +72,20 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     if (selectedFilter) {
       return selectedFilter
         .getResults(search)
-        .map((result, index) => (
+        .map((result) => (
           <MenuItem
-            key={index}
+            key={`filter:${selectedFilter.name}:${result.key}`}
             onClick={() => selectValue(selectedFilter, result.value)}
             text={result.label}
           />
         ));
     }
     const jsxResults: JSX.Element[] = [];
-    filters.forEach((filter, index) => {
+    filters.forEach((filter) => {
       if (filteredFilters.includes(filter)) {
         jsxResults.push(
           <MenuItem
-            key={index}
+            key={`filter:${filter.name}`}
             onClick={() => {
               setSelectedFilter(filter);
             }}
@@ -98,10 +98,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           />,
         );
       }
-      results[filter.name]?.forEach((result, resultIndex) => {
+      results[filter.name]?.forEach((result) => {
         jsxResults.push(
           <MenuItem
-            key={filter.name + resultIndex}
+            key={`filter:${filter.name}:${result.key}`}
             onClick={() => selectValue(filter, result.value)}
             text={result.label}
           />,
@@ -147,12 +147,32 @@ type FilterDropdownButtonProps = {
   filters: Filter<any, any>[];
 };
 export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
+  const keyRef = React.useRef(0);
+
   const [isOpen, _setIsOpen] = useState(false);
+  const prevOpenRef = React.useRef(isOpen);
+
+  const setIsOpen = useSetStateUpdateCallback(
+    isOpen,
+    React.useCallback((isOpen) => {
+      _setIsOpen(isOpen);
+      if (isOpen && !prevOpenRef.current) {
+        // Reset the key when the dropdown is opened
+        // But not when its closed because of the closing animation
+        keyRef.current++;
+      }
+      prevOpenRef.current = isOpen;
+    }, []),
+  );
+
   const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
 
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
+  /**
+   * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
+   */
   React.useLayoutEffect(() => {
     const listener = (e: MouseEvent) => {
       if (
@@ -168,23 +188,7 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
     return () => {
       document.body.removeEventListener('click', listener);
     };
-  }, []);
-
-  const keyRef = React.useRef(0);
-  const prevOpenRef = React.useRef(isOpen);
-
-  const setIsOpen = useSetStateUpdateCallback(
-    isOpen,
-    React.useCallback((isOpen) => {
-      _setIsOpen(isOpen);
-      if (isOpen && !prevOpenRef.current) {
-        // Reset the key when the dropdown is opened
-        // But not when its closed because of the closing animation
-        keyRef.current++;
-      }
-      prevOpenRef.current = isOpen;
-    }, []),
-  );
+  }, [setIsOpen]);
 
   return (
     <ShortcutHandler
@@ -243,6 +247,9 @@ const TextInputWrapper = styled.div`
   display: flex;
   flex-direction: row;
   flex-gap: 12px;
+  > *:first-child {
+    flex-grow: 1;
+  }
   input {
     padding: 12px 16px;
     &,
@@ -265,8 +272,15 @@ const PopoverStyle = createGlobalStyle`
   .filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown {
     margin-left: 16px !important;
     border-radius: 8px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     .bp3-popover2-content {
       border-radius: 8px;
     }
+  }
+  
+  .bp3-overlay-content {
+    max-width: 100%;
   }
 `;

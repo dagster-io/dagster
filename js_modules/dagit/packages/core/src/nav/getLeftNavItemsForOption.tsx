@@ -92,9 +92,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
       leftIcon: 'job',
       label: (
         <Label $hasIcon={someInRepoHasIcon}>
-          <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
-            {name}
-          </TruncatingName>
+          <TruncatedTextWithFullTextOnHover text={name} />
           <div style={{flex: 1}} />
           {isJob ? null : <LegacyPipelineTag />}
         </Label>
@@ -139,3 +137,19 @@ const TruncatingName = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
 `;
+
+export const TruncatedTextWithFullTextOnHover = React.forwardRef(
+  (
+    {text, tooltipStyle, ...rest}: {text: string; tooltipStyle?: string},
+    ref: React.ForwardedRef<HTMLDivElement>,
+  ) => (
+    <TruncatingName
+      data-tooltip={text}
+      data-tooltip-style={tooltipStyle ?? LabelTooltipStyles}
+      ref={ref}
+      {...rest}
+    >
+      {text}
+    </TruncatingName>
+  ),
+);

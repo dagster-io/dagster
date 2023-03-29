@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-restricted-imports
+import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -37,6 +39,7 @@ export const TimeProvider: React.FC = (props) => {
     }),
     [timezone, hourCycle],
   );
+  moment.tz.setDefault(timezone[0]);
 
   return <TimeContext.Provider value={state}>{props.children}</TimeContext.Provider>;
 };

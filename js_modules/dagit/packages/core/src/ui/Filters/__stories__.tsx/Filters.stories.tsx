@@ -1,7 +1,8 @@
-import {Box} from '@dagster-io/ui';
+import {Box, CustomTooltipProvider} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import React from 'react';
 
+import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForOption';
 import {Filter} from '../Filter';
 import {FilterDropdown} from '../FilterDropdown';
 import {StaticSetFilter} from '../StaticSetFilter';
@@ -22,6 +23,9 @@ const TestComponent: React.FC = () => {
         icon: 'account_circle',
         allValues: [
           value('marco'),
+          value(`a super ${'long '.repeat(100)} name`),
+          value(`a super ${'long '.repeat(10)} name`),
+          value(`a super ${'long '.repeat(1000)} name`),
           value('polo'),
           value('hi'),
           value('test'),
@@ -29,7 +33,9 @@ const TestComponent: React.FC = () => {
           value('yesterday'),
         ],
         renderLabel: ({value, isActive}) => (
-          <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
+          <span style={{color: isActive ? 'green' : undefined}}>
+            <TruncatedTextWithFullTextOnHover text={value} />
+          </span>
         ),
         getStringValue: (value) => value,
       }),
@@ -45,7 +51,9 @@ const TestComponent: React.FC = () => {
           value('yesterday'),
         ],
         renderLabel: ({value, isActive}) => (
-          <div style={{color: isActive ? 'green' : undefined}}>{value}</div>
+          <span style={{color: isActive ? 'green' : undefined}}>
+            <TruncatedTextWithFullTextOnHover text={value} />
+          </span>
         ),
         getStringValue: (value) => value,
       }),
@@ -66,18 +74,20 @@ const TestComponent: React.FC = () => {
                 margin: '4px',
               }}
             />
-            <span>{value}</span>
+            <span>
+              <TruncatedTextWithFullTextOnHover text={value} />
+            </span>
           </Box>
         ),
       }),
-      new TimeRangeFilter('Timestamp', 'account_tree'),
+      new TimeRangeFilter('Timestamp', 'account_tree', 'UTC'),
     ],
     [],
   );
 
-  const [activeFilters, setActiveFilters] = React.useState<Filter<any, any>[]>([]);
+  const [_activeFilters, setActiveFilters] = React.useState<Filter<any, any>[]>([]);
 
-  const {button, activeFiltersJsx} = useFilters({filters, activeFilters, setActiveFilters});
+  const {button, activeFiltersJsx} = useFilters({filters, setActiveFilters});
 
   return (
     <Box flex={{gap: 8, direction: 'column'}} padding={12}>
@@ -88,7 +98,12 @@ const TestComponent: React.FC = () => {
 };
 
 export const FilterDropdownStory = () => {
-  return <TestComponent />;
+  return (
+    <>
+      <CustomTooltipProvider />
+      <TestComponent />
+    </>
+  );
 };
 
 function value(value: string) {

@@ -51,10 +51,11 @@ export class StaticSetFilter<TValue> extends Filter<Set<TValue>, TValue> {
     return this.getState().size > 0;
   }
 
-  getResults(query: string): {label: JSX.Element; value: TValue}[] {
+  getResults(query: string): {label: JSX.Element; key: string; value: TValue}[] {
     if (query === '') {
       return this.allValues.map(({value}) => ({
         label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
+        key: this.getStringValue(value),
         value,
       }));
     }
@@ -62,11 +63,12 @@ export class StaticSetFilter<TValue> extends Filter<Set<TValue>, TValue> {
       .filter(({match}) => match.some((value) => value.toLowerCase().includes(query.toLowerCase())))
       .map(({value}) => ({
         label: <SetFilterLabel value={value} renderLabel={this.renderLabel} filter={this} />,
+        key: this.getStringValue(value),
         value,
       }));
   }
 
-  onSelect(value: TValue, _: () => void) {
+  onSelect({value}: {value: TValue}) {
     if (this.getState().has(value)) {
       const nextState = new Set(this.getState());
       nextState.delete(value);
@@ -77,6 +79,8 @@ export class StaticSetFilter<TValue> extends Filter<Set<TValue>, TValue> {
     return null;
   }
 }
+
+const MAX_VALUES_TO_SHOW = 3;
 
 function SetFilterActiveState({
   name,
@@ -97,7 +101,7 @@ function SetFilterActiveState({
   const label = React.useMemo(() => {
     if (arr.length === 0) {
       return null;
-    } else if (arr.length <= 3) {
+    } else if (arr.length <= MAX_VALUES_TO_SHOW) {
       return (
         <>
           is&nbsp;{arr.length === 1 ? '' : <>any of&nbsp;</>}
@@ -109,33 +113,38 @@ function SetFilterActiveState({
           ))}
         </>
       );
-    } else if (arr.length > 3) {
+    } else {
       return (
-        <div>
-          is any of{' '}
+        <Box flex={{direction: 'row', alignItems: 'center'}}>
+          is any of&nbsp;
           <Popover
             interactionKind="hover"
             position="bottom"
             content={
-              <Box
-                padding={{vertical: 8, horizontal: 12}}
-                flex={{direction: 'column', gap: 4}}
-                style={{maxHeight: '300px', overflow: 'auto'}}
-              >
+              <Box padding={{vertical: 8, horizontal: 12}} flex={{direction: 'column', gap: 4}}>
                 {arr.map((value) => (
-                  <div key={value}>{renderLabel({value, isActive: true})}</div>
+                  <div
+                    key={value}
+                    style={{
+                      maxWidth: '500px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {renderLabel({value, isActive: true})}
+                  </div>
                 ))}
               </Box>
             }
           >
-            <FilterTagHighlightedText>
-              {arr.length} {name.toLowerCase()}s
-            </FilterTagHighlightedText>
+            <FilterTagHighlightedText>{`${
+              arr.length
+            } ${name.toLowerCase()}s`}</FilterTagHighlightedText>
           </Popover>
-        </div>
+        </Box>
       );
     }
-    return null;
   }, [arr, getStringValue, name, renderLabel]);
 
   if (arr.length === 0) {
@@ -145,7 +154,7 @@ function SetFilterActiveState({
     <FilterTag
       iconName={icon}
       label={
-        <Box flex={{direction: 'row'}}>
+        <Box flex={{direction: 'row', alignItems: 'center'}}>
           {capitalizeFirstLetter(name)}&nbsp;{label}
         </Box>
       }
@@ -160,7 +169,7 @@ function capitalizeFirstLetter(string: string) {
 
 type SetFilterLabelProps = {
   value: any;
-  filter: SetFilter<any>;
+  filter: StaticSetFilter<any>;
   renderLabel: (value: any) => JSX.Element;
 };
 function SetFilterLabel(props: SetFilterLabelProps) {
@@ -178,7 +187,12 @@ function SetFilterLabel(props: SetFilterLabelProps) {
   return (
     // 4 px of margin to compensate for weird Checkbox CSS whose bounding box is smaller than the actual
     // SVG it contains with size="small"
-    <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}} ref={labelRef} margin={{left: 4}}>
+    <Box
+      flex={{direction: 'row', gap: 6, alignItems: 'center'}}
+      ref={labelRef}
+      margin={{left: 4}}
+      style={{maxWidth: '500px'}}
+    >
       <Checkbox
         checked={isActive}
         onChange={(_) => {
@@ -186,7 +200,12 @@ function SetFilterLabel(props: SetFilterLabelProps) {
         }}
         size="small"
       />
-      {renderLabel({value, isActive})}
+      <Box
+        flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
+        style={{overflow: 'hidden'}}
+      >
+        <div style={{overflow: 'hidden'}}>{renderLabel({value, isActive})}</div>
+      </Box>
     </Box>
   );
 }

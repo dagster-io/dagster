@@ -11,10 +11,12 @@ interface UseFiltersProps {
 export const useFilters = ({filters, setActiveFilters}: UseFiltersProps) => {
   const filterStates = React.useMemo(() => {
     return filters.map((filter) => filter.getState());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...filters.map((filter) => filter.getState())]);
 
   const activeFilters = React.useMemo(() => {
     return filters.filter((filter) => filter.isActive());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStates]);
 
   React.useEffect(() => {
@@ -38,6 +40,8 @@ export const useFilters = ({filters, setActiveFilters}: UseFiltersProps) => {
       <React.Fragment key={index}>{filter.renderActiveFilterState()}</React.Fragment>
     ));
   }, [activeFilters]);
+
+  console.log({activeFilters, filterStates, activeFilterJsx});
 
   return {
     button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),

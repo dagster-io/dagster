@@ -97,6 +97,8 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         }
       }
 
+      currentQueryString = next;
+
       history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
     },
     [history, encode, location.pathname, options],
