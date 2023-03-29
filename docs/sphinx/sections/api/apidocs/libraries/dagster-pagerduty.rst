@@ -30,5 +30,5 @@ alerts from within your ops.
 
 .. currentmodule:: dagster_pagerduty
 
-.. autoconfigurable:: pagerduty_resource
+.. autoconfigurable:: PagerDutyService
   :annotation: ResourceDefinition
