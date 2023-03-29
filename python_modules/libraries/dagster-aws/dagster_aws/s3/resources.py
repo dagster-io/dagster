@@ -1,18 +1,19 @@
 from dagster import Field, StringSource, resource
 from dagster._utils.merger import merge_dicts
 
+from python_modules.dagster.dagster._config import BoolSource, IntSource
 from .file_manager import S3FileManager
 from .utils import construct_s3_client
 
 S3_SESSION_CONFIG = {
     "use_unsigned_session": Field(
-        bool,
+        BoolSource,
         description="Specifies whether to use an unsigned S3 session",
         is_required=False,
         default_value=False,
     ),
     "region_name": Field(
-        str, description="Specifies a custom region for the S3 session", is_required=False
+        StringSource, description="Specifies a custom region for the S3 session", is_required=False
     ),
     "endpoint_url": Field(
         StringSource,
@@ -20,7 +21,7 @@ S3_SESSION_CONFIG = {
         is_required=False,
     ),
     "max_attempts": Field(
-        int,
+        IntSource,
         description=(
             "This provides Boto3's retry handler with a value of maximum retry attempts, "
             "where the initial call counts toward the max_attempts value that you provide"
@@ -29,18 +30,18 @@ S3_SESSION_CONFIG = {
         default_value=5,
     ),
     "profile_name": Field(
-        str,
+        StringSource,
         description="Specifies a profile to connect that session",
         is_required=False,
     ),
     "use_ssl": Field(
-        bool,
+        BoolSource,
         description="Whether or not to use SSL. By default, SSL is used.",
         is_required=False,
         default_value=True,
     ),
     "verify": Field(
-        str,
+        StringSource,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
             " You can also specify this argument if you want to use a different CA cert bundle than"
@@ -50,13 +51,13 @@ S3_SESSION_CONFIG = {
         default_value=None,
     ),
     "aws_access_key_id": Field(
-        str,
+        StringSource,
         description="The access key to use when creating the client.",
         is_required=False,
         default_value=None,
     ),
     "aws_secret_access_key": Field(
-        str,
+        StringSource,
         description=(
             "The secret key to use when creating the client."
         ),
@@ -64,7 +65,7 @@ S3_SESSION_CONFIG = {
         default_value=None,
     ),
     "aws_session_token": Field(
-        str,
+        StringSource,
         description=(
             "The session token to use when creating the client."
         ),
