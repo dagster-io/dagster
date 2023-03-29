@@ -16,7 +16,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -163,7 +162,6 @@ def _check_valid_partitions_dimensions(
                 )
 
 
-@experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
     """Takes the cross-product of partitions from two partitions definitions.
 
