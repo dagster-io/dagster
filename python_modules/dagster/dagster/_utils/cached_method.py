@@ -16,6 +16,7 @@ class _Sentinel:
 
 
 NO_VALUE_IN_CACHE_SENTINEL: Final = _Sentinel()
+NO_ARGS_HASH_VALUE = 0
 
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
@@ -107,18 +108,23 @@ def _make_key(
     its hash value, then that argument is returned without a wrapper.  This
     saves space and improves lookup speed.
     """
-    check.invariant(
-        not args,
-        (
-            "@cached_method does not support non-keyword arguments, because doing so would enable "
-            "functionally identical sets of arguments to correpond to different cache keys."
-        ),
-    )
-    key = tuple()
-    if kwds:
-        key = tuple(sorted(kwds.items()))
-    else:
-        key = tuple()
-    if len(key) == 1 and type(key[0]) in fasttypes:
-        return key[0]
-    return _HashedSeq(key)
+    if args:
+        check.failed(
+            (
+                "@cached_method does not support non-keyword arguments, because doing so would"
+                " enable functionally identical sets of arguments to correspond to different cache"
+                " keys."
+            ),
+        )
+
+    # if no args return a shared value
+    if not kwds:
+        return NO_ARGS_HASH_VALUE
+
+    # if single fast (str/int) arg, use that value for hash
+    if len(kwds) == 1:
+        k, v = next(iter(kwds.items()))
+        if type(v) in fasttypes:
+            return f"{k}.{v}"
+
+    return _HashedSeq(tuple(sorted(kwds.items())))
