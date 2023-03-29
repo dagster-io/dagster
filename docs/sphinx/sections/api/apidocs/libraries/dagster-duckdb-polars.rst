@@ -6,6 +6,9 @@ This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ d
 
 .. currentmodule:: dagster_duckdb_polars
 
+.. autoconfigurable:: DuckDBPolarsIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: duckdb_polars_io_manager
   :annotation: IOManagerDefinition
 
