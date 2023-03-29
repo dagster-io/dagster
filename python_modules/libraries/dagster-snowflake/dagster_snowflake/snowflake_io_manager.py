@@ -131,7 +131,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"))
+                    "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
                 }
             )
 

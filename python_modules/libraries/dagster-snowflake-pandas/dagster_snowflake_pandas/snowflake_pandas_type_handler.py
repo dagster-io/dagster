@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Mapping, Optional, Sequence, Type
 
 import pandas as pd
 import pandas.core.dtypes.common as pd_core_dtypes_common
@@ -6,7 +6,7 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
 from snowflake.connector.pandas_tools import pd_writer
 
 
@@ -160,3 +160,68 @@ Examples:
             ...
 
 """
+
+
+class SnowflakePandasIOManager(SnowflakeIOManager):
+    """An IO manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
+    using the SnowflakePandasIOManager, any inputs and outputs without type annotations will be loaded
+    as Pandas DataFrames.
+
+
+    Returns:
+        IOManagerDefinition
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_snowflake_pandas import SnowflakePandasIOManager
+            from dagster import asset, Definitions, EnvVar
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": SnowflakePandasIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
+                }
+            )
+
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> pd.DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+    """
+
+    @staticmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        return [SnowflakePandasTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return pd.DataFrame
