@@ -11,6 +11,7 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    EnvVar,
     IOManagerDefinition,
     MetadataValue,
     MultiPartitionKey,
@@ -32,7 +33,11 @@ from dagster import (
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
+from dagster_snowflake_pyspark import (
+    SnowflakePySparkIOManager,
+    SnowflakePySparkTypeHandler,
+    snowflake_pyspark_io_manager,
+)
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import LongType, StringType, StructField, StructType
@@ -54,6 +59,19 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
     "warehouse": "BUILDKITE",
 }
+
+DATABASE = "TEST_SNOWFLAKE_IO_MANAGER"
+SCHEMA = "SNOWFLAKE_IO_MANAGER_SCHEMA"
+
+pythonic_snowflake_io_manager = SnowflakePySparkIOManager(
+    database=DATABASE,
+    account=EnvVar("SNOWFLAKE_ACCOUNT"),
+    user="BUILDKITE",
+    password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
+)
+old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(
+    {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
+)
 
 
 @contextmanager
@@ -132,20 +150,19 @@ def test_build_snowflake_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_io_manager_with_snowflake_pyspark(spark):
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_io_manager_with_snowflake_pyspark(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
         @op(
-            out={
-                table_name: Out(
-                    dagster_type=DataFrame, metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
-                )
-            },
+            out={table_name: Out(dagster_type=DataFrame, metadata={"schema": SCHEMA})},
         )
         def emit_pyspark_df(_):
             columns = ["foo", "quux"]
@@ -158,13 +175,7 @@ def test_io_manager_with_snowflake_pyspark(spark):
             assert set([f.name for f in df.schema.fields]) == {"foo", "quux"}
             assert df.count() == 2
 
-        @job(
-            resource_defs={
-                "io_manager": snowflake_pyspark_io_manager.configured(
-                    {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": "TEST_SNOWFLAKE_IO_MANAGER"}
-                )
-            }
-        )
+        @job(resource_defs={"io_manager": io_manager})
         def io_manager_test_pipeline():
             read_pyspark_df(emit_pyspark_df())
 
@@ -173,10 +184,13 @@ def test_io_manager_with_snowflake_pyspark(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_time_window_partitioned_asset(spark):
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_time_window_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
@@ -184,7 +198,7 @@ def test_time_window_partitioned_asset(spark):
             partitions_def=partitions_def,
             metadata={"partition_expr": "time"},
             config_schema={"value": str},
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            key_prefix=SCHEMA,
             name=table_name,
         )
         def daily_partitioned(context) -> DataFrame:
@@ -210,27 +224,26 @@ def test_time_window_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
-            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in daily_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
-        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        snowflake_table_path = f"{SCHEMA}.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": DATABASE,
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -269,17 +282,20 @@ def test_time_window_partitioned_asset(spark):
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_static_partitioned_asset(spark):
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_static_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            key_prefix=[SCHEMA],
             metadata={"partition_expr": "color"},
             config_schema={"value": str},
             name=table_name,
@@ -301,27 +317,26 @@ def test_static_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
-            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in static_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
-        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        snowflake_table_path = f"{SCHEMA}.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": DATABASE,
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
         materialize(
             [static_partitioned, downstream_partitioned],
             partition_key="red",
@@ -360,10 +375,13 @@ def test_static_partitioned_asset(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_multi_partitioned_asset(spark):
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_multi_partitioned_asset(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         partitions_def = MultiPartitionsDefinition(
             {
@@ -374,7 +392,7 @@ def test_multi_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            key_prefix=[SCHEMA],
             metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
             config_schema={"value": str},
             name=table_name,
@@ -402,27 +420,26 @@ def test_multi_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
-            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in multi_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
-        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        snowflake_table_path = f"{SCHEMA}.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": DATABASE,
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -474,16 +491,19 @@ def test_multi_partitioned_asset(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_dynamic_partitions(spark):
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_dynamic_partitions(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
         @asset(
             partitions_def=dynamic_fruits,
-            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            key_prefix=[SCHEMA],
             metadata={"partition_expr": "FRUIT"},
             config_schema={"value": str},
             name=table_name,
@@ -508,27 +528,26 @@ def test_dynamic_partitions(spark):
 
         @asset(
             partitions_def=dynamic_fruits,
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
-            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in dynamic_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
-        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        snowflake_table_path = f"{SCHEMA}.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": DATABASE,
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
             instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
@@ -576,20 +595,22 @@ def test_dynamic_partitions(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_self_dependent_asset(spark):
-    schema = "SNOWFLAKE_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize(
+    "io_manager", [(old_snowflake_io_manager), (pythonic_snowflake_io_manager)]
+)
+def test_self_dependent_asset(spark, io_manager):
     with temporary_snowflake_table(
-        schema_name=schema,
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name=SCHEMA,
+        db_name=DATABASE,
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
         @asset(
             partitions_def=daily_partitions,
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             ins={
                 "self_dependent_asset": AssetIn(
-                    key=AssetKey([schema, table_name]),
+                    key=AssetKey([SCHEMA, table_name]),
                     partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                 ),
             },
@@ -624,19 +645,18 @@ def test_self_dependent_asset(spark):
             df = spark.createDataFrame(data, schema=schema)
             return df
 
-        asset_full_name = f"{schema}__{table_name}"
-        snowflake_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        snowflake_table_path = f"{SCHEMA}.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": DATABASE,
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": io_manager}
 
         materialize(
             [self_dependent_asset],
