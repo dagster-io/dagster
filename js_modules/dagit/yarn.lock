@@ -6309,6 +6309,7 @@ __metadata:
     lodash: ^4.17.15
     lru-cache: ^6.0.0
     moment: ^2.29.4
+    moment-timezone: ^0.5.42
     prettier: 2.2.1
     qs: ^6.10.3
     react: ^17.0.2
@@ -23693,6 +23694,15 @@ __metadata:
   bin:
     mkdirp: bin/cmd.js
   checksum: a96865108c6c3b1b8e1d5e9f11843de1e077e57737602de1b82030815f311be11f96f09cce59bd5b903d0b29834733e5313f9301e3ed6d6f6fba2eae0df4298f
+  languageName: node
+  linkType: hard
+
+"moment-timezone@npm:^0.5.42":
+  version: 0.5.42
+  resolution: "moment-timezone@npm:0.5.42"
+  dependencies:
+    moment: ^2.29.4
+  checksum: d4d5d68d4b98e4309e8692ddb6b790ab6b375414ea4e45ef3144bfbc689ab14e3089c4561aea43471fd58595328f43fc554231c9d8fc753b460ca0a29a105693
   languageName: node
   linkType: hard
 
