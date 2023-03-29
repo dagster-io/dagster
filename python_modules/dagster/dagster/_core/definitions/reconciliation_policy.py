@@ -35,7 +35,9 @@ class ReconciliationPolicy(NamedTuple):
     in order to stay in line with the relevant FreshnessPolicies.
     """
 
-    is_eager: bool
+    on_missing: bool
+    on_upstream_update: bool
+    for_freshness: bool
     time_window_partition_scope: Optional[datetime.timedelta]
 
     @staticmethod
@@ -43,7 +45,10 @@ class ReconciliationPolicy(NamedTuple):
         time_window_partition_scope: Optional[datetime.timedelta] = datetime.timedelta.resolution,
     ) -> "ReconciliationPolicy":
         return ReconciliationPolicy(
-            is_eager=True, time_window_partition_scope=time_window_partition_scope
+            on_missing=True,
+            on_upstream_update=True,
+            for_freshness=True,
+            time_window_partition_scope=time_window_partition_scope,
         )
 
     @staticmethod
@@ -51,5 +56,8 @@ class ReconciliationPolicy(NamedTuple):
         time_window_partition_scope: Optional[datetime.timedelta] = datetime.timedelta.resolution,
     ) -> "ReconciliationPolicy":
         return ReconciliationPolicy(
-            is_eager=False, time_window_partition_scope=time_window_partition_scope
+            on_missing=True,
+            on_upstream_update=False,
+            for_freshness=True,
+            time_window_partition_scope=time_window_partition_scope,
         )
