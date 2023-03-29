@@ -109,7 +109,7 @@ TEST_PIPELINE_NAME = "_test_pipeline_"
 
 def create_run_for_test(
     instance: DagsterInstance,
-    pipeline_name=TEST_PIPELINE_NAME,
+    pipeline_name: str = TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,

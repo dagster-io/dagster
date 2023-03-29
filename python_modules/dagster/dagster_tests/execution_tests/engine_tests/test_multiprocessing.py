@@ -320,7 +320,7 @@ def test_separate_sub_dags():
 
         # this test is to ensure that the chain of noop -> noop -> noop -> writer is not blocked by waiter
         order = [
-            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
+            str(event.node_handle) for event in result.step_event_list if event.is_step_success
         ]
 
         # the writer and waiter my finish in different orders so just ensure the proceeding chain

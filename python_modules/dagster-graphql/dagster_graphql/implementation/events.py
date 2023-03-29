@@ -443,7 +443,7 @@ def construct_basic_params(event_record: EventLogEntry) -> Any:
         if (dagster_event and dagster_event.event_type)
         else None,
         "stepKey": event_record.step_key,
-        "solidHandleID": event_record.dagster_event.solid_handle.to_string()  # type: ignore
-        if dagster_event and dagster_event.solid_handle
+        "solidHandleID": event_record.dagster_event.node_handle.to_string()  # type: ignore
+        if dagster_event and dagster_event.node_handle
         else None,
     }

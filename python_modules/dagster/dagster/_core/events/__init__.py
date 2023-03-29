@@ -345,7 +345,9 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
         )
 
 
-@whitelist_for_serdes(serializer=DagsterEventSerializer)
+@whitelist_for_serdes(
+    serializer=DagsterEventSerializer, storage_field_names={"node_handle": "solid_handle"}
+)
 class DagsterEvent(
     NamedTuple(
         "_DagsterEvent",
@@ -353,7 +355,7 @@ class DagsterEvent(
             ("event_type_value", str),
             ("pipeline_name", str),
             ("step_handle", Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]]),
-            ("solid_handle", Optional[NodeHandle]),
+            ("node_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
             ("logging_tags", Optional[Mapping[str, str]]),
             ("event_specific_data", Optional["EventSpecificData"]),
@@ -370,7 +372,7 @@ class DagsterEvent(
     Attributes:
         event_type_value (str): Value for a DagsterEventType.
         pipeline_name (str)
-        solid_handle (NodeHandle)
+        node_handle (NodeHandle)
         step_kind_value (str): Value for a StepKind.
         logging_tags (Dict[str, str])
         event_specific_data (Any): Type must correspond to event_type_value.
@@ -390,7 +392,7 @@ class DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.node_handle,
+            node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
@@ -454,7 +456,7 @@ class DagsterEvent(
         event_type_value: str,
         pipeline_name: str,
         step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         step_kind_value: Optional[str] = None,
         logging_tags: Optional[Mapping[str, str]] = None,
         event_specific_data: Optional["EventSpecificData"] = None,
@@ -463,9 +465,9 @@ class DagsterEvent(
         # legacy
         step_key: Optional[str] = None,
     ):
-        # old events may contain solid_handle but not step_handle
-        if solid_handle is not None and step_handle is None:
-            step_handle = StepHandle(solid_handle)
+        # old events may contain node_handle but not step_handle
+        if node_handle is not None and step_handle is None:
+            step_handle = StepHandle(node_handle)
 
         # Legacy events may have step_key set directly, preserve those to stay in sync
         # with legacy execution plan snapshots.
@@ -479,7 +481,7 @@ class DagsterEvent(
             check.opt_inst_param(
                 step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
             ),
-            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
+            check.opt_inst_param(node_handle, "node_handle", NodeHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
             check.opt_mapping_param(logging_tags, "logging_tags"),
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
@@ -489,14 +491,10 @@ class DagsterEvent(
         )
 
     @property
-    def node_handle(self) -> Optional[NodeHandle]:
-        return self.solid_handle
-
-    @property
     def solid_name(self) -> str:
-        check.invariant(self.solid_handle is not None)
-        solid_handle = cast(NodeHandle, self.solid_handle)
-        return solid_handle.name
+        check.invariant(self.node_handle is not None)
+        node_handle = cast(NodeHandle, self.node_handle)
+        return node_handle.name
 
     @public
     @property
@@ -1271,7 +1269,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.node_handle,
+            node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
@@ -1295,7 +1293,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.node_handle,
+            node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(
@@ -1320,7 +1318,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.node_handle,
+            node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
