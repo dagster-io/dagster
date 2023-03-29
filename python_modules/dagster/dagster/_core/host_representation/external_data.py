@@ -917,6 +917,9 @@ class ExternalResourceConfigEnvVar(NamedTuple):
 ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
 
 
+UNKNOWN_RESOURCE_TYPE = "Unknown"
+
+
 @whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
@@ -949,7 +952,7 @@ class ExternalResourceData(
         config_schema_snap: ConfigSchemaSnapshot,
         nested_resources: Optional[Mapping[str, NestedResource]] = None,
         parent_resources: Optional[Mapping[str, str]] = None,
-        resource_type: str = "Unknown",
+        resource_type: str = UNKNOWN_RESOURCE_TYPE,
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
     ):
