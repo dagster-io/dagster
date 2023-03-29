@@ -84,7 +84,7 @@ def build_duckdb_io_manager(
 
     """
 
-    @io_manager(config_schema=infer_schema_from_config_class(ConfigurableDuckDBIOManager))
+    @io_manager(config_schema=infer_schema_from_config_class(DuckDBIOManager))
     def duckdb_io_manager(init_context):
         """IO Manager for storing outputs in a DuckDB database.
 
@@ -105,7 +105,7 @@ def build_duckdb_io_manager(
     return duckdb_io_manager
 
 
-class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
+class DuckDBIOManager(ConfigurableIOManagerFactory):
     database: str
     schema_: Optional[str] = Field(None, alias="schema")  # schema is a reserved word for pydantic
 

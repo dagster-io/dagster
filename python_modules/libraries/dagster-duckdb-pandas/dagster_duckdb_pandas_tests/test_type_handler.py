@@ -20,7 +20,7 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster_duckdb_pandas import ConfigurableDuckDBPandasIOManager, duckdb_pandas_io_manager
+from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def io_managers(tmp_path):
         duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb")}
         ),
-        ConfigurableDuckDBPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
+        DuckDBPandasIOManager(database=os.path.join(tmp_path, "unit_test.duckdb")),
     ]
 
 
@@ -113,7 +113,7 @@ def test_duckdb_io_manager_with_schema(tmp_path):
         duckdb_pandas_io_manager.configured(
             {"database": os.path.join(tmp_path, "unit_test.duckdb"), "schema": "custom_schema"}
         ),
-        ConfigurableDuckDBPandasIOManager(
+        DuckDBPandasIOManager(
             database=os.path.join(tmp_path, "unit_test.duckdb"), schema="custom_schema"
         ),
     ]
