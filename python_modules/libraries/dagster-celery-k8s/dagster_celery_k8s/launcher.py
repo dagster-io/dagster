@@ -276,7 +276,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not pipeline_run:
             return False
 
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if pipeline_run.status != DagsterRunStatus.CANCELING:
             return False
 
         return True
