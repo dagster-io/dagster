@@ -42,6 +42,7 @@ export type ResourceDetailsFragment = {
       description: string | null;
     } | null;
   }>;
+  assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
 };
 
 export type ResourceRootQueryVariables = Types.Exact<{
@@ -101,6 +102,7 @@ export type ResourceRootQuery = {
             description: string | null;
           } | null;
         }>;
+        assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
       }
     | {__typename: 'ResourceNotFoundError'};
 };
