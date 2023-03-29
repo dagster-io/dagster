@@ -10,11 +10,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, BulkActionStatus} from '../graphql/types';
-import {
-  PartitionState,
-  PartitionStatus,
-  runStatusToPartitionState,
-} from '../partitions/PartitionStatus';
+import {PartitionStatus, PartitionStatusHealthSourceOps} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
@@ -258,19 +254,14 @@ const BackfillRunStatus = ({
   counts: {[status: string]: number};
 }) => {
   const history = useHistory();
-
-  // Note: The backend reports a run status as the state of each partition, but
-  // Dagit doesn't consider all run statuses (eg: "Canceling") a valid partition state.
-  // Coerce the data from the backend into PartitionState, collapsing the counts.
   const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
-    const key = runStatusToPartitionState(runStatus as RunStatus);
-    (partitionCounts as any)[key] = ((partitionCounts as any)[key] || 0) + count;
+    partitionCounts[runStatus] = (partitionCounts[runStatus] || 0) + count;
     return partitionCounts;
   }, {});
 
-  const health = React.useMemo(
+  const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({
-      partitionStateForKey: (key: string) =>
+      runStatusForPartitionKey: (key: string) =>
         statuses?.filter((s) => s.partitionName === key)[0]?.runStatus || RunStatus.NOT_STARTED,
     }),
     [statuses],
@@ -290,9 +281,9 @@ const BackfillRunStatus = ({
     />
   ) : (
     <RunStatusTagsWithCounts
-      succeededCount={(partitionCounts as any)[PartitionState.SUCCESS]}
-      inProgressCount={(partitionCounts as any)[PartitionState.STARTED]}
-      failedCount={(partitionCounts as any)[PartitionState.FAILURE]}
+      succeededCount={partitionCounts[RunStatus.SUCCESS]}
+      inProgressCount={partitionCounts[RunStatus.STARTED]}
+      failedCount={partitionCounts[RunStatus.FAILURE]}
     />
   );
 };
@@ -419,9 +410,9 @@ const BackfillRequestedRange = ({
 };
 
 const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
-  const health = React.useMemo(
+  const health: PartitionStatusHealthSourceOps = React.useMemo(
     () => ({
-      partitionStateForKey: (key: string) =>
+      runStatusForPartitionKey: (key: string) =>
         requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
     }),
     [requested],

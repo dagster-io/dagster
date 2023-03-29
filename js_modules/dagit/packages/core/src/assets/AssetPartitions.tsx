@@ -21,7 +21,7 @@ import {
   usePartitionHealthData,
   rangesClippedToSelection,
   keyCountByStateInSelection,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
   AssetPartitionStatus,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
@@ -80,7 +80,7 @@ export const AssetPartitions: React.FC<Props> = ({
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const materializedRangesByDimension = React.useMemo(
+  const rangesForEachDimension = React.useMemo(
     () =>
       selections.map((_s, idx) =>
         assetHealth
@@ -122,10 +122,7 @@ export const AssetPartitions: React.FC<Props> = ({
       return sort === 1 ? result : result.reverse();
     }
 
-    const rangesInSelection = rangesClippedToSelection(
-      materializedRangesByDimension[idx],
-      selectedRanges,
-    );
+    const rangesInSelection = rangesClippedToSelection(rangesForEachDimension[idx], selectedRanges);
 
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return rangesInSelection.flatMap((r) =>
@@ -176,7 +173,7 @@ export const AssetPartitions: React.FC<Props> = ({
         >
           <DimensionRangeWizard
             partitionKeys={selections[timeDimensionIdx].dimension.partitionKeys}
-            health={{ranges: materializedRangesByDimension[timeDimensionIdx]}}
+            health={{ranges: rangesForEachDimension[timeDimensionIdx]}}
             selected={selections[timeDimensionIdx].selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
@@ -257,12 +254,12 @@ export const AssetPartitions: React.FC<Props> = ({
             ) : (
               <AssetPartitionList
                 partitions={dimensionKeysInSelection(idx)}
-                stateForPartition={(dimensionKey) => {
+                statusForPartition={(dimensionKey) => {
                   if (idx === 1 && focusedDimensionKeys[0]) {
                     return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
                   }
                   const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
-                  return partitionStateAtIndex(materializedRangesByDimension[idx], dimensionKeyIdx);
+                  return partitionStatusAtIndex(rangesForEachDimension[idx], dimensionKeyIdx);
                 }}
                 focusedDimensionKey={focusedDimensionKeys[idx]}
                 setFocusedDimensionKey={(dimensionKey) => {

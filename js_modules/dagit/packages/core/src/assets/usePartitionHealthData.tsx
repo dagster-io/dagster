@@ -1,6 +1,7 @@
 import {gql, useApolloClient} from '@apollo/client';
+import {Colors} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React from 'react';
+import React, {CSSProperties} from 'react';
 
 import {assertUnreachable} from '../app/Util';
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -51,6 +52,37 @@ export const assetPartitionStatusToText = (status: AssetPartitionStatus) => {
     default:
       assertUnreachable(status);
   }
+};
+
+export const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
+  switch (status) {
+    case AssetPartitionStatus.MATERIALIZED:
+      return Colors.Green500;
+    case AssetPartitionStatus.MATERIALIZING:
+      return Colors.Blue500;
+    case AssetPartitionStatus.FAILED:
+      return Colors.Red500;
+    case AssetPartitionStatus.MISSING:
+      return Colors.Gray200;
+    default:
+      assertUnreachable(status);
+  }
+};
+
+export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): CSSProperties => {
+  if (status.length === 0) {
+    return {background: Colors.Gray200};
+  }
+  if (status.length === 1) {
+    return {background: assetPartitionStatusToColor(status[0])};
+  }
+  const a = assetPartitionStatusToColor(status[0]);
+  const b = assetPartitionStatusToColor(status[1]);
+
+  return {
+    background: `linear-gradient(135deg, ${a} 25%, ${b} 25%, ${b} 50%, ${a} 50%, ${a} 75%, ${b} 75%, ${b} 100%)`,
+    backgroundSize: '8.49px 8.49px',
+  };
 };
 
 export interface PartitionHealthData {
@@ -394,11 +426,11 @@ export function keyCountByStateInSelection(
 
   const failed = sumWithStatus(AssetPartitionStatus.FAILED);
   const materializing = sumWithStatus(AssetPartitionStatus.MATERIALIZING);
-  const success = sumWithStatus(AssetPartitionStatus.MATERIALIZED);
+  const materialized = sumWithStatus(AssetPartitionStatus.MATERIALIZED);
 
   return {
-    [AssetPartitionStatus.MISSING]: total - success - failed - materializing,
-    [AssetPartitionStatus.MATERIALIZED]: success,
+    [AssetPartitionStatus.MISSING]: total - materialized - failed - materializing,
+    [AssetPartitionStatus.MATERIALIZED]: materialized,
     [AssetPartitionStatus.MATERIALIZING]: materializing,
     [AssetPartitionStatus.FAILED]: failed,
   };
@@ -407,7 +439,7 @@ export function keyCountByStateInSelection(
 // Given a set of ranges representing materialization status across the key space,
 // find the range containing the given key and return it's state, or MISSING.
 //
-export function partitionStateAtIndex(ranges: Range[], idx: number) {
+export function partitionStatusAtIndex(ranges: Range[], idx: number) {
   return (
     ranges.find((r) => r.start.idx <= idx && r.end.idx >= idx)?.value || [
       AssetPartitionStatus.MISSING,

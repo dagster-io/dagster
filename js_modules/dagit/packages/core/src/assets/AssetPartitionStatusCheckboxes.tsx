@@ -9,8 +9,9 @@ export function countsByState(
   partitionKeysForCounts: {partitionKey: string; state: AssetPartitionStatus}[],
 ) {
   const result: {[state: string]: number} = {
-    [AssetPartitionStatus.MATERIALIZED]: 0,
     [AssetPartitionStatus.MISSING]: 0,
+    [AssetPartitionStatus.MATERIALIZED]: 0,
+    [AssetPartitionStatus.MATERIALIZING]: 0,
     [AssetPartitionStatus.FAILED]: 0,
   };
   for (const key of partitionKeysForCounts) {

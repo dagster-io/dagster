@@ -7,7 +7,7 @@ import {
   partitionStatusGivenRanges,
   rangeClippedToSelection,
   rangesForKeys,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
   keyCountByStateInSelection,
   PartitionHealthDimension,
   PartitionDimensionSelection,
@@ -642,18 +642,18 @@ describe('usePartitionHealthData utilities', () => {
     });
   });
 
-  describe('partitionStateAtIndex', () => {
+  describe('partitionStatusAtIndex', () => {
     it('should return range.value if the index is within one of the ranges, missing otherwise', () => {
-      expect(partitionStateAtIndex([A_C, G_I], 0)).toEqual(AssetPartitionStatus.MATERIALIZED);
-      expect(partitionStateAtIndex([A_C, G_I], 6)).toEqual(AssetPartitionStatus.MATERIALIZED);
-      expect(partitionStateAtIndex([A_C, G_I], 3)).toEqual(AssetPartitionStatus.MISSING);
-      expect(partitionStateAtIndex([A_C, G_I], -1)).toEqual(AssetPartitionStatus.MISSING);
-      expect(partitionStateAtIndex([A_C, G_I], 100)).toEqual(AssetPartitionStatus.MISSING);
-      expect(partitionStateAtIndex([], 3)).toEqual(AssetPartitionStatus.MISSING);
-      expect(partitionStateAtIndex([], -1)).toEqual(AssetPartitionStatus.MISSING);
-      expect(partitionStateAtIndex([], 100)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([A_C, G_I], 0)).toEqual(AssetPartitionStatus.MATERIALIZED);
+      expect(partitionStatusAtIndex([A_C, G_I], 6)).toEqual(AssetPartitionStatus.MATERIALIZED);
+      expect(partitionStatusAtIndex([A_C, G_I], 3)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([A_C, G_I], -1)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([A_C, G_I], 100)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([], 3)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([], -1)).toEqual(AssetPartitionStatus.MISSING);
+      expect(partitionStatusAtIndex([], 100)).toEqual(AssetPartitionStatus.MISSING);
       expect(
-        partitionStateAtIndex(
+        partitionStatusAtIndex(
           [
             {
               start: {idx: 0, key: 'A'},

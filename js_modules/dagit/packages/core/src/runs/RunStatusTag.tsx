@@ -1,4 +1,4 @@
-import {Box, Popover, Tag} from '@dagster-io/ui';
+import {Box, Colors, Popover, Tag} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -28,7 +28,7 @@ const statusToIntent = (status: RunStatus) => {
   }
 };
 
-const statusToString = (status: RunStatus) => {
+export const runStatusToString = (status: RunStatus) => {
   switch (status) {
     case RunStatus.QUEUED:
       return 'Queued';
@@ -53,13 +53,28 @@ const statusToString = (status: RunStatus) => {
   }
 };
 
+export const RUN_STATUS_COLORS = {
+  QUEUED: Colors.Blue200,
+  NOT_STARTED: Colors.Gray600,
+  STARTING: Colors.Gray400,
+  MANAGED: Colors.Gray400,
+  STARTED: Colors.Blue500,
+  SUCCESS: Colors.Green500,
+  FAILURE: Colors.Red500,
+  CANCELING: Colors.Red500,
+  CANCELED: Colors.Red500,
+
+  // Not technically a RunStatus, but useful.
+  SCHEDULED: Colors.Blue200,
+};
+
 export const RunStatusTag = (props: {status: RunStatus}) => {
   const {status} = props;
   return (
     <Tag intent={statusToIntent(status)}>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
-        <div>{statusToString(status)}</div>
+        <div>{runStatusToString(status)}</div>
       </Box>
     </Tag>
   );

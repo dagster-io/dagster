@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -12,8 +13,8 @@ import {RepoAddress} from '../workspace/types';
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
-import {getVisibleItemCount} from './PartitionStepStatus';
+import {PartitionStatus} from './PartitionStatus';
+import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
   OpJobPartitionSetFragment,
@@ -140,28 +141,28 @@ const OpJobPartitionsViewContent: React.FC<{
 
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
 
-  const {statusData, runDurationData} = React.useMemo(() => {
+  const {runStatusData, runDurationData} = React.useMemo(() => {
     // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
     // rather than looking at the duration of the most recent run returned in `partitions` above
     // so that the latter can be loaded when you click "Show per-step status" only.
-    const statusData: {[name: string]: PartitionState} = {};
+    const runStatusData: {[name: string]: RunStatus} = {};
     const runDurationData: {[name: string]: number | undefined} = {};
 
     (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
       ? partitionSet.partitionStatusesOrError.results
       : []
     ).forEach((p) => {
-      statusData[p.partitionName] = runStatusToPartitionState(p.runStatus);
+      runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
       if (selectedPartitions.includes(p.partitionName)) {
         runDurationData[p.partitionName] = p.runDuration || undefined;
       }
     });
-    return {statusData, runDurationData};
+    return {runStatusData, runDurationData};
   }, [partitionSet, selectedPartitions]);
 
   const health = React.useMemo(() => {
-    return {partitionStateForKey: (name: string) => statusData[name]};
-  }, [statusData]);
+    return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
+  }, [runStatusData]);
 
   return (
     <div>
@@ -177,7 +178,7 @@ const OpJobPartitionsViewContent: React.FC<{
           <BackfillPartitionSelector
             partitionSetName={partitionSet.name}
             partitionNames={partitionNames}
-            partitionData={statusData}
+            runStatusData={runStatusData}
             pipelineName={partitionSet.pipelineName}
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(_backfillId, _stepQuery) => {
@@ -224,11 +225,15 @@ const OpJobPartitionsViewContent: React.FC<{
       >
         <CountBox count={partitionNames.length} label="Total partitions" />
         <CountBox
-          count={partitionNames.filter((x) => statusData[x] === PartitionState.FAILURE).length}
+          count={partitionNames.filter((x) => runStatusData[x] === RunStatus.FAILURE).length}
           label="Failed partitions"
         />
         <CountBox
-          count={partitionNames.filter((x) => !statusData[x]).length}
+          count={
+            partitionNames.filter(
+              (x) => !runStatusData[x] || runStatusData[x] === RunStatus.NOT_STARTED,
+            ).length
+          }
           label="Missing partitions"
         />
       </Box>

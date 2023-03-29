@@ -105,7 +105,7 @@ const AssetNodePartitionsRow: React.FC<StatusRowProps> = (props) => {
   );
 };
 
-const StyleForPartitionState: {
+const StyleForAssetPartitionStatus: {
   [state: string]: {
     background: string;
     foreground: string;
@@ -137,7 +137,7 @@ const StyleForPartitionState: {
   },
 };
 
-const partitionStateToString = (count: number | undefined, adjective = '') =>
+const partitionCountString = (count: number | undefined, adjective = '') =>
   `${count === undefined ? '-' : count.toLocaleString()} ${adjective}${adjective ? ' ' : ''}${
     count === 1 ? 'partition' : 'partitions'
   }`;
@@ -147,7 +147,7 @@ const AssetNodePartitionCountBox: React.FC<{
   value: number | undefined;
   total: number | undefined;
 }> = ({status, value, total}) => {
-  const style = StyleForPartitionState[status];
+  const style = StyleForAssetPartitionStatus[status];
   const foreground = value ? style.foreground : Colors.Gray500;
   const background = value ? style.background : Colors.Gray50;
 
@@ -156,7 +156,7 @@ const AssetNodePartitionCountBox: React.FC<{
       display="block"
       position="top"
       canShow={value !== undefined}
-      content={partitionStateToString(value, style.adjective)}
+      content={partitionCountString(value, style.adjective)}
     >
       <AssetNodePartitionCountContainer style={{color: foreground, background}}>
         <Icon name={style.icon} color={foreground} size={16} />
@@ -304,7 +304,7 @@ function buildAssetNodeStatusRow({
   if (liveData.partitionStats) {
     const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
     const numMissing = numPartitions - numFailed - numMaterialized;
-    const {background, foreground, border} = StyleForPartitionState[
+    const {background, foreground, border} = StyleForAssetPartitionStatus[
       late || numFailed
         ? AssetPartitionStatus.FAILED
         : numMissing
@@ -324,7 +324,7 @@ function buildAssetNodeStatusRow({
           >
             {late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-              : partitionStateToString(numPartitions)}
+              : partitionCountString(numPartitions)}
           </Link>
         </Caption>
       ),

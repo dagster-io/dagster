@@ -133,7 +133,13 @@ export function assembleRangesFromTransitions(
   // FROM: [{idx: 0, delta: 1}, {idx: 0, delta: 1}, {idx: 3, delta: 1}, {idx: 10, delta: -1}]
   //   TO: [{idx: 0, depth: 2}, {idx: 3, depth: 3}, {idx: 10, depth: 2}]
   //
-  const depths: {idx: number; materialized: number; failed: number; materializing: number}[] = [];
+  const depths: {
+    idx: number;
+    MISSING: number;
+    MATERIALIZED: number;
+    MATERIALIZING: number;
+    FAILED: number;
+  }[] = [];
   for (const transition of transitions) {
     const last = depths[depths.length - 1];
     if (last && last.idx === transition.idx) {
@@ -155,18 +161,19 @@ export function assembleRangesFromTransitions(
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
   //
   const result: Range[] = [];
-  for (const {idx, materialized, failed, materializing} of depths) {
+
+  for (const {idx, MATERIALIZED, FAILED, MATERIALIZING, MISSING} of depths) {
     const value: AssetPartitionStatus[] = [];
-    if (failed > 0) {
+    if (FAILED > 0) {
       value.push(AssetPartitionStatus.FAILED);
     }
-    if (materialized > 0) {
+    if (MATERIALIZED > 0) {
       value.push(AssetPartitionStatus.MATERIALIZED);
     }
-    if (materializing > 0) {
+    if (MATERIALIZING > 0) {
       value.push(AssetPartitionStatus.MATERIALIZING);
     }
-    if (failed + materialized + materializing < maxOverlap) {
+    if (MISSING || FAILED + MATERIALIZED + MATERIALIZING < maxOverlap) {
       value.push(AssetPartitionStatus.MISSING);
     }
 
@@ -179,7 +186,6 @@ export function assembleRangesFromTransitions(
       result.push({start: {idx, key: allKeys[idx]}, end: {idx, key: allKeys[idx]}, value});
     }
   }
-
   return result.filter((range) => !isEqual(range.value, [AssetPartitionStatus.MISSING]));
 }
 

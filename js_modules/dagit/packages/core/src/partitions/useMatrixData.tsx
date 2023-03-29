@@ -15,7 +15,12 @@ import {
   PartitionMatrixSolidHandleFragment,
 } from './types/useMatrixData.types';
 
-type StatusSquareColor = 'SUCCESS' | 'FAILURE' | 'MISSING' | 'FAILURE-MISSING' | 'SUCCESS-MISSING';
+export type StatusSquareColor =
+  | 'SUCCESS'
+  | 'FAILURE'
+  | 'MISSING'
+  | 'FAILURE-MISSING'
+  | 'SUCCESS-MISSING';
 
 export interface PartitionRuns {
   name: string;

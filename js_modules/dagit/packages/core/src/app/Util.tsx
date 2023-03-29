@@ -167,8 +167,8 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function assertUnreachable(_: never): never {
-  throw new Error("Didn't expect to get here");
+export function assertUnreachable(value: never): never {
+  throw new Error(`Didn't expect to get here with value: ${value}`);
 }
 
 export function debugLog(...args: any[]) {

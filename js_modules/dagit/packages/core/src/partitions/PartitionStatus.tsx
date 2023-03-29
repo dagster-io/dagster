@@ -3,11 +3,12 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {
-  AssetPartitionStatus,
+  assetPartitionStatusesToStyle,
   assetPartitionStatusToText,
   Range,
 } from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
+import {runStatusToString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
 
 import {assembleIntoSpans} from './SpanRepresentation';
 
@@ -17,18 +18,6 @@ type SelectionRange = {
 };
 
 const MIN_SPAN_WIDTH = 8;
-
-// Todo: Rename this enum to Partition"Status" instead of Partition"State" to
-// match the server-provided RunStatus and others.
-export enum PartitionState {
-  MISSING = 'missing',
-  SUCCESS = 'success',
-  SUCCESS_MISSING = 'success_missing', // states where the run succeeded in the past for a given step, but is missing for the last run
-  FAILURE = 'failure',
-  FAILURE_MISSING = 'failure_missing', // states where the run failed in the past for a given step, but is missing for the last run
-  QUEUED = 'queued',
-  STARTED = 'started',
-}
 
 // This component can be wired up to assets, which provide partition status in terms
 // of ranges with a given status. It can also be wired up to backfills, which provide
@@ -41,29 +30,12 @@ export type PartitionStatusHealthSourceAssets = {
   ranges: Range[];
 };
 export type PartitionStatusHealthSourceOps = {
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
+  runStatusForPartitionKey: (partitionKey: string, partitionIdx: number) => RunStatus;
 };
 
 export type PartitionStatusHealthSource =
   | PartitionStatusHealthSourceOps
   | PartitionStatusHealthSourceAssets;
-
-export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
-  switch (runStatus) {
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
-      return PartitionState.FAILURE;
-    case RunStatus.STARTED:
-      return PartitionState.STARTED;
-    case RunStatus.SUCCESS:
-      return PartitionState.SUCCESS;
-    case RunStatus.QUEUED:
-      return PartitionState.QUEUED;
-    default:
-      return PartitionState.MISSING;
-  }
-};
 
 interface PartitionStatusProps {
   partitionNames: string[];
@@ -357,15 +329,16 @@ function useColorSegments(
   partitionNames: string[],
 ) {
   const _ranges = 'ranges' in health ? health.ranges : null;
-  const _stateForKey = 'partitionStateForKey' in health ? health.partitionStateForKey : null;
+  const _statusForKey =
+    'runStatusForPartitionKey' in health ? health.runStatusForPartitionKey : null;
 
   return React.useMemo(() => {
-    return _stateForKey
-      ? opPartitionStateToColorRanges(partitionNames, splitPartitions, _stateForKey)
+    return _statusForKey
+      ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
       : _ranges && splitPartitions
       ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
       : assetHealthToColorSegments(_ranges!);
-  }, [splitPartitions, partitionNames, _ranges, _stateForKey]);
+  }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
 }
 
 // If you ask for each partition to be rendered as a separate segment in the UI, we break the
@@ -391,72 +364,32 @@ function assetHealthToColorSegments(ranges: Range[]) {
     start: range.start,
     end: range.end,
     label: range.value.map((v) => assetPartitionStatusToText(v)).join(', '),
-    style: partitionStateToStyle(range.value[0]),
+    style: assetPartitionStatusesToStyle(range.value),
   }));
 }
 
-function opPartitionStateToColorRanges(
+function opRunStatusToColorRanges(
   partitionNames: string[],
   splitPartitions: boolean,
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState,
+  runStatusForKey: (partitionKey: string, partitionIdx: number) => RunStatus,
 ) {
   const spans = splitPartitions
     ? partitionNames.map((name, idx) => ({
         startIdx: idx,
         endIdx: idx,
-        status: partitionStateForKey(name, idx),
+        status: runStatusForKey(name, idx),
       }))
-    : assembleIntoSpans(partitionNames, partitionStateForKey);
+    : assembleIntoSpans(partitionNames, runStatusForKey);
 
   return spans.map((s) => ({
-    label: s.status,
-    style: partitionStateToStyle(s.status),
+    label: runStatusToString(s.status),
     start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
     end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
+    style: {
+      background: s.status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[s.status],
+    },
   }));
 }
-
-export const partitionStateToStyle = (
-  status: PartitionState | AssetPartitionStatus,
-): React.CSSProperties => {
-  switch (status) {
-    case PartitionState.SUCCESS:
-    case AssetPartitionStatus.MATERIALIZED:
-      return {background: Colors.Green500};
-    case PartitionState.SUCCESS_MISSING:
-      return {
-        background: `linear-gradient(135deg, ${Colors.Green500} 25%, ${Colors.Gray200} 25%, ${Colors.Gray200} 50%, ${Colors.Green500} 50%, ${Colors.Green500} 75%, ${Colors.Gray200} 75%, ${Colors.Gray200} 100%)`,
-        backgroundSize: '8.49px 8.49px',
-      };
-    case PartitionState.FAILURE:
-    case AssetPartitionStatus.FAILED:
-      return {background: Colors.Red500};
-    case PartitionState.STARTED:
-    case AssetPartitionStatus.MATERIALIZING:
-      return {background: Colors.Blue500};
-    case PartitionState.QUEUED:
-      return {background: Colors.Blue200};
-    default:
-      return {background: Colors.Gray200};
-  }
-};
-
-export const partitionStatusToText = (status: PartitionState) => {
-  switch (status) {
-    case PartitionState.SUCCESS:
-      return 'Completed';
-    case PartitionState.SUCCESS_MISSING:
-      return 'Partial';
-    case PartitionState.FAILURE:
-      return 'Failed';
-    case PartitionState.STARTED:
-      return 'In progress';
-    case PartitionState.QUEUED:
-      return 'Queued';
-    default:
-      return 'Missing';
-  }
-};
 
 const SelectionSpansContainer = styled.div`
   position: relative;

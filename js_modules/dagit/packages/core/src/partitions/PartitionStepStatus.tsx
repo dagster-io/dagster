@@ -20,7 +20,7 @@ import {
   AssetPartitionStatus,
   PartitionHealthData,
   PartitionHealthDimension,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
   Range,
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
@@ -33,7 +33,6 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {PartitionRunList} from './PartitionRunList';
-import {PartitionState} from './PartitionStatus';
 import {
   BOX_SIZE,
   GridColumn,
@@ -54,6 +53,7 @@ import {
   useMatrixData,
   MatrixData,
   PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+  StatusSquareColor,
 } from './useMatrixData';
 
 const BUFFER = 3;
@@ -128,7 +128,7 @@ export const PartitionPerAssetStatus: React.FC<
         name: box.node.name,
         unix: 0,
         color: assetPartitionStatusToSquareColor(
-          partitionStateAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
+          partitionStatusAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
         ),
       })),
     })),
@@ -144,23 +144,17 @@ export const PartitionPerAssetStatus: React.FC<
   );
 };
 
-export const assetPartitionStatusToSquareColor = (state: AssetPartitionStatus[]) => {
+export const assetPartitionStatusToSquareColor = (
+  state: AssetPartitionStatus[],
+): StatusSquareColor => {
   return state.includes(AssetPartitionStatus.MATERIALIZED) &&
     state.includes(AssetPartitionStatus.MISSING)
     ? 'SUCCESS-MISSING'
     : state.includes(AssetPartitionStatus.MATERIALIZED)
     ? 'SUCCESS'
+    : state.includes(AssetPartitionStatus.FAILED) && state.includes(AssetPartitionStatus.MISSING)
+    ? 'FAILURE-MISSING'
     : state.includes(AssetPartitionStatus.FAILED)
-    ? 'FAILURE'
-    : 'MISSING';
-};
-
-export const partitionStateToStatusSquareColor = (state: PartitionState) => {
-  return state === PartitionState.SUCCESS
-    ? 'SUCCESS'
-    : state === PartitionState.SUCCESS_MISSING
-    ? 'SUCCESS-MISSING'
-    : state === PartitionState.FAILURE
     ? 'FAILURE'
     : 'MISSING';
 };
