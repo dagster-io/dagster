@@ -1,10 +1,10 @@
-from typing import Mapping
+from typing import Mapping, Optional, Sequence, Type
 
 import dagster._check as check
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake import SnowflakeIOManager, build_snowflake_io_manager
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import StructType
@@ -171,3 +171,76 @@ Examples:
             ...
 
 """
+
+
+class SnowflakePySparkIOManager(SnowflakeIOManager):
+    """An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake. When
+    using the SnowflakePySparkIOManager, any inputs and outputs without type annotations will be loaded
+    as PySpark DataFrames.
+
+    Returns:
+        IOManagerDefinition
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_snowflake_pyspark import SnowflakePySparkIOManager
+            from pyspark.sql import DataFrame
+            from dagster import Definitions, EnvVar
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> DataFrame:  # the name of the asset will be the table name
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": SnowflakePySparkIOManager(
+                        database="my_database",
+                        warehouse="my_warehouse", # required for SnowflakePySparkIOManager
+                        account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                        password=EnvVar("SNOWFLAKE_PASSWORD"),
+                        ...
+                    )
+                }
+            )
+
+        Note that the warehouse configuration value is required when using the SnowflakePySparkIOManager
+
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: DataFrame) -> DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+    """
+
+    @staticmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        return [SnowflakePySparkTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return DataFrame

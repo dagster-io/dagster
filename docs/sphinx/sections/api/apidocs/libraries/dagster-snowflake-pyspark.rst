@@ -16,6 +16,9 @@ Related Guides:
 
 .. currentmodule:: dagster_snowflake_pyspark
 
+.. autoconfigurable:: SnowflakePySparkIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: snowflake_pyspark_io_manager
   :annotation: IOManagerDefinition
 
