@@ -5,11 +5,18 @@ import {FilterDropdownButton} from './FilterDropdown';
 
 interface UseFiltersProps {
   filters: Filter<any, any>[];
-  activeFilters: Filter<any, any>[];
   setActiveFilters: (next: React.SetStateAction<Filter<any, any>[]>) => void;
 }
 
-export const useFilters = ({filters, activeFilters, setActiveFilters}: UseFiltersProps) => {
+export const useFilters = ({filters, setActiveFilters}: UseFiltersProps) => {
+  const filterStates = React.useMemo(() => {
+    return filters.map((filter) => filter.getState());
+  }, [...filters.map((filter) => filter.getState())]);
+
+  const activeFilters = React.useMemo(() => {
+    return filters.filter((filter) => filter.isActive());
+  }, [filterStates]);
+
   React.useEffect(() => {
     filters.forEach((filter) => {
       filter.subscribe(({previousActive, active}) => {
@@ -30,8 +37,7 @@ export const useFilters = ({filters, activeFilters, setActiveFilters}: UseFilter
     return activeFilters.map((filter, index) => (
       <React.Fragment key={index}>{filter.renderActiveFilterState()}</React.Fragment>
     ));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...filters.map((filter) => filter.getState())]);
+  }, [activeFilters]);
 
   return {
     button: React.useMemo(() => <FilterDropdownButton filters={filters} />, [filters]),

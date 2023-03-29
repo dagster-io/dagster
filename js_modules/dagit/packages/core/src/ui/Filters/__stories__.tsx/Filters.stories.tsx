@@ -4,7 +4,7 @@ import React from 'react';
 
 import {Filter} from '../Filter';
 import {FilterDropdown} from '../FilterDropdown';
-import {SetFilter} from '../SetFilter';
+import {StaticSetFilter} from '../StaticSetFilter';
 import {TimeRangeFilter} from '../TimeRangeFilter';
 import {useFilters} from '../useFilters';
 
@@ -17,7 +17,7 @@ export default {
 const TestComponent: React.FC = () => {
   const filters = React.useMemo(
     () => [
-      new SetFilter({
+      new StaticSetFilter({
         name: 'User',
         icon: 'account_circle',
         allValues: [
@@ -33,7 +33,7 @@ const TestComponent: React.FC = () => {
         ),
         getStringValue: (value) => value,
       }),
-      new SetFilter({
+      new StaticSetFilter({
         name: 'Test set filter',
         icon: 'account_tree',
         allValues: [
@@ -50,7 +50,7 @@ const TestComponent: React.FC = () => {
         getStringValue: (value) => value,
       }),
 
-      new SetFilter({
+      new StaticSetFilter({
         name: 'Deployment',
         icon: 'workspaces',
         allValues: [value('prod'), value('dev'), value('staging')],

@@ -13,6 +13,7 @@ import React, {useState} from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
+import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 
 import {Filter} from './Filter';
 
@@ -118,6 +119,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search filters..."
+          ref={(element) => {
+            element?.focus();
+          }}
         />
         <Box
           flex={{justifyContent: 'center', alignItems: 'center'}}
@@ -143,7 +147,7 @@ type FilterDropdownButtonProps = {
   filters: Filter<any, any>[];
 };
 export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, _setIsOpen] = useState(false);
   const [portaledElements, setPortaledElements] = useState<JSX.Element[]>([]);
 
   const buttonRef = React.useRef<HTMLButtonElement>(null);
@@ -168,12 +172,19 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
 
   const keyRef = React.useRef(0);
   const prevOpenRef = React.useRef(isOpen);
-  prevOpenRef.current = isOpen;
-  if (isOpen && !prevOpenRef.current) {
-    // Reset the key when the dropdown is opened
-    // But not when its closed because of the closing animation
-    keyRef.current++;
-  }
+
+  const setIsOpen = useSetStateUpdateCallback(
+    isOpen,
+    React.useCallback((isOpen) => {
+      _setIsOpen(isOpen);
+      if (isOpen && !prevOpenRef.current) {
+        // Reset the key when the dropdown is opened
+        // But not when its closed because of the closing animation
+        keyRef.current++;
+      }
+      prevOpenRef.current = isOpen;
+    }, []),
+  );
 
   return (
     <ShortcutHandler
@@ -197,6 +208,9 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
         popoverClassName="filter-dropdown"
         isOpen={isOpen}
         position="bottom"
+        onClosing={() => {
+          prevOpenRef.current = false;
+        }}
       >
         <div>
           <Popover

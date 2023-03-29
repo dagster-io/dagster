@@ -7,7 +7,7 @@ type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
-export class SetFilter<TValue> extends Filter<Set<TValue>, TValue> {
+export class StaticSetFilter<TValue> extends Filter<Set<TValue>, TValue> {
   public readonly allValues: SetFilterValue<TValue>[];
   private readonly renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
   private readonly getStringValue: (value: TValue) => string;

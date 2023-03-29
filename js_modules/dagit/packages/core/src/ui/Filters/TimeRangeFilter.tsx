@@ -289,8 +289,3 @@ const Container = styled.div`
     border-color: ${Colors.Blue500};
   }
 `;
-
-function createDateLocalTimezone(dateString: string) {
-  const [year, month, day] = dateString.split('-');
-  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-}
