@@ -31,11 +31,12 @@ from dateutil.relativedelta import relativedelta
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.run_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._core.definitions.run_request import DynamicPartitionsAction, DynamicPartitionsRequest
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
@@ -91,10 +92,6 @@ class Partition(Generic[T_cov]):
         else:
             other = cast(Partition[object], other)
             return self.value == other.value and self.name == other.name
-
-
-class PendingPartition(Partition):
-    pass
 
 
 def schedule_partition_range(
@@ -722,19 +719,17 @@ class DynamicPartitionsDefinition(
 
     def request_for_adding_partitions(
         self, partition_keys: Sequence[str]
-    ) -> DynamicPartitionsRequest:
+    ) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         validated_name = self._validated_name()
-        return DynamicPartitionsRequest(validated_name, partition_keys, DynamicPartitionsAction.ADD)
+        return AddDynamicPartitionsRequest(validated_name, partition_keys)
 
     def request_for_deleting_partitions(
         self, partition_keys: Sequence[str]
-    ) -> DynamicPartitionsRequest:
+    ) -> DeleteDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         validated_name = self._validated_name()
-        return DynamicPartitionsRequest(
-            validated_name, partition_keys, DynamicPartitionsAction.DELETE
-        )
+        return DeleteDynamicPartitionsRequest(validated_name, partition_keys)
 
 
 class PartitionedConfig(Generic[T_cov]):
@@ -786,13 +781,20 @@ class PartitionedConfig(Generic[T_cov]):
         partition_key: str,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
+        check_valid_partition_key=True,
     ) -> Mapping[str, Any]:
         """Generates the run config corresponding to a partition key.
 
         Args:
             partition_key (str): the key for a partition that should be used to generate a run config.
         """
-        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        if check_valid_partition_key:
+            partition = self._key_to_partition(
+                partition_key, current_time, dynamic_partitions_store
+            )
+        else:
+            partition = Partition(partition_key, partition_key)
+
         return copy.deepcopy(self.run_config_for_partition_fn(partition))
 
     def get_tags_for_partition_key(
@@ -801,12 +803,19 @@ class PartitionedConfig(Generic[T_cov]):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
         job_name: Optional[str] = None,
+        check_valid_partition_key=True,
     ) -> Mapping[str, str]:
         from dagster._core.host_representation.external_data import (
             external_partition_set_name_for_job_name,
         )
 
-        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        if check_valid_partition_key:
+            partition = self._key_to_partition(
+                partition_key, current_time, dynamic_partitions_store
+            )
+        else:
+            partition = Partition(partition_key, partition_key)
+
         user_tags = (
             validate_tags(self._tags_for_partition_fn(partition), allow_reserved_tags=False)
             if self._tags_for_partition_fn

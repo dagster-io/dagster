@@ -1,11 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
@@ -39,6 +38,56 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         return super(SkipReason, cls).__new__(
             cls,
             skip_message=check.opt_str_param(skip_message, "skip_message"),
+        )
+
+
+@whitelist_for_serdes
+class AddDynamicPartitionsRequest(
+    NamedTuple(
+        "_AddDynamicPartitionsRequest",
+        [
+            ("partitions_def_name", str),
+            ("partition_keys", Sequence[str]),
+        ],
+    )
+):
+    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
+    """
+
+    def __new__(
+        cls,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+    ):
+        return super(AddDynamicPartitionsRequest, cls).__new__(
+            cls,
+            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
+            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
+        )
+
+
+@whitelist_for_serdes
+class DeleteDynamicPartitionsRequest(
+    NamedTuple(
+        "_AddDynamicPartitionsRequest",
+        [
+            ("partitions_def_name", str),
+            ("partition_keys", Sequence[str]),
+        ],
+    )
+):
+    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule.
+    """
+
+    def __new__(
+        cls,
+        partitions_def_name: str,
+        partition_keys: Sequence[str],
+    ):
+        return super(DeleteDynamicPartitionsRequest, cls).__new__(
+            cls,
+            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
+            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
         )
 
 
@@ -113,10 +162,18 @@ class RunRequest(
     def with_resolved_tags_and_config(
         self,
         target_definition: Union["JobDefinition", "UnresolvedAssetJobDefinition"],
+        dynamic_partitions_requests: Sequence[
+            Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]
+        ],
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
         from dagster._core.definitions.job_definition import JobDefinition
+        from dagster._core.definitions.partition import (
+            DynamicPartitionsDefinition,
+            PartitionedConfig,
+            PartitionsDefinition,
+        )
 
         if self.partition_key is None:
             check.failed(
@@ -143,29 +200,64 @@ class RunRequest(
                 "Cannot resolve partition for run request on unpartitioned job",
             )
 
-        # Relies on the partitions def to throw an error if the partition does not exist
-        partition = partitions_def.get_partition(
-            self.partition_key,
-            current_time=current_time,
-            dynamic_partitions_store=dynamic_partitions_store,
-        )
+        if isinstance(partitions_def, DynamicPartitionsDefinition) and partitions_def.name:
+            if not dynamic_partitions_store:
+                check.failed(
+                    "Cannot resolve partition for run request on dynamic partitions without"
+                    " dynamic_partitions_store"
+                )
 
-        get_run_request_tags = lambda partition: (
+            add_partition_keys: Set[str] = set()
+            delete_partition_keys: Set[str] = set()
+            for req in dynamic_partitions_requests:
+                if isinstance(req, AddDynamicPartitionsRequest):
+                    if req.partitions_def_name == partitions_def.name:
+                        add_partition_keys.update(set(req.partition_keys))
+                elif isinstance(req, DeleteDynamicPartitionsRequest):
+                    if req.partitions_def_name == partitions_def.name:
+                        delete_partition_keys.update(set(req.partition_keys))
+
+            partition_keys_after_requests_resolved = (
+                set(
+                    dynamic_partitions_store.get_dynamic_partitions(
+                        partitions_def_name=partitions_def.name
+                    )
+                )
+                | add_partition_keys
+            ) - delete_partition_keys
+
+            if self.partition_key not in partition_keys_after_requests_resolved:
+                check.failed(
+                    f"Dynamic partition key {self.partition_key} for partitions def"
+                    f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
+                    " applied, it does not exist in the set of valid partition keys."
+                )
+        else:
+            # Relies on the partitions def to throw an error if the partition does not exist
+            partitions_def.get_partition(
+                self.partition_key,
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
+            )
+
+        get_run_request_tags = lambda partition_key: (
             {
                 **self.tags,
                 **partitioned_config.get_tags_for_partition_key(
-                    partition,
+                    partition_key,
                     dynamic_partitions_store=dynamic_partitions_store,
                     current_time=current_time,
                     job_name=target_definition.name,
+                    check_valid_partition_key=False,
                 ),
             }
             if self.tags
             else partitioned_config.get_tags_for_partition_key(
-                partition,
+                partition_key,
                 dynamic_partitions_store=dynamic_partitions_store,
                 current_time=current_time,
                 job_name=target_definition.name,
+                check_valid_partition_key=False,
             )
         )
 
@@ -173,11 +265,12 @@ class RunRequest(
             run_config=self.run_config
             if self.run_config
             else partitioned_config.get_run_config_for_partition_key(
-                partition.name,
+                self.partition_key,
                 dynamic_partitions_store=dynamic_partitions_store,
                 current_time=current_time,
+                check_valid_partition_key=False,
             ),
-            tags=get_run_request_tags(partition.name),
+            tags=get_run_request_tags(self.partition_key),
         )
 
     def has_resolved_partition(self) -> bool:
@@ -220,41 +313,6 @@ class PipelineRunReaction(
         )
 
 
-@whitelist_for_serdes
-class DynamicPartitionsAction(str, Enum):
-    ADD = "ADD"
-    DELETE = "DELETE"
-
-
-@whitelist_for_serdes
-class DynamicPartitionsRequest(
-    NamedTuple(
-        "_DynamicPartitionsRequest",
-        [
-            ("partitions_def_name", str),
-            ("partition_keys", Sequence[str]),
-            ("action", DynamicPartitionsAction),
-        ],
-    )
-):
-    """
-    A request to add or delete partitions from a dynamic partitions definition, to be evaluated by a sensor.
-    """
-
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        partition_keys: Sequence[str],
-        action: DynamicPartitionsAction,
-    ):
-        return super(DynamicPartitionsRequest, cls).__new__(
-            cls,
-            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
-            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
-            action=check.inst_param(action, "action", DynamicPartitionsAction),
-        )
-
-
 @experimental
 class SensorResult(
     NamedTuple(
@@ -263,7 +321,12 @@ class SensorResult(
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_reason", Optional[SkipReason]),
             ("cursor", Optional[str]),
-            ("dynamic_partitions_requests", Optional[Sequence[DynamicPartitionsRequest]]),
+            (
+                "dynamic_partitions_requests",
+                Optional[
+                    Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
+                ],
+            ),
         ],
     )
 ):
@@ -275,9 +338,10 @@ class SensorResult(
         skip_reason (Optional[SkipReason]): A skip message indicating why sensor evaluation was skipped.
         cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
             context for the next sensor evaluation.
-        dynamic_partitions_requests (Optional[Sequence[DynamicPartitionsRequests]]): A list of
-            dynamic partition requests to request dynamic partition addition and deletion. Run requests
-            will be evaluated using the state of the partitions with these changes applied.
+        dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest,
+            AddDynamicPartitionsRequest]]]): A list of dynamic partition requests to request dynamic
+            partition addition and deletion. Run requests will be evaluated using the state of the
+            partitions with these changes applied.
     """
 
     def __new__(
@@ -285,7 +349,9 @@ class SensorResult(
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_reason: Optional[SkipReason] = None,
         cursor: Optional[str] = None,
-        dynamic_partitions_requests: Optional[Sequence[DynamicPartitionsRequest]] = None,
+        dynamic_partitions_requests: Optional[
+            Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
+        ] = None,
     ):
         if skip_reason and len(run_requests if run_requests else []) > 0:
             check.failed(
@@ -301,6 +367,6 @@ class SensorResult(
             dynamic_partitions_requests=check.opt_sequence_param(
                 dynamic_partitions_requests,
                 "dynamic_partitions_requests",
-                DynamicPartitionsRequest,
+                (AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest),
             ),
         )

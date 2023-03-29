@@ -553,7 +553,7 @@ quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def
 
 @sensor()
 def add_dynamic_partitions_sensor(context):
-    return SensorTickResult(
+    return SensorResult(
         dynamic_partitions_requests=[
             quux.request_for_adding_partitions(["baz"]),
         ],
@@ -562,22 +562,22 @@ def add_dynamic_partitions_sensor(context):
 
 @sensor(job=quux_asset_job)
 def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
-    return SensorTickResult(
+    return SensorResult(
         dynamic_partitions_requests=[
             quux.request_for_adding_partitions(["1"]),
             quux.request_for_deleting_partitions(["2"]),
         ],
-        run_requests=[quux_asset_job.run_request_for_partition("1")],
+        run_requests=[RunRequest(partition_key="1")],
     )
 
 
 @sensor(job=quux_asset_job)
 def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
-    return SensorTickResult(
+    return SensorResult(
         dynamic_partitions_requests=[
             quux.request_for_deleting_partitions(["2"]),
         ],
-        run_requests=[quux_asset_job.run_request_for_partition("2")],
+        run_requests=[RunRequest(partition_key="2")],
     )
 
 
@@ -891,7 +891,8 @@ def validate_tick(
     assert tick_data.instigator_name == external_sensor.name
     assert tick_data.instigator_type == InstigatorType.SENSOR
     assert tick_data.status == expected_status
-    assert tick_data.timestamp == expected_datetime.timestamp()
+    if expected_datetime:
+        assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:
         assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
@@ -3082,13 +3083,11 @@ def test_error_on_deleted_dynamic_partitions_run_request(
     assert len(ticks) == 1
     validate_tick(
         ticks[0],
-        external_repo.get_external_sensor(
-            "error_on_deleted_dynamic_partitions_run_requests_sensor"
-        ),
+        external_sensor,
         expected_datetime=None,
         expected_status=TickStatus.FAILURE,
         expected_run_ids=None,
-        expected_error="Cannot create run request for partition 2 because it does not exist.",
+        expected_error="Dynamic partition key 2 for partitions def 'quux' is invalid",
     )
     assert set(instance.get_dynamic_partitions("quux")) == set(["2"])
 
