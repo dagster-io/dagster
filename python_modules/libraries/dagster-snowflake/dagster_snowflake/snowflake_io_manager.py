@@ -211,7 +211,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             db_client=SnowflakeDbClient(),
             io_manager_name="SnowflakeIOManager",
             database=self.database,
-            schema=self._schema,
+            schema=self.schema_,
             type_handlers=self.type_handlers(),
             default_load_type=self.default_load_type(),
         )
