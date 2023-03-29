@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import (
         InstigatorState,
+        InstigatorStatus,
         InstigatorTick,
         TickData,
         TickStatus,
@@ -580,8 +581,11 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional["InstigatorType"] = None,
+        instigator_status: Optional["InstigatorStatus"] = None,
     ) -> Iterable["InstigatorState"]:
-        return self._storage.schedule_storage.all_instigator_state()
+        return self._storage.schedule_storage.all_instigator_state(
+            repository_origin_id, repository_selector_id, instigator_type, instigator_status
+        )
 
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:
         return self._storage.schedule_storage.get_instigator_state(origin_id, selector_id)
