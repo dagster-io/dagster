@@ -6,6 +6,7 @@ import {MemoryRouter, Route} from 'react-router-dom';
 
 import {AssetKeyInput} from '../../graphql/types';
 import {AssetPartitionListProps} from '../AssetPartitionList';
+import {AssetPartitionStatus} from '../AssetPartitionStatus';
 import {AssetPartitions} from '../AssetPartitions';
 import {AssetViewParams} from '../AssetView';
 import {
@@ -87,7 +88,7 @@ describe('AssetPartitions', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('Missing (135)')).toBeVisible();
-      expect(screen.getByText('Completed (15)')).toBeVisible();
+      expect(screen.getByText('Materialized (15)')).toBeVisible();
     });
     await waitFor(() => {
       // Verify that the items shown on the left update to reflect the subrange
@@ -124,18 +125,28 @@ describe('AssetPartitions', () => {
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
     });
 
-    const successCheck = screen.getByTestId('partition-state-success-checkbox');
+    const successCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MATERIALIZED}-checkbox`,
+    );
     await userEvent.click(successCheck);
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure%2Cmissing');
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MISSING}`,
+    );
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('5,310 Partitions');
 
-    const missingCheck = screen.getByTestId('partition-state-missing-checkbox');
+    const missingCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MISSING}-checkbox`,
+    );
     await userEvent.click(missingCheck);
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure');
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      `status=${AssetPartitionStatus.FAILED}`,
+    );
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('22 Partitions Selected');
 
     await userEvent.click(successCheck);
-    expect(screen.getByTestId('router-search')).toHaveTextContent('states=failure%2Csuccess');
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MATERIALIZED}`,
+    );
     expect(screen.getByTestId('partitions-selected')).toHaveTextContent('712 Partitions Selected');
 
     // verify that filtering by state updates the left sidebar

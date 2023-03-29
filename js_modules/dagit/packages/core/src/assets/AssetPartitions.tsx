@@ -12,6 +12,7 @@ import {testId} from '../testing/testId';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
 import {AssetViewParams} from './AssetView';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
@@ -22,7 +23,6 @@ import {
   rangesClippedToSelection,
   keyCountByStateInSelection,
   partitionStatusAtIndex,
-  AssetPartitionStatus,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
 
@@ -42,7 +42,7 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [
+const DISPLAYED_STATUSES = [
   AssetPartitionStatus.MISSING,
   AssetPartitionStatus.MATERIALIZED,
   AssetPartitionStatus.FAILED,
@@ -65,13 +65,13 @@ export const AssetPartitions: React.FC<Props> = ({
 
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
 
-  const [stateFilters, setStateFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
-    defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
-    encode: (val) => ({states: [...val].sort().join(',')}),
+  const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
+    defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
+    encode: (val) => ({status: [...val].sort().join(',')}),
     decode: (qs) =>
-      (qs.states || '')
+      (qs.status || '')
         .split(',')
-        .filter((s: AssetPartitionStatus) => DISPLAYED_STATES.includes(s)),
+        .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
   });
 
   // Determine which axis we will show at the top of the page, if any.
@@ -117,7 +117,7 @@ export const AssetPartitions: React.FC<Props> = ({
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
-    if (isEqual(DISPLAYED_STATES, stateFilters)) {
+    if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();
       return sort === 1 ? result : result.reverse();
     }
@@ -131,17 +131,17 @@ export const AssetPartitions: React.FC<Props> = ({
     };
 
     const states: AssetPartitionStatus[] = [];
-    if (stateFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
+    if (statusFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
       states.push(AssetPartitionStatus.MATERIALIZED);
     }
-    if (stateFilters.includes(AssetPartitionStatus.FAILED)) {
+    if (statusFilters.includes(AssetPartitionStatus.FAILED)) {
       states.push(AssetPartitionStatus.FAILED);
     }
     const matching = uniq(getKeysWithStates(states));
 
     let result;
     // We have to add in "missing" separately because it's the absence of a range
-    if (stateFilters.includes(AssetPartitionStatus.MISSING)) {
+    if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
       result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
@@ -155,7 +155,7 @@ export const AssetPartitions: React.FC<Props> = ({
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
-  const countsFiltered = stateFilters.reduce((a, b) => a + (countsByStateInSelection as any)[b], 0);
+  const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
 
   const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
     params,
@@ -200,8 +200,8 @@ export const AssetPartitions: React.FC<Props> = ({
             AssetPartitionStatus.MATERIALIZED,
             AssetPartitionStatus.FAILED,
           ]}
-          value={stateFilters}
-          onChange={setStateFilters}
+          value={statusFilters}
+          onChange={setStatusFilters}
         />
       </Box>
       <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>

@@ -1,13 +1,13 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Colors} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
-import React, {CSSProperties} from 'react';
+import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 
+import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {assembleRangesFromTransitions, Transition} from './MultipartitioningSupport';
 import {usePartitionDataSubscriber} from './PartitionSubscribers';
 import {AssetKey} from './types';
@@ -29,61 +29,6 @@ type PartitionHealthMaterializedPartitions = Extract<
  * The hope is that if we want to add support for 3- and 4- dimension partitioned assets, all
  * of the changes will be in this file. The rest of the app already supports N dimensions.
  */
-
-// Same as PartitionRangeStatus but we need a "MISSING" value
-//
-export enum AssetPartitionStatus {
-  FAILED = 'FAILED',
-  MATERIALIZED = 'MATERIALIZED',
-  MATERIALIZING = 'MATERIALIZING',
-  MISSING = 'MISSING',
-}
-
-export const assetPartitionStatusToText = (status: AssetPartitionStatus) => {
-  switch (status) {
-    case AssetPartitionStatus.MATERIALIZED:
-      return 'Materialized';
-    case AssetPartitionStatus.MATERIALIZING:
-      return 'Materializing';
-    case AssetPartitionStatus.FAILED:
-      return 'Failed';
-    case AssetPartitionStatus.MISSING:
-      return 'Missing';
-    default:
-      assertUnreachable(status);
-  }
-};
-
-export const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
-  switch (status) {
-    case AssetPartitionStatus.MATERIALIZED:
-      return Colors.Green500;
-    case AssetPartitionStatus.MATERIALIZING:
-      return Colors.Blue500;
-    case AssetPartitionStatus.FAILED:
-      return Colors.Red500;
-    case AssetPartitionStatus.MISSING:
-      return Colors.Gray200;
-    default:
-      assertUnreachable(status);
-  }
-};
-
-export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): CSSProperties => {
-  if (status.length === 0) {
-    return {background: Colors.Gray200};
-  }
-  if (status.length === 1) {
-    return {background: assetPartitionStatusToColor(status[0])};
-  }
-  const a = assetPartitionStatusToColor(status[0]);
-  const b = assetPartitionStatusToColor(status[1]);
-
-  return {
-    background: `linear-gradient(135deg, ${a} 25%, ${b} 25%, ${b} 50%, ${a} 50%, ${a} 75%, ${b} 75%, ${b} 100%)`,
-    backgroundSize: '8.49px 8.49px',
-  };
-};
 
 export interface PartitionHealthData {
   assetKey: AssetKey;
@@ -220,7 +165,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
             subranges,
           };
         })
-        .filter((range) => !isEqual(range.value, AssetPartitionStatus.MISSING)) as Range[];
+        .filter((range) => !isEqual(range.value, [AssetPartitionStatus.MISSING])) as Range[];
       return removeSubrangesAndJoin(clipped);
     } else {
       const [d0, d1] = dimensions;
@@ -276,8 +221,11 @@ export type Range = {
  * (some of the keys) or "missing". (none of the keys). Used to evaluate the status
  * of the first dimension based on second dimension materialized ranges.
  */
-export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: number) {
-  const successCount = keyCountInRanges(
+export function partitionStatusGivenRanges(
+  ranges: Range[],
+  totalKeyCount: number,
+): AssetPartitionStatus[] {
+  const materializedCount = keyCountInRanges(
     ranges.filter((r) => r.value.includes(AssetPartitionStatus.MATERIALIZED)),
   );
   const materializingCount = keyCountInRanges(
@@ -287,16 +235,16 @@ export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: numbe
     ranges.filter((r) => r.value.includes(AssetPartitionStatus.FAILED)),
   );
   const statuses: AssetPartitionStatus[] = [];
-  if (successCount > 0) {
+  if (materializedCount > 0) {
     statuses.push(AssetPartitionStatus.MATERIALIZED);
-  }
-  if (failedCount > 0) {
-    statuses.push(AssetPartitionStatus.FAILED);
   }
   if (materializingCount > 0) {
     statuses.push(AssetPartitionStatus.MATERIALIZING);
   }
-  if (successCount + failedCount + materializingCount < totalKeyCount) {
+  if (failedCount > 0) {
+    statuses.push(AssetPartitionStatus.FAILED);
+  }
+  if (materializedCount + failedCount + materializingCount < totalKeyCount) {
     statuses.push(AssetPartitionStatus.MISSING);
   }
   return statuses;
@@ -346,7 +294,7 @@ function removeSubrangesAndJoin(ranges: Range[]): Range[] {
   const result: Range[] = [];
   for (const range of ranges) {
     const last = result[result.length - 1];
-    if (last && last.end.idx === range.start.idx - 1 && last.value === range.value) {
+    if (last && last.end.idx === range.start.idx - 1 && isEqual(last.value, range.value)) {
       last.end = range.end;
     } else {
       result.push({start: range.start, end: range.end, value: range.value});
@@ -382,12 +330,7 @@ export function keyCountByStateInSelection(
 ) {
   if (_selections.length === 0) {
     warnUnlessTest('[keyCountByStateInSelection] A selection must be provided for dimension 0.');
-    return {
-      [AssetPartitionStatus.MISSING]: 0,
-      [AssetPartitionStatus.MATERIALIZED]: 0,
-      [AssetPartitionStatus.MATERIALIZING]: 0,
-      [AssetPartitionStatus.FAILED]: 0,
-    };
+    return emptyAssetPartitionStatusCounts();
   }
 
   // Make sure that the provided selections are in the same order as the /underlying/

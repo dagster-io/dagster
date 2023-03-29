@@ -5,7 +5,7 @@ import * as React from 'react';
 import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
-import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './usePartitionHealthData';
+import {AssetPartitionStatus, assetPartitionStatusesToStyle} from './AssetPartitionStatus';
 
 export interface AssetPartitionListProps {
   partitions: string[];
@@ -88,14 +88,18 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
                 <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
                   {dimensionKey}
                   <div style={{flex: 1}} />
-                  {state.includes(AssetPartitionStatus.MATERIALIZED) && (
-                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
-                  )}
+                  {/* Note: we could just state.map, but we want these in a particular order*/}
                   {state.includes(AssetPartitionStatus.MISSING) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.MISSING]} />
                   )}
                   {state.includes(AssetPartitionStatus.FAILED) && (
                     <AssetPartitionStatusDot status={[AssetPartitionStatus.FAILED]} />
+                  )}
+                  {state.includes(AssetPartitionStatus.MATERIALIZING) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZING]} />
+                  )}
+                  {state.includes(AssetPartitionStatus.MATERIALIZED) && (
+                    <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />
                   )}
                 </Box>
               </Box>

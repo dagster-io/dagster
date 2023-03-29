@@ -16,8 +16,8 @@ import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {
-  AssetPartitionStatus,
   PartitionHealthData,
   PartitionHealthDimension,
   partitionStatusAtIndex,

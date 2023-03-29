@@ -58,6 +58,7 @@ import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {
   executionParamsForAssetJob,
   LaunchAssetsChoosePartitionsTarget,
@@ -75,11 +76,7 @@ import {
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {
-  AssetPartitionStatus,
-  PartitionDimensionSelection,
-  usePartitionHealthData,
-} from './usePartitionHealthData';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 interface Props {
   open: boolean;

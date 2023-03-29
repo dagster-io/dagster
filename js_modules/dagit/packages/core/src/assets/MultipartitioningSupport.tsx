@@ -3,12 +3,12 @@ import uniq from 'lodash/uniq';
 
 import {PartitionDefinitionType} from '../graphql/types';
 
+import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
   PartitionDimensionSelection,
   Range,
-  AssetPartitionStatus,
   PartitionHealthDataMerged,
 } from './usePartitionHealthData';
 
@@ -123,9 +123,7 @@ export function assembleRangesFromTransitions(
   maxOverlap: number,
 ) {
   // sort the input array, this algorithm does not work unless the transitions are in order
-  const transitions = [...transitionsUnsorted].sort(
-    (a, b) => a.idx - b.idx || `${a.state}`.localeCompare(`${b.state}`),
-  );
+  const transitions = [...transitionsUnsorted].sort((a, b) => a.idx - b.idx || b.delta - a.delta);
 
   // walk the transitions array and apply the transitions to a counter, creating an array of just the changes
   // in the number of currently-overlapping ranges. (eg: how many of the assets are materialized at this time).
@@ -135,23 +133,21 @@ export function assembleRangesFromTransitions(
   //
   const depths: {
     idx: number;
-    MISSING: number;
-    MATERIALIZED: number;
-    MATERIALIZING: number;
-    FAILED: number;
+    [AssetPartitionStatus.FAILED]: number;
+    [AssetPartitionStatus.MATERIALIZING]: number;
+    [AssetPartitionStatus.MATERIALIZED]: number;
+    [AssetPartitionStatus.MISSING]: number;
   }[] = [];
   for (const transition of transitions) {
-    const last = depths[depths.length - 1];
-    if (last && last.idx === transition.idx) {
-      for (const state of transition.state) {
+    for (const state of transition.state) {
+      const last = depths[depths.length - 1];
+      if (last && last.idx === transition.idx) {
         last[state] = (last[state] || 0) + transition.delta;
-      }
-    } else {
-      for (const state of transition.state) {
+      } else {
         depths.push({
-          ...(last || {}),
-          idx: transition.idx,
+          ...(last || emptyAssetPartitionStatusCounts()),
           [state]: (last?.[state] || 0) + transition.delta,
+          idx: transition.idx,
         });
       }
     }
@@ -173,7 +169,7 @@ export function assembleRangesFromTransitions(
     if (MATERIALIZING > 0) {
       value.push(AssetPartitionStatus.MATERIALIZING);
     }
-    if (MISSING || FAILED + MATERIALIZED + MATERIALIZING < maxOverlap) {
+    if (MISSING > 0 || FAILED + MATERIALIZED + MATERIALIZING < maxOverlap) {
       value.push(AssetPartitionStatus.MISSING);
     }
 
@@ -186,7 +182,10 @@ export function assembleRangesFromTransitions(
       result.push({start: {idx, key: allKeys[idx]}, end: {idx, key: allKeys[idx]}, value});
     }
   }
-  return result.filter((range) => !isEqual(range.value, [AssetPartitionStatus.MISSING]));
+  return result.filter(
+    (range) =>
+      range.start.idx < allKeys.length && !isEqual(range.value, [AssetPartitionStatus.MISSING]),
+  );
 }
 
 export function partitionDefinitionsEqual(

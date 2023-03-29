@@ -4,13 +4,10 @@ import React from 'react';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {
-  PartitionHealthData,
-  PartitionDimensionSelection,
-  AssetPartitionStatus,
-} from './usePartitionHealthData';
+import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 export const PartitionHealthSummary: React.FC<{
   assetKey: AssetKey;

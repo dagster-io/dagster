@@ -2,13 +2,14 @@ import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
   explodePartitionKeysInSelection,
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
-import {AssetPartitionStatus, usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';

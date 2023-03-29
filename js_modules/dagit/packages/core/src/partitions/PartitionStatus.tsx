@@ -3,10 +3,10 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {
-  assetPartitionStatusesToStyle,
   assetPartitionStatusToText,
-  Range,
-} from '../assets/usePartitionHealthData';
+  assetPartitionStatusesToStyle,
+} from '../assets/AssetPartitionStatus';
+import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
 import {runStatusToString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
 

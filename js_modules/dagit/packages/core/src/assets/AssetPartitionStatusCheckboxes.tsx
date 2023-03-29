@@ -3,17 +3,16 @@ import * as React from 'react';
 
 import {testId} from '../testing/testId';
 
-import {AssetPartitionStatus, assetPartitionStatusToText} from './usePartitionHealthData';
+import {
+  AssetPartitionStatus,
+  assetPartitionStatusToText,
+  emptyAssetPartitionStatusCounts,
+} from './AssetPartitionStatus';
 
 export function countsByState(
   partitionKeysForCounts: {partitionKey: string; state: AssetPartitionStatus}[],
 ) {
-  const result: {[state: string]: number} = {
-    [AssetPartitionStatus.MISSING]: 0,
-    [AssetPartitionStatus.MATERIALIZED]: 0,
-    [AssetPartitionStatus.MATERIALIZING]: 0,
-    [AssetPartitionStatus.FAILED]: 0,
-  };
+  const result = emptyAssetPartitionStatusCounts();
   for (const key of partitionKeysForCounts) {
     result[key.state] = (result[key.state] || 0) + 1;
   }
@@ -21,7 +20,7 @@ export function countsByState(
 }
 
 export const AssetPartitionStatusCheckboxes: React.FC<{
-  counts: {[state: string]: number};
+  counts: {[status: string]: number};
   value: AssetPartitionStatus[];
   allowed: AssetPartitionStatus[];
   onChange: (selected: AssetPartitionStatus[]) => void;
@@ -29,16 +28,18 @@ export const AssetPartitionStatusCheckboxes: React.FC<{
 }> = ({counts, value, onChange, allowed, disabled}) => {
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 12}} style={{overflow: 'hidden'}}>
-      {allowed.map((state) => (
+      {allowed.map((status) => (
         <Checkbox
-          key={state}
-          data-testid={testId(`partition-state-${state}-checkbox`)}
+          key={status}
+          data-testid={testId(`partition-status-${status}-checkbox`)}
           disabled={disabled}
           style={{marginBottom: 0, marginLeft: 10, minWidth: 200}}
-          checked={value.includes(state) && !disabled}
-          label={`${assetPartitionStatusToText(state)} (${counts[state]})`}
+          checked={value.includes(status) && !disabled}
+          label={`${assetPartitionStatusToText(status)} (${counts[status]})`}
           onChange={() =>
-            onChange(value.includes(state) ? value.filter((v) => v !== state) : [...value, state])
+            onChange(
+              value.includes(status) ? value.filter((v) => v !== status) : [...value, status],
+            )
           }
         />
       ))}
