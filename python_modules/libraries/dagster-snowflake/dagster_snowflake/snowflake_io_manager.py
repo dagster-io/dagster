@@ -1,7 +1,12 @@
+from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Mapping, Optional, Sequence, Type, cast
 
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster._config.structured_config import (
+    ConfigurableIOManagerFactory,
+    infer_schema_from_config_class,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -10,6 +15,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
+from pydantic import Field
 from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeConnection
@@ -86,50 +92,7 @@ def build_snowflake_io_manager(
 
     """
 
-    @io_manager(
-        config_schema={
-            "database": Field(StringSource, description="Name of the database to use."),
-            "account": Field(
-                StringSource,
-                description=(
-                    "Your Snowflake account name. For more details, see  https://bit.ly/2FBL320."
-                ),
-            ),
-            "user": Field(StringSource, description="User login name."),
-            "password": Field(StringSource, description="User password.", is_required=False),
-            "warehouse": Field(
-                StringSource, description="Name of the warehouse to use.", is_required=False
-            ),
-            "schema": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
-            ),
-            "role": Field(StringSource, description="Name of the role to use.", is_required=False),
-            "private_key": Field(
-                StringSource,
-                description=(
-                    "Raw private key to use. See"
-                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
-                ),
-                is_required=False,
-            ),
-            "private_key_path": Field(
-                StringSource,
-                description=(
-                    "Path to the private key. See"
-                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
-                ),
-                is_required=False,
-            ),
-            "private_key_password": Field(
-                StringSource,
-                description=(
-                    "The password of the private key. See"
-                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
-                ),
-                is_required=False,
-            ),
-        }
-    )
+    @io_manager(config_schema=infer_schema_from_config_class(SnowflakeIOManager))
     def snowflake_io_manager(init_context):
         return DbIOManager(
             type_handlers=type_handlers,
@@ -141,6 +104,117 @@ def build_snowflake_io_manager(
         )
 
     return snowflake_io_manager
+
+
+class SnowflakeIOManager(ConfigurableIOManagerFactory):
+    """Base class for an IO manager definition that reads inputs from and writes outputs to Snowflake.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_snowflake import SnowflakeIOManager
+            from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions, EnvVar
+
+            class MySnowflakeIOManager(SnowflakeIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"))
+                }
+            )
+
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> pd.DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+    """
+
+    database: str = Field(..., description="Name of the database to use.")
+    schema_: Optional[str] = Field(
+        None, alias="schema", description="Name of the schema to use."
+    )  # schema is a reserved word for pydantic
+    account: str = Field(
+        ...,
+        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+    )
+    user: str = Field(..., description="User login name.")
+    password: Optional[str] = Field(None, description="User password.")
+    warehouse: Optional[str] = Field(None, description="Name of the warehouse to use.")
+    role: Optional[str] = Field(None, description="Name of the role to use.")
+    private_key: Optional[str] = Field(
+        None,
+        description=(
+            "Raw private key to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
+    )
+    private_key_path: Optional[str] = Field(
+        None,
+        description=(
+            "Path to the private key. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
+    )
+    private_key_password: Optional[str] = Field(
+        None,
+        description=(
+            "The password of the private key. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+        ),
+    )
+
+    @staticmethod
+    @abstractmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        ...
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return None
+
+    def create_io_manager(self, context) -> DbIOManager:
+        return DbIOManager(
+            db_client=SnowflakeDbClient(),
+            io_manager_name="SnowflakeIOManager",
+            database=self.database,
+            schema=self._schema,
+            type_handlers=self.type_handlers(),
+            default_load_type=self.default_load_type(),
+        )
 
 
 class SnowflakeDbClient(DbClient):
