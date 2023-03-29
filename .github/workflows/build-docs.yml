@@ -9,6 +9,10 @@ on:
   pull_request:
     paths:
       - docs/**
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
