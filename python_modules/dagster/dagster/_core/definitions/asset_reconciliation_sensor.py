@@ -671,7 +671,11 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     expected_data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
     for level in asset_graph.toposort_asset_keys():
         for key in level:
-            if key not in target_parent_asset_keys or key not in asset_graph.all_asset_keys:
+            if (
+                key not in target_parent_asset_keys
+                or key not in asset_graph.all_asset_keys
+                or not asset_graph.get_downstream_freshness_policies(asset_key=key)
+            ):
                 continue
 
             # figure out the current contents of this asset with respect to its constraints
