@@ -214,7 +214,9 @@ op_result = process_users_job.execute_in_process(
 )
 ```
 
-### Validated config fields
+---
+
+## Validated config fields
 
 Config fields can have custom validation logic applied using [Pydantic validators](https://docs.pydantic.dev/usage/validators/). Pydantic validators are defined as methods on the config class, and are decorated with the `@validator` decorator. Here, we define some validators on a configured user's name and username, which will throw exceptions if incorrect values are passed in the launchpad or from a schedule or sensor.
 
