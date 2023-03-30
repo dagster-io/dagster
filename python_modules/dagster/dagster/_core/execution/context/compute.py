@@ -122,6 +122,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def op_config(self) -> Any:
+        """Any: The op config for the current execution.
+        """
         return self._step_execution_context.op_config
 
     @property
@@ -274,6 +276,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
+        """
+        AssetsDefinition: The definition for the asset currently being computed.
+
+        Raises:
+           DagsterInvalidPropertyError: if the op does not have an assets definition.
+         """
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
@@ -318,6 +326,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        """AbstractSet[AssetKey]: The set of asset keys which are
+        selected for materialization for the current run.
+
+        If the op does not have an assets definition, returns an empty set.
+
+        """
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             return set()
@@ -326,6 +340,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
+        """AbstractSet[str]: The set of output names of the assets
+        which are selected for materialization for the current run.
+
+        If the op does not have an assets definition, returns an empty set.
+        """
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
@@ -347,6 +366,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        """
+        AssetKey: The asset key for the given output, referenced by name.
+        """
         asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
         )
@@ -357,6 +379,9 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
+        """
+        AssetKey: The asset key for the given input, referenced by name.
+        """
         key = self.pipeline_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
         )
@@ -406,10 +431,16 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_key_range_for_output(
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
+        """
+        PartitionKeyRange: The partition key range for the output asset, referenced by name.
+        """
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        """
+        PartitionKeyRange: The partition key range for the input asset, referenced by name.
+        """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
     @public
