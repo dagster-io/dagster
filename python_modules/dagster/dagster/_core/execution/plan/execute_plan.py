@@ -57,7 +57,7 @@ def inner_plan_execution_iterator(
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             while not active_execution.is_complete:
-                step = active_execution.get_next_step()
+                step = active_execution.get_next_step(increment=False)
                 step_context = cast(
                     StepExecutionContext,
                     pipeline_context.for_step(step, active_execution.get_known_state()),

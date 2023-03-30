@@ -17,6 +17,10 @@ from typing import (
 
 from typing_extensions import Self
 
+from pools.pools import decrement_pool, engine, increment_pool
+from psycopg2.errors import LockNotAvailable
+from sqlalchemy.exc import OperationalError
+
 import dagster._check as check
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
@@ -255,17 +259,17 @@ class ActiveExecution:
         if sleep_amt > 0:
             time.sleep(sleep_amt)
 
-    def get_next_step(self) -> ExecutionStep:
+    def get_next_step(self, increment) -> ExecutionStep:
         check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
-        steps = self.get_steps_to_execute(limit=1)
+        steps = self.get_steps_to_execute(limit=1, increment=increment)
         step = None
 
         if steps:
             step = steps[0]
         elif self._waiting_to_retry:
             self.sleep_til_ready()
-            step = self.get_next_step()
+            step = self.get_next_step(increment=increment)
 
         check.invariant(step is not None, "Unexpected ActiveExecution state")
         return step  # type: ignore  # (possible none)
@@ -277,6 +281,14 @@ class ActiveExecution:
     def get_steps_to_execute(
         self,
         limit: Optional[int] = None,
+        # Added increment argument here to prevent double increment.
+        # This method is also called in the worker subprocess for some reason,
+        # see `inner_plan_execution_iterator` in https://excalidraw.com/#json=5715587808362496,jNlDGr4uOi7FyuTu_UfLoA.
+        # Subprocess worker tries to call `get_next_step`, which calls this method
+        # and tries to increment again. Not entirely sure why? In any case,
+        # we only need to increment when actual work is being scheduled, which happens
+        # in https://github.com/dagster-io/dagster/blob/1e86e8e9b12668dd1162b39bfc2d1f76ec9443d7/python_modules/dagster/dagster/_core/executor/multiprocess.py#L214
+        increment=True
     ) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
@@ -304,6 +316,19 @@ class ActiveExecution:
         for step in steps:
             if limit is not None and len(batch) >= limit:
                 break
+
+            if "pool" in step.tags and increment:
+                try:
+                    if not increment_pool(step.tags["pool"], engine): # I.e. occupied pool is full
+                        time.sleep(3)
+                        continue
+                except OperationalError as exc:
+                    # We continue here so we can pick it up in the next loop:
+                    # https://github.com/dagster-io/dagster/blob/1e86e8e9b12668dd1162b39bfc2d1f76ec9443d7/python_modules/dagster/dagster/_core/executor/multiprocess.py#L213
+                    if isinstance(exc.orig, LockNotAvailable):
+                        time.sleep(3)
+                        continue
+                    raise OperationalError from exc
 
             if (
                 self._max_concurrent is not None
@@ -453,7 +478,7 @@ class ActiveExecution:
         )
         self._in_flight.remove(step_key)
 
-    def handle_event(self, dagster_event: DagsterEvent) -> None:
+    def handle_event(self, dagster_event: DagsterEvent, tags=None) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
         step_key = cast(str, dagster_event.step_key)
@@ -492,10 +517,18 @@ class ActiveExecution:
                     ],
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(self, pipeline_context: IPlanContext, step_key: str) -> None:
+        if tags and "pool" in tags:
+            if any([dagster_event.is_step_failure, dagster_event.is_resource_init_failure,
+                                dagster_event.is_step_success, dagster_event.is_step_skipped,
+                                dagster_event.is_step_up_for_retry]):
+                decrement_pool(tags["pool"], engine)
+
+    def verify_complete(self, pipeline_context: IPlanContext, step_key: str, tags=None) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
         if step_key in self._in_flight:
+            if tags and "pool" in tags:
+                decrement_pool(tags["pool"], engine)
             pipeline_context.log.error(
                 "Step {key} finished without success or failure event. Downstream steps will not"
                 " execute.".format(key=step_key)

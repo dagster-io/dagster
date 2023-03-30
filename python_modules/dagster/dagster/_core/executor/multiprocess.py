@@ -39,6 +39,14 @@ from .child_process_executor import (
     execute_child_process_command,
 )
 
+import logging
+import os
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if bool(os.environ.get("DEBUG", False)):
+    logger.setLevel(logging.DEBUG)
+
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
@@ -242,7 +250,8 @@ class MultiprocessExecutor(Executor):
                                 continue
                             else:
                                 yield event_or_none
-                                active_execution.handle_event(event_or_none)
+                                step = active_execution.get_step_by_key(key)
+                                active_execution.handle_event(event_or_none, step.tags)
 
                         except ChildProcessCrashException as crash:
                             serializable_error = serializable_error_info_from_exc_info(
@@ -267,7 +276,8 @@ class MultiprocessExecutor(Executor):
                                     error=serializable_error, user_failure_data=None
                                 ),
                             )
-                            active_execution.handle_event(step_failure_event)
+                            step = active_execution.get_step_by_key(key)
+                            active_execution.handle_event(step_failure_event, step.tags)
                             yield step_failure_event
                             empty_iters.append(key)
                         except StopIteration:
@@ -277,7 +287,9 @@ class MultiprocessExecutor(Executor):
                     for key in empty_iters:
                         del active_iters[key]
                         del term_events[key]
-                        active_execution.verify_complete(plan_context, key)
+                        step = active_execution.get_step_by_key(key)
+                        logger.info("Got into steps without success or failure event")
+                        active_execution.verify_complete(plan_context, key, step.tags) #check
 
                     # process skipped and abandoned steps
                     yield from active_execution.plan_events_iterator(plan_context)
