@@ -20,7 +20,7 @@ from dagster_test.toys.cross_repo_assets import (
 )
 from dagster_test.toys.dynamic import dynamic_job
 from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
-from dagster_test.toys.graph_backed_assets import graph_backed_group
+from dagster_test.toys.graph_backed_assets import graph_backed_asset
 from dagster_test.toys.hammer import hammer_default_executor_job
 from dagster_test.toys.input_managers import df_stats_job
 from dagster_test.toys.log_asset import log_asset_job
@@ -180,7 +180,7 @@ def downstream_assets_repository2():
 
 @repository
 def graph_backed_asset_repository():
-    return [graph_backed_group]
+    return [graph_backed_asset]
 
 
 @repository
