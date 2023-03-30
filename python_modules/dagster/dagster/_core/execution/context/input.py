@@ -43,7 +43,7 @@ class InputContext:
     an `InputContext` for testing an IO Manager's `load_input` method, use
     :py:func:`dagster.build_input_context`.
 
-    Attributes:
+    Parameters:
         name (Optional[str]): The name of the input that we're loading.
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
@@ -160,7 +160,7 @@ class InputContext:
     @public
     @property
     def has_input_name(self) -> bool:
-        """If we're the InputContext is being used to load the result of a run from outside the run,
+        """If the InputContext is being used to load the result of a run from outside the run,
         then it won't have an input name.
         """
         return self._name is not None
@@ -168,6 +168,13 @@ class InputContext:
     @public
     @property
     def name(self) -> str:
+        """
+        str: The name of the input that's being loaded.
+
+        Raises:
+            DagsterInvariantViolationError: If the InputContext is being used outside of a run, so
+            no name is available.
+        """
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -192,6 +199,9 @@ class InputContext:
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """
+        OpDefinition: The definition of the op that's loading the input.
+        """
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -203,21 +213,33 @@ class InputContext:
     @public
     @property
     def config(self) -> Any:
+        """
+        Any: The config attached to the input that's being loaded.
+        """
         return self._config
 
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """
+        Optional[ArbitraryMetadataMapping]: The metadata attached to the input that's being loaded.
+        """
         return self._metadata
 
     @public
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
+        """
+        Optional[OutputContext]: Info about the output that produced the object we're loading.
+        """
         return self._upstream_output
 
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """
+        DagsterType: The type of this input. 
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -229,6 +251,9 @@ class InputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """
+        DagsterLogManager: A handle to the log manager for the current execution.
+        """
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -240,11 +265,17 @@ class InputContext:
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
+        """
+        Optional[Mapping[str, Any]]: The resource configuration for the current execution.
+        """
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """
+        Any: The resources for the current execution.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -262,11 +293,15 @@ class InputContext:
     @public
     @property
     def has_asset_key(self) -> bool:
+        """
+        bool: Whether the input corresponds to an asset.
+        """
         return self._asset_key is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """AssetKey: The AssetKey corresponding to this input."""
         if self._asset_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
@@ -277,7 +312,7 @@ class InputContext:
     @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
-        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        """PartitionsDefinition: The PartitionsDefinition on the upstream asset corresponding to this input."""
         if self._asset_partitions_def is None:
             if self.asset_key:
                 raise DagsterInvariantViolationError(
@@ -305,13 +340,13 @@ class InputContext:
     @public
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """bool: Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
     @public
     @property
     def partition_key(self) -> str:
-        """The partition key for the current run.
+        """str: The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
         """
@@ -325,12 +360,13 @@ class InputContext:
     @public
     @property
     def has_asset_partitions(self) -> bool:
+        """bool: Whether the input corresponds to a partitioned asset."""
         return self._asset_partitions_subset is not None
 
     @public
     @property
     def asset_partition_key(self) -> str:
-        """The partition key for input asset.
+        """str: The partition key for input asset.
 
         Raises an error if the input asset has no partitioning, or if the run covers a partition
         range for the input asset.
@@ -352,7 +388,7 @@ class InputContext:
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The partition key range for input asset.
+        """PartitionKeyRange: The partition key range for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
@@ -379,7 +415,7 @@ class InputContext:
     @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
-        """The partition keys for input asset.
+        """Sequence[str]: The partition keys for input asset.
 
         Raises an error if the input asset has no partitioning.
         """
@@ -393,7 +429,7 @@ class InputContext:
     @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
-        """The time window for the partitions of the input asset.
+        """TimeWindow: The time window for the partitions of the input asset.
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
@@ -454,6 +490,11 @@ class InputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """
+        Sequence[str]: A list of identifiers that uniquely identify the asset corresponding to the input.
+
+        If the asset is partitioned, the partition key is included in the identifier list.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
