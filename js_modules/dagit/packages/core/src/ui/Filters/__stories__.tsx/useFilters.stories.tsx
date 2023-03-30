@@ -29,6 +29,7 @@ const TestComponent: React.FC = () => {
       value('today'),
       value('yesterday'),
     ],
+    getKey: (value) => value,
     renderLabel: ({value, isActive}) => (
       <span style={{color: isActive ? 'green' : undefined}}>
         <TruncatedTextWithFullTextOnHover text={value} />
@@ -48,6 +49,7 @@ const TestComponent: React.FC = () => {
       value('today'),
       value('yesterday'),
     ],
+    getKey: (value) => value,
     renderLabel: ({value, isActive}) => (
       <span style={{color: isActive ? 'green' : undefined}}>
         <TruncatedTextWithFullTextOnHover text={value} />
