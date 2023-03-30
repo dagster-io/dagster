@@ -1,6 +1,9 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .bigquery.io_manager import build_bigquery_io_manager as build_bigquery_io_manager
+from .bigquery.io_manager import (
+    BigQueryIOManager as BigQueryIOManager,
+    build_bigquery_io_manager as build_bigquery_io_manager,
+)
 from .bigquery.ops import (
     bq_create_dataset as bq_create_dataset,
     bq_delete_dataset as bq_delete_dataset,
