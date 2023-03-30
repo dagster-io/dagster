@@ -24,13 +24,13 @@ from dagster_tests.general_tests.test_legacy_repository import (
 
 
 def test_default_mode_definition():
-    pipeline_def = PipelineDefinition(name="takesamode", solid_defs=[])
+    pipeline_def = PipelineDefinition(name="takesamode", node_defs=[])
     assert pipeline_def
 
 
 def test_mode_takes_a_name():
     pipeline_def = PipelineDefinition(
-        name="takesamode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
+        name="takesamode", node_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
     )
     assert pipeline_def
 
@@ -91,7 +91,7 @@ def test_mode_double_default_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
         PipelineDefinition(
             name="double_default",
-            solid_defs=[],
+            node_defs=[],
             mode_defs=[ModeDefinition(), ModeDefinition()],
         )
 
@@ -106,7 +106,7 @@ def test_mode_double_given_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
         PipelineDefinition(
             name="double_given",
-            solid_defs=[],
+            node_defs=[],
             mode_defs=[ModeDefinition(name="given"), ModeDefinition(name="given")],
         )
 
@@ -178,7 +178,7 @@ def test_mode_with_resource_deps():
 
     pipeline_def_good_deps = PipelineDefinition(
         name="mode_with_good_deps",
-        solid_defs=[requires_a],
+        node_defs=[requires_a],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a})],
     )
 
@@ -192,7 +192,7 @@ def test_mode_with_resource_deps():
     ):
         PipelineDefinition(
             name="mode_with_bad_deps",
-            solid_defs=[requires_a],
+            node_defs=[requires_a],
             mode_defs=[ModeDefinition(resource_defs={"ab": resource_a})],
         )
 
@@ -203,7 +203,7 @@ def test_mode_with_resource_deps():
 
     pipeline_def_no_deps = PipelineDefinition(
         name="mode_with_no_deps",
-        solid_defs=[no_deps],
+        node_defs=[no_deps],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a})],
     )
 
@@ -235,7 +235,7 @@ def test_subset_with_mode_definitions():
 
     pipeline_def = PipelineDefinition(
         name="subset_test",
-        solid_defs=[requires_a, requires_b],
+        node_defs=[requires_a, requires_b],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
@@ -279,7 +279,7 @@ def define_multi_mode_with_loggers_pipeline():
     return (
         PipelineDefinition(
             name="multi_mode",
-            solid_defs=[return_six],
+            node_defs=[return_six],
             mode_defs=[
                 ModeDefinition(name="foo_mode", logger_defs={"foo": foo_logger}),
                 ModeDefinition(

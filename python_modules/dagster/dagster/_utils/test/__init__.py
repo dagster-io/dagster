@@ -63,7 +63,7 @@ def create_test_pipeline_execution_context(
     )
     mode_def = ModeDefinition(logger_defs=loggers)
     pipeline_def = PipelineDefinition(
-        name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
+        name="test_legacy_context", node_defs=[], mode_defs=[mode_def]
     )
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
     pipeline_run = DagsterRun(pipeline_name="test_legacy_context", run_config=run_config)
@@ -109,7 +109,7 @@ def build_pipeline_with_input_stubs(
     stub_solid_defs = []
 
     for solid_name, input_dict in inputs.items():
-        if not pipeline_def.has_solid_named(solid_name):
+        if not pipeline_def.has_node_named(solid_name):
             raise DagsterInvariantViolationError(
                 (
                     "You are injecting an input value for solid {solid_name} "
@@ -117,7 +117,7 @@ def build_pipeline_with_input_stubs(
                 ).format(solid_name=solid_name, pipeline_name=pipeline_def.name)
             )
 
-        solid = pipeline_def.solid_named(solid_name)
+        solid = pipeline_def.get_node_named(solid_name)
         for input_name, input_value in input_dict.items():
             stub_solid_def = define_stub_solid(
                 "__stub_{solid_name}_{input_name}".format(
@@ -130,7 +130,7 @@ def build_pipeline_with_input_stubs(
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",
-        solid_defs=[*pipeline_def.top_level_solid_defs, *stub_solid_defs],
+        node_defs=[*pipeline_def.top_level_node_defs, *stub_solid_defs],
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,  # type: ignore
     )
@@ -383,7 +383,7 @@ def execute_solid(
     result = execute_pipeline(
         PipelineDefinition(
             name=f"ephemeral_{solid_def.name}_solid_pipeline",
-            solid_defs=solid_defs,
+            node_defs=solid_defs,
             dependencies=dependencies,
             mode_defs=[mode_def] if mode_def else None,
         ),

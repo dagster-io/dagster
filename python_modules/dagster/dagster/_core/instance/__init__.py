@@ -978,17 +978,17 @@ class DagsterInstance(DynamicPartitionsStore):
             if isinstance(pipeline_def, PipelineSubsetDefinition):
                 # for the case when pipeline_def is created by IPipeline or ExternalPipeline
                 check.invariant(
-                    solids_to_execute == pipeline_def.solids_to_execute,
+                    solids_to_execute == pipeline_def.nodes_to_execute,
                     "Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} "
                     "that conflicts with solids_to_execute arg {solids_to_execute}".format(
-                        pipeline_solids_to_execute=str_format_list(pipeline_def.solids_to_execute),
+                        pipeline_solids_to_execute=str_format_list(pipeline_def.nodes_to_execute),
                         solids_to_execute=str_format_list(solids_to_execute),
                     ),
                 )
             else:
                 # for cases when `create_run_for_pipeline` is directly called
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
-                    solids_to_execute=solids_to_execute
+                    nodes_to_execute=solids_to_execute
                 )
         if asset_selection and isinstance(pipeline_def, JobDefinition):
             # for cases when `create_run_for_pipeline` is directly called

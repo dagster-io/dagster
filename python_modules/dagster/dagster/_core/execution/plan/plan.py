@@ -199,7 +199,7 @@ class _PlanBuilder:
             )
 
         self._build_from_sorted_nodes(
-            pipeline_def.solids_in_topological_order,
+            pipeline_def.nodes_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
         )
@@ -1406,7 +1406,7 @@ def _get_manager_key(
 ) -> str:
     step_output = _get_step_output(step_dict_by_key, step_output_handle)
     node_handle = step_output.node_handle
-    output_def = pipeline_def.get_solid(node_handle).output_def_named(step_output.name)
+    output_def = pipeline_def.get_node(node_handle).output_def_named(step_output.name)
     return output_def.io_manager_key
 
 

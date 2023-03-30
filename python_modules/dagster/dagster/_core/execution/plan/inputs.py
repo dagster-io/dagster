@@ -204,7 +204,7 @@ class FromSourceAsset(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        op = pipeline_def.get_solid(self.node_handle)
+        op = pipeline_def.get_node(self.node_handle)
         input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
         io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             input_manager_key
@@ -253,7 +253,7 @@ class FromSourceAsset(
                 ),
             )
 
-        input_def = pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
+        input_def = pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
         if input_def.input_manager_key is not None:
             input_manager_key = input_def.input_manager_key
         else:
@@ -337,7 +337,7 @@ class FromRootInputManager(
     ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
-        solid = pipeline_def.get_solid(self.node_handle)
+        solid = pipeline_def.get_node(self.node_handle)
         input_manager_key: str = check.not_none(
             solid.input_def_named(self.input_name).root_manager_key
             if solid.input_def_named(self.input_name).root_manager_key
@@ -380,7 +380,7 @@ class FromRootInputManager(
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
+        input_def = pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
 
         input_manager_key: str = check.not_none(
             input_def.root_manager_key
@@ -569,7 +569,7 @@ class FromConfig(
         that the config was provided at.
         """
         if self.node_handle:
-            return pipeline_def.get_solid(self.node_handle).input_def_named(self.input_name)
+            return pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
         else:
             return pipeline_def.graph.input_def_named(self.input_name)
 
@@ -676,7 +676,7 @@ class FromDefaultValue(
         return super(FromDefaultValue, cls).__new__(cls, node_handle, input_name)
 
     def _load_value(self, pipeline_def: PipelineDefinition):
-        return pipeline_def.get_solid(self.node_handle).definition.default_value_for_input(
+        return pipeline_def.get_node(self.node_handle).definition.default_value_for_input(
             self.input_name
         )
 
@@ -1071,14 +1071,3 @@ StepInputSourceUnion = Union[
 ]
 
 StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore
-
-# GRAVEYARD
-# kept around to prevent problematic deserialization
-
-
-@whitelist_for_serdes
-class FromRootInputConfig(
-    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
-    StepInputSource,
-):
-    """DEPRECATED replaced by FromConfig with None node handle."""
