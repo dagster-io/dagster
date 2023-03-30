@@ -1,7 +1,6 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui';
 import React from 'react';
 
-import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
