@@ -101,7 +101,7 @@ describe('useStaticSetFilter', () => {
     expect(cherry).not.toBeInTheDocument();
   });
 
-  it.only('reflects initial state', async () => {
+  it('reflects initial state', async () => {
     const props = {...testFilterProps};
     const filter = renderHook(() => useStaticSetFilter(props));
     select(filter, 'apple');
