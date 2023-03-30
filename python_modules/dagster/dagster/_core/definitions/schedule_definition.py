@@ -300,7 +300,11 @@ class ScheduleEvaluationContext:
         return self._log_key
 
     @property
-    def repository_def(self) -> Optional["RepositoryDefinition"]:
+    def repository_def(self) -> "RepositoryDefinition":
+        if not self._repository_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to access repository_def, but no repository_def was provided."
+            )
         return self._repository_def
 
 
@@ -335,7 +339,6 @@ def build_schedule_context(
         .. code-block:: python
 
             context = build_schedule_context(instance)
-            daily_schedule.evaluate_tick(context)
 
     """
     check.opt_inst_param(instance, "instance", DagsterInstance)
@@ -718,9 +721,7 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
-        from dagster._core.definitions.partition import DynamicPartitionsDefinition
-
-        from .job_definition import JobDefinition
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
@@ -762,54 +763,22 @@ class ScheduleDefinition:
             run_requests = result
             skip_message = None
 
-        # clone all the run requests with the required schedule tags
-        run_requests_with_schedule_tags = []
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
 
+        # clone all the run requests with resolved tags and config
+        resolved_run_requests = []
         for run_request in run_requests:
-            if run_request.partition_key and not run_request.has_resolved_partition_run_request():
+            if run_request.partition_key and not run_request.has_resolved_partition():
                 if context.repository_def is None:
                     raise DagsterInvariantViolationError(
                         "Must provide repository def to build_schedule_context when yielding"
                         " partitioned run requests"
                     )
 
-                scheduled_target = (
-                    self.load_target()
-                    if isinstance(self._target, DirectTarget)
-                    else context.repository_def.get_job(self._target.pipeline_name)
-                )
-
-                if isinstance(scheduled_target, GraphDefinition):
-                    raise Exception(
-                        f"Error in schedule {self._name}: Schedule returned a partitioned"
-                        " RunRequest, but the target is a graph with no partitions definition."
-                    )
-
-                if isinstance(scheduled_target, PipelineDefinition):
-                    if not scheduled_target.is_job:
-                        raise Exception("Schedule target cannot be a legacy pipeline.")
-                    else:
-                        scheduled_target = cast(JobDefinition, scheduled_target)
-
-                partitions_def = scheduled_target.partitions_def
-                if not partitions_def:
-                    raise Exception(
-                        f"Error in schedule {self._name}: Schedule returned a partitioned"
-                        " RunRequest, but the target job has no partitions definition."
-                    )
-
-                dynamic_partitions_store = None
-                if isinstance(partitions_def, DynamicPartitionsDefinition):
-                    # Instance also needs to be provided when partitions def is a multipartitions
-                    # def with dynamic dimension
-                    if context.instance_ref is None:
-                        raise DagsterInvalidInvocationError(
-                            "Instance must be provided in build_schedule_context when yielding run"
-                            " requests for dynamic partitions."
-                        )
-                    dynamic_partitions_store = context.instance
-
-                resolved_request = run_request.with_resolved_partition(
+                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     current_time=context.scheduled_execution_time,
                     dynamic_partitions_store=dynamic_partitions_store,
@@ -817,14 +786,14 @@ class ScheduleDefinition:
             else:
                 resolved_request = run_request
 
-            run_requests_with_schedule_tags.append(
+            resolved_run_requests.append(
                 resolved_request.with_replaced_attrs(
                     tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
                 )
             )
 
         return ScheduleExecutionData(
-            run_requests=run_requests_with_schedule_tags,
+            run_requests=resolved_run_requests,
             skip_message=skip_message,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
@@ -841,9 +810,8 @@ class ScheduleDefinition:
     def load_target(
         self,
     ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
-        target = self._target
-        if isinstance(target, DirectTarget):
-            return target.load()
+        if isinstance(self._target, DirectTarget):
+            return self._target.load()
 
         check.failed("Target is not loadable")
 

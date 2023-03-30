@@ -83,7 +83,6 @@ class UnresolvedAssetJobDefinition(
         instance: Optional[DagsterInstance] = None,
         current_time: Optional[datetime] = None,
     ) -> RunRequest:
-        # TODO deprecate this function?
         """Creates a RunRequest object for a run that processes the given partition.
 
         Args:
@@ -106,6 +105,12 @@ class UnresolvedAssetJobDefinition(
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
             PartitionedConfig,
+        )
+
+        deprecation_warning(
+            "UnresolvedAssetJobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
         )
 
         if not self.partitions_def:

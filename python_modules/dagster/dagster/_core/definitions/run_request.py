@@ -110,7 +110,7 @@ class RunRequest(
                 fields[k] = kwargs[k]
         return RunRequest(**fields)
 
-    def with_resolved_partition(
+    def with_resolved_tags_and_config(
         self,
         target_definition: Union["JobDefinition", "UnresolvedAssetJobDefinition"],
         current_time: Optional[datetime] = None,
@@ -126,7 +126,10 @@ class RunRequest(
         partitions_def = target_definition.partitions_def
         if partitions_def is None:
             check.failed(
-                "Cannot resolve partition for run request without partitions_def",
+                (
+                    "Cannot resolve partition for run request when target job"
+                    f" '{target_definition.name}' is unpartitioned."
+                ),
             )
         partitions_def = cast(PartitionsDefinition, partitions_def)
 
@@ -177,7 +180,7 @@ class RunRequest(
             tags=get_run_request_tags(partition.name),
         )
 
-    def has_resolved_partition_run_request(self) -> bool:
+    def has_resolved_partition(self) -> bool:
         # Backcompat run requests yielded via `run_request_for_partition` already have resolved
         # partitioning
         return self.tags.get(PARTITION_NAME_TAG) is not None if self.partition_key else True

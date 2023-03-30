@@ -785,9 +785,10 @@ def build_run_requests(
                 check.failed("Partition key provided for unpartitioned asset")
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
-        # Normally the run request would have to be resolved with the partitions def, but
-        # we have already confirmed that the partition key exists. Performing another check
-        # in the run request resolution would be redundant and costly to fetch all partition keys.
+        # Do not call run_request.with_resolved_tags_and_config as the partition key is
+        # valid and there is no config.
+        # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
+        # checks for valid partition keys.
         run_requests.append(
             RunRequest(
                 asset_selection=list(asset_keys),

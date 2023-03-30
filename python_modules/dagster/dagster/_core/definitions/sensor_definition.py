@@ -25,7 +25,9 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+)
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import (
     Resources,
@@ -618,7 +620,7 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         """Returns job/graph definitions that have been directly passed into the sensor definition.
         Any jobs or graphs that are referenced by name will not be loaded.
         """
@@ -653,10 +655,18 @@ class SensorDefinition:
                 "decorator."
             )
 
+        if asset_selection:
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
+            ]
+
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
         # Run requests may contain an invalid target, or a partition key that does not exist.
         # We will resolve these run requests, applying the target and partition config/tags.
         resolved_run_requests = []
-
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
                 raise Exception(
@@ -664,43 +674,22 @@ class SensorDefinition:
                     " specify job_name for the requested run. Expected one of:"
                     f" {target_names}"
                 )
-            elif run_request.job_name and run_request.job_name not in target_names:
+            elif (
+                run_request.job_name
+                and run_request.job_name not in target_names
+                and not asset_selection
+            ):
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
 
-            if run_request.partition_key and not run_request.has_resolved_partition_run_request():
+            if run_request.partition_key and not run_request.has_resolved_partition():
                 selected_job = _get_repo_job_by_name(
                     context, run_request.job_name if run_request.job_name else target_names[0]
                 )
-
-                if isinstance(selected_job, GraphDefinition):
-                    raise Exception(
-                        f"Error in sensor {self._name}: Sensor returned a partitioned RunRequest, "
-                        "but the target is a graph with no partitions definition."
-                    )
-
-                partitions_def = selected_job.partitions_def
-                if not partitions_def:
-                    raise Exception(
-                        f"Error in sensor {self._name}: Sensor returned a partitioned RunRequest, "
-                        "but the target job has no partitions definition."
-                    )
-
-                dynamic_partitions_store = None
-                if isinstance(partitions_def, DynamicPartitionsDefinition):
-                    # Instance also needs to be provided when partitions def is a multipartitions
-                    # def with dynamic dimension
-                    if context.instance_ref is None:
-                        raise DagsterInvalidInvocationError(
-                            "Instance must be provided in build_sensor_context when yielding run"
-                            " requests for dynamic partitions."
-                        )
-                    dynamic_partitions_store = context.instance
-
                 resolved_run_requests.append(
-                    run_request.with_resolved_partition(
+                    run_request.with_resolved_tags_and_config(
                         target_definition=selected_job,
                         current_time=None,
                         dynamic_partitions_store=dynamic_partitions_store,
@@ -708,11 +697,6 @@ class SensorDefinition:
                 )
             else:
                 resolved_run_requests.append(run_request)
-
-        if asset_selection:
-            resolved_run_requests = [
-                *_run_requests_with_base_asset_jobs(resolved_run_requests, context, asset_selection)
-            ]
 
         return resolved_run_requests
 

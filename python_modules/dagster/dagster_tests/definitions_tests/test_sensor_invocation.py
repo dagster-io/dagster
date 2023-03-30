@@ -303,6 +303,52 @@ def test_partitioned_config_run_request():
                 run_requests = invalid_sensor.evaluate_tick(context).run_requests
 
 
+def test_asset_selection_run_request_partition_key():
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def valid_req_sensor():
+        return RunRequest(partition_key="a")
+
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def invalid_req_sensor():
+        return RunRequest(partition_key="b")
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a"]))
+    def a_asset():
+        return 1
+
+    daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def b_asset():
+        return 1
+
+    @asset(partitions_def=daily_partitions_def)
+    def c_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [
+            a_asset,
+            b_asset,
+            c_asset,
+            valid_req_sensor,
+            invalid_req_sensor,
+            define_asset_job("a_job", [a_asset]),
+            define_asset_job("b_job", [b_asset]),
+        ]
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        run_requests = valid_req_sensor.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        assert run_requests[0].partition_key == "a"
+        assert run_requests[0].tags.get(PARTITION_NAME_TAG) == "a"
+        assert run_requests[0].asset_selection == [a_asset.key]
+
+        with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+            invalid_req_sensor.evaluate_tick(context)
+
+
 def test_run_status_sensor():
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
