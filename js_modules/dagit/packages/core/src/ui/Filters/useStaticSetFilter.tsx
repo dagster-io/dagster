@@ -38,7 +38,6 @@ export function useStaticSetFilter<TValue>({
   }, [state]);
 
   React.useEffect(() => {
-    console.log('effect');
     setState(initialState ? new Set(initialState) : new Set());
   }, [initialState]);
 

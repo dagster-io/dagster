@@ -12,6 +12,10 @@ describe('useStaticSetFilter', () => {
     {value: 'cherry', match: ['cherry']},
   ];
 
+  function createTestFilter() {
+    return renderHook(() => useStaticSetFilter(testFilterProps));
+  }
+
   const testFilterProps = {
     name: 'Test',
     icon: 'asset' as IconName,
