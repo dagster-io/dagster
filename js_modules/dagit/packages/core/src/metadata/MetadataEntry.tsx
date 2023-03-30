@@ -10,6 +10,8 @@ import {
   Tooltip,
   FontFamily,
   tryPrettyPrintJSON,
+  Table,
+  DialogBody,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -19,6 +21,7 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {TableMetadataEntry} from '../graphql/types';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 
@@ -171,7 +174,8 @@ export const MetadataEntry: React.FC<{
         </MetadataEntryLink>
       );
     case 'TableMetadataEntry':
-      return null;
+      return <TableMetadataEntryComponent entry={entry} />;
+
     case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
     case 'NotebookMetadataEntry':
@@ -318,6 +322,53 @@ const MetadataEntryModalAction: React.FC<{
         </DialogFooter>
       </Dialog>
     </>
+  );
+};
+
+const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({entry}) => {
+  const [showSchema, setShowSchema] = React.useState(false);
+
+  const schema = entry.table.schema;
+  const records = entry.table.records.map((record) => JSON.parse(record));
+
+  return (
+    <Box flex={{direction: 'column', gap: 8}}>
+      <MetadataEntryAction onClick={() => setShowSchema(true)}>Show schema</MetadataEntryAction>
+      <Table style={{borderRight: `1px solid ${Colors.KeylineGray}`}}>
+        <thead>
+          <tr>
+            {schema.columns.map((column) => (
+              <th key={column.name}>{column.name}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((record, idx) => (
+            <tr key={idx}>
+              {schema.columns.map((column) => (
+                <td key={column.name}>{record[column.name].toString()}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+      <Dialog isOpen={showSchema} title={`Schema for ${entry.label}`}>
+        <DialogBody>
+          <TableSchema schema={schema} />
+        </DialogBody>
+        <DialogFooter topBorder>
+          <Button
+            intent="primary"
+            autoFocus={true}
+            onClick={() => {
+              setShowSchema(false);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </Box>
   );
 };
 

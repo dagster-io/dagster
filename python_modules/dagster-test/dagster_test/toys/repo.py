@@ -154,6 +154,13 @@ def partitioned_assets_repository():
 
 
 @repository
+def table_metadata_repository():
+    from . import table_metadata
+
+    return load_assets_from_modules([table_metadata])
+
+
+@repository
 def long_asset_keys_repository():
     return [long_asset_keys_group]
 
