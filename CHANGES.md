@@ -31,11 +31,11 @@
   ```python
   class MyResource(ConfigurableResource):
       pass
-  
+
   @op
   def my_op(x: int, y: int, my_resource: MyResource) -> int:
       return x + y
-  
+
   my_op(4, 5, my_resource=MyResource())
   ```
 
@@ -48,7 +48,7 @@
 
 ### Community Contributions
 
-- Typos fixed in `[CHANGES.md](http://CHANGES.md)` (thanks [@fridiculous](https://github.com/fridiculous))
+- Typos fixed in [CHANGES.md](http://CHANGES.md) (thanks [@fridiculous](https://github.com/fridiculous))
 - Links to telemetry docs fixed (thanks [@Abbe98](https://github.com/Abbe98))
 - `--path-prefix` can now be supplied via Helm chart (thanks [@mpicard](https://github.com/mpicard))
 
