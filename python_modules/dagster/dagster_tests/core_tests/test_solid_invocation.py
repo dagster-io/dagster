@@ -15,12 +15,15 @@ from dagster import (
     Failure,
     Field,
     In,
+    MultiPartitionsDefinition,
     Noneable,
     Nothing,
     Out,
     Output,
     RetryRequested,
     Selector,
+    StaticPartitionsDefinition,
+    TimeWindow,
     asset,
     build_op_context,
     op,
@@ -1209,3 +1212,48 @@ def test_partitions_time_window_asset_invocation():
         partition_key="2023-02-02",
     )
     partitioned_asset(context)
+
+
+def test_multipartitioned_time_window_asset_invocation():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context):
+        time_window = TimeWindow(
+            start=pendulum.instance(
+                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+            ),
+            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+        )
+        assert context.asset_partitions_time_window_for_output() == time_window
+        return 1
+
+    context = build_op_context(
+        partition_key="2020-01-01|a",
+    )
+    my_asset(context)
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "static2": StaticPartitionsDefinition(["a", "b"]),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def static_multipartitioned_asset(context):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="with a single time dimension",
+        ):
+            context.asset_partitions_time_window_for_output()
+
+    context = build_op_context(
+        partition_key="a|a",
+    )
+    static_multipartitioned_asset(context)

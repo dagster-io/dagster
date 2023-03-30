@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -14,7 +14,10 @@ from .schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
 )
-from .time_window_partitions import TimeWindowPartitionsDefinition
+from .time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    has_one_dimension_time_window_partitioning,
+)
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
@@ -204,24 +207,15 @@ def _get_schedule_evaluation_fn(
 def _check_valid_schedule_partitions_def(
     partitions_def: PartitionsDefinition,
 ) -> Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition]:
-    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-        return partitions_def
+    if not has_one_dimension_time_window_partitioning(partitions_def):
+        raise DagsterInvalidDefinitionError(
+            "Tried to build a partitioned schedule from an asset job, but received an invalid"
+            " partitions definition. The permitted partitions definitions are: \n1."
+            " TimeWindowPartitionsDefinition\n2. MultiPartitionsDefinition with a single"
+            " TimeWindowPartitionsDefinition dimension"
+        )
 
-    if isinstance(partitions_def, MultiPartitionsDefinition):
-        time_window_dims = [
-            dim
-            for dim in partitions_def.partitions_defs
-            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-        ]
-        if len(time_window_dims) == 1:
-            return partitions_def
-
-    raise DagsterInvalidDefinitionError(
-        "Tried to build a partitioned schedule from an asset job, but received an invalid"
-        " partitions definition. The permitted partitions definitions are: \n1."
-        " TimeWindowPartitionsDefinition\n2. MultiPartitionsDefinition with a single"
-        " TimeWindowPartitionsDefinition dimension"
-    )
+    return cast(Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def)
 
 
 schedule_from_partitions = build_schedule_from_partitioned_job

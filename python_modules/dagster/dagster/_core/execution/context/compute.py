@@ -398,7 +398,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+          MultiPartitionsDefinition with one time-partitioned dimension.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
