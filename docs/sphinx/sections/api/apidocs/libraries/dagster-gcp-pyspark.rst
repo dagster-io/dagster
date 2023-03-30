@@ -12,6 +12,10 @@ Related Guides:
 * `Using Dagster with BigQuery </integrations/bigquery>`_
 * `BigQuery I/O manager reference </integrations/bigquery/reference>`_
 
+
+.. autoconfigurable:: BigQueryPySparkIOManager
+  :annotation: IOManagerDefinition
+  
 .. autoconfigurable:: bigquery_pyspark_io_manager
   :annotation: IOManagerDefinition
 
