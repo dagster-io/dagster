@@ -68,6 +68,7 @@ pythonic_snowflake_io_manager = SnowflakePySparkIOManager(
     account=EnvVar("SNOWFLAKE_ACCOUNT"),
     user="BUILDKITE",
     password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
+    warehouse="BUILDKITE",
 )
 old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(
     {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": DATABASE}
