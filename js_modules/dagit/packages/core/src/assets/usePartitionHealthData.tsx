@@ -527,10 +527,12 @@ export function usePartitionHealthData(
 // or partition events page needs to be reloaded based on the partition counts or
 // a new run / run failure.
 //
-export const healthRefreshHintFromLiveData = (liveData: LiveDataForNode) =>
-  `${liveData.lastMaterialization?.timestamp},${
-    liveData.runWhichFailedToMaterialize?.id
-  },${JSON.stringify(liveData.partitionStats)}`;
+export const healthRefreshHintFromLiveData = (liveData: LiveDataForNode | undefined) =>
+  liveData
+    ? `${liveData.lastMaterialization?.timestamp},${
+        liveData.runWhichFailedToMaterialize?.id
+      },${JSON.stringify(liveData.partitionStats)}`
+    : `-`;
 
 const rangeStatusToState = (rangeStatus: PartitionRangeStatus) =>
   rangeStatus === PartitionRangeStatus.MATERIALIZED
