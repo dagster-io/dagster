@@ -226,7 +226,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
         ),
     )
-    temporary_gc_bucket: Optional[str] = Field(
+    temporary_gcs_bucket: Optional[str] = Field(
         None,
         description=(
             "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
