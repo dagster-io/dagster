@@ -22,7 +22,6 @@ from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
-DEFAULT_MAX_RUNTIME = 60 * 60 * 12
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
@@ -36,10 +35,7 @@ def monitor_starting_run(
     launch_time = check.not_none(
         run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
     )
-    if (
-        instance.run_launcher.supports_check_run_worker_health
-        and time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds
-    ):
+    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
             "Run timed out due to taking longer than"
             f" {instance.run_monitoring_start_timeout_seconds} seconds to start."
@@ -162,8 +158,10 @@ def check_run_timeout(
     max_time_str = run_record.dagster_run.tags.get(
         MAX_RUNTIME_TAG,
     )
+    if not max_time_str:
+        return
 
-    max_time = float(max_time_str) if max_time_str else DEFAULT_MAX_RUNTIME
+    max_time = float(max_time_str)
 
     if (
         run_record.start_time is not None
