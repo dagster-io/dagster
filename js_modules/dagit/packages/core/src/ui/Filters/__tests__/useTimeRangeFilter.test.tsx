@@ -10,6 +10,7 @@ import {
   useTimeRangeFilter,
   CustomTimeRangeFilterDialog,
   TimeRangeState,
+  ActiveFilterState,
 } from '../useTimeRangeFilter';
 
 let mockReactDates = jest.fn((_props) => <div />);
@@ -126,5 +127,112 @@ describe('CustomTimeRangeFilterDialog', () => {
       // wait for blueprint animation
       expect(closeRefMock).toHaveBeenCalled();
     });
+  });
+});
+
+describe('ActiveFilterState', () => {
+  const mockTimezone = 'UTC';
+  const {timeRanges} = calculateTimeRanges(mockTimezone);
+  const removeMock = jest.fn();
+
+  afterEach(() => {
+    removeMock.mockClear();
+  });
+
+  it('should render Today filter state', () => {
+    const {getByText} = render(
+      <ActiveFilterState
+        state={timeRanges.TODAY.range}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Today/)).toBeInTheDocument();
+  });
+
+  it('should render Yesterday filter state', () => {
+    const {getByText} = render(
+      <ActiveFilterState
+        state={timeRanges.YESTERDAY.range}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Yesterday/)).toBeInTheDocument();
+  });
+
+  it('should render Within last 7 days filter state', () => {
+    const {getByText} = render(
+      <ActiveFilterState
+        state={timeRanges.LAST_7_DAYS.range}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Last 7 days/gi)).toBeInTheDocument();
+  });
+
+  it('should render Within last 30 days filter state', () => {
+    const {getByText} = render(
+      <ActiveFilterState
+        state={timeRanges.LAST_30_DAYS.range}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Last 30 days/gi)).toBeInTheDocument();
+  });
+
+  it('should render custom filter state with lower boundary', () => {
+    const customRange = [moment().subtract(3, 'days').valueOf(), null] as TimeRangeState;
+    const {getByText} = render(
+      <ActiveFilterState
+        state={customRange}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Timestamp is after/)).toBeInTheDocument();
+  });
+
+  it('should render custom filter state with upper boundary', () => {
+    const customRange = [null, moment().subtract(1, 'days').valueOf()] as TimeRangeState;
+    const {getByText} = render(
+      <ActiveFilterState
+        state={customRange}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Timestamp is before/)).toBeInTheDocument();
+  });
+
+  it('should render custom filter state with both boundaries', () => {
+    const customRange = [
+      moment().subtract(5, 'days').valueOf(),
+      moment().subtract(2, 'days').valueOf(),
+    ] as TimeRangeState;
+    const {getByText} = render(
+      <ActiveFilterState
+        state={customRange}
+        remove={removeMock}
+        timezone={mockTimezone}
+        timeRanges={timeRanges}
+      />,
+    );
+
+    expect(getByText(/Timestamp is in range/)).toBeInTheDocument();
   });
 });
