@@ -39,7 +39,6 @@ export const TimeProvider: React.FC = (props) => {
     }),
     [timezone, hourCycle],
   );
-  moment.tz.setDefault(timezone[0]);
 
   return <TimeContext.Provider value={state}>{props.children}</TimeContext.Provider>;
 };
