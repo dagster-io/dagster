@@ -468,7 +468,7 @@ class OutputContext:
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
-          MultiPartitionsDefinition with one time-partitioned dimension.
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         if self._warn_on_step_context_use:
             warnings.warn(
