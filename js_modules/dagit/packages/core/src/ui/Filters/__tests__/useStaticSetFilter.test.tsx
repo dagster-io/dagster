@@ -66,7 +66,6 @@ describe('useStaticSetFilter', () => {
           <span
             key={r.key}
             onClick={() => {
-              console.log('onClick', r.value);
               select(filter, r.value);
             }}
           >
