@@ -453,6 +453,76 @@ def hash_name(name: str) -> str:
     return hashlib.sha256(name.encode("utf-8")).hexdigest()
 
 
+def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
+    from dagster._core.host_representation.external_data import (
+        ExternalDynamicPartitionsDefinitionData,
+        ExternalMultiPartitionsDefinitionData,
+    )
+
+    num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
+    num_schedules_in_repo = len(external_repo.get_external_schedules())
+    num_sensors_in_repo = len(external_repo.get_external_sensors())
+    external_asset_nodes = external_repo.get_external_asset_nodes()
+    num_assets_in_repo = len(external_asset_nodes)
+
+    num_partitioned_assets_in_repo = 0
+    num_multi_partitioned_assets_in_repo = 0
+    num_dynamic_partitioned_assets_in_repo = 0
+    num_assets_with_freshness_policies_in_repo = 0
+    num_source_assets_in_repo = 0
+    num_observable_source_assets_in_repo = 0
+    num_dbt_assets_in_repo = 0
+    num_assets_with_code_versions_in_repo = 0
+    for asset in external_asset_nodes:
+        if asset.partitions_def_data:
+            num_partitioned_assets_in_repo += 1
+
+            if isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData):
+                num_dynamic_partitioned_assets_in_repo += 1
+
+            if isinstance(asset.partitions_def_data, ExternalMultiPartitionsDefinitionData):
+                num_multi_partitioned_assets_in_repo += 1
+
+        if asset.freshness_policy is not None:
+            num_assets_with_freshness_policies_in_repo += 1
+
+        if asset.is_source:
+            num_source_assets_in_repo += 1
+
+            if asset.is_observable:
+                num_observable_source_assets_in_repo += 1
+
+        if asset.code_version is not None:
+            num_assets_with_code_versions_in_repo += 1
+
+        if asset.compute_kind == "dbt":
+            num_dbt_assets_in_repo += 1
+
+    num_asset_reconciliation_sensors_in_repo = sum(
+        1
+        for external_sensor in external_repo.get_external_sensors()
+        if external_sensor.name == "asset_reconciliation_sensor"
+    )
+
+    return {
+        "num_pipelines_in_repo": str(num_pipelines_in_repo),
+        "num_schedules_in_repo": str(num_schedules_in_repo),
+        "num_sensors_in_repo": str(num_sensors_in_repo),
+        "num_assets_in_repo": str(num_assets_in_repo),
+        "num_source_assets_in_repo": str(num_source_assets_in_repo),
+        "num_partitioned_assets_in_repo": str(num_partitioned_assets_in_repo),
+        "num_dynamic_partitioned_assets_in_repo": str(num_dynamic_partitioned_assets_in_repo),
+        "num_multi_partitioned_assets_in_repo": str(num_multi_partitioned_assets_in_repo),
+        "num_assets_with_freshness_policies_in_repo": str(
+            num_assets_with_freshness_policies_in_repo
+        ),
+        "num_observable_source_assets_in_repo": str(num_observable_source_assets_in_repo),
+        "num_dbt_assets_in_repo": str(num_dbt_assets_in_repo),
+        "num_assets_with_code_versions_in_repo": str(num_assets_with_code_versions_in_repo),
+        "num_asset_reconciliation_sensors_in_repo": str(num_asset_reconciliation_sensors_in_repo),
+    }
+
+
 def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
@@ -460,25 +530,11 @@ def log_external_repo_stats(
     external_pipeline: Optional["ExternalPipeline"] = None,
 ):
     from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
-    from dagster._core.host_representation.external_data import (
-        ExternalAssetNode,
-        ExternalDynamicPartitionsDefinitionData,
-    )
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-
-    def _get_num_dynamic_partitioned_assets(
-        external_asset_nodes: Sequence[ExternalAssetNode],
-    ) -> int:
-        return sum(
-            1
-            for asset in external_asset_nodes
-            if asset.partitions_def_data
-            and isinstance(asset.partitions_def_data, ExternalDynamicPartitionsDefinitionData)
-        )
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
@@ -486,14 +542,6 @@ def log_external_repo_stats(
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
         location_name_hash = hash_name(external_repo.handle.location_name)
-        num_pipelines_in_repo = len(external_repo.get_all_external_jobs())
-        num_schedules_in_repo = len(external_repo.get_external_schedules())
-        num_sensors_in_repo = len(external_repo.get_external_sensors())
-        external_asset_nodes = external_repo.get_external_asset_nodes()
-        num_assets_in_repo = len(external_asset_nodes)
-        num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(
-            external_asset_nodes
-        )
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -502,17 +550,11 @@ def log_external_repo_stats(
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata={
+                    **get_stats_from_external_repo(external_repo),
                     "source": source,
                     "pipeline_name_hash": pipeline_name_hash,
-                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
-                    "num_schedules_in_repo": str(num_schedules_in_repo),
-                    "num_sensors_in_repo": str(num_sensors_in_repo),
-                    "num_assets_in_repo": str(num_assets_in_repo),
                     "repo_hash": repo_hash,
                     "location_name_hash": location_name_hash,
-                    "num_dynamic_partitioned_assets_in_repo": str(
-                        num_dynamic_partitioned_assets_in_repo
-                    ),
                 },
             )._asdict()
         )
