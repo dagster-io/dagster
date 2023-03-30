@@ -52,7 +52,7 @@ class OutputContext:
     `OutputContext` for testing an IO Manager's `handle_output` method, use
     :py:func:`dagster.build_output_context`.
 
-    Attributes:
+    Parameters:
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
         run_id (Optional[str]): The id of the run that produced the output.
@@ -184,6 +184,9 @@ class OutputContext:
     @public
     @property
     def step_key(self) -> str:
+        """
+        str: The key of the step that produced this output.
+        """
         if self._step_key is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_key, "
@@ -195,6 +198,9 @@ class OutputContext:
     @public
     @property
     def name(self) -> str:
+        """
+        str: The name of the output.
+        """
         if self._name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access name, "
@@ -216,6 +222,9 @@ class OutputContext:
     @public
     @property
     def run_id(self) -> str:
+        """
+        str: The run id of the run that produced this output.
+        """
         if self._run_id is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access run_id, "
@@ -227,21 +236,33 @@ class OutputContext:
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
+        """
+        Optional[ArbitraryMetadataMapping]: The metadata associated with this output.
+        """
         return self._metadata
 
     @public
     @property
     def mapping_key(self) -> Optional[str]:
+        """
+        Optional[str]: The mapping key associated with this output.
+        """
         return self._mapping_key
 
     @public
     @property
     def config(self) -> Any:
+        """
+        Any: The config associated with this output.
+        """
         return self._config
 
     @public
     @property
     def op_def(self) -> "OpDefinition":
+        """
+        OpDefinition: The definition of the op which produced this output.
+        """
         from dagster._core.definitions import OpDefinition
 
         if self._op_def is None:
@@ -255,6 +276,9 @@ class OutputContext:
     @public
     @property
     def dagster_type(self) -> "DagsterType":
+        """
+        DagsterType: The type of the output value.
+        """
         if self._dagster_type is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access dagster_type, "
@@ -266,6 +290,9 @@ class OutputContext:
     @public
     @property
     def log(self) -> "DagsterLogManager":
+        """
+        DagsterLogManager: A handle to a log manager that can be used to log events.
+        """
         if self._log is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access log, "
@@ -277,16 +304,25 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
+        """
+        Optional[str]: The version of the output.
+        """
         return self._version
 
     @public
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
+        """
+        Optional[Mapping[str, object]]: The resource config associated with the output manager that is handling this output.
+        """
         return self._resource_config
 
     @public
     @property
     def resources(self) -> Any:
+        """
+        Any: The resources available to the output manager that is handling this output.
+        """
         if self._resources is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access resources, "
@@ -308,11 +344,13 @@ class OutputContext:
     @public
     @property
     def has_asset_key(self) -> bool:
+        """bool: Whether this output has an asset key."""
         return self._asset_info is not None
 
     @public
     @property
     def asset_key(self) -> AssetKey:
+        """AssetKey: The asset key corresponding to this output."""
         if self._asset_info is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, "
@@ -324,7 +362,7 @@ class OutputContext:
     @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
-        """The PartitionsDefinition on the asset corresponding to this output."""
+        """PartitionsDefinition: The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
         result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
@@ -356,7 +394,7 @@ class OutputContext:
     @public
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run."""
+        """bool: Whether the current run is a partitioned run."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_partition_key"
@@ -370,7 +408,7 @@ class OutputContext:
     @public
     @property
     def partition_key(self) -> str:
-        """The partition key for the current run.
+        """str: The partition key for the current run.
 
         Raises an error if the current run is not a partitioned run.
         """
@@ -392,6 +430,7 @@ class OutputContext:
     @public
     @property
     def has_asset_partitions(self) -> bool:
+        """bool: Whether the output asset has partitions."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_asset_partitions"
@@ -408,7 +447,7 @@ class OutputContext:
     @public
     @property
     def asset_partition_key(self) -> str:
-        """The partition key for output asset.
+        """str: The partition key for output asset.
 
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
@@ -426,7 +465,7 @@ class OutputContext:
     @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
-        """The partition key range for output asset.
+        """PartitionKeyRange: The partition key range for output asset.
 
         Raises an error if the output asset has no partitioning.
         """
@@ -443,7 +482,7 @@ class OutputContext:
     @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
-        """The partition keys for the output asset.
+        """Sequence[str]: The partition keys for the output asset.
 
         Raises an error if the output asset has no partitioning.
         """
@@ -463,7 +502,7 @@ class OutputContext:
     @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
-        """The time window for the partitions of the output asset.
+        """TimeWindow: The time window for the partitions of the output asset.
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
@@ -571,6 +610,11 @@ class OutputContext:
 
     @public
     def get_asset_identifier(self) -> Sequence[str]:
+        """
+        Sequence[str]: A list of identifiers that uniquely identify the asset corresponding to the output.
+
+        If the asset is partitioned, the partition key is included in the identifier list.
+        """
         if self.asset_key is not None:
             if self.has_asset_partitions:
                 return [*self.asset_key.path, self.asset_partition_key]
