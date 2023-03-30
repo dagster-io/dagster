@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -285,36 +286,54 @@ def find_parent_materialized_asset_partitions(
         if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
             result_latest_storage_id = latest_record.storage_id
 
-        # for partitioned assets, we'll want a count of all asset partitions that have been
+        # for partitioned assets, we'll want the set of all asset partitions that have been
         # materialized since the latest_storage_id, not just the most recent
-        if asset_graph.is_partitioned(asset_key):
-            for partition_key in instance_queryer.get_materialized_partitions(
-                asset_key, after_cursor=latest_storage_id
-            ):
-                for child in asset_graph.get_children_partitions(
-                    instance_queryer,
-                    asset_key,
-                    partition_key,
-                ):
-                    # we need to see if the child was materialized in the same run, but this is
-                    # expensive, so we try to avoid doing so in as many situations as possible
-                    if child.asset_key not in target_asset_keys:
-                        continue
-                    elif not can_reconcile_fn(child):
-                        continue
-                    elif partition_key != child.partition_key:
-                        result_asset_partitions.add(child)
-                    else:
-                        latest_partition_record = check.not_none(
-                            instance_queryer.get_latest_materialization_record(
-                                AssetKeyPartitionKey(asset_key, partition_key),
-                                after_cursor=latest_storage_id,
-                            )
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if partitions_def is not None:
+            partitions_subset = partitions_def.empty_subset().with_partition_keys(
+                instance_queryer.get_materialized_partitions(
+                    asset_key, after_cursor=latest_storage_id
+                )
+            )
+            for child in asset_graph.get_children(asset_key):
+                child_partitions_def = asset_graph.get_partitions_def(child)
+                if child not in target_asset_keys:
+                    continue
+                elif not child_partitions_def:
+                    result_asset_partitions.add(AssetKeyPartitionKey(child, None))
+                else:
+                    # we are mapping from the partitions of the parent asset to the partitions of
+                    # the child asset
+                    partition_mapping = asset_graph.get_partition_mapping(child, asset_key)
+                    child_partitions_subset = (
+                        partition_mapping.get_downstream_partitions_for_partitions(
+                            partitions_subset,
+                            downstream_partitions_def=child_partitions_def,
+                            dynamic_partitions_store=instance_queryer,
                         )
-                        if not instance_queryer.is_asset_planned_for_run(
-                            latest_partition_record.run_id, child
+                    )
+                    for child_partition in child_partitions_subset.get_partition_keys():
+                        # we need to see if the child was materialized in the same run, but this is
+                        # expensive, so we try to avoid doing so in as many situations as possible
+                        child_asset_partition = AssetKeyPartitionKey(child, child_partition)
+                        if not can_reconcile_fn(child_asset_partition):
+                            continue
+                        # cannot materialize in the same run if different partitions defs
+                        elif child_partitions_def != partitions_def or not isinstance(
+                            partition_mapping, IdentityPartitionMapping
                         ):
-                            result_asset_partitions.add(child)
+                            result_asset_partitions.add(child_asset_partition)
+                        else:
+                            latest_partition_record = check.not_none(
+                                instance_queryer.get_latest_materialization_record(
+                                    AssetKeyPartitionKey(asset_key, child_partition),
+                                    after_cursor=latest_storage_id,
+                                )
+                            )
+                            if not instance_queryer.is_asset_planned_for_run(
+                                latest_partition_record.run_id, child
+                            ):
+                                result_asset_partitions.add(child_asset_partition)
 
     return (result_asset_partitions, result_latest_storage_id)
 
