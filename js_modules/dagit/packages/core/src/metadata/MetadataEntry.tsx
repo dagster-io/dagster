@@ -171,7 +171,13 @@ export const MetadataEntry: React.FC<{
         </MetadataEntryLink>
       );
     case 'TableMetadataEntry':
-      return null;
+      console.log(entry);
+      return (
+        <Box>
+          <TableSchema schema={entry.table.schema} />
+        </Box>
+      );
+
     case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
     case 'NotebookMetadataEntry':
