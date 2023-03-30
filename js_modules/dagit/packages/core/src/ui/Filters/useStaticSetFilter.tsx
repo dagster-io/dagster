@@ -1,6 +1,7 @@
 import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui';
 import React from 'react';
 
+import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -16,9 +17,10 @@ type Args<TValue> = {
   getStringValue: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
   initialState?: Set<TValue> | TValue[];
+  onStateChanged?: (state: Set<TValue>) => void;
 };
 
-type StaticSetFilter<TValue> = FilterObject<Set<TValue>>;
+export type StaticSetFilter<TValue> = FilterObject<Set<TValue>>;
 
 export function useStaticSetFilter<TValue>({
   name,
@@ -27,60 +29,78 @@ export function useStaticSetFilter<TValue>({
   renderLabel,
   initialState,
   getStringValue,
+  onStateChanged,
 }: Args<TValue>): StaticSetFilter<TValue> {
   const [state, setState] = React.useState(new Set(initialState || []));
 
-  const filterObj: StaticSetFilter<TValue> = {
-    name,
-    icon,
-    state,
-    setState,
-    isActive: state.size > 0,
-    getResults: (query) => {
-      if (query === '') {
-        return allValues.map(({value}) => ({
-          label: (
-            <SetFilterLabel value={value} renderLabel={renderLabel} filter={filterObjRef.current} />
-          ),
-          key: getStringValue(value),
-          value,
-        }));
-      }
-      return allValues
-        .filter(({match}) =>
-          match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
-        )
-        .map(({value}) => ({
-          label: (
-            <SetFilterLabel value={value} renderLabel={renderLabel} filter={filterObjRef.current} />
-          ),
-          key: getStringValue(value),
-          value,
-        }));
-    },
-    onSelect: ({value}) => {
-      const newState = new Set(filterObjRef.current.state);
-      if (newState.has(value)) {
-        newState.delete(value);
-      } else {
-        newState.add(value);
-      }
-      setState(newState);
-    },
+  React.useEffect(() => {
+    onStateChanged?.(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
-    activeJSX: (
-      <SetFilterActiveState
-        name={name}
-        state={state}
-        getStringValue={getStringValue}
-        renderLabel={renderLabel}
-        onRemove={() => {
-          setState(new Set());
-        }}
-        icon={icon}
-      />
-    ),
-  };
+  const filterObj: StaticSetFilter<TValue> = React.useMemo(
+    () => ({
+      name,
+      icon,
+      state,
+      setState,
+      isActive: state.size > 0,
+      getResults: (query) => {
+        if (query === '') {
+          return allValues.map(({value}) => ({
+            label: (
+              <SetFilterLabel
+                value={value}
+                renderLabel={renderLabel}
+                filter={filterObjRef.current}
+              />
+            ),
+            key: getStringValue(value),
+            value,
+          }));
+        }
+        return allValues
+          .filter(({match}) =>
+            match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
+          )
+          .map(({value}) => ({
+            label: (
+              <SetFilterLabel
+                value={value}
+                renderLabel={renderLabel}
+                filter={filterObjRef.current}
+              />
+            ),
+            key: getStringValue(value),
+            value,
+          }));
+      },
+      onSelect: ({value}) => {
+        const newState = new Set(filterObjRef.current.state);
+        if (newState.has(value)) {
+          newState.delete(value);
+        } else {
+          newState.add(value);
+        }
+        setState(newState);
+      },
+
+      activeJSX: (
+        <SetFilterActiveState
+          name={name}
+          state={state}
+          getStringValue={getStringValue}
+          renderLabel={renderLabel}
+          onRemove={() => {
+            setState(new Set());
+          }}
+          icon={icon}
+        />
+      ),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [name, icon, state, getStringValue, renderLabel, allValues],
+  );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
 }

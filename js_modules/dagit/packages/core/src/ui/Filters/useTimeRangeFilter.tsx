@@ -56,9 +56,24 @@ type Args = {
   icon: IconName;
   timezone: string;
   initialState?: TimeRangeState;
+  onStateChanged?: (state: TimeRangeState) => void;
 };
-export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): TimeRangeFilter {
+export function useTimeRangeFilter({
+  name,
+  icon,
+  timezone,
+  initialState,
+  onStateChanged,
+}: Args): TimeRangeFilter {
   const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
+  React.useEffect(() => {
+    onStateChanged?.(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state[0], state[1]]);
+
+  React.useEffect(() => {
+    setState(initialState || [null, null]);
+  }, [initialState]);
 
   const {timeRanges, timeRangesArray} = React.useMemo(() => calculateTimeRanges(timezone), [
     timezone,
@@ -71,56 +86,62 @@ export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): 
     setState([null, null]);
   };
 
-  const filterObj = {
-    name,
-    icon,
-    state,
-    setState,
-    isActive: !isEqual(state, initialState),
-    getResults: React.useCallback((query: string): {
-      label: JSX.Element;
-      key: string;
-      value: TimeRangeKey;
-    }[] => {
-      return timeRangesArray
-        .filter(({label}) => query === '' || label.toLowerCase().includes(query.toLowerCase()))
-        .map(({label, key}) => ({
-          label: <TimeRangeResult range={label} />,
-          key,
-          value: key,
-        }));
-    }, []),
-    onSelect: ({
-      value,
-      close,
-      createPortal,
-    }: {
-      value: TimeRangeKey;
-      close: () => void;
-      createPortal: (element: JSX.Element) => () => void;
-    }) => {
-      if (value === 'CUSTOM') {
-        const closeRef = {
-          current: () => {},
-        };
-        closeRef.current = createPortal(
-          <CustomTimeRangeFilterDialog filter={filterObjRef.current} closeRef={closeRef} />,
-        );
-      } else {
-        const nextState = timeRanges[value].range;
-        setState(nextState);
-      }
-      close();
-    },
-    activeJSX: (
-      <ActiveFilterState
-        timeRanges={timeRanges}
-        state={state}
-        timezone={timezone}
-        remove={onReset}
-      />
-    ),
-  };
+  const filterObj = React.useMemo(
+    () => ({
+      name,
+      icon,
+      state,
+      setState,
+      isActive: state[0] !== null || state[1] !== null,
+      getResults: (
+        query: string,
+      ): {
+        label: JSX.Element;
+        key: string;
+        value: TimeRangeKey;
+      }[] => {
+        return timeRangesArray
+          .filter(({label}) => query === '' || label.toLowerCase().includes(query.toLowerCase()))
+          .map(({label, key}) => ({
+            label: <TimeRangeResult range={label} />,
+            key,
+            value: key,
+          }));
+      },
+      onSelect: ({
+        value,
+        close,
+        createPortal,
+      }: {
+        value: TimeRangeKey;
+        close: () => void;
+        createPortal: (element: JSX.Element) => () => void;
+      }) => {
+        if (value === 'CUSTOM') {
+          const closeRef = {
+            current: () => {},
+          };
+          closeRef.current = createPortal(
+            <CustomTimeRangeFilterDialog filter={filterObjRef.current} closeRef={closeRef} />,
+          );
+        } else {
+          const nextState = timeRanges[value].range;
+          setState(nextState);
+        }
+        close();
+      },
+      activeJSX: (
+        <ActiveFilterState
+          timeRanges={timeRanges}
+          state={state}
+          timezone={timezone}
+          remove={onReset}
+        />
+      ),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [name, icon, state, timeRanges, timezone, timeRangesArray],
+  );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
 }
@@ -151,7 +172,8 @@ export function ActiveFilterState({
         year: 'numeric',
         month: 'numeric',
         day: 'numeric',
-        timeZone: timezone === 'Automatic' ? undefined : timezone,
+        timeZone:
+          timezone === 'Automatic' ? Intl.DateTimeFormat().resolvedOptions().timeZone : timezone,
       }),
     [timezone],
   );
