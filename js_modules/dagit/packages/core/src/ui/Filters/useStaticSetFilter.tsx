@@ -37,6 +37,12 @@ export function useStaticSetFilter<TValue>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
+  console.log({initialState});
+  React.useEffect(() => {
+    console.log('effect');
+    setState(initialState ? new Set(initialState) : new Set());
+  }, [initialState]);
+
   const filterObj: StaticSetFilter<TValue> = React.useMemo(
     () => ({
       name,
