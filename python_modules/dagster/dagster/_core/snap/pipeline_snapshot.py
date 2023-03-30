@@ -75,15 +75,16 @@ class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
     #     deserialization errors.
     def before_unpack(
         self,
-        **packed: Any,
+        context,
+        storage_dict: Any,
     ) -> Dict[str, Any]:
-        if packed.get("graph_def_name") is None:
-            packed["graph_def_name"] = packed["name"]
-        if packed.get("metadata") is None:
-            packed["metadata"] = {}
-        if packed.get("lineage_snapshot") is None:
-            packed["lineage_snapshot"] = None
-        return packed
+        if storage_dict.get("graph_def_name") is None:
+            storage_dict["graph_def_name"] = storage_dict["name"]
+        if storage_dict.get("metadata") is None:
+            storage_dict["metadata"] = []
+        if storage_dict.get("lineage_snapshot") is None:
+            storage_dict["lineage_snapshot"] = None
+        return storage_dict
 
 
 # Note that unlike other serdes-whitelisted objects that hold metadata, the field here has always

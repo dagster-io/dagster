@@ -23,8 +23,11 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
+    BottomUpUnpackContext,
     FieldSerializer,
     PackableValue,
+    RecursiveDescentContext,
+    UnpackContext,
     WhitelistMap,
     pack_value,
     unpack_value,
@@ -945,7 +948,7 @@ class MetadataFieldSerializer(FieldSerializer):
         self,
         metadata_dict: Mapping[str, MetadataValue],
         whitelist_map: WhitelistMap,
-        descent_path: str,
+        context: RecursiveDescentContext,
     ) -> Sequence[Mapping[str, Any]]:
         return [
             {
@@ -953,7 +956,7 @@ class MetadataFieldSerializer(FieldSerializer):
                 "label": k,
                 # MetadataValue itself can't inherit from NamedTuple and so isn't a PackableValue,
                 # but one of its subclasses will always be returned here.
-                "entry_data": pack_value(v, whitelist_map, descent_path),  # type: ignore
+                "entry_data": pack_value(v, whitelist_map, context),  # type: ignore
                 "description": None,
             }
             for k, v in metadata_dict.items()
@@ -961,21 +964,28 @@ class MetadataFieldSerializer(FieldSerializer):
 
     def unpack(
         self,
-        metadata_entries: List[Mapping[str, Any]],
+        metadata_entries: Union[List[Mapping[str, Any]], List["MetadataEntry"]],
         whitelist_map: WhitelistMap,
-        descent_path: str,
+        context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
-        return {
-            e["label"]: unpack_value(
-                e["entry_data"],
-                # MetadataValue itself can't inherit from NamedTuple and so isn't a PackableValue,
-                # but one of its subclasses will always be returned here.
-                as_type=MetadataValue,  # type: ignore
-                whitelist_map=whitelist_map,
-                descent_path=descent_path,
-            )
-            for e in metadata_entries
-        }
+        if isinstance(context, RecursiveDescentContext):
+            metadata_entries = cast(List[Mapping[str, Any]], metadata_entries)
+            return {
+                e["label"]: unpack_value(
+                    e["entry_data"],
+                    # MetadataValue itself can't inherit from NamedTuple and so isn't a PackableValue,
+                    # but one of its subclasses will always be returned here.
+                    as_type=MetadataValue,  # type: ignore
+                    whitelist_map=whitelist_map,
+                    context=context,
+                )
+                for e in metadata_entries
+            }
+        elif isinstance(context, BottomUpUnpackContext):
+            metadata_entries = cast(List[MetadataEntry], metadata_entries)
+            return {e.label: e.entry_data for e in metadata_entries}
+        else:
+            check.failed(f"unexpected serdes context {context}")
 
 
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)

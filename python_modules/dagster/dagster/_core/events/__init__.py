@@ -47,6 +47,7 @@ from dagster._serdes import (
     NamedTupleSerializer,
     whitelist_for_serdes,
 )
+from dagster._serdes.serdes import UnpackContext
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -314,7 +315,7 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
 
 
 class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
-    def before_unpack(self, **storage_dict: Any) -> Dict[str, Any]:
+    def before_unpack(self, context, storage_dict: Any) -> Dict[str, Any]:
         event_type_value, event_specific_data = _handle_back_compat(
             storage_dict["event_type_value"], storage_dict.get("event_specific_data")
         )
@@ -323,7 +324,12 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
 
         return storage_dict
 
-    def handle_unpack_error(self, exc: Exception, **storage_dict: Any) -> "DagsterEvent":
+    def handle_unpack_error(
+        self,
+        exc: Exception,
+        context: UnpackContext,
+        storage_dict: Dict[str, Any],
+    ) -> "DagsterEvent":
         event_type_value, _ = _handle_back_compat(
             storage_dict["event_type_value"], storage_dict.get("event_specific_data")
         )
@@ -1733,7 +1739,8 @@ class ComputeLogsCaptureData(
 
 
 def _handle_back_compat(
-    event_type_value: str, event_specific_data: Optional[Dict[str, Any]]
+    event_type_value: str,
+    event_specific_data: Optional[Dict[str, Any]],
 ) -> Tuple[str, Optional[Dict[str, Any]]]:
     # transform old specific process events in to engine events
     if event_type_value in [

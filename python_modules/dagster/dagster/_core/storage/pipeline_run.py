@@ -23,7 +23,7 @@ from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
-    copy_packed_set,
+    unpack_value,
     whitelist_for_serdes,
 )
 
@@ -152,63 +152,72 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # * renamed environment_dict -> run_config
     # * added asset_selection
     # * added has_repository_load_data
-    def before_unpack(self, **unpacked: Any) -> Dict[str, Any]:
+    def before_unpack(self, context, storage_dict: Dict[str, Any]) -> Dict[str, Any]:
         # back compat for environment dict => run_config
-        if "environment_dict" in unpacked:
+        if "environment_dict" in storage_dict:
             check.invariant(
-                unpacked.get("run_config") is None,
+                storage_dict.get("run_config") is None,
                 "Cannot set both run_config and environment_dict. Use run_config parameter.",
             )
-            unpacked["run_config"] = unpacked["environment_dict"]
-            del unpacked["environment_dict"]
+            storage_dict["run_config"] = storage_dict["environment_dict"]
+            del storage_dict["environment_dict"]
 
         # back compat for previous_run_id => parent_run_id, root_run_id
-        if "previous_run_id" in unpacked and not (
-            "parent_run_id" in unpacked and "root_run_id" in unpacked
+        if "previous_run_id" in storage_dict and not (
+            "parent_run_id" in storage_dict and "root_run_id" in storage_dict
         ):
-            unpacked["parent_run_id"] = unpacked["previous_run_id"]
-            unpacked["root_run_id"] = unpacked["previous_run_id"]
-            del unpacked["previous_run_id"]
+            storage_dict["parent_run_id"] = storage_dict["previous_run_id"]
+            storage_dict["root_run_id"] = storage_dict["previous_run_id"]
+            del storage_dict["previous_run_id"]
 
         # back compat for selector => pipeline_name, solids_to_execute
-        if "selector" in unpacked:
-            selector = unpacked["selector"]
+        if "selector" in storage_dict:
+            selector = storage_dict["selector"]
 
-            pipeline_name = unpacked.get("pipeline_name")
+            # bottom-up
+            if isinstance(selector, ExecutionSelector):
+                selector_name: Optional[str] = selector.name
+                selector_subset: Optional[Sequence[str]] = selector.solid_subset
+            # recursive descent
+            else:
+                selector_name = selector.get("name")
+                selector_subset = selector.get("solid_subset")
+
+            pipeline_name = storage_dict.get("pipeline_name")
             check.invariant(
-                pipeline_name is None or selector.get("name") == pipeline_name,
+                pipeline_name is None or selector_name == pipeline_name,
                 (
                     f"Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
-                    f"selector was passed with pipeline {selector.get('name')}"
+                    f"selector was passed with pipeline {selector_name}"
                 ),
             )
             if pipeline_name is None:
-                unpacked["pipeline_name"] = selector.get("name")
+                storage_dict["pipeline_name"] = selector_name
 
-            solids_to_execute = unpacked.get("solids_to_execute")
+            solids_to_execute = storage_dict.get("solids_to_execute")
             check.invariant(
-                solids_to_execute is None or set(selector.get("solid_subset")) == solids_to_execute,
+                solids_to_execute is None
+                or (selector_subset and set(selector_subset) == solids_to_execute),
                 (
                     f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
-                    f" PipelineRun: selector was passed with subset {selector.get('solid_subset')}"
+                    f" PipelineRun: selector was passed with subset {selector_subset}"
                 ),
             )
             # for old runs that only have selector but no solids_to_execute
             if solids_to_execute is None:
-                solids_to_execute = (
-                    copy_packed_set(selector["solid_subset"], "__frozenset__")
-                    if selector.get("solid_subset")
-                    else None
-                )
+                solids_to_execute = frozenset(selector_subset) if selector_subset else None
 
         # back compat for solid_subset => solids_to_execute
-        if "solid_subset" in unpacked:
-            unpacked["solids_to_execute"] = copy_packed_set(
-                unpacked["solid_subset"], "__frozenset__"
-            )
-            del unpacked["solid_subset"]
+        if "solid_subset" in storage_dict:
+            stored_solid_subset = storage_dict["solids_to_execute"]
+            if isinstance(stored_solid_subset, (set, frozenset)):
+                val = stored_solid_subset
+            else:
+                val = frozenset(unpack_value(stored_solid_subset, as_type=(set, frozenset)))
+            storage_dict["solids_to_execute"] = val
+            del storage_dict["solid_subset"]
 
-        return unpacked
+        return storage_dict
 
 
 @whitelist_for_serdes(
@@ -431,12 +440,13 @@ class DagsterRun(
 class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
     def before_unpack(
         self,
-        **unpacked_dict: Any,
+        context,
+        storage_dict: Dict[str, Any],
     ) -> Dict[str, Any]:
         # We store empty run ids as [] but only accept None
-        if "run_ids" in unpacked_dict and unpacked_dict["run_ids"] == []:
-            unpacked_dict["run_ids"] = None
-        return unpacked_dict
+        if "run_ids" in storage_dict and storage_dict["run_ids"] == []:
+            storage_dict["run_ids"] = None
+        return storage_dict
 
 
 @whitelist_for_serdes(

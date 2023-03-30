@@ -11,10 +11,13 @@ from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
+    UnpackContext,
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,
+    pack_value,
     serialize_value,
+    unpack_value,
 )
 from dagster._serdes.utils import hash_str
 
@@ -56,9 +59,21 @@ def test_descent_path():
         buzz: int
 
     # Arg is not actually a namedtuple but the function still works on it
-    ser = serialize_value({"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map)
+    val = {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}
+    packed = pack_value(val, whitelist_map=test_map)
+    ser = serialize_value(val, whitelist_map=test_map)
 
-    with pytest.raises(DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
+    with pytest.raises(
+        DeserializationError,
+        match=re.escape("Descent path: <root:dict>.a.b[2].c"),
+    ):
+        unpack_value(packed, whitelist_map=blank_map)
+
+    # when parsing from serialized - we unpack objects bottom-up in instead of
+    # recursively so we do not have a descent path
+    with pytest.raises(
+        DeserializationError,
+    ):
         deserialize_value(ser, whitelist_map=blank_map)
 
 
@@ -197,9 +212,9 @@ def test_forward_compat():
     # Separate scope since we redefine Quux
     def register_orig() -> Any:
         @_whitelist_for_serdes(whitelist_map=old_map)
-        class Quux(namedtuple("_Quux", "bar baz")):
-            def __new__(cls, bar, baz):
-                return super().__new__(cls, bar, baz)
+        class Quux(NamedTuple):
+            bar: str
+            baz: str
 
         return Quux
 
@@ -209,21 +224,33 @@ def test_forward_compat():
     new_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=new_map)
-    class Quux(namedtuple("_Quux", "foo bar baz")):
-        def __new__(cls, foo, bar, baz):
-            return super().__new__(cls, foo, bar, baz)
+    class Quux(NamedTuple):
+        foo: "Foo"
+        bar: str
+        baz: str
+        buried: dict
 
     @_whitelist_for_serdes(whitelist_map=new_map)
-    class Foo(namedtuple("_Foo", "wow")):
-        def __new__(cls, wow):
-            return super().__new__(cls, wow)
+    class Foo(NamedTuple):
+        s: str
 
-    new_quux = Quux(foo=Foo("wow"), bar="bar", baz="baz")
+    new_quux = Quux(
+        foo=Foo("wow"),
+        bar="bar",
+        baz="baz",
+        buried={
+            "top": Foo("d"),
+            "list": [Foo("l"), 2, 3],
+            "set": {Foo("s"), 2, 3},
+            "frozenset": frozenset((1, 2, Foo("fs"))),
+            "deep": {"1": [{"2": {"3": [Foo("d")]}}]},
+        },
+    )
 
     # write from new
     serialized = serialize_value(new_quux, whitelist_map=new_map)
 
-    # read from old, foo ignored
+    # read from old, Foo ignored
     deserialized = deserialize_value(serialized, as_type=orig_klass, whitelist_map=old_map)
     assert deserialized.bar == "bar"
     assert deserialized.baz == "baz"
@@ -470,12 +497,18 @@ def test_named_tuple_field_serializers() -> None:
 
     class PairsSerializer(FieldSerializer):
         def pack(
-            self, entries: Mapping[str, str], whitelist_map: WhitelistMap, descent_path: str
+            self,
+            entries: Mapping[str, str],
+            whitelist_map: WhitelistMap,
+            context: UnpackContext,
         ) -> Sequence[Sequence[str]]:
             return list(entries.items())
 
         def unpack(
-            self, entries: Sequence[Sequence[str]], whitelist_map: WhitelistMap, descent_path: str
+            self,
+            entries: Sequence[Sequence[str]],
+            whitelist_map: WhitelistMap,
+            context: UnpackContext,
         ) -> Any:
             return {entry[0]: entry[1] for entry in entries}
 
@@ -556,7 +589,7 @@ def test_named_tuple_custom_serializer():
             del storage_dict["color"]
             return storage_dict
 
-        def before_unpack(self, **storage_dict: Dict[str, Any]):
+        def before_unpack(self, context, storage_dict: Dict[str, Any]):
             storage_dict["color"] = storage_dict["colour"]
             del storage_dict["colour"]
             return storage_dict
@@ -576,7 +609,7 @@ def test_named_tuple_custom_serializer_error_handling():
     test_map = WhitelistMap.create()
 
     class FooSerializer(NamedTupleSerializer):
-        def handle_unpack_error(self, exc: Exception, **storage_dict: Any) -> "Foo":
+        def handle_unpack_error(self, exc: Exception, context, storage_dict: Any) -> "Foo":
             return Foo("default")
 
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=FooSerializer)

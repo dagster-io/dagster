@@ -457,11 +457,11 @@ class AssetMaterializationSerializer(NamedTupleSerializer):
     # There are old `Materialization` objects in storage. We set the default value for asset key to
     # be `AssetKey(["__undefined__"])` to ensure that we can load these objects, without needing to
     # allow for the construction of new `AssetMaterialization` objects with no defined AssetKey.
-    def before_unpack(self, **raw_dict: Any) -> Any:
+    def before_unpack(self, context, storage_dict: Any) -> Any:
         # cover both the case where "asset_key" is not present at all and where it is None
-        if raw_dict.get("asset_key") is None:
-            raw_dict["asset_key"] = {"__class__": "AssetKey", "path": UNDEFINED_ASSET_KEY_PATH}
-        return raw_dict
+        if storage_dict.get("asset_key") is None:
+            storage_dict["asset_key"] = AssetKey(UNDEFINED_ASSET_KEY_PATH)
+        return storage_dict
 
 
 @whitelist_for_serdes(
