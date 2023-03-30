@@ -26,14 +26,15 @@ So, why use resources?
 
 ## Relevant APIs
 
-| Name                                             | Description                                                                                                                                                                                                                 |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="resource" decorator />         | The decorator used to define resources. The decorated function is called a `resource_fn`. The decorator returns a <PyObject object="ResourceDefinition" />.                                                                 |
-| <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
-| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
-| <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
-| <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
-| <PyObject object="with_resources"/>              | Function for providing resources to software-defined assets and source assets.                                                                                                                                              |
+| Name                                             | Description                                                                                                                                                                                                                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="ConfigurableResource"/>        | The base class extended to define resources. Under the hood, implements <PyObject object="ResourceDefinition" />.                                                                                                                       |
+| <PyObject object="ConfigurableResourceFactory"/> | A base class extended to define resources which pass plain Python objects to user code.                                                                                                                                                 |
+| <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should extend the <PyObject object="ConfigurableResource" /> class which implements <PyObject object="ResourceDefinition" />. |
+| <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                             |
+| <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
+| <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
+| <PyObject object="with_resources"/>              | Function for providing resources to software-defined assets and source assets.                                                                                                                                                          |
 
 ---
 
@@ -433,7 +434,9 @@ defs = Definitions(
 
 In some cases, you may want to use a bare Python object as a resource which is not a subclass of <PyObject object="ConfigurableResource"/>.
 
-For example, you may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="Resource"/>.
+#### Directly passing bare Python objects
+
+You may want to directly pass a third-party API client into your assets or ops. This follows a similar pattern to using a <PyObject object="ConfigurableResource"/> subclass, however assets and ops which use these resources must [annotate](https://docs.python.org/3/library/typing.html#typing.Annotated) them with <PyObject object="Resource"/>.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
 from dagster import Definitions, asset, ResourceParam
@@ -453,6 +456,33 @@ defs = Definitions(
 )
 ```
 
+#### Config with bare Python objects
+
+If you want to attach any config to your Python objects, such as credentials or tokens, you can use <PyObject object="ConfigurableResourceFactory"/>. Similar to a <PyObject object="ConfigurableResource"/>, any fields on the factory will be treated as config fields. The factory should implement a `create_resource` method which returns the bare Python object.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource_factory endbefore=end_raw_github_resource_factory dedent=4
+from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
+
+class GitHubResource(ConfigurableResourceFactory[GitHub]):
+    access_token: str
+
+    def create_resource(self, _context) -> GitHub:
+        return GitHub(self.access_token)
+
+@asset
+def public_github_repos(github: Resource[GitHub]):
+    return github.organization("dagster-io").repositories()
+
+defs = Definitions(
+    assets=[public_github_repos],
+    resources={
+        "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
+    },
+)
+```
+
+#### Dependencies on bare Python objects
+
 If you would like a Pythonic resource to depend on a bare Python object, you can use the <PyObject object="ResourceDependency"/> annotation to annotate the attribute in question. This indicates to Dagster that the attribute should be treated as a resource dependency.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource_dep endbefore=end_raw_github_resource_dep dedent=4
@@ -469,50 +499,5 @@ engine = create_engine(...)
 defs = Definitions(
     assets=...,
     resources={"db": DBResource(engine=engine)},
-)
-```
-
----
-
-## Implementation details
-
-### Resource input resolution
-
-Resources defined by subclassing <PyObject object="ConfigurableResource"/> can take various unresolved inputs, including `EnvVar`s instead of string values or unconfigured resources returned by `configure_at_launch()` in place of configured resources.
-
-Between construction time and runtime, the <PyObject object="ConfigurableResource"/> class resolves all of its attributes to their final values, meaning that when an attribute of a resource is accessed in the body of an asset or op, it will always be a fully resolved value.
-
-In the following example, the `FileStoreBucket` constructor will accept the still-unconfigured `unconfigured_credentials_resource`, which will be resolved once the resource is configured at runtime.
-
-```python file=/concepts/resources/pythonic_resources.py startafter=start_impl_details_resolve endbefore=end_impl_details_resolve dedent=4
-from dagster import ConfigurableResource
-
-class CredentialsResource(ConfigurableResource):
-    username: str
-    password: str
-
-class FileStoreBucket(ConfigurableResource):
-    credentials: CredentialsResource
-    region: str
-
-    def write(self, data: str):
-        # In this context, `self.credentials` is ensured to
-        # be a CredentialsResource with valid values for
-        # `username` and `password`
-
-        get_filestore_client(
-            username=self.credentials.username,
-            password=self.credentials.password,
-            region=self.region,
-        ).write(data)
-
-# unconfigured_credentials_resource is typed as PartialResource[CredentialsResource]
-unconfigured_credentials_resource = CredentialsResource.configure_at_launch()
-
-# FileStoreBucket constructor accepts either a CredentialsResource or a
-# PartialResource[CredentialsResource] for the `credentials` argument
-bucket = FileStoreBucket(
-    credentials=unconfigured_credentials_resource,
-    region="us-east-1",
 )
 ```

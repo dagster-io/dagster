@@ -555,3 +555,28 @@ def new_io_manager() -> None:
     )
 
     # end_new_io_manager
+
+
+def raw_github_resource_factory() -> None:
+    # start_raw_github_resource_factory
+
+    from dagster import ConfigurableResourceFactory, Resource, asset, EnvVar
+
+    class GitHubResource(ConfigurableResourceFactory[GitHub]):
+        access_token: str
+
+        def create_resource(self, _context) -> GitHub:
+            return GitHub(self.access_token)
+
+    @asset
+    def public_github_repos(github: Resource[GitHub]):
+        return github.organization("dagster-io").repositories()
+
+    defs = Definitions(
+        assets=[public_github_repos],
+        resources={
+            "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
+        },
+    )
+
+    # end_raw_github_resource_factory
