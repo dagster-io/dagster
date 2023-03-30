@@ -436,6 +436,7 @@ def _test_launch(
                             raise Exception("Timed out waiting for run to start")
 
                 launcher = instance.run_launcher
+                instance.report_run_canceling(run)
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)
