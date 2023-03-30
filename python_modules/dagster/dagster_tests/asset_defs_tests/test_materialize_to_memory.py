@@ -321,3 +321,21 @@ def test_raise_on_error():
         raise ValueError()
 
     assert not materialize_to_memory([asset1], raise_on_error=False).success
+
+
+def test_selection():
+    @asset
+    def upstream():
+        ...
+
+    @asset
+    def downstream(upstream):
+        ...
+
+    assets = [upstream, downstream]
+
+    result1 = materialize_to_memory(assets, selection=[upstream])
+    assert result1.success
+    materialization_events = result1.get_asset_materialization_events()
+    assert len(materialization_events) == 1
+    assert materialization_events[0].materialization.asset_key == AssetKey("upstream")
