@@ -120,4 +120,14 @@ describe('useStaticSetFilter', () => {
 
     expect(filter.result.current.state).toEqual(new Set(['cherry']));
   });
+
+  it('uses getKey to generate keys', () => {
+    const filter = renderHook(() =>
+      useStaticSetFilter({...testFilterProps, getKey: (value: string) => value.toUpperCase()}),
+    );
+    const results = filter.result.current.getResults('');
+    results.forEach((result) => {
+      expect(result.key).toEqual(result.value.toUpperCase());
+    });
+  });
 });
