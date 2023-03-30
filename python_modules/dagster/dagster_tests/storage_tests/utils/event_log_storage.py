@@ -188,8 +188,8 @@ def _stats_records(run_id):
 
 def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data=None):
     pipeline_name = "pipeline_name"
-    solid_handle = NodeHandle(solid_name, None)
-    step_handle = StepHandle(solid_handle)
+    node_handle = NodeHandle(solid_name, None)
+    step_handle = StepHandle(node_handle)
     return EventLogEntry(
         error_info=None,
         user_message="",
@@ -201,7 +201,7 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
         dagster_event=DagsterEvent(
             event_type.value,
             pipeline_name,
-            solid_handle=solid_handle,
+            node_handle=node_handle,
             step_handle=step_handle,
             event_specific_data=event_specific_data,
         ),

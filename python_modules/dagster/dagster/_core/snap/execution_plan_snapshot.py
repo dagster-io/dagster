@@ -117,7 +117,7 @@ class ExecutionPlanSnapshotErrorData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle_id": "solid_handle_id"})
 class ExecutionStepSnap(
     NamedTuple(
         "_ExecutionStepSnap",
@@ -125,7 +125,7 @@ class ExecutionStepSnap(
             ("key", str),
             ("inputs", Sequence["ExecutionStepInputSnap"]),
             ("outputs", Sequence["ExecutionStepOutputSnap"]),
-            ("solid_handle_id", str),
+            ("node_handle_id", str),
             ("kind", StepKind),
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
             ("tags", Optional[Mapping[str, str]]),
@@ -138,7 +138,7 @@ class ExecutionStepSnap(
         key: str,
         inputs: Sequence["ExecutionStepInputSnap"],
         outputs: Sequence["ExecutionStepOutputSnap"],
-        solid_handle_id: str,
+        node_handle_id: str,
         kind: StepKind,
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
         tags: Optional[Mapping[str, str]] = None,
@@ -149,7 +149,7 @@ class ExecutionStepSnap(
             key=check.str_param(key, "key"),
             inputs=check.sequence_param(inputs, "inputs", ExecutionStepInputSnap),
             outputs=check.sequence_param(outputs, "outputs", ExecutionStepOutputSnap),
-            solid_handle_id=check.str_param(solid_handle_id, "solid_handle_id"),
+            node_handle_id=check.str_param(node_handle_id, "node_handle_id"),
             kind=check.inst_param(kind, "kind", StepKind),
             metadata_items=check.sequence_param(
                 metadata_items, "metadata_items", ExecutionPlanMetadataItemSnap
@@ -193,14 +193,14 @@ class ExecutionStepInputSnap(
         return [output_handle.step_key for output_handle in self.upstream_output_handles]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
 class ExecutionStepOutputSnap(
     NamedTuple(
         "_ExecutionStepOutputSnap",
         [
             ("name", str),
             ("dagster_type_key", str),
-            ("solid_handle", Optional[NodeHandle]),
+            ("node_handle", Optional[NodeHandle]),
             ("properties", Optional[StepOutputProperties]),
         ],
     )
@@ -209,14 +209,14 @@ class ExecutionStepOutputSnap(
         cls,
         name: str,
         dagster_type_key: str,
-        solid_handle: Optional[NodeHandle] = None,
+        node_handle: Optional[NodeHandle] = None,
         properties: Optional[StepOutputProperties] = None,
     ):
         return super(ExecutionStepOutputSnap, cls).__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
-            check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
+            check.opt_inst_param(node_handle, "node_handle", NodeHandle),
             check.opt_inst_param(properties, "properties", StepOutputProperties),
         )
 
@@ -249,12 +249,12 @@ def _snapshot_from_step_input(step_input):
     )
 
 
-def _snapshot_from_step_output(step_output):
+def _snapshot_from_step_output(step_output: StepOutput) -> ExecutionStepOutputSnap:
     check.inst_param(step_output, "step_output", StepOutput)
     return ExecutionStepOutputSnap(
         name=step_output.name,
         dagster_type_key=step_output.dagster_type_key,
-        solid_handle=step_output.solid_handle,
+        node_handle=step_output.node_handle,
         properties=step_output.properties,
     )
 
@@ -275,7 +275,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
             list(map(_snapshot_from_step_output, execution_step.step_outputs)),
             key=lambda so: so.name,
         ),
-        solid_handle_id=execution_step.node_handle.to_string(),
+        node_handle_id=execution_step.node_handle.to_string(),
         kind=execution_step.kind,
         metadata_items=sorted(
             [

@@ -92,7 +92,7 @@ def test_hook_user_error():
         lambda event: event.event_type == DagsterEventType.HOOK_ERRORED
     )
     assert len(hook_errored_events) == 1
-    assert hook_errored_events[0].solid_handle.name == "a_op_with_hook"
+    assert hook_errored_events[0].node_handle.name == "a_op_with_hook"
 
 
 def test_hook_decorator_arg_error():
