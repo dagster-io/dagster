@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Mapping, Optional
+
 import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.host_representation import RepresentedPipeline
@@ -7,9 +9,17 @@ from dagster_graphql.schema.util import ResolveInfo
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
 
+if TYPE_CHECKING:
+    from ..schema.pipelines.config import (
+        GraphenePipelineConfigValidationValid,
+    )
+    from ..schema.run_config import GrapheneRunConfigSchema
+
 
 @capture_error
-def resolve_run_config_schema_or_error(graphene_info: ResolveInfo, selector, mode):
+def resolve_run_config_schema_or_error(
+    graphene_info: ResolveInfo, selector: PipelineSelector, mode: Optional[str]
+) -> "GrapheneRunConfigSchema":
     from ..schema.errors import GrapheneModeNotFoundError
     from ..schema.run_config import GrapheneRunConfigSchema
 
@@ -31,7 +41,12 @@ def resolve_run_config_schema_or_error(graphene_info: ResolveInfo, selector, mod
 
 
 @capture_error
-def resolve_is_run_config_valid(graphene_info: ResolveInfo, represented_pipeline, mode, run_config):
+def resolve_is_run_config_valid(
+    graphene_info: ResolveInfo,
+    represented_pipeline: RepresentedPipeline,
+    mode: str,
+    run_config: Mapping[str, object],
+) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationValid,

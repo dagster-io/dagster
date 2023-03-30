@@ -201,7 +201,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
 
-    def resolve_runs(self, graphene_info: ResolveInfo):
+    def resolve_runs(self, graphene_info: ResolveInfo) -> "Sequence[GrapheneRun]":
         from .pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
@@ -241,7 +241,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return partition_statuses_from_run_partition_data(
             partition_set_name,
             partition_run_data,
-            self._backfill_job.get_partition_names(graphene_info.context),
+            check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
             backfill_id=self._backfill_job.backfill_id,
         )
 
@@ -250,15 +250,16 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     ) -> Sequence["GraphenePartitionStatusCounts"]:
         partition_run_data = self._get_partition_run_data(graphene_info)
         return partition_status_counts_from_run_partition_data(
-            partition_run_data, self._backfill_job.get_partition_names(graphene_info.context)
+            partition_run_data,
+            check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
         )
 
-    def resolve_error(self, _graphene_info: ResolveInfo):
+    def resolve_error(self, _graphene_info: ResolveInfo) -> Optional[GraphenePythonError]:
         if self._backfill_job.error:
             return GraphenePythonError(self._backfill_job.error)
         return None
 
-    def resolve_hasCancelPermission(self, graphene_info: ResolveInfo):
+    def resolve_hasCancelPermission(self, graphene_info: ResolveInfo) -> bool:
         if self._backfill_job.partition_set_origin is None:
             return graphene_info.context.has_permission(Permissions.CANCEL_PARTITION_BACKFILL)
         location_name = self._backfill_job.partition_set_origin.selector.location_name
@@ -266,7 +267,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             Permissions.CANCEL_PARTITION_BACKFILL, location_name
         )
 
-    def resolve_hasResumePermission(self, graphene_info: ResolveInfo):
+    def resolve_hasResumePermission(self, graphene_info: ResolveInfo) -> bool:
         if self._backfill_job.partition_set_origin is None:
             return graphene_info.context.has_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
         location_name = self._backfill_job.partition_set_origin.selector.location_name

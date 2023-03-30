@@ -93,7 +93,7 @@ export type AssetAssetMaterializationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   partitionInLast?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
   tags?: InputMaybe<Array<InputTag>>;
 };
 
@@ -102,7 +102,7 @@ export type AssetAssetObservationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   partitionInLast?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetConnection = {
@@ -231,17 +231,17 @@ export type AssetNodeAssetMaterializationUsedDataArgs = {
 export type AssetNodeAssetMaterializationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeAssetObservationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeLatestRunForPartitionArgs = {
