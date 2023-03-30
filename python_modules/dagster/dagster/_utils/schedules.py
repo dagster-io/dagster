@@ -96,6 +96,12 @@ def cron_string_iterator(
                 check.invariant(next_date_cand.hour == curr_hour)
 
             next_date = next_date_cand
+
+            if start_offset == 0 and next_date.timestamp() < start_timestamp:
+                # Guard against edge cases where croniter get_prev() returns unexpected
+                # results that cause us to get stuck
+                continue
+
             yield next_date
     else:
         # Otherwise fall back to croniter
@@ -103,6 +109,11 @@ def cron_string_iterator(
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
             )
+
+            if start_offset == 0 and next_date.timestamp() < start_timestamp:
+                # Guard against edge cases where croniter get_prev() returns unexpected
+                # results that cause us to get stuck
+                continue
 
             yield next_date
 
@@ -169,6 +180,12 @@ def reverse_cron_string_iterator(
                 check.invariant(next_date_cand.hour == curr_hour)
 
             next_date = next_date_cand
+
+            if next_date.timestamp() > end_timestamp:
+                # Guard against edge cases where croniter get_next() returns unexpected
+                # results that cause us to get stuck
+                continue
+
             yield next_date
     else:
         # Otherwise fall back to croniter
@@ -176,6 +193,11 @@ def reverse_cron_string_iterator(
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str
             )
+
+            if next_date.timestamp() > end_timestamp:
+                # Guard against edge cases where croniter get_next() returns unexpected
+                # results that cause us to get stuck
+                continue
 
             yield next_date
 
