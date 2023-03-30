@@ -47,7 +47,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import MetadataEntry, RawMetadataValue
+from .metadata import RawMetadataValue
 from .node_container import create_execution_structure, normalize_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
@@ -563,7 +563,6 @@ class GraphDefinition(NodeDefinition):
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
 
@@ -642,7 +641,6 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
-            _metadata_entries=_metadata_entries,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self) -> "JobDefinition":

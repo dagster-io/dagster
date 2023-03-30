@@ -13,7 +13,6 @@ from dagster import (
     DynamicOutput,
     Failure,
     Field,
-    MetadataEntry,
     ResourceDefinition,
     RetryPolicy,
     RetryRequested,
@@ -484,9 +483,7 @@ def test_explicit_failure():
             )
             fd = run.result_for_node("retry_op").failure_data
             assert fd.user_failure_data.description == "some failure description"
-            assert fd.user_failure_data.metadata_entries == [
-                MetadataEntry(label="foo", value=MetadataValue.float(1.23))
-            ]
+            assert fd.user_failure_data.metadata == {"foo": MetadataValue.float(1.23)}
 
 
 def test_arbitrary_error():

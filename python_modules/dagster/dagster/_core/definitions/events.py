@@ -27,6 +27,7 @@ from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
+    MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
     RawMetadataValue,
@@ -219,7 +220,8 @@ class Output(Generic[T]):
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
         metadata_entries (Optional[MetadataEntry]):
-            (Experimental) A set of metadata entries to attach to events related to this Output.
+            (Deprecated) A set of metadata entries to attach to events related to this Output. Use
+            `metadata` instead.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -236,22 +238,19 @@ class Output(Generic[T]):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
     ):
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries,
-            "metadata_entries",
-            of_type=MetadataEntry,
-        )
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
         if data_version is not None:
             experimental_class_param_warning("data_version", "Output")
         self._data_version = check.opt_inst_param(data_version, "data_version", DataVersion)
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
+        )
 
     @property
-    def metadata_entries(self) -> Sequence[MetadataEntry]:
-        return self._metadata_entries
+    def metadata(self) -> MetadataMapping:
+        return self._metadata
 
     @public
     @property
@@ -273,7 +272,7 @@ class Output(Generic[T]):
             isinstance(other, Output)
             and self.value == other.value
             and self.output_name == other.output_name
-            and self.metadata_entries == other.metadata_entries
+            and self.metadata == other.metadata
         )
 
 
@@ -296,7 +295,8 @@ class DynamicOutput(Generic[T]):
             Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
         metadata_entries (Optional[MetadataEntry]):
-            (Experimental) A set of metadata entries to attach to events related to this output.
+            (Deprecated) A set of metadata entries to attach to events related to this Output. Use
+            `metadata` instead.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -311,18 +311,17 @@ class DynamicOutput(Generic[T]):
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
         self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
         self._output_name = check.str_param(output_name, "output_name")
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
         self._value = value
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
+        )
 
     @property
-    def metadata_entries(self) -> Sequence[MetadataEntry]:
-        return self._metadata_entries
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._metadata
 
     @public
     @property
@@ -345,18 +344,36 @@ class DynamicOutput(Generic[T]):
             and self.value == other.value
             and self.output_name == other.output_name
             and self.mapping_key == other.mapping_key
-            and self.metadata_entries == other.metadata_entries
+            and self.metadata == other.metadata
         )
 
 
-@whitelist_for_serdes
+# This is a temporary function to consolidate metadata normalization logic on event classes where
+# we've had to mangle the signature for backcompat reasons. Can be deleted when we remove
+# `metadata_entries`/`MetadataEntry`.
+def _normalize_event_metadata(
+    metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
+    metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+) -> MetadataMapping:
+    metadata_dict = metadata if isinstance(metadata, dict) else {}
+    metadata_entries = metadata if isinstance(metadata, list) else metadata_entries
+    return normalize_metadata(
+        check.opt_mapping_param(metadata_dict, "metadata_dict", key_type=str),
+        check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
+    )
+
+
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class AssetObservation(
     NamedTuple(
         "_AssetObservation",
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("partition", PublicAttr[Optional[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
@@ -366,7 +383,8 @@ class AssetObservation(
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the asset.
+        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
+            asset. Use `metadata` instead.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -381,10 +399,10 @@ class AssetObservation(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -401,18 +419,13 @@ class AssetObservation(
                 "The tags argument is reserved for system-populated tags."
             )
 
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
+        metadata = _normalize_event_metadata(metadata, metadata_entries)
 
         return super(AssetObservation, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=metadata,
             tags=tags,
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -437,7 +450,10 @@ class AssetMaterializationSerializer(NamedTupleSerializer):
 
 
 @whitelist_for_serdes(
-    old_storage_names={"Materialization"}, serializer=AssetMaterializationSerializer
+    old_storage_names={"Materialization"},
+    serializer=AssetMaterializationSerializer,
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
 )
 class AssetMaterialization(
     NamedTuple(
@@ -445,7 +461,7 @@ class AssetMaterialization(
         [
             ("asset_key", PublicAttr[AssetKey]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("partition", PublicAttr[Optional[str]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
@@ -466,8 +482,8 @@ class AssetMaterialization(
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across
             job runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary
-            metadata about the materialized value.
+        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary
+            metadata about the materialized value. Use `metadata` instead.
         partition (Optional[str]): The name of the partition
             that was materialized.
         tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
@@ -482,10 +498,10 @@ class AssetMaterialization(
         cls,
         asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
         partition: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 
@@ -505,10 +521,7 @@ class AssetMaterialization(
                 " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
+        metadata = _normalize_event_metadata(metadata, metadata_entries)
 
         partition = check.opt_str_param(partition, "partition")
 
@@ -527,7 +540,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=normalize_metadata(metadata, metadata_entries),
+            metadata=metadata,
             tags=tags,
             partition=partition,
         )
@@ -558,13 +571,11 @@ class AssetMaterialization(
             metadata={"path": MetadataValue.path(path)},
         )
 
-    @public
-    @property
-    def metadata(self) -> MetadataMapping:
-        return {entry.label: entry.value for entry in self.metadata_entries}
 
-
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class ExpectationResult(
     NamedTuple(
         "_ExpectationResult",
@@ -572,7 +583,7 @@ class ExpectationResult(
             ("success", PublicAttr[bool]),
             ("label", PublicAttr[Optional[str]]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
         ],
     )
 ):
@@ -586,8 +597,8 @@ class ExpectationResult(
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
         description (Optional[str]): A longer human-readable description of the expectation.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            expectation.
+        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
+            expectation. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -599,25 +610,24 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
+        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata = _normalize_event_metadata(metadata, metadata_entries)
 
         return super(ExpectationResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=metadata,
         )
 
 
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 @whitelist_for_serdes
 class TypeCheck(
     NamedTuple(
@@ -625,7 +635,7 @@ class TypeCheck(
         [
             ("success", PublicAttr[bool]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata_entries", PublicAttr[Sequence[MetadataEntry]]),
+            ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
         ],
     )
 ):
@@ -641,8 +651,8 @@ class TypeCheck(
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.
         description (Optional[str]): A human-readable description of the type check.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            type check.
+        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
+            type check. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -653,21 +663,16 @@ class TypeCheck(
         cls,
         success: bool,
         description: Optional[str] = None,
+        metadata: Optional[Union[Mapping[str, RawMetadataValue], Sequence[MetadataEntry]]] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata = _normalize_event_metadata(metadata, metadata_entries)
 
         return super(TypeCheck, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
-            ),
+            metadata=metadata,
         )
 
 
@@ -680,8 +685,8 @@ class Failure(Exception):
 
     Args:
         description (Optional[str]): A human-readable description of the failure.
-        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
-            failure.
+        metadata_entries (Optional[List[MetadataEntry]]): (Deprecated) Arbitrary metadata about the
+            failure. Use `metadata` instead.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -698,14 +703,12 @@ class Failure(Exception):
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         allow_retries: Optional[bool] = None,
     ):
-        metadata_entries = check.opt_sequence_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            check.opt_sequence_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
+        )
         self.allow_retries = check.opt_bool_param(allow_retries, "allow_retries", True)
 
 

@@ -1,12 +1,16 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions import (
     AssetMaterialization,
-    MetadataEntry,
     NodeHandle,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import (
+    MetadataFieldSerializer,
+    MetadataValue,
+    normalize_metadata,
+)
 from dagster._serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
@@ -98,7 +102,10 @@ class StepOutput(
         return self.properties.asset_key
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class StepOutputData(
     NamedTuple(
         "_StepOutputData",
@@ -106,7 +113,7 @@ class StepOutputData(
             ("step_output_handle", "StepOutputHandle"),
             ("type_check_data", Optional[TypeCheckData]),
             ("version", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
         ],
     )
 ):
@@ -117,7 +124,7 @@ class StepOutputData(
         step_output_handle: "StepOutputHandle",
         type_check_data: Optional[TypeCheckData] = None,
         version: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         # graveyard
         intermediate_materialization: Optional[AssetMaterialization] = None,
     ):
@@ -128,8 +135,8 @@ class StepOutputData(
             ),
             type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
             version=check.opt_str_param(version, "version"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", MetadataEntry
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
         )
 

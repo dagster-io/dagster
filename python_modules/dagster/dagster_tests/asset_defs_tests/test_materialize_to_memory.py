@@ -31,7 +31,7 @@ def test_basic_materialize_to_memory():
 
     result = materialize_to_memory([the_asset])
     assert result.success
-    assert len(result.asset_materializations_for_node("the_asset")[0].metadata_entries) == 0
+    assert len(result.asset_materializations_for_node("the_asset")[0].metadata) == 0
     assert result.asset_value(the_asset.key) == 5
 
 

@@ -5,9 +5,9 @@ from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from dagster import (
-    MetadataEntry,
     _check as check,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
@@ -84,9 +84,9 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 log_manager,
                 self.pipeline_run.pipeline_name,
                 message=f'Executing step "{self.step_key}" in subprocess.',
-                metadata_entries=[
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ],
+                metadata={
+                    "pid": MetadataValue.text(str(os.getpid())),
+                },
                 step_key=self.step_key,
             )
 
@@ -351,7 +351,7 @@ def execute_step_out_of_process(
     yield DagsterEvent.step_worker_starting(
         step_context,
         f'Launching subprocess for "{step.key}".',
-        metadata_entries=[],
+        metadata={},
     )
 
     for ret in execute_child_process_command(multiproc_ctx, command):

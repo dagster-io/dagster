@@ -105,7 +105,7 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
                 "`return` instead of `yield` in the body of your {node_type} compute function. If "
                 "you are already using `return`, and you expected to return a value of type "
                 "{type_}, you may be inadvertently returning a generator rather than the value "
-                "you expected."
+                # f"you expected. Value is {str(event[0])}"
             ).format(
                 described_node=step_context.describe_op(),
                 type_=type(event),

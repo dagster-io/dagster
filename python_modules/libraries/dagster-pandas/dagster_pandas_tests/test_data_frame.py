@@ -7,7 +7,6 @@ from dagster import (
     DynamicOutput,
     Field,
     In,
-    MetadataEntry,
     Out,
     Output,
     Selector,
@@ -17,6 +16,7 @@ from dagster import (
     job,
     op,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils import safe_tempfile_path
 from dagster_pandas.constraints import (
     ColumnDTypeInSetConstraint,
@@ -64,11 +64,9 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
     assert result.success
     for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
-            mock_df_output_event_metadata = (
-                event.event_specific_data.type_check_data.metadata_entries
-            )
+            mock_df_output_event_metadata = event.event_specific_data.type_check_data.metadata
             assert len(mock_df_output_event_metadata) == 1
-            assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
+            assert "max_pid" in mock_df_output_event_metadata
 
 
 def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
@@ -138,14 +136,13 @@ def test_dataframe_description_generation_multi_constraints():
 def test_execute_summary_stats_null_function():
     assert _execute_summary_stats("foo", DataFrame(), None) == []
 
-    metadata_entries = _execute_summary_stats(
+    metadata = _execute_summary_stats(
         "foo",
         DataFrame({"bar": [1, 2, 3]}),
-        lambda value: [MetadataEntry("qux", value="baz")],
+        lambda value: {"qux": MetadataValue.text("baz")},
     )
-    assert len(metadata_entries) == 1
-    assert metadata_entries[0].label == "qux"
-    assert metadata_entries[0].value.text == "baz"
+    assert len(metadata) == 1
+    assert metadata["qux"] == MetadataValue.text("baz")
 
 
 def test_execute_summary_stats_error():
@@ -153,11 +150,7 @@ def test_execute_summary_stats_error():
         assert _execute_summary_stats("foo", DataFrame({}), lambda value: "jajaja")
 
     with pytest.raises(DagsterInvariantViolationError):
-        assert _execute_summary_stats(
-            "foo",
-            DataFrame({}),
-            lambda value: [MetadataEntry("qux", value="baz"), "rofl"],
-        )
+        assert _execute_summary_stats("foo", DataFrame({}), lambda value: "rofl")
 
 
 def test_execute_summary_stats_metadata_value_error():
@@ -256,11 +249,11 @@ def test_custom_dagster_dataframe_parametrizable_input():
     assert output_df["foo"].tolist() == ["goat"]
 
 
-def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
+def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata():
     def compute_event_metadata(dataframe):
-        return [
-            MetadataEntry("max_pid", value=str(max(dataframe["pid"]))),
-        ]
+        return {
+            "max_pid": MetadataValue.text(str(max(dataframe["pid"]))),
+        }
 
     BasicDF = create_dagster_pandas_dataframe_type(
         name="BasicDF",
@@ -286,11 +279,9 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
     assert result.success
     for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
-            mock_df_output_event_metadata = (
-                event.event_specific_data.type_check_data.metadata_entries
-            )
+            mock_df_output_event_metadata = event.event_specific_data.type_check_data.metadata
             assert len(mock_df_output_event_metadata) == 1
-            assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
+            assert "max_pid" in mock_df_output_event_metadata
 
 
 def execute_op_in_job(the_op):

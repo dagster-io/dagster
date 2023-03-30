@@ -15,7 +15,7 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster._core.definitions.metadata import MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
@@ -399,11 +399,7 @@ def _execute_step_command_body(
             pipeline_run.pipeline_name,
             message="Step worker started"
             + (f' for "{single_step_key}".' if single_step_key else "."),
-            metadata_entries=(
-                [
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ]
-            ),
+            metadata={"pid": MetadataValue.text(str(os.getpid()))},
             step_key=single_step_key,
         )
 

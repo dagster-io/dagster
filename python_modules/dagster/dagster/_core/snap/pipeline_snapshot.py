@@ -24,7 +24,10 @@ from dagster._config import (
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    MetadataFieldSerializer,
+    MetadataValue,
+    RawMetadataValue,
+    normalize_metadata,
 )
 from dagster._core.definitions.pipeline_definition import (
     PipelineDefinition,
@@ -72,20 +75,24 @@ class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
     #     deserialization errors.
     def before_unpack(
         self,
-        **unpacked: Any,
+        **packed: Any,
     ) -> Dict[str, Any]:
-        if unpacked.get("graph_def_name") is None:
-            unpacked["graph_def_name"] = unpacked["name"]
-        if unpacked.get("metadata") is None:
-            unpacked["metadata"] = []
-        if unpacked.get("lineage_snapshot") is None:
-            unpacked["lineage_snapshot"] = None
-        return unpacked
+        if packed.get("graph_def_name") is None:
+            packed["graph_def_name"] = packed["name"]
+        if packed.get("metadata") is None:
+            packed["metadata"] = {}
+        if packed.get("lineage_snapshot") is None:
+            packed["lineage_snapshot"] = None
+        return packed
 
 
+# Note that unlike other serdes-whitelisted objects that hold metadata, the field here has always
+# been called `metadata` instead of `metadata_entries`, so we don't need to rename the field for
+# serialization.
 @whitelist_for_serdes(
     serializer=PipelineSnapshotSerializer,
     skip_when_empty_fields={"metadata"},
+    field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
 class PipelineSnapshot(
@@ -102,7 +109,7 @@ class PipelineSnapshot(
             ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
-            ("metadata", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
         ],
     )
 ):
@@ -118,7 +125,7 @@ class PipelineSnapshot(
         mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
-        metadata: Optional[Sequence[MetadataEntry]],
+        metadata: Optional[Mapping[str, RawMetadataValue]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
@@ -146,7 +153,9 @@ class PipelineSnapshot(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
-            metadata=check.opt_sequence_param(metadata, "metadata"),
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
+            ),
         )
 
     @classmethod

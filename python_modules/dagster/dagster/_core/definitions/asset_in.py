@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -8,6 +8,7 @@ from dagster._core.definitions.events import (
     CoercibleToAssetKeyPrefix,
 )
 from dagster._core.definitions.input import NoValueSentinel
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._utils.backcompat import canonicalize_backcompat_args
 
@@ -19,7 +20,7 @@ class AssetIn(
         "_AssetIn",
         [
             ("key", PublicAttr[Optional[AssetKey]]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("metadata", PublicAttr[Optional[ArbitraryMetadataMapping]]),
             ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
             ("input_manager_key", PublicAttr[Optional[str]]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
@@ -50,7 +51,7 @@ class AssetIn(
     def __new__(
         cls,
         key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,

@@ -10,7 +10,6 @@ from dagster import (
     DailyPartitionsDefinition,
     FreshnessPolicy,
     IOManager,
-    MetadataEntry,
     ResourceDefinition,
     asset,
     io_manager,
@@ -18,6 +17,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import build_assets_job
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._legacy import AssetGroup
 from dagster._utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
@@ -119,11 +119,10 @@ def test_runtime_metadata_fn(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
-    for entry in [
-        MetadataEntry("op_name", value=dbt_assets[0].op.name),
-        MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
-    ]:
-        assert entry in materializations[0].metadata_entries
+    assert materializations[0].metadata["op_name"] == MetadataValue.text(dbt_assets[0].op.name)
+    assert materializations[0].metadata["dbt_model"] == MetadataValue.text(
+        materializations[0].asset_key.path[-1]
+    )
 
 
 def test_fail_immediately(dbt_seed, conn_string, test_project_dir, dbt_config_dir):
