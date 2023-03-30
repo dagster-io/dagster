@@ -431,6 +431,7 @@ def test_terminated_run(instance, workspace, run_config):
     poll_for_step_start(instance, run_id)
 
     launcher = instance.run_launcher
+    instance.report_run_canceling(pipeline_run)
     assert launcher.terminate(run_id)
 
     terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)

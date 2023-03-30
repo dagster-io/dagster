@@ -221,6 +221,7 @@ def test_terminate_launched_docker_run(aws_env):
 
             poll_for_step_start(instance, run_id)
 
+            instance.report_run_canceling(run)
             assert instance.run_launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)

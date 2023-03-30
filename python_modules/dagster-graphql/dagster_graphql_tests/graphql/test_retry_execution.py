@@ -731,6 +731,8 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
         # Wait until the first step succeeded
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
+
+        instance.report_run_canceling(instance.get_run_by_id(run_id))
         # Terminate the current pipeline run at the second step
         graphql_context.instance.run_launcher.terminate(run_id)
 
