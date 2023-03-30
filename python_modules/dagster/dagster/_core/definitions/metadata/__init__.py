@@ -25,9 +25,9 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
     PackableValue,
+    UnpackContext,
     WhitelistMap,
     pack_value,
-    unpack_value,
 )
 from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
@@ -961,21 +961,11 @@ class MetadataFieldSerializer(FieldSerializer):
 
     def unpack(
         self,
-        metadata_entries: List[Mapping[str, Any]],
+        metadata_entries: List["MetadataEntry"],
         whitelist_map: WhitelistMap,
-        descent_path: str,
+        context: UnpackContext,
     ) -> Mapping[str, MetadataValue]:
-        return {
-            e["label"]: unpack_value(
-                e["entry_data"],
-                # MetadataValue itself can't inherit from NamedTuple and so isn't a PackableValue,
-                # but one of its subclasses will always be returned here.
-                as_type=MetadataValue,  # type: ignore
-                whitelist_map=whitelist_map,
-                descent_path=descent_path,
-            )
-            for e in metadata_entries
-        }
+        return {e.label: e.entry_data for e in metadata_entries}
 
 
 T_MetadataValue = TypeVar("T_MetadataValue", bound=MetadataValue, covariant=True)
