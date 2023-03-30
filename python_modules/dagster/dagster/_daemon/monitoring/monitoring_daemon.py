@@ -105,7 +105,7 @@ def monitor_started_run(
                     )
                 logger.info(msg)
                 instance.report_run_failed(run, msg)
-    handle_started_run(instance, run_record, logger)
+    check_run_timeout(instance, run_record, logger)
 
 
 def execute_monitoring_iteration(
@@ -148,7 +148,7 @@ def execute_monitoring_iteration(
             yield
 
 
-def handle_started_run(
+def check_run_timeout(
     instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
 ) -> None:
     max_time_str = run_record.dagster_run.tags.get(
