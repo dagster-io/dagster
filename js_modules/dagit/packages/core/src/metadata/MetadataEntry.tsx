@@ -352,7 +352,7 @@ const TableMetadataEntryComponent: React.FC<{entry: TableMetadataEntry}> = ({ent
           ))}
         </tbody>
       </Table>
-      <Dialog isOpen={showSchema}>
+      <Dialog isOpen={showSchema} title={`Schema for ${entry.label}`}>
         <DialogBody>
           <TableSchema schema={schema} />
         </DialogBody>
