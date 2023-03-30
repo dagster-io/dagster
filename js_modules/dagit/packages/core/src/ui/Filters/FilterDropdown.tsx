@@ -192,7 +192,7 @@ export const FilterDropdownButton = React.memo(({filters}: FilterDropdownButtonP
 
   return (
     <ShortcutHandler
-      shortcutLabel="⌥F"
+      shortcutLabel="F"
       shortcutFilter={(e) => e.code === 'KeyF'}
       onShortcut={() => setIsOpen((isOpen) => !isOpen)}
     >

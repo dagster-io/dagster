@@ -1,89 +1,107 @@
-import {render, getByText, fireEvent} from '@testing-library/react';
+import {render} from '@testing-library/react';
+import {act, renderHook} from '@testing-library/react-hooks';
 import React from 'react';
 
-import {StaticSetFilter} from '../useStaticSetFilter';
+import {useStaticSetFilter} from '../useStaticSetFilter';
 
-const sampleValues = [
-  {value: 'apple', match: ['apple', 'fruit']},
-  {value: 'banana', match: ['banana', 'fruit']},
-  {value: 'carrot', match: ['carrot', 'vegetable']},
-  {value: 'potato', match: ['potato', 'vegetable']},
-];
+describe('useStaticSetFilter', () => {
+  const allValues = [
+    {value: 'apple', match: ['apple']},
+    {value: 'banana', match: ['banana']},
+    {value: 'cherry', match: ['cherry']},
+  ];
 
-const renderLabel = ({value, isActive}: {value: any; isActive: boolean}) => (
-  <span style={isActive ? {fontWeight: 'bold'} : {}}>{value}</span>
-);
+  function createTestFilter() {
+    return renderHook(() =>
+      useStaticSetFilter({
+        name: 'Test',
+        icon: 'asset',
+        allValues,
+        renderLabel: ({value, isActive}) => (
+          <span className={isActive ? 'active' : 'inactive'}>{value}</span>
+        ),
+        getStringValue: (value: string) => value,
+        initialState: ['banana'],
+      }),
+    );
+  }
 
-const getStringValue = (value: any) => value;
+  it('creates filter object with the correct properties', () => {
+    const filter = createTestFilter();
 
-const filter = new StaticSetFilter({
-  name: 'Food',
-  icon: 'asset',
-  allValues: sampleValues,
-  renderLabel,
-  getStringValue,
-  initialState: new Set(),
-});
-
-describe('StaticSetFilter', () => {
-  it('should be initially inactive', () => {
-    expect(filter.isActive()).toBe(false);
+    expect(filter.result.current).toHaveProperty('name', 'Test');
+    expect(filter.result.current).toHaveProperty('icon', 'asset');
+    expect(filter.result.current).toHaveProperty('state', new Set(['banana']));
   });
 
-  it('should return all values when query is empty', () => {
-    const results = filter.getResults('');
-    expect(results.length).toBe(sampleValues.length);
+  function select(filter: ReturnType<typeof createTestFilter>, value: string) {
+    const close = jest.fn();
+    const createPortal = jest.fn();
+    act(() => {
+      filter.result.current.onSelect({
+        value,
+        close,
+        createPortal,
+      });
+    });
+    return {close, createPortal};
+  }
+
+  it('adds and removes values from the state', () => {
+    const filter = createTestFilter();
+    const {close} = select(filter, 'apple');
+    expect(filter.result.current.state).toEqual(new Set(['banana', 'apple']));
+    expect(close.mock.calls.length).toEqual(0);
+
+    select(filter, 'banana');
+    expect(filter.result.current.state).toEqual(new Set(['apple']));
   });
 
-  it('should return filtered results based on query', () => {
-    const results = filter.getResults('fruit');
-    expect(results.length).toBe(2);
-    expect(results.map((result) => result.value)).toEqual(['apple', 'banana']);
+  it('renders results with proper isActive state', () => {
+    const filter = createTestFilter();
+    const results = filter.result.current.getResults('');
+    const {getByText} = render(
+      <>
+        {results.map((r) => (
+          <span
+            key={r.key}
+            onClick={() => {
+              console.log('onClick', r.value);
+              select(filter, r.value);
+            }}
+          >
+            {r.label}
+          </span>
+        ))}
+      </>,
+    );
+
+    const apple = getByText('apple');
+    const banana = getByText('banana');
+    const cherry = getByText('cherry');
+
+    expect(apple).not.toHaveClass('active');
+    expect(banana).toHaveClass('active');
+    expect(cherry).not.toHaveClass('active');
   });
 
-  it('should update the filter state on onSelect', () => {
-    expect(filter.getState().has('apple')).toBe(false);
-    filter.onSelect({value: 'apple'});
-    expect(filter.getState().has('apple')).toBe(true);
-    filter.onSelect({value: 'apple'});
-    expect(filter.getState().has('apple')).toBe(false);
-  });
+  it('renders filtered results based on query', () => {
+    const filter = createTestFilter();
+    const results = filter.result.current.getResults('a');
+    const {getByText, queryByText} = render(
+      <>
+        {results.map((r) => (
+          <span key={r.key}>{r.label}</span>
+        ))}
+      </>,
+    );
 
-  it('should render SetFilterActiveState correctly', () => {
-    const element = filter.renderActiveFilterState();
-    const {getByText, queryByText, rerender} = render(element);
+    const apple = getByText('apple');
+    const banana = getByText('banana');
+    const cherry = queryByText('cherry');
 
-    // Initially, the filter is inactive
-    expect(queryByText('Food is')).not.toBeInTheDocument();
-
-    // Add a single value to the filter state
-    filter.onSelect({value: 'apple'});
-    rerender(<filter.renderActiveFilterState />);
-    expect(getByText('Food is apple')).toBeInTheDocument();
-
-    // Add multiple values to the filter state (total <= MAX_VALUES_TO_SHOW)
-    filter.onSelect({value: 'banana'});
-    rerender(<filter.renderActiveFilterState />);
-    expect(getByText('Food is any of apple, banana')).toBeInTheDocument();
-
-    // Add more values to the filter state (total > MAX_VALUES_TO_SHOW)
-    filter.onSelect({value: 'carrot'});
-    filter.onSelect({value: 'potato'});
-    rerender(<filter.renderActiveFilterState />);
-    const popoverTrigger = getByText('Food is any of 4 foods');
-    expect(popoverTrigger).toBeInTheDocument();
-
-    // Check if popover content is rendered correctly when hovering over the trigger
-    fireEvent.mouseOver(popoverTrigger);
-    const popoverContent = document.body.querySelector('.filter-dropdown')!;
-    expect(popoverContent).toBeInTheDocument();
-    expect(popoverContent.textContent).toContain('apple');
-    expect(popoverContent.textContent).toContain('banana');
-    expect(popoverContent.textContent).toContain('carrot');
-
-    // Test the onRemove callback
-    const removeButton = getByText('×');
-    fireEvent.click(removeButton);
-    expect(filter.isActive()).toBe(false);
+    expect(apple).toBeInTheDocument();
+    expect(banana).toBeInTheDocument();
+    expect(cherry).not.toBeInTheDocument();
   });
 });

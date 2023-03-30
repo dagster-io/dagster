@@ -6,14 +6,16 @@ import React from 'react';
 import {DateRangePicker} from 'react-dates';
 import styled from 'styled-components/macro';
 
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 import 'react-dates/initialize';
 import 'react-dates/lib/css/_datepicker.css';
 
-type TimeRangeState = [number | null, number | null];
+export type TimeRangeState = [number | null, number | null];
 
-function calculateTimeRanges(timezone: string) {
+export function calculateTimeRanges(timezone: string) {
   const obj = {
     TODAY: {
       label: 'Today',
@@ -47,7 +49,7 @@ function calculateTimeRanges(timezone: string) {
   return {timeRanges: obj, timeRangesArray: array};
 }
 
-type TimeRangeFilter = FilterObject<[number | null, number | null]>;
+export type TimeRangeFilter = FilterObject<[number | null, number | null]>;
 type TimeRangeKey = keyof ReturnType<typeof calculateTimeRanges>['timeRanges'];
 type Args = {
   name: string;
@@ -56,7 +58,7 @@ type Args = {
   initialState?: TimeRangeState;
 };
 export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): TimeRangeFilter {
-  const [state, setState] = React.useState(initialState || [null, null]);
+  const [state, setState] = React.useState<TimeRangeState>(initialState || [null, null]);
 
   const {timeRanges, timeRangesArray} = React.useMemo(() => calculateTimeRanges(timezone), [
     timezone,
@@ -102,7 +104,7 @@ export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): 
           current: () => {},
         };
         closeRef.current = createPortal(
-          <CustomTimeRangeFilterDialog filter={filterObj} closeRef={closeRef} />,
+          <CustomTimeRangeFilterDialog filter={filterObjRef.current} closeRef={closeRef} />,
         );
       } else {
         const nextState = timeRanges[value].range;
@@ -119,6 +121,7 @@ export function useTimeRangeFilter({name, icon, timezone, initialState}: Args): 
       />
     ),
   };
+  const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
 }
 
@@ -131,7 +134,7 @@ function TimeRangeResult({range}: {range: string}) {
   );
 }
 
-function ActiveFilterState({
+export function ActiveFilterState({
   state,
   remove,
   timezone,
@@ -216,7 +219,7 @@ function ActiveFilterState({
   );
 }
 
-function CustomTimeRangeFilterDialog({
+export function CustomTimeRangeFilterDialog({
   filter,
   closeRef,
 }: {
