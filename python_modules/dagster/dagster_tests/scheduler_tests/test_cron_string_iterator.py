@@ -1,3 +1,4 @@
+import pytest
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils.schedules import cron_string_iterator
 
@@ -18,32 +19,44 @@ def test_cron_iterator_always_advances():
     assert next_datetime.timestamp() > start_timestamp
 
 
-# These are not what one might expect due to upstream croniter bugs, but verifies that we
-# don't get stuck
-time_sequences = (
-    "Europe/Berlin",
-    "0 2 * * *",
+@pytest.mark.parametrize(
+    "execution_timezone,cron_string,times",
     [
-        create_pendulum_time(2023, 3, 24, 2, 0, 0, tz="Europe/Berlin"),
-        create_pendulum_time(2023, 3, 25, 2, 0, 0, tz="Europe/Berlin"),
-        create_pendulum_time(  # 2AM on 3/26 does not exist, move forward
-            2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"
+        (
+            "Europe/Berlin",
+            "0 2 * * *",
+            [
+                create_pendulum_time(2023, 3, 24, 2, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 25, 2, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(  # 2AM on 3/26 does not exist, move forward
+                    2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"
+                ),
+                create_pendulum_time(
+                    2023, 3, 27, 3, 0, 0, tz="Europe/Berlin"
+                ),  # Should be 2AM, is 3AM due to croniter bug
+                create_pendulum_time(2023, 3, 28, 2, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 29, 2, 0, 0, tz="Europe/Berlin"),
+            ],
         ),
-        create_pendulum_time(
-            2023, 3, 27, 1, 0, 0, tz="Europe/Berlin"
-        ),  # Should be 2AM, is 1AM due to croniter bug
-        create_pendulum_time(  # 3/28 fires twice due to croniter bug
-            2023, 3, 28, 1, 0, 0, tz="Europe/Berlin"
+        (
+            "Europe/Berlin",
+            "30 2 * * *",
+            [
+                create_pendulum_time(2023, 3, 24, 2, 30, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 25, 2, 30, 0, tz="Europe/Berlin"),
+                create_pendulum_time(  # 2AM on 3/26 does not exist, move forward
+                    2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"
+                ),
+                create_pendulum_time(
+                    2023, 3, 27, 3, 30, 0, tz="Europe/Berlin"
+                ),  # Should be 2AM, is 3AM due to croniter bug
+                create_pendulum_time(2023, 3, 28, 2, 30, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 29, 2, 30, 0, tz="Europe/Berlin"),
+            ],
         ),
-        create_pendulum_time(2023, 3, 28, 2, 0, 0, tz="Europe/Berlin"),
-        create_pendulum_time(2023, 3, 29, 2, 0, 0, tz="Europe/Berlin"),
     ],
 )
-
-
-def test_dst_spring_forward_transition_advances():
-    execution_timezone, cron_string, times = time_sequences
-
+def test_dst_spring_forward_transition_advances(execution_timezone, cron_string, times):
     start_timestamp = to_timezone(times[0], "UTC").timestamp()
 
     cron_string_iterator(

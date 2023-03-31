@@ -44,6 +44,13 @@ def cron_string_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
 
+    if not croniter.match(cron_string, next_date):
+        # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
+        # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
+        # goes back to 1AM on the previous day) - when this happens, advance to the correct
+        # time that actually matches the cronstring
+        next_date = date_iter.get_next(datetime.datetime)
+
     check.invariant(start_offset <= 0)
     for _ in range(-start_offset):
         next_date = date_iter.get_prev(datetime.datetime)
