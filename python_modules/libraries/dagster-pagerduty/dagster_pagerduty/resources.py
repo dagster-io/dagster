@@ -2,6 +2,7 @@ from typing import Dict, Optional, cast
 
 import pypd
 from dagster import ConfigurableResource, resource
+from dagster._annotations import quiet_experimental_warnings
 from dagster._config.structured_config import infer_schema_from_config_class
 from pydantic import Field as PyField
 
@@ -163,6 +164,7 @@ class PagerDutyService(ConfigurableResource):
     config_schema=infer_schema_from_config_class(PagerDutyService),
     description="""This resource is for posting events to PagerDuty.""",
 )
+@quiet_experimental_warnings
 def pagerduty_resource(context) -> PagerDutyService:
     """A resource for posting events (alerts) to PagerDuty.
 
