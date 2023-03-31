@@ -41,11 +41,14 @@ export function calculateTimeRanges(timezone: string) {
     },
     CUSTOM: {label: 'Custom...', range: [null, null] as TimeRangeState},
   };
-  const array = Object.keys(obj).map((key) => ({
-    key: key as keyof typeof obj,
-    label: obj[key].label,
-    range: obj[key].range,
-  }));
+  const array = Object.keys(obj).map((keyString) => {
+    const key = keyString as keyof typeof obj;
+    return {
+      key,
+      label: obj[key].label,
+      range: obj[key].range,
+    };
+  });
   return {timeRanges: obj, timeRangesArray: array};
 }
 

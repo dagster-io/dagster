@@ -156,7 +156,7 @@ export const AssetPartitions: React.FC<Props> = ({
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
-  const countsFiltered = stateFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
+  const countsFiltered = stateFilters.reduce((a, b) => a + (countsByStateInSelection as any)[b], 0);
 
   const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
     params,

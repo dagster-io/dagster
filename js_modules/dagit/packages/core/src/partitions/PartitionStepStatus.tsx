@@ -215,8 +215,8 @@ const PartitionStepStatus: React.FC<
 
   const sortPartitionSteps = (steps: MatrixStep[]) => {
     const stepsByName = {};
-    steps.forEach((step) => (stepsByName[step.name] = step));
-    return stepRows.map((stepRow) => stepsByName[stepRow.name]);
+    steps.forEach((step) => ((stepsByName as any)[step.name] = step));
+    return stepRows.map((stepRow) => (stepsByName as any)[stepRow.name]);
   };
 
   const visibleCount = getVisibleItemCount(viewport.width);

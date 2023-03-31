@@ -22,7 +22,7 @@ export const scaffoldType = (
       for (const field of type.fields) {
         const {name, isRequired, configTypeKey} = field;
         if (isRequired) {
-          config[name] = scaffoldType(configTypeKey, typeLookup);
+          (config as any)[name] = scaffoldType(configTypeKey, typeLookup);
         }
       }
 
