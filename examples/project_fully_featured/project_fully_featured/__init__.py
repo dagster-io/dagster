@@ -15,6 +15,13 @@ resources_by_deployment_name = {
     "local": RESOURCES_LOCAL,
 }
 
+while True:
+    import time
+
+    print("WAITING FOREVER")
+    time.sleep(10)
+
+
 deployment_name = os.environ.get("DAGSTER_DEPLOYMENT", "local")
 
 all_sensors = [activity_analytics_assets_sensor, recommender_assets_sensor]
