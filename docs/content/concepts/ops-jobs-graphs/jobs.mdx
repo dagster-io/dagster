@@ -112,12 +112,17 @@ You can model this by building multiple jobs that use the same underlying graph 
 To do this, you first define a graph with the <PyObject object="graph" decorator /> decorator.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_from_graphs.py startafter=start_define_graph endbefore=end_define_graph
-from dagster import graph, op
+from dagster import graph, op, Resource
 
 
-@op(required_resource_keys={"server"})
-def interact_with_server(context):
-    context.resources.server.ping_server()
+class Server:
+    def ping_server(self):
+        ...
+
+
+@op
+def interact_with_server(server: Resource[Server]):
+    server.ping_server()
 
 
 @graph
@@ -155,18 +160,24 @@ When constructing a job, you can customize how that configuration will be satisf
 
 ### Hardcoded configuration
 
-You can supply a config dictionary. The supplied dictionary will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
+You can supply a config dictionary or <PyObject object="RunConfig"/> object. The supplied config will be used to configure the job whenever the job is launched. It will show up in the Dagit Launchpad and can be overridden.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_default_config.py
-from dagster import job, op
+from dagster import Config, RunConfig, job, op
 
 
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
+class DoSomethingConfig(Config):
+    config_param: str
 
 
-default_config = {"ops": {"do_something": {"config": {"config_param": "stuff"}}}}
+@op
+def do_something(context, config: DoSomethingConfig):
+    context.log.info("config_param: " + config.config_param)
+
+
+default_config = RunConfig(
+    ops={"do_something": DoSomethingConfig(config_param="stuff")}
+)
 
 
 @job(config=default_config)
@@ -190,19 +201,27 @@ Refer to the [Partitions documentation](/concepts/partitions-schedules-sensors/p
 You can supply a <PyObject object="ConfigMapping" />. This allows you to expose a narrower config interface to your job. Instead of needing to configure every op and resource individually when launching the job, you can supply a smaller number of values to the outer config, and the <PyObject object="ConfigMapping" /> can translate it into config for all the job's ops and resources.
 
 ```python file=/concepts/ops_jobs_graphs/jobs_with_config_mapping.py
-from dagster import config_mapping, job, op
+from dagster import Config, RunConfig, config_mapping, job, op
 
 
-@op(config_schema={"config_param": str})
-def do_something(context):
-    context.log.info("config_param: " + context.op_config["config_param"])
+class DoSomethingConfig(Config):
+    config_param: str
 
 
-@config_mapping(config_schema={"simplified_param": str})
-def simplified_config(val):
-    return {
-        "ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}
-    }
+@op
+def do_something(context, config: DoSomethingConfig) -> None:
+    context.log.info("config_param: " + config.config_param)
+
+
+class SimplifiedConfig(Config):
+    simplified_param: str
+
+
+@config_mapping
+def simplified_config(val: SimplifiedConfig) -> RunConfig:
+    return RunConfig(
+        ops={"do_something": DoSomethingConfig(config_param=val.simplified_param)}
+    )
 
 
 @job(config=simplified_config)

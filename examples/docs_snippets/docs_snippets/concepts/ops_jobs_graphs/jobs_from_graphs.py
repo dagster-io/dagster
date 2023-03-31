@@ -1,12 +1,17 @@
 # isort: skip_file
 
 # start_define_graph
-from dagster import graph, op
+from dagster import graph, op, Resource
 
 
-@op(required_resource_keys={"server"})
-def interact_with_server(context):
-    context.resources.server.ping_server()
+class Server:
+    def ping_server(self):
+        ...
+
+
+@op
+def interact_with_server(server: Resource[Server]):
+    server.ping_server()
 
 
 @graph
