@@ -94,7 +94,7 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
 export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   const logCaptureSteps = {};
   stepKeys.forEach(
-    (stepKey) => (logCaptureSteps[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
+    (stepKey) => ((logCaptureSteps as any)[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
   );
   return logCaptureSteps;
 };

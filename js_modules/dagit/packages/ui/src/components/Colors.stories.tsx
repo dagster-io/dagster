@@ -21,14 +21,17 @@ export default {
 } as Meta;
 
 const ColorsToHex = Object.keys(Colors).reduce(
-  (accum, key) => ({...accum, [key]: `#${rgbHex(Colors[key]).slice(0, 6)}`}),
+  (accum, key) => ({...accum, [key]: `#${rgbHex(Colors[key as keyof typeof Colors]).slice(0, 6)}`}),
   {},
 );
 
 const toCurrent = nearestColor.from(ColorsToHex);
 
 const BlueprintToHex = Object.keys(BlueprintColors).reduce(
-  (accum, key) => ({...accum, [key]: `${BlueprintColors[key].slice(0, 7)}`}),
+  (accum, key) => ({
+    ...accum,
+    [key]: `${BlueprintColors[key as keyof typeof BlueprintColors].slice(0, 7)}`,
+  }),
   {},
 );
 
@@ -38,15 +41,15 @@ export const Comparison = () => {
       <Box flex={{direction: 'column', alignItems: 'stretch', gap: 4}}>
         <div>Current colors</div>
         {Object.keys(ColorsToHex).map((key) => (
-          <ColorExample key={key} name={key} color={ColorsToHex[key]} />
+          <ColorExample key={key} name={key} color={ColorsToHex[key as keyof typeof ColorsToHex]} />
         ))}
       </Box>
       <Box flex={{direction: 'column', alignItems: 'stretch', gap: 4}}>
         <div>Blueprint colors</div>
         {Object.keys(BlueprintToHex).map((key) => (
           <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}} key={key}>
-            <ColorExample name={key} color={BlueprintToHex[key]} />
-            <div>{toCurrent(BlueprintToHex[key]).name}</div>
+            <ColorExample name={key} color={BlueprintToHex[key as keyof typeof BlueprintToHex]} />
+            <div>{toCurrent(BlueprintToHex[key as keyof typeof BlueprintToHex]).name}</div>
           </Box>
         ))}
       </Box>
