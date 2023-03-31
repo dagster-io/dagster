@@ -916,7 +916,7 @@ def cron_schedule_from_schedule_type_and_offsets(
     minute_offset: int,
     hour_offset: int,
     day_offset: Optional[int],
-):
+) -> str:
     if schedule_type is ScheduleType.HOURLY:
         return f"{minute_offset} * * * *"
     elif schedule_type is ScheduleType.DAILY:
