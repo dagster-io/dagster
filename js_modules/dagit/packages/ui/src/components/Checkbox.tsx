@@ -14,7 +14,7 @@ type Props = Omit<
   'size'
 > & {
   checked: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: React.ReactNode;
   indeterminate?: boolean;
   format?: Format;
@@ -189,6 +189,10 @@ const Base = ({
         tabIndex={0}
         checked={checked}
         disabled={disabled}
+        onClick={(e) => {
+          // https://codesandbox.io/s/muddy-https-6zypxg?file=/src/index.js
+          e.stopPropagation();
+        }}
       />
       <Component
         disabled={disabled}
