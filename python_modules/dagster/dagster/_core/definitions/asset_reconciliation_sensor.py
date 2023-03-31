@@ -22,10 +22,10 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -45,29 +45,22 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
-def get_scope(asset_graph: AssetGraph, asset_key: AssetKey) -> Optional[datetime.timedelta]:
-    """For backcompat with pre-reconciliation policy graphs, assume a default scope of 1 day."""
-    reconciliation_policy = asset_graph.reconciliation_policies_by_key.get(asset_key)
-    if reconciliation_policy is None:
-        return datetime.timedelta(days=1)
-    return reconciliation_policy.time_window_partition_scope
-
-
-def get_implicit_reconciliation_policy(
+def get_implicit_auto_materialization_policy(
     asset_graph: AssetGraph, asset_key: AssetKey
-) -> Optional[ReconciliationPolicy]:
-    """For backcompat with pre-reconciliation policy graphs, assume a default scope of 1 day."""
-    reconciliation_policy = asset_graph.reconciliation_policies_by_key.get(asset_key)
-    if reconciliation_policy is None:
-        return ReconciliationPolicy(
+) -> Optional[AutoMaterializationPolicy]:
+    """For backcompat with pre-auto materialization policy graphs, assume a default scope of 1 day.
+    """
+    auto_materialization_policy = asset_graph.get_auto_materialization_policy(asset_key)
+    if auto_materialization_policy is None:
+        return AutoMaterializationPolicy(
             on_missing=True,
             on_upstream_update=not bool(
                 asset_graph.get_downstream_freshness_policies(asset_key=asset_key)
             ),
             for_freshness=True,
-            time_window_partition_scope=datetime.timedelta(days=1),
+            time_window_partition_scope_seconds=datetime.timedelta(days=1).total_seconds(),
         )
-    return reconciliation_policy
+    return auto_materialization_policy
 
 
 def reconciliation_window_for_time_window_partitions(
@@ -424,12 +417,15 @@ def find_never_materialized_or_requested_root_asset_partitions(
         AssetSelection.keys(*target_asset_keys) & AssetSelection.all().sources()
     ).resolve(asset_graph):
         if asset_graph.is_partitioned(asset_key):
+            auto_materialization_policy = check.not_none(
+                get_implicit_auto_materialization_policy(asset_graph, asset_key)
+            )
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
                 asset_key,
                 asset_graph,
                 instance_queryer,
                 evaluation_time,
-                time_window_partition_scope=get_scope(asset_graph, asset_key),
+                time_window_partition_scope=auto_materialization_policy.time_window_partition_scope,
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
                 if instance_queryer.get_latest_materialization_record(asset_partition, None):
@@ -477,13 +473,13 @@ def determine_asset_partitions_to_reconcile(
 
     # a filter for eliminating candidates
     def can_reconcile_candidate(candidate: AssetKeyPartitionKey) -> bool:
-        reconciliation_policy = get_implicit_reconciliation_policy(
+        auto_materialization_policy = get_implicit_auto_materialization_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
         partitions_def = asset_graph.get_partitions_def(candidate.asset_key)
 
         # no policy means no reconciliation
-        if reconciliation_policy is None:
+        if auto_materialization_policy is None:
             return False
         # the partition is too old to reconcile
         elif isinstance(
@@ -491,13 +487,14 @@ def determine_asset_partitions_to_reconcile(
         ) and not can_reconcile_time_window_partition(
             partitions_def=partitions_def,
             partition_key=candidate.partition_key,
-            time_window_partition_scope=reconciliation_policy.time_window_partition_scope,
+            time_window_partition_scope=auto_materialization_policy.time_window_partition_scope,
             evaluation_time=evaluation_time,
         ):
             return False
         # the policy does not allow for materializing missing partitions and it's missing
-        elif not reconciliation_policy.on_missing and not instance_queryer.materialization_exists(
-            candidate
+        elif (
+            not auto_materialization_policy.on_missing
+            and not instance_queryer.materialization_exists(candidate)
         ):
             return False
 
@@ -540,17 +537,17 @@ def determine_asset_partitions_to_reconcile(
         )
 
     def should_reconcile_candidate(candidate: AssetKeyPartitionKey) -> bool:
-        reconciliation_policy = get_implicit_reconciliation_policy(
+        auto_materialization_policy = get_implicit_auto_materialization_policy(
             asset_graph=asset_graph, asset_key=candidate.asset_key
         )
-        if reconciliation_policy is None:
+        if auto_materialization_policy is None:
             return False
 
         return (
-            reconciliation_policy.on_missing
+            auto_materialization_policy.on_missing
             and not instance_queryer.materialization_exists(asset_partition=candidate)
         ) or (
-            reconciliation_policy.on_upstream_update
+            auto_materialization_policy.on_upstream_update
             and not instance_queryer.is_reconciled(
                 asset_partition=candidate, asset_graph=asset_graph
             )
@@ -755,16 +752,16 @@ def reconcile(
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
-    # if there is a reconciliation policy set in the selection, use that
+    # if there is a auto materialization policy set in the selection, use that
     target_asset_keys = asset_selection.resolve(asset_graph)
     if any(
-        asset_graph.reconciliation_policies_by_key.get(target_key) is not None
+        asset_graph.get_auto_materialization_policy(target_key) is not None
         for target_key in target_asset_keys
     ):
         target_asset_keys = {
             target_key
             for target_key in target_asset_keys
-            if asset_graph.reconciliation_policies_by_key.get(target_key) is not None
+            if asset_graph.get_auto_materialization_policy(target_key) is not None
         }
 
     # fetch some data in advance to batch some queries

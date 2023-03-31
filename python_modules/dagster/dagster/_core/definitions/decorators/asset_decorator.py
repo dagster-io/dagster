@@ -18,9 +18,9 @@ import dagster._check as check
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -73,7 +73,7 @@ def asset(
     group_name: Optional[str] = ...,
     output_required: bool = ...,
     freshness_policy: Optional[FreshnessPolicy] = ...,
-    reconciliation_policy: Optional[ReconciliationPolicy] = ...,
+    auto_materialization_policy: Optional[AutoMaterializationPolicy] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -101,7 +101,7 @@ def asset(
     group_name: Optional[str] = None,
     output_required: bool = True,
     freshness_policy: Optional[FreshnessPolicy] = None,
-    reconciliation_policy: Optional[ReconciliationPolicy] = None,
+    auto_materialization_policy: Optional[AutoMaterializationPolicy] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -195,7 +195,7 @@ def asset(
             group_name=group_name,
             output_required=output_required,
             freshness_policy=freshness_policy,
-            reconciliation_policy=reconciliation_policy,
+            auto_materialization_policy=auto_materialization_policy,
             retry_policy=retry_policy,
             code_version=code_version,
         )
@@ -242,7 +242,7 @@ class _Asset:
         group_name: Optional[str] = None,
         output_required: bool = True,
         freshness_policy: Optional[FreshnessPolicy] = None,
-        reconciliation_policy: Optional[ReconciliationPolicy] = None,
+        auto_materialization_policy: Optional[AutoMaterializationPolicy] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
@@ -268,7 +268,7 @@ class _Asset:
         self.group_name = group_name
         self.output_required = output_required
         self.freshness_policy = freshness_policy
-        self.reconciliation_policy = reconciliation_policy
+        self.auto_materialization_policy = auto_materialization_policy
         self.retry_policy = retry_policy
         self.code_version = code_version
 
@@ -354,8 +354,8 @@ class _Asset:
             freshness_policies_by_key={out_asset_key: self.freshness_policy}
             if self.freshness_policy
             else None,
-            reconciliation_policies_by_key={out_asset_key: self.reconciliation_policy}
-            if self.reconciliation_policy
+            auto_materialization_policies_by_key={out_asset_key: self.auto_materialization_policy}
+            if self.auto_materialization_policy
             else None,
         )
 

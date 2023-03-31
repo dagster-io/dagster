@@ -27,11 +27,11 @@ from dagster._core.selector.subset_selector import DependencyGraph, generate_ass
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition
+from .auto_materialization_policy import AutoMaterializationPolicy
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_mapping import PartitionMapping, infer_partition_mapping
-from .reconciliation_policy import ReconciliationPolicy
 from .source_asset import SourceAsset
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -48,7 +48,9 @@ class AssetGraph:
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-        reconciliation_policies_by_key: Mapping[AssetKey, Optional[ReconciliationPolicy]],
+        auto_materialization_policies_by_key: Mapping[
+            AssetKey, Optional[AutoMaterializationPolicy]
+        ],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         code_versions_by_key: Mapping[AssetKey, Optional[str]],
         is_observable_by_key: Mapping[AssetKey, bool],
@@ -59,7 +61,7 @@ class AssetGraph:
         self._partition_mappings_by_key = partition_mappings_by_key
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
-        self._reconciliation_policies_by_key = reconciliation_policies_by_key
+        self._auto_materialization_policies_by_key = auto_materialization_policies_by_key
         self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
         self._code_versions_by_key = code_versions_by_key
         self._is_observable_by_key = is_observable_by_key
@@ -88,8 +90,10 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @property
-    def reconciliation_policies_by_key(self) -> Mapping[AssetKey, Optional[ReconciliationPolicy]]:
-        return self._reconciliation_policies_by_key
+    def auto_materialization_policies_by_key(
+        self,
+    ) -> Mapping[AssetKey, Optional[AutoMaterializationPolicy]]:
+        return self._auto_materialization_policies_by_key
 
     @staticmethod
     def from_assets(
@@ -103,7 +107,9 @@ class AssetGraph:
         ] = {}
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
-        reconciliation_policies_by_key: Dict[AssetKey, Optional[ReconciliationPolicy]] = {}
+        auto_materialization_policies_by_key: Dict[
+            AssetKey, Optional[AutoMaterializationPolicy]
+        ] = {}
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
         is_observable_by_key: Dict[AssetKey, bool] = {}
@@ -122,7 +128,9 @@ class AssetGraph:
                 partitions_defs_by_key.update({key: asset.partitions_def for key in asset.keys})
                 group_names_by_key.update(asset.group_names_by_key)
                 freshness_policies_by_key.update(asset.freshness_policies_by_key)
-                reconciliation_policies_by_key.update(asset.reconciliation_policies_by_key)
+                auto_materialization_policies_by_key.update(
+                    asset.auto_materialization_policies_by_key
+                )
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
@@ -135,7 +143,7 @@ class AssetGraph:
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            reconciliation_policies_by_key=reconciliation_policies_by_key,
+            auto_materialization_policies_by_key=auto_materialization_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
             source_assets=source_assets,
@@ -381,6 +389,14 @@ class AssetGraph:
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
 
+    def get_auto_materialization_policy(
+        self, asset_key: AssetKey
+    ) -> Optional[AutoMaterializationPolicy]:
+        return self.auto_materialization_policies_by_key.get(asset_key)
+
+    def get_freshness_policy(self, asset_key: AssetKey) -> Optional[FreshnessPolicy]:
+        return self.freshness_policies_by_key.get(asset_key)
+
     @cached_method
     def get_downstream_freshness_policies(
         self, *, asset_key: AssetKey
@@ -535,7 +551,9 @@ class InternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
-        reconciliation_policies_by_key: Mapping[AssetKey, Optional[ReconciliationPolicy]],
+        auto_materialization_policies_by_key: Mapping[
+            AssetKey, Optional[AutoMaterializationPolicy]
+        ],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
@@ -549,7 +567,7 @@ class InternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
-            reconciliation_policies_by_key=reconciliation_policies_by_key,
+            auto_materialization_policies_by_key=auto_materialization_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,

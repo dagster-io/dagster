@@ -45,6 +45,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
@@ -978,6 +979,7 @@ class ExternalAssetNode(
             # have the same atomic_execution_unit_id. This ID should be stable across reloads and
             # unique deployment-wide.
             ("atomic_execution_unit_id", Optional[str]),
+            ("auto_materialization_policy", Optional[AutoMaterializationPolicy]),
         ],
     )
 ):
@@ -1008,6 +1010,7 @@ class ExternalAssetNode(
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         atomic_execution_unit_id: Optional[str] = None,
+        auto_materialization_policy: Optional[AutoMaterializationPolicy] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1054,6 +1057,11 @@ class ExternalAssetNode(
             is_observable=check.bool_param(is_observable, "is_observable"),
             atomic_execution_unit_id=check.opt_str_param(
                 atomic_execution_unit_id, "atomic_execution_unit_id"
+            ),
+            auto_materialization_policy=check.opt_inst_param(
+                auto_materialization_policy,
+                "auto_materialization_policy",
+                AutoMaterializationPolicy,
             ),
         )
 
@@ -1127,6 +1135,7 @@ def external_asset_graph_from_defs(
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
+    auto_materialization_policy_by_asset_key: Dict[AssetKey, AutoMaterializationPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
@@ -1177,6 +1186,9 @@ def external_asset_graph_from_defs(
         for assets_def in asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
+            auto_materialization_policy_by_asset_key.update(
+                assets_def.auto_materialization_policies_by_key
+            )
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
@@ -1288,6 +1300,7 @@ def external_asset_graph_from_defs(
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
+                auto_materialization_policy=auto_materialization_policy_by_asset_key.get(asset_key),
             )
         )
 

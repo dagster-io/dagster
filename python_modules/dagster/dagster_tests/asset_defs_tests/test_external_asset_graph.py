@@ -1,9 +1,11 @@
+import datetime
 import os
 import sys
 import time
 from unittest import mock
 
 from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -56,6 +58,9 @@ partitioned_source = SourceAsset(
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     non_argument_deps={"partitioned_source"},
+    auto_materialization_policy=AutoMaterializationPolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    ),
 )
 def downstream_of_partitioned_source():
     pass
@@ -156,7 +161,19 @@ def test_cross_repo_dep_no_source_asset():
 
 
 def test_partitioned_source_asset():
-    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+    asset_graph = ExternalAssetGraph.from_workspace(
+        make_context(["partitioned_defs", "downstream_defs"])
+    )
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
     assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+
+
+def test_auto_materialization_policy():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+
+    assert asset_graph.get_auto_materialization_policy(
+        AssetKey("downstream_of_partitioned_source")
+    ) == AutoMaterializationPolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    )

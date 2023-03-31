@@ -20,9 +20,9 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
-from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -85,7 +85,7 @@ class AssetsDefinition(ResourceAddable):
     _can_subset: bool
     _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
-    _reconciliation_policies_by_key: Mapping[AssetKey, ReconciliationPolicy]
+    _auto_materialization_policies_by_key: Mapping[AssetKey, AutoMaterializationPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
 
@@ -104,7 +104,9 @@ class AssetsDefinition(ResourceAddable):
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
-        reconciliation_policies_by_key: Optional[Mapping[AssetKey, ReconciliationPolicy]] = None,
+        auto_materialization_policies_by_key: Optional[
+            Mapping[AssetKey, AutoMaterializationPolicy]
+        ] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
@@ -224,12 +226,13 @@ class AssetsDefinition(ResourceAddable):
             value_type=FreshnessPolicy,
         )
 
-        self._reconciliation_policies_by_key = check.opt_mapping_param(
-            reconciliation_policies_by_key,
-            "reconciliation_policies_by_key",
+        self._auto_materialization_policies_by_key = check.opt_mapping_param(
+            auto_materialization_policies_by_key,
+            "auto_materialization_policies_by_key",
             key_type=AssetKey,
-            value_type=ReconciliationPolicy,
+            value_type=AutoMaterializationPolicy,
         )
+
         _validate_self_deps(
             input_keys=self._keys_by_input_name.values(),
             output_keys=self._keys_by_output_name.values(),
@@ -657,8 +660,8 @@ class AssetsDefinition(ResourceAddable):
         return self._freshness_policies_by_key
 
     @property
-    def reconciliation_policies_by_key(self) -> Mapping[AssetKey, ReconciliationPolicy]:
-        return self._reconciliation_policies_by_key
+    def auto_materialization_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializationPolicy]:
+        return self._auto_materialization_policies_by_key
 
     @public
     @property
@@ -752,9 +755,9 @@ class AssetsDefinition(ResourceAddable):
             for key, policy in self._freshness_policies_by_key.items()
         }
 
-        replaced_reconciliation_policies_by_key = {
+        replaced_auto_materialization_policies_by_key = {
             output_asset_key_replacements.get(key, key): policy
-            for key, policy in self._reconciliation_policies_by_key.items()
+            for key, policy in self._auto_materialization_policies_by_key.items()
         }
 
         replaced_descriptions_by_key = {
@@ -802,7 +805,7 @@ class AssetsDefinition(ResourceAddable):
                 for key, value in self.metadata_by_key.items()
             },
             freshness_policies_by_key=replaced_freshness_policies_by_key,
-            reconciliation_policies_by_key=replaced_reconciliation_policies_by_key,
+            auto_materialization_policies_by_key=replaced_auto_materialization_policies_by_key,
             descriptions_by_key=replaced_descriptions_by_key,
         )
 
@@ -915,7 +918,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
-                reconciliation_policies_by_key=self.reconciliation_policies_by_key,
+                auto_materialization_policies_by_key=self.auto_materialization_policies_by_key,
                 descriptions_by_key=self.descriptions_by_key,
             )
         else:
@@ -934,7 +937,7 @@ class AssetsDefinition(ResourceAddable):
                 group_names_by_key=self.group_names_by_key,
                 metadata_by_key=self.metadata_by_key,
                 freshness_policies_by_key=self.freshness_policies_by_key,
-                reconciliation_policies_by_key=self.reconciliation_policies_by_key,
+                auto_materialization_policies_by_key=self.auto_materialization_policies_by_key,
                 descriptions_by_key=self.descriptions_by_key,
             )
 
@@ -1079,6 +1082,8 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key=self.group_names_by_key,
             metadata_by_key=self.metadata_by_key,
             freshness_policies_by_key=self.freshness_policies_by_key,
+            auto_materialization_policies_by_key=self.auto_materialization_policies_by_key,
+            descriptions_by_key=self.descriptions_by_key,
         )
 
 

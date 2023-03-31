@@ -37,13 +37,13 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
+from dagster._core.definitions.auto_materialization_policy import AutoMaterializationPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
     PartitionsSubset,
 )
-from dagster._core.definitions.reconciliation_policy import ReconciliationPolicy
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -54,8 +54,8 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
-def with_reconciliation_policy(
-    assets_defs: Sequence[AssetsDefinition], reconciliation_policy: ReconciliationPolicy
+def with_auto_materialization_policy(
+    assets_defs: Sequence[AssetsDefinition], auto_materialization_policy: AutoMaterializationPolicy
 ) -> Sequence[AssetsDefinition]:
     """Note: this should be implemented in core dagster at some point, and this implementation is
     a lazy hack.
@@ -63,8 +63,8 @@ def with_reconciliation_policy(
     ret = []
     for assets_def in assets_defs:
         new_assets_def = copy.copy(assets_def)
-        new_assets_def._reconciliation_policies_by_key = {  # noqa: SLF001
-            asset_key: reconciliation_policy for asset_key in new_assets_def.asset_keys
+        new_assets_def._auto_materialization_policies_by_key = {  # noqa: SLF001
+            asset_key: auto_materialization_policy for asset_key in new_assets_def.asset_keys
         }
         ret.append(new_assets_def)
     return ret
@@ -260,7 +260,7 @@ def asset_def(
     deps: Optional[Union[List[str], Mapping[str, PartitionMapping]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
-    reconciliation_policy: Optional[ReconciliationPolicy] = None,
+    auto_materialization_policy: Optional[AutoMaterializationPolicy] = None,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = set()
@@ -282,7 +282,7 @@ def asset_def(
         ins=ins,
         config_schema={"fail": Field(bool, default_value=False)},
         freshness_policy=freshness_policy,
-        reconciliation_policy=reconciliation_policy,
+        auto_materialization_policy=auto_materialization_policy,
     )
     def _asset(context, **kwargs):
         del kwargs
@@ -617,7 +617,7 @@ two_dynamic_assets = [
     asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
 
-# reconciliation policies
+# auto materialization policies
 
 
 scenarios = {
@@ -1368,9 +1368,11 @@ scenarios = {
         ],
         expected_run_requests=[],
     ),
-    # reconciliation policies
-    "reconciliation_policy_eager_with_freshness_policies": AssetReconciliationScenario(
-        assets=with_reconciliation_policy(overlapping_freshness_inf, ReconciliationPolicy.eager()),
+    # auto materialization policies
+    "auto_materialization_policy_eager_with_freshness_policies": AssetReconciliationScenario(
+        assets=with_auto_materialization_policy(
+            overlapping_freshness_inf, AutoMaterializationPolicy.eager()
+        ),
         cursor_from=AssetReconciliationScenario(
             assets=overlapping_freshness_inf,
             unevaluated_runs=[run(["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"])],
@@ -1381,10 +1383,10 @@ scenarios = {
             run_request(asset_keys=["asset2", "asset3", "asset4", "asset5", "asset6"])
         ],
     ),
-    "reconciliation_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
-        assets=with_reconciliation_policy(
+    "auto_materialization_policy_with_default_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=with_auto_materialization_policy(
             hourly_to_daily_partitions,
-            ReconciliationPolicy.eager(),
+            AutoMaterializationPolicy.eager(),
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
@@ -1398,10 +1400,10 @@ scenarios = {
             )
         ],
     ),
-    "reconciliation_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
-        assets=with_reconciliation_policy(
+    "auto_materialization_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=with_auto_materialization_policy(
             hourly_to_daily_partitions,
-            ReconciliationPolicy.eager(time_window_partition_scope=datetime.timedelta(days=2)),
+            AutoMaterializationPolicy.eager(time_window_partition_scope=datetime.timedelta(days=2)),
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
@@ -1412,10 +1414,10 @@ scenarios = {
             )
         ],
     ),
-    "reconciliation_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
-        assets=with_reconciliation_policy(
+    "auto_materialization_policy_with_custom_scope_hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+        assets=with_auto_materialization_policy(
             hourly_to_daily_partitions,
-            ReconciliationPolicy.lazy(time_window_partition_scope=datetime.timedelta(days=2)),
+            AutoMaterializationPolicy.lazy(time_window_partition_scope=datetime.timedelta(days=2)),
         ),
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
@@ -1426,10 +1428,10 @@ scenarios = {
             )
         ],
     ),
-    "reconciliation_policy_lazy_parent_rematerialized_one_partition": AssetReconciliationScenario(
-        assets=with_reconciliation_policy(
+    "auto_materialization_policy_lazy_parent_rematerialized_one_partition": AssetReconciliationScenario(
+        assets=with_auto_materialization_policy(
             two_assets_in_sequence_one_partition,
-            ReconciliationPolicy.lazy(),
+            AutoMaterializationPolicy.lazy(),
         ),
         unevaluated_runs=[
             run(["asset1", "asset2"], partition_key="a"),
