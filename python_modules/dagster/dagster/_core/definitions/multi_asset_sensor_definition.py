@@ -1098,7 +1098,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     repository_def=context.repository_def,
                     monitored_assets=monitored_assets,
                     instance=context.instance,
-                    resources=context.resources,
+                    resources=context.resource_defs,
                 )
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names

@@ -39,6 +39,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import (
@@ -342,7 +343,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
 )
 def test_resources(
     caplog,
-    instance,
+    instance: DagsterInstance,
     workspace_context_struct_resources,
     external_repo_struct_resources,
     sensor_name,
@@ -485,7 +486,7 @@ def test_resources_freshness_policy_sensor(
 )
 def test_resources_run_status_sensor(
     caplog,
-    instance,
+    instance: DagsterInstance,
     workspace_context_struct_resources,
     external_repo_struct_resources,
     sensor_name,

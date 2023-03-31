@@ -24,7 +24,6 @@ from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import (
-    IContainsGenerator,
     Resources,
     ScopedResourcesBuilder,
 )
@@ -135,8 +134,7 @@ class RunStatusSensorContext:
         context=None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ) -> None:
-        from dagster._core.execution.build_resources import build_resources
-
+        self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
@@ -152,14 +150,10 @@ class RunStatusSensorContext:
                 **(resources or {}),
             }
 
+        # Wait to set resources unless they're accessed
         self._resource_defs = resources
-
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        self._resources = None
         self._cm_scope_entered = False
-        self._exit_stack = ExitStack()
 
     def for_run_failure(self):
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -170,6 +164,49 @@ class RunStatusSensorContext:
             instance=self._instance,
             context=self._context,
         )
+
+    @property
+    def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
+        return self._resource_defs
+
+    @property
+    def resources(self) -> Resources:
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            """
+            This is similar to what we do in e.g. the op context - we set up a resource
+            building context manager, and immediately enter it. This is so that in cases
+            where a user is not using any context-manager based resources, they don't
+            need to enter this SensorEvaluationContext themselves.
+
+            For example:
+
+            my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
+
+            will work ok, but for a CM resource we must do
+
+            with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+                my_sensor(context)
+            """
+
+            instance = self.instance if self._instance else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
+                )
+
+        return self._resources
 
     @public
     @property
@@ -215,23 +252,8 @@ class RunStatusSensorContext:
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
-
-    def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
-    @property
-    def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
-        return self._resources
 
 
 class RunFailureSensorContext(RunStatusSensorContext):
@@ -683,36 +705,29 @@ class RunStatusSensorDefinition(SensorDefinition):
                 resource_args_populated = validate_and_get_resource_dict(
                     context.resources, name, resource_arg_names
                 )
-                sensor_context = RunStatusSensorContext(
-                    sensor_name=name,
-                    dagster_run=pipeline_run,
-                    dagster_event=event_log_entry.dagster_event,
-                    instance=context.instance,
-                    context=context,
-                )
 
                 try:
-                    with user_code_error_boundary(
-                        RunStatusSensorExecutionError,
-                        lambda: f'Error occurred during the execution sensor "{name}".',
-                    ):
-                        # one user code invocation maps to one failure event
-                        context_param_name = get_context_param_name(run_status_sensor_fn)
-                        context_param = (
-                            {context_param_name: sensor_context} if context_param_name else {}
-                        )
+                    with RunStatusSensorContext(
+                        sensor_name=name,
+                        dagster_run=pipeline_run,
+                        dagster_event=event_log_entry.dagster_event,
+                        instance=context.instance,
+                        context=context,
+                        resources=context.resource_defs,
+                    ) as sensor_context:
+                        with user_code_error_boundary(
+                            RunStatusSensorExecutionError,
+                            lambda: f'Error occurred during the execution sensor "{name}".',
+                        ):
+                            # one user code invocation maps to one failure event
+                            context_param_name = get_context_param_name(run_status_sensor_fn)
+                            context_param = (
+                                {context_param_name: sensor_context} if context_param_name else {}
+                            )
 
-                        sensor_return = run_status_sensor_fn(
-                            **context_param,
-                            **resource_args_populated,
-                        )
-
-                        if sensor_return is not None:
-                            context.update_cursor(
-                                RunStatusSensorCursor(
-                                    record_id=storage_id,
-                                    update_timestamp=update_timestamp.isoformat(),
-                                ).to_json()
+                            sensor_return = run_status_sensor_fn(
+                                **context_param,
+                                **resource_args_populated,
                             )
 
                             if isinstance(sensor_return, SensorResult):
