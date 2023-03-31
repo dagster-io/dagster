@@ -3,7 +3,7 @@ import os
 
 import pytest
 from dagster import asset, materialize
-from dagster_gcs import bigquery_resource
+from dagster_gcp import bigquery_resource
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
