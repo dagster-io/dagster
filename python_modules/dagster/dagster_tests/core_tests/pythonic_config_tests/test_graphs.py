@@ -14,7 +14,7 @@ def test_binding_runconfig() -> None:
     def do_something(config: DoSomethingConfig) -> str:
         return config.config_param
 
-    @job(config=RunConfig(ops={"do_something": DoSomethingConfig(config_param="foo")}))
+    @job(config=RunConfig(ops={"do_something": DoSomethingConfig(config_param="foo")}))  # type: ignore[call-arg]
     def do_it_all_with_baked_in_config() -> None:
         do_something()
 
