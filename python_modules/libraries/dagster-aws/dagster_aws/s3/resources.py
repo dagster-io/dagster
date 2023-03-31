@@ -1,19 +1,18 @@
 from dagster import Field, StringSource, resource
 from dagster._utils.merger import merge_dicts
 
-from python_modules.dagster.dagster._config import BoolSource, IntSource
 from .file_manager import S3FileManager
 from .utils import construct_s3_client
 
 S3_SESSION_CONFIG = {
     "use_unsigned_session": Field(
-        BoolSource,
+        bool,
         description="Specifies whether to use an unsigned S3 session",
         is_required=False,
         default_value=False,
     ),
     "region_name": Field(
-        StringSource, description="Specifies a custom region for the S3 session", is_required=False
+        str, description="Specifies a custom region for the S3 session", is_required=False
     ),
     "endpoint_url": Field(
         StringSource,
@@ -21,7 +20,7 @@ S3_SESSION_CONFIG = {
         is_required=False,
     ),
     "max_attempts": Field(
-        IntSource,
+        int,
         description=(
             "This provides Boto3's retry handler with a value of maximum retry attempts, "
             "where the initial call counts toward the max_attempts value that you provide"
@@ -30,18 +29,18 @@ S3_SESSION_CONFIG = {
         default_value=5,
     ),
     "profile_name": Field(
-        StringSource,
+        str,
         description="Specifies a profile to connect that session",
         is_required=False,
     ),
     "use_ssl": Field(
-        BoolSource,
+        bool,
         description="Whether or not to use SSL. By default, SSL is used.",
         is_required=False,
         default_value=True,
     ),
     "verify": Field(
-        StringSource,
+        str,
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
             " You can also specify this argument if you want to use a different CA cert bundle than"
