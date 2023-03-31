@@ -256,7 +256,7 @@ const RowGrid = styled(Box)`
 const ScheduleStringContainer = styled.div`
   max-width: 100%;
 
-  .bp3-popover2-target {
+  .bp4-popover2-target {
     max-width: 100%;
 
     :focus {

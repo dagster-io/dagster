@@ -6,9 +6,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@apollo/client": "3.6.9",
-    "@blueprintjs/core": "^3.45.0",
-    "@blueprintjs/popover2": "0.10.1",
-    "@blueprintjs/select": "^3.16.4",
+    "@blueprintjs/core": "^4.17.8",
+    "@blueprintjs/popover2": "1.13.12",
+    "@blueprintjs/select": "^4.9.12",
     "@dagster-io/dagit-core": "workspace:*",
     "@dagster-io/ui": "workspace:*",
     "@rive-app/react-canvas": "^3.0.34",

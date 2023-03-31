@@ -26,25 +26,25 @@ export const MultiSlider: React.FC<MultiSliderProps & {fillColor?: string}> & {
 MultiSlider.Handle = BlueprintMultiSlider.Handle;
 
 export const SliderStyles = css<{$fillColor: string}>`
-  .bp3-slider-track {
+  .bp4-slider-track {
     height: 8px;
-    .bp3-slider-progress {
+    .bp4-slider-progress {
       background-color: ${(p) => p.$fillColor};
       opacity: 0.2;
       height: 8px;
     }
-    .bp3-slider-progress.bp3-intent-primary {
+    .bp4-slider-progress.bp4-intent-primary {
       background-color: ${(p) => p.$fillColor};
       opacity: 1;
       height: 8px;
     }
   }
-  &.bp3-vertical .bp3-slider-track,
-  &.bp3-vertical .bp3-slider-track .bp3-slider-progress {
+  &.bp4-vertical .bp4-slider-track,
+  &.bp4-vertical .bp4-slider-track .bp4-slider-progress {
     height: initial;
     width: 8px;
   }
-  .bp3-slider-handle {
+  .bp4-slider-handle {
     width: 18px;
     height: 18px;
     border-radius: 50%;
@@ -56,7 +56,7 @@ export const SliderStyles = css<{$fillColor: string}>`
       box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
     }
 
-    .bp3-slider-label {
+    .bp4-slider-label {
       background: ${Colors.Gray900};
       box-shadow: 0 1px 4px rgba(0,0,0,0.15)
       padding: 4px 8px;
