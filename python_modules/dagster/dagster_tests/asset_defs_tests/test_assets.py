@@ -49,7 +49,7 @@ def test_with_replaced_asset_keys():
         assert input1
         assert input2
 
-    replaced = asset1.with_prefix_or_group(
+    replaced = asset1.with_attributes(
         output_asset_key_replacements={
             AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
         },
@@ -114,7 +114,7 @@ def test_retain_group():
     def bar():
         pass
 
-    replaced = bar.with_prefix_or_group(
+    replaced = bar.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
@@ -127,7 +127,7 @@ def test_retain_freshness_policy():
     def bar():
         pass
 
-    replaced = bar.with_prefix_or_group(
+    replaced = bar.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
@@ -159,7 +159,7 @@ def test_graph_backed_retain_freshness_policy():
         my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}
     )
 
-    replaced = my_graph_asset.with_prefix_or_group(
+    replaced = my_graph_asset.with_attributes(
         output_asset_key_replacements={
             AssetKey("a"): AssetKey("aa"),
             AssetKey("b"): AssetKey("bb"),
@@ -183,7 +183,7 @@ def test_retain_metadata_graph():
     md = {"foo": "bar", "baz": 12.5}
     original = AssetsDefinition.from_graph(bar, metadata_by_output_name={"result": md})
 
-    replaced = original.with_prefix_or_group(
+    replaced = original.with_attributes(
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert (
@@ -218,7 +218,7 @@ def test_retain_partition_mappings():
 
     assert isinstance(bar_.get_partition_mapping(AssetKey(["input_last"])), LastPartitionMapping)
 
-    replaced = bar_.with_prefix_or_group(
+    replaced = bar_.with_attributes(
         input_asset_key_replacements={
             AssetKey(["input_last"]): AssetKey(["input_last2"]),
         }
@@ -242,7 +242,7 @@ def test_chain_replace_and_subset_for():
     def abc_(context, in1, in2, in3):
         pass
 
-    replaced_1 = abc_.with_prefix_or_group(
+    replaced_1 = abc_.with_attributes(
         output_asset_key_replacements={AssetKey(["a"]): AssetKey(["foo", "foo_a"])},
         input_asset_key_replacements={AssetKey(["in1"]): AssetKey(["foo", "bar_in1"])},
     )
@@ -264,7 +264,7 @@ def test_chain_replace_and_subset_for():
     )
     assert subbed_1.keys == {AssetKey(["foo", "foo_a"]), AssetKey("b")}
 
-    replaced_2 = subbed_1.with_prefix_or_group(
+    replaced_2 = subbed_1.with_attributes(
         output_asset_key_replacements={
             AssetKey(["foo", "foo_a"]): AssetKey(["again", "foo", "foo_a"]),
             AssetKey(["b"]): AssetKey(["something", "bar_b"]),
