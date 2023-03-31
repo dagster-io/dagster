@@ -177,6 +177,8 @@ def test_sensor_invocation_resources_deferred() -> None:
     with context as open_context:
         with pytest.raises(Exception):
             basic_sensor_resource_req(open_context)
+
+
 def test_multi_asset_sensor_invocation_resources() -> None:
     class MyResource(ConfigurableResource):
         a_str: str

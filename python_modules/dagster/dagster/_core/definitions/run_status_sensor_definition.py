@@ -146,8 +146,11 @@ class RunStatusSensorContext:
         )
         self._logger: Optional[logging.Logger] = None
 
-        if context:
-            resources = {**context.resources, **(resources or {})}
+        if self._context and self._context.resource_defs:
+            resources = {
+                **(self._context.resource_defs),
+                **(resources or {}),
+            }
 
         self._resource_defs = resources
 

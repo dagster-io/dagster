@@ -25,8 +25,7 @@ class ContextAndEventLogEntryParamNames(NamedTuple):
 
 
 def get_context_and_event_log_entry_param_names(fn: Callable) -> ContextAndEventLogEntryParamNames:
-    """
-    Determines the names of the context and event log entry parameters for an asset sensor function.
+    """Determines the names of the context and event log entry parameters for an asset sensor function.
     These are assumed to be the first two non-resource params, in order (context param before event log entry).
     """
     resource_params = {param.name for param in get_resource_args(fn)}
