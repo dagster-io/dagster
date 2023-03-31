@@ -79,6 +79,16 @@ def dagster_instance_config(
         custom_instance_class = None
         schema = dagster_instance_config_schema()
 
+    if "run_queue" in dagster_config_dict and "run_coordinator" in dagster_config_dict:
+        raise DagsterInvalidConfigError(
+            (
+                "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+                " entry."
+            ),
+            [],
+            None,
+        )
+
     if "storage" in dagster_config_dict and (
         "run_storage" in dagster_config_dict
         or "event_log_storage" in dagster_config_dict
@@ -116,6 +126,15 @@ def dagster_instance_config(
 
 def config_field_for_configurable_class() -> Field:
     return Field(configurable_class_schema(), is_required=False)
+
+
+def run_queue_config_schema() -> Field:
+    from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+
+    return Field(
+        QueuedRunCoordinator.config_type(),
+        is_required=False,
+    )
 
 
 def storage_config_schema() -> Field:
@@ -265,6 +284,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),
         "storage": storage_config_schema(),
+        "run_queue": run_queue_config_schema(),
         "run_storage": config_field_for_configurable_class(),
         "event_log_storage": config_field_for_configurable_class(),
         "schedule_storage": config_field_for_configurable_class(),
