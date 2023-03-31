@@ -578,9 +578,7 @@ def test_execute_during_dst_transition_spring_forward(
         expected_datetimes_utc = [
             to_timezone(create_pendulum_time(2019, 3, 13, 2, 30, 0, tz="US/Central"), "UTC"),
             to_timezone(create_pendulum_time(2019, 3, 12, 2, 30, 0, tz="US/Central"), "UTC"),
-            to_timezone(
-                create_pendulum_time(2019, 3, 11, 3, 30, 0, tz="US/Central"), "UTC"
-            ),  # Incorrect due to croniter bug
+            to_timezone(create_pendulum_time(2019, 3, 11, 2, 30, 0, tz="US/Central"), "UTC"),
             to_timezone(create_pendulum_time(2019, 3, 10, 3, 00, 0, tz="US/Central"), "UTC"),
             to_timezone(create_pendulum_time(2019, 3, 9, 2, 30, 0, tz="US/Central"), "UTC"),
         ]

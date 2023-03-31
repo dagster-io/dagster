@@ -62,6 +62,7 @@ def cron_string_iterator(
 
     delta_fn = None
     should_hour_change = False
+    expected_hour = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
@@ -78,6 +79,9 @@ def cron_string_iterator(
         elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
             delta_fn = lambda d, num: d.add(hours=num)
             should_hour_change = True
+
+    if is_numeric[1]:
+        expected_hour = int(cron_parts[1][0])
 
     if delta_fn is not None:
         # Use pendulums for intervals when possible
@@ -101,6 +105,12 @@ def cron_string_iterator(
 
                 next_date_cand = delta_fn(next_date, 2)
                 check.invariant(next_date_cand.hour == curr_hour)
+            elif expected_hour is not None and new_hour != expected_hour:
+                # hour should only be different than expected if the timezone has just changed -
+                # if it hasn't, it means we are moving from e.g. 3AM on spring DST day back to
+                # 2AM on the next day and need to reset back to the expected hour
+                if next_date_cand.utcoffset() == next_date.utcoffset():
+                    next_date_cand = next_date_cand.set(hour=expected_hour)
 
             next_date = next_date_cand
 

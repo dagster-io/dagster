@@ -24,6 +24,18 @@ def test_cron_iterator_always_advances():
     [
         (
             "Europe/Berlin",
+            "0 1 * * *",
+            [
+                create_pendulum_time(2023, 3, 24, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 25, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 27, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 28, 1, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 29, 1, 0, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
             "0 2 * * *",
             [
                 create_pendulum_time(2023, 3, 24, 2, 0, 0, tz="Europe/Berlin"),
@@ -31,9 +43,7 @@ def test_cron_iterator_always_advances():
                 create_pendulum_time(  # 2AM on 3/26 does not exist, move forward
                     2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"
                 ),
-                create_pendulum_time(
-                    2023, 3, 27, 3, 0, 0, tz="Europe/Berlin"
-                ),  # Should be 2AM, is 3AM due to croniter bug
+                create_pendulum_time(2023, 3, 27, 2, 0, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 28, 2, 0, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 29, 2, 0, 0, tz="Europe/Berlin"),
             ],
@@ -44,14 +54,24 @@ def test_cron_iterator_always_advances():
             [
                 create_pendulum_time(2023, 3, 24, 2, 30, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 25, 2, 30, 0, tz="Europe/Berlin"),
-                create_pendulum_time(  # 2AM on 3/26 does not exist, move forward
+                create_pendulum_time(  # 2AM on 3/26 does not exist, move forward to 3AM
                     2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"
                 ),
-                create_pendulum_time(
-                    2023, 3, 27, 3, 30, 0, tz="Europe/Berlin"
-                ),  # Should be 2AM, is 3AM due to croniter bug
+                create_pendulum_time(2023, 3, 27, 2, 30, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 28, 2, 30, 0, tz="Europe/Berlin"),
                 create_pendulum_time(2023, 3, 29, 2, 30, 0, tz="Europe/Berlin"),
+            ],
+        ),
+        (
+            "Europe/Berlin",
+            "0 3 * * *",
+            [
+                create_pendulum_time(2023, 3, 24, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 25, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 26, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 27, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 28, 3, 0, 0, tz="Europe/Berlin"),
+                create_pendulum_time(2023, 3, 29, 3, 0, 0, tz="Europe/Berlin"),
             ],
         ),
     ],
