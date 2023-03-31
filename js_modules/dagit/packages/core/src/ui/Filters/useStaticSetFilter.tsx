@@ -217,13 +217,7 @@ function SetFilterLabel(props: SetFilterLabelProps) {
       margin={{left: 4}}
       style={{maxWidth: '500px'}}
     >
-      <Checkbox
-        checked={isActive}
-        onChange={(_) => {
-          labelRef.current?.click();
-        }}
-        size="small"
-      />
+      <Checkbox checked={isActive} size="small" />
       <Box
         flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
         style={{overflow: 'hidden'}}

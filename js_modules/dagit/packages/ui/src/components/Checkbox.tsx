@@ -14,7 +14,8 @@ type Props = Omit<
   'size'
 > & {
   checked: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClick?: (e: React.MouseEvent<HTMLLabelElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: React.ReactNode;
   indeterminate?: boolean;
   format?: Format;
@@ -173,6 +174,7 @@ const Base = ({
   fillColor = Colors.Blue500,
   children, // not passed to input
   size,
+  onClick,
   ...rest
 }: Props) => {
   const uid = useRef(id || uniqueId());
@@ -181,7 +183,7 @@ const Base = ({
   ];
 
   return (
-    <label htmlFor={uid.current} className={className}>
+    <label htmlFor={uid.current} className={className} onClick={onClick}>
       <input
         {...rest}
         type="checkbox"
@@ -189,6 +191,10 @@ const Base = ({
         tabIndex={0}
         checked={checked}
         disabled={disabled}
+        onClick={(e) => {
+          // https://codesandbox.io/s/muddy-https-6zypxg?file=/src/index.js
+          e.stopPropagation();
+        }}
       />
       <Component
         disabled={disabled}
