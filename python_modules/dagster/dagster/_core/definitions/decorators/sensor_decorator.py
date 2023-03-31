@@ -173,12 +173,6 @@ def asset_sensor(
                         " with a cursor value. The cursor is managed by the asset sensor and"
                         " should not be modified by a user."
                     )
-                if result.pipeline_run_reactions:
-                    raise DagsterInvariantViolationError(
-                        f"Error in asset sensor {sensor_name}: Sensor returned a SensorResult with"
-                        " pipeline run reactions. Should only return RunRequest or SkipReason"
-                        " objects within the returned SensorResult."
-                    )
                 yield result
 
             elif result is not None:

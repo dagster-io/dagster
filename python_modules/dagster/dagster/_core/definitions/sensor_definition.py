@@ -583,11 +583,11 @@ class SensorDefinition:
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
-
-                pipeline_run_reactions = (
-                    list(item.pipeline_run_reactions) if item.pipeline_run_reactions else []
+                skip_message = (
+                    item.skip_reason.skip_message
+                    if item.skip_reason
+                    else (None if run_requests else "Sensor function returned an empty result")
                 )
-                skip_message = item.skip_reason.skip_message if item.skip_reason else None
 
                 if item.cursor and context.cursor_updated:
                     raise DagsterInvariantViolationError(

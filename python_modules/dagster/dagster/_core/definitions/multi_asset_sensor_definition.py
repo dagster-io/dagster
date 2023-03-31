@@ -1095,7 +1095,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
                             runs_yielded = True
                         if isinstance(item, SensorResult):
                             raise DagsterInvariantViolationError(
-                                "Cannot yield a SensorResult from a multi_asset_sensor. Instead return the SensorResult."
+                                "Cannot yield a SensorResult from a multi_asset_sensor. Instead"
+                                " return the SensorResult."
                             )
                         yield item
                 elif isinstance(result, RunRequest):

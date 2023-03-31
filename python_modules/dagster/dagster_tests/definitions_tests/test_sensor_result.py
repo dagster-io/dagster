@@ -87,12 +87,6 @@ def test_invalid_skip_reason_invocations():
             ),
         ]
 
-    @sensor(job=do_something_job)
-    def empty_sensor_result(_):
-        return [
-            SensorResult(),
-        ]
-
     with instance_for_test() as instance:
         ctx = build_sensor_context(
             instance=instance,
@@ -121,14 +115,6 @@ def test_invalid_skip_reason_invocations():
             match="Expected a single SkipReason or one or more RunRequests",
         ):
             invalid_sensor_result.evaluate_tick(ctx)
-
-        with pytest.raises(
-            CheckError,
-            match=(
-                "Must provide at least one of run_requests, skip_reason, or pipeline_run_reactions"
-            ),
-        ):
-            empty_sensor_result.evaluate_tick(ctx)
 
 
 def test_update_cursor():
