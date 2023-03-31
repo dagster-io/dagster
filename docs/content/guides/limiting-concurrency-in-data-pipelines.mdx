@@ -138,7 +138,7 @@ To limit concurrency for ops and assets in jobs, use `multiprocess.max_concurren
 
 #### Asset-based jobs
 
-Asset jobs are defined using `define_asset_job`. In this example, the job will execute up to three assets at once:
+Asset jobs are defined using <PyObject object="define_asset_job" />. In this example, the job will execute up to three assets at once:
 
 ```python
 assets_job = define_asset_job(
@@ -160,9 +160,9 @@ assets_job = define_asset_job(
 
 #### Op-based jobs
 
-Op-based jobs are defined using the `@job` decorator. In this example, the job will execute up to four ops at once:
+Op-based jobs are defined using the <PyObject object="job" decorator /> decorator. In this example, the job will execute up to four ops at once:
 
-```python
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
 @job(
     config={
         "execution": {
@@ -259,29 +259,47 @@ def tag_concurrency_job():
 
 When limiting concurrency, you might run into some issues until you get the configuration right.
 
-| Issue                                               | Description and resolution                                                                      |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Runs skip the QUEUED status and go right to STARTED | Your instance may not be using the QueuedRunCoordinator, which is responsible for run queueing. |
+### Runs skipping QUEUED status, going to STARTED
 
-Verify your instance is using the correct run coordinator by navigating to Deployment > Configuration in the Dagster UI. | | Runs remain in the QUEUED status | If runs aren’t being dequeued, the root cause is likely an issue with the Dagster daemon or the queue configuration.
+The `run_queue` key may not be set in your instance's settings. How you verify this depends on whether you're using Dagster Cloud or Dagster Open Source:
 
-Step 1: Verify the Dagster daemon is set up and running
+- **Dagster Cloud**: Click **your user icon > Cloud Settings > Deployments**, then **Settings** next to the deployment. **Note**: [Organization Admin permissions](/dagster-cloud/account/managing-users) are required to modify these settings.
+- **Dagster Open Source**: In the Dagster UI, navigate to **Deployment > Configuration**.
 
-In the Dagster UI, navigate to Deployment > Daemons and verify that the daemon is running. The Run queue should also be running. If you used dagster dev to start the Dagster UI, the daemon should have been started for you.
+### Runs remaining in QUEUED status
 
-If the daemon isn’t running, proceed to step 2.
+The possible causes for runs remaining in `QUEUED` status depends on whether you're using Dagster Cloud or Dagster Open Source.
 
-Step 2: Verify the Dagster daemon can access the same storages as the Dagit process
+<TabGroup>
+<TabItem name="Dagster Cloud">
 
-Both the Dagit (Dagster UI) process and Dagster daemon should access the same storage, meaning they should use the same dagster.yaml. Locally, this means both processes should have the same set DAGSTER_HOME environment variable. Refer to the <https://docs.dagster.io/deployment/dagster-instance> docs for more information.
+If runs aren't being dequeued in Dagster Cloud, the root causes could be:
 
-Check the queue configuration
+- **If using a [Hybrid deployment](/dagster-cloud/deployment/hybrid)**, the agent serving the deployment may be down. In this situation, runs will be paused.
+- **Dagster Cloud is experiencing downtime**. Check the [status page](http://dagstercloud.statuspage.io/) for the latest on potential outages.
 
-If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate, you can:
+</TabItem>
+<TabItem name="Dagster Open Source">
 
-- Check the output logged from the daemon process, as this will include skipped runs.
-- Check the max_concurrent_runs setting in your instance’s dagster.yaml. If set to 0, this may block the queue. You can check this setting in the Dagster UI by navigating to Deployment > Configuration and locating the run_coordinator.config.max_concurrent_runs setting.
-- Check the state of your run queue. In some cases, the queue may be blocked by some number of in-progress runs. To view the status of your run queue, click Runs in the top navigation of the Dagster UI and then open the Queued and In Progress tabs. If there are queued or in-progress runs blocking the queue, you can terminate them to allow other runs to proceed. |
+If runs aren’t being dequeued in Dagster Open Source, the root cause is likely an issue with the Dagster daemon or the run queue configuration.
+
+- **Troubleshoot the Dagster daemon**:
+   1. **Verify the Dagster daemon is set up and running**. In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [`dagster dev`](/guides/running-dagster-locally) to start the Dagster UI, the daemon should have been started for you.
+
+      If the daemon isn’t running, proceed to step 2.
+
+   2. **Verify the Dagster daemon can access the same storage as the Dagit process**. Both the Dagit (Dagster UI) process and Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. Refer to the [Dagster Instance docs]() for more information.
+
+- **Troubleshoot the run queue configuration**: If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate, you can:
+
+   - **Check the output logged from the daemon process**, as this will include skipped runs.
+   - **Check the `max_concurrent_runs` setting in your instance’s `dagster.yaml`.** If set to `0`, this may block the queue. You can check this setting in the Dagster UI by navigating to **Deployment > Configuration** and locating the `run_queue.max_concurrent_runs` setting. Refer to the [Limiting overall runs section](#limiting-overall-runs) for more info.
+   - **Check the state of your run queue**. In some cases, the queue may be blocked by some number of in-progress runs. To view the status of your run queue, click **Runs** in the top navigation of the Dagster UI and then open the **Queued** and **In Progress** tabs.
+
+      If there are queued or in-progress runs blocking the queue, you can terminate them to allow other runs to proceed.
+
+</TabItem>
+</TabGroup>
 
 ---
 
