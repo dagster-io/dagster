@@ -291,7 +291,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self,
         *,
         asset_key: AssetKey,
-        before_cursor: int,
+        before_cursor: Optional[int],
     ) -> Optional["EventLogRecord"]:
         from dagster._core.event_api import EventRecordsFilter
 
@@ -313,7 +313,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self,
         *,
         asset_key: AssetKey,
-        after_cursor: int,
+        after_cursor: Optional[int],
         data_version: DataVersion,
     ) -> Optional["EventLogRecord"]:
         from dagster._core.event_api import EventRecordsFilter
@@ -332,6 +332,67 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         # no records found with a new data version
         return None
+
+    def new_version_exists(
+        self,
+        observable_source_asset_key: AssetKey,
+        after_cursor: Optional[int] = None,
+    ) -> bool:
+        """Returns True if there is an asset observation of the given observable source asset key
+        after the specified cursor.
+
+        Args:
+            observable_source_asset_key (AssetKeyPartitionKey): The observable source asset to query.
+            after_cursor (Optional[int]): Filter parameter such that only records with a storage_id
+                greater than this value will be considered.
+        """
+        previous_version_record = self.get_observation_record(
+            asset_key=observable_source_asset_key,
+            # we're looking for if a new version exists after `after_cursor`, so we need to know
+            # what the version was before `after_cursor`
+            before_cursor=after_cursor,
+        )
+        if previous_version_record is None:
+            return False
+        previous_version = extract_data_version_from_entry(previous_version_record.event_log_entry)
+        if previous_version is None:
+            return False
+
+        next_version_record = self.next_version_record(
+            asset_key=observable_source_asset_key,
+            after_cursor=after_cursor,
+            data_version=previous_version,
+        )
+        return next_version_record is not None
+
+    def _new_version_of_source_exists_after_asset_partition(
+        self,
+        observable_source_asset_key: AssetKey,
+        asset_partition: AssetKeyPartitionKey,
+    ) -> bool:
+        """Returns True if there is a new version of a given observable source asset after the latest
+        materialization record for a given asset partition.
+
+        Attempts to optimize cases where the downstream asset is partitioned, and we expect
+        this to be called multiple times for the same inputs, only varying the partitioned asset's key.
+
+        Args:
+            observable_source_asset_key (AssetKeyPartitionKey): The observable source asset.
+            asset_partition (AssetKeyPartitionKey): The downstream asset partition.
+        """
+        # TODO: this assumes that each observation record will have a distinct data version, which
+        # is not always the case. In the "next_version_record" implementation, we have the benefit
+        # of having an explicit start cursor, but here the corresponding implementation would require
+        # loading all historical observation records. We'll have to do our own pagination here.
+        latest_observation_record = self.get_observation_record(
+            asset_key=observable_source_asset_key,
+            before_cursor=None,
+        )
+        if latest_observation_record is None:
+            return False
+        return not self.materialization_exists(
+            asset_partition, after_cursor=latest_observation_record.storage_id
+        )
 
     ####################
     # RUNS
@@ -515,12 +576,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_partition.partition_key,
         ):
             if asset_graph.is_source(parent.asset_key):
-                continue
-
-            if self._materialization_of_a_exists_after_b(a=parent, b=asset_partition):
+                if asset_graph.is_observable(
+                    parent.asset_key
+                ) and self._new_version_of_source_exists_after_asset_partition(
+                    observable_source_asset_key=parent.asset_key,
+                    asset_partition=asset_partition,
+                ):
+                    return False
+                else:
+                    continue
+            elif self._materialization_of_a_exists_after_b(a=parent, b=asset_partition):
                 return False
-
-            if not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
+            elif not self.is_reconciled(asset_partition=parent, asset_graph=asset_graph):
                 return False
 
         return True
