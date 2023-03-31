@@ -5,7 +5,7 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part six: Saving your data
 
-So, you wrote a data pipeline using assets and had it rebuilt every hour. Currently, your assets are stored in a temporary folder that is deleted after closing the `dagster` process. **Note**: If you set up Dagster without the tutorial, you may have set a `DAGSTER_HOME` environment variable. If so, then your assets will be stored in that directory.
+You've written a data pipeline using assets and had it rebuilt every hour by now. Currently, your assets are stored in a temporary folder that is deleted after closing the `dagster` process. **Note**: If you set up Dagster without the tutorial, you may have set a `DAGSTER_HOME` environment variable. If so, then your assets will be stored in that directory.
 
 You likely want to store your assets in places such as tables in your database or files in cloud storage. To do this, Dagster has I/O managers that enable reading and writing data to storage systems.
 
@@ -21,9 +21,16 @@ By the end of this section, you will:
 
 I/O stands for **input** and **output.** I/O managers are Dagster objects that control how Dagster reads and writes data to specific external services, such as Snowflake or Amazon Web Services (AWS) S3.
 
-The **input** they manage is reading an asset from where it’s stored and loading it into memory to be used by a dependent asset. For example, `topstories_word_cloud` needs `topstories`. Therefore, the I/O manager that `topstories` uses will load the data into memory so the `topstories_word_cloud` asset can use it.
+They manage **input** by reading an asset from where it’s stored and loading it into memory to be used by a dependent asset. For example, `topstories_word_cloud` needs `topstories`. Therefore, the I/O manager that `topstories` uses will load the data into memory so the `topstories_word_cloud` asset can use it.
 
-The **output** that I/O managers control is writing to the location specified by the asset. By the end of this section, you’ll configure an I/O manager to write the `hackernews_topstories` DataFrame into a database as a table.
+I/O managers control \*_output_ by writing the asset's to the location configured. By the end of this section, you’ll configure an I/O manager to write the `hackernews_topstories` DataFrame into a database as a table.
+
+<Note>
+  In-memory processing means the data is transformed on a computer's RAM (Random
+  access memory). This is different from disk storage, which is slower but
+  likely you have more of. In-memory processing is faster, but it can only be
+  done on a computer's RAM and you likely have less RAM on your machines.
+</Note>
 
 ---
 
@@ -70,11 +77,11 @@ defs = Definitions(
   information.
 </Note>
 
-To see the effect of this change, reload your code location in the Dagster UI and materialize your assets. When you click on an asset, you’ll see the `path` metadata pointing to a local storage directory.
+To see the effect of this change, reload your code location in the Dagster UI and materialize your assets. When you click on an asset, you’ll see the `path` metadata pointing to the `data` directory on your computer.
 
-Look at your Dagster project in your file system (via Finder or Windows Explorer) and you’ll find a new directory called `data` that contains your materialized assets.
+Look at your Dagster project in your file system (via terminal, Finder, or Windows Explorer) and you’ll find a new directory called `data` that contains your materialized assets.
 
-This is a short example of how powerful I/O managers are. In a few lines of code, assets previously stored in ephemeral storage can now be saved **anywhere**. With I/O managers, you can save your assets to places like AWS S3, Google Cloud Storage, or Azure Blob Storage.
+This is a short example of the value of I/O managers. In a few lines of code, assets previously stored in ephemeral memory can now be saved to many locations. With I/O managers, you can save your assets to places like AWS S3, Google Cloud Storage, or Azure Blob Storage.
 
 In addition to file storage systems, I/O managers can connect to any service from which data can be read or written, such as databases.
 
@@ -82,26 +89,25 @@ In addition to file storage systems, I/O managers can connect to any service fro
 
 ## Step 2: Writing to databases
 
-In data engineering, a common asset is tabular data. These are often seen as database tables or DataFrames in memory. I/O managers translate between tables and in-memory data formats.
+In data engineering, a common asset is tabular data. These are often seen as database tables or DataFrames in-memory. In Dagster, I/O managers define the relationship between how data is saved as a table in the database and what in-memory data format to represent the data as.
 
-Dagster includes out-of-the-box IO managers for common databases, such as DuckDB. When a DataFrame is returned in an asset’s function, it is translated and written into the database.
+Dagster includes out-of-the-box IO managers for common databases, such as DuckDB. When a DataFrame is returned in an asset’s definition, it is translated into a database-compatible format. The I/O manager then runs a SQL query to write the data into the database.
 
 Let’s modify our pipeline to store our `topstories` DataFrame as a table in DuckDB. We’ll use Dagster’s out-of-the-box I/O manager for DuckDB, an easy-to-set-up database that doesn't require any long-running processes.
 
 ### Setting up I/O managers
 
-Adding an I/O manager for a database is similar to connecting it to a file storage system. The biggest difference is you must specify what **type** of DataFrame to use when the data is loaded into Dagster’s memory. In this tutorial, you’ll use DuckDB to store the data and Pandas DataFrames to work with the data.
+Adding an I/O manager for a database is similar to connecting it to file storage. The biggest difference is you must specify what **type** of DataFrame to use when the data is loaded into Dagster’s memory. In this tutorial, you’ll use DuckDB to store the data and Pandas DataFrames when transforming with the data.
 
 Update your `__init__.py` to reflect the changes below:
 
 ```python
-from dagster_duckdb import build_duckdb_io_manager
-from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
 # Add the imports to the top
 # These imports let you define how Dagster communicates with DuckDB
 
 # Insert this section anywhere above your `defs = Definitions(...)`
-duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()]).configured({
+database_io_manager = duckdb_pandas_io_manager.configured({
     "database": "analytics.hackernews"
 })
 
@@ -111,21 +117,20 @@ defs = Definitions(
     schedules=[hackernews_schedule],
     resources={
         "io_manager": io_manager,
-        "database_io_manager": duckdb_io_manager # Define the I/O manager here
+        "database_io_manager": database_io_manager # Define the I/O manager here
     }
 )
 ```
 
-The four changes here are:
+There are three changes in this snippet:
 
-- `dagster_duckdb` and `dagster_duckdb_pandas` are imported
-- The DuckDB I/O manager is built
-- The DuckDB I/O manager was configured to load data as Pandas DataFrames to set the default namespace to `analytics.hackernews`
+- `duckdb_pandas_io_manager` is imported
+- A DuckDB+Pandas I/O manager is defined
 - The new I/O manager is added as a resource under the key `database_io_manager`
 
 ### Choosing an I/O manager for each asset
 
-You now have two I/O managers configured within a code location. By default, all assets will use the I/O manager under the `io_manager` key. This is why the `fs_io_manager` could plug and play without any additional changes. Overriding and priority are given to the I/O manager key that is most specific to the asset.
+You now have two I/O managers configured within a code location. By default, all assets will use the I/O manager under the `io_manager` key. Because you updated the `io_manager` key, the `fs_io_manager` could plug and play without any additional changes. Overriding and priority are given to the I/O manager key that is most specific to the asset.
 
 To have the `topstories` asset store its data in DuckDB, modify its asset function in `assets.py` by specifying the asset’s `io_manager_key` to be `"database_io_manager"`, as shown below:
 
@@ -158,7 +163,7 @@ def topstories(topstory_ids):
     )
 ```
 
-To validate that this worked, materialize your entire asset graph again using the Dagster UI. The I/O manager should store the DataFrame in a table called `analytics.hackernews.topstories` and continue to store the IDs and word cloud in a directory called `data`.
+To validate that this worked, materialize your entire asset graph. The I/O manager should store the DataFrame in a table called `analytics.hackernews.topstories` and continue to store the IDs and word cloud in a directory called `data`.
 
 Despite the changes in where the data is stored, the developer experience hasn’t changed. I/O managers deal with reading/writing data from storage for you so you can focus on the core logic and computation.
 
