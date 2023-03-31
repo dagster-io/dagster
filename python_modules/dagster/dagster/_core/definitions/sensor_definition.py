@@ -15,6 +15,8 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -161,6 +163,10 @@ class SensorEvaluationContext:
     def __exit__(self, *exc) -> None:
         self._exit_stack.close()
         self._logger = None
+
+    @property
+    def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
+        return self._resource_defs
 
     @property
     def resources(self) -> Resources:
@@ -320,57 +326,19 @@ def get_context_param_name(fn: Callable) -> Optional[str]:
     )
 
 
-def _validate_and_get_resource_dict(
-    context: SensorEvaluationContext, sensor_name: str, required_resource_keys: Set[str]
+def validate_and_get_resource_dict(
+    resources: Resources, sensor_name: str, required_resource_keys: Set[str]
 ) -> Dict[str, Any]:
     """Validates that the context has all the required resources and returns a dictionary of
     resource key to resource object.
     """
     for k in required_resource_keys:
-        if not hasattr(context.resources, k):
+        if not hasattr(resources, k):
             raise DagsterInvalidDefinitionError(
                 f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
             )
 
-    return {k: getattr(context.resources, k) for k in required_resource_keys}
-
-
-def get_or_create_sensor_context(
-    fn: Callable, *args: Any, **kwargs: Any
-) -> SensorEvaluationContext:
-    """Based on the passed resource function and the arguments passed to it, returns the
-    user-passed SensorEvaluationContext or creates one if it is not passed.
-
-    Raises an exception if the user passes more than one argument or if the user-provided
-    function requires a context parameter but none is passed.
-    """
-    context_param_name_if_present = get_context_param_name(fn)
-
-    if len(args) + len(kwargs) > 1:
-        raise DagsterInvalidInvocationError(
-            "Sensor invocation received multiple arguments. Only a first "
-            "positional context parameter should be provided when invoking."
-        )
-
-    context: Optional[SensorEvaluationContext] = None
-
-    if len(args) > 0:
-        context = check.opt_inst(args[0], SensorEvaluationContext)
-    elif len(kwargs) > 0:
-        if context_param_name_if_present and context_param_name_if_present not in kwargs:
-            raise DagsterInvalidInvocationError(
-                f"Sensor invocation expected argument '{context_param_name_if_present}'."
-            )
-        context_param_name_if_present = context_param_name_if_present or list(kwargs.keys())[0]
-        context = check.opt_inst(kwargs.get(context_param_name_if_present), SensorEvaluationContext)
-    elif context_param_name_if_present:
-        # If the context parameter is present but no value was provided, we error
-        raise DagsterInvalidInvocationError(
-            "Sensor evaluation function expected context argument, but no context argument "
-            "was provided when invoking."
-        )
-
-    return context or build_sensor_context()
+    return {k: getattr(resources, k) for k in required_resource_keys}
 
 
 class SensorDefinition:
@@ -511,8 +479,8 @@ class SensorDefinition:
             {context_param_name_if_present: context} if context_param_name_if_present else {}
         )
 
-        resources = _validate_and_get_resource_dict(
-            context, self.name, self._required_resource_keys
+        resources = validate_and_get_resource_dict(
+            context.resources, self.name, self._required_resource_keys
         )
         return self._raw_fn(**context_param, **resources)
 
@@ -807,8 +775,8 @@ def wrap_sensor_evaluation(
     resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
 
     def _wrapped_fn(context: SensorEvaluationContext):
-        resource_args_populated = _validate_and_get_resource_dict(
-            context, sensor_name, resource_arg_names
+        resource_args_populated = validate_and_get_resource_dict(
+            context.resources, sensor_name, resource_arg_names
         )
 
         context_param_name_if_present = get_context_param_name(fn)
@@ -880,6 +848,66 @@ def build_sensor_context(
         repository_def=repository_def,
         sensor_name=sensor_name,
         resources=resources,
+    )
+
+
+T = TypeVar("T")
+
+
+def get_or_create_sensor_context_base(
+    fn: Callable,
+    *args: Any,
+    context_type: Type[T],
+    **kwargs: Any,
+) -> Optional[T]:
+    context_param_name = get_context_param_name(fn)
+
+    if len(args) + len(kwargs) > 1:
+        raise DagsterInvalidInvocationError(
+            "Sensor invocation received multiple arguments. Only a first "
+            "positional context parameter should be provided when invoking."
+        )
+
+    context: Optional[T] = None
+
+    if len(args) > 0:
+        context = check.opt_inst(args[0], context_type)
+    elif len(kwargs) > 0:
+        if context_param_name and context_param_name not in kwargs:
+            raise DagsterInvalidInvocationError(
+                f"Sensor invocation expected argument '{context_param_name}'."
+            )
+        context_param_name = context_param_name or list(kwargs.keys())[0]
+        context = check.opt_inst(kwargs.get(context_param_name), context_type)
+    elif context_param_name:
+        # If the context parameter is present but no value was provided, we error
+        raise DagsterInvalidInvocationError(
+            "Sensor evaluation function expected context argument, but no context argument "
+            "was provided when invoking."
+        )
+
+    return context
+
+
+def get_or_create_sensor_context(
+    fn: Callable,
+    *args: Any,
+    **kwargs: Any,
+) -> SensorEvaluationContext:
+    """Based on the passed resource function and the arguments passed to it, returns the
+    user-passed SensorEvaluationContext or creates one if it is not passed.
+
+    Raises an exception if the user passes more than one argument or if the user-provided
+    function requires a context parameter but none is passed.
+    """
+    return (
+        get_or_create_sensor_context_base(
+            fn,
+            *args,
+            context_type=SensorEvaluationContext,
+            **kwargs,
+        )
+        or build_sensor_context()
     )
 
 
