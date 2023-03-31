@@ -32,3 +32,10 @@ alerts from within your ops.
 
 .. autoconfigurable:: PagerDutyService
   :annotation: ResourceDefinition
+
+
+Legacy
+=========
+
+.. autoconfigurable:: pagerduty_resource
+  :annotation: ResourceDefinition

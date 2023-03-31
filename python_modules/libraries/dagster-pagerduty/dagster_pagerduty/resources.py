@@ -22,9 +22,11 @@ class PagerDutyService(ConfigurableResource):
 
     routing_key: str = PyField(
         ...,
-        description="""The routing key provisions access to your PagerDuty service. You
-                    will need to include the integration key for your new integration, as a
-                    routing_key in the event payload.""",
+        description=(
+            "The routing key provisions access to your PagerDuty service. You"
+            "will need to include the integration key for your new integration, as a"
+            "routing_key in the event payload."
+        ),
     )
 
     def EventV2_create(
