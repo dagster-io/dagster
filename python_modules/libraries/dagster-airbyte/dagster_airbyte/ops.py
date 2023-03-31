@@ -63,8 +63,7 @@ class AirbyteSyncConfig(Config):
     tags={"kind": "airbyte"},
 )
 def airbyte_sync_op(context, config: AirbyteSyncConfig, airbyte: AirbyteResource) -> Iterable[Any]:
-    """
-    Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
+    """Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
     the job details for a given ``connection_id``.
 

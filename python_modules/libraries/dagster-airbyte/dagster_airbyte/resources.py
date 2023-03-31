@@ -14,6 +14,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster._annotations import quiet_experimental_warnings
 from dagster._config.structured_config import infer_schema_from_config_class
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field as PyField
@@ -35,9 +36,7 @@ class AirbyteState:
 
 
 class AirbyteResource(ConfigurableResource):
-    """
-    This class exposes methods on top of the Airbyte REST API.
-    """
+    """This class exposes methods on top of the Airbyte REST API."""
 
     _log: logging.Logger
 
@@ -371,6 +370,7 @@ class AirbyteResource(ConfigurableResource):
 
 
 @resource(config_schema=infer_schema_from_config_class(AirbyteResource))
+@quiet_experimental_warnings
 def airbyte_resource(context) -> AirbyteResource:
     """This resource allows users to programatically interface with the Airbyte REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
