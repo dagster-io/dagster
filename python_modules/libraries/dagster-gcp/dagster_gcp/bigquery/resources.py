@@ -15,7 +15,7 @@ from .configs import bq_resource_config
 )
 def bigquery_resource(context):
     no_creds_config = {
-        key: value for key, value in context.resource_config if key != "gcp_credentials"
+        key: value for key, value in context.resource_config.items() if key != "gcp_credentials"
     }
     bq = bigquery.Client(**no_creds_config)
 
