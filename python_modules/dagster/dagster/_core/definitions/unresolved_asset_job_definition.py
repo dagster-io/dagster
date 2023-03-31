@@ -107,6 +107,12 @@ class UnresolvedAssetJobDefinition(
             PartitionedConfig,
         )
 
+        deprecation_warning(
+            "UnresolvedAssetJobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
         if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -127,7 +133,7 @@ class UnresolvedAssetJobDefinition(
             run_config
             if run_config is not None
             else partitioned_config.get_run_config_for_partition_key(
-                partition.name, instance=instance, current_time=current_time
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
             )
         )
         run_request_tags = {
@@ -143,6 +149,7 @@ class UnresolvedAssetJobDefinition(
             run_config=run_config,
             tags=run_request_tags,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     def resolve(

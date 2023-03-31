@@ -25,6 +25,9 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+)
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import (
     Resources,
@@ -44,9 +47,14 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import PipelineRunReaction, RunRequest, SkipReason
+from .run_request import (
+    PipelineRunReaction,
+    RunRequest,
+    SkipReason,
+)
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
@@ -592,15 +600,12 @@ class SensorDefinition:
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
-        self.check_valid_run_requests(run_requests)
-
-        if self._asset_selection:
-            run_requests = [
-                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
-            ]
+        resolved_run_requests = self.resolve_run_requests(
+            run_requests, context, self._asset_selection
+        )
 
         return SensorExecutionData(
-            run_requests,
+            resolved_run_requests,
             skip_message,
             context.cursor,
             pipeline_run_reactions,
@@ -616,17 +621,33 @@ class SensorDefinition:
     def load_targets(
         self,
     ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        """Returns job/graph definitions that have been directly passed into the sensor definition.
+        Any jobs or graphs that are referenced by name will not be loaded.
+        """
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
                 targets.append(target.load())
         return targets
 
-    def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
+    def resolve_run_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        context: SensorEvaluationContext,
+        asset_selection: Optional[AssetSelection],
+    ) -> Sequence[RunRequest]:
+        def _get_repo_job_by_name(context: SensorEvaluationContext, job_name: str) -> JobDefinition:
+            if context.repository_def is None:
+                raise DagsterInvariantViolationError(
+                    "Must provide repository def to build_sensor_context when yielding partitioned"
+                    " run requests"
+                )
+            return context.repository_def.get_job(job_name)
+
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
 
-        if run_requests and not self._targets and not self._asset_selection:
+        if run_requests and len(self._targets) == 0 and not self._asset_selection:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
@@ -634,17 +655,50 @@ class SensorDefinition:
                 "decorator."
             )
 
+        if asset_selection:
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
+            ]
+
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
+        # Run requests may contain an invalid target, or a partition key that does not exist.
+        # We will resolve these run requests, applying the target and partition config/tags.
+        resolved_run_requests = []
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
                 raise Exception(
-                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
-                    f"specify job_name for the requested run. Expected one of: {target_names}"
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not"
+                    " specify job_name for the requested run. Expected one of:"
+                    f" {target_names}"
                 )
-            elif run_request.job_name and run_request.job_name not in target_names:
+            elif (
+                run_request.job_name
+                and run_request.job_name not in target_names
+                and not asset_selection
+            ):
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
+
+            if run_request.partition_key and not run_request.has_resolved_partition():
+                selected_job = _get_repo_job_by_name(
+                    context, run_request.job_name if run_request.job_name else target_names[0]
+                )
+                resolved_run_requests.append(
+                    run_request.with_resolved_tags_and_config(
+                        target_definition=selected_job,
+                        current_time=None,
+                        dynamic_partitions_store=dynamic_partitions_store,
+                    )
+                )
+            else:
+                resolved_run_requests.append(run_request)
+
+        return resolved_run_requests
 
     @property
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
