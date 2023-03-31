@@ -1,13 +1,8 @@
-import base64
-import json
-import os
-import tempfile
 from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
 
 from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -18,6 +13,8 @@ from dagster._core.storage.db_io_manager import (
 )
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
+
+from .utils import setup_gcp_creds
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -175,25 +172,8 @@ def build_bigquery_io_manager(
             default_load_type=default_load_type,
         )
         if init_context.resource_config.get("gcp_credentials"):
-            if os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None:
-                raise DagsterInvalidDefinitionError(
-                    "Resource config error: gcp_credentials config for BigQuery IO manager cannot"
-                    " be used if GOOGLE_APPLICATION_CREDENTIALS environment variable is set."
-                )
-            with tempfile.NamedTemporaryFile("w+") as f:
-                temp_file_name = f.name
-                json.dump(
-                    json.loads(
-                        base64.b64decode(init_context.resource_config.get("gcp_credentials"))
-                    ),
-                    f,
-                )
-                f.flush()
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_name
-                try:
-                    yield mgr
-                finally:
-                    os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+            with setup_gcp_creds(init_context):
+                yield mgr
         else:
             yield mgr
 
