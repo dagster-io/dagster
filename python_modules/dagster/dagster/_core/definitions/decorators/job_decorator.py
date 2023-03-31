@@ -38,12 +38,14 @@ class _Job:
         partitions_def: Optional["PartitionsDefinition[object]"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ):
+        from dagster._core.definitions.run_config import convert_config_input
+
         self.name = name
         self.description = description
         self.tags = tags
         self.metadata = metadata
         self.resource_defs = resource_defs
-        self.config = config
+        self.config = convert_config_input(config)
         self.logger_defs = logger_defs
         self.executor_def = executor_def
         self.hooks = hooks
