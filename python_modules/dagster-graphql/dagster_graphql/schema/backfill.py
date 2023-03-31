@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
-from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.execution.backfill import BackfillPartitionsStatus, PartitionBackfill
 from dagster._core.host_representation.external import ExternalPartitionSet
 from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
@@ -28,7 +28,10 @@ from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.partition_sets import GraphenePartitionStatusCounts
+    from dagster_graphql.schema.partition_sets import (
+        GrapheneAssetPartitionsStatusCounts,
+        GraphenePartitionStatusCounts,
+    )
 
     from ..schema.partition_sets import GraphenePartitionSet
     from .pipelines.pipeline import GrapheneRun
@@ -128,6 +131,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
+    )
+    assetPartitionsStatusCounts = non_null_list(
+        "dagster_graphql.schema.partition_sets.GrapheneAssetPartitionsStatusCounts"
     )
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
@@ -253,6 +259,35 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             partition_run_data,
             check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
         )
+
+    def resolve_assetPartitionsStatusCounts(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence["GrapheneAssetPartitionsStatusCounts"]:
+        from dagster_graphql.schema.partition_sets import (
+            GrapheneAssetPartitionsStatusCounts,
+        )
+
+        status_counts_by_asset = (
+            self._backfill_job.get_partitions_status_counts_and_totals_by_asset(
+                graphene_info.context
+            )
+        )
+
+        asset_partition_status_counts = []
+
+        for asset_key, partitions_counts in status_counts_by_asset.items():
+            counts_by_status = partitions_counts[0]
+            asset_partition_status_counts.append(
+                GrapheneAssetPartitionsStatusCounts(
+                    assetKey=asset_key,
+                    numPartitionsTargeted=partitions_counts[1],
+                    numPartitionsRequested=counts_by_status[BackfillPartitionsStatus.REQUESTED],
+                    numPartitionsCompleted=counts_by_status[BackfillPartitionsStatus.COMPLETED],
+                    numPartitionsFailed=counts_by_status[BackfillPartitionsStatus.FAILED],
+                )
+            )
+
+        return asset_partition_status_counts
 
     def resolve_error(self, _graphene_info: ResolveInfo) -> Optional[GraphenePythonError]:
         if self._backfill_job.error:

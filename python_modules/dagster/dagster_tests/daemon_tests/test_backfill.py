@@ -823,6 +823,7 @@ def test_pure_asset_backfill(
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
         assert len(instance.run_ids_for_asset_key(asset_key)) == 0
 
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED

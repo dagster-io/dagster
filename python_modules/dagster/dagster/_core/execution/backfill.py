@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence, Tuple
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -15,7 +15,7 @@ from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
-from .asset_backfill import AssetBackfillData
+from .asset_backfill import AssetBackfillData, BackfillPartitionsStatus
 
 
 @whitelist_for_serdes
@@ -125,6 +125,44 @@ class PartitionBackfill(
             )
         else:
             return True
+
+    def get_partitions_status_counts_and_totals_by_asset(
+        self, workspace: IWorkspace
+    ) -> Mapping[AssetKey, Tuple[Mapping[BackfillPartitionsStatus, int], int]]:
+        if not self.is_valid_serialization(workspace):
+            return {}
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return {}
+
+            partitions_status_counts_by_asset_key = (
+                asset_backfill_data.get_partitions_status_counts_by_asset_key()
+            )
+            num_targeted_partitions_by_asset_key = (
+                asset_backfill_data.get_num_targeted_partitions_by_asset_key()
+            )
+
+            check.invariant(
+                partitions_status_counts_by_asset_key.keys()
+                == num_targeted_partitions_by_asset_key.keys()
+            )
+
+            return {
+                asset_key: (
+                    partitions_status_counts_by_asset_key[asset_key],
+                    num_targeted_partitions_by_asset_key[asset_key],
+                )
+                for asset_key in partitions_status_counts_by_asset_key
+            }
+
+        else:
+            return {}
 
     def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
         if not self.is_valid_serialization(workspace):

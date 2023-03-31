@@ -270,6 +270,15 @@ export type AssetOrError = Asset | AssetNotFoundError;
 
 export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
 
+export type AssetPartitionsStatusCounts = {
+  __typename: 'AssetPartitionsStatusCounts';
+  assetKey: AssetKey;
+  numPartitionsCompleted: Scalars['Int'];
+  numPartitionsFailed: Scalars['Int'];
+  numPartitionsRequested: Scalars['Int'];
+  numPartitionsTargeted: Scalars['Int'];
+};
+
 export type AssetWipeMutationResult =
   | AssetNotFoundError
   | AssetWipeSuccess
@@ -2230,6 +2239,7 @@ export type PartitionRunsArgs = {
 
 export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
+  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
   assetSelection: Maybe<Array<AssetKey>>;
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
@@ -4512,6 +4522,39 @@ export const buildAssetNotFoundError = (
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
+  };
+};
+
+export const buildAssetPartitionsStatusCounts = (
+  overrides?: Partial<AssetPartitionsStatusCounts>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetPartitionsStatusCounts'} & AssetPartitionsStatusCounts => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetPartitionsStatusCounts');
+  return {
+    __typename: 'AssetPartitionsStatusCounts',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    numPartitionsCompleted:
+      overrides && overrides.hasOwnProperty('numPartitionsCompleted')
+        ? overrides.numPartitionsCompleted!
+        : 524,
+    numPartitionsFailed:
+      overrides && overrides.hasOwnProperty('numPartitionsFailed')
+        ? overrides.numPartitionsFailed!
+        : 6432,
+    numPartitionsRequested:
+      overrides && overrides.hasOwnProperty('numPartitionsRequested')
+        ? overrides.numPartitionsRequested!
+        : 1501,
+    numPartitionsTargeted:
+      overrides && overrides.hasOwnProperty('numPartitionsTargeted')
+        ? overrides.numPartitionsTargeted!
+        : 5211,
   };
 };
 
@@ -8615,6 +8658,14 @@ export const buildPartitionBackfill = (
   relationshipsToOmit.add('PartitionBackfill');
   return {
     __typename: 'PartitionBackfill',
+    assetPartitionsStatusCounts:
+      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
+        ? overrides.assetPartitionsStatusCounts!
+        : [
+            relationshipsToOmit.has('AssetPartitionsStatusCounts')
+              ? ({} as AssetPartitionsStatusCounts)
+              : buildAssetPartitionsStatusCounts({}, relationshipsToOmit),
+          ],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
