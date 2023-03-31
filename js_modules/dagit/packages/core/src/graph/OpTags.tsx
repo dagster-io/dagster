@@ -325,7 +325,7 @@ export const KNOWN_TAGS = {
     reversed: true,
   },
   meltano: {
-    color: '#2D1C6D',
+    color: '#311772',
     icon: meltano,
     content: 'Meltano',
   },
