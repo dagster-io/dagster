@@ -77,20 +77,14 @@ def test_cron_iterator_always_advances():
     ],
 )
 def test_dst_spring_forward_transition_advances(execution_timezone, cron_string, times):
-    start_timestamp = to_timezone(times[0], "UTC").timestamp()
-
-    cron_string_iterator(
-        start_timestamp + 1,
-        cron_string,
-        execution_timezone,
-    )
-
-    # Starting 1 second after each time individually also produces the next tick
+    # Starting 1 second after each time produces the next tick
     for i in range(len(times) - 1):
         start_timestamp = to_timezone(times[i], "UTC").timestamp() + 1
         fresh_cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
-        next_time = next(fresh_cron_iter)
 
-        assert (
-            next_time.timestamp() == times[i + 1].timestamp()
-        ), f"Expected {times[i]} to advance to {times[i+1]}, got {str(next_time)}"
+        for j in range(i + 1, len(times)):
+            next_time = next(fresh_cron_iter)
+
+            assert (
+                next_time.timestamp() == times[j].timestamp()
+            ), f"Expected {times[i]} to advance to {times[j]}, got {str(next_time)}"
