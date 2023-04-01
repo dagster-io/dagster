@@ -13,76 +13,12 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'a_solid_with_config'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'job_with_default_config'
-                        },
-                        'solidHandle': {
-                            'handleID': 'a_solid_with_config'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'op_with_map_config'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'config_with_map'
-                        },
-                        'solidHandle': {
-                            'handleID': 'op_with_map_config'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'op_with_multilayered_config'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'more_complicated_nested_config'
-                        },
-                        'solidHandle': {
-                            'handleID': 'op_with_multilayered_config'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'op_with_three_field_config'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'more_complicated_config'
-                        },
-                        'solidHandle': {
-                            'handleID': 'op_with_three_field_config'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
                     'name': 'add_four'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four'
@@ -98,7 +34,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_1.adder_1'
@@ -106,7 +42,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_1.adder_2'
@@ -114,7 +50,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_2.adder_1'
@@ -122,7 +58,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_2.adder_2'
@@ -138,7 +74,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_1'
@@ -146,7 +82,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'add_four.adder_2'
@@ -198,22 +134,6 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'always_succeed'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'apply_to_three'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'multi_mode_with_resources'
-                        },
-                        'solidHandle': {
-                            'handleID': 'apply_to_three'
                         }
                     }
                 ]
@@ -354,7 +274,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'can_fail'
@@ -397,7 +317,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'df_expectations_solid'
+                    'name': 'df_expectations_op'
                 },
                 'invocations': [
                     {
@@ -405,7 +325,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_with_expectations'
                         },
                         'solidHandle': {
-                            'handleID': 'df_expectations_solid'
+                            'handleID': 'df_expectations_op'
                         }
                     }
                 ]
@@ -418,7 +338,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'div_four'
@@ -434,7 +354,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'div_four.div_1'
@@ -442,7 +362,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'composites_pipeline'
+                            'name': 'composites_job'
                         },
                         'solidHandle': {
                             'handleID': 'div_four.div_2'
@@ -570,7 +490,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'emit'
@@ -586,7 +506,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_expectations'
+                            'name': 'job_with_expectations'
                         },
                         'solidHandle': {
                             'handleID': 'emit_failed_expectation'
@@ -602,7 +522,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_expectations'
+                            'name': 'job_with_expectations'
                         },
                         'solidHandle': {
                             'handleID': 'emit_successful_expectation'
@@ -618,7 +538,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_expectations'
+                            'name': 'job_with_expectations'
                         },
                         'solidHandle': {
                             'handleID': 'emit_successful_expectation_no_metadata'
@@ -634,7 +554,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'emit_ten'
@@ -698,7 +618,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_invalid_definition_error'
+                            'name': 'job_with_invalid_definition_error'
                         },
                         'solidHandle': {
                             'handleID': 'fail_subset'
@@ -922,7 +842,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_input_early_terminate_pipeline'
+                            'name': 'retry_multi_input_early_terminate_job'
                         },
                         'solidHandle': {
                             'handleID': 'get_input_one'
@@ -938,7 +858,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_input_early_terminate_pipeline'
+                            'name': 'retry_multi_input_early_terminate_job'
                         },
                         'solidHandle': {
                             'handleID': 'get_input_two'
@@ -1098,7 +1018,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'infinite_loop_pipeline'
+                            'name': 'infinite_loop_job'
                         },
                         'solidHandle': {
                             'handleID': 'loop'
@@ -1114,7 +1034,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'materialization_pipeline'
+                            'name': 'materialization_job'
                         },
                         'solidHandle': {
                             'handleID': 'materialize'
@@ -1130,7 +1050,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'multi'
@@ -1218,7 +1138,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'double_total'
@@ -1226,7 +1146,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'multiply_by_two'
@@ -1242,7 +1162,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'multiply_inputs'
@@ -1354,7 +1274,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'child_multi_skip'
@@ -1362,7 +1282,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'child_skip'
@@ -1370,7 +1290,7 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'grandchild_fail'
@@ -1381,7 +1301,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'noop_solid'
+                    'name': 'noop_op'
                 },
                 'invocations': [
                     {
@@ -1389,7 +1309,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'config_with_map'
                         },
                         'solidHandle': {
-                            'handleID': 'noop_solid'
+                            'handleID': 'noop_op'
                         }
                     },
                     {
@@ -1397,15 +1317,15 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'more_complicated_config'
                         },
                         'solidHandle': {
-                            'handleID': 'noop_solid'
+                            'handleID': 'noop_op'
                         }
                     },
                     {
                         'pipeline': {
-                            'name': 'noop_pipeline'
+                            'name': 'noop_job'
                         },
                         'solidHandle': {
-                            'handleID': 'noop_solid'
+                            'handleID': 'noop_op'
                         }
                     },
                     {
@@ -1413,7 +1333,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'simple_job_a'
                         },
                         'solidHandle': {
-                            'handleID': 'noop_solid'
+                            'handleID': 'noop_op'
                         }
                     },
                     {
@@ -1421,7 +1341,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'simple_job_b'
                         },
                         'solidHandle': {
-                            'handleID': 'noop_solid'
+                            'handleID': 'noop_op'
                         }
                     },
                     {
@@ -1429,7 +1349,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'composed_graph'
                         },
                         'solidHandle': {
-                            'handleID': 'simple_graph.noop_solid'
+                            'handleID': 'simple_graph.noop_op'
                         }
                     }
                 ]
@@ -1442,7 +1362,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_invalid_definition_error'
+                            'name': 'job_with_invalid_definition_error'
                         },
                         'solidHandle': {
                             'handleID': 'one'
@@ -1501,6 +1421,78 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'op_asset_a'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'multi_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_asset_a'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'single_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_asset_a'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_asset_b'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'multi_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_asset_b'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'partitioned_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_that_gets_tags'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hello_world_with_tags'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_that_gets_tags'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'op_with_2_ins'
                 },
                 'invocations': [
@@ -1517,12 +1509,132 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'op_with_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'job_with_default_config'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_input_output_metadata'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'job_with_input_output_metadata'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_input_output_metadata'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_list'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'job_with_list'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_list'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_map_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'config_with_map'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_map_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_multilayered_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'more_complicated_nested_config'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_multilayered_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_required_resource'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'required_resource_config_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_required_resource'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'required_resource_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_required_resource'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'op_with_three_field_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'more_complicated_config'
+                        },
+                        'solidHandle': {
+                            'handleID': 'op_with_three_field_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'passthrough'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_output_pipeline'
+                            'name': 'retry_multi_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'child_fail'
@@ -1578,7 +1690,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'scalar_output_pipeline'
+                            'name': 'scalar_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_any'
@@ -1594,7 +1706,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'scalar_output_pipeline'
+                            'name': 'scalar_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_bool'
@@ -1610,7 +1722,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'no_config_chain_pipeline'
+                            'name': 'no_config_chain_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_foo'
@@ -1626,7 +1738,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'no_config_pipeline'
+                            'name': 'no_config_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_hello'
@@ -1642,7 +1754,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'no_config_chain_pipeline'
+                            'name': 'no_config_chain_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_hello_world'
@@ -1658,7 +1770,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'scalar_output_pipeline'
+                            'name': 'scalar_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_int'
@@ -1690,7 +1802,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_input_early_terminate_pipeline'
+                            'name': 'retry_multi_input_early_terminate_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_one'
@@ -1706,7 +1818,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'multi_mode_with_loggers'
+                            'name': 'loggers_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_six'
@@ -1722,7 +1834,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'scalar_output_pipeline'
+                            'name': 'scalar_output_job'
                         },
                         'solidHandle': {
                             'handleID': 'return_str'
@@ -1749,135 +1861,15 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'simple_solid'
+                    'name': 'simple_op'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'tagged_pipeline'
+                            'name': 'tagged_job'
                         },
                         'solidHandle': {
-                            'handleID': 'simple_solid'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_asset_a'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'multi_asset_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_asset_a'
-                        }
-                    },
-                    {
-                        'pipeline': {
-                            'name': 'single_asset_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_asset_a'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_asset_b'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'multi_asset_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_asset_b'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_partitioned_asset'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'partitioned_asset_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_partitioned_asset'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_that_gets_tags'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'hello_world_with_tags'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_that_gets_tags'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_with_input_output_metadata'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'pipeline_with_input_output_metadata'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_with_input_output_metadata'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_with_list'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'pipeline_with_list'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_with_list'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'solid_with_required_resource'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'required_resource_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'solid_with_required_resource'
+                            'handleID': 'simple_op'
                         }
                     }
                 ]
@@ -1906,7 +1898,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'spew_pipeline'
+                            'name': 'spew_job'
                         },
                         'solidHandle': {
                             'handleID': 'spew'
@@ -1922,7 +1914,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_resource_pipeline'
+                            'name': 'retry_resource_job'
                         },
                         'solidHandle': {
                             'handleID': 'start'
@@ -1954,7 +1946,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_multi_input_early_terminate_pipeline'
+                            'name': 'retry_multi_input_early_terminate_job'
                         },
                         'solidHandle': {
                             'handleID': 'sum_inputs'
@@ -1970,7 +1962,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'dynamic_pipeline'
+                            'name': 'dynamic_job'
                         },
                         'solidHandle': {
                             'handleID': 'sum_numbers'
@@ -1981,7 +1973,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'sum_solid'
+                    'name': 'sum_op'
                 },
                 'invocations': [
                     {
@@ -1989,7 +1981,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_solid'
+                            'handleID': 'sum_op'
                         }
                     },
                     {
@@ -1997,7 +1989,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_df_input'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_solid'
+                            'handleID': 'sum_op'
                         }
                     },
                     {
@@ -2005,7 +1997,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_two'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_solid'
+                            'handleID': 'sum_op'
                         }
                     },
                     {
@@ -2013,7 +2005,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_with_expectations'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_solid'
+                            'handleID': 'sum_op'
                         }
                     }
                 ]
@@ -2021,7 +2013,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'sum_sq_solid'
+                    'name': 'sum_sq_op'
                 },
                 'invocations': [
                     {
@@ -2029,7 +2021,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_sq_solid'
+                            'handleID': 'sum_sq_op'
                         }
                     },
                     {
@@ -2037,7 +2029,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_df_input'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_sq_solid'
+                            'handleID': 'sum_sq_op'
                         }
                     },
                     {
@@ -2045,7 +2037,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'csv_hello_world_with_expectations'
                         },
                         'solidHandle': {
-                            'handleID': 'sum_sq_solid'
+                            'handleID': 'sum_sq_op'
                         }
                     }
                 ]
@@ -2053,15 +2045,15 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'tag_asset_solid'
+                    'name': 'tag_asset_op'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'asset_tag_pipeline'
+                            'name': 'asset_tag_job'
                         },
                         'solidHandle': {
-                            'handleID': 'tag_asset_solid'
+                            'handleID': 'tag_asset_op'
                         }
                     }
                 ]
@@ -2074,7 +2066,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'pipeline_with_enum_config'
+                            'name': 'job_with_enum_config'
                         },
                         'solidHandle': {
                             'handleID': 'takes_an_enum'
@@ -2106,7 +2098,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'naughty_programmer_pipeline'
+                            'name': 'naughty_programmer_job'
                         },
                         'solidHandle': {
                             'handleID': 'throw_a_thing'
@@ -2338,7 +2330,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'retry_resource_pipeline'
+                            'name': 'retry_resource_job'
                         },
                         'solidHandle': {
                             'handleID': 'will_fail'
