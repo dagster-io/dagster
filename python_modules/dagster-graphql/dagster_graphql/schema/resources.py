@@ -1,11 +1,16 @@
+from typing import List
+
 import dagster._check as check
 import graphene
+from dagster._core.definitions.selector import ResourceSelector
 from dagster._core.host_representation.external import ExternalResource
 from dagster._core.host_representation.external_data import (
     ExternalResourceConfigEnvVar,
     ExternalResourceValue,
+    NestedResourceType,
 )
 
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -44,26 +49,55 @@ class GrapheneConfiguredValue(graphene.ObjectType):
             self.value = external_resource_value
 
 
+GrapheneNestedResourceType = graphene.Enum.from_enum(NestedResourceType)
+
+
+class GrapheneNestedResourceEntry(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    type = graphene.NonNull(GrapheneNestedResourceType)
+    resource = graphene.Field(lambda: GrapheneResourceDetails)
+
+    class Meta:
+        name = "NestedResourceEntry"
+
+
 class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configFields = graphene.Field(
         non_null_list(GrapheneConfigTypeField),
-        description="Snapshots of all the fields for the given Resource",
+        description="Snapshots of all the fields for the given resource",
     )
     configuredValues = graphene.Field(
         non_null_list(GrapheneConfiguredValue),
         description=(
             "List of K/V pairs of user-configured values for each of the top-level fields on the"
-            " Resource"
+            " resource"
         ),
     )
+    isTopLevel = graphene.NonNull(graphene.Boolean)
+    nestedResources = graphene.Field(
+        non_null_list(GrapheneNestedResourceEntry),
+        description="List of nested resources for the given resource",
+    )
+    parentResources = graphene.Field(
+        non_null_list(GrapheneNestedResourceEntry),
+        description="List of parent resources for the given resource",
+    )
+    resourceType = graphene.NonNull(graphene.String)
+    assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
 
     class Meta:
         name = "ResourceDetails"
 
-    def __init__(self, external_resource: ExternalResource):
+    def __init__(
+        self, location_name: str, repository_name: str, external_resource: ExternalResource
+    ):
         super().__init__()
+
+        self._location_name = check.str_param(location_name, "location_name")
+        self._repository_name = check.str_param(repository_name, "repository_name")
+
         self._external_resource = check.inst_param(
             external_resource, "external_resource", ExternalResource
         )
@@ -73,6 +107,11 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._configured_values = external_resource.configured_values
 
         self._config_schema_snap = external_resource.config_schema_snap
+        self.isTopLevel = external_resource.is_top_level
+        self._nested_resources = external_resource.nested_resources
+        self._parent_resources = external_resource.parent_resources
+        self.resourceType = external_resource.resource_type
+        self._asset_keys_using = external_resource.asset_keys_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -88,6 +127,49 @@ class GrapheneResourceDetails(graphene.ObjectType):
             GrapheneConfiguredValue(key=key, external_resource_value=value)
             for key, value in self._configured_values.items()
         ]
+
+    def resolve_nestedResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+        from dagster_graphql.implementation.fetch_resources import get_resource_or_error
+
+        return [
+            GrapheneNestedResourceEntry(
+                name=k,
+                type=v.type,
+                resource=get_resource_or_error(
+                    graphene_info,
+                    ResourceSelector(
+                        location_name=self._location_name,
+                        repository_name=self._repository_name,
+                        resource_name=v.name,
+                    ),
+                )
+                if v.type == NestedResourceType.TOP_LEVEL
+                else None,
+            )
+            for k, v in self._nested_resources.items()
+        ]
+
+    def resolve_parentResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+        from dagster_graphql.implementation.fetch_resources import get_resource_or_error
+
+        return [
+            GrapheneNestedResourceEntry(
+                name=attribute,
+                type=NestedResourceType.TOP_LEVEL,
+                resource=get_resource_or_error(
+                    graphene_info,
+                    ResourceSelector(
+                        location_name=self._location_name,
+                        repository_name=self._repository_name,
+                        resource_name=name,
+                    ),
+                ),
+            )
+            for name, attribute in self._parent_resources.items()
+        ]
+
+    def resolve_assetKeysUsing(self, _graphene_info):
+        return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):

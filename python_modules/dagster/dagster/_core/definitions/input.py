@@ -7,7 +7,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Type,
     TypeVar,
@@ -18,7 +17,8 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    ArbitraryMetadataMapping,
+    MetadataValue,
     RawMetadataValue,
     normalize_metadata,
 )
@@ -101,8 +101,8 @@ class InputDefinition:
     _default_value: Any
     _input_manager_key: Optional[str]
     _root_manager_key: Optional[str]
-    _metadata: Mapping[str, RawMetadataValue]
-    _metadata_entries: Sequence[MetadataEntry]
+    _raw_metadata: ArbitraryMetadataMapping
+    _metadata: Mapping[str, MetadataValue]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
     _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
 
@@ -113,7 +113,7 @@ class InputDefinition:
         description: Optional[str] = None,
         default_value: object = NoValueSentinel,
         root_manager_key: Optional[str] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
         input_manager_key: Optional[str] = None
@@ -145,8 +145,8 @@ class InputDefinition:
 
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
-        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = normalize_metadata(self._metadata, [], allow_invalid=True)
+        self._raw_metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        self._metadata = normalize_metadata(self._raw_metadata, allow_invalid=True)
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -201,16 +201,12 @@ class InputDefinition:
         return self._input_manager_key
 
     @property
-    def metadata(self) -> Mapping[str, RawMetadataValue]:
-        return self._metadata
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self._raw_metadata
 
     @property
     def is_asset(self) -> bool:
         return self._asset_key is not None
-
-    @property
-    def metadata_entries(self) -> Sequence[MetadataEntry]:
-        return self._metadata_entries
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -317,7 +313,7 @@ class InputDefinition:
             description=description,
             default_value=default_value,
             root_manager_key=self._root_manager_key,
-            metadata=self._metadata,
+            metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             input_manager_key=self._input_manager_key,
@@ -330,7 +326,7 @@ class InputDefinition:
             description=self.description,
             default_value=self.default_value if self.has_default_value else NoValueSentinel,
             root_manager_key=self._root_manager_key,
-            metadata=self._metadata,
+            metadata=self.metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             input_manager_key=self._input_manager_key,

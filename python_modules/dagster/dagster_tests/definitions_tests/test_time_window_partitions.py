@@ -16,6 +16,7 @@ from dagster import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     ScheduleType,
     TimeWindow,
@@ -789,3 +790,14 @@ def test_invalid_cron_schedule():
             cron_schedule="0 -24 * * *",
             fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         )
+
+
+def test_get_cron_schedule_weekdays_with_hour_offset():
+    partitions_def = TimeWindowPartitionsDefinition(
+        start="2023-03-27", fmt="%Y-%m-%d", cron_schedule=r"0 0 * * 1-5"
+    )
+    with pytest.raises(
+        CheckError,
+        match="does not support minute_of_hour/hour_of_day/day_of_week/day_of_month arguments",
+    ):
+        partitions_def.get_cron_schedule(hour_of_day=3)

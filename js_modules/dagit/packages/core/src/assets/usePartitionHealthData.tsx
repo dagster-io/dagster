@@ -3,6 +3,7 @@ import isEqual from 'lodash/isEqual';
 import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
+import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
@@ -466,7 +467,8 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
 
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
-// clear them immediately to avoid an empty state.
+// clear them immediately to avoid an empty state. You can generate a hint from the
+// minimal LiveData using healthRefreshHintFromLiveData.
 //
 export function usePartitionHealthData(
   assetKeys: AssetKey[],
@@ -520,6 +522,17 @@ export function usePartitionHealthData(
     );
   }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
 }
+
+// This function returns a string value that changes when the partition health bar
+// or partition events page needs to be reloaded based on the partition counts or
+// a new run / run failure.
+//
+export const healthRefreshHintFromLiveData = (liveData: LiveDataForNode | undefined) =>
+  liveData
+    ? `${liveData.lastMaterialization?.timestamp},${
+        liveData.runWhichFailedToMaterialize?.id
+      },${JSON.stringify(liveData.partitionStats)}`
+    : `-`;
 
 const rangeStatusToState = (rangeStatus: PartitionRangeStatus) =>
   rangeStatus === PartitionRangeStatus.MATERIALIZED

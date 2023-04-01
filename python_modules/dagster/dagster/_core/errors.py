@@ -119,7 +119,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
                 current_value=repr(current_value),
-                reason_str=" Reason: {reason}.".format(reason=reason) if reason else "",
+                reason_str=f" Reason: {reason}." if reason else "",
             ),
             **kwargs,
         )
@@ -487,13 +487,14 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success`` member is ``False``.
     """
 
-    def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import DagsterType, MetadataEntry
+    def __init__(self, description=None, metadata=None, dagster_type=None):
+        from dagster import DagsterType
+        from dagster._core.definitions.metadata import normalize_metadata
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
@@ -504,7 +505,7 @@ class DagsterEventLogInvalidForRun(DagsterError):
     def __init__(self, run_id):
         self.run_id = check.str_param(run_id, "run_id")
         super(DagsterEventLogInvalidForRun, self).__init__(
-            "Event logs invalid for run id {}".format(run_id)
+            f"Event logs invalid for run id {run_id}"
         )
 
 

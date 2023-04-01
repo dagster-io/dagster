@@ -2,13 +2,14 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, Mapping, NamedTuple, Optional, Sequence
 
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
+    FieldSerializer,
     NamedTupleSerializer,
     WhitelistMap,
     _whitelist_for_serdes,
@@ -460,6 +461,31 @@ def test_named_tuple_old_fields() -> None:
     val = Foo("red")
     serialized = serialize_value(val, whitelist_map=test_env)
     assert serialized == '{"__class__": "Foo", "color": "red", "shape": null}'
+    deserialized = deserialize_value(serialized, whitelist_map=test_env)
+    assert deserialized == val
+
+
+def test_named_tuple_field_serializers() -> None:
+    test_env = WhitelistMap.create()
+
+    class PairsSerializer(FieldSerializer):
+        def pack(
+            self, entries: Mapping[str, str], whitelist_map: WhitelistMap, descent_path: str
+        ) -> Sequence[Sequence[str]]:
+            return list(entries.items())
+
+        def unpack(
+            self, entries: Sequence[Sequence[str]], whitelist_map: WhitelistMap, descent_path: str
+        ) -> Any:
+            return {entry[0]: entry[1] for entry in entries}
+
+    @_whitelist_for_serdes(test_env, field_serializers={"entries": PairsSerializer})
+    class Foo(NamedTuple):
+        entries: Mapping[str, str]
+
+    val = Foo({"a": "b", "c": "d"})
+    serialized = serialize_value(val, whitelist_map=test_env)
+    assert serialized == '{"__class__": "Foo", "entries": [["a", "b"], ["c", "d"]]}'
     deserialized = deserialize_value(serialized, whitelist_map=test_env)
     assert deserialized == val
 

@@ -44,7 +44,7 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
         "Bad value for log level {level}: permissible values are {levels}.".format(
             level=str_log_level,
             levels=", ".join(
-                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
+                [f"'{level_name.upper()}'" for level_name in PYTHON_LOGGING_LEVELS_NAMES]
             ),
         ),
     )
@@ -71,11 +71,11 @@ def make_new_backfill_id() -> str:
 
 
 def str_format_list(items: Iterable[object]) -> str:
-    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
+    return "[{items}]".format(items=", ".join([f"'{item}'" for item in items]))
 
 
 def str_format_set(items: Iterable[object]) -> str:
-    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
+    return "[{items}]".format(items=", ".join([f"'{item}'" for item in items]))
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:

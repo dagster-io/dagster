@@ -43,7 +43,7 @@ from .dagster_types import (
 )
 from .dep_snapshot import (
     DependencyStructureIndex as DependencyStructureIndex,
-    SolidInvocationSnap as SolidInvocationSnap,
+    NodeInvocationSnap as NodeInvocationSnap,
 )
 from .execution_plan_snapshot import (
     ExecutionPlanSnapshot as ExecutionPlanSnapshot,
@@ -58,12 +58,12 @@ from .mode import (
     ModeDefSnap as ModeDefSnap,
     ResourceDefSnap as ResourceDefSnap,
 )
+from .node import (
+    GraphDefSnap as GraphDefSnap,
+    OpDefSnap as OpDefSnap,
+    build_graph_def_snap as build_graph_def_snap,
+)
 from .pipeline_snapshot import (
     PipelineSnapshot as PipelineSnapshot,
     create_pipeline_snapshot_id as create_pipeline_snapshot_id,
-)
-from .solid import (
-    CompositeSolidDefSnap as CompositeSolidDefSnap,
-    SolidDefSnap as SolidDefSnap,
-    build_composite_solid_def_snap as build_composite_solid_def_snap,
 )

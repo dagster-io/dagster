@@ -892,7 +892,7 @@ def load_assets_from_dbt_manifest(
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [
-            dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
+            dbt_assets_def.with_attributes(input_asset_key_replacements=input_key_replacements)
         ]
     else:
         dbt_assets = [dbt_assets_def]

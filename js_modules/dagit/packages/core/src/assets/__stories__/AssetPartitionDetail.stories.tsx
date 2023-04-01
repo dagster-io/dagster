@@ -28,7 +28,7 @@ export const EmptyState = () => {
   );
 };
 
-export const MaterializationFollowedByObservation = () => {
+export const MaterializationFollowedByObservations = () => {
   return (
     <MockedProvider
       mocks={[buildAssetPartitionDetailMock(), MaterializationUpstreamDataFullMock]}

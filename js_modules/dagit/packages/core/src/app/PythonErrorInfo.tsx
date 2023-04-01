@@ -100,6 +100,7 @@ export const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;
+  white-space: pre-wrap;
 `;
 
 const Trace = styled.div`

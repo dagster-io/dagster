@@ -188,8 +188,8 @@ def _stats_records(run_id):
 
 def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data=None):
     pipeline_name = "pipeline_name"
-    solid_handle = NodeHandle(solid_name, None)
-    step_handle = StepHandle(solid_handle)
+    node_handle = NodeHandle(solid_name, None)
+    step_handle = StepHandle(node_handle)
     return EventLogEntry(
         error_info=None,
         user_message="",
@@ -201,7 +201,7 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
         dagster_event=DagsterEvent(
             event_type.value,
             pipeline_name,
-            solid_handle=solid_handle,
+            node_handle=node_handle,
             step_handle=step_handle,
             event_specific_data=event_specific_data,
         ),
@@ -963,6 +963,10 @@ class TestEventLogStorage:
             record = records[0]
             assert isinstance(record, EventLogRecord)
             assert record.event_log_entry.dagster_event.asset_key == asset_key
+
+    def test_asset_materialization_null_key_fails(self):
+        with pytest.raises(check.CheckError):
+            AssetMaterialization(asset_key=None)
 
     def test_asset_events_error_parsing(self, storage):
         if not isinstance(storage, SqlEventLogStorage):

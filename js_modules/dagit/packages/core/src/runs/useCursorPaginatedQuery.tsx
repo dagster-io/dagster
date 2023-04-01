@@ -25,6 +25,7 @@ interface CursorPaginationQueryVariables {
 export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVariables>(options: {
   query: DocumentNode;
   nextCursorForResult: (result: T) => string | undefined;
+  skip?: boolean;
   variables: Omit<Omit<TVars, 'cusor'>, 'limit'>;
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
@@ -40,6 +41,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
 
   const queryResult = useQuery<T, TVars>(options.query, {
     partialRefetch: true,
+    skip: options.skip,
     variables: queryVars,
     notifyOnNetworkStatusChange: true,
   });

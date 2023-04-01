@@ -4,7 +4,6 @@ from dagster._core.definitions import (
     InputDefinition as InputDefinition,
     ModeDefinition as ModeDefinition,
     OutputDefinition as OutputDefinition,
-    PartitionSetDefinition as PartitionSetDefinition,
     PipelineDefinition as PipelineDefinition,
     PresetDefinition as PresetDefinition,
     build_assets_job as build_assets_job,
@@ -24,11 +23,6 @@ from dagster._core.execution.results import (
 from dagster._core.storage.fs_io_manager import (
     custom_path_fs_io_manager as custom_path_fs_io_manager,
     fs_io_manager as fs_io_manager,
-)
-from dagster._utils.partitions import (
-    create_offset_partition_selector as create_offset_partition_selector,
-    date_partition_range as date_partition_range,
-    identity_partition_selector as identity_partition_selector,
 )
 from dagster._utils.test import (
     execute_solid as execute_solid,

@@ -116,15 +116,13 @@ def _fetch_persisted_cursors(
         raw_cursor_value = persisted_cursors.get(_create_cursor_key(event_type))
 
         if raw_cursor_value is None:
-            logger.warn("No cursor for event type {}, ignoring older events".format(event_type))
+            logger.warn(f"No cursor for event type {event_type}, ignoring older events")
             fetched_cursors[event_type] = None
         else:
             try:
                 cursor_value = int(raw_cursor_value)
             except ValueError:
-                logger.exception(
-                    "Invalid cursor for event_type {}: {}".format(event_type, raw_cursor_value)
-                )
+                logger.exception(f"Invalid cursor for event_type {event_type}: {raw_cursor_value}")
                 raise
             fetched_cursors[event_type] = cursor_value
 

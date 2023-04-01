@@ -6,8 +6,8 @@ from dagster._config import ConfigSchemaSnapshot
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.mode import ModeDefSnap
+from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
-from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from .pipeline_index import PipelineIndex
 
@@ -56,7 +56,7 @@ class RepresentedPipeline(ABC):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -64,7 +64,7 @@ class RepresentedPipeline(ABC):
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -103,7 +103,7 @@ class RepresentedPipeline(ABC):
         return self._pipeline_index.dep_structure_index
 
     # Solids
-    def get_node_def_snap(self, solid_def_name: str) -> Union[SolidDefSnap, CompositeSolidDefSnap]:
+    def get_node_def_snap(self, solid_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:
         check.str_param(solid_def_name, "solid_def_name")
         return self._pipeline_index.get_node_def_snap(solid_def_name)
 

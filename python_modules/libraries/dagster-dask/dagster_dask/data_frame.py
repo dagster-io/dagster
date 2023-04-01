@@ -15,7 +15,6 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    MetadataEntry,
     Permissive,
     Selector,
     Shape,
@@ -476,9 +475,7 @@ def dataframe_loader(_context, config):
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
     if read_type not in DataFrameReadTypes:
-        raise DagsterInvariantViolationError(
-            "Unsupported read_type {read_type}.".format(read_type=read_type)
-        )
+        raise DagsterInvariantViolationError(f"Unsupported read_type {read_type}.")
 
     # Get the metadata entry for the read_type in order to know which function
     # to call and whether it uses path as the first argument. And, make
@@ -504,10 +501,8 @@ def df_type_check(_, value):
         return TypeCheck(success=False)
     return TypeCheck(
         success=True,
-        metadata_entries=[
-            # string cast columns since they may be things like datetime
-            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
-        ],
+        # string cast columns since they may be things like datetime
+        metadata={"metadata": {"columns": list(map(str, value.columns))}},
     )
 
 

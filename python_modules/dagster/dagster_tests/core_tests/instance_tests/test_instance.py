@@ -61,7 +61,7 @@ def test_get_run_by_id():
 
 def do_test_single_write_read(instance):
     run_id = "some_run_id"
-    pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+    pipeline_def = PipelineDefinition(name="some_pipeline", node_defs=[])
     instance.create_run_for_pipeline(pipeline_def=pipeline_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
@@ -410,7 +410,7 @@ def test_dagster_home_not_abspath(dirname):
     with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match=re.escape('$DAGSTER_HOME "{}" must be an absolute path.'.format(dirname)),
+            match=re.escape(f'$DAGSTER_HOME "{dirname}" must be an absolute path.'),
         ):
             DagsterInstance.get()
 
@@ -421,9 +421,7 @@ def test_dagster_home_not_dir():
     with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match=re.escape(
-                '$DAGSTER_HOME "{}" is not a directory or does not exist.'.format(dirname)
-            ),
+            match=re.escape(f'$DAGSTER_HOME "{dirname}" is not a directory or does not exist.'),
         ):
             DagsterInstance.get()
 

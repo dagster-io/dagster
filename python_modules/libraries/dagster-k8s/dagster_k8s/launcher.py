@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 from dagster import (
-    MetadataEntry,
     _check as check,
 )
 from dagster._cli.api import ExecuteRunArgs
@@ -240,11 +239,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "Creating Kubernetes run worker job",
             run,
             EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
+                {
+                    "Kubernetes Job name": job_name,
+                    "Kubernetes Namespace": container_context.namespace,
+                    "Run ID": run.run_id,
+                }
             ),
             cls=self.__class__,
         )
@@ -315,7 +314,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
+                message=f"Unable to terminate run; can_terminate returned {can_terminate}",
                 pipeline_run=run,
                 cls=self.__class__,
             )

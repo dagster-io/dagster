@@ -35,7 +35,9 @@ setup(
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        "dbt-core",
+        # Follow the version support constraints for dbt Core: https://docs.getdbt.com/docs/dbt-versions/core
+        "dbt-core>=1.1",
+        "networkx",
         "requests",
         "typer[all]",
     ],

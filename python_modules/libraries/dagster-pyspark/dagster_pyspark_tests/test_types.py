@@ -43,7 +43,7 @@ def test_dataframe_inputs(file_type, read, other, resource):
     def return_df(_, input_df):
         return input_df
 
-    options = {"path": file_relative_path(__file__, "num.{file_type}".format(file_type=file_type))}
+    options = {"path": file_relative_path(__file__, f"num.{file_type}")}
     if other:
         options["format"] = file_type
         file_type = "other"

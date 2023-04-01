@@ -48,7 +48,6 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
@@ -233,7 +232,7 @@ def run(
 def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey(key) for key in asset_keys],
-        tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+        partition_key=partition_key,
     )
 
 
@@ -740,6 +739,11 @@ scenarios = {
     "partial_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
+        expected_run_requests=[],
+    ),
+    "partial_run_partitioned": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_one_partition,
+        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"], partition_key="a")],
         expected_run_requests=[],
     ),
     ################################################################################################

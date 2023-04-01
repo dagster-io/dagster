@@ -21,7 +21,7 @@ from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -82,7 +82,7 @@ class AssetsDefinition(ResourceAddable):
     _group_names_by_key: Mapping[AssetKey, str]
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
-    _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
+    _metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping]
     _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
     _code_versions_by_key: Mapping[AssetKey, Optional[str]]
     _descriptions_by_key: Mapping[AssetKey, str]
@@ -100,10 +100,10 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
+        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
         descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_prefix_or_group
+        # if adding new fields, make sure to handle them in the with_attributes
         # and from_graph methods
     ):
         from .graph_definition import GraphDefinition
@@ -271,7 +271,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -355,7 +355,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -432,7 +432,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         group_names_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         descriptions_by_output_name: Optional[Mapping[str, str]] = None,
-        metadata_by_output_name: Optional[Mapping[str, Optional[MetadataUserInput]]] = None,
+        metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -653,7 +653,7 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def metadata_by_key(self) -> Mapping[AssetKey, MetadataUserInput]:
+    def metadata_by_key(self) -> Mapping[AssetKey, ArbitraryMetadataMapping]:
         return self._metadata_by_key
 
     @property
@@ -696,11 +696,14 @@ class AssetsDefinition(ResourceAddable):
         output_name = self.get_output_name_for_asset_key(key)
         return self.node_def.resolve_output_to_origin_op_def(output_name)
 
-    def with_prefix_or_group(
+    def with_attributes(
         self,
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        freshness_policy: Optional[
+            Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
+        ] = None,
     ) -> "AssetsDefinition":
         output_asset_key_replacements = check.opt_mapping_param(
             output_asset_key_replacements,
@@ -718,26 +721,49 @@ class AssetsDefinition(ResourceAddable):
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
         )
 
-        defined_group_names = [
-            asset_key.to_user_string()
-            for asset_key in group_names_by_key
-            if asset_key in self.group_names_by_key
-            and self.group_names_by_key[asset_key] != DEFAULT_GROUP_NAME
-        ]
-        if defined_group_names:
-            raise DagsterInvalidDefinitionError(
-                f"Group name already exists on assets {', '.join(defined_group_names)}"
-            )
+        if group_names_by_key:
+            group_name_conflicts = [
+                asset_key
+                for asset_key in group_names_by_key
+                if asset_key in self.group_names_by_key
+                and self.group_names_by_key[asset_key] != DEFAULT_GROUP_NAME
+            ]
+            if group_name_conflicts:
+                raise DagsterInvalidDefinitionError(
+                    "Group name already exists on assets"
+                    f" {', '.join(asset_key.to_user_string() for asset_key in group_name_conflicts)}"
+                )
 
         replaced_group_names_by_key = {
             output_asset_key_replacements.get(key, key): group_name
             for key, group_name in self.group_names_by_key.items()
         }
 
-        replaced_freshness_policies_by_key = {
-            output_asset_key_replacements.get(key, key): policy
-            for key, policy in self._freshness_policies_by_key.items()
-        }
+        if freshness_policy:
+            freshness_policy_conflicts = (
+                self.freshness_policies_by_key.keys()
+                if isinstance(freshness_policy, FreshnessPolicy)
+                else (freshness_policy.keys() & self.freshness_policies_by_key.keys())
+            )
+            if freshness_policy_conflicts:
+                raise DagsterInvalidDefinitionError(
+                    "FreshnessPolicy already exists on assets"
+                    f" {', '.join(key.to_string() for key in freshness_policy_conflicts)}"
+                )
+
+        replaced_freshness_policies_by_key = {}
+        for key in self.keys:
+            if isinstance(freshness_policy, FreshnessPolicy):
+                replaced_freshness_policy = freshness_policy
+            elif freshness_policy:
+                replaced_freshness_policy = freshness_policy.get(key)
+            else:
+                replaced_freshness_policy = self.freshness_policies_by_key.get(key)
+
+            if replaced_freshness_policy:
+                replaced_freshness_policies_by_key[
+                    output_asset_key_replacements.get(key, key)
+                ] = replaced_freshness_policy
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description

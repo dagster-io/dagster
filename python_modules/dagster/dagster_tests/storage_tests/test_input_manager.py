@@ -10,7 +10,6 @@ from dagster import (
     InputManager,
     IOManager,
     IOManagerDefinition,
-    MetadataEntry,
     Out,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
@@ -26,6 +25,7 @@ from dagster import (
     root_input_manager,
 )
 from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
 from dagster._utils.test import wrap_op_in_graph_and_execute
@@ -553,7 +553,7 @@ def test_configurable_root_input_manager():
 
 
 def test_only_used_for_root():
-    metadata = {"name": 5}
+    metadata = {"name": MetadataValue.int(5)}
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -622,7 +622,7 @@ def test_input_manager_with_failure():
     def should_fail(_):
         raise Failure(
             description="Foolure",
-            metadata_entries=[MetadataEntry("label", value="text")],
+            metadata={"label": "text"},
         )
 
     @op(ins={"_fail_input": In(root_manager_key="should_fail")})
@@ -645,8 +645,7 @@ def test_input_manager_with_failure():
         assert failure_data.error.cls_name == "Failure"
 
         assert failure_data.user_failure_data.description == "Foolure"
-        assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
+        assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
 
 
 def test_input_manager_with_retries():

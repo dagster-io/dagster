@@ -571,7 +571,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_extra_cmds=k8s_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
     ),
-    PackageSpec("python_modules/libraries/dagster-mlflow"),
+    PackageSpec(
+        "python_modules/libraries/dagster-mlflow",
+        unsupported_python_versions=[
+            # https://github.com/mlflow/mlflow/issues/7681
+            AvailablePythonVersion.V3_11,
+        ],
+    ),
     PackageSpec(
         "python_modules/libraries/dagster-mysql",
         pytest_extra_cmds=mysql_extra_cmds,

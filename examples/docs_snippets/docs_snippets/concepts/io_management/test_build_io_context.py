@@ -118,7 +118,7 @@ def test_context_logging_metadata():
 
     context.add_output_metadata({"foo": "bar"})
 
-    assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]
+    assert "foo" in context.get_logged_metadata()
 
 
 def test_output_context_partition_key():

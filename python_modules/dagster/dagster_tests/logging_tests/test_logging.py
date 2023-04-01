@@ -124,7 +124,7 @@ def test_multiline_logging_complex():
         event_type_value="STEP_FAILURE",
         pipeline_name="error_monster",
         step_key="start.materialization.output.result.0",
-        solid_handle=NodeHandle("start", None),
+        node_handle=NodeHandle("start", None),
         step_kind_value="MATERIALIZATION_THUNK",
         logging_tags={
             "pipeline": "error_monster",

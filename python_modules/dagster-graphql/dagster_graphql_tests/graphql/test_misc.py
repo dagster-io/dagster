@@ -132,7 +132,7 @@ def test_type_rendering(graphql_context):
 def define_circular_dependency_pipeline():
     return PipelineDefinition(
         name="circular_dependency_pipeline",
-        solid_defs=[
+        node_defs=[
             OpDefinition(
                 name="csolid",
                 ins={"num": In("num", PoorMansDataFrame)},

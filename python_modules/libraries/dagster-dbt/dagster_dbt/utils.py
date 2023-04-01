@@ -247,21 +247,14 @@ def select_unique_ids_from_manifest(
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
-    try:
-        import dbt.flags as flags
-        import dbt.graph.cli as graph_cli
-        import dbt.graph.selector as graph_selector
-        from dbt.contracts.graph.manifest import Manifest, WritableManifest
-        from dbt.contracts.state import PreviousState
-        from dbt.graph import SelectionSpec
-        from dbt.graph.selector_spec import IndirectSelection
-        from networkx import DiGraph
-
-    except ImportError as e:
-        raise check.CheckError(
-            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
-            "`dbt-core >= 1.0.0` and `networkx` installed."
-        ) from e
+    import dbt.flags as flags
+    import dbt.graph.cli as graph_cli
+    import dbt.graph.selector as graph_selector
+    from dbt.contracts.graph.manifest import Manifest, WritableManifest
+    from dbt.contracts.state import PreviousState
+    from dbt.graph import SelectionSpec
+    from dbt.graph.selector_spec import IndirectSelection
+    from networkx import DiGraph
 
     if state_path is not None:
         previous_state = PreviousState(

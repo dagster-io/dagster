@@ -1,5 +1,5 @@
 from dagster import In, Out, op
-from dagster._core.snap.solid import SolidDefSnap, build_core_solid_def_snap
+from dagster._core.snap.node import OpDefSnap, build_op_def_snap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 
@@ -9,10 +9,10 @@ def test_basic_solid_definition():
     def noop_op(_):
         pass
 
-    solid_snap = build_core_solid_def_snap(noop_op)
+    solid_snap = build_op_def_snap(noop_op)
 
     assert solid_snap
-    assert deserialize_value(serialize_value(solid_snap), SolidDefSnap) == solid_snap
+    assert deserialize_value(serialize_value(solid_snap), OpDefSnap) == solid_snap
 
 
 def test_solid_definition_kitchen_sink():
@@ -36,7 +36,7 @@ def test_solid_definition_kitchen_sink():
         assert arg_two
         raise Exception("should not execute")
 
-    kitchen_sink_solid_snap = build_core_solid_def_snap(kitchen_sink_op)
+    kitchen_sink_solid_snap = build_op_def_snap(kitchen_sink_op)
 
     assert kitchen_sink_solid_snap
     assert kitchen_sink_solid_snap.name == "kitchen_sink_op"
@@ -73,6 +73,6 @@ def test_solid_definition_kitchen_sink():
     assert kitchen_sink_op.positional_inputs == ["arg_two", "arg_one"]
 
     assert (
-        deserialize_value(serialize_value(kitchen_sink_solid_snap), SolidDefSnap)
+        deserialize_value(serialize_value(kitchen_sink_solid_snap), OpDefSnap)
         == kitchen_sink_solid_snap
     )

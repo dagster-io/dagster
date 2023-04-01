@@ -80,7 +80,8 @@ export class CellTruncationProvider extends React.Component<
       return;
     }
 
-    const isOverflowing = child.scrollHeight > this.props.style.height!;
+    const isOverflowing =
+      typeof this.props.style.height === 'number' && child.scrollHeight > this.props.style.height;
     if (isOverflowing !== this.state.isOverflowing) {
       this.setState({isOverflowing});
     }

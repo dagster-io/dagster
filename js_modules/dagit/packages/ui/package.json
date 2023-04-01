@@ -73,7 +73,7 @@
     "@types/mdx-js__react": "^1",
     "@types/react-is": "^17",
     "@types/rollup-plugin-node-globals": "^1",
-    "@types/styled-components": "^5",
+    "@types/styled-components": "^5.1.26",
     "@types/testing-library__jest-dom": "^5.14.2",
     "babel-jest": "^27.4.6",
     "babel-loader": "^8.2.4",
@@ -90,7 +90,7 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-polyfill-node": "^0.8.0",
     "rollup-plugin-styles": "^4.0.0",
-    "typescript": "4.8.4",
+    "typescript": "5.0.2",
     "webpack": "^5.0.0"
   },
   "browserslist": {

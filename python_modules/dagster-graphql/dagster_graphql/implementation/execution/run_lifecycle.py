@@ -51,7 +51,7 @@ def compute_step_keys_to_execute(
         return execution_params.step_keys, known_state
 
 
-def is_resume_retry(execution_params):
+def is_resume_retry(execution_params: ExecutionParams) -> bool:
     check.inst_param(execution_params, "execution_params", ExecutionParams)
     return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"
 
@@ -60,7 +60,7 @@ def create_valid_pipeline_run(
     graphene_info: "ResolveInfo",
     external_pipeline: ExternalPipeline,
     execution_params: ExecutionParams,
-):
+) -> DagsterRun:
     from ...schema.errors import GrapheneNoModeProvidedError
 
     mode: Optional[str]

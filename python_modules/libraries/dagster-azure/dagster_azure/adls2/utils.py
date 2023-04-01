@@ -17,7 +17,7 @@ except ImportError:
 
 
 def _create_url(storage_account, subdomain):
-    return "https://{}.{}.core.windows.net/".format(storage_account, subdomain)
+    return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
 def create_adls2_client(storage_account, credential):

@@ -1,11 +1,17 @@
 import pytest
 from dagster import (
+    DagsterEventType,
     _check as check,
+    job,
+    reconstructable,
     resource,
 )
 from dagster._core.definitions import op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import (
+    DagsterEvent,
+)
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import (
     create_execution_plan,
@@ -16,6 +22,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
+from dagster._grpc.impl import core_execute_run
 from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
@@ -40,6 +47,16 @@ def resource_solid(_):
     return "A"
 
 
+@op
+def simple_op():
+    pass
+
+
+@job
+def simple_job():
+    simple_op()
+
+
 def test_execute_pipeline_iterator():
     with instance_for_test() as instance:
         records = []
@@ -50,7 +67,7 @@ def test_execute_pipeline_iterator():
 
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -87,7 +104,7 @@ def test_execute_run_iterator():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -145,6 +162,12 @@ def test_execute_run_iterator():
                 "run_monitoring": {"enabled": True},
             }
         ) as run_monitoring_instance:
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=pipeline_def,
+                run_config={"loggers": {"callback": {}}},
+                mode="default",
+            ).with_status(DagsterRunStatus.CANCELING)
+
             event = next(
                 execute_run_iterator(
                     InMemoryPipeline(pipeline_def),
@@ -160,7 +183,7 @@ def test_execute_run_iterator():
 
             with pytest.raises(
                 check.CheckError,
-                match=r"in state DagsterRunStatus.SUCCESS, expected STARTED or STARTING "
+                match=r"in state DagsterRunStatus.CANCELING, expected STARTED or STARTING "
                 r"because it's resuming from a run worker failure",
             ):
                 execute_run_iterator(
@@ -194,7 +217,7 @@ def test_restart_running_run_worker():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -231,7 +254,7 @@ def test_start_run_worker_after_run_failure():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -261,7 +284,7 @@ def test_execute_canceled_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -317,7 +340,7 @@ def test_execute_run_bad_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -351,7 +374,7 @@ def test_execute_plan_iterator():
     with instance_for_test() as instance:
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            node_defs=[resource_solid],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -385,3 +408,30 @@ def test_execute_plan_iterator():
         messages = [record.user_message for record in records if not record.is_dagster_event]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
+
+
+def test_run_fails_while_loading_code():
+    with instance_for_test() as instance:
+        recon_pipeline = reconstructable(simple_job)
+        run = instance.create_run_for_pipeline(
+            pipeline_def=simple_job,
+            run_config={},
+            mode="default",
+        )
+
+        gen_execute_run = core_execute_run(recon_pipeline, run, instance, inject_env_vars=False)
+
+        # Run is moved to failure while the code is still loading
+        instance.run_storage.handle_run_event(
+            run.run_id,  # fail one after two has fails and three has succeeded
+            DagsterEvent(
+                message="run monitoring killed it",
+                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                pipeline_name="simple_job",
+            ),
+        )
+
+        list(gen_execute_run)
+
+        # Execution is stopped, stays in failure state
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE

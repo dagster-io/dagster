@@ -43,7 +43,7 @@ from dagster._core.execution.api import execute_pipeline, execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
-    build_dep_structure_snapshot_from_icontains_solids,
+    build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import instance_for_test
@@ -395,7 +395,7 @@ def test_multiple_non_argument_deps():
 
     job = build_assets_job("a", [foo, bar, baz, qux])
 
-    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(job.graph)
+    dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("foo")

@@ -1,6 +1,5 @@
 from dagster import (
     DagsterInstance,
-    MetadataEntry,
     _check as check,
 )
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -32,9 +31,7 @@ def create_task(celery_app, **task_kwargs):
         retry_mode = execute_step_args.retry_mode
 
         pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
-        check.invariant(
-            pipeline_run, "Could not load run {}".format(execute_step_args.pipeline_run_id)
-        )
+        check.invariant(pipeline_run, f"Could not load run {execute_step_args.pipeline_run_id}")
 
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
@@ -47,13 +44,13 @@ def create_task(celery_app, **task_kwargs):
         )
 
         engine_event = instance.report_engine_event(
-            "Executing steps {} in celery worker".format(step_keys_str),
+            f"Executing steps {step_keys_str} in celery worker",
             pipeline_run,
             EngineEventData(
-                [
-                    MetadataEntry("step_keys", value=step_keys_str),
-                    MetadataEntry("Celery worker", value=self.request.hostname),
-                ],
+                {
+                    "step_keys": step_keys_str,
+                    "Celery worker": self.request.hostname,
+                },
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryExecutor,

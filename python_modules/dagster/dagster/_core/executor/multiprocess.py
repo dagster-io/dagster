@@ -5,9 +5,9 @@ from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from dagster import (
-    MetadataEntry,
     _check as check,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
@@ -83,10 +83,10 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             yield DagsterEvent.step_worker_started(
                 log_manager,
                 self.pipeline_run.pipeline_name,
-                message='Executing step "{}" in subprocess.'.format(self.step_key),
-                metadata_entries=[
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ],
+                message=f'Executing step "{self.step_key}" in subprocess.',
+                metadata={
+                    "pid": MetadataValue.text(str(os.getpid())),
+                },
                 step_key=self.step_key,
             )
 
@@ -308,7 +308,7 @@ class MultiprocessExecutor(Executor):
                         " processes:\n{error_list}".format(
                             error_list="\n".join(
                                 [
-                                    "In process {pid}: {err}".format(pid=pid, err=err.to_string())
+                                    f"In process {pid}: {err.to_string()}"
                                     for pid, err in errs.items()
                                 ]
                             )
@@ -350,8 +350,8 @@ def execute_step_out_of_process(
 
     yield DagsterEvent.step_worker_starting(
         step_context,
-        'Launching subprocess for "{}".'.format(step.key),
-        metadata_entries=[],
+        f'Launching subprocess for "{step.key}".',
+        metadata={},
     )
 
     for ret in execute_child_process_command(multiproc_ctx, command):
@@ -361,4 +361,4 @@ def execute_step_out_of_process(
             if isinstance(ret, ChildProcessSystemErrorEvent):
                 errors[ret.pid] = ret.error_info
         else:
-            check.failed("Unexpected return value from child process {}".format(type(ret)))
+            check.failed(f"Unexpected return value from child process {type(ret)}")

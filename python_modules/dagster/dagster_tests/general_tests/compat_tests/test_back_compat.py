@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 
 import datetime
+import json
 import os
 import re
 import sqlite3
@@ -24,8 +25,8 @@ from dagster import (
 )
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
@@ -47,7 +48,6 @@ from dagster._serdes.serdes import (
     pack_value,
     serialize_value,
 )
-from dagster._seven import json
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 
@@ -56,11 +56,11 @@ def _migration_regex(warning, current_revision, expected_revision=None):
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            f"Database is at revision {current_revision}, head is {expected_revision}."
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
-    return "{} {} {}".format(warning, revision, instruction)
+        revision = f"Database is at revision {current_revision}, head is [a-z0-9]+."
+    return f"{warning} {revision} {instruction}"
 
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
@@ -141,14 +141,14 @@ def get_current_alembic_version(db_path):
 def get_sqlite3_columns(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
-    cursor.execute('PRAGMA table_info("{}");'.format(table_name))
+    cursor.execute(f'PRAGMA table_info("{table_name}");')
     return [r[1] for r in cursor.fetchall()]
 
 
 def get_sqlite3_indexes(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
-    cursor.execute('PRAGMA index_list("{}");'.format(table_name))
+    cursor.execute(f'PRAGMA index_list("{table_name}");')
     return [r[1] for r in cursor.fetchall()]
 
 
@@ -1172,51 +1172,82 @@ def test_add_primary_keys():
 # can deserialize a `Materialization` with a null asset key directly to an `AssetMaterialization`.
 # In the future, we will need to enable the runtime null check on `AssetMaterialization` and
 # introduce a dummy asset key when deserializing old `Materialization` events.
-@pytest.mark.parametrize("asset_key", [AssetKey(["foo", "bar"]), None], ids=("defined", "none"))
+@pytest.mark.parametrize(
+    "asset_key", [AssetKey(["foo", "bar"]), None, "__missing__"], ids=("defined", "none", "missing")
+)
 def test_load_old_materialization(asset_key: Optional[AssetKey]):
-    packed_asset_key = pack_value(asset_key) if asset_key else None
-    old_materialization = json.dumps(
-        {
-            "__class__": "StepMaterializationData",
-            "materialization": {
-                "__class__": "Materialization",
-                "label": "foo",
-                "description": "bar",
-                "metadata_entries": [
-                    {
-                        "__class__": "EventMetadataEntry",
-                        "label": "baz",
-                        "description": "qux",
-                        "entry_data": {
-                            "__class__": "TextMetadataEntryData",
-                            "text": "quux",
-                        },
-                    }
-                ],
-                "partition": "alpha",
-                "asset_key": packed_asset_key,
-            },
-            "asset_lineage": [
+    packed_asset_key = pack_value(asset_key) if isinstance(asset_key, AssetKey) else None
+    delete_asset_key = asset_key == "__missing__"
+    packed_old_materialization = {
+        "__class__": "StepMaterializationData",
+        "materialization": {
+            "__class__": "Materialization",
+            "label": "foo",
+            "description": "bar",
+            "metadata_entries": [
                 {
-                    "__class__": "AssetLineageInfo",
-                    "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
-                    "partitions": {"__set__": ["alpha"]},
+                    "__class__": "EventMetadataEntry",
+                    "label": "baz",
+                    "description": "qux",
+                    "entry_data": {
+                        "__class__": "TextMetadataEntryData",
+                        "text": "quux",
+                    },
                 }
             ],
-        }
-    )
+            "partition": "alpha",
+            "asset_key": packed_asset_key,  # this key will be deleted for `__missing__`
+        },
+        "asset_lineage": [
+            {
+                "__class__": "AssetLineageInfo",
+                "asset_key": {"__class__": "AssetKey", "path": ["foo", "bar"]},
+                "partitions": {"__set__": ["alpha"]},
+            }
+        ],
+    }
+    if delete_asset_key:
+        del packed_old_materialization["materialization"]["asset_key"]
+    old_materialization = serialize_value(packed_old_materialization)
 
-    deserialized_asset_key = asset_key
+    deserialized_asset_key = (
+        AssetKey(UNDEFINED_ASSET_KEY_PATH) if asset_key in (None, "__missing__") else asset_key
+    )
     assert deserialize_value(
         old_materialization, StepMaterializationData
     ) == StepMaterializationData(
         materialization=AssetMaterialization(
             description="bar",
-            metadata_entries=[
-                MetadataEntry("baz", description="qux", entry_data=MetadataValue.text("quux"))
-            ],
+            metadata={"baz": MetadataValue.text("quux")},
             partition="alpha",
-            asset_key=deserialized_asset_key,  # type: ignore
+            asset_key=deserialized_asset_key,
         ),
         asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
     )
+
+
+# Prior to 1.2.5, metadata was stored on all classes as a `List[MetadataEntry]`. With 1.2.5 it
+# changed to `Dict[str, MetadataValue]`, with serdes-whitelisted classes using
+# `MetadataFieldSerializer` to serialize the dictionary as a list of `MetadataEntry` for backcompat.
+def test_metadata_serialization():
+    # We use `AssetMaterialization` as a stand-in for all classes using `MetadataFieldSerializer`.
+    mat = AssetMaterialization(
+        AssetKey(["foo"]),
+        metadata={"alpha": MetadataValue.text("beta"), "delta": MetadataValue.int(1)},
+    )
+    serialized_mat = serialize_value(mat)
+    assert json.loads(serialized_mat)["metadata_entries"] == [
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "alpha",
+            "description": None,
+            "entry_data": {"__class__": "TextMetadataEntryData", "text": "beta"},
+        },
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "delta",
+            "description": None,
+            "entry_data": {"__class__": "IntMetadataEntryData", "value": 1},
+        },
+    ]
+    assert deserialize_value(serialized_mat, AssetMaterialization) == mat

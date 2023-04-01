@@ -65,8 +65,8 @@ def test_normalize_name():
 
     assert result.success
     assert result.job_def.name == "dag_with_dot_dash"
-    assert len(result.job_def.solids) == 1
-    assert result.job_def.solids[0].name == "dag_with_dot_dash__task_with_dot_dash"
+    assert len(result.job_def.nodes) == 1
+    assert result.job_def.nodes[0].name == "dag_with_dot_dash__task_with_dot_dash"
 
 
 # Test names with 250 characters, Airflow's max allowed length
@@ -103,9 +103,9 @@ def test_long_name():
         == "dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong"
     )
 
-    assert len(result.job_def.solids) == 1
+    assert len(result.job_def.nodes) == 1
     assert (
-        result.job_def.solids[0].name
+        result.job_def.nodes[0].name
         == "dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong__task_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loong"
     )
 

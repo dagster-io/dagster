@@ -56,7 +56,7 @@ class BasicTest:
         self.x = x
 
     def __repr__(self):
-        return "BasicTest: {x}".format(x=str(self.x))
+        return f"BasicTest: {str(self.x)}"
 
 
 def nb_test_path(name):

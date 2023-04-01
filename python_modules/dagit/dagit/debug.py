@@ -25,13 +25,13 @@ from .version import __version__
     "--port",
     "-p",
     type=click.INT,
-    help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
+    help=f"Port to run server on, default is {DEFAULT_DAGIT_PORT}",
     default=DEFAULT_DAGIT_PORT,
 )
 def dagit_debug_command(input_files, port):
     debug_payloads = []
     for input_file in input_files:
-        click.echo("Loading {} ...".format(input_file))
+        click.echo(f"Loading {input_file} ...")
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
             debug_payload = deserialize_value(blob, DebugRunPayload)
@@ -44,13 +44,14 @@ def dagit_debug_command(input_files, port):
             debug_payloads.append(debug_payload)
 
     instance = DagsterInstance.ephemeral(preload=debug_payloads)
-    host_dagit_ui_with_workspace_process_context(
-        workspace_process_context=WorkspaceProcessContext(instance, None, version=__version__),
-        port=port,
-        host=DEFAULT_DAGIT_HOST,
-        path_prefix="",
-        log_level="debug",
-    )
+    with WorkspaceProcessContext(instance, None, version=__version__) as workspace_process_context:
+        host_dagit_ui_with_workspace_process_context(
+            workspace_process_context=workspace_process_context,
+            port=port,
+            host=DEFAULT_DAGIT_HOST,
+            path_prefix="",
+            log_level="debug",
+        )
 
 
 def main():

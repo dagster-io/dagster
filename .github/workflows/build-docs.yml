@@ -5,19 +5,58 @@ on:
       - master
       - 'release-*'
     paths:
-      - docs/next/**
+      - docs/**
   pull_request:
     paths:
-      - docs/next/**
+      - docs/**
+concurrency:
+  # Cancel in-progress runs on same branch
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: amondnet/vercel-action@v25
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+
+      - name: Get changed docs files
+        if: ${{ github.event.pull_request }}
+        run: |
+          echo "Base ref is $GITHUB_BASE_SHA"
+          echo "Head ref is $GITHUB_HEAD_SHA"
+          git fetch origin $GITHUB_HEAD_SHA
+          CHANGED_MDX_FILES=$(git diff --name-only "$GITHUB_BASE_SHA" "$GITHUB_HEAD_SHA" -- '*.mdx')
+          CHANGES_ENTRY=$(echo "$CHANGED_MDX_FILES" | sed 's/\.mdx$//' | sed 's/^docs\/content/- {{deploymentUrl}}/')
+          CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
+          echo "$CHANGES_ENTRY"
+          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "CHANGES_ENTRY<<$EOF" >> $GITHUB_ENV
+          echo "$CHANGES_ENTRY" >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Publish Preview to Vercel
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'pull_request'
+        with:
+          github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Publish to Vercel
+        uses: amondnet/vercel-action@v25
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}

@@ -95,6 +95,7 @@ export const Tooltip: React.FC<Props> = (props) => {
 
 interface StyledTooltipProps {
   $display: React.CSSProperties['display'];
+  children: React.ReactNode;
 }
 
 const StyledTooltip = styled(Tooltip2)<StyledTooltipProps>`

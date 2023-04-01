@@ -57,7 +57,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
 
         for input_name in parameters["__dm_input_names"]:
             dm_load_input_call = f"__dm_dagstermill._load_input_parameter('{input_name}')"
-            content += "{}\n".format(cls.assign(input_name, dm_load_input_call))
+            content += f"{cls.assign(input_name, dm_load_input_call)}\n"
 
         return content
 

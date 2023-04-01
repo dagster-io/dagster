@@ -23,7 +23,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -184,6 +183,9 @@ class RepositoryDefinition:
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()
 
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        return self._repository_data.get_resource_key_mapping()
+
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -224,13 +226,6 @@ class RepositoryDefinition:
             List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
-
-    @property
-    def partition_set_defs(self) -> Sequence[PartitionSetDefinition]:
-        return self._repository_data.get_all_partition_sets()
-
-    def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
-        return self._repository_data.get_partition_set(name)
 
     @public
     @property
@@ -421,6 +416,7 @@ class PendingRepositoryDefinition:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        _resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -434,6 +430,7 @@ class PendingRepositoryDefinition:
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
+        self._resource_key_mapping = _resource_key_mapping
 
     @property
     def name(self) -> str:
@@ -480,6 +477,7 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
             top_level_resources=self._top_level_resources,
+            resource_key_mapping=self._resource_key_mapping,
         )
 
         return RepositoryDefinition(

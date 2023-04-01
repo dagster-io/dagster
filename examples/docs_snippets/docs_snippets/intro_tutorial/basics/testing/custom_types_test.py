@@ -48,7 +48,7 @@ def less_simple_data_frame_loader(context, config):
     with open(csv_path, "r", encoding="utf8") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
-    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
+    context.log.info(f"Read {len(lines)} lines")
     return lines
 
 

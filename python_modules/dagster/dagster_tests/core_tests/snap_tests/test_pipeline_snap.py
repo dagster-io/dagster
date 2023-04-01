@@ -5,8 +5,8 @@ from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, j
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
     DependencyStructureIndex,
+    NodeInvocationSnap,
     PipelineSnapshot,
-    SolidInvocationSnap,
     create_pipeline_snapshot_id,
     snap_from_config_type,
 )
@@ -14,7 +14,7 @@ from dagster._core.snap.dep_snapshot import (
     DependencyStructureSnapshot,
     InputHandle,
     OutputHandleSnap,
-    build_dep_structure_snapshot_from_icontains_solids,
+    build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._legacy import pipeline
 from dagster._serdes import (
@@ -87,11 +87,9 @@ def test_noop_deps_snap():
     def noop_job():
         noop_op()
 
-    invocations = build_dep_structure_snapshot_from_icontains_solids(
-        noop_job.graph
-    ).solid_invocation_snaps
+    invocations = build_dep_structure_snapshot_from_graph_def(noop_job.graph).node_invocation_snaps
     assert len(invocations) == 1
-    assert isinstance(invocations[0], SolidInvocationSnap)
+    assert isinstance(invocations[0], NodeInvocationSnap)
 
 
 def test_two_invocations_deps_snap(snapshot):
@@ -105,7 +103,7 @@ def test_two_invocations_deps_snap(snapshot):
         noop_op.alias("two")()
 
     index = DependencyStructureIndex(
-        build_dep_structure_snapshot_from_icontains_solids(two_solid_job.graph)
+        build_dep_structure_snapshot_from_graph_def(two_solid_job.graph)
     )
     assert index.get_invocation("one")
     assert index.get_invocation("two")
@@ -131,7 +129,7 @@ def test_basic_dep():
         passthrough(return_one())
 
     index = DependencyStructureIndex(
-        build_dep_structure_snapshot_from_icontains_solids(single_dep_job.graph)
+        build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     )
 
     assert index.get_invocation("return_one")
@@ -139,7 +137,7 @@ def test_basic_dep():
 
     outputs = index.get_upstream_outputs("passthrough", "value")
     assert len(outputs) == 1
-    assert outputs[0].solid_name == "return_one"
+    assert outputs[0].node_name == "return_one"
     assert outputs[0].output_name == "result"
 
 
@@ -158,9 +156,7 @@ def test_basic_dep_fan_out(snapshot):
         passthrough.alias("passone")(return_one_result)
         passthrough.alias("passtwo")(return_one_result)
 
-    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(
-        single_dep_job.graph
-    )
+    dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("return_one")
@@ -207,7 +203,7 @@ def test_basic_fan_in(snapshot):
             ]
         )
 
-    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(fan_in_test.graph)
+    dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(fan_in_test.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("nothing_one")
@@ -266,7 +262,7 @@ def test_deserialize_solid_def_snaps_default_field():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Shape)
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     assert isinstance(recevied_config_type.fields["bar"].config_type, String)
@@ -293,7 +289,7 @@ def test_deserialize_solid_def_snaps_enum():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Enum)
     assert recevied_config_type.given_name == "CowboyType"
     assert all(
@@ -313,7 +309,7 @@ def test_deserialize_solid_def_snaps_strict_shape():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Shape)
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     assert isinstance(recevied_config_type.fields["bar"].config_type, String)
@@ -335,7 +331,7 @@ def test_deserialize_solid_def_snaps_selector():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Selector)
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     assert isinstance(recevied_config_type.fields["bar"].config_type, Int)
@@ -356,7 +352,7 @@ def test_deserialize_solid_def_snaps_permissive():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Permissive)
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     _dict_has_stable_hashes(
@@ -376,7 +372,7 @@ def test_deserialize_solid_def_snaps_array():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Array)
     assert isinstance(recevied_config_type.inner_type, String)
     _array_has_stable_hashes(
@@ -396,7 +392,7 @@ def test_deserialize_solid_def_snaps_map():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Map)
     assert isinstance(recevied_config_type.key_type, String)
     assert isinstance(recevied_config_type.inner_type, String)
@@ -417,7 +413,7 @@ def test_deserialize_solid_def_snaps_map_with_name():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Map)
     assert isinstance(recevied_config_type.key_type, Bool)
     assert isinstance(recevied_config_type.inner_type, Float)
@@ -439,7 +435,7 @@ def test_deserialize_solid_def_snaps_noneable():
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Noneable)
     assert isinstance(recevied_config_type.inner_type, String)
 
@@ -481,7 +477,7 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _dict_has_stable_hashes(
         recevied_config_type,
@@ -501,7 +497,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _array_has_stable_hashes(
         recevied_config_type,
@@ -520,7 +516,7 @@ def test_multi_type_config_array_map(snapshot):
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _array_has_stable_hashes(
         recevied_config_type,
@@ -545,7 +541,7 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
     solid_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
-    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _dict_has_stable_hashes(
         recevied_config_type,

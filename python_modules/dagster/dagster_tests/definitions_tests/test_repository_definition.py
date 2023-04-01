@@ -16,7 +16,6 @@ from dagster import (
     SourceAsset,
     asset,
     build_schedule_from_partitioned_job,
-    daily_partitioned_config,
     define_asset_job,
     executor,
     graph,
@@ -416,13 +415,11 @@ def test_job_with_partitions():
             )
         ]
 
-    assert test.get_partition_set_def("bare_partition_set")
     # do it twice to make sure we don't overwrite cache on second time
-    assert test.get_partition_set_def("bare_partition_set")
     assert test.has_job("bare")
-    assert test.get_job("bare")
+    assert test.get_job("bare").partitions_def
     assert test.has_job("bare")
-    assert test.get_job("bare")
+    assert test.get_job("bare").partitions_def
 
 
 def test_dupe_graph_defs():
@@ -619,39 +616,6 @@ def test_list_dupe_graph():
         @repository
         def _jobs():
             return [foo.to_job(name="foo"), foo]
-
-
-def test_job_scheduled_partitions():
-    @graph
-    def my_graph():
-        pass
-
-    @daily_partitioned_config(start_date="2021-09-01")
-    def daily_schedule_config(_start, _end):
-        return {}
-
-    my_job = my_graph.to_job(config=daily_schedule_config)
-    my_schedule = build_schedule_from_partitioned_job(my_job)
-
-    @repository
-    def schedule_repo():
-        return [my_schedule]
-
-    @repository
-    def job_repo():
-        return [my_job]
-
-    @repository
-    def schedule_job_repo():
-        return [my_job, my_schedule]
-
-    assert len(schedule_repo.partition_set_defs) == 1
-    assert schedule_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(job_repo.partition_set_defs) == 1
-    assert job_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(schedule_job_repo.partition_set_defs) == 1
-    assert schedule_job_repo.get_partition_set_def("my_graph_partition_set")
-    assert len(schedule_job_repo.job_names) == 1
 
 
 def test_bad_coerce():

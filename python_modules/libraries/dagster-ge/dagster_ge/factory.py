@@ -5,7 +5,6 @@ import great_expectations as ge
 from dagster import (
     ExpectationResult,
     In,
-    MetadataEntry,
     MetadataValue,
     Noneable,
     Out,
@@ -116,12 +115,9 @@ def ge_validation_op_factory(
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=res["success"],
-            metadata_entries=[
-                meta_stats,
-            ],
+            metadata={"Expectation Results": MetadataValue.md(md_str)},
         )
         yield Output(res)
 
@@ -221,10 +217,9 @@ def ge_validation_op_factory_v3(
         )
         md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=bool(results["success"]),
-            metadata_entries=[meta_stats],
+            metadata={"Expectation Results": MetadataValue.md(md_str)},
         )
         yield Output(results.to_json_dict())
 

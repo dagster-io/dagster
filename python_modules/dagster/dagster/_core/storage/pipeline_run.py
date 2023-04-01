@@ -29,7 +29,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
@@ -37,10 +36,6 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partition import (
-        Partition,
-        PartitionSetDefinition,
-    )
     from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
@@ -432,14 +427,6 @@ class DagsterRun(
     def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
 
-    @staticmethod
-    def tags_for_partition_set(
-        partition_set: "PartitionSetDefinition", partition: "Partition"
-    ) -> Mapping[str, str]:
-        tags = {PARTITION_SET_TAG: partition_set.name}
-        tags.update(partition_set.partitions_def.get_tags_for_partition_key(partition.name))
-        return tags
-
 
 class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
     def before_unpack(
@@ -536,12 +523,6 @@ class RunsFilter(
     @staticmethod
     def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
-
-    @staticmethod
-    def for_partition(
-        partition_set: "PartitionSetDefinition", partition: "Partition"
-    ) -> "RunsFilter":
-        return RunsFilter(tags=DagsterRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
     def for_sensor(sensor: "ExternalSensor") -> "RunsFilter":

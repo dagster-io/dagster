@@ -104,7 +104,7 @@ class _Pipeline:
             tags=self.tags,
             description=self.description or format_docstring_for_description(fn),
             hook_defs=self.hook_defs,
-            solid_retry_policy=self.solid_retry_policy,
+            op_retry_policy=self.solid_retry_policy,
             version_strategy=self.version_strategy,
         )
         update_wrapper(pipeline_def, fn)

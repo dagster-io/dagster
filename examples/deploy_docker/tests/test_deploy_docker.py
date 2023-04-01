@@ -133,9 +133,7 @@ def test_deploy_docker():
                 raise Exception("Timed out waiting for dagit server to be available")
 
             try:
-                sanity_check = requests.get(
-                    "http://{dagit_host}:3000/dagit_info".format(dagit_host=dagit_host)
-                )
+                sanity_check = requests.get(f"http://{dagit_host}:3000/dagit_info")
                 assert "dagit" in sanity_check.text
                 break
             except requests.exceptions.ConnectionError:

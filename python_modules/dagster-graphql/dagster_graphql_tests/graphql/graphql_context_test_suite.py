@@ -41,7 +41,7 @@ def get_main_loadable_target_origin():
 
 
 @contextmanager
-def graphql_postgres_instance(overrides):
+def graphql_postgres_instance(overrides=None):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),
@@ -205,13 +205,6 @@ class InstanceManagers:
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
-                        "run_launcher": {
-                            "module": "dagster",
-                            "class": "DefaultRunLauncher",
-                            "config": {
-                                "wait_for_processes": True,
-                            },
-                        },
                     },
                 ) as instance:
                     yield instance
@@ -244,17 +237,7 @@ class InstanceManagers:
     def postgres_instance_with_default_run_launcher():
         @contextmanager
         def _postgres_instance_with_default_hijack():
-            with graphql_postgres_instance(
-                overrides={
-                    "run_launcher": {
-                        "module": "dagster",
-                        "class": "DefaultRunLauncher",
-                        "config": {
-                            "wait_for_processes": True,
-                        },
-                    },
-                }
-            ) as instance:
+            with graphql_postgres_instance() as instance:
                 yield instance
 
         return MarkedManager(
@@ -319,29 +302,27 @@ class EnvironmentManagers:
     def deployed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            server_process = GrpcServerProcess(
+            with GrpcServerProcess(
                 instance_ref=instance.get_ref(),
                 location_name=location_name,
                 loadable_target_origin=target
                 if target is not None
                 else get_main_loadable_target_origin(),
-            )
-            try:
-                with server_process.create_ephemeral_client() as api_client:
-                    with WorkspaceProcessContext(
-                        instance,
-                        GrpcServerTarget(
-                            port=api_client.port,
-                            socket=api_client.socket,
-                            host=api_client.host,
-                            location_name=location_name,
-                        ),
-                        version="",
-                        read_only=read_only,
-                    ) as workspace:
-                        yield workspace
-            finally:
-                server_process.wait()
+                wait_on_exit=True,
+            ) as server_process:
+                api_client = server_process.create_client()
+                with WorkspaceProcessContext(
+                    instance,
+                    GrpcServerTarget(
+                        port=api_client.port,
+                        socket=api_client.socket,
+                        host=api_client.host,
+                        location_name=location_name,
+                    ),
+                    version="",
+                    read_only=read_only,
+                ) as workspace:
+                    yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.deployed_grpc_env])
 

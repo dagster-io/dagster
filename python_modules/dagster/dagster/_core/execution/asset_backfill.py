@@ -1,7 +1,9 @@
 import json
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -9,6 +11,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     cast,
 )
 
@@ -28,6 +31,10 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.events import DagsterEventType
+from dagster._core.host_representation import (
+    ExternalExecutionPlan,
+    ExternalPipeline,
+)
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
@@ -35,10 +42,17 @@ from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,
     IWorkspaceProcessContext,
 )
+from dagster._utils import hash_collection
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
     from .backfill import PartitionBackfill
+
+
+class BackfillPartitionsStatus(Enum):
+    REQUESTED = "REQUESTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
 
 class AssetBackfillData(NamedTuple):
@@ -54,9 +68,14 @@ class AssetBackfillData(NamedTuple):
     failed_and_downstream_subset: AssetGraphSubset
 
     def is_complete(self) -> bool:
+        """The asset backfill is complete when all runs to be requested have finished (success,
+        failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        per asset partition, the daemon continues to update the backfill data until all runs have
+        finished in order to display the final partition statuses in the UI.
+        """
         return (
             (
-                self.requested_subset | self.failed_and_downstream_subset
+                self.materialized_subset | self.failed_and_downstream_subset
             ).num_partitions_and_non_partitioned_assets
             == self.target_subset.num_partitions_and_non_partitioned_assets
         )
@@ -85,6 +104,40 @@ class AssetBackfillData(NamedTuple):
             return next(iter(asset_partition_nums))
         else:
             return None
+
+    def get_num_targeted_partitions_by_asset_key(self) -> Mapping[AssetKey, int]:
+        return {
+            asset_key: len(subset)
+            for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
+        }
+
+    def get_partitions_status_counts_by_asset_key(
+        self,
+    ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:
+        """Returns a mapping from asset key to a mapping from status to count of partitions in that
+        status.
+
+        Only includes assets that are partitioned.
+        """
+        return {
+            asset_key: {
+                BackfillPartitionsStatus.COMPLETED: len(
+                    self.materialized_subset.get_partitions_subset(asset_key)
+                ),
+                BackfillPartitionsStatus.FAILED: len(
+                    self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                ),
+                BackfillPartitionsStatus.REQUESTED: len(
+                    self.requested_subset.get_partitions_subset(asset_key)
+                )
+                - (
+                    len(self.failed_and_downstream_subset.get_partitions_subset(asset_key))
+                    + len(self.materialized_subset.get_partitions_subset(asset_key))
+                ),
+            }
+            for asset_key in self.target_subset.asset_keys
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
+        }
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
         """Only valid when the same number of partitions are targeted in every asset.
@@ -252,7 +305,15 @@ def execute_asset_backfill_iteration(
         result.backfill_data, dynamic_partitions_store=instance
     )
     if result.backfill_data.is_complete():
+        # The asset backfill is complete when all runs to be requested have finished (success,
+        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        # per asset partition, the daemon continues to update the backfill data until all runs have
+        # finished in order to display the final partition statuses in the UI.
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
+
+    pipeline_and_execution_plan_cache: Dict[
+        int, Tuple[ExternalPipeline, ExternalExecutionPlan]
+    ] = {}
 
     for run_request in result.run_requests:
         yield None
@@ -263,6 +324,7 @@ def execute_asset_backfill_iteration(
             # is swapped out in the middle of the backfill
             workspace=workspace_process_context.create_request_context(),
             instance=instance,
+            pipeline_and_execution_plan_cache=pipeline_and_execution_plan_cache,
         )
 
     instance.update_backfill(updated_backfill)
@@ -273,13 +335,13 @@ def submit_run_request(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
+    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalPipeline, ExternalExecutionPlan]],
 ) -> None:
     """Creates and submits a run for the given run request."""
     repo_handle = asset_graph.get_repository_handle(
         cast(Sequence[AssetKey], run_request.asset_selection)[0]
     )
     location_name = repo_handle.code_location_origin.location_name
-    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
     job_name = _get_implicit_job_name_for_assets(
         asset_graph, cast(Sequence[AssetKey], run_request.asset_selection)
     )
@@ -288,6 +350,10 @@ def submit_run_request(
             "Could not find an implicit asset job for the given assets:"
             f" {run_request.asset_selection}"
         )
+
+    if not run_request.asset_selection:
+        check.failed("Expected RunRequest to have an asset selection")
+
     pipeline_selector = PipelineSelector(
         location_name=location_name,
         repository_name=repo_handle.repository_name,
@@ -295,19 +361,28 @@ def submit_run_request(
         asset_selection=run_request.asset_selection,
         solid_selection=None,
     )
-    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
 
-    external_execution_plan = code_location.get_external_execution_plan(
-        external_pipeline,
-        {},
-        DEFAULT_MODE_NAME,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
-    )
+    selector_id = hash_collection(pipeline_selector)
 
-    if not run_request.asset_selection:
-        check.failed("Expected RunRequest to have an asset selection")
+    if selector_id not in pipeline_and_execution_plan_cache:
+        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
+
+        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+
+        external_execution_plan = code_location.get_external_execution_plan(
+            external_pipeline,
+            {},
+            DEFAULT_MODE_NAME,
+            step_keys_to_execute=None,
+            known_state=None,
+            instance=instance,
+        )
+        pipeline_and_execution_plan_cache[selector_id] = (
+            external_pipeline,
+            external_execution_plan,
+        )
+
+    external_pipeline, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
 
     run = instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
@@ -335,9 +410,9 @@ def submit_run_request(
 def _get_implicit_job_name_for_assets(
     asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
-    job_names = set(asset_graph.get_job_names(asset_keys[0]))
+    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_job_names(asset_key))
+        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 

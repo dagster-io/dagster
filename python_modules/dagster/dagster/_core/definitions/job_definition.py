@@ -37,7 +37,6 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -57,6 +56,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -68,7 +68,7 @@ from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
+from .partition import PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -84,7 +84,6 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
-    _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
 
@@ -107,10 +106,10 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        _was_explicitly_provided_resources: Optional[bool] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers
@@ -168,12 +167,15 @@ class JobDefinition(PipelineDefinition):
         )
         asset_layer = check.opt_inst_param(asset_layer, "asset_layer", AssetLayer)
         input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
-        _metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
         _preset_defs = check.opt_sequence_param(
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
 
-        did_user_provide_resources = bool(resource_defs)
+        was_provided_resources = (
+            bool(resource_defs)
+            if _was_explicitly_provided_resources is None
+            else _was_explicitly_provided_resources
+        )
         if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
@@ -211,6 +213,7 @@ class JobDefinition(PipelineDefinition):
                         executor_def,
                         logger_defs,
                         asset_layer,
+                        was_explicitly_provided_resources=was_provided_resources,
                     ),
                     config,
                     name,
@@ -231,7 +234,6 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=partitioned_config,
         )
 
-        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values
         for input_name in sorted(list(self.input_values.keys())):
@@ -248,13 +250,12 @@ class JobDefinition(PipelineDefinition):
             preset_defs=presets or _preset_defs,
             tags=tags,
             metadata=metadata,
-            metadata_entries=_metadata_entries,
             hook_defs=hook_defs,
-            solid_retry_policy=op_retry_policy,
+            op_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
-            _should_validate_resource_requirements=did_user_provide_resources,
+            _should_validate_resource_requirements=was_provided_resources,
         )
 
     @property
@@ -380,7 +381,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             config=self.config_mapping or self.partitioned_config,
             tags=self.tags,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
@@ -395,23 +396,21 @@ class JobDefinition(PipelineDefinition):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            if not self.partitioned_config:
-                check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
-                    " partitioned config"
-                )
-            partition_set = self.get_partition_set_def()
-            if not partition_set:
-                check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
-                    " partitioned config"
-                )
+            if not (self.partitions_def and self.partitioned_config):
+                check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
-            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
-                run_config if run_config else partition_set.run_config_for_partition(partition)
+                run_config
+                if run_config
+                else self.partitioned_config.get_run_config_for_partition_key(
+                    partition_key, instance
+                )
             )
-            merged_tags.update(partition_set.tags_for_partition(partition))
+            merged_tags.update(
+                self.partitioned_config.get_tags_for_partition_key(
+                    partition_key, instance, job_name=self.name
+                )
+            )
 
         return core_execute_in_process(
             ephemeral_pipeline=ephemeral_job,
@@ -541,7 +540,7 @@ class JobDefinition(PipelineDefinition):
                 config=config_arg,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
-                op_retry_policy=self._solid_retry_policy,
+                op_retry_policy=self._op_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
                 _executor_def_specified=self._executor_def_specified,
@@ -566,26 +565,6 @@ class JobDefinition(PipelineDefinition):
                 f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
                 f"{self.graph.name} results in an invalid graph."
             ) from exc
-
-    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        mode = self.get_mode_definition()
-        if not mode.partitioned_config:
-            return None
-
-        if not self._cached_partition_set:
-            tags_fn = mode.partitioned_config.tags_for_partition_fn
-            if not tags_fn:
-                tags_fn = lambda _: {}
-            self._cached_partition_set = PartitionSetDefinition(
-                job_name=self.name,
-                name=f"{self.name}_partition_set",
-                partitions_def=mode.partitioned_config.partitions_def,
-                run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
-                tags_fn_for_partition=tags_fn,
-                mode=mode.name,
-            )
-
-        return self._cached_partition_set
 
     @public
     @property
@@ -626,34 +605,48 @@ class JobDefinition(PipelineDefinition):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        partition_set = self.get_partition_set_def()
-        if not partition_set:
+        deprecation_warning(
+            "JobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
+        if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
-            if not instance:
-                check.failed(
-                    "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "dynamic partition set"
-                )
+        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+            check.failed(
+                "Must provide a dagster instance when calling run_request_for_partition on a "
+                "dynamic partition set"
+            )
 
-        partition = partition_set.get_partition(
+        partition = self.partitions_def.get_partition(
             partition_key, dynamic_partitions_store=instance, current_time=current_time
         )
-        run_request_tags = (
-            {**tags, **partition_set.tags_for_partition(partition)}
-            if tags
-            else partition_set.tags_for_partition(partition)
+        run_config = (
+            run_config
+            if run_config is not None
+            else self.partitioned_config.get_run_config_for_partition_key(
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
+            )
         )
+        run_request_tags = {
+            **(tags or {}),
+            **self.partitioned_config.get_tags_for_partition_key(
+                partition_key,
+                dynamic_partitions_store=instance,
+                current_time=current_time,
+                job_name=self.name,
+            ),
+        }
 
         return RunRequest(
             run_key=run_key,
-            run_config=run_config
-            if run_config is not None
-            else partition_set.run_config_for_partition(partition),
+            run_config=run_config,
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     @public
@@ -671,7 +664,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
@@ -716,7 +709,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self._asset_layer,
-            _metadata_entries=self._metadata_entries,
+            metadata=self._metadata,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
@@ -756,9 +749,9 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
@@ -778,9 +771,9 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
@@ -1061,6 +1054,7 @@ def get_run_config_schema_for_job(
     executor_def: "ExecutorDefinition",
     logger_defs: Mapping[str, LoggerDefinition],
     asset_layer: Optional[AssetLayer],
+    was_explicitly_provided_resources: bool = False,
 ) -> ConfigType:
     return (
         JobDefinition(
@@ -1070,6 +1064,7 @@ def get_run_config_schema_for_job(
             executor_def=executor_def,
             logger_defs=logger_defs,
             asset_layer=asset_layer,
+            _was_explicitly_provided_resources=was_explicitly_provided_resources,
         )
         .get_run_config_schema("default")
         .run_config_schema_type

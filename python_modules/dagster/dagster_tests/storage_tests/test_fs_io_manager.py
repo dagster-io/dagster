@@ -67,24 +67,21 @@ def test_fs_io_manager():
         assert len(handled_output_events) == 2
 
         filepath_a = os.path.join(tmpdir_path, result.run_id, "op_a", "result")
-        result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
-        assert result_metadata_entry_a.label == "path"
-        assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        metadata = handled_output_events[0].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_events))
-        input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
-        assert input_metadata_entry_a.label == "path"
-        assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        metadata = loaded_input_events[0].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
         assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
-        result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
-        assert result_metadata_entry_b.label == "path"
-        assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
+        metadata = handled_output_events[1].event_specific_data.metadata
+        assert metadata["path"] == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
@@ -485,7 +482,7 @@ def test_fs_io_manager_none():
         assert len(handled_output_events) == 2
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata) == 0
 
 
 def test_fs_io_manager_ops_none():
@@ -512,7 +509,7 @@ def test_fs_io_manager_ops_none():
         assert len(handled_output_events) == 2
 
         for event in handled_output_events:
-            assert len(event.event_specific_data.metadata_entries) == 0
+            assert len(event.event_specific_data.metadata) == 0
 
 
 def test_multipartitions_fs_io_manager():
@@ -604,11 +601,9 @@ def test_backcompat_multipartitions_fs_io_manager():
         materializations = result.asset_materializations_for_node("multipartitioned")
         assert len(materializations) == 1
 
-        get_path_metadata_entry = lambda materialization: next(
-            iter([me for me in materialization.metadata_entries if me.label == "path"])
-        )
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path
+        get_path_metadata_entry = lambda materialization: materialization.metadata["path"]
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).path
 
         materializations = result.asset_materializations_for_node("downstream_of_multipartitioned")
         assert len(materializations) == 1
-        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).value.path
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).path

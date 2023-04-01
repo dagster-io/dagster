@@ -170,6 +170,8 @@ export const AssetPartitionDetail: React.FC<{
         )
       : [];
 
+  const prior = latest ? all.slice(all.indexOf(latest)) : all;
+
   return (
     <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box
@@ -216,14 +218,21 @@ export const AssetPartitionDetail: React.FC<{
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         padding={{vertical: 16}}
       >
-        <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Latest event</Subheading>
-          {!latest ? (
+        {!latest ? (
+          <Box flex={{gap: 4, direction: 'column'}}>
+            <Subheading>Latest materialization</Subheading>
             <Box flex={{gap: 4}}>
               <Icon name="materialization" />
               None
             </Box>
-          ) : (
+          </Box>
+        ) : (
+          <Box flex={{gap: 4, direction: 'column'}}>
+            <Subheading>
+              {latest.__typename === 'MaterializationEvent'
+                ? 'Latest materialization'
+                : 'Latest observation'}
+            </Subheading>
             <Box flex={{gap: 4}} style={{whiteSpace: 'nowrap'}}>
               {latest.__typename === 'MaterializationEvent' ? (
                 <Icon name="materialization" />
@@ -231,14 +240,14 @@ export const AssetPartitionDetail: React.FC<{
                 <Icon name="observation" />
               )}
               <Timestamp timestamp={{ms: Number(latest.timestamp)}} />
-              {all.length > 1 && (
+              {prior.length > 0 && (
                 <AllIndividualEventsLink hasPartitions hasLineage={hasLineage} events={all}>
-                  {`(${all.length} events)`}
+                  {`(${prior.length - 1} prior ${prior.length - 1 === 1 ? 'event' : 'events'})`}
                 </AllIndividualEventsLink>
               )}
             </Box>
-          )}
-        </Box>
+          </Box>
+        )}
         <Box flex={{gap: 4, direction: 'column'}}>
           <Subheading>Run</Subheading>
           {latestEventRun && latest ? (

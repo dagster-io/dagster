@@ -15,6 +15,10 @@ from dagster._config.config_type import (
     Noneable,
     ScalarUnion,
 )
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    infer_schema_from_config_class,
+)
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
 from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
@@ -43,7 +47,7 @@ def type_repr(config_type: ConfigType) -> str:
         return "Enum{" + ", ".join(str(val) for val in config_type.config_values) + "}"
     elif config_type.kind == ConfigTypeKind.ARRAY:
         config_type = cast(Array, config_type)
-        return "List[{}]".format(type_repr(config_type.inner_type))
+        return f"List[{type_repr(config_type.inner_type)}]"
     elif config_type.kind == ConfigTypeKind.SELECTOR:
         return "selector"
     elif config_type.kind == ConfigTypeKind.STRICT_SHAPE:
@@ -138,10 +142,15 @@ class ConfigurableDocumenter(DataDocumenter):
         else:
             obj = self.object
 
-        obj = cast(Union[ConfigurableDefinition, Type[ConfigurableClass]], obj)
+        obj = cast(
+            Union[ConfigurableDefinition, Type[ConfigurableClass], ConfigurableResource], obj
+        )
+
         config_field = None
         if isinstance(obj, ConfigurableDefinition):
             config_field = check.not_none(obj.config_schema).as_field()
+        elif inspect.isclass(obj) and issubclass(obj, ConfigurableResource):
+            config_field = infer_schema_from_config_class(obj)
         elif isinstance(obj, type) and issubclass(obj, ConfigurableClass):
             config_field = Field(obj.config_type())
 

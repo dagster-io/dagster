@@ -93,7 +93,7 @@ export type AssetAssetMaterializationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   partitionInLast?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
   tags?: InputMaybe<Array<InputTag>>;
 };
 
@@ -102,7 +102,7 @@ export type AssetAssetObservationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
   partitionInLast?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetConnection = {
@@ -231,17 +231,17 @@ export type AssetNodeAssetMaterializationUsedDataArgs = {
 export type AssetNodeAssetMaterializationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeAssetObservationsArgs = {
   beforeTimestampMillis?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
-  partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+  partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
 export type AssetNodeLatestRunForPartitionArgs = {
@@ -269,6 +269,15 @@ export type AssetNotFoundError = Error & {
 export type AssetOrError = Asset | AssetNotFoundError;
 
 export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
+
+export type AssetPartitionsStatusCounts = {
+  __typename: 'AssetPartitionsStatusCounts';
+  assetKey: AssetKey;
+  numPartitionsCompleted: Scalars['Int'];
+  numPartitionsFailed: Scalars['Int'];
+  numPartitionsRequested: Scalars['Int'];
+  numPartitionsTargeted: Scalars['Int'];
+};
 
 export type AssetWipeMutationResult =
   | AssetNotFoundError
@@ -2072,6 +2081,18 @@ export type MultiPartitions = {
   ranges: Array<MaterializedPartitionRange2D>;
 };
 
+export type NestedResourceEntry = {
+  __typename: 'NestedResourceEntry';
+  name: Scalars['String'];
+  resource: Maybe<ResourceDetails>;
+  type: NestedResourceType;
+};
+
+export enum NestedResourceType {
+  ANONYMOUS = 'ANONYMOUS',
+  TOP_LEVEL = 'TOP_LEVEL',
+}
+
 export type NoModeProvidedError = Error & {
   __typename: 'NoModeProvidedError';
   message: Scalars['String'];
@@ -2218,6 +2239,7 @@ export type PartitionRunsArgs = {
 
 export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
+  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
   assetSelection: Maybe<Array<AssetKey>>;
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
@@ -2841,10 +2863,15 @@ export type Resource = {
 
 export type ResourceDetails = {
   __typename: 'ResourceDetails';
+  assetKeysUsing: Array<AssetKey>;
   configFields: Array<ConfigTypeField>;
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
+  isTopLevel: Scalars['Boolean'];
   name: Scalars['String'];
+  nestedResources: Array<NestedResourceEntry>;
+  parentResources: Array<NestedResourceEntry>;
+  resourceType: Scalars['String'];
 };
 
 export type ResourceDetailsList = {
@@ -4495,6 +4522,39 @@ export const buildAssetNotFoundError = (
   return {
     __typename: 'AssetNotFoundError',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'beatae',
+  };
+};
+
+export const buildAssetPartitionsStatusCounts = (
+  overrides?: Partial<AssetPartitionsStatusCounts>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetPartitionsStatusCounts'} & AssetPartitionsStatusCounts => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetPartitionsStatusCounts');
+  return {
+    __typename: 'AssetPartitionsStatusCounts',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+        ? ({} as AssetKey)
+        : buildAssetKey({}, relationshipsToOmit),
+    numPartitionsCompleted:
+      overrides && overrides.hasOwnProperty('numPartitionsCompleted')
+        ? overrides.numPartitionsCompleted!
+        : 524,
+    numPartitionsFailed:
+      overrides && overrides.hasOwnProperty('numPartitionsFailed')
+        ? overrides.numPartitionsFailed!
+        : 6432,
+    numPartitionsRequested:
+      overrides && overrides.hasOwnProperty('numPartitionsRequested')
+        ? overrides.numPartitionsRequested!
+        : 1501,
+    numPartitionsTargeted:
+      overrides && overrides.hasOwnProperty('numPartitionsTargeted')
+        ? overrides.numPartitionsTargeted!
+        : 5211,
   };
 };
 
@@ -8170,6 +8230,28 @@ export const buildMultiPartitions = (
   };
 };
 
+export const buildNestedResourceEntry = (
+  overrides?: Partial<NestedResourceEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'NestedResourceEntry'} & NestedResourceEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('NestedResourceEntry');
+  return {
+    __typename: 'NestedResourceEntry',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'quia',
+    resource:
+      overrides && overrides.hasOwnProperty('resource')
+        ? overrides.resource!
+        : relationshipsToOmit.has('ResourceDetails')
+        ? ({} as ResourceDetails)
+        : buildResourceDetails({}, relationshipsToOmit),
+    type:
+      overrides && overrides.hasOwnProperty('type')
+        ? overrides.type!
+        : NestedResourceType.ANONYMOUS,
+  };
+};
+
 export const buildNoModeProvidedError = (
   overrides?: Partial<NoModeProvidedError>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8576,6 +8658,14 @@ export const buildPartitionBackfill = (
   relationshipsToOmit.add('PartitionBackfill');
   return {
     __typename: 'PartitionBackfill',
+    assetPartitionsStatusCounts:
+      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
+        ? overrides.assetPartitionsStatusCounts!
+        : [
+            relationshipsToOmit.has('AssetPartitionsStatusCounts')
+              ? ({} as AssetPartitionsStatusCounts)
+              : buildAssetPartitionsStatusCounts({}, relationshipsToOmit),
+          ],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
@@ -10166,6 +10256,14 @@ export const buildResourceDetails = (
   relationshipsToOmit.add('ResourceDetails');
   return {
     __typename: 'ResourceDetails',
+    assetKeysUsing:
+      overrides && overrides.hasOwnProperty('assetKeysUsing')
+        ? overrides.assetKeysUsing!
+        : [
+            relationshipsToOmit.has('AssetKey')
+              ? ({} as AssetKey)
+              : buildAssetKey({}, relationshipsToOmit),
+          ],
     configFields:
       overrides && overrides.hasOwnProperty('configFields')
         ? overrides.configFields!
@@ -10184,7 +10282,26 @@ export const buildResourceDetails = (
           ],
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
+    isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
+    nestedResources:
+      overrides && overrides.hasOwnProperty('nestedResources')
+        ? overrides.nestedResources!
+        : [
+            relationshipsToOmit.has('NestedResourceEntry')
+              ? ({} as NestedResourceEntry)
+              : buildNestedResourceEntry({}, relationshipsToOmit),
+          ],
+    parentResources:
+      overrides && overrides.hasOwnProperty('parentResources')
+        ? overrides.parentResources!
+        : [
+            relationshipsToOmit.has('NestedResourceEntry')
+              ? ({} as NestedResourceEntry)
+              : buildNestedResourceEntry({}, relationshipsToOmit),
+          ],
+    resourceType:
+      overrides && overrides.hasOwnProperty('resourceType') ? overrides.resourceType! : 'sed',
   };
 };
 

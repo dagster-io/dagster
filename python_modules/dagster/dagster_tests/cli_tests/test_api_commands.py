@@ -68,7 +68,7 @@ def test_execute_run():
                 [input_json],
             )
 
-            assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result.stdout)
+            assert "PIPELINE_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
 
             # Framework errors (e.g. running a run that has already run) still result in a non-zero error code
             result = runner.invoke(api.execute_run_command, [input_json])
@@ -127,7 +127,7 @@ def test_execute_run_with_secrets_loader():
                 [input_json],
             )
 
-            assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result.stdout)
+            assert "PIPELINE_SUCCESS" in result.stdout, f"no match, result: {result.stdout}"
 
     # Without a secrets loader the run fails due to missing env var
     with instance_for_test(
@@ -160,7 +160,7 @@ def test_execute_run_with_secrets_loader():
 
         assert (
             "PIPELINE_FAILURE" in result.stdout and "Exception: Missing env var" in result.stdout
-        ), "no match, result: {}".format(result.stdout)
+        ), f"no match, result: {result.stdout}"
 
 
 def test_execute_run_fail_pipeline():
@@ -197,7 +197,7 @@ def test_execute_run_fail_pipeline():
             )
             assert result.exit_code == 0
 
-            assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
+            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
 
             run = create_run_for_test(
                 instance,
@@ -219,7 +219,7 @@ def test_execute_run_fail_pipeline():
 
             assert result.exit_code != 0, str(result.stdout)
 
-            assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
+            assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
 
             with mock.patch(
                 "dagster._core.execution.api.pipeline_execution_iterator"
@@ -273,7 +273,7 @@ def test_execute_run_cannot_load():
 
             assert "Pipeline run with id 'FOOBAR' not found for run execution" in str(
                 result.exception
-            ), "no match, result: {}".format(result.stdout)
+            ), f"no match, result: {result.stdout}"
 
 
 def runner_execute_step(runner, cli_args, env=None):

@@ -20,10 +20,14 @@ def instance():
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace(instance):
-    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
-    with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref())
-        with second_server_process.create_ephemeral_client() as second_server:
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), wait_on_exit=True
+    ) as first_server_process:
+        first_server = first_server_process.create_client()
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), wait_on_exit=True
+        ) as second_server_process:
+            second_server = second_server_process.create_client()
             first_socket = first_server.socket
             second_socket = second_server.socket
             workspace_yaml = """
@@ -51,7 +55,7 @@ load_from:
                 }
                 assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{socket}".format(socket=first_socket)
+                default_location_name = f"grpc:localhost:{first_socket}"
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
@@ -67,8 +71,6 @@ load_from:
                 assert local_port_default_host.port is None
 
                 assert all(map(lambda x: x.name, code_locations.values()))
-        second_server_process.wait()
-    first_server_process.wait()
 
 
 def test_grpc_server_env_vars():
@@ -116,44 +118,46 @@ def test_grpc_server_env_vars():
 
 
 def test_ssl_grpc_server_workspace(instance):
-    server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-    try:
-        with server_process.create_ephemeral_client() as client:
-            assert client.heartbeat(echo="Hello")
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+    ) as server_process:
+        client = server_process.create_client()
+        assert client.heartbeat(echo="Hello")
 
-            port = server_process.port
-            ssl_yaml = f"""
-    load_from:
-    - grpc_server:
-        host: localhost
-        port: {port}
-        ssl: true
-    """
-            origins = location_origins_from_config(
-                yaml.safe_load(ssl_yaml),
-                # fake out as if it were loaded by a yaml file in this directory
-                file_relative_path(__file__, "not_a_real.yaml"),
-            )
-            origin = list(origins.values())[0]
-            assert origin.use_ssl
+        port = server_process.port
+        ssl_yaml = f"""
+load_from:
+- grpc_server:
+    host: localhost
+    port: {port}
+    ssl: true
+"""
+        origins = location_origins_from_config(
+            yaml.safe_load(ssl_yaml),
+            # fake out as if it were loaded by a yaml file in this directory
+            file_relative_path(__file__, "not_a_real.yaml"),
+        )
+        origin = list(origins.values())[0]
+        assert origin.use_ssl
 
-            # Actually connecting to the server will fail since it's expecting SSL
-            # and we didn't set up the server with SSL
-            try:
-                with origin.create_location():
-                    assert False
-            except DagsterUserCodeUnreachableError:
-                pass
-
-    finally:
-        server_process.wait()
+        # Actually connecting to the server will fail since it's expecting SSL
+        # and we didn't set up the server with SSL
+        try:
+            with origin.create_location():
+                assert False
+        except DagsterUserCodeUnreachableError:
+            pass
 
 
 def test_grpc_server_workspace(instance):
-    first_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-    with first_server_process.create_ephemeral_client() as first_server:
-        second_server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
-        with second_server_process.create_ephemeral_client() as second_server:
+    with GrpcServerProcess(
+        instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+    ) as first_server_process:
+        first_server = first_server_process.create_client()
+        with GrpcServerProcess(
+            instance_ref=instance.get_ref(), force_port=True, wait_on_exit=True
+        ) as second_server_process:
+            second_server = second_server_process.create_client()
             first_port = first_server.port
             second_port = second_server.port
             workspace_yaml = """
@@ -181,7 +185,7 @@ load_from:
                 }
                 assert len(code_locations) == 2
 
-                default_location_name = "grpc:localhost:{port}".format(port=first_port)
+                default_location_name = f"grpc:localhost:{first_port}"
                 assert code_locations.get(default_location_name)
                 local_port = code_locations.get(default_location_name)
 
@@ -197,8 +201,6 @@ load_from:
                 assert local_port_default_host.socket is None
 
                 assert all(map(lambda x: x.name, code_locations.values()))
-        second_server_process.wait()
-    first_server_process.wait()
 
 
 def test_cannot_set_socket_and_port():

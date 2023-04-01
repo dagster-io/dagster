@@ -175,7 +175,7 @@ class TestPostgresInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode("utf-8")
             raise PostgresDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
+                f"Failed to launch docker container(s) via docker-compose: {err_text}",
                 ex,
             ) from ex
 
@@ -205,9 +205,9 @@ class TestPostgresInstance:
                 yield conn_str
         except PostgresDockerError as ex:
             warnings.warn(
-                "Error launching Dockerized Postgres: {}".format(ex), RuntimeWarning, stacklevel=3
+                f"Error launching Dockerized Postgres: {ex}", RuntimeWarning, stacklevel=3
             )
-            pytest.skip("Skipping due to error launching Dockerized Postgres: {}".format(ex))
+            pytest.skip(f"Skipping due to error launching Dockerized Postgres: {ex}")
 
 
 def is_postgres_running(service_name):
@@ -219,7 +219,7 @@ def is_postgres_running(service_name):
                 "container",
                 "ps",
                 "-f",
-                "name={}".format(service_name),
+                f"name={service_name}",
                 "-f",
                 "status=running",
             ],

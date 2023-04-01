@@ -16,7 +16,10 @@ import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
-import {usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {
+  healthRefreshHintFromLiveData,
+  usePartitionHealthData,
+} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
@@ -34,7 +37,13 @@ export const SidebarAssetInfo: React.FC<{
   liveData: LiveDataForNode;
 }> = ({assetNode, liveData}) => {
   const assetKey = assetNode.assetKey;
-  const partitionHealthData = usePartitionHealthData([assetKey]);
+  const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
+  const partitionHealthData = usePartitionHealthData(
+    [assetKey],
+    partitionHealthRefreshHint,
+    'background',
+  );
+
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });

@@ -37,7 +37,7 @@ def get_param_value(param_name, param_type) -> Any:
     elif inspect.isclass(param_type):
         return instantiate(param_type)
     else:
-        raise Exception("Unhandled type: {}".format(param_type))
+        raise Exception(f"Unhandled type: {param_type}")
 
 
 def test_destination_constructors():

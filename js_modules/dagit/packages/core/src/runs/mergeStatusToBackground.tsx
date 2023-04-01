@@ -44,7 +44,7 @@ export const mergeStatusToBackground = (runs: TimelineRun[]) => {
   });
 
   const statusArr = Object.keys(counts).filter(
-    (status) => counts[status] > 0,
+    (status) => counts[status as keyof typeof counts] > 0,
   ) as BackgroundStatus[];
 
   if (statusArr.length === 1) {

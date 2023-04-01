@@ -1,5 +1,5 @@
 """As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/install#telemetry'.
+For more information, check out the docs at https://docs.dagster.io/getting-started/telemetry'.
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -177,7 +177,7 @@ def _telemetry_wrapper(
 
 def get_python_version() -> str:
     version = sys.version_info
-    return "{}.{}.{}".format(version.major, version.minor, version.micro)
+    return f"{version.major}.{version.minor}.{version.micro}"
 
 
 def get_is_known_ci_env() -> bool:
@@ -671,7 +671,7 @@ TELEMETRY_TEXT = """
   %(telemetry)s
 
   As an open source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/install#telemetry.
+  information, read https://docs.dagster.io/getting-started/telemetry.
 
   We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
   any data that is processed within solids and pipelines.

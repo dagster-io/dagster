@@ -5,12 +5,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
-    MetadataEntry,
     Output,
     _check as check,
 )
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (
@@ -41,7 +41,7 @@ def create_root_fn_failure_solid(name):
 
 def test_compute_failure_pipeline():
     pipeline_def = PipelineDefinition(
-        solid_defs=[create_root_fn_failure_solid("failing")],
+        node_defs=[create_root_fn_failure_solid("failing")],
         name="test",
     )
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
@@ -204,7 +204,7 @@ def test_user_error_propogation():
 
     pipeline_def = PipelineDefinition(
         name="test_user_error_propogation",
-        solid_defs=[throws_user_error, return_one, add_one],
+        node_defs=[throws_user_error, return_one, add_one],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
@@ -219,7 +219,7 @@ def test_explicit_failure():
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",
-            metadata_entries=[MetadataEntry("always_fails", value="why")],
+            metadata={"always_fails": MetadataValue.text("why")},
         )
 
     @pipeline
@@ -230,4 +230,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]
+    assert exc_info.value.metadata == {"always_fails": MetadataValue.text("why")}
