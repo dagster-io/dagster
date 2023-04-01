@@ -2,6 +2,8 @@ import hashlib
 import json
 import os
 import textwrap
+from enum import Enum
+from functools import partial
 from typing import (
     AbstractSet,
     Any,
@@ -45,7 +47,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
-from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
@@ -328,11 +330,15 @@ def _get_asset_deps(
         metadata_by_output_name,
     )
 
+class _DbtOpCommands(Enum):
+    RUN = "run"
+    BUILD = "build"
+    TEST = "test"
 
 def _batch_event_iterator(
     context: OpExecutionContext,
     dbt_resource: DbtCliResource,
-    use_build_command: bool,
+    command: _DbtOpCommands,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -344,10 +350,16 @@ def _batch_event_iterator(
     """
     dbt_output: Optional[DbtOutput] = None
     try:
-        if use_build_command:
-            dbt_output = dbt_resource.build(**kwargs)
-        else:
+        if command == _DbtOpCommands.RUN:
             dbt_output = dbt_resource.run(**kwargs)
+        elif command == _DbtOpCommands.BUILD:
+            dbt_output = dbt_resource.build(**kwargs)
+        elif command == _DbtOpCommands.TEST:
+            dbt_output = dbt_resource.test(**kwargs)
+        else:
+            raise DagsterInvariantViolationError(
+                f"Unexpected command {command} in _batch_event_iterator"
+            )
     finally:
         # in the case that the project only partially runs successfully, still attempt to generate
         # events for the parts that were successful
@@ -380,6 +392,7 @@ def _events_for_structured_json_line(
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
     manifest_json: Mapping[str, Any],
+    tests_as_assets: bool = False,
 ) -> Iterator[Union[AssetObservation, Output]]:
     """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
     as closely as possible.
@@ -397,7 +410,9 @@ def _events_for_structured_json_line(
 
     compiled_node_info = manifest_json["nodes"][unique_id]
 
-    if node_resource_type in ASSET_RESOURCE_TYPES and node_status == "success":
+    # Parse results for nodes treated as assets
+    asset_nodes = ASSET_RESOURCE_TYPES + ["test"] if tests_as_assets else ASSET_RESOURCE_TYPES
+    if node_resource_type in asset_nodes and node_status == "success":
         metadata = dict(
             runtime_metadata_fn(context, compiled_node_info) if runtime_metadata_fn else {}
         )
@@ -416,6 +431,7 @@ def _events_for_structured_json_line(
                 "Execution Duration": duration.total_seconds(),
             }
         )
+    elif node_resource_type == "test" and node_status == "fail":
         yield Output(
             value=None,
             output_name=_get_output_name(compiled_node_info),
@@ -446,7 +462,8 @@ def _events_for_structured_json_line(
 def _stream_event_iterator(
     context: OpExecutionContext,
     dbt_resource: DbtCliResource,
-    use_build_command: bool,
+    command: _DbtOpCommands,
+    tests_as_assets: bool,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -458,12 +475,11 @@ def _stream_event_iterator(
     """
     manifest_json = check.not_none(dbt_resource.get_manifest_json())
 
-    for parsed_json_line in dbt_resource.cli_stream_json(
-        command="build" if use_build_command else "run",
-        **kwargs,
-    ):
+
+    for parsed_json_line in dbt_resource.cli_stream_json(command=command.value, **kwargs):
         yield from _events_for_structured_json_line(
-            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
+            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json,
+            tests_as_assets=tests_as_assets  # We can infer this from the command.
         )
 
 
@@ -481,6 +497,7 @@ def _get_dbt_op(
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
+    tests_as_assets: bool = False,
 ):
     @op(
         name=op_name,
@@ -529,20 +546,29 @@ def _get_dbt_op(
         # merge in any additional kwargs from the config
         kwargs = deep_merge_dicts(kwargs, context.op_config)
 
+        # Set the DBT command to run. Test cannot be mixed with Run.
+        command = _DbtOpCommands.RUN
+        if tests_as_assets:
+            command = _DbtOpCommands.TEST
+        if use_build_command:  # Build also runs tests.
+            command = _DbtOpCommands.BUILD
+
         if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
                 context,
                 dbt_resource,
-                use_build_command,
+                command,
+                tests_as_assets,
                 node_info_to_asset_key,
                 runtime_metadata_fn,
                 kwargs,
+                tests_as_assets=tests_as_assets,
             )
         else:
             yield from _batch_event_iterator(
                 context,
                 dbt_resource,
-                use_build_command,
+                command,
                 node_info_to_asset_key,
                 runtime_metadata_fn,
                 kwargs,
@@ -626,6 +652,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
+        tests_as_assets=tests_as_assets,
     )
 
     return AssetsDefinition(
@@ -669,6 +696,7 @@ def load_assets_from_dbt_project(
     ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
+    tests_as_assets: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models from a dbt project into Dagster assets.
 
@@ -756,6 +784,7 @@ def load_assets_from_dbt_project(
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
         dbt_resource_key=dbt_resource_key,
+        tests_as_assets=tests_as_assets,
     )
 
 
@@ -783,6 +812,7 @@ def load_assets_from_dbt_manifest(
     ] = _get_node_metadata,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
+    tests_as_assets: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
@@ -875,7 +905,8 @@ def load_assets_from_dbt_manifest(
         if len(selected_unique_ids) == 0:
             raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
 
-    dbt_assets_def = _dbt_nodes_to_assets(
+
+    _get_dbt_assets = partial(_dbt_nodes_to_assets,
         dbt_nodes,
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
@@ -893,6 +924,17 @@ def load_assets_from_dbt_manifest(
         node_info_to_definition_metadata_fn=node_info_to_definition_metadata_fn,
         display_raw_sql=display_raw_sql,
     )
+
+    # Build runs tests, but Run does not, so we need to handle both cases if tests are assets.
+    dbt_test_assets_def: Optional[AssetsDefinition] = None
+    if tests_as_assets and use_build_command:
+        dbt_assets_def = _get_dbt_assets(tests_as_assets=tests_as_assets)
+    elif tests_as_assets and not use_build_command:
+        dbt_assets_def = _get_dbt_assets(tests_as_assets=False)  # only models
+        dbt_test_assets_def = _get_dbt_assets(tests_as_assets=tests_as_assets)
+    else: # This is the base case, but to avoid calling twice, we use else.
+        dbt_assets_def = _get_dbt_assets()
+
     dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
@@ -905,8 +947,24 @@ def load_assets_from_dbt_manifest(
         dbt_assets = [
             dbt_assets_def.with_attributes(input_asset_key_replacements=input_key_replacements)
         ]
+
+        # Case when tests are assets, but not run with build command:
+        if dbt_test_assets_def is not None:
+            input_key_replacements = {
+                input_key: AssetKey([*source_key_prefix, *input_key.path])
+                for input_key in dbt_test_assets_def.keys_by_input_name.values()
+            }
+            dbt_assets.append(
+                dbt_test_assets_def.with_attributes(
+                    input_asset_key_replacements=input_key_replacements
+                )
+            )
+
     else:
         dbt_assets = [dbt_assets_def]
+
+        if dbt_test_assets_def is not None:  # Case when tests are assets, but not run with build command.
+            dbt_assets.append(dbt_test_assets_def)
 
     if key_prefix:
         dbt_assets = prefix_assets(dbt_assets, key_prefix)

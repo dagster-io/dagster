@@ -57,6 +57,14 @@ Examples:
                 "prefix the generated asset keys."
             ),
         ),
+        "tests_as_assets": Field(
+            config=Bool,
+            default_value=False,
+            description=(
+                "If True, tests will be yielded as fully-qualified assets. If False, they will be yielded as "
+                "asset observations. Default: False"
+            ),
+        ),
     },
 )
 def dbt_build_op(context):

@@ -87,6 +87,7 @@ def result_to_events(
     manifest_json: Optional[Mapping[str, Any]] = None,
     extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     generate_asset_outputs: bool = False,
+    tests_as_assets: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
     """This is a hacky solution that attempts to consolidate parsing many of the potential formats
     that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
@@ -146,7 +147,41 @@ def result_to_events(
                 description=f"dbt node: {unique_id}",
                 metadata=metadata,
             )
-    # can only associate tests with assets if we have manifest_json available
+    elif node_resource_type == "test" and tests_as_assets and status != "skipped":
+    # Tests as fully-qualified assets, OutPut the test result, which should fail the op due to type mismatch.
+        metadata.update(
+            {
+                "Test ID": result.get("unique_id"),
+                "Test Description": result.get("description"),
+                "Test Status": status,
+                "Test Message": result.get("message", "Test failed!"),
+                "Test Failures": result.get("failures"),
+            }
+        )
+
+        _materialize_test_asset = False
+        if status == "pass":
+            return_value = None
+            _materialize_test_asset = True
+        elif status == "fail":
+            return_value = str(result.get("message", "Test failed!"))
+        else:
+            return_value = str(result.get("message", "Test error!"))
+
+        if generate_asset_outputs:
+            yield Output(
+                value=return_value,
+                output_name=_get_output_name(node_info),
+                metadata=metadata)
+        else:
+            if _materialize_test_asset:
+                yield AssetMaterialization(
+                    asset_key=node_info_to_asset_key(node_info),
+                    description=f"dbt test: {unique_id}",
+                    metadata=metadata,
+                )
+
+    # Tests as Asset observatons: only possible if we have manifest_json available
     elif node_resource_type == "test" and manifest_json and status != "skipped":
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
@@ -172,6 +207,7 @@ def generate_events(
     dbt_output: DbtOutput,
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
+    tests_as_assets: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
     """This function yields :py:class:`dagster.AssetMaterialization` events for each model updated by
     a dbt command, and :py:class:`dagster.AssetObservation` events for each test run.
@@ -184,6 +220,7 @@ def generate_events(
             docs_url=dbt_output.docs_url,
             node_info_to_asset_key=node_info_to_asset_key,
             manifest_json=manifest_json,
+            tests_as_assets=tests_as_assets,
         ):
             yield check.inst(
                 cast(Union[AssetMaterialization, AssetObservation], event),
