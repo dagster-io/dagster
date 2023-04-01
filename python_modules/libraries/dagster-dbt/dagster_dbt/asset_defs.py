@@ -577,18 +577,18 @@ def _dbt_nodes_to_assets(
     tests_as_assets: bool = False,
 ) -> AssetsDefinition:
     """Given a set of dbt nodes, return an AssetsDefinition that can be used to create a pipeline."""
-    asset_resource_types = set(ASSET_RESOURCE_TYPES)
-    if not tests_as_assets:
-        asset_resource_types.remove('test')
+    asset_resource_types = ASSET_RESOURCE_TYPES + ['test'] if tests_as_assets else ASSET_RESOURCE_TYPES
+    #if not tests_as_assets:
+    #    asset_resource_types.remove('test')
     if use_build_command:
         deps = _get_deps(
             dbt_nodes,
             selected_unique_ids,
-            asset_resource_types=list(asset_resource_types),
+            asset_resource_types=asset_resource_types,
         )
     else:
-        asset_resource_types -= {'source', 'seed'}
-        deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=list(asset_resource_types))
+        asset_resource_types = ['test'] if tests_as_assets else ['model']
+        deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=asset_resource_types)
 
     (
         asset_deps,
