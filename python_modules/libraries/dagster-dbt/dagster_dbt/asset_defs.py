@@ -577,7 +577,7 @@ def _dbt_nodes_to_assets(
         deps = _get_deps(
             dbt_nodes,
             selected_unique_ids,
-            asset_resource_types=["model", "seed", "snapshot"],
+            asset_resource_types=ASSET_RESOURCE_TYPES,
         )
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])

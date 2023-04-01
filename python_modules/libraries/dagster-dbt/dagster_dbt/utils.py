@@ -26,7 +26,7 @@ from dagster._core.definitions.metadata import RawMetadataValue
 from .types import DbtOutput
 
 # dbt resource types that may be considered assets
-ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot", "test"]
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
