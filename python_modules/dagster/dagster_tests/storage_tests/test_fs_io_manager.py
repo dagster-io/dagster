@@ -35,11 +35,12 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
 
-def define_pipeline(io_manager):
+def define_job(io_manager: IOManagerDefinition):
     @op
     def op_a(_context):
         return [1, 2, 3]
@@ -58,9 +59,9 @@ def define_pipeline(io_manager):
 def test_fs_io_manager():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_pipeline(io_manager)
+        job_def = define_job(io_manager)
 
-        result = pipeline_def.execute_in_process()
+        result = job_def.execute_in_process()
         assert result.success
 
         handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_events))
@@ -91,9 +92,9 @@ def test_fs_io_manager_base_dir():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.ephemeral(tempdir=tmpdir_path)
         io_manager = fs_io_manager
-        pipeline_def = define_pipeline(io_manager)
+        job_def = define_job(io_manager)
 
-        result = pipeline_def.execute_in_process(instance=instance)
+        result = job_def.execute_in_process(instance=instance)
         assert result.success
         assert result.output_for_node("op_a") == [1, 2, 3]
 
