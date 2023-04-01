@@ -939,7 +939,7 @@ def test_monitor_source_asset_sensor(executor):
                 TickStatus.SUCCESS,
             )
             run_request = instance.get_runs(limit=1)[0]
-            assert run_request.pipeline_name == "the_graph"
+            assert run_request.pipeline_name == "the_job"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
