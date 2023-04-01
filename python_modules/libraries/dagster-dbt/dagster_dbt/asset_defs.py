@@ -128,6 +128,9 @@ def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
     """A node's group name is subdirectory that it resides in."""
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
+    if node_info.get("resource_type") == "test":
+        # tests are not in subdirectories, so we return tests as the group name
+        return "tests"
     if len(fqn) < 3:
         return None
     return fqn[1]
