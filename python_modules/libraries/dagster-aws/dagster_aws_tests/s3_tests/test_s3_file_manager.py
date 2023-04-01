@@ -115,6 +115,10 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
             endpoint_url=resource_config["endpoint_url"],
             use_ssl=True,
             config=call_kwargs["config"],
+            aws_access_key_id=None,
+            aws_secret_access_key=None,
+            aws_session_token=None,
+            verify=None,
         )
 
         assert call_kwargs["config"].retries["max_attempts"] == 5

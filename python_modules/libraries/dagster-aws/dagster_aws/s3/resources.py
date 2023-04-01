@@ -1,4 +1,4 @@
-from dagster import Field, StringSource, resource
+from dagster import Field, Noneable, StringSource, resource
 from dagster._utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
@@ -40,7 +40,7 @@ S3_SESSION_CONFIG = {
         default_value=True,
     ),
     "verify": Field(
-        str,
+        Noneable(str),
         description=(
             "Whether or not to verify SSL certificates. By default SSL certificates are verified."
             " You can also specify this argument if you want to use a different CA cert bundle than"
@@ -50,24 +50,20 @@ S3_SESSION_CONFIG = {
         default_value=None,
     ),
     "aws_access_key_id": Field(
-        StringSource,
+        Noneable(StringSource),
         description="The access key to use when creating the client.",
         is_required=False,
         default_value=None,
     ),
     "aws_secret_access_key": Field(
-        StringSource,
-        description=(
-            "The secret key to use when creating the client."
-        ),
+        Noneable(StringSource),
+        description="The secret key to use when creating the client.",
         is_required=False,
         default_value=None,
     ),
     "aws_session_token": Field(
-        StringSource,
-        description=(
-            "The session token to use when creating the client."
-        ),
+        Noneable(StringSource),
+        description="The session token to use when creating the client.",
         is_required=False,
         default_value=None,
     ),
