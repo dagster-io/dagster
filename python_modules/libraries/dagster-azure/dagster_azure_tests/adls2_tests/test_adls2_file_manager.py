@@ -2,13 +2,9 @@ import uuid
 from unittest import mock
 
 from dagster import ResourceDefinition, build_op_context, configured, op
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster._legacy import (
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
-)
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
     ADLS2FileManager,
@@ -119,21 +115,16 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
         prefix="some-prefix",
     )
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource),
-                    "file_manager": ResourceDefinition.hardcoded_resource(adls2_fake_file_manager),
-                },
-            )
-        ]
+    @job(
+        resource_defs={
+            "adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource),
+            "file_manager": ResourceDefinition.hardcoded_resource(adls2_fake_file_manager),
+        },
     )
     def adls2_file_manager_test():
         accept_file(emit_file())
 
-    result = execute_pipeline(
-        adls2_file_manager_test,
+    result = adls2_file_manager_test.execute_in_process(
         run_config={"resources": {"file_manager": {"config": {"adls2_file_system": file_system}}}},
     )
 

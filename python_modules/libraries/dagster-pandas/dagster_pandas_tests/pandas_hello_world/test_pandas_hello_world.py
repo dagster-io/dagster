@@ -2,12 +2,12 @@ import os
 
 from dagster._cli.job import do_execute_command
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 
 
-def test_execute_pipeline():
+def test_execute_job():
     environment = {
         "ops": {
             "sum_op": {
@@ -16,25 +16,28 @@ def test_execute_pipeline():
         }
     }
 
-    result = execute_pipeline(
-        ReconstructablePipeline.for_module("dagster_pandas.examples", "pandas_hello_world_test"),
-        run_config=environment,
-    )
+    with instance_for_test() as instance:
+        with execute_job(
+            ReconstructablePipeline.for_module(
+                "dagster_pandas.examples", "pandas_hello_world_test"
+            ),
+            run_config=environment,
+            instance=instance,
+        ) as result:
+            assert result.success
 
-    assert result.success
+            assert result.output_for_node("sum_op").to_dict("list") == {
+                "num1": [1, 3],
+                "num2": [2, 4],
+                "sum": [3, 7],
+            }
 
-    assert result.result_for_node("sum_op").output_value().to_dict("list") == {
-        "num1": [1, 3],
-        "num2": [2, 4],
-        "sum": [3, 7],
-    }
-
-    assert result.result_for_node("sum_sq_op").output_value().to_dict("list") == {
-        "num1": [1, 3],
-        "num2": [2, 4],
-        "sum": [3, 7],
-        "sum_sq": [9, 49],
-    }
+            assert result.output_for_node("sum_sq_op").to_dict("list") == {
+                "num1": [1, 3],
+                "num2": [2, 4],
+                "sum": [3, 7],
+                "sum_sq": [9, 49],
+            }
 
 
 def test_cli_execute():

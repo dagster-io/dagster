@@ -1,5 +1,5 @@
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster_slack import slack_resource
 from dagster_slack.hooks import slack_on_failure, slack_on_success
 from mock import patch
@@ -12,24 +12,23 @@ class SomeUserException(Exception):
 @patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_on_solid_instance(mock_api_call):
     @op
-    def pass_solid(_):
+    def pass_op(_):
         pass
 
     @op
-    def fail_solid(_):
+    def fail_op(_):
         raise SomeUserException()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
-    def a_pipeline():
-        pass_solid.with_hooks(hook_defs={slack_on_failure("#foo")})()
-        pass_solid.alias("solid_with_hook").with_hooks(hook_defs={slack_on_failure("#foo")})()
-        fail_solid.alias("fail_solid_without_hook")()
-        fail_solid.with_hooks(
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op.with_hooks(hook_defs={slack_on_failure("#foo")})()
+        pass_op.alias("solid_with_hook").with_hooks(hook_defs={slack_on_failure("#foo")})()
+        fail_op.alias("fail_op_without_hook")()
+        fail_op.with_hooks(
             hook_defs={slack_on_failure(channel="#foo", dagit_base_url="localhost:3000")}
         )()
 
-    result = execute_pipeline(
-        a_pipeline,
+    result = job_def.execute_in_process(
         run_config={
             "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
@@ -42,22 +41,21 @@ def test_failure_hook_on_solid_instance(mock_api_call):
 @patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_decorator(mock_api_call):
     @op
-    def pass_solid(_):
+    def pass_op(_):
         pass
 
     @op
-    def fail_solid(_):
+    def fail_op(_):
         raise SomeUserException()
 
     @slack_on_failure("#foo")
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
-    def a_pipeline():
-        pass_solid()
-        fail_solid()
-        fail_solid.alias("another_fail_solid")()
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op()
+        fail_op()
+        fail_op.alias("another_fail_op")()
 
-    result = execute_pipeline(
-        a_pipeline,
+    result = job_def.execute_in_process(
         run_config={
             "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
@@ -73,22 +71,21 @@ def test_success_hook_on_solid_instance(mock_api_call):
         return "Some custom text"
 
     @op
-    def pass_solid(_):
+    def pass_op(_):
         pass
 
     @op
-    def fail_solid(_):
+    def fail_op(_):
         raise SomeUserException()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
-    def a_pipeline():
-        pass_solid.with_hooks(hook_defs={slack_on_success("#foo")})()
-        pass_solid.alias("solid_with_hook").with_hooks(hook_defs={slack_on_success("#foo")})()
-        pass_solid.alias("solid_without_hook")()
-        fail_solid.with_hooks(hook_defs={slack_on_success("#foo", message_fn=my_message_fn)})()
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op.with_hooks(hook_defs={slack_on_success("#foo")})()
+        pass_op.alias("solid_with_hook").with_hooks(hook_defs={slack_on_success("#foo")})()
+        pass_op.alias("solid_without_hook")()
+        fail_op.with_hooks(hook_defs={slack_on_success("#foo", message_fn=my_message_fn)})()
 
-    result = execute_pipeline(
-        a_pipeline,
+    result = job_def.execute_in_process(
         run_config={
             "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
@@ -101,22 +98,21 @@ def test_success_hook_on_solid_instance(mock_api_call):
 @patch("slack_sdk.WebClient.api_call")
 def test_success_hook_decorator(mock_api_call):
     @op
-    def pass_solid(_):
+    def pass_op(_):
         pass
 
     @op
-    def fail_solid(_):
+    def fail_op(_):
         raise SomeUserException()
 
     @slack_on_success("#foo")
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
-    def a_pipeline():
-        pass_solid()
-        pass_solid.alias("another_pass_solid")()
-        fail_solid()
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op()
+        pass_op.alias("another_pass_op")()
+        fail_op()
 
-    result = execute_pipeline(
-        a_pipeline,
+    result = job_def.execute_in_process(
         run_config={
             "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
