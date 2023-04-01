@@ -114,6 +114,8 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
     """
     if node_info["resource_type"] == "source":
         components = [node_info["source_name"], node_info["name"]]
+    elif node_info["resource_type"] == "test":  # To not have dbt_test__audit as prefix.
+        components = [node_info["name"]]
     else:
         configured_schema = node_info["config"].get("schema")
         if configured_schema is not None:
