@@ -83,6 +83,8 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
     from dagster._core.snap import PipelineSnapshot
 
+DEFAULT_EXECUTOR_DEF = multi_or_in_process_executor
+
 
 class JobDefinition(PipelineDefinition):
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
@@ -109,44 +111,19 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _executor_def_specified: Optional[bool] = None,
-        _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
         _was_explicitly_provided_resources: Optional[bool] = None,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
-        from dagster._loggers import default_loggers
 
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        resource_defs = check.opt_mapping_param(
-            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
-        )
-        # We need to check whether an actual executor/logger def was passed in
-        # before we set a default executor/logger defs. This is so we can
-        # determine if someone passed in the default executor vs the system set
-        # it directly. Once JobDefinition no longer subclasses
-        # PipelineDefinition, we can change the default executor to be set
-        # elsewhere to avoid the need for this check.
-        self._executor_def_specified = (
-            _executor_def_specified
-            if _executor_def_specified is not None
-            else executor_def is not None
-        )
-        self._logger_defs_specified = (
-            _logger_defs_specified
-            if _logger_defs_specified is not None
-            else logger_defs is not None
-        )
-        executor_def = check.opt_inst_param(
-            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
-        )
-        check.opt_mapping_param(
+        self._executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
+        self._loggers = check.opt_mapping_param(
             logger_defs,
             "logger_defs",
             key_type=str,
             value_type=LoggerDefinition,
         )
-        logger_defs = logger_defs or default_loggers()
+
         name = check_valid_name(check.opt_str_param(name, "name", default=graph_def.name))
 
         config = check.opt_inst_param(
@@ -275,7 +252,12 @@ class JobDefinition(PipelineDefinition):
     @public
     @property
     def executor_def(self) -> ExecutorDefinition:
-        return self.get_mode_definition().executor_defs[0]
+        return self._executor_def or DEFAULT_EXECUTOR_DEF
+
+    @public
+    @property
+    def has_specified_executor(self) -> bool:
+        return self._executor_def is not None
 
     @public
     @property
@@ -295,7 +277,14 @@ class JobDefinition(PipelineDefinition):
     @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
-        return self.get_mode_definition().loggers
+        from dagster._loggers import default_loggers
+
+        return self._loggers or default_loggers()
+
+    @public
+    @property
+    def has_specified_loggers(self) -> bool:
+        return self._loggers is not None
 
     @public
     def execute_in_process(
@@ -388,8 +377,6 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
-            _executor_def_specified=self._executor_def_specified,
-            _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
         )
 
@@ -546,8 +533,6 @@ class JobDefinition(PipelineDefinition):
                 op_retry_policy=self._op_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
-                _executor_def_specified=self._executor_def_specified,
-                _logger_defs_specified=self._logger_defs_specified,
                 _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
@@ -674,8 +659,6 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._op_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
-            _executor_def_specified=self._executor_def_specified,
-            _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
         )
 
@@ -717,8 +700,6 @@ class JobDefinition(PipelineDefinition):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self._asset_layer,
             metadata=self._metadata,
-            _executor_def_specified=self._executor_def_specified,
-            _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
         )
 
@@ -763,8 +744,6 @@ class JobDefinition(PipelineDefinition):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
-            _executor_def_specified=False,
-            _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
         )
 
@@ -785,8 +764,6 @@ class JobDefinition(PipelineDefinition):
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
             input_values=self.input_values,
-            _executor_def_specified=self._executor_def_specified,
-            _logger_defs_specified=False,
             _preset_defs=self._preset_defs,
         )
 
