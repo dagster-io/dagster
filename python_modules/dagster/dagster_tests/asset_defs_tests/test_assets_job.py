@@ -39,7 +39,7 @@ from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._core.execution.api import execute_pipeline, execute_run_iterator
+from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -1608,7 +1608,7 @@ def test_op_outputs_with_default_asset_io_mgr():
         [AssetsDefinition.from_graph(complicated_graph), my_asset],
     ).build_job("my_job", executor_def=in_process_executor)
 
-    result = execute_pipeline(my_job)
+    result = my_job.execute_in_process()
     assert result.success
 
 

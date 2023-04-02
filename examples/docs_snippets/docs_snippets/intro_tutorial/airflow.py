@@ -2,8 +2,7 @@ import csv
 
 import requests
 
-from dagster import op
-from dagster._legacy import pipeline
+from dagster import job, op
 
 
 @op
@@ -16,6 +15,6 @@ def hello_cereal(context):
     return cereals
 
 
-@pipeline
+@job
 def hello_cereal_pipeline():
     hello_cereal()

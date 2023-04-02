@@ -129,7 +129,6 @@ from .decorators import (
     job as job,
     multi_asset as multi_asset,
     op as op,
-    pipeline as pipeline,
     repository as repository,
     schedule as schedule,
     sensor as sensor,

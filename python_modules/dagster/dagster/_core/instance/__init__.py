@@ -1342,7 +1342,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # The "python origin" arguments exist so a job can be reconstructed in memory
         # after a DagsterRun has been fetched from the database.
         #
-        # There are cases (notably in _logged_execute_pipeline with Reconstructable pipelines)
+        # There are cases (notably in _logged_execute_job with Reconstructable jobs)
         # where pipeline_code_origin and is not. In some cloud test cases only
         # external_pipeline_origin is passed But they are almost always passed together.
         # If these are not set the created run will never be able to be relaunched from
