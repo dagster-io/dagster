@@ -851,7 +851,11 @@ def disable_gc(_context):
         gc.enable()
 
 
-@job(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+# Using in-process executor prevents test flaking
+@job(
+    resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc},
+    executor_def=in_process_executor,
+)
 def retry_multi_input_early_terminate_job():
     @op(out=Out(Int))
     def return_one():

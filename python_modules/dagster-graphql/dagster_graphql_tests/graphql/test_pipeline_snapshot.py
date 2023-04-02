@@ -68,8 +68,7 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(
     result = noop_job.execute_in_process(instance=instance)
     assert result.success
     run = instance.get_run_by_id(result.run_id)
-    assert run
-    assert run.pipeline_snapshot_id
+    assert run and run.pipeline_snapshot_id
 
     result = execute_dagster_graphql(
         graphql_context,

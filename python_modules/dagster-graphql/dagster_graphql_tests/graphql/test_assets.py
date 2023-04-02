@@ -1428,19 +1428,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # Generate materializations for bar asset
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         assert run.status == DagsterRunStatus.SUCCESS
         assert run.asset_selection == {AssetKey("bar")}
 
-    def test_execute_pipeline_subset(self, graphql_context: WorkspaceRequestContext):
+    def test_execute_job_subset(self, graphql_context: WorkspaceRequestContext):
         # Assets foo and bar are upstream dependencies of asset foo_bar
 
         # Execute subselection with asset bar
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
@@ -1452,8 +1450,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             asset_selection=[{"path": ["foo"]}, {"path": ["foo_bar"]}],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 2
         assert events[0].get_dagster_event().asset_key == AssetKey("foo")
@@ -1473,8 +1470,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             ],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
 
         # Generate materializations with subselection of foo and baz
         run_id = _create_run(
@@ -1483,8 +1479,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             asset_selection=[{"path": ["foo"]}, {"path": ["baz"]}],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 2
         assert events[0].get_dagster_event().asset_key == AssetKey("baz")
@@ -1498,8 +1493,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             asset_selection=[{"path": ["foo"]}, {"path": ["unconnected"]}],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 2
         assert events[0].get_dagster_event().asset_key == AssetKey("foo")
@@ -1508,8 +1502,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_reexecute_subset(self, graphql_context: WorkspaceRequestContext):
         run_id = _create_run(graphql_context, "foo_job", asset_selection=[{"path": ["bar"]}])
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")
@@ -1533,8 +1526,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         poll_for_finished_run(graphql_context.instance, run_id)
 
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.is_finished
+        assert run and run.is_finished
         events = _get_sorted_materialization_events(graphql_context, run_id)
         assert len(events) == 1
         assert events[0].get_dagster_event().asset_key == AssetKey("bar")

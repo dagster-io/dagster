@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, cast
 
 from dagster import (
     AssetIn,
@@ -9,11 +9,13 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.events import AssetKey
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     GqlAssetKey,
+    GqlResult,
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_or_pipeline_selector,
@@ -151,10 +153,12 @@ def test_partitioned_self_dep():
 def _materialize_assets(
     context: WorkspaceRequestContext,
     repo: RepositoryDefinition,
-    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
-):
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+) -> GqlResult:
     gql_asset_selection = (
-        [AssetKey.to_graphql_input(key) for key in asset_selection] if asset_selection else None
+        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
+        if asset_selection
+        else None
     )
     selector = infer_job_or_pipeline_selector(
         context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection

@@ -286,8 +286,7 @@ def test_launch_mutation():
             assert not result.errors
             assert result.data
             run = result.data["launchPipelineExecution"]["run"]
-            assert run
-            assert run["runId"]
+            assert run and run["runId"]
 
 
 def test_launch_mutation_error():

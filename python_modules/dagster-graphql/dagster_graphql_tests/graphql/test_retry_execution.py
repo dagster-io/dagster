@@ -538,8 +538,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.FAILURE
+        assert run and run.status == DagsterRunStatus.FAILURE
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -552,8 +551,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
         ]
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.SUCCESS
+        assert run and run.status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -629,8 +627,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.FAILURE
+        assert run and run.status == DagsterRunStatus.FAILURE
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -640,8 +637,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
         run_id = retry.data["launchPipelineReexecution"]["run"]["runId"]
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.SUCCESS
+        assert run and run.status == DagsterRunStatus.SUCCESS
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
@@ -749,8 +745,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
         # Wait for the original run to finish
         poll_for_finished_run(instance, run_id, timeout=30)
         run = instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.CANCELED
+        assert run and run.status == DagsterRunStatus.CANCELED
 
         # Start retry
         new_run_id = make_new_run_id()

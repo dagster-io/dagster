@@ -1,6 +1,8 @@
+import typing
 from time import sleep
 
-from dagster import Field, In, Int, List, Out, Output, job, op
+from dagster import Config, In, Int, List, Out, Output, job, op
+from pydantic import Field
 
 
 @op(
@@ -17,8 +19,11 @@ def sleeper(context, units):
     return tot
 
 
+class GiverConfig(Config):
+    units: typing.List[int] = Field(default_value=[1, 1, 1, 1])
+
+
 @op(
-    config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
     out={
         "out 1": Out(List[Int]),
         "out 2": Out(List[Int]),
@@ -26,10 +31,9 @@ def sleeper(context, units):
         "out 4": Out(List[Int]),
     },
 )
-def giver(context):
-    units = context.op_config
+def giver(config: GiverConfig):
     queues = [[], [], [], []]
-    for i, sec in enumerate(units):
+    for i, sec in enumerate(config.units):
         queues[i % 4].append(sec)
 
     yield Output(queues[0], "out_1")

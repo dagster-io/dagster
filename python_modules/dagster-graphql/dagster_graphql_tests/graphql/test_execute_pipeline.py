@@ -709,8 +709,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         wait_for_runs_to_finish(graphql_context.instance)
 
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.SUCCESS
+        assert run and run.status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
@@ -735,8 +734,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         wait_for_runs_to_finish(graphql_context.instance)
 
         run = graphql_context.instance.get_run_by_id(run_id)
-        assert run
-        assert run.status == DagsterRunStatus.SUCCESS
+        assert run and run.status == DagsterRunStatus.SUCCESS
 
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"

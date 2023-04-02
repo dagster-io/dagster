@@ -4,10 +4,11 @@ from typing import Any
 
 import pytest
 from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.execution.api import execute_job
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
@@ -75,7 +76,7 @@ QueuedRunCoordinatorTestSuite: Any = make_graphql_context_test_suite(
 
 
 class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
-    def test_cancel_queued_run(self, graphql_context):
+    def test_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -97,7 +98,8 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-            assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.QUEUED
+            run = graphql_context.instance.get_run_by_id(run_id)
+            assert run and run.status == DagsterRunStatus.QUEUED
 
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
@@ -106,7 +108,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
                 result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
             ), str(result.data)
 
-    def test_force_cancel_queued_run(self, graphql_context):
+    def test_force_cancel_queued_run(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -128,7 +130,8 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
-            assert graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.QUEUED
+            run = graphql_context.instance.get_run_by_id(run_id)
+            assert run and run.status == DagsterRunStatus.QUEUED
 
             result = execute_dagster_graphql(
                 graphql_context,
@@ -155,7 +158,7 @@ def _return_fail_terminate(_run_id):
 
 
 class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
-    def test_termination_permission_failure(self, graphql_context):
+    def test_termination_permission_failure(self, graphql_context: WorkspaceRequestContext):
         run_id = create_run_for_test(graphql_context.instance).run_id
         result = execute_dagster_graphql(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
@@ -168,7 +171,7 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
 
 
 class TestRunVariantTermination(RunTerminationTestSuite):
-    def test_basic_termination(self, graphql_context):
+    def test_basic_termination(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -201,7 +204,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             )
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
-    def test_force_termination(self, graphql_context):
+    def test_force_termination(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
@@ -241,9 +244,9 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             instance = graphql_context.instance
             run = instance.get_run_by_id(run_id)
-            assert run.status == DagsterRunStatus.CANCELED
+            assert run and run.status == DagsterRunStatus.CANCELED
 
-    def test_run_not_found(self, graphql_context):
+    def test_run_not_found(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": "nope"}
         )
@@ -259,7 +262,9 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             [_exception_terminate, "PythonError"],
         ],
     )
-    def test_terminate_failed(self, graphql_context, new_terminate_method, terminate_result):
+    def test_terminate_failed(
+        self, graphql_context: WorkspaceRequestContext, new_terminate_method, terminate_result
+    ):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.instance.run_launcher.terminate
@@ -310,55 +315,54 @@ class TestRunVariantTermination(RunTerminationTestSuite):
 
             # Clean up the run process on the gRPC server
             code_location = graphql_context.code_locations[0]
-            code_location.client.cancel_execution(CancelExecutionRequest(run_id=run_id))
+            code_location.client.cancel_execution(CancelExecutionRequest(run_id=run_id))  # type: ignore
 
-            assert (
-                graphql_context.instance.get_run_by_id(run_id).status == DagsterRunStatus.CANCELED
-            )
+            run = graphql_context.instance.get_run_by_id(run_id)
+            assert run and run.status == DagsterRunStatus.CANCELED
 
-    def test_run_finished(self, graphql_context):
+    def test_run_finished(self, graphql_context: WorkspaceRequestContext):
         instance = graphql_context.instance
 
-        pipeline = ReconstructableRepository.for_file(
+        recon_job = ReconstructableRepository.for_file(
             file_relative_path(__file__, "repo.py"),
             "test_repo",
         ).get_reconstructable_pipeline("noop_job")
 
-        pipeline_result = execute_pipeline(pipeline, instance=instance)
-        assert pipeline_result.success
-        assert pipeline_result.run_id
+        with execute_job(recon_job, instance=instance) as exec_result:
+            assert exec_result.success
+            assert exec_result.run_id
 
-        time.sleep(0.05)  # guarantee execution finish
+            time.sleep(0.05)  # guarantee execution finish
 
-        result = execute_dagster_graphql(
-            graphql_context,
-            RUN_CANCELLATION_QUERY,
-            variables={"runId": pipeline_result.run_id},
-        )
+            result = execute_dagster_graphql(
+                graphql_context,
+                RUN_CANCELLATION_QUERY,
+                variables={"runId": exec_result.run_id},
+            )
 
-        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
-        assert (
-            "could not be terminated due to having status SUCCESS."
-            in result.data["terminatePipelineExecution"]["message"]
-        )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
+            assert (
+                "could not be terminated due to having status SUCCESS."
+                in result.data["terminatePipelineExecution"]["message"]
+            )
 
-        # Still fails even if you change the terminate policy to fail immediately
-        result = execute_dagster_graphql(
-            graphql_context,
-            RUN_CANCELLATION_QUERY,
-            variables={
-                "runId": pipeline_result.run_id,
-                "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY",
-            },
-        )
+            # Still fails even if you change the terminate policy to fail immediately
+            result = execute_dagster_graphql(
+                graphql_context,
+                RUN_CANCELLATION_QUERY,
+                variables={
+                    "runId": exec_result.run_id,
+                    "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY",
+                },
+            )
 
-        assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
-        assert (
-            "could not be terminated due to having status SUCCESS."
-            in result.data["terminatePipelineExecution"]["message"]
-        )
+            assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunFailure"
+            assert (
+                "could not be terminated due to having status SUCCESS."
+                in result.data["terminatePipelineExecution"]["message"]
+            )
 
-    def test_backcompat_termination(self, graphql_context):
+    def test_backcompat_termination(self, graphql_context: WorkspaceRequestContext):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
