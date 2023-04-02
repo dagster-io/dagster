@@ -210,7 +210,8 @@ def noop_op(_):
     pass
 
 
-@job
+# Won't pass cloud-dagit test suite without `in_process_executor`.
+@job(executor_def=in_process_executor)
 def noop_job():
     noop_op()
 
