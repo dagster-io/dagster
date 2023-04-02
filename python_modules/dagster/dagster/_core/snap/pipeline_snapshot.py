@@ -22,16 +22,14 @@ from dagster._config import (
     get_builtin_scalar_by_name,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.job_definition import (
+    JobDefinition,
+)
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
-)
-from dagster._core.definitions.pipeline_definition import (
-    PipelineDefinition,
-    PipelineSubsetDefinition,
 )
 from dagster._core.utils import toposort_flatten
 from dagster._serdes import (
@@ -160,18 +158,10 @@ class PipelineSnapshot(
         )
 
     @classmethod
-    def from_pipeline_def(cls, pipeline_def: PipelineDefinition) -> "PipelineSnapshot":
-        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    def from_pipeline_def(cls, pipeline_def: JobDefinition) -> "PipelineSnapshot":
+        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         lineage = None
-        if isinstance(pipeline_def, PipelineSubsetDefinition):
-            lineage = PipelineSnapshotLineage(
-                parent_snapshot_id=create_pipeline_snapshot_id(
-                    cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
-                ),
-                node_selection=sorted(pipeline_def.node_selection),
-                nodes_to_execute=pipeline_def.nodes_to_execute,
-            )
-        if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
+        if pipeline_def.op_selection_data:
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
@@ -179,7 +169,7 @@ class PipelineSnapshot(
                 node_selection=sorted(pipeline_def.op_selection_data.op_selection),
                 nodes_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
-        if isinstance(pipeline_def, JobDefinition) and pipeline_def.asset_selection_data:
+        if pipeline_def.asset_selection_data:
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
@@ -196,10 +186,7 @@ class PipelineSnapshot(
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             node_defs_snapshot=build_node_defs_snapshot(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(pipeline_def.graph),
-            mode_def_snaps=[
-                build_mode_def_snap(md, pipeline_def.get_run_config_schema(md.name).config_type.key)
-                for md in pipeline_def.mode_definitions
-            ],
+            mode_def_snaps=[build_mode_def_snap(pipeline_def)],
             lineage_snapshot=lineage,
             graph_def_name=pipeline_def.graph.name,
         )

@@ -861,7 +861,6 @@ def _create_sensor_run(
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,
         run_request.run_config,
-        target_data.mode,
         step_keys_to_execute=None,
         known_state=None,
         instance=instance,
@@ -891,7 +890,6 @@ def _create_sensor_run(
         pipeline_name=target_data.pipeline_name,
         run_id=None,
         run_config=run_request.run_config,
-        mode=target_data.mode,
         solids_to_execute=external_pipeline.solids_to_execute,
         step_keys_to_execute=None,
         status=DagsterRunStatus.NOT_STARTED,

@@ -17,7 +17,9 @@ from dagster import (
     op,
 )
 from dagster._config import ConfigTypeKind, process_config
+from dagster._config.config_type import ConfigType
 from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_node_shape,
@@ -35,19 +37,16 @@ def create_creation_data(job_def):
         job_def.name,
         job_def.nodes,
         job_def.dependency_structure,
-        job_def.mode_definition,
         logger_defs=default_loggers(),
         ignored_nodes=[],
         required_resources=set(),
-        is_using_graph_job_op_apis=job_def.is_job,
         direct_inputs=job_def._input_values if job_def.is_job else {},  # noqa: SLF001
         asset_layer=job_def.asset_layer,
     )
 
 
-def create_run_config_schema_type(job_def):
-    schema = create_run_config_schema(pipeline_def=job_def, mode=None)
-    return schema.config_type
+def create_run_config_schema_type(job_def: JobDefinition) -> ConfigType:
+    return job_def.run_config_schema.config_type
 
 
 def test_all_types_provided():
@@ -284,7 +283,6 @@ def test_solid_config_error():
         dependency_structure=job_def.dependency_structure,
         parent_handle=None,
         resource_defs={},
-        is_using_graph_job_op_apis=False,
         asset_layer=job_def.asset_layer,
         node_input_source_assets={},
     )

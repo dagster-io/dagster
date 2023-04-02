@@ -12,7 +12,6 @@ from dagster._core.execution.context.compute import AbstractComputeExecutionCont
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import PipelineDefinition
 from dagster._utils.backcompat import deprecation_warning
 
 
@@ -25,7 +24,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     def __init__(
         self,
         pipeline_context: PlanExecutionContext,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         resource_keys_to_init: AbstractSet[str],
         op_name: str,
         node_handle: NodeHandle,
@@ -34,7 +33,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         self._pipeline_context = check.inst_param(
             pipeline_context, "pipeline_context", PlanExecutionContext
         )
-        self._pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        self._pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
@@ -120,7 +119,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         )
 
     @property
-    def pipeline_def(self) -> PipelineDefinition:
+    def pipeline_def(self) -> JobDefinition:
         """:class:`dagster.PipelineDefinition`: The pipeline definition for the context.
 
         This will be a dagstermill-specific shim.
@@ -205,7 +204,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
     def __init__(
         self,
         pipeline_context: PlanExecutionContext,
-        pipeline_def: PipelineDefinition,
+        pipeline_def: JobDefinition,
         resource_keys_to_init: AbstractSet[str],
         op_name: str,
         step_context: StepExecutionContext,

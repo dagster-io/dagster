@@ -6,7 +6,7 @@ import graphene
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
-from dagster._core.host_representation.external_data import ExternalPresetData
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
 from dagster._core.storage.pipeline_run import (
     DagsterRunStatus,
     PipelineRunStatsSnapshot,
@@ -377,7 +377,7 @@ class GrapheneRun(graphene.ObjectType):
         super().__init__(
             runId=pipeline_run.run_id,
             status=pipeline_run.status.value,
-            mode=pipeline_run.mode,
+            mode=DEFAULT_MODE_NAME,
         )
         self._pipeline_run = pipeline_run
         self._run_record = record

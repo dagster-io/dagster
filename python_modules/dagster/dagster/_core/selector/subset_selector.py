@@ -33,7 +33,6 @@ from dagster._utils import check
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.pipeline_definition import PipelineDefinition
     from dagster._core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize
@@ -131,7 +130,7 @@ def generate_asset_dep_graph(
     return {"upstream": upstream, "downstream": downstream}
 
 
-def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[str]:
+def generate_dep_graph(pipeline_def: "JobDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
@@ -409,7 +408,7 @@ def parse_op_selection(
 
 
 def parse_solid_selection(
-    pipeline_def: "PipelineDefinition",
+    pipeline_def: "JobDefinition",
     solid_selection: Sequence[str],
 ) -> FrozenSet[str]:
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
@@ -452,11 +451,7 @@ def parse_solid_selection(
         subset = clause_to_subset(graph, clause, lambda x: x)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
-                    requested=solid_selection,
-                    node_type="ops" if pipeline_def.is_job else "solids",
-                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
-                )
+                f"No qualified ops to execute found for op_selection={solid_selection}"
             )
         solids_set.update(subset)
 

@@ -55,8 +55,6 @@ from ..decorator_utils import (
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
-from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -522,7 +520,6 @@ class SensorDefinition:
             targets = [
                 RepoRelativeTarget(
                     pipeline_name=check.str_param(job_name, "job_name"),
-                    mode=DEFAULT_MODE_NAME,
                     solid_selection=None,
                 )
             ]
@@ -613,7 +610,7 @@ class SensorDefinition:
 
     @public
     @property
-    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -736,7 +733,7 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         """Returns job/graph definitions that have been directly passed into the sensor definition.
         Any jobs or graphs that are referenced by name will not be loaded.
         """

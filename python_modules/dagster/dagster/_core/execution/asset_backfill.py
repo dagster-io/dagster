@@ -26,7 +26,6 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
@@ -390,7 +389,6 @@ def submit_run_request(
         external_execution_plan = code_location.get_external_execution_plan(
             external_pipeline,
             {},
-            DEFAULT_MODE_NAME,
             step_keys_to_execute=None,
             known_state=None,
             instance=instance,
@@ -411,7 +409,6 @@ def submit_run_request(
         solids_to_execute=None,
         solid_selection=None,
         run_config={},
-        mode=DEFAULT_MODE_NAME,
         step_keys_to_execute=None,
         tags=run_request.tags,
         root_run_id=None,

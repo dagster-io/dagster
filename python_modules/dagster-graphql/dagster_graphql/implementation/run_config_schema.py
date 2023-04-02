@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING, Mapping, Optional
 import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 
+from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
@@ -18,25 +20,23 @@ if TYPE_CHECKING:
 
 @capture_error
 def resolve_run_config_schema_or_error(
-    graphene_info: ResolveInfo, selector: PipelineSelector, mode: Optional[str]
+    graphene_info: ResolveInfo, selector: PipelineSelector, mode: Optional[str] = None
 ) -> "GrapheneRunConfigSchema":
-    from ..schema.errors import GrapheneModeNotFoundError
     from ..schema.run_config import GrapheneRunConfigSchema
 
     check.inst_param(selector, "selector", PipelineSelector)
-    check.opt_str_param(mode, "mode")
+
+    # Mode has been eliminated from the definitions layer, so we perform a "shallow" check for
+    # invalid mode. This is temporary and will be removed when the GQL API transitions to
+    # job/op/graph.
+    if mode and mode != DEFAULT_MODE_NAME:
+        return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
 
-    if mode is None:
-        mode = external_pipeline.get_default_mode_name()
-
-    if not external_pipeline.has_mode(mode):
-        raise UserFacingGraphQLError(GrapheneModeNotFoundError(mode=mode, selector=selector))
-
     return GrapheneRunConfigSchema(
         represented_pipeline=external_pipeline,
-        mode=mode,
+        mode=DEFAULT_MODE_NAME,
     )
 
 

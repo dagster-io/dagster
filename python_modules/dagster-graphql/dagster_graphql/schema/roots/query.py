@@ -706,7 +706,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=False),
-            mode,
         )
 
     def resolve_executionPlanOrError(
@@ -720,7 +719,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
             parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore  # (possible str)
-            mode,
         )
 
     def resolve_runConfigSchemaOrError(
@@ -730,9 +728,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         mode: Optional[str] = None,
     ):
         return resolve_run_config_schema_or_error(
-            graphene_info,
-            pipeline_selector_from_graphql(selector),
-            mode,
+            graphene_info, pipeline_selector_from_graphql(selector), mode
         )
 
     def resolve_instance(self, graphene_info: ResolveInfo):

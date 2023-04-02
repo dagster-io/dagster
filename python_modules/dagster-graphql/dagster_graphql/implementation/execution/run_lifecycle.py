@@ -11,7 +11,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._utils.merger import merge_dicts
 
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
-from ..utils import ExecutionParams, UserFacingGraphQLError
+from ..utils import ExecutionParams
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -61,20 +61,7 @@ def create_valid_pipeline_run(
     external_pipeline: ExternalPipeline,
     execution_params: ExecutionParams,
 ) -> DagsterRun:
-    from ...schema.errors import GrapheneNoModeProvidedError
-
-    mode: Optional[str]
-    if execution_params.mode is None and len(external_pipeline.available_modes) > 1:
-        raise UserFacingGraphQLError(
-            GrapheneNoModeProvidedError(external_pipeline.name, external_pipeline.available_modes)
-        )
-    elif execution_params.mode is None and len(external_pipeline.available_modes) == 1:
-        mode = external_pipeline.available_modes[0]
-
-    else:
-        mode = execution_params.mode
-
-    ensure_valid_config(external_pipeline, mode, execution_params.run_config)
+    ensure_valid_config(external_pipeline, execution_params.run_config)
 
     step_keys_to_execute, known_state = compute_step_keys_to_execute(
         graphene_info, execution_params
@@ -83,7 +70,6 @@ def create_valid_pipeline_run(
     external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info=graphene_info,
         external_pipeline=external_pipeline,
-        mode=mode,
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
@@ -106,7 +92,6 @@ def create_valid_pipeline_run(
         if execution_params.selector.solid_selection
         else None,
         run_config=execution_params.run_config,
-        mode=mode,
         step_keys_to_execute=step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,

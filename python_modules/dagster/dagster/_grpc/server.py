@@ -549,7 +549,7 @@ class DagsterApiServer(DagsterApiServicer):
                 ExternalRepositoryOrigin,
             )
 
-            job_def = self._get_repo_for_origin(repository_origin).get_pipeline(request.job_name)
+            job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
             ser_job_data = serialize_value(external_pipeline_data_from_def(job_def))
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)  # type: ignore
         except Exception:

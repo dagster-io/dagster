@@ -44,7 +44,6 @@ from .definition_config_schema import IDefinitionConfigSchema
 from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput, OpNode
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
-from .mode import ModeDefinition
 from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
 
@@ -97,11 +96,11 @@ class RunConfigSchemaCreationData(NamedTuple):
     nodes: Sequence[Node]
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
-    mode_definition: ModeDefinition
+    executor_def: ExecutorDefinition
+    resource_defs: Mapping[str, ResourceDefinition]
     logger_defs: Mapping[str, LoggerDefinition]
     ignored_nodes: Sequence[Node]
     required_resources: AbstractSet[str]
-    is_using_graph_job_op_apis: bool
     direct_inputs: Mapping[str, Any]
     asset_layer: AssetLayer
 
@@ -140,16 +139,9 @@ def define_single_execution_field(executor_def: ExecutorDefinition, description:
 
 
 def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
-    execution_field = (
-        define_execution_field(
-            creation_data.mode_definition.executor_defs,
-            "Configure how steps are executed within a run.",
-        )
-        if not creation_data.is_using_graph_job_op_apis
-        else define_single_execution_field(
-            creation_data.mode_definition.executor_defs[0],
-            "Configure how steps are executed within a run.",
-        )
+    execution_field = define_single_execution_field(
+        creation_data.executor_def,
+        "Configure how steps are executed within a run.",
     )
 
     top_level_node = GraphNode(
@@ -166,7 +158,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         ),
         "resources": Field(
             define_resource_dictionary_cls(
-                creation_data.mode_definition.resource_defs,
+                creation_data.resource_defs,
                 creation_data.required_resources,
             ),
             description="Configure how shared resources are implemented within a run.",
@@ -175,12 +167,11 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             node=top_level_node,
             handle=NodeHandle(top_level_node.name, parent=None),
             dependency_structure=creation_data.dependency_structure,
-            resource_defs=creation_data.mode_definition.resource_defs,
+            resource_defs=creation_data.resource_defs,
             node_ignored=False,
             direct_inputs=creation_data.direct_inputs,
             input_source_assets={},
             asset_layer=creation_data.asset_layer,
-            is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
         ),
     }
 
@@ -196,20 +187,15 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 nodes=creation_data.nodes,
                 ignored_nodes=creation_data.ignored_nodes,
                 dependency_structure=creation_data.dependency_structure,
-                resource_defs=creation_data.mode_definition.resource_defs,
-                is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
+                resource_defs=creation_data.resource_defs,
                 asset_layer=creation_data.asset_layer,
                 node_input_source_assets=creation_data.graph_def.node_input_source_assets,
             ),
             description="Configure runtime parameters for ops or assets.",
         )
 
-    if creation_data.is_using_graph_job_op_apis:
-        fields["ops"] = nodes_field
-        field_aliases = {"ops": "solids"}
-    else:
-        fields["solids"] = nodes_field
-        field_aliases = {"solids": "ops"}
+    fields["ops"] = nodes_field
+    field_aliases = {"ops": "solids"}
 
     return Shape(
         fields=remove_none_entries(fields),
@@ -230,7 +216,6 @@ def get_inputs_field(
     resource_defs: Mapping[str, ResourceDefinition],
     node_ignored: bool,
     asset_layer: AssetLayer,
-    is_using_graph_job_op_apis: bool,
     input_source_assets: Mapping[str, "SourceAsset"],
     direct_inputs: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Field]:
@@ -265,12 +250,11 @@ def get_inputs_field(
     if not inputs_field_fields:
         return None
     if node_ignored:
-        node_type = "op" if is_using_graph_job_op_apis else "solid"
         return Field(
             Shape(inputs_field_fields),
             is_required=False,
             description=(
-                f"This {node_type} is not present in the current {node_type} selection, "
+                "This op is not present in the current op selection, "
                 "the input config values are allowed but ignored."
             ),
         )
@@ -387,19 +371,16 @@ def get_output_manager_output_field(
     return None
 
 
-def node_config_field(
-    fields: Mapping[str, Optional[Field]], ignored: bool, is_using_graph_job_op_apis: bool
-) -> Optional[Field]:
-    field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
+def node_config_field(fields: Mapping[str, Optional[Field]], ignored: bool) -> Optional[Field]:
+    field_aliases = {"ops": "solids"}
     trimmed_fields = remove_none_entries(fields)
     if trimmed_fields:
         if ignored:
-            node_type = "op" if is_using_graph_job_op_apis else "solid"
             return Field(
                 Shape(trimmed_fields, field_aliases=field_aliases),
                 is_required=False,
                 description=(
-                    f"This {node_type} is not present in the current {node_type} selection, "
+                    "This op is not present in the current op selection, "
                     "the config values are allowed but ignored."
                 ),
             )
@@ -416,7 +397,6 @@ def construct_leaf_node_config(
     config_schema: Optional[IDefinitionConfigSchema],
     resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
-    is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
     input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
@@ -429,14 +409,12 @@ def construct_leaf_node_config(
                 resource_defs,
                 ignored,
                 asset_layer,
-                is_using_graph_job_op_apis,
                 input_source_assets,
             ),
             "outputs": get_outputs_field(node, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
-        is_using_graph_job_op_apis=is_using_graph_job_op_apis,
     )
 
 
@@ -446,7 +424,6 @@ def define_node_field(
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
-    is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
     input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
@@ -470,7 +447,6 @@ def define_node_field(
             node.definition.config_schema,
             resource_defs,
             ignored,
-            is_using_graph_job_op_apis,
             asset_layer,
             input_source_assets,
         )
@@ -488,7 +464,6 @@ def define_node_field(
             graph_def.config_schema,
             resource_defs,
             ignored,
-            is_using_graph_job_op_apis,
             asset_layer,
             input_source_assets,
         )
@@ -503,31 +478,23 @@ def define_node_field(
                 resource_defs,
                 ignored,
                 asset_layer,
-                is_using_graph_job_op_apis,
                 input_source_assets,
             ),
             "outputs": get_outputs_field(node, resource_defs),
+            "ops": Field(
+                define_node_shape(
+                    nodes=graph_def.nodes,
+                    ignored_nodes=None,
+                    dependency_structure=graph_def.dependency_structure,
+                    parent_handle=handle,
+                    resource_defs=resource_defs,
+                    asset_layer=asset_layer,
+                    node_input_source_assets=graph_def.node_input_source_assets,
+                )
+            ),
         }
-        nodes_field = Field(
-            define_node_shape(
-                nodes=graph_def.nodes,
-                ignored_nodes=None,
-                dependency_structure=graph_def.dependency_structure,
-                parent_handle=handle,
-                resource_defs=resource_defs,
-                is_using_graph_job_op_apis=is_using_graph_job_op_apis,
-                asset_layer=asset_layer,
-                node_input_source_assets=graph_def.node_input_source_assets,
-            )
-        )
-        if is_using_graph_job_op_apis:
-            fields["ops"] = nodes_field
-        else:
-            fields["solids"] = nodes_field
 
-        return node_config_field(
-            fields, ignored=ignored, is_using_graph_job_op_apis=is_using_graph_job_op_apis
-        )
+        return node_config_field(fields, ignored=ignored)
 
 
 def define_node_shape(
@@ -535,7 +502,6 @@ def define_node_shape(
     ignored_nodes: Optional[Sequence[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
-    is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
     node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]],
     parent_handle: Optional[NodeHandle] = None,
@@ -568,7 +534,6 @@ def define_node_shape(
             dependency_structure,
             resource_defs,
             ignored=False,
-            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
             input_source_assets=node_input_source_assets.get(node.name, {}),
         )
@@ -583,15 +548,13 @@ def define_node_shape(
             dependency_structure,
             resource_defs,
             ignored=True,
-            is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
             input_source_assets=node_input_source_assets.get(node.name, {}),
         )
         if node_field:
             fields[node.name] = node_field
 
-    field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
-    return Shape(fields, field_aliases=field_aliases)
+    return Shape(fields, field_aliases={"ops": "solids"})
 
 
 def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigType]:

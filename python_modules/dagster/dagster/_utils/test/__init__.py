@@ -15,13 +15,12 @@ from dagster import (
 from dagster._core.definitions import (
     GraphDefinition,
     InputMapping,
-    ModeDefinition,
+    JobDefinition,
     OpDefinition,
     OutputMapping,
-    PipelineDefinition,
 )
 from dagster._core.definitions.dependency import Node
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -58,10 +57,10 @@ def create_test_pipeline_execution_context(
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
-    mode_def = ModeDefinition(logger_defs=loggers)
-    pipeline_def = PipelineDefinition(
-        name="test_legacy_context", node_defs=[], mode_defs=[mode_def]
-    )
+    pipeline_def = GraphDefinition(
+        name="test_legacy_context",
+        node_defs=[],
+    ).to_job(executor_def=in_process_executor, logger_defs=logger_defs)
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
     pipeline_run = DagsterRun(pipeline_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
@@ -95,7 +94,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
 def build_job_with_input_stubs(
     job_def: JobDefinition, inputs: Mapping[str, Mapping[str, object]]
 ) -> JobDefinition:
-    check.inst_param(job_def, "pipeline_def", PipelineDefinition)
+    check.inst_param(job_def, "pipeline_def", JobDefinition)
     check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
 
     deps: Dict[NodeInvocation, Dict[str, object]] = defaultdict(dict)

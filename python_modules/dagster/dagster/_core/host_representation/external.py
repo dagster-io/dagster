@@ -52,6 +52,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    DEFAULT_MODE_NAME,
     EnvVarConsumer,
     ExternalAssetNode,
     ExternalJobRef,
@@ -409,21 +410,8 @@ class ExternalPipeline(RepresentedPipeline):
         return self._active_preset_dict[preset_name]
 
     @property
-    def available_modes(self) -> Sequence[str]:
-        return self._pipeline_index.available_modes
-
-    def has_mode(self, mode_name: str) -> bool:
-        check.str_param(mode_name, "mode_name")
-        return self._pipeline_index.has_mode_def(mode_name)
-
-    def root_config_key_for_mode(self, mode_name: Optional[str]) -> Optional[str]:
-        check.opt_str_param(mode_name, "mode_name")
-        return self.get_mode_def_snap(
-            mode_name if mode_name else self.get_default_mode_name()
-        ).root_config_key
-
-    def get_default_mode_name(self) -> str:
-        return self._pipeline_index.get_default_mode_name()
+    def root_config_key(self) -> Optional[str]:
+        return self.get_mode_def_snap(DEFAULT_MODE_NAME).root_config_key
 
     @property
     def tags(self) -> Mapping[str, object]:
@@ -454,10 +442,6 @@ class ExternalPipeline(RepresentedPipeline):
 
     def get_external_origin_id(self) -> str:
         return self.get_external_origin().get_id()
-
-    @property
-    def is_job(self) -> bool:
-        return self._is_job
 
 
 class ExternalExecutionPlan:

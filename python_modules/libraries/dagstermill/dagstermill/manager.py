@@ -16,12 +16,13 @@ from dagster import (
 )
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -37,11 +38,9 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager
-from dagster._utils.backcompat import deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -158,9 +157,7 @@ class Manager:
         self.op_def = op_def
         self.pipeline = pipeline
 
-        resolved_run_config = ResolvedRunConfig.build(
-            pipeline_def, run_config, mode=dagster_run.mode
-        )
+        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
         execution_plan = ExecutionPlan.build(
             self.pipeline,
@@ -204,7 +201,6 @@ class Manager:
         op_config: Any = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        mode_def: Optional[ModeDefinition] = None,
         run_config: Optional[dict] = None,
     ) -> DagstermillExecutionContext:
         """Get a dagstermill execution context for interactive exploration and development.
@@ -220,30 +216,7 @@ class Manager:
         Returns:
             :py:class:`~dagstermill.DagstermillExecutionContext`
         """
-        check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
         run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-
-        if resource_defs and mode_def:
-            raise DagsterInvariantViolationError(
-                "Attempted to provide both resource_defs and mode_def arguments to"
-                " `dagstermill.get_context`. Please provide one or the other."
-            )
-
-        if logger_defs and mode_def:
-            raise DagsterInvariantViolationError(
-                "Attempted to provide both logger_defs and mode_def arguments to"
-                " `dagstermill.get_context`. Please provide one or the other."
-            )
-
-        if mode_def:
-            deprecation_warning(
-                "mode_def argument to dagstermill.get_context",
-                "0.17.0",
-                (
-                    "Use the resource_defs argument to provide resources, and the logger_defs"
-                    " argument to provide loggers."
-                ),
-            )
 
         # If we are running non-interactively, and there is already a context reconstituted, return
         # that context rather than overwriting it.
@@ -252,23 +225,23 @@ class Manager:
         ):
             return self.context
 
-        if not mode_def:
-            if not logger_defs:
-                logger_defs = {"dagstermill": colored_console_logger}
-                run_config["loggers"] = {"dagstermill": {}}
-            logger_defs = check.opt_mapping_param(logger_defs, "logger_defs")
-            resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-            mode_def = ModeDefinition(logger_defs=logger_defs, resource_defs=resource_defs)
+        if not logger_defs:
+            logger_defs = {"dagstermill": colored_console_logger}
+            run_config["loggers"] = {"dagstermill": {}}
+        logger_defs = check.opt_mapping_param(logger_defs, "logger_defs")
+        resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
 
         op_def = OpDefinition(
             name="this_op",
             compute_fn=lambda *args, **kwargs: None,
             description="Ephemeral op constructed by dagstermill.get_context()",
-            required_resource_keys=mode_def.resource_key_set,
+            required_resource_keys=set(resource_defs.keys()),
         )
 
-        pipeline_def = PipelineDefinition(
-            [op_def], mode_defs=[mode_def], name="ephemeral_dagstermill_pipeline"
+        pipeline_def = JobDefinition(
+            graph_def=GraphDefinition(name="ephemeral_dagstermill_pipeline", node_defs=[op_def]),
+            logger_defs=logger_defs,
+            resource_defs=resource_defs,
         )
 
         run_id = make_new_run_id()
@@ -280,7 +253,6 @@ class Manager:
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,
-            mode=mode_def.name,
             step_keys_to_execute=None,
             status=DagsterRunStatus.NOT_STARTED,
             tags=None,
@@ -290,7 +262,7 @@ class Manager:
         self.op_def = op_def
         self.pipeline = pipeline_def
 
-        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode_def.name)
+        resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
         pipeline = InMemoryPipeline(pipeline_def)
         execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
