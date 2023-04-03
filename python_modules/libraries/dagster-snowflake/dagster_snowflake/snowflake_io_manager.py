@@ -164,33 +164,33 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
     """
 
     database: str = Field(..., description="Name of the database to use.")
-    schema_: Optional[str] = Field(
-        None, alias="schema", description="Name of the schema to use."
-    )  # schema is a reserved word for pydantic
     account: str = Field(
         ...,
         description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
     )
     user: str = Field(..., description="User login name.")
-    password: Optional[str] = Field(None, description="User password.")
-    warehouse: Optional[str] = Field(None, description="Name of the warehouse to use.")
-    role: Optional[str] = Field(None, description="Name of the role to use.")
+    schema_: Optional[str] = Field(
+        default=None, alias="schema", description="Name of the schema to use."
+    )  # schema is a reserved word for pydantic
+    password: Optional[str] = Field(default=None, description="User password.")
+    warehouse: Optional[str] = Field(default=None, description="Name of the warehouse to use.")
+    role: Optional[str] = Field(default=None, description="Name of the role to use.")
     private_key: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "Raw private key to use. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
     private_key_path: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "Path to the private key. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
     private_key_password: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "The password of the private key. See"
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
