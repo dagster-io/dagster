@@ -124,6 +124,8 @@ Run concurrency can be configured by:
 
 These methods of limiting concurrency can be used individually or together. For each queued run, Dagster will check that launching the run will satisfy all conditions. For example, if launching a run would exceed the maximum number of concurrent runs, Dagster will queue the run until another run finishes.
 
+**Note**: Setting maximum concurrent runs for the same job isn't currently supported. If you want to prevent a new run from launching if a current run is in progress, we recommend writing some custom logic in a job schedule. Check out [this GitHub discussion for an example](https://github.com/dagster-io/dagster/discussions/8414).
+
 <TabGroup>
 <TabItem name="Limiting overall runs">
 
