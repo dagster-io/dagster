@@ -45,7 +45,7 @@ export type ResourceDetailsFragment = {
   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   jobsOpsUsing: Array<{
     __typename: 'JobWithOps';
-    job: {__typename: 'Job'; name: string};
+    job: {__typename: 'Job'; id: string; name: string};
     opsUsing: Array<{
       __typename: 'SolidHandle';
       handleID: string;
@@ -114,7 +114,7 @@ export type ResourceRootQuery = {
         assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
         jobsOpsUsing: Array<{
           __typename: 'JobWithOps';
-          job: {__typename: 'Job'; name: string};
+          job: {__typename: 'Job'; id: string; name: string};
           opsUsing: Array<{
             __typename: 'SolidHandle';
             handleID: string;

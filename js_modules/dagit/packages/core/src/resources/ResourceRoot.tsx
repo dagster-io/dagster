@@ -578,6 +578,7 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
     }
     jobsOpsUsing {
       job {
+        id
         name
       }
       opsUsing {
