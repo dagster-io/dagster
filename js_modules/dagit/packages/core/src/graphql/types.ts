@@ -2242,6 +2242,7 @@ export type PartitionBackfill = {
   assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
   assetSelection: Maybe<Array<AssetKey>>;
   backfillId: Scalars['String'];
+  endTimestamp: Maybe<Scalars['Float']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
   hasCancelPermission: Scalars['Boolean'];
@@ -8676,6 +8677,8 @@ export const buildPartitionBackfill = (
           ],
     backfillId:
       overrides && overrides.hasOwnProperty('backfillId') ? overrides.backfillId! : 'sint',
+    endTimestamp:
+      overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
       overrides && overrides.hasOwnProperty('error')
         ? overrides.error!

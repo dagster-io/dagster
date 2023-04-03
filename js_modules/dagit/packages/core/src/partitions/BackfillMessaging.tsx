@@ -73,7 +73,7 @@ export function showBackfillSuccessToast(history: History<unknown>, backfillId: 
     ),
     action: {
       text: 'View',
-      onClick: () => history.push('/overview/backfills'),
+      onClick: () => history.push(`/overview/backfills/${backfillId}`),
     },
   });
 }

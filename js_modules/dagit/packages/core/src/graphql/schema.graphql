@@ -2384,6 +2384,7 @@ type PartitionBackfill {
   assetSelection: [AssetKey!]
   partitionSetName: String
   timestamp: Float!
+  endTimestamp: Float
   partitionSet: PartitionSet
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
