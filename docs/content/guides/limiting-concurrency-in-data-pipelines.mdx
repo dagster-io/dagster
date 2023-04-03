@@ -89,6 +89,18 @@ Concurrency is the ability of a system to execute multiple processes in parallel
       </td>
       <td>A sequence of Dagster runs waiting to be executed.</td>
     </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/deployment/executors">Executor</a>
+        </strong>
+      </td>
+      <td>
+        Executors are responsible for executing steps within a job run.
+        Executors can range from single-process serial executors to managing
+        per-step computational resources with a control plane.
+      </td>
+    </tr>
   </tbody>
 </table>
 
@@ -192,7 +204,7 @@ With this configuration, each unique value of the `use-case` tag will be limited
   <a href="/deployment/guides/celery">integration with Celery</a>.
 </Note>
 
-Utilizing op/asset-level concurrency provides fine-grained control for the maximum number of ops/assets that can be executed at once within a single run, ensuring that resources shared by multiple ops/assets aren't overwhelmed.
+Utilizing op/asset-level concurrency provides fine-grained control for the maximum number of ops/assets that can be executed at once within a single run, ensuring that shared resources aren't overwhelmed.
 
 Op and asset concurrency can be configured by:
 
