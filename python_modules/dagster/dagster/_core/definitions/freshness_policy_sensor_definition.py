@@ -133,7 +133,7 @@ class FreshnessPolicySensorContext(
             if previous_minutes_late is not None
             else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
-            resources=resources or ScopedResourcesBuilder().build_empty(),
+            resources=resources or ScopedResourcesBuilder.build_empty(),
         )
 
 
@@ -328,7 +328,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
         resources = validate_and_get_resource_dict(
-            sensor_context.resources if sensor_context else ScopedResourcesBuilder().build_empty(),
+            sensor_context.resources if sensor_context else ScopedResourcesBuilder.build_empty(),
             self._name,
             self._required_resource_keys,
         )

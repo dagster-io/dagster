@@ -790,7 +790,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         context_param = {context_param_name: context} if context_param_name and context else {}
 
         resources = validate_and_get_resource_dict(
-            context.resources if context else ScopedResourcesBuilder().build_empty(),
+            context.resources if context else ScopedResourcesBuilder.build_empty(),
             self._name,
             self._required_resource_keys,
         )
