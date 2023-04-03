@@ -24,6 +24,13 @@ const APIToEnding = {
   useSubscription: 'Subscription',
 };
 
+let moduleAliases = {};
+try {
+  moduleAliases = require(path.resolve('.dagster.js')).moduleAliases;
+} catch (e) {
+  console.warn('No .dagster.js moduleAliases found.');
+}
+
 module.exports = {
   rule: createRule({
     create(context) {
@@ -64,9 +71,17 @@ module.exports = {
               }),
           );
           const importPath = importDeclaration.source.value;
-          const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
-          const fullPath = path.join(currentPath, importPath + '.ts');
-
+          let fullPath;
+          if (
+            importPath.startsWith('@dagster-io/dagit-core') ||
+            importPath.startsWith('@dagster-io/ui')
+          ) {
+            const repl = importPath.split('/').slice(0, 2).join('/');
+            fullPath = importPath.replace(repl, moduleAliases[repl]) + '.ts';
+          } else {
+            const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
+            fullPath = path.join(currentPath, importPath + '.ts');
+          }
           const graphqlTypeFile = fs.readFileSync(fullPath, {encoding: 'utf8'});
 
           // This part is kind of hacky. I should use the parser service to find the identifier
