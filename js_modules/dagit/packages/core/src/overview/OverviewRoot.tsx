@@ -4,6 +4,7 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 import {InstanceBackfills} from '../instance/InstanceBackfills';
 
 import {OverviewJobsRoot} from './OverviewJobsRoot';
+import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {OverviewSchedulesRoot} from './OverviewSchedulesRoot';
 import {OverviewSensorsRoot} from './OverviewSensorsRoot';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
@@ -25,6 +26,9 @@ export const OverviewRoot = () => {
       </Route>
       <Route path="/overview/backfills">
         <InstanceBackfills />
+      </Route>
+      <Route path="/overview/resources">
+        <OverviewResourcesRoot />
       </Route>
       <Route path="*" render={() => <Redirect to="/overview/timeline" />} />
     </Switch>
