@@ -3,7 +3,7 @@ import pytest
 from click.testing import CliRunner
 from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import new_cwd
 from dagster._utils import file_relative_path
 

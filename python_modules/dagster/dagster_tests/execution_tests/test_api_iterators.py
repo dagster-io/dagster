@@ -23,7 +23,7 @@ from dagster._core.execution.api import (
     execute_run,
     execute_run_iterator,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._grpc.impl import core_execute_run
 

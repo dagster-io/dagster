@@ -7,7 +7,7 @@ from typing import Any, Mapping
 import boto3
 import pytest
 from dagster import DagsterEventType
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster._utils.yaml_utils import merge_yamls

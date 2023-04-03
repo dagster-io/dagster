@@ -2,7 +2,7 @@ import json
 import time
 import uuid
 
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path

@@ -11,7 +11,7 @@ from dagster import (
 )
 from dagster._core.events import DagsterEventType, EngineEventData
 from dagster._core.launcher import WorkerStatus
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRunStatus,
     RunRecord,

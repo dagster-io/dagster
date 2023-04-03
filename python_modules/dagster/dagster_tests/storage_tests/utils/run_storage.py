@@ -22,15 +22,15 @@ from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
-from dagster._core.storage.event_log import InMemoryEventLogStorage
-from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
     RunsFilter,
     TagBucket,
 )
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS

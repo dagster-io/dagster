@@ -944,7 +944,7 @@ def create_repo_run(instance):
 
 
 def get_repo_runs(instance, repo_label):
-    from dagster._core.storage.pipeline_run import RunsFilter
+    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
     return instance.get_runs(filters=RunsFilter(tags={REPOSITORY_LABEL_TAG: repo_label}))

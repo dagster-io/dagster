@@ -44,7 +44,7 @@ from ..errors import (
 )
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
-from ..storage.pipeline_run import DagsterRun
+from ..storage.dagster_run import DagsterRun
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason

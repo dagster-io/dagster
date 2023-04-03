@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._serdes import deserialize_value
 
 

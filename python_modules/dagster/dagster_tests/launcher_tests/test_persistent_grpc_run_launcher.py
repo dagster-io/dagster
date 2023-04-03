@@ -4,7 +4,7 @@ import time
 import pytest
 from dagster import _seven, file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

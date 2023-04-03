@@ -39,7 +39,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
 from dagster._utils import EventGenerationManager

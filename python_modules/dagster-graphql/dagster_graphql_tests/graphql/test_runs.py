@@ -5,7 +5,7 @@ import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
 from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.execution.api import execute_run
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext

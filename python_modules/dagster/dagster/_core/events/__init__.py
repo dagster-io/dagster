@@ -42,7 +42,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepRetryData,
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import (
     NamedTupleSerializer,
     whitelist_for_serdes,

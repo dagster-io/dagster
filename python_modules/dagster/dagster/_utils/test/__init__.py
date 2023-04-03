@@ -36,7 +36,7 @@ from dagster._core.execution.context_creation_pipeline import (
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utility_solids import create_stub_op
 from dagster._serdes import ConfigurableClass
 

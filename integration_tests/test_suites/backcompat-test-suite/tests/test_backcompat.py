@@ -11,7 +11,7 @@ import dagster._check as check
 import docker
 import pytest
 import requests
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._utils import (
     file_relative_path,
     library_version_from_core_version,

@@ -41,7 +41,7 @@ from .child_process_executor import (
 
 if TYPE_CHECKING:
     from dagster._core.instance.ref import InstanceRef
-    from dagster._core.storage.pipeline_run import DagsterRun
+    from dagster._core.storage.dagster_run import DagsterRun
 
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 

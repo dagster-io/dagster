@@ -10,7 +10,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from kubernetes.client.models import V1JobStatus
 
 try:

@@ -15,7 +15,7 @@ from dagster._core.execution.backfill import (
     PartitionBackfill,
 )
 from dagster._core.host_representation.external import ExternalPartitionSet
-from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
+from dagster._core.storage.dagster_run import RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.workspace.permissions import Permissions
 

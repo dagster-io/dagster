@@ -5,7 +5,7 @@ import threading
 import time
 from collections import OrderedDict
 
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 

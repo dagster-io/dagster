@@ -18,7 +18,7 @@ from dagster import (
 from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
     environ,

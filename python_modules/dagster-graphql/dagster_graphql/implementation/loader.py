@@ -17,7 +17,7 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
-from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
+from dagster._core.storage.dagster_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
 

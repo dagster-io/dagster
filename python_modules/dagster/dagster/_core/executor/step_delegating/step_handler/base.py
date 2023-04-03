@@ -8,7 +8,7 @@ from dagster import (
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteStepArgs
 
 

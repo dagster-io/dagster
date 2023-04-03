@@ -33,7 +33,7 @@ from dagster._core.execution.api import (
     execute_run_iterator,
 )
 from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 
 executors = pytest.mark.parametrize(

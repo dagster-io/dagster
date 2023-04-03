@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 

@@ -450,6 +450,12 @@ from dagster._core.instance_for_test import instance_for_test as instance_for_te
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.storage.asset_value_loader import AssetValueLoader as AssetValueLoader
+from dagster._core.storage.dagster_run import (
+    DagsterRun as DagsterRun,
+    DagsterRunStatus as DagsterRunStatus,
+    RunRecord as RunRecord,
+    RunsFilter as RunsFilter,
+)
 from dagster._core.storage.file_manager import (
     FileHandle as FileHandle,
     LocalFileHandle as LocalFileHandle,
@@ -474,12 +480,6 @@ from dagster._core.storage.mem_io_manager import (
     mem_io_manager as mem_io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager as MemoizableIOManager
-from dagster._core.storage.pipeline_run import (
-    DagsterRun as DagsterRun,
-    DagsterRunStatus as DagsterRunStatus,
-    RunRecord as RunRecord,
-    RunsFilter as RunsFilter,
-)
 from dagster._core.storage.root_input_manager import (
     RootInputManager as RootInputManager,
     RootInputManagerDefinition as RootInputManagerDefinition,

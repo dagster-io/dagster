@@ -48,7 +48,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import JobSnapshot, NodeInvocationSnap
-from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id

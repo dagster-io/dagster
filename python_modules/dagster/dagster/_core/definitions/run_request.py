@@ -6,7 +6,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.events import AssetKey
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo

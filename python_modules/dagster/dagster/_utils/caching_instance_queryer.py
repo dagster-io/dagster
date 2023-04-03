@@ -20,7 +20,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.pipeline_run import (
+from dagster._core.storage.dagster_run import (
     DagsterRun,
     RunRecord,
 )
