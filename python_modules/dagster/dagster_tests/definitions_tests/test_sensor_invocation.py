@@ -102,8 +102,8 @@ def test_sensor_invocation_args():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Sensor invocation received multiple arguments. Only a first positional context "
-            "parameter should be provided when invoking."
+            "Sensor invocation received multiple non-resource arguments. Only a first positional"
+            " context parameter should be provided when invoking."
         ),
     ):
         basic_sensor_with_context(context, _arbitrary_context=None)
@@ -134,6 +134,108 @@ def test_sensor_invocation_resources() -> None:
             build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_direct() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            " provided."
+        ),
+    ):
+        basic_sensor_resource_req()
+
+    # Can pass resource through context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            context=build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+    # Can pass resource directly
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=(
+            "If directly invoking a sensor, you may not provide resources as"
+            " positional"
+            " arguments, only as keyword arguments."
+        ),
+    ):
+        # We don't allow providing resources as args, this adds too much complexity
+        # They must be kwargs, and we will error accordingly
+        assert cast(
+            RunRequest,
+            basic_sensor_resource_req(MyResource(a_str="foo")),
+        ).run_config == {"foo": "foo"}
+
+    # Can pass resource directly with context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(build_sensor_context(), my_resource=MyResource(a_str="foo")),
+    ).run_config == {"foo": "foo"}
+
+    # Test with context arg requirement
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    assert cast(
+        RunRequest,
+        basic_sensor_with_context_resource_req(
+            build_sensor_context(), my_resource=MyResource(a_str="foo")
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_direct_many() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_resource_req(my_resource: MyResource, my_other_resource: MyResource):
+        return RunRequest(
+            run_key=None,
+            run_config={"foo": my_resource.a_str, "bar": my_other_resource.a_str},
+            tags={},
+        )
+
+    # Can pass resource directly
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            my_other_resource=MyResource(a_str="bar"), my_resource=MyResource(a_str="foo")
+        ),
+    ).run_config == {"foo": "foo", "bar": "bar"}
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+    ):
+        # Cannot pass resources both directly and in context
+        assert cast(
+            RunRequest,
+            basic_sensor_resource_req(
+                context=build_sensor_context(
+                    resources={"my_other_resource": MyResource(a_str="foo")}
+                ),
+                my_resource=MyResource(a_str="foo"),
+            ),
+        ).run_config == {"foo": "foo"}
 
 
 def test_sensor_invocation_resources_context_manager() -> None:
