@@ -17,6 +17,7 @@ from ..version_strategy import VersionStrategy
 if TYPE_CHECKING:
     from ..executor_definition import ExecutorDefinition
     from ..partition import PartitionedConfig, PartitionsDefinition
+    from ..run_config import RunConfig
 
 
 class _Job:
@@ -28,7 +29,7 @@ class _Job:
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]
+            Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"]
         ] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -122,7 +123,7 @@ def job(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     resource_defs: Optional[Mapping[str, object]] = ...,
-    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"] = ...,
+    config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
@@ -142,7 +143,9 @@ def job(
     name: Optional[str] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Mapping[str, object]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
+    config: Optional[
+        Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig[object]"]
+    ] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -177,6 +180,9 @@ def job(
             it will be used as the job's run config for the job whenever the job is executed.
             The values provided will be viewable and editable in the Dagit playground, so be
             careful with secrets.
+
+            If a :py:class:`RunConfig` object is provided, then it will be used directly as the run config
+            for the job whenever the job is executed, similar to providing a dictionary.
 
             If a :py:class:`ConfigMapping` object is provided, then the schema for the job's run config is
             determined by the config mapping, and the ConfigMapping, which should return
