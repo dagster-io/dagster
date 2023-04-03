@@ -69,14 +69,21 @@ BACKFILL_PARTITION_STATUS_COUNTS_BY_ASSET = """
   query BackfillStatusesByAsset($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
-        assetPartitionsStatusCounts {
-          assetKey {
-            path
-          }
-          numPartitionsTargeted
-          numPartitionsRequested
-          numPartitionsCompleted
-          numPartitionsFailed
+        assetBackfillData {
+            assetPartitionsStatusCounts {
+                assetKey {
+                    path
+                }
+                numPartitionsTargeted
+                numPartitionsRequested
+                numPartitionsCompleted
+                numPartitionsFailed
+            }
+            rootAssetTargetedRanges {
+                start
+                end
+            }
+            rootAssetTargetedPartitions
         }
       }
     }
@@ -122,6 +129,7 @@ GET_PARTITION_BACKFILLS_QUERY = """
         pipelineName
         backfills {
           backfillId
+          isAssetBackfill
         }
       }
     }
@@ -308,6 +316,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionSetOrError"]["__typename"] == "PartitionSet"
         assert len(result.data["partitionSetOrError"]["backfills"]) == 1
         assert result.data["partitionSetOrError"]["backfills"][0]["backfillId"] == backfill_id
+        assert result.data["partitionSetOrError"]["backfills"][0]["isAssetBackfill"] is False
 
     def test_launch_partial_backfill(self, graphql_context):
         # execute a full pipeline, without the failure environment variable
@@ -527,12 +536,13 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
 
     def test_asset_backfill_partition_stats(self, graphql_context):
+        partitions = ["a", "b", "c", "d", "e", "f"]
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PARTITION_BACKFILL_MUTATION,
             variables={
                 "backfillParams": {
-                    "partitionNames": ["a", "b", "c", "d", "e", "f"],
+                    "partitionNames": partitions,
                     "assetSelection": [
                         key.to_graphql_input()
                         for key in [AssetKey("upstream_static_partitioned_asset")]
@@ -570,7 +580,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             graphql_context.instance.update_backfill(updated_backfill)
 
         def _test_partitioned_asset_run(partition, status):
-            @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]))
+            @asset(partitions_def=StaticPartitionsDefinition(partitions))
             def upstream_static_partitioned_asset():
                 if status == DagsterRunStatus.FAILURE:
                     raise Exception("fail")
@@ -606,9 +616,12 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
 
         assert not result.errors
         assert result.data
-        asset_partition_status_counts = result.data["partitionBackfillOrError"][
-            "assetPartitionsStatusCounts"
-        ]
+        backfill_data = result.data["partitionBackfillOrError"]["assetBackfillData"]
+
+        assert backfill_data["rootAssetTargetedRanges"] is None
+        assert set(backfill_data["rootAssetTargetedPartitions"]) == set(partitions)
+
+        asset_partition_status_counts = backfill_data["assetPartitionsStatusCounts"]
         assert len(asset_partition_status_counts) == 1
         assert asset_partition_status_counts[0]["assetKey"]["path"] == [
             "upstream_static_partitioned_asset"

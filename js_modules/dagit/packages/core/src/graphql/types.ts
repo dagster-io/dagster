@@ -105,6 +105,13 @@ export type AssetAssetObservationsArgs = {
   partitions?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type AssetBackfillData = {
+  __typename: 'AssetBackfillData';
+  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
+  rootAssetTargetedPartitions: Maybe<Array<Scalars['String']>>;
+  rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
+};
+
 export type AssetConnection = {
   __typename: 'AssetConnection';
   nodes: Array<Asset>;
@@ -2245,13 +2252,14 @@ export type PartitionRunsArgs = {
 
 export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
-  assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
+  assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
   hasCancelPermission: Scalars['Boolean'];
   hasResumePermission: Scalars['Boolean'];
+  isAssetBackfill: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Maybe<Scalars['Int']>;
@@ -2299,6 +2307,12 @@ export enum PartitionDefinitionType {
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }
+
+export type PartitionKeyRange = {
+  __typename: 'PartitionKeyRange';
+  end: Scalars['String'];
+  start: Scalars['String'];
+};
 
 export enum PartitionRangeStatus {
   FAILED = 'FAILED',
@@ -4050,6 +4064,37 @@ export const buildAsset = (
         : relationshipsToOmit.has('AssetKey')
         ? ({} as AssetKey)
         : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetBackfillData = (
+  overrides?: Partial<AssetBackfillData>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetBackfillData'} & AssetBackfillData => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetBackfillData');
+  return {
+    __typename: 'AssetBackfillData',
+    assetPartitionsStatusCounts:
+      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
+        ? overrides.assetPartitionsStatusCounts!
+        : [
+            relationshipsToOmit.has('AssetPartitionsStatusCounts')
+              ? ({} as AssetPartitionsStatusCounts)
+              : buildAssetPartitionsStatusCounts({}, relationshipsToOmit),
+          ],
+    rootAssetTargetedPartitions:
+      overrides && overrides.hasOwnProperty('rootAssetTargetedPartitions')
+        ? overrides.rootAssetTargetedPartitions!
+        : ['accusantium'],
+    rootAssetTargetedRanges:
+      overrides && overrides.hasOwnProperty('rootAssetTargetedRanges')
+        ? overrides.rootAssetTargetedRanges!
+        : [
+            relationshipsToOmit.has('PartitionKeyRange')
+              ? ({} as PartitionKeyRange)
+              : buildPartitionKeyRange({}, relationshipsToOmit),
+          ],
   };
 };
 
@@ -8690,14 +8735,12 @@ export const buildPartitionBackfill = (
   relationshipsToOmit.add('PartitionBackfill');
   return {
     __typename: 'PartitionBackfill',
-    assetPartitionsStatusCounts:
-      overrides && overrides.hasOwnProperty('assetPartitionsStatusCounts')
-        ? overrides.assetPartitionsStatusCounts!
-        : [
-            relationshipsToOmit.has('AssetPartitionsStatusCounts')
-              ? ({} as AssetPartitionsStatusCounts)
-              : buildAssetPartitionsStatusCounts({}, relationshipsToOmit),
-          ],
+    assetBackfillData:
+      overrides && overrides.hasOwnProperty('assetBackfillData')
+        ? overrides.assetBackfillData!
+        : relationshipsToOmit.has('AssetBackfillData')
+        ? ({} as AssetBackfillData)
+        : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection')
         ? overrides.assetSelection!
@@ -8724,6 +8767,8 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('hasResumePermission')
         ? overrides.hasResumePermission!
         : true,
+    isAssetBackfill:
+      overrides && overrides.hasOwnProperty('isAssetBackfill') ? overrides.isAssetBackfill! : false,
     isValidSerialization:
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
@@ -8826,6 +8871,19 @@ export const buildPartitionDefinition = (
       overrides && overrides.hasOwnProperty('type')
         ? overrides.type!
         : PartitionDefinitionType.DYNAMIC,
+  };
+};
+
+export const buildPartitionKeyRange = (
+  overrides?: Partial<PartitionKeyRange>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PartitionKeyRange'} & PartitionKeyRange => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PartitionKeyRange');
+  return {
+    __typename: 'PartitionKeyRange',
+    end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : 'repudiandae',
+    start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : 'qui',
   };
 };
 

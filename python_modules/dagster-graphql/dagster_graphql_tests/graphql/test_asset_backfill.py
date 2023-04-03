@@ -59,6 +59,23 @@ SINGLE_BACKFILL_QUERY = """
   }
 """
 
+ASSET_BACKFILL_DATA_QUERY = """
+  query BackfillStatusesByAsset($backfillId: String!) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      ... on PartitionBackfill {
+        assetBackfillData {
+            rootAssetTargetedRanges {
+                start
+                end
+            }
+            rootAssetTargetedPartitions
+        }
+        isAssetBackfill
+      }
+    }
+  }
+"""
+
 
 def get_repo():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
@@ -451,6 +468,21 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                     .with_partition_keys(["2020-01-02", "2020-01-03"]),
                 },
             )
+
+            asset_backfill_data_result = execute_dagster_graphql(
+                context, ASSET_BACKFILL_DATA_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert asset_backfill_data_result.data
+            assert (
+                asset_backfill_data_result.data["partitionBackfillOrError"]["isAssetBackfill"]
+                is True
+            )
+            targeted_ranges = asset_backfill_data_result.data["partitionBackfillOrError"][
+                "assetBackfillData"
+            ]["rootAssetTargetedRanges"]
+            assert len(targeted_ranges) == 1
+            assert targeted_ranges[0]["start"] == "2020-01-02-22:00"
+            assert targeted_ranges[0]["end"] == "2020-01-03-00:00"
 
 
 def _get_backfill_data(launch_backfill_result, instance, repo):

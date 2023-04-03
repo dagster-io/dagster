@@ -5,6 +5,7 @@ from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
 )
@@ -163,6 +164,25 @@ class PartitionBackfill(
 
         else:
             return {}
+
+    def get_target_root_partitions_subset(
+        self, workspace: IWorkspace
+    ) -> Optional[PartitionsSubset]:
+        if not self.is_valid_serialization(workspace):
+            return None
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return None
+
+            return asset_backfill_data.get_target_root_partitions_subset()
+        else:
+            return None
 
     def get_num_partitions(self, workspace: IWorkspace) -> Optional[int]:
         if not self.is_valid_serialization(workspace):
