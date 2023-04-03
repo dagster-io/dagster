@@ -87,7 +87,7 @@ run_launcher:
       memory: 512
 ```
 
-You can also use job tags to customize the CPU and memory of every run for a particular job:
+You can also use job tags to customize the CPU, memory, or ephemeral storage of every run for a particular job:
 
 ```py
 from dagster import job, op
@@ -100,30 +100,6 @@ def my_op(context):
   tags = {
     "ecs/cpu": "256",
     "ecs/memory": "512",
-  }
-)
-def my_job():
-  my_op()
-```
-
-If the `ecs/cpu` or `ecs/memory` tags are set, they will override any defaults set on the run launcher.
-
-**Note**: [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
-
-
-### Customizing ephemeral storage in ECS
-
-You can use job tags to customize the ephemeral storage of every run for a particular job:
-
-```py
-from dagster import job, op
-
-@op()
-def my_op(context):
-  context.log.info('running')
-
-@job(
-  tags = {
     "ecs/ephemeralStorage": "21",
   }
 )
@@ -131,46 +107,9 @@ def my_job():
   my_op()
 ```
 
-If the `ecs/ephemeralStorage` tag is set, it will override any defaults set in the task definition.
+If these tags are set, they will override any defaults set on the run launcher.
 
-**Note**: Fargate tasks only support values of ephemeral storage between 21 and 200 GiB (default is set to 20 GiB)
-
-
-### Customizing capacity provider strategy in ECS (Fargate Spot integration)
-
-You can set the `run_launcher.config.run_task_kwargs` field to customize the default capacity provider strategy for Dagster runs. For example:
-
-```yaml
-run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
-  config:
-    run_task_kwargs:
-      capacityProviderStrategy: "FARGATE_SPOT"
-```
-
-You can also use job tags to customize the capacity provider strategy of every run for a particular job:
-
-```py
-from dagster import job, op
-
-@op()
-def my_op(context):
-  context.log.info('running')
-
-@job(
-  tags = {
-    "ecs/capacityProvider": "FARGATE_SPOT",
-  }
-)
-def my_job():
-  my_op()
-```
-
-If the `ecs/capacityProvider` tag is set, it will override any defaults set on the run launcher.
-
-**Note**: FARGATE and FARGATE_SPOT are default capacity strategies within ECS, however, you can also pass on personalized capacity provider strategies as long as they are present in the ECS cluster.
-
+**Note**: Fargate tasks only support [certain combinations of CPU and memory](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) and values of ephemeral storage between 21 and 200 GiB (the default is set to 20 GiB).
 
 ### Customizing the launched run's task
 
@@ -185,6 +124,35 @@ run_launcher:
   config:
     run_task_kwargs:
       launchType: "EC2"
+```
+
+or to set the capacity provider strategy to run in Fargate Spot instances:
+
+```yaml
+run_launcher:
+  module: "dagster_aws.ecs"
+  class: "EcsRunLauncher"
+  config:
+    run_task_kwargs:
+      capacityProviderStrategy: "FARGATE_SPOT"
+```
+
+You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of every run for a particular job:
+
+```py
+from dagster import job, op
+
+@op()
+def my_op(context):
+  context.log.info('running')
+
+@job(
+  tags = {
+    "ecs/run_task_kwargs": {"capacityProviderStrategy": "FARGATE_SPOT", "weight": 1, "base": 1},
+  }
+)
+def my_job():
+  my_op()
 ```
 
 Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:

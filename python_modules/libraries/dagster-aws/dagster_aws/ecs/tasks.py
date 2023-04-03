@@ -319,7 +319,7 @@ def get_task_kwargs_from_current_task(
         for group in eni.groups:
             security_groups.append(group["GroupId"])
 
-    returnDict = {
+    run_task_kwargs = {
         "cluster": cluster,
         "networkConfiguration": {
             "awsvpcConfiguration": {
@@ -327,14 +327,12 @@ def get_task_kwargs_from_current_task(
                 "assignPublicIp": "ENABLED" if public_ip else "DISABLED",
                 "securityGroups": security_groups,
             },
-        }
+        },
     }
 
-    # LaunchType and CapacityProviderStrategy are mutually exclusive
-    # Note: it can also be defined as tag in the run itself, overriding this
     if not task.get("capacityProviderStrategy"):
-        returnDict["launchType"] = task.get("launchType") or "FARGATE"
+        run_task_kwargs["launchType"] = task.get("launchType") or "FARGATE"
     else:
-        returnDict["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
+        run_task_kwargs["capacityProviderStrategy"] = task.get("capacityProviderStrategy")
 
-    return returnDict
+    return run_task_kwargs
