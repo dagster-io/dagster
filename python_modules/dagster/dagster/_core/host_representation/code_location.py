@@ -816,7 +816,6 @@ class GrpcServerCodeLocation(CodeLocation):
                     try:
                         raise Exception(
                             f"Unable to reach the user code server for resource {resource_name}."
-                            " Schedule will resume execution once the server is available."
                         ) from e
                     except:
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
@@ -824,8 +823,6 @@ class GrpcServerCodeLocation(CodeLocation):
                         tick_context.update_state(
                             TickStatus.FAILURE,
                             error=error_data,
-                            # don't increment the failure count - retry forever until the server comes back up
-                            # or the schedule is turned off
                             failure_count=tick_context.failure_count,
                         )
                         return ResourceVerificationResult(
