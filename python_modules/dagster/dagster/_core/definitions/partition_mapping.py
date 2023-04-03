@@ -554,6 +554,7 @@ class MultiToSingleDimensionPartitionMapping(
             )
 
 
+@whitelist_for_serdes
 class DimensionPartitionMapping(
     NamedTuple(
         "_DimensionPartitionMapping",
