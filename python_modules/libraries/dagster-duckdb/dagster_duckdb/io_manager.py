@@ -159,7 +159,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
 
     database: str = Field(..., description="Path to the DuckDB database.")
     schema_: Optional[str] = Field(
-        None, alias="schema", description="Name of the schema to use."
+        default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
 
     @staticmethod
