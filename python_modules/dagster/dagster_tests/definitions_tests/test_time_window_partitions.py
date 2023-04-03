@@ -801,3 +801,20 @@ def test_get_cron_schedule_weekdays_with_hour_offset():
         match="does not support minute_of_hour/hour_of_day/day_of_week/day_of_month arguments",
     ):
         partitions_def.get_cron_schedule(hour_of_day=3)
+
+
+def test_has_partition_key():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+    assert not partitions_def.has_partition_key("fdsjkl")
+    assert not partitions_def.has_partition_key("2020-01-01 00:00")
+    assert not partitions_def.has_partition_key("2020-01-01-00:00")
+    assert not partitions_def.has_partition_key("2020/01/01")
+    assert not partitions_def.has_partition_key("2019-12-31")
+    assert not partitions_def.has_partition_key(
+        "2020-03-15", current_time=datetime.strptime("2020-03-14", "%Y-%m-%d")
+    )
+    assert not partitions_def.has_partition_key(
+        "2020-03-15", current_time=datetime.strptime("2020-03-15", "%Y-%m-%d")
+    )
+    assert partitions_def.has_partition_key("2020-01-01")
+    assert partitions_def.has_partition_key("2020-03-15")
