@@ -223,19 +223,14 @@ def test_sensor_invocation_resources_direct_many() -> None:
         ),
     ).run_config == {"foo": "foo", "bar": "bar"}
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-    ):
-        # Cannot pass resources both directly and in context
-        assert cast(
-            RunRequest,
-            basic_sensor_resource_req(
-                context=build_sensor_context(
-                    resources={"my_other_resource": MyResource(a_str="foo")}
-                ),
-                my_resource=MyResource(a_str="foo"),
-            ),
-        ).run_config == {"foo": "foo"}
+    # Pass resources both directly and in context
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            context=build_sensor_context(resources={"my_other_resource": MyResource(a_str="bar")}),
+            my_resource=MyResource(a_str="foo"),
+        ),
+    ).run_config == {"foo": "foo", "bar": "bar"}
 
 
 def test_sensor_invocation_resources_context_manager() -> None:

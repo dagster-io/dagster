@@ -206,19 +206,16 @@ def test_schedule_invocation_resources_direct_many() -> None:
         ),
     ).run_config == {"foo": "foo", "bar": "bar"}
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-    ):
-        # Cannot pass resources both directly and in context
-        assert cast(
-            RunRequest,
-            basic_schedule_resource_req(
-                context=build_schedule_context(
-                    resources={"my_other_resource": MyResource(a_str="foo")}
-                ),
-                my_resource=MyResource(a_str="foo"),
+    # Can pass resources both directly and in context
+    assert cast(
+        RunRequest,
+        basic_schedule_resource_req(
+            context=build_schedule_context(
+                resources={"my_other_resource": MyResource(a_str="bar")}
             ),
-        ).run_config == {"foo": "foo"}
+            my_resource=MyResource(a_str="foo"),
+        ),
+    ).run_config == {"foo": "foo", "bar": "bar"}
 
 
 def test_partition_key_run_request_schedule():
