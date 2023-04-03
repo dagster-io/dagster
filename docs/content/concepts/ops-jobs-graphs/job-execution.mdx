@@ -5,17 +5,7 @@ description: Dagster provides several different ways to execute jobs.
 
 # Execution
 
-Dagster provides several different ways to execute jobs.
-
-## Relevant APIs
-
-| Name                                                            | Description                                                                        |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process" /> | A method to execute a job synchronously, typically for running scripts or testing. |
-
-## Overview
-
-There are several different ways to execute jobs. This page explains different ways to do one-off execution of jobs: [Dagit](#dagit), [Dagster CLI](#dagster-cli), or [Python APIs](#python-apis).
+Dagster provides several different ways to execute jobs. This guide explains different ways to do one-off execution of jobs: [Dagit](#dagit), [Dagster CLI](#dagster-cli), or [Python APIs](#python-apis).
 
 You can also launch jobs in other ways:
 
@@ -24,7 +14,15 @@ You can also launch jobs in other ways:
 
 ---
 
-## Executing a Job
+## Relevant APIs
+
+| Name                                                            | Description                                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process" /> | A method to execute a job synchronously, typically for running scripts or testing. |
+
+---
+
+## Executing a job
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 from dagster import job, op
@@ -69,7 +67,7 @@ width={3808}
 height={2414}
 />
 
-Click on the "Launchpad" tab, then press the "Launch Run" button to execute the job. You will then see Dagit launch a job run:
+Click on the **Launchpad** tab, then press the **Launch Run** button to execute the job. You will then see Dagit launch a job run:
 
 <Image
 alt="job-run"
@@ -106,22 +104,24 @@ if __name__ == "__main__":
 
 You can find the full API documentation in [Execution API](/\_apidocs/execution) and learn more about the testing use cases in [Testing](/concepts/testing).
 
-## Executing Job Subsets
+---
+
+## Executing job subsets
 
 Dagster supports ways to run a subset of a job, called Op Selection.
 
-### Op Selection Syntax
+### Op selection syntax
 
 To specify op selection, Dagster supports a simple query syntax.
 
 It works as follows:
 
 - A query includes a list of clauses.
-- A clause can be a op name, in which case that op is selected.
-- A clause can be a op name preceded by `*`, in which case that op and all of its ancestors (upstream dependencies) are selected.
-- A clause can be a op name followed by `*`, in which case that op and all of its descendents (downstream dependencies) are selected.
-- A clause can be a op name followed by any number of `+`s, in which case that op and descendents up to that many hops away are selected.
-- A clause can be a op name preceded by any number of `+`s, in which case that op and ancestors up to that many hops away are selected.
+- A clause can be an op name, in which case that op is selected.
+- A clause can be an op name preceded by `*`, in which case that op and all of its ancestors (upstream dependencies) are selected.
+- A clause can be an op name followed by `*`, in which case that op and all of its descendants (downstream dependencies) are selected.
+- A clause can be an op name followed by any number of `+`s, in which case that op and descendants up to that many hops away are selected.
+- A clause can be an op name preceded by any number of `+`s, in which case that op and ancestors up to that many hops away are selected.
 
 **Clause examples**
 
@@ -132,7 +132,7 @@ It works as follows:
 - `+some_op`: select "some_op" and its direct parents.
 - `some_op+++`: select "some_op" and its children, its children's children, and its children's children's children.
 
-### Specifying Op Selection
+### Specifying op selection
 
 You can use this selection syntax in the `op_selection` argument to the <PyObject object="JobDefinition" method="execute_in_process" />:
 
@@ -149,7 +149,7 @@ width={3808}
 height={2414}
 />
 
-## Controlling Job Execution
+## Controlling job execution
 
 Each <PyObject object="JobDefinition" /> contains an <PyObject object="ExecutorDefinition" /> that determines how it will be executed.
 
@@ -190,15 +190,15 @@ def forkserver_job():
     multi_three(add_two(return_one()))
 ```
 
-Using forkserver is a great way to reduce per process overhead during multiprocess execution, but can cause issues with certain libraries. More details can be found [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods).
+Using forkserver is a great way to reduce per-process overhead during multiprocess execution, but can cause issues with certain libraries. More details can be found [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods).
 
-#### Op Concurrency limits
+#### Op concurrency limits
 
-In addition to the `max_concurrent` limit, you can use `tag_concurrency_limits` to specify limits on the number of ops with certain tags that can be executing at once within a single run.
+In addition to the `max_concurrent` limit, you can use `tag_concurrency_limits` to specify limits on the number of ops with certain tags that can execute at once within a single run.
 
-Limits can be specified for all ops with a certain tag key or key-value pair. If any limit would be exceeded by launching a op, then the op will stay queued. Asset jobs will look at the `op_tags` field on each asset in the job when checking them for tag concurrency limits.
+Limits can be specified for all ops with a certain tag key or key-value pair. If any limit would be exceeded by launching an op, then the op will stay queued. Asset jobs will look at the `op_tags` field on each asset in the job when checking them for tag concurrency limits.
 
-For example, the following job will execute at most two ops at once with the "database" tag equal to "redshift", while also ensuring that at most 4 ops execute at once:
+For example, the following job will execute at most two ops at once with the `database` tag equal to `redshift`, while also ensuring that at most four ops execute at once:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
 @job(
@@ -224,3 +224,5 @@ def tag_concurrency_job():
 ```
 
 **Note:** These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject module="dagster_celery" object="celery_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+
+Refer to the [Limiting concurrency in data pipelines guide](/guides/limiting-concurrency-in-data-pipelines) for more info about op concurrency, and how to limit run concurrency.
