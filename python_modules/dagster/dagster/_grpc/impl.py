@@ -462,20 +462,22 @@ def get_partition_tags(
 
         # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
         # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-        instance = (
+        with (
             DagsterInstance.from_ref(instance_ref)
             if (_partitions_def_contains_dynamic_partitions_def(partitions_def) and instance_ref)
-            else None
-        )
-        partition = partitions_def.get_partition(partition_name, dynamic_partitions_store=instance)
-        with user_code_error_boundary(
-            PartitionExecutionError,
-            lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
-        ):
-            tags = partitioned_config.get_tags_for_partition_key(
-                partition.name, job_name=job_def.name
+            else nullcontext()
+        ) as instance:
+            partition = partitions_def.get_partition(
+                partition_name, dynamic_partitions_store=instance
             )
-            return ExternalPartitionTagsData(name=partition.name, tags=tags)
+            with user_code_error_boundary(
+                PartitionExecutionError,
+                lambda: f"Error occurred during the evaluation of the `tags_for_partition` function for partitioned config on job '{job_def.name}'",
+            ):
+                tags = partitioned_config.get_tags_for_partition_key(
+                    partition.name, job_name=job_def.name
+                )
+                return ExternalPartitionTagsData(name=partition.name, tags=tags)
     except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
@@ -527,47 +529,47 @@ def get_partition_set_execution_param_data(
     try:
         # Certain gRPC servers do not have access to the instance, so we only attempt to instantiate
         # the instance when necessary for dynamic partitions: https://github.com/dagster-io/dagster/issues/12440
-        instance = (
+        with (
             DagsterInstance.from_ref(instance_ref)
             if (_partitions_def_contains_dynamic_partitions_def(partitions_def) and instance_ref)
-            else None
-        )
-        with user_code_error_boundary(
-            PartitionExecutionError,
-            lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
-        ):
-            all_partitions = partitions_def.get_partitions(dynamic_partitions_store=instance)
-            partitions = [
-                partition for partition in all_partitions if partition.name in partition_names
-            ]
-
-        partition_data = []
-        for partition in partitions:
-
-            def _error_message_fn(partition_name: str):
-                return (
-                    lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
-                )
-
+            else nullcontext()
+        ) as instance:
             with user_code_error_boundary(
-                PartitionExecutionError, _error_message_fn(partition.name)
+                PartitionExecutionError,
+                lambda: f"Error occurred during the partition generation for partitioned config on job '{job_def.name}'",
             ):
-                run_config = partitioned_config.get_run_config_for_partition_key(
-                    partition.name, instance
-                )
-                tags = partitioned_config.get_tags_for_partition_key(
-                    partition.name, instance, job_name=job_def.name
+                all_partitions = partitions_def.get_partitions(dynamic_partitions_store=instance)
+                partitions = [
+                    partition for partition in all_partitions if partition.name in partition_names
+                ]
+
+            partition_data = []
+            for partition in partitions:
+
+                def _error_message_fn(partition_name: str):
+                    return (
+                        lambda: f"Error occurred during the partition config and tag generation for '{partition_name}' in partitioned config on job '{job_def.name}'"
+                    )
+
+                with user_code_error_boundary(
+                    PartitionExecutionError, _error_message_fn(partition.name)
+                ):
+                    run_config = partitioned_config.get_run_config_for_partition_key(
+                        partition.name, instance
+                    )
+                    tags = partitioned_config.get_tags_for_partition_key(
+                        partition.name, instance, job_name=job_def.name
+                    )
+
+                partition_data.append(
+                    ExternalPartitionExecutionParamData(
+                        name=partition.name,
+                        tags=tags,
+                        run_config=run_config,
+                    )
                 )
 
-            partition_data.append(
-                ExternalPartitionExecutionParamData(
-                    name=partition.name,
-                    tags=tags,
-                    run_config=run_config,
-                )
-            )
-
-        return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
+            return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
 
     except Exception:
         return ExternalPartitionExecutionErrorData(
