@@ -32,7 +32,7 @@ export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
 
   const params = useParams();
-  const explorerPath = explorerPathFromString(params['0']);
+  const explorerPath = explorerPathFromString((params as any)['0']);
   const {pipelineName, snapshotId} = explorerPath;
   const history = useHistory();
 

@@ -56,7 +56,7 @@ export const getStepDurationsForRun = (run: PartitionGraphSetRunFragment) => {
   const perStepDuration = {};
   stepStats.forEach((stepStat: any) => {
     if (stepStat.endTime && stepStat.startTime) {
-      perStepDuration[stepStat.stepKey] = stepStat.endTime - stepStat.startTime;
+      (perStepDuration as any)[stepStat.stepKey] = stepStat.endTime - stepStat.startTime;
     }
   });
 
@@ -75,7 +75,7 @@ export const getStepMaterializationCountForRun = (run: PartitionGraphFragment) =
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] = stepStat.materializations?.length || 0;
+    (perStepCounts as any)[stepStat.stepKey] = stepStat.materializations?.length || 0;
   });
   return perStepCounts;
 };
@@ -89,7 +89,7 @@ export const getStepExpectationSuccessForRun = (run: PartitionGraphFragment) => 
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] =
+    (perStepCounts as any)[stepStat.stepKey] =
       stepStat.expectationResults?.filter((x) => x.success).length || 0;
   });
   return perStepCounts;
@@ -104,7 +104,7 @@ export const getStepExpectationFailureForRun = (run: PartitionGraphFragment) => 
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] =
+    (perStepCounts as any)[stepStat.stepKey] =
       stepStat.expectationResults?.filter((x) => !x.success).length || 0;
   });
   return perStepCounts;
@@ -130,7 +130,7 @@ export const getStepExpectationRateForRun = (run: PartitionGraphFragment) => {
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
     const results = stepStat.expectationResults || [];
-    perStepCounts[stepStat.stepKey] = results.length
+    (perStepCounts as any)[stepStat.stepKey] = results.length
       ? results.filter((x) => x.success).length / results.length
       : 0;
   });

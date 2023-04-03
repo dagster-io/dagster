@@ -24,7 +24,9 @@ def resolve_stale_or_missing_assets(
     asset_selection = (
         run_request.asset_selection
         if run_request.asset_selection is not None
-        else asset_graph.get_asset_keys_for_job(check.not_none(instigator.pipeline_name))
+        else asset_graph.get_materialization_asset_keys_for_job(
+            check.not_none(instigator.pipeline_name)
+        )
     )
     resolver = CachingStaleStatusResolver(context.instance, asset_graph)
     stale_or_unknown_keys: List[AssetKey] = []

@@ -730,7 +730,7 @@ class PartitionedConfig(Generic[T_cov]):
     def get_run_config_for_partition_key(
         self,
         partition_key: str,
-        instance: Optional[DagsterInstance] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
     ) -> Mapping[str, Any]:
         """Generates the run config corresponding to a partition key.
@@ -738,13 +738,13 @@ class PartitionedConfig(Generic[T_cov]):
         Args:
             partition_key (str): the key for a partition that should be used to generate a run config.
         """
-        partition = self._key_to_partition(partition_key, current_time, instance)
+        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
         return copy.deepcopy(self.run_config_for_partition_fn(partition))
 
     def get_tags_for_partition_key(
         self,
         partition_key: str,
-        instance: Optional[DagsterInstance] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
         job_name: Optional[str] = None,
     ) -> Mapping[str, str]:
@@ -752,7 +752,7 @@ class PartitionedConfig(Generic[T_cov]):
             external_partition_set_name_for_job_name,
         )
 
-        partition = self._key_to_partition(partition_key, current_time, instance)
+        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
         user_tags = (
             validate_tags(self._tags_for_partition_fn(partition), allow_reserved_tags=False)
             if self._tags_for_partition_fn
@@ -774,12 +774,12 @@ class PartitionedConfig(Generic[T_cov]):
         self,
         partition_key: str,
         current_time: Optional[datetime],
-        instance: Optional[DagsterInstance],
+        dynamic_partitions_store: Optional[DynamicPartitionsStore],
     ) -> Partition[T_cov]:
         matches = [
             p
             for p in self.partitions_def.get_partitions(
-                current_time=current_time, dynamic_partitions_store=instance
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
             )
             if p.name == partition_key
         ]
@@ -916,7 +916,7 @@ def cron_schedule_from_schedule_type_and_offsets(
     minute_offset: int,
     hour_offset: int,
     day_offset: Optional[int],
-):
+) -> str:
     if schedule_type is ScheduleType.HOURLY:
         return f"{minute_offset} * * * *"
     elif schedule_type is ScheduleType.DAILY:

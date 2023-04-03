@@ -410,9 +410,9 @@ def submit_run_request(
 def _get_implicit_job_name_for_assets(
     asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
-    job_names = set(asset_graph.get_job_names(asset_keys[0]))
+    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_job_names(asset_key))
+        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 

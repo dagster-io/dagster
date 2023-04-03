@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from ...schema.errors import GraphenePartitionSetNotFoundError
 
 
-@capture_error
 def create_and_launch_partition_backfill(
     graphene_info: "ResolveInfo",
     backfill_params: BackfillParams,

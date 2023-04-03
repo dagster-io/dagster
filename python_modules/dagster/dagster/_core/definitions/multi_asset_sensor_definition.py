@@ -33,7 +33,7 @@ from dagster._core.instance.ref import InstanceRef
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
-from .run_request import RunRequest, SkipReason
+from .run_request import RunRequest, SensorResult, SkipReason
 from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
@@ -244,7 +244,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized
         # cursor.
         self._unpacked_cursor = MultiAssetSensorContextCursor(cursor, self)
-        self._cursor_has_been_updated = False
         self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
@@ -730,7 +729,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will not be updated.
         """
         self._cursor_advance_state_mutation.add_advanced_records(materialization_records_by_key)
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     def advance_all_cursors(self):
@@ -743,7 +742,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         self._cursor_advance_state_mutation.add_advanced_records(materializations_by_key)
         self._cursor_advance_state_mutation.advance_all_cursors_called = True
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     @property
@@ -1000,7 +999,12 @@ def build_multi_asset_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
+    Iterator[Union[RunRequest, SkipReason, SensorResult]],
+    Sequence[RunRequest],
+    RunRequest,
+    SkipReason,
+    None,
+    SensorResult,
 ]
 AssetMaterializationFunction = Callable[
     ["SensorEvaluationContext", "EventLogEntry"],
@@ -1059,6 +1063,13 @@ class MultiAssetSensorDefinition(SensorDefinition):
     ):
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
+                def _check_cursor_not_set(sensor_result: SensorResult):
+                    if sensor_result.cursor:
+                        raise DagsterInvariantViolationError(
+                            "Cannot set cursor in a multi_asset_sensor. Cursor is set automatically"
+                            " based on the latest materialization for each monitored asset."
+                        )
+
                 multi_asset_sensor_context = MultiAssetSensorEvaluationContext(
                     instance_ref=context.instance_ref,
                     last_completion_time=context.last_completion_time,
@@ -1082,6 +1093,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     for item in result:
                         if isinstance(item, RunRequest):
                             runs_yielded = True
+                        if isinstance(item, SensorResult):
+                            raise DagsterInvariantViolationError(
+                                "Cannot yield a SensorResult from a multi_asset_sensor. Instead"
+                                " return the SensorResult."
+                            )
                         yield item
                 elif isinstance(result, RunRequest):
                     runs_yielded = True
@@ -1089,11 +1105,13 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 elif isinstance(result, SkipReason):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
+                elif isinstance(result, SensorResult):
+                    _check_cursor_not_set(result)
+                    if result.run_requests:
+                        runs_yielded = True
+                    yield result
 
-                if (
-                    runs_yielded
-                    and not multi_asset_sensor_context._cursor_has_been_updated  # noqa: SLF001
-                ):
+                if runs_yielded and not multi_asset_sensor_context.cursor_updated:
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, but the cursor"
                         " was not updated. This means the same materialization events will be"
@@ -1112,7 +1130,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
-                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn")
             ),
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,

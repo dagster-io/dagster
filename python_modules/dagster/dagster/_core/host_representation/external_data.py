@@ -10,6 +10,7 @@ from enum import Enum
 from typing import (
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -49,9 +50,15 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, is_base_asset_job_name
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
-from dagster._core.definitions.dependency import NodeOutputHandle
+from dagster._core.definitions.dependency import (
+    GraphNode,
+    Node,
+    NodeHandle,
+    NodeOutputHandle,
+    OpNode,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
@@ -926,6 +933,14 @@ UNKNOWN_RESOURCE_TYPE = "Unknown"
 
 
 @whitelist_for_serdes
+class ResourceJobUsageEntry(NamedTuple):
+    """Stores information about where a resource is used in a job."""
+
+    job_name: str
+    node_handles: List[NodeHandle]
+
+
+@whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
         "_ExternalResourceData",
@@ -940,6 +955,7 @@ class ExternalResourceData(
             ("resource_type", str),
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
+            ("job_ops_using", List[ResourceJobUsageEntry]),
         ],
     )
 ):
@@ -960,6 +976,7 @@ class ExternalResourceData(
         resource_type: str = UNKNOWN_RESOURCE_TYPE,
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
+        job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -997,6 +1014,12 @@ class ExternalResourceData(
             resource_type=check.str_param(resource_type, "resource_type"),
             asset_keys_using=list(
                 check.opt_sequence_param(asset_keys_using, "asset_keys_using", of_type=AssetKey)
+            )
+            or [],
+            job_ops_using=list(
+                check.opt_sequence_param(
+                    job_ops_using, "job_ops_using", of_type=ResourceJobUsageEntry
+                )
             )
             or [],
         )
@@ -1120,6 +1143,50 @@ class ExternalAssetNode(
         )
 
 
+ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
+
+
+class NodeHandleResourceUse(NamedTuple):
+    resource_key: str
+    node_handle: NodeHandle
+
+
+def _get_resource_usage_from_node(
+    pipeline: PipelineDefinition,
+    node: Node,
+    parent_handle: Optional[NodeHandle] = None,
+) -> Iterable[NodeHandleResourceUse]:
+    handle = NodeHandle(node.name, parent_handle)
+    if isinstance(node, OpNode):
+        for resource_req in node.get_resource_requirements(pipeline.graph):
+            yield NodeHandleResourceUse(resource_req.key, handle)
+    elif isinstance(node, GraphNode):
+        for nested_node in node.definition.nodes:
+            yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
+
+
+def _get_resource_job_usage(pipelines: Sequence[PipelineDefinition]) -> ResourceJobUsageMap:
+    resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
+
+    for pipeline in pipelines:
+        pipeline_name = pipeline.name
+        if is_base_asset_job_name(pipeline_name):
+            continue
+
+        resource_usage: List[NodeHandleResourceUse] = []
+        for solid in pipeline.nodes_in_topological_order:
+            resource_usage += [use for use in _get_resource_usage_from_node(pipeline, solid)]
+        node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
+        for use in resource_usage:
+            node_use_by_key[use.resource_key].append(use.node_handle)
+        for resource_key in node_use_by_key:
+            resource_job_usage_map[resource_key].append(
+                ResourceJobUsageEntry(pipeline.name, node_use_by_key[resource_key])
+            )
+
+    return resource_job_usage_map
+
+
 def external_repository_data_from_def(
     repository_def: RepositoryDefinition,
     defer_snapshots: bool = False,
@@ -1155,11 +1222,13 @@ def external_repository_data_from_def(
             if nested_resource.type == NestedResourceType.TOP_LEVEL:
                 inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
-    resource_asset_usage_map = defaultdict(list)
+    resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
     for asset in asset_graph:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
+
+    resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(pipelines)
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1198,6 +1267,7 @@ def external_repository_data_from_def(
                     nested_resource_map[res_name],
                     inverted_nested_resources_map[res_name],
                     resource_asset_usage_map,
+                    resource_job_usage_map,
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1469,6 +1539,7 @@ def external_resource_data_from_def(
     nested_resources: Mapping[str, NestedResource],
     parent_resources: Mapping[str, str],
     resource_asset_usage_map: Mapping[str, List[AssetKey]],
+    resource_job_usage_map: ResourceJobUsageMap,
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1514,6 +1585,7 @@ def external_resource_data_from_def(
         parent_resources=parent_resources,
         is_top_level=True,
         asset_keys_using=resource_asset_usage_map.get(name, []),
+        job_ops_using=resource_job_usage_map.get(name, []),
         resource_type=resource_type,
     )
 

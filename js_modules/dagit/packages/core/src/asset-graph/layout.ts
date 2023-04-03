@@ -114,9 +114,9 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
       g.setEdge({v: upstreamId, w: downstreamId}, {weight: 1});
 
       if (!shouldRender(graphData.nodes[downstreamId])) {
-        linksToAssetsOutsideGraphedSet[downstreamId] = true;
+        (linksToAssetsOutsideGraphedSet as any)[downstreamId] = true;
       } else if (!shouldRender(graphData.nodes[upstreamId])) {
-        linksToAssetsOutsideGraphedSet[upstreamId] = true;
+        (linksToAssetsOutsideGraphedSet as any)[upstreamId] = true;
       }
     });
   });

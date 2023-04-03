@@ -56,6 +56,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -604,6 +605,12 @@ class JobDefinition(PipelineDefinition):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        deprecation_warning(
+            "JobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -620,13 +627,16 @@ class JobDefinition(PipelineDefinition):
             run_config
             if run_config is not None
             else self.partitioned_config.get_run_config_for_partition_key(
-                partition.name, instance=instance, current_time=current_time
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
             )
         )
         run_request_tags = {
             **(tags or {}),
             **self.partitioned_config.get_tags_for_partition_key(
-                partition_key, instance=instance, current_time=current_time, job_name=self.name
+                partition_key,
+                dynamic_partitions_store=instance,
+                current_time=current_time,
+                job_name=self.name,
             ),
         }
 
@@ -636,6 +646,7 @@ class JobDefinition(PipelineDefinition):
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     @public
