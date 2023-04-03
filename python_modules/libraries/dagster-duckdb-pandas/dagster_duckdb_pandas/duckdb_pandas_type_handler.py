@@ -13,26 +13,29 @@ from dagster_duckdb.io_manager import (
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Stores and loads Pandas DataFrames in DuckDB.
 
-    To use this type handler, pass it to ``build_duckdb_io_manager``
+    To use this type handler, return it from the ``type_handlers` method of an I/O manager that inherits from ``DuckDBIOManager``.
 
     Example:
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager
+            from dagster_duckdb import DuckDBIOManager
             from dagster_duckdb_pandas import DuckDBPandasTypeHandler
 
-            @asset
-            def my_table():
+            class MyDuckDBIOManager(DuckDBIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [DuckDBPandasTypeHandler()]
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
-
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table],
+                resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
+            )
 
     """
 
@@ -81,7 +84,7 @@ duckdb_pandas_io_manager = build_duckdb_io_manager(
     [DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
 )
 duckdb_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
+An I/O manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
 using the duckdb_pandas_io_manager, any inputs and outputs without type annotations will be loaded
 as Pandas DataFrames.
 
@@ -108,7 +111,7 @@ Examples:
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
+    the I/O Manager. For assets, the schema will be determined from the asset key.
     For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the schema.
 
@@ -137,8 +140,8 @@ Examples:
 
 
 class DuckDBPandasIOManager(DuckDBIOManager):
-    """An IO manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
-    using the duckdb_pandas_io_manager, any inputs and outputs without type annotations will be loaded
+    """An I/O manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
+    using the DuckDBPandasIOManager, any inputs and outputs without type annotations will be loaded
     as Pandas DataFrames.
 
     Returns:
@@ -161,7 +164,7 @@ class DuckDBPandasIOManager(DuckDBIOManager):
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
         For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
         via config or on the asset/op, "public" will be used for the schema.
 
