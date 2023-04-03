@@ -90,3 +90,69 @@ def test_external_partition_set_execution_params_grpc(instance: DagsterInstance)
         )
         assert isinstance(data, ExternalPartitionSetExecutionParamData)
         assert len(data.partition_data) == 3
+
+
+def test_dynamic_partition_set_grpc(instance: DagsterInstance):
+    with get_bar_repo_code_location(instance) as code_location:
+        instance.add_dynamic_partitions("dynamic_partitions", ["a", "b", "c"])
+        repository_handle = code_location.get_repository("bar_repo").handle
+
+        data = sync_get_external_partition_set_execution_param_data_grpc(
+            code_location.client,  # type: ignore
+            repository_handle,
+            "dynamic_job_partition_set",
+            ["a", "b", "c"],
+            instance=instance,
+        )
+        assert isinstance(data, ExternalPartitionSetExecutionParamData)
+        assert len(data.partition_data) == 3
+
+        data = sync_get_external_partition_config_grpc(
+            code_location.client,  # type: ignore
+            repository_handle,
+            "dynamic_job_partition_set",
+            "a",
+            instance,
+        )
+        assert isinstance(data, ExternalPartitionConfigData)
+        assert data.name == "a"
+        assert data.run_config == {}
+
+        data = sync_get_external_partition_tags_grpc(
+            code_location.client,  # type: ignore
+            repository_handle,
+            "dynamic_job_partition_set",
+            "a",
+            instance,
+        )
+        assert isinstance(data, ExternalPartitionTagsData)
+        assert data.tags
+        assert data.tags["dagster/partition"] == "a"
+
+        data = sync_get_external_partition_set_execution_param_data_grpc(
+            code_location.client,  # type: ignore
+            repository_handle,
+            "dynamic_job_partition_set",
+            ["nonexistent_partition"],
+            instance=instance,
+        )
+        assert isinstance(data, ExternalPartitionSetExecutionParamData)
+        assert data.partition_data == []
+
+        with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
+            sync_get_external_partition_config_grpc(
+                code_location.client,  # type: ignore
+                repository_handle,
+                "dynamic_job_partition_set",
+                "nonexistent_partition",
+                instance,
+            )
+
+        with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
+            sync_get_external_partition_tags_grpc(
+                code_location.client,  # type: ignore
+                repository_handle,
+                "dynamic_job_partition_set",
+                "nonexistent_partition",
+                instance,
+            )
