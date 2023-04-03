@@ -43,7 +43,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   const resources = React.useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
-      return data.repositoryOrError.topLevelResources;
+      return data.repositoryOrError.allTopLevelResourceDetails;
     }
     return [];
   }, [data]);
@@ -124,15 +124,33 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   );
 };
 
+export const RESOURCE_ENTRY_FRAGMENT = gql`
+  fragment ResourceEntryFragment on ResourceDetails {
+    name
+    description
+    resourceType
+    parentResources {
+      name
+    }
+    assetKeysUsing {
+      path
+    }
+    jobsOpsUsing {
+      job {
+        id
+      }
+    }
+  }
+`;
+
 export const WORKSPACE_RESOURCES_QUERY = gql`
   query WorkspaceResourcesQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {
         id
         name
-        topLevelResources {
-          name
-          description
+        allTopLevelResourceDetails {
+          ...ResourceEntryFragment
         }
       }
       ...PythonErrorFragment
@@ -140,4 +158,5 @@ export const WORKSPACE_RESOURCES_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
+  ${RESOURCE_ENTRY_FRAGMENT}
 `;

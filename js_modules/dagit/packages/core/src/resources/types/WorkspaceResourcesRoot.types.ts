@@ -2,6 +2,16 @@
 
 import * as Types from '../../graphql/types';
 
+export type ResourceEntryFragment = {
+  __typename: 'ResourceDetails';
+  name: string;
+  description: string | null;
+  resourceType: string;
+  parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+  assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+  jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+};
+
 export type WorkspaceResourcesQueryVariables = Types.Exact<{
   selector: Types.RepositorySelector;
 }>;
@@ -23,10 +33,14 @@ export type WorkspaceResourcesQuery = {
         __typename: 'Repository';
         id: string;
         name: string;
-        topLevelResources: Array<{
-          __typename: 'TopLevelResource';
+        allTopLevelResourceDetails: Array<{
+          __typename: 'ResourceDetails';
           name: string;
           description: string | null;
+          resourceType: string;
+          parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+          assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+          jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
         }>;
       }
     | {__typename: 'RepositoryNotFoundError'};

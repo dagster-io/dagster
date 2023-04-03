@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui';
+import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,18 +7,31 @@ import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-const TEMPLATE_COLUMNS = '1.5fr';
+import {succinctType} from './ResourceRoot';
+import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 
-interface ResourceRowProps {
-  name: string;
-  description: string | null;
+const TEMPLATE_COLUMNS = '1.5fr 1fr 1fr';
+
+interface ResourceRowProps extends ResourceEntryFragment {
   repoAddress: RepoAddress;
   height: number;
   start: number;
 }
 
 export const VirtualizedResourceRow = (props: ResourceRowProps) => {
-  const {name, description, repoAddress, start, height} = props;
+  const {
+    name,
+    description,
+    repoAddress,
+    start,
+    height,
+    resourceType,
+    parentResources,
+    jobsOpsUsing,
+    assetKeysUsing,
+  } = props;
+  const resourceTypeSuccinct = succinctType(resourceType);
+  const uses = parentResources.length + jobsOpsUsing.length + assetKeysUsing.length;
 
   return (
     <Row $height={height} $start={start}>
@@ -52,6 +65,14 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
             </div>
           </Box>
         </RowCell>
+        <RowCell>
+          <Tooltip content={resourceType}>
+            <Mono>{resourceTypeSuccinct}</Mono>
+          </Tooltip>
+        </RowCell>
+        <RowCell>
+          <Link to={workspacePathFromAddress(repoAddress, `/resources/${name}/uses`)}>{uses}</Link>
+        </RowCell>
       </RowGrid>
     </Row>
   );
@@ -70,6 +91,8 @@ export const VirtualizedResourceHeader = () => {
       }}
     >
       <HeaderCell>Name</HeaderCell>
+      <HeaderCell>Type</HeaderCell>
+      <HeaderCell>Uses</HeaderCell>
     </Box>
   );
 };

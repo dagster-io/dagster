@@ -5,11 +5,11 @@ import {Container, Inner} from '../ui/VirtualizedTable';
 import {RepoAddress} from '../workspace/types';
 
 import {VirtualizedResourceHeader, VirtualizedResourceRow} from './VirtualizedResourceRow';
-type Resource = {name: string; description: string | null};
+import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
-  resources: Resource[];
+  resources: ResourceEntryFragment[];
 }
 
 export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resources}) => {
@@ -32,15 +32,14 @@ export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resource
         <Container ref={parentRef}>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
-              const row: Resource = resources[index];
+              const row: ResourceEntryFragment = resources[index];
               return (
                 <VirtualizedResourceRow
                   key={key}
-                  name={row.name}
-                  description={row.description}
                   repoAddress={repoAddress}
                   height={size}
                   start={start}
+                  {...row}
                 />
               );
             })}
