@@ -581,10 +581,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional["InstigatorType"] = None,
-        instigator_status: Optional["InstigatorStatus"] = None,
+        instigator_statuses: Optional[Set["InstigatorStatus"]] = None,
     ) -> Iterable["InstigatorState"]:
         return self._storage.schedule_storage.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type, instigator_status
+            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
         )
 
     def get_instigator_state(self, origin_id: str, selector_id: str) -> Optional["InstigatorState"]:

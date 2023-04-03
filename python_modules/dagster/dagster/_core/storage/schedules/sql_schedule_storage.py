@@ -9,6 +9,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Type,
     TypeVar,
 )
@@ -70,7 +71,7 @@ class SqlScheduleStorage(ScheduleStorage):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_status: Optional[InstigatorStatus] = None,
+        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
     ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
@@ -82,8 +83,10 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             if instigator_type:
                 query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
-            if instigator_status:
-                query = query.where(InstigatorsTable.c.status == instigator_status.value)
+            if instigator_statuses:
+                query = query.where(
+                    InstigatorsTable.c.status.in_([status.value for status in instigator_statuses])
+                )
 
         else:
             query = db.select([JobTable.c.job_body]).select_from(JobTable)
@@ -91,8 +94,10 @@ class SqlScheduleStorage(ScheduleStorage):
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
                 query = query.where(JobTable.c.job_type == instigator_type.value)
-            if instigator_status:
-                query = query.where(JobTable.c.status == instigator_status.value)
+            if instigator_statuses:
+                query = query.where(
+                    JobTable.c.status.in_([status.value for status in instigator_statuses])
+                )
 
         rows = self.execute(query)
         return self._deserialize_rows(rows, InstigatorState)

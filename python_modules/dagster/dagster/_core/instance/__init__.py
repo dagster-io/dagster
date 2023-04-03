@@ -2314,12 +2314,12 @@ class DagsterInstance(DynamicPartitionsStore):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_status: Optional[InstigatorStatus] = None,
+        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
     ):
         if not self._schedule_storage:
             check.failed("Schedule storage not available")
         return self._schedule_storage.all_instigator_state(
-            repository_origin_id, repository_selector_id, instigator_type, instigator_status
+            repository_origin_id, repository_selector_id, instigator_type, instigator_statuses
         )
 
     @traced

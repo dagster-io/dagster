@@ -129,28 +129,20 @@ class TestScheduleStorage:
             self.fake_repo_target().get_id(),
             self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
-            InstigatorStatus.RUNNING,
+            {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING},
         )
-        assert len(running) == 1
-        assert running[0].instigator_name == "my_schedule"
+        assert len(running) == 2
+        assert "my_schedule" in [state.instigator_name for state in running]
+        assert "my_schedule_3" in [state.instigator_name for state in running]
 
         stopped = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
             self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
-            InstigatorStatus.STOPPED,
+            {InstigatorStatus.STOPPED},
         )
         assert len(stopped) == 1
         assert stopped[0].instigator_name == "my_schedule_2"
-
-        automatically_running = storage.all_instigator_state(
-            self.fake_repo_target().get_id(),
-            self.fake_repo_target().get_selector_id(),
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.AUTOMATICALLY_RUNNING,
-        )
-        assert len(automatically_running) == 1
-        assert automatically_running[0].instigator_name == "my_schedule_3"
 
     def test_get_schedule_state(self, storage):
         assert storage
