@@ -8,9 +8,13 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from dagster import resource
 from dagster._annotations import public
+from dagster._config.structured_config import (
+    ConfigurableResourceFactory,
+    infer_schema_from_config_class,
+)
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-
-from .configs import define_snowflake_config
+from pydantic import Field, validator
 
 try:
     import snowflake.connector
@@ -335,8 +339,204 @@ class SnowflakeConnection:
         self.execute_queries(sql_queries)
 
 
+class SnowflakeResource(ConfigurableResourceFactory):
+    account: Optional[str] = Field(
+        default=None,
+        description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+    )
+
+    user: str = Field(..., description="User login name.")
+
+    password: Optional[str] = Field(default=None, description="User password.")
+
+    database: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default database to use. After login, you can use USE DATABASE "
+            " to change the database."
+        ),
+    )
+
+    schema_: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default schema to use. After login, you can use USE SCHEMA to "
+            "change the schema."
+        ),
+        alias="schema",
+    )
+
+    role: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default role to use. After login, you can use USE ROLE to change "
+            " the role."
+        ),
+    )
+
+    warehouse: Optional[str] = Field(
+        default=None,
+        description=(
+            "Name of the default warehouse to use. After login, you can use USE WAREHOUSE "
+            "to change the role."
+        ),
+    )
+
+    private_key: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set private_key_path and private_key_password."
+        ),
+    )
+
+    private_key_password: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key password to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
+            " both private_key and private_key_path."
+        ),
+    )
+
+    private_key_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Raw private key path to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set the raw private key as private_key."
+        ),
+    )
+
+    autocommit: Optional[bool] = Field(
+        default=None,
+        description=(
+            "None by default, which honors the Snowflake parameter AUTOCOMMIT. Set to True "
+            "or False to enable or disable autocommit mode in the session, respectively."
+        ),
+    )
+
+    client_prefetch_threads: Optional[int] = Field(
+        default=None,
+        description=(
+            "Number of threads used to download the results sets (4 by default). "
+            "Increasing the value improves fetch performance but requires more memory."
+        ),
+    )
+
+    client_session_keep_alive: Optional[str] = Field(
+        default=None,
+        description=(
+            "False by default. Set this to True to keep the session active indefinitely, "
+            "even if there is no activity from the user. Make certain to call the close method to "
+            "terminate the thread properly or the process may hang."
+        ),
+    )
+
+    login_timeout: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for login. By default, 60 seconds. The login request gives "
+            'up after the timeout length if the HTTP response is "success".'
+        ),
+    )
+
+    network_timeout: Optional[int] = Field(
+        default=None,
+        description=(
+            "Timeout in seconds for all other operations. By default, none/infinite. A general"
+            " request gives up after the timeout length if the HTTP response is not 'success'."
+        ),
+    )
+
+    ocsp_response_cache_filename: Optional[str] = Field(
+        default=None,
+        description=(
+            "URI for the OCSP response cache file.  By default, the OCSP response cache "
+            "file is created in the cache directory."
+        ),
+    )
+
+    validate_default_parameters: bool = Field(
+        default=False,
+        description=(
+            "False by default. Raise an exception if either one of specified database, "
+            "schema or warehouse doesn't exists if True."
+        ),
+    )
+
+    paramstyle: str = Field(
+        default="pyformat",
+        description=(
+            "pyformat by default for client side binding. Specify qmark or numeric to "
+            "change bind variable formats for server side binding."
+        ),
+    )
+
+    timezone: Optional[str] = Field(
+        default=None,
+        description=(
+            "None by default, which honors the Snowflake parameter TIMEZONE. Set to a "
+            "valid time zone (e.g. America/Los_Angeles) to set the session time zone."
+        ),
+    )
+
+    connector: Optional[str] = Field(
+        default=None,
+        description=(
+            "Indicate alternative database connection engine. Permissible option is "
+            "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
+        ),
+        is_required=False,
+    )
+
+    cache_column_metadata: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional parameter when connector is set to sqlalchemy. Snowflake SQLAlchemy takes a"
+            " flag cache_column_metadata=True such that all of column metadata for all tables are"
+            ' "cached"'
+        ),
+    )
+
+    numpy: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional parameter when connector is set to sqlalchemy. To enable fetching "
+            "NumPy data types, add numpy=True to the connection parameters."
+        ),
+    )
+
+    authenticator: Optional[str] = Field(
+        default=None,
+        description="Optional parameter to specify the authentication mechanism to use.",
+    )
+
+    @validator("paramstyle")
+    def validate_paramstyle(cls, v):
+        valid_config = ["pyformat", "qmark", "numeric"]
+        if v not in valid_config:
+            raise DagsterInvalidConfigError(
+                "Snowflake Resource: 'paramstyle' configuration value must be one of:"
+                f" {','.join(valid_config)}"
+            )
+        return v
+
+    @validator("connector")
+    def validate_connector(cls, v):
+        if v is not None and v != "sqlalchemy":
+            raise DagsterInvalidConfigError(
+                "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy"
+            )
+        return v
+
+    def create_resource(self, context) -> SnowflakeConnection:
+        return SnowflakeConnection(context.resource_config, context.log)
+
+
 @resource(
-    config_schema=define_snowflake_config(),
+    config_schema=infer_schema_from_config_class(SnowflakeResource),
     description="This resource is for connecting to the Snowflake data warehouse",
 )
 def snowflake_resource(context):
