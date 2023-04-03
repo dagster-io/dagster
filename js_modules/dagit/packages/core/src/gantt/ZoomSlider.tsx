@@ -14,12 +14,12 @@ export const ZoomSlider: React.FC<{
   return (
     <ZoomSliderContainer
       $fillColor={Colors.Gray600}
-      className="bp3-slider bp3-slider-unlabeled"
+      className="bp4-slider bp4-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
-        const rect = e.currentTarget.closest('.bp3-slider')!.getBoundingClientRect();
+        const rect = e.currentTarget.closest('.bp4-slider')!.getBoundingClientRect();
 
         let initialX: number;
-        if (e.target instanceof HTMLElement && e.target.classList.contains('bp3-slider-handle')) {
+        if (e.target instanceof HTMLElement && e.target.classList.contains('bp4-slider-handle')) {
           initialX = e.pageX;
         } else {
           initialX = rect.left + (props.value / 100) * rect.width;
@@ -38,16 +38,16 @@ export const ZoomSlider: React.FC<{
         document.addEventListener('mouseup', onRelease);
       }}
     >
-      <div className="bp3-slider-track">
-        <div className="bp3-slider-progress" style={{left: 0, right: 0, top: 0}} />
+      <div className="bp4-slider-track">
+        <div className="bp4-slider-progress" style={{left: 0, right: 0, top: 0}} />
         <div
-          className="bp3-slider-progress bp3-intent-primary"
+          className="bp4-slider-progress bp4-intent-primary"
           style={{left: 0, right: `${100 - props.value}%`, top: 0}}
         />
       </div>
-      <div className="bp3-slider-axis" />
+      <div className="bp4-slider-axis" />
       <span
-        className="bp3-slider-handle"
+        className="bp4-slider-handle"
         style={{left: `calc(${props.value}% - 8px)`}}
         tabIndex={0}
       />
