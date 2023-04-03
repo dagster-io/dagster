@@ -160,7 +160,7 @@ run_launcher:
 
 This launcher will start each run in a new container, using whatever image set in the `DAGSTER_CURRENT_IMAGE` environment variable in your user code container. This will usually be the same image as the user code container itself.
 
-Any container that launches runs - usually the `dagster-daemon` container if you're maintaining a [run queue](/deployment/run-coordinator#queuedruncoordinator) or launching runs from schedules or sensors - must have permissions to create Docker containers in order to use this run launcher. Mounting `/var/run/docker.sock` as a volume is one way to give it these permissions.
+Any container that launches runs - usually the `dagster-daemon` container if you're maintaining a [run queue](/guides/customizing-run-queue-priority) or launching runs from schedules or sensors - must have permissions to create Docker containers in order to use this run launcher. Mounting `/var/run/docker.sock` as a volume is one way to give it these permissions.
 
 ---
 
