@@ -42,14 +42,28 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     Examples:
         .. code-block:: python
 
-            from dagster_snowflake import build_snowflake_io_manager
+            from dagster_snowflake import SnowflakeIOManager
             from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions, EnvVar
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+            class MySnowflakeIOManager(SnowflakeIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
 
-            @job(resource_defs={'io_manager': snowflake_io_manager})
-            def my_job():
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            )
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": MySnowflakeIOManager(database="MY_DATABASE", account=EnvVar("SNOWFLAKE_ACCOUNT"), ...)
+                }
+            )
     """
 
     def handle_output(
@@ -101,7 +115,7 @@ snowflake_pandas_io_manager = build_snowflake_io_manager(
     [SnowflakePandasTypeHandler()], default_load_type=pd.DataFrame
 )
 snowflake_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
+An I/O manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
 using the snowflake_pandas_io_manager, any inputs and outputs without type annotations will be loaded
 as Pandas DataFrames.
 
@@ -134,7 +148,7 @@ Examples:
         )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
+    the I/O Manager. For assets, the schema will be determined from the asset key.
     For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the schema.
 
@@ -163,7 +177,7 @@ Examples:
 
 
 class SnowflakePandasIOManager(SnowflakeIOManager):
-    """An IO manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
+    """An I/O manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
     using the SnowflakePandasIOManager, any inputs and outputs without type annotations will be loaded
     as Pandas DataFrames.
 
@@ -191,7 +205,7 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
         For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
         via config or on the asset/op, "public" will be used for the schema.
 
