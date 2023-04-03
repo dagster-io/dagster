@@ -1174,7 +1174,7 @@ def _get_resource_job_usage(pipelines: Sequence[PipelineDefinition]) -> Resource
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []
-        for solid in pipeline.solids_in_topological_order:
+        for solid in pipeline.nodes_in_topological_order:
             resource_usage += [use for use in _get_resource_usage_from_node(pipeline, solid)]
         node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
         for use in resource_usage:
