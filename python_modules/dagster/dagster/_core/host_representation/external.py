@@ -559,6 +559,12 @@ class ExternalResource:
             self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
+    def get_external_origin(self) -> ExternalInstigatorOrigin:
+        return self._handle.get_external_origin()
+
+    def get_external_origin_id(self) -> str:
+        return self.get_external_origin().get_id()
+
     @property
     def name(self) -> str:
         return self._external_resource_data.name

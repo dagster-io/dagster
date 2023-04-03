@@ -2,12 +2,13 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Iterator, Optional, Sequence, Tuple
+from typing import Any, Iterator, Optional, Sequence, Tuple, Type
 
 import grpc
 from google.protobuf.reflection import GeneratedProtocolMessageType
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
+from pytest_mock import TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
@@ -17,6 +18,7 @@ from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -31,7 +33,12 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
+    ResourceVerificationRequest,
+    ResourceVerificationResult,
     SensorExecutionArgs,
+    UserCodeExecutionRequest,
+    UserCodeExecutionResult,
+    UserCodeExecutionType,
 )
 from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
 
@@ -50,6 +57,9 @@ def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) 
             client.heartbeat("ping")
         except DagsterUserCodeUnreachableError:
             continue
+
+
+T = TypeVar("T")
 
 
 class DagsterGrpcClient:
@@ -187,12 +197,12 @@ class DagsterGrpcClient:
 
     def ping(self, echo: str):
         check.str_param(echo, "echo")
-        res = self._query("Ping", api_pb2.PingRequest, echo=echo)  # type: ignore
+        res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def heartbeat(self, echo: str = ""):
         check.str_param(echo, "echo")
-        res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)  # type: ignore
+        res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def streaming_ping(self, sequence_length: int, echo: str):
@@ -201,7 +211,7 @@ class DagsterGrpcClient:
 
         for res in self._streaming_query(
             "StreamingPing",
-            api_pb2.StreamingPingRequest,  # type: ignore
+            api_pb2.StreamingPingRequest,
             sequence_length=sequence_length,
             echo=echo,
         ):
@@ -211,7 +221,7 @@ class DagsterGrpcClient:
             }
 
     def get_server_id(self, timeout: int = DEFAULT_GRPC_TIMEOUT) -> str:
-        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)  # type: ignore
+        res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs):
@@ -220,7 +230,7 @@ class DagsterGrpcClient:
         )
         res = self._query(
             "ExecutionPlanSnapshot",
-            api_pb2.ExecutionPlanSnapshotRequest,  # type: ignore
+            api_pb2.ExecutionPlanSnapshotRequest,
             serialized_execution_plan_snapshot_args=serialize_value(execution_plan_snapshot_args),
         )
         return res.serialized_execution_plan_snapshot
@@ -309,7 +319,7 @@ class DagsterGrpcClient:
 
         res = self._query(
             "ExternalRepository",
-            api_pb2.ExternalRepositoryRequest,  # type: ignore
+            api_pb2.ExternalRepositoryRequest,
             # rename this param name
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
@@ -330,7 +340,7 @@ class DagsterGrpcClient:
 
         return self._query(
             "ExternalJob",
-            api_pb2.ExternalJobRequest,  # type: ignore
+            api_pb2.ExternalJobRequest,
             serialized_repository_origin=serialize_value(external_repository_origin),
             job_name=job_name,
         )
@@ -342,7 +352,7 @@ class DagsterGrpcClient:
     ):
         for res in self._streaming_query(
             "StreamingExternalRepository",
-            api_pb2.ExternalRepositoryRequest,  # type: ignore
+            api_pb2.ExternalRepositoryRequest,
             # Rename parameter
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
@@ -401,7 +411,7 @@ class DagsterGrpcClient:
         check.str_param(notebook_path, "notebook_path")
         res = self._query(
             "ExternalNotebookData",
-            api_pb2.ExternalNotebookDataRequest,  # type: ignore
+            api_pb2.ExternalNotebookDataRequest,
             notebook_path=notebook_path,
         )
         return res.content
@@ -438,7 +448,7 @@ class DagsterGrpcClient:
 
         res = self._query(
             "CanCancelExecution",
-            api_pb2.CanCancelExecutionRequest,  # type: ignore
+            api_pb2.CanCancelExecutionRequest,
             timeout=timeout,
             serialized_can_cancel_execution_request=serialize_value(can_cancel_execution_request),
         )
@@ -452,7 +462,7 @@ class DagsterGrpcClient:
             try:
                 res = self._query(
                     "StartRun",
-                    api_pb2.StartRunRequest,  # type: ignore
+                    api_pb2.StartRunRequest,
                     serialized_execute_run_args=serialize_value(execute_run_args),
                 )
                 return res.serialized_start_run_result
@@ -489,6 +499,32 @@ class DagsterGrpcClient:
         status_number = response.status
 
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
+
+    def user_code_execution(
+        self, execution_type: UserCodeExecutionType, request: Any, response_type: Type[T]
+    ) -> T:
+        res = self._query(
+            "UserCodeExecution",
+            api_pb2.UserCodeExecutionRequest,
+            serialized_user_code_execution_request=serialize_value(
+                UserCodeExecutionRequest(execution_type, request)
+            ),
+        )
+        return deserialize_value(
+            res.serialized_user_code_execution_result, UserCodeExecutionResult
+        ).unpack_as(response_type)
+
+    def resource_verification(
+        self, resource_verification: ResourceVerificationRequest
+    ) -> ResourceVerificationResult:
+        check.inst_param(
+            resource_verification, "resource_verification", ResourceVerificationRequest
+        )
+        return self.user_code_execution(
+            UserCodeExecutionType.RESOURCE_VERIFICATION,
+            resource_verification,
+            ResourceVerificationResult,
+        )
 
 
 @contextmanager

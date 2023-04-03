@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 class InstigatorType(Enum):
     SCHEDULE = "SCHEDULE"
     SENSOR = "SENSOR"
+    VERIFICATION = "VERIFICATION"
 
 
 @whitelist_for_serdes

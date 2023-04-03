@@ -1,6 +1,7 @@
 import datetime
 import sys
 import threading
+import time
 from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
@@ -19,11 +20,16 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._config.structured_config.resource_verification import launch_resource_verification
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import PipelineSelector
-from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterUserCodeProcessError,
+    DagsterUserCodeUnreachableError,
+)
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalPipelineSubsetResult
@@ -42,6 +48,7 @@ from dagster._core.host_representation.grpc_server_registry import GrpcServerReg
 from dagster._core.host_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
+    ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
@@ -58,7 +65,12 @@ from dagster._grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
+from dagster._grpc.types import (
+    GetCurrentImageResult,
+    GetCurrentRunsResult,
+    ResourceVerificationRequest,
+    ResourceVerificationResult,
+)
 from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
@@ -155,6 +167,15 @@ class CodeLocation(AbstractContextManager):
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead.
         """
+
+    @abstractmethod
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance: DagsterInstance,
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        pass
 
     @abstractmethod
     def get_external_partition_config(
@@ -537,6 +558,15 @@ class InProcessCodeLocation(CodeLocation):
     def get_dagster_library_versions(self) -> Mapping[str, str]:
         return DagsterLibraryRegistry.get()
 
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance: DagsterInstance,
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        definition = self._get_repo_def(origin.repository_name)
+        return launch_resource_verification(definition, instance.get_ref(), resource_name)
+
 
 class GrpcServerCodeLocation(CodeLocation):
     def __init__(
@@ -717,6 +747,102 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self.external_repositories
+
+    def launch_resource_verification(
+        self,
+        origin: ExternalRepositoryOrigin,
+        instance: DagsterInstance,
+        resource_name: str,
+    ) -> ResourceVerificationResult:
+        from dagster._config.structured_config.resource_verification import (
+            VerificationResult,
+            VerificationStatus,
+            _ResourceVerificationContext,
+        )
+        from dagster._core.definitions.run_request import InstigatorType
+        from dagster._core.scheduler.instigation import TickData, TickStatus
+        from dagster._utils.error import (
+            serializable_error_info_from_exc_info,
+        )
+        from dagster._utils.log import get_dagster_logger
+
+        timestamp = time.time()
+        tick = instance.create_tick(
+            TickData(
+                instigator_origin_id=origin.get_id(),
+                instigator_name=f"resource_verification_{resource_name}",
+                instigator_type=InstigatorType.VERIFICATION,
+                status=TickStatus.STARTED,
+                timestamp=timestamp,
+                selector_id=resource_name,
+            )
+        )
+        try:
+            external_resource = self.get_repositories()[
+                origin.repository_name
+            ].get_external_resource(resource_name)
+        except KeyError:
+            return ResourceVerificationResult(
+                VerificationResult.failure(f"Resource {resource_name} not found"), None
+            )
+        logger = get_dagster_logger()
+        tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.VERIFICATION)
+
+        with _ResourceVerificationContext(
+            external_resource, tick, instance, logger, tick_retention_settings
+        ) as tick_context:
+            try:
+                result = self.client.resource_verification(
+                    ResourceVerificationRequest(
+                        repository_origin=origin,
+                        instance_ref=instance.get_ref(),
+                        resource_name=resource_name,
+                    )
+                )
+                if result.serializable_error_info:
+                    tick_context.update_state(
+                        TickStatus.FAILURE, error=result.serializable_error_info
+                    )
+                else:
+                    tick_context.update_state(
+                        TickStatus.SUCCESS
+                        if result.response.status == VerificationStatus.SUCCESS
+                        else TickStatus.SKIPPED,
+                    )
+                    tick_context.update_cursor(result.response.message)
+                return result
+            except Exception as e:
+                if isinstance(e, DagsterUserCodeUnreachableError):
+                    try:
+                        raise Exception(
+                            f"Unable to reach the user code server for resource {resource_name}."
+                            " Schedule will resume execution once the server is available."
+                        ) from e
+                    except:
+                        error_data = serializable_error_info_from_exc_info(sys.exc_info())
+
+                        tick_context.update_state(
+                            TickStatus.FAILURE,
+                            error=error_data,
+                            # don't increment the failure count - retry forever until the server comes back up
+                            # or the schedule is turned off
+                            failure_count=tick_context.failure_count,
+                        )
+                        return ResourceVerificationResult(
+                            VerificationResult.failure("Unable to reach user code server"),
+                            error_data,
+                        )
+
+                else:
+                    error_data = serializable_error_info_from_exc_info(sys.exc_info())
+                    tick_context.update_state(
+                        TickStatus.FAILURE,
+                        error=error_data,
+                        failure_count=tick_context.failure_count + 1,
+                    )
+                    return ResourceVerificationResult(
+                        VerificationResult.failure("Error verifying resource"), error_data
+                    )
 
     def get_external_execution_plan(
         self,
