@@ -1,4 +1,4 @@
-from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
@@ -42,11 +42,9 @@ def iris_data() -> DataFrame:
 defs = Definitions(
     assets=[iris_data],
     resources={
-        "io_manager": bigquery_pyspark_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "io_manager": BigQueryPySparkIOManager(
+            project="my-gcp-project",
+            location="us-east5",
         ),
     },
 )

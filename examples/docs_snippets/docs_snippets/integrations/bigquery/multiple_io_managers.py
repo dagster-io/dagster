@@ -4,7 +4,7 @@ plot_data = None
 
 import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_gcp_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import BigQueryPandasIOManager
 
 from dagster import Definitions, asset
 
@@ -33,11 +33,9 @@ def iris_plots(iris_data):
 defs = Definitions(
     assets=[iris_data, iris_plots],
     resources={
-        "warehouse_io_manager": bigquery_pandas_io_manager.configured(
-            {
-                "project": "my-gcp-project",
-                "dataset": "IRIS",
-            }
+        "warehouse_io_manager": BigQueryPandasIOManager(
+            project="my-gcp-project",
+            dataset="IRIS",
         ),
         "blob_io_manager": s3_pickle_io_manager,
     },
