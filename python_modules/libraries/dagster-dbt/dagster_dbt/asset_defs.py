@@ -343,6 +343,7 @@ def _batch_event_iterator(
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
+    tests_as_assets: bool,
     kwargs: Dict[str, Any],
 ) -> Iterator[Union[AssetObservation, AssetMaterialization, Output]]:
     """Yields events for a dbt cli invocation. Waits until the entire command has completed before
@@ -381,6 +382,7 @@ def _batch_event_iterator(
                 manifest_json=manifest_json,
                 extra_metadata=extra_metadata,
                 generate_asset_outputs=True,
+                tests_as_assets=tests_as_assets,
             )
 
 
@@ -463,11 +465,11 @@ def _stream_event_iterator(
     context: OpExecutionContext,
     dbt_resource: DbtCliResource,
     command: _DbtOpCommands,
-    tests_as_assets: bool,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
+    tests_as_assets: bool,
     kwargs: Dict[str, Any],
 ) -> Iterator[Union[AssetObservation, Output]]:
     """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
@@ -555,23 +557,23 @@ def _get_dbt_op(
 
         if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
-                context,
-                dbt_resource,
-                command,
-                tests_as_assets,
-                node_info_to_asset_key,
-                runtime_metadata_fn,
-                kwargs,
+                context=context,
+                dbt_resource=dbt_resource,
+                command=command,
+                node_info_to_asset_key=node_info_to_asset_key,
+                runtime_metadata_fn=runtime_metadata_fn,
                 tests_as_assets=tests_as_assets,
+                kwargs=kwargs,
             )
         else:
             yield from _batch_event_iterator(
-                context,
-                dbt_resource,
-                command,
-                node_info_to_asset_key,
-                runtime_metadata_fn,
-                kwargs,
+                context=context,
+                dbt_resource=dbt_resource,
+                command=command,
+                node_info_to_asset_key=node_info_to_asset_key,
+                runtime_metadata_fn=runtime_metadata_fn,
+                tests_as_assets=tests_as_assets,
+                kwargs=kwargs,
             )
 
     return _dbt_op
