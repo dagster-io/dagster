@@ -200,10 +200,48 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
     @staticmethod
     @abstractmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
+        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
+
+        .. code-block:: python
+
+            from dagster_snowflake import SnowflakeIOManager
+            from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions, EnvVar
+
+            class MySnowflakeIOManager(SnowflakeIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+        """
         ...
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
+        """If an asset or op is not annotated with an return type, default_load_type will be used to
+        determine which TypeHandler to use to store and load the output.
+
+        If left unimplemented, default_load_type will return None. In that case, if there is only
+        one TypeHandler, the I/O manager will default to loading unannotated outputs with that
+        TypeHandler.
+
+        .. code-block:: python
+
+            from dagster_snowflake import SnowflakeIOManager
+            from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions, EnvVar
+            import pandas as pd
+
+            class MySnowflakeIOManager(SnowflakeIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+
+                @staticmethod
+                def default_load_type() -> Optional[Type]:
+                    return pd.DataFrame
+        """
         return None
 
     def create_io_manager(self, context) -> DbIOManager:
