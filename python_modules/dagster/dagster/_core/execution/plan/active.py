@@ -17,7 +17,6 @@ from typing import (
 
 from typing_extensions import Self
 
-from pools.pools import decrement_pool, engine, increment_pool
 from psycopg2.errors import LockNotAvailable
 from sqlalchemy.exc import OperationalError
 
@@ -35,6 +34,7 @@ from dagster._core.execution.context.system import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
+from dagster._core.pools.pools import decrement_pool, engine, increment_pool
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter

@@ -39,14 +39,6 @@ from .child_process_executor import (
     execute_child_process_command,
 )
 
-import logging
-import os
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if bool(os.environ.get("DEBUG", False)):
-    logger.setLevel(logging.DEBUG)
-
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
@@ -288,8 +280,7 @@ class MultiprocessExecutor(Executor):
                         del active_iters[key]
                         del term_events[key]
                         step = active_execution.get_step_by_key(key)
-                        logger.info("Got into steps without success or failure event")
-                        active_execution.verify_complete(plan_context, key, step.tags) #check
+                        active_execution.verify_complete(plan_context, key, step.tags)
 
                     # process skipped and abandoned steps
                     yield from active_execution.plan_events_iterator(plan_context)
