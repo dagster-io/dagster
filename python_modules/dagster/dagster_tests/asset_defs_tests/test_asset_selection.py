@@ -183,21 +183,21 @@ def test_asset_selection_sinks(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({fiona})
 
 
-def test_asset_selection_required_neighbors(all_assets: _AssetList):
+def test_asset_selection_required_multi_asset_neighbors(all_assets: _AssetList):
     # no effect for single assets
-    sel = AssetSelection.keys("george").required_neighbors()
+    sel = AssetSelection.keys("george").required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == _asset_keys_of({george})
 
     # robots must all be materialized together, so they are expanded
-    # from required_neighbors
-    sel = AssetSelection.keys("rosie").required_neighbors()
+    # from required_multi_asset_neighbors
+    sel = AssetSelection.keys("rosie").required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == _asset_keys_of({robots})
 
-    sel = AssetSelection.keys("alice", "bob", "walle").required_neighbors()
+    sel = AssetSelection.keys("alice", "bob", "walle").required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == _asset_keys_of({alice, bob, robots})
 
-    # aliens are subsettable, so no expansion from required_neighbors
-    sel = AssetSelection.keys("zorg").required_neighbors()
+    # aliens are subsettable, so no expansion from required_multi_asset_neighbors
+    sel = AssetSelection.keys("zorg").required_multi_asset_neighbors()
     assert sel.resolve(all_assets) == {AssetKey("zorg")}
 
 

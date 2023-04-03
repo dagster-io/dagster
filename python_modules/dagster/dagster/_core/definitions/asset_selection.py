@@ -57,7 +57,7 @@ class AssetSelection(ABC):
             AssetSelection.all() - AssetSelection.groups("marketing")
 
             # Select all assets which are materialized by the same op as "projections":
-            AssetSelection.keys("projections").required_neighbors()
+            AssetSelection.keys("projections").required_multi_asset_neighbors()
     """
 
     @public
@@ -159,7 +159,7 @@ class AssetSelection(ABC):
         return SinkAssetSelection(self)
 
     @public
-    def required_neighbors(self) -> "RequiredNeighborsAssetSelection":
+    def required_multi_asset_neighbors(self) -> "RequiredNeighborsAssetSelection":
         """Given an asset selection in which some assets are output from a mutli-asset compute op
         which cannot be subset, returns a new asset selection that contains all of the assets
         required to execute the original asset selection.
