@@ -200,16 +200,16 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
     """
 
+    project: str = Field(..., description="The GCP project to use.")
     dataset: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "Name of the BigQuery dataset to use. If not provided, the last prefix before"
             " the asset name will be used."
         ),
     )
-    project: str = Field(..., description="The GCP project to use.")
     location: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "The GCP location. **Note:** When using PySpark DataFrames, the default"
             " location of the project will be used. A custom location can be specified in"
@@ -217,7 +217,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         ),
     )
     gcp_credentials: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "GCP authentication credentials. If provided, a temporary file will be created"
             " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
@@ -227,14 +227,14 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         ),
     )
     temporary_gcs_bucket: Optional[str] = Field(
-        None,
+        default=None,
         description=(
             "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
             " store data. If not provided, data will be directly written to BigQuery."
         ),
     )
     timeout: Optional[float] = Field(
-        None,
+        default=None,
         description=(
             "When using Pandas DataFrames, optionally specify a timeout for the BigQuery"
             " queries (loading and reading from tables)."
