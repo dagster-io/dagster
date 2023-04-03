@@ -169,6 +169,29 @@ class SensorEvaluationContext:
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
 
+    def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
+        """Merge the specified resources into this context.
+
+        This method is intended to be used by the Dagster framework, and should not be called by user code.
+
+        Args:
+            resources_dict (Mapping[str, Any]): The resources to replace in the context.
+        """
+        check.invariant(
+            self._resources is None, "Cannot merge resources in context that has been initialized."
+        )
+        return SensorEvaluationContext(
+            instance_ref=self._instance_ref,
+            last_completion_time=self._last_completion_time,
+            last_run_key=self._last_run_key,
+            cursor=self._cursor,
+            repository_name=self._repository_name,
+            repository_def=self._repository_def,
+            instance=self._instance,
+            sensor_name=self._sensor_name,
+            resources={**(self._resource_defs or {}), **resources_dict},
+        )
+
     @property
     def resources(self) -> Resources:
         from dagster._core.definitions.scoped_resources_builder import (
@@ -861,12 +884,22 @@ def get_sensor_context_from_args_or_kwargs(
     kwargs: Dict[str, Any],
     context_type: Type[T],
 ) -> Optional[T]:
+    from dagster import ResourceDefinition
+
     context_param_name = get_context_param_name(fn)
 
-    if len(args) + len(kwargs) > 1:
+    kwarg_keys_non_resource = set(kwargs.keys()) - {param.name for param in get_resource_args(fn)}
+    if len(args) + len(kwarg_keys_non_resource) > 1:
         raise DagsterInvalidInvocationError(
-            "Sensor invocation received multiple arguments. Only a first "
+            "Sensor invocation received multiple non-resource arguments. Only a first "
             "positional context parameter should be provided when invoking."
+        )
+
+    if any(isinstance(arg, ResourceDefinition) for arg in args):
+        raise DagsterInvalidInvocationError(
+            "If directly invoking a sensor, you may not provide resources as"
+            " positional"
+            " arguments, only as keyword arguments."
         )
 
     context: Optional[T] = None
@@ -878,8 +911,7 @@ def get_sensor_context_from_args_or_kwargs(
             raise DagsterInvalidInvocationError(
                 f"Sensor invocation expected argument '{context_param_name}'."
             )
-        context_param_name = context_param_name or list(kwargs.keys())[0]
-        context = check.opt_inst(kwargs.get(context_param_name), context_type)
+        context = check.opt_inst(kwargs.get(context_param_name or "context"), context_type)
     elif context_param_name:
         # If the context parameter is present but no value was provided, we error
         raise DagsterInvalidInvocationError(
@@ -901,7 +933,7 @@ def get_or_create_sensor_context(
     Raises an exception if the user passes more than one argument or if the user-provided
     function requires a context parameter but none is passed.
     """
-    return (
+    context = (
         get_sensor_context_from_args_or_kwargs(
             fn,
             args,
@@ -910,6 +942,17 @@ def get_or_create_sensor_context(
         )
         or build_sensor_context()
     )
+    resource_args_from_kwargs = {}
+
+    resource_args = {param.name for param in get_resource_args(fn)}
+    for resource_arg in resource_args:
+        if resource_arg in kwargs:
+            resource_args_from_kwargs[resource_arg] = kwargs[resource_arg]
+
+    if resource_args_from_kwargs:
+        return context.merge_resources(resource_args_from_kwargs)
+
+    return context
 
 
 def _run_requests_with_base_asset_jobs(
