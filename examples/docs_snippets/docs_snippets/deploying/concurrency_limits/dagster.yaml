@@ -17,13 +17,3 @@ run_queue:
       limit: 10 
 
 # end_tag_example
-
-# start_unique_value_example
-
-run_queue:
-  - key: "use-case"
-    value:
-      applyLimitPerUniqueValue: true
-    limit: 3  
-
-# end_unique_value_example

@@ -1,0 +1,5 @@
+run_queue:
+  - key: "use-case"
+    value:
+      applyLimitPerUniqueValue: true
+    limit: 3
