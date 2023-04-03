@@ -9,26 +9,29 @@ from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckd
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     """Stores and loads Polars DataFrames in DuckDB.
 
-    To use this type handler, pass it to ``build_duckdb_io_manager``
+    To use this type handler, return it from the ``type_handlers` method of an I/O manager that inherits from ``DuckDBIOManager``.
 
     Example:
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager
+            from dagster_duckdb import DuckDBIOManager
             from dagster_duckdb_polars import DuckDBPolarsTypeHandler
 
-            @asset
-            def my_table():
+            class MyDuckDBIOManager(DuckDBIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [DuckDBPolarsTypeHandler()]
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_table() -> pl.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPolarsTypeHandler()])
-
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table],
+                resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
+            )
 
     """
 
@@ -83,7 +86,7 @@ duckdb_polars_io_manager = build_duckdb_io_manager(
     [DuckDBPolarsTypeHandler()], default_load_type=pl.DataFrame
 )
 duckdb_polars_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes polars dataframes to DuckDB. When
+An I/O manager definition that reads inputs from and writes polars dataframes to DuckDB. When
 using the duckdb_polars_io_manager, any inputs and outputs without type annotations will be loaded
 as Polars DataFrames.
 
@@ -110,7 +113,7 @@ Examples:
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
+    the I/O Manager. For assets, the schema will be determined from the asset key.
     For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the schema.
 
@@ -139,7 +142,7 @@ Examples:
 
 
 class DuckDBPolarsIOManager(DuckDBIOManager):
-    """An IO manager definition that reads inputs from and writes Polars DataFrames to DuckDB. When
+    """An I/O manager definition that reads inputs from and writes Polars DataFrames to DuckDB. When
     using the duckdb_polars_io_manager, any inputs and outputs without type annotations will be loaded
     as Polars DataFrames.
 
@@ -163,7 +166,7 @@ class DuckDBPolarsIOManager(DuckDBIOManager):
             )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-        the IO Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
         For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
         via config or on the asset/op, "public" will be used for the schema.
 
