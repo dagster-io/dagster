@@ -213,7 +213,7 @@ Whiel `max_concurrent` is used to limit concurrency in both asset and op-based j
 
 #### Asset-based jobs
 
-Asset jobs are defined using <PyObject object="define_asset_job" />. In this example, using the multiprocess [job executor][job-executor-concept], the job will execute up to three assets at once:
+Asset jobs are defined using <PyObject object="define_asset_job" />. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to three assets at once:
 
 ```python
 assets_job = define_asset_job(
@@ -235,7 +235,7 @@ assets_job = define_asset_job(
 
 #### Op-based jobs
 
-Op-based jobs are defined using the <PyObject object="job" decorator /> decorator. In this example, using the multiprocess [job executor][job-executor-concept], the job will execute up to four ops at once:
+Op-based jobs are defined using the <PyObject object="job" decorator /> decorator. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to four ops at once:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
 @job(
@@ -264,7 +264,16 @@ def tag_concurrency_job():
 </TabGroup>
 </TabItem>
 <TabItem name="In the Dagster UI">
-todo
+
+In the Dagster UI, navigate to the details page for a job, then the **Launchpad** tab. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to three ops/assets at once:
+
+<Image
+alt="Using the Launchpad in the Dagster UI to limit op/asset concurrency in a job"
+src="/images/guides/limiting-concurrency/launchpad-config-job-level.png"
+width={3068}
+height={1640}
+/>
+
 </TabItem>
 </TabGroup>
 
@@ -284,7 +293,7 @@ Whiel `tag_concurrency_limits` is used to limit concurrency in both asset and op
 
 #### Asset-based jobs
 
-Unlike op-based jobs, asset jobs use the `op_tags` field on each asset when checking them for tag concurrency limits. In this example, the job will execute up to three assets at once with the `database` tag equal to `snowflake`:
+Unlike op-based jobs, asset jobs use the `op_tags` field on each asset when checking them for tag concurrency limits. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to three assets at once with the `database` tag equal to `snowflake`:
 
 ```python
 # example asset with tags, specified using op_tags
@@ -317,7 +326,7 @@ assets_job = define_asset_job(
 
 #### Op-based jobs
 
-In this example, the job will execute up to two ops at once with the `database` tag equal to `redshift`:
+In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to two ops at once with the `database` tag equal to `redshift`:
 
 ```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
 @job(
@@ -346,7 +355,16 @@ def tag_concurrency_job():
 </TabGroup>
 </TabItem>
 <TabItem name="In the Dagster UI">
-TODO
+
+In the Dagster UI, navigate to the details page for a job, then the **Launchpad** tab. In this example, using the <PyObject module="dagster" object="multiprocess_executor" />, the job will execute up to two ops/assets at once with the `database` tag equal to `redshift`:
+
+<Image
+alt="Using tags to limit op/asset concurrency in a job in the Launchpad of the Dagster UI"
+src="/images/guides/limiting-concurrency/launchpad-config-job-level-tags.png"
+width={3062}
+height={1638}
+/>
+
 </TabItem>
 </TabGroup>
 
@@ -356,7 +374,7 @@ TODO
 
 When limiting concurrency, you might run into some issues until you get the configuration right.
 
-### Runs skipping QUEUED status, going to STARTED
+### Runs going to STARTED status and skipping QUEUED
 
 The `run_queue` key may not be set in your instance's settings. How you verify this depends on whether you're using Dagster Cloud or Dagster Open Source:
 
@@ -431,8 +449,6 @@ If runs aren’t being dequeued in Dagster Open Source, the root cause is likely
 [sda-concept]: /concepts/assets/software-defined-assets
 
 [job-concept]: /concepts/ops-jobs-graphs/jobs
-
-[job-executor-concept]: /concepts/ops-jobs-graphs/job-execution#controlling-job-execution
 
 [code-location-concept]: /concepts/code-locations
 
