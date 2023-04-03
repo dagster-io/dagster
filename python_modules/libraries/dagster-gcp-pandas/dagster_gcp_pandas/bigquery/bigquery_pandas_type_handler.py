@@ -16,24 +16,25 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     Examples:
         .. code-block:: python
 
-            from dagster_gcp import build_bigquery_io_manager
-            from dagster_gcp_pandas import BigQueryPandasTypeHandler
-            from dagster import asset, Definitions
+            from dagster_gcp import BigQueryIOManager
+            from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+            from dagster import Definitions, EnvVar
+
+            class MyBigQueryIOManager(BigQueryIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [BigQueryPandasTypeHandler()]
 
             @asset(
-                key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
             )
-            def my_table():
+            def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
-
-            bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
             defs = Definitions(
                 assets=[my_table],
                 resources={
-                    "io_manager": bigquery_io_manager.configured({
-                        "project" : {"env": "GCP_PROJECT"}
-                    })
+                    "io_manager": MyBigQueryIOManager(project=EnvVar("GCP_PROJECT"))
                 }
             )
 
