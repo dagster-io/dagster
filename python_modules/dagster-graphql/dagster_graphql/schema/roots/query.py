@@ -537,11 +537,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
         repositorySelector: GrapheneRepositorySelector,
         scheduleStatus: Optional[GrapheneInstigationStatus] = None,
     ):
-        schedule_status = InstigatorStatus(scheduleStatus) if scheduleStatus else None
+        if scheduleStatus == GrapheneInstigationStatus.RUNNING:
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+        elif scheduleStatus == GrapheneInstigationStatus.STOPPED:
+            instigator_statuses = {InstigatorStatus.STOPPED}
+        else:
+            instigator_statuses = None
+
         return get_schedules_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(repositorySelector),
-            schedule_status,
+            instigator_statuses,
         )
 
     def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
@@ -572,9 +578,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
         repositorySelector: GrapheneRepositorySelector,
         sensorStatus: Optional[GrapheneInstigationStatus] = None,
     ):
-        sensor_status = InstigatorStatus(sensorStatus) if sensorStatus else None
+        if sensorStatus == GrapheneInstigationStatus.RUNNING:
+            instigator_statuses = {InstigatorStatus.RUNNING, InstigatorStatus.AUTOMATICALLY_RUNNING}
+        elif sensorStatus == GrapheneInstigationStatus.STOPPED:
+            instigator_statuses = {InstigatorStatus.STOPPED}
+        else:
+            instigator_statuses = None
         return get_sensors_or_error(
-            graphene_info, RepositorySelector.from_graphql_input(repositorySelector), sensor_status
+            graphene_info,
+            RepositorySelector.from_graphql_input(repositorySelector),
+            instigator_statuses,
         )
 
     def resolve_instigationStateOrError(
