@@ -19,12 +19,12 @@ from .target import ExecutableDefinition
 from .utils import check_valid_name
 
 
-class ContextAndEventLogEntryParamNames(NamedTuple):
+class AssetSensorParamNames(NamedTuple):
     context_param_name: Optional[str]
     event_log_entry_param_name: Optional[str]
 
 
-def get_context_and_event_log_entry_param_names(fn: Callable) -> ContextAndEventLogEntryParamNames:
+def get_context_and_event_log_entry_param_names(fn: Callable) -> AssetSensorParamNames:
     """Determines the names of the context and event log entry parameters for an asset sensor function.
     These are assumed to be the first two non-resource params, in order (context param before event log entry).
     """
@@ -32,8 +32,14 @@ def get_context_and_event_log_entry_param_names(fn: Callable) -> ContextAndEvent
 
     non_resource_params = [
         param.name for param in get_function_params(fn) if param.name not in resource_params
-    ] + [None, None]
-    return ContextAndEventLogEntryParamNames(*non_resource_params[:2])
+    ]
+
+    context_param_name = non_resource_params[0] if len(non_resource_params) > 0 else None
+    event_log_entry_param_name = non_resource_params[1] if len(non_resource_params) > 1 else None
+
+    return AssetSensorParamNames(
+        context_param_name=context_param_name, event_log_entry_param_name=event_log_entry_param_name
+    )
 
 
 class AssetSensorDefinition(SensorDefinition):

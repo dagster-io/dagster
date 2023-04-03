@@ -60,7 +60,7 @@ from .sensor_definition import (
     SensorType,
     SkipReason,
     get_context_param_name,
-    get_or_create_sensor_context_base,
+    get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
 from .target import ExecutableDefinition
@@ -781,13 +781,16 @@ class RunStatusSensorDefinition(SensorDefinition):
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
         context_param_name = get_context_param_name(self._run_status_sensor_fn)
-        context = get_or_create_sensor_context_base(
-            self._run_status_sensor_fn, *args, context_type=RunStatusSensorContext, **kwargs
+        context = get_sensor_context_from_args_or_kwargs(
+            self._run_status_sensor_fn,
+            args,
+            kwargs,
+            context_type=RunStatusSensorContext,
         )
         context_param = {context_param_name: context} if context_param_name and context else {}
 
         resources = validate_and_get_resource_dict(
-            context.resources if context else ScopedResourcesBuilder().build(None),
+            context.resources if context else ScopedResourcesBuilder().build_empty(),
             self._name,
             self._required_resource_keys,
         )

@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -854,11 +855,11 @@ def build_sensor_context(
 T = TypeVar("T")
 
 
-def get_or_create_sensor_context_base(
+def get_sensor_context_from_args_or_kwargs(
     fn: Callable,
-    *args: Any,
+    args: Tuple[Any],
+    kwargs: Dict[str, Any],
     context_type: Type[T],
-    **kwargs: Any,
 ) -> Optional[T]:
     context_param_name = get_context_param_name(fn)
 
@@ -901,11 +902,11 @@ def get_or_create_sensor_context(
     function requires a context parameter but none is passed.
     """
     return (
-        get_or_create_sensor_context_base(
+        get_sensor_context_from_args_or_kwargs(
             fn,
-            *args,
+            args,
+            kwargs,
             context_type=SensorEvaluationContext,
-            **kwargs,
         )
         or build_sensor_context()
     )

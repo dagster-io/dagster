@@ -32,7 +32,7 @@ from .sensor_definition import (
     SensorType,
     SkipReason,
     get_context_param_name,
-    get_or_create_sensor_context_base,
+    get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
 )
 
@@ -133,7 +133,7 @@ class FreshnessPolicySensorContext(
             if previous_minutes_late is not None
             else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
-            resources=resources or ScopedResourcesBuilder().build(None),
+            resources=resources or ScopedResourcesBuilder().build_empty(),
         )
 
 
@@ -317,18 +317,18 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
     def __call__(self, *args, **kwargs) -> None:
         context_param_name = get_context_param_name(self._freshness_policy_sensor_fn)
 
-        sensor_context = get_or_create_sensor_context_base(
+        sensor_context = get_sensor_context_from_args_or_kwargs(
             self._freshness_policy_sensor_fn,
-            *args,
+            args,
+            kwargs,
             context_type=FreshnessPolicySensorContext,
-            **kwargs,
         )
         context_param = (
             {context_param_name: sensor_context} if context_param_name and sensor_context else {}
         )
 
         resources = validate_and_get_resource_dict(
-            sensor_context.resources if sensor_context else ScopedResourcesBuilder().build(None),
+            sensor_context.resources if sensor_context else ScopedResourcesBuilder().build_empty(),
             self._name,
             self._required_resource_keys,
         )

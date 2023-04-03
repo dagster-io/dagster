@@ -103,3 +103,7 @@ class ScopedResourcesBuilder(
                 ...
 
             return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]
+
+    def build_empty(self) -> Resources:
+        """Returns an empty Resources object, equivalent to ScopedResourcesBuilder.build(None)."""
+        return self.build(None)
