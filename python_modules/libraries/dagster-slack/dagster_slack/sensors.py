@@ -106,7 +106,7 @@ def make_slack_on_run_failure_sensor(
     blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict[Any, Any]]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
-    minimum_interval_seconds: Optional[str] = None,
+    minimum_interval_seconds: Optional[int] = None,
     monitored_jobs: Optional[
         Sequence[
             Union[
@@ -154,7 +154,7 @@ def make_slack_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed job run.
-        minimum_interval_seconds: (Optional[str]): The minimum number of seconds that will elapse
+        minimum_interval_seconds: (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): The jobs in the
             current repository that will be monitored by this failure sensor. Defaults to None, which
