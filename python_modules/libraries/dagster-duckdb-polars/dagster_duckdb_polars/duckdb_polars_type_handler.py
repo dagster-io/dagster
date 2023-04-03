@@ -143,7 +143,7 @@ Examples:
 
 class DuckDBPolarsIOManager(DuckDBIOManager):
     """An I/O manager definition that reads inputs from and writes Polars DataFrames to DuckDB. When
-    using the duckdb_polars_io_manager, any inputs and outputs without type annotations will be loaded
+    using the DuckDBPolarsIOManager, any inputs and outputs without type annotations will be loaded
     as Polars DataFrames.
 
     Returns:
