@@ -17,6 +17,10 @@ module.exports = {
   features: {
     storyStoreV7: true,
   },
+  // https://github.com/hipstersmoothie/react-docgen-typescript-plugin/issues/78#issuecomment-1409224863
+  typescript: {
+    reactDocgen: 'react-docgen-typescript-plugin',
+  },
   // https://github.com/storybookjs/storybook/issues/16690#issuecomment-971579785
   webpackFinal: async (config) => {
     // console.log(path.resolve('../ui/src'));
