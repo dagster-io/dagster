@@ -10,7 +10,11 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 ## General
 
+### Development environment
+
 - [Running Dagster locally](/guides/running-dagster-locally) - Learn how to run Dagster and its web UI on your local machine
+
+### Working with data assets
 
 - [Understanding how assets relate to ops and graphs](/guides/dagster/how-assets-relate-to-ops-and-graphs) - Learn how software-defined assets relate to ops and graphs, and when to use one over the other
 
@@ -20,15 +24,15 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 - [Declarative scheduling for Software-defined assets](/guides/dagster/scheduling-assets) - Create data SLAs and schedule based on desired outcomes, not tasks
 
-- [Re-executing Dagster jobs](/guides/dagster/re-execution) - Learn to re-execute Dagster jobs using either the UI or Dagster's APIs
-
-- [Validating data with Dagster Type factories](/guides/dagster/dagster_type_factories) - Explore using a Dagster Type factory to validate Pandas dataframes using Pandera
-
-- [Intro to ops and jobs](/guides/dagster/intro-to-ops-jobs) - Learn to execute tasks that don't produce assets
-
 - [Testing assets](/guides/dagster/testing-assets) - Learn to test your Software-defined Assets
 
 - [Assets without I/O](/guides/dagster/non-argument-deps) - Create and use assets without writing back to storage or reading data when used as inputs
+
+### Working with tasks
+
+- [Re-executing Dagster jobs](/guides/dagster/re-execution) - Learn to re-execute Dagster jobs using either the UI or Dagster's APIs
+
+- [Intro to ops and jobs](/guides/dagster/intro-to-ops-jobs) - Learn to execute tasks that don't produce assets
 
 - [Migrating to graphs, jobs, and ops](https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op) - **Legacy**. Migrate to Dagster graphs, jobs, and ops from Dagster solids and pipelines
 
@@ -52,12 +56,24 @@ Learn to apply [Dagster concepts](/concepts) to your work, explore experimental 
 
 ---
 
-## Experimental features
+## Advanced and experimental features
+
+### Advanced features
+
+- [Limiting concurrency in data pipelines](/guides/limiting-concurrency-in-data-pipelines) - Learn how limiting concurrency in your data pipelines can help prevent performance problems and downtime
+
+- [Customizing run queue priority](/guides/customizing-run-queue-priority) - Define custom prioritization rules for your Dagster instance's run queue
+
+- [Validating data with Dagster Type factories](/guides/dagster/dagster_type_factories) - Explore using a Dagster Type factory to validate Pandas dataframes using Pandera
+
+### Experimental features
 
 - [Pythonic config](/guides/dagster/pythonic-config) - Get started using the new Pythonic config APIs, a more ergonomic way to define op and asset config
-- [Pythonic resources](/guides/dagster/pythonic-resources) - Get started using the new Pythonic resource APIs, a more ergonomic way to define and use resources
-- [Using Custom Run Coordinators to perform run attribution](/guides/dagster/run-attribution) - A look at using a Custom Run Coordinator to perform run attribution
-- [Asset versioning and caching](/guides/dagster/asset-versioning-and-caching) - Memoize assets using Dagster's data versioning system
-- [Airbyte ingestion as code](/guides/dagster/airbyte-ingestion-as-code) - Configure airbyte connections with Dagster
 
-[def]: /guides/dagster/
+- [Pythonic resources](/guides/dagster/pythonic-resources) - Get started using the new Pythonic resource APIs, a more ergonomic way to define and use resources
+
+- [Using Custom Run Coordinators to perform run attribution](/guides/dagster/run-attribution) - A look at using a Custom Run Coordinator to perform run attribution
+
+- [Asset versioning and caching](/guides/dagster/asset-versioning-and-caching) - Memoize assets using Dagster's data versioning system
+
+- [Airbyte ingestion as code](/guides/dagster/airbyte-ingestion-as-code) - Configure Airbyte connections with Dagster
