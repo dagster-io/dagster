@@ -17,7 +17,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
@@ -120,7 +120,7 @@ class DockerStepHandler(StepHandler):
         from . import DockerRunLauncher
 
         image = cast(
-            PipelinePythonOrigin, step_handler_context.dagster_run.pipeline_code_origin
+            JobPythonOrigin, step_handler_context.dagster_run.pipeline_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image

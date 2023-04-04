@@ -14,7 +14,7 @@ from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
+from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -70,7 +70,7 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
-def _get_entry_point(origin: PipelinePythonOrigin):
+def _get_entry_point(origin: JobPythonOrigin):
     return (
         origin.repository_origin.entry_point
         if origin.repository_origin.entry_point
@@ -84,7 +84,7 @@ class ExecuteRunArgs(
         "_ExecuteRunArgs",
         [
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_origin", JobPythonOrigin),
             ("pipeline_run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
@@ -93,7 +93,7 @@ class ExecuteRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
+        pipeline_origin: JobPythonOrigin,
         pipeline_run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
@@ -103,7 +103,7 @@ class ExecuteRunArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin,
                 "pipeline_origin",
-                PipelinePythonOrigin,
+                JobPythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -129,7 +129,7 @@ class ResumeRunArgs(
         "_ResumeRunArgs",
         [
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_origin", JobPythonOrigin),
             ("pipeline_run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
@@ -138,7 +138,7 @@ class ResumeRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
+        pipeline_origin: JobPythonOrigin,
         pipeline_run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
@@ -148,7 +148,7 @@ class ResumeRunArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin,
                 "pipeline_origin",
-                PipelinePythonOrigin,
+                JobPythonOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -203,7 +203,7 @@ class ExecuteStepArgs(
         "_ExecuteStepArgs",
         [
             # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_origin", JobPythonOrigin),
             ("pipeline_run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("instance_ref", Optional[InstanceRef]),
@@ -215,7 +215,7 @@ class ExecuteStepArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: PipelinePythonOrigin,
+        pipeline_origin: JobPythonOrigin,
         pipeline_run_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
         instance_ref: Optional[InstanceRef] = None,
@@ -226,7 +226,7 @@ class ExecuteStepArgs(
         return super(ExecuteStepArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", PipelinePythonOrigin
+                pipeline_origin, "pipeline_origin", JobPythonOrigin
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             step_keys_to_execute=check.opt_nullable_sequence_param(

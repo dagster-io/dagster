@@ -24,7 +24,7 @@ from dagster._core.execution.run_cancellation_thread import start_run_cancellati
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     get_python_environment_entry_point,
 )
 from dagster._core.storage.pipeline_run import DagsterRun
@@ -103,12 +103,12 @@ def _execute_run_command_body(
 
     check.inst(
         pipeline_run.pipeline_code_origin,
-        PipelinePythonOrigin,
+        JobPythonOrigin,
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
-        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
+        cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
     )
 
     pid = os.getpid()
@@ -208,12 +208,12 @@ def _resume_run_command_body(
     )
     check.inst(
         pipeline_run.pipeline_code_origin,
-        PipelinePythonOrigin,
+        JobPythonOrigin,
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
-        cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
+        cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
     )
 
     pid = os.getpid()
@@ -380,7 +380,7 @@ def _execute_step_command_body(
         )
         check.inst(
             pipeline_run.pipeline_code_origin,
-            PipelinePythonOrigin,
+            JobPythonOrigin,
             f"Pipeline run with id '{args.pipeline_run_id}' does not include an origin.",
         )
 
@@ -422,7 +422,7 @@ def _execute_step_command_body(
 
         recon_pipeline = (
             recon_pipeline_from_origin(
-                cast(PipelinePythonOrigin, pipeline_run.pipeline_code_origin)
+                cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
             )
             .with_repository_load_data(repository_load_data)
             .subset_for_execution_from_existing_pipeline(

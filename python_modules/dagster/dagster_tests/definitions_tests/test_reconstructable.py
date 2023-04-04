@@ -17,7 +17,7 @@ from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
@@ -171,8 +171,8 @@ def test_reconstructable_module():
 
 
 def test_reconstruct_from_origin():
-    origin = PipelinePythonOrigin(
-        pipeline_name="foo_pipe",
+    origin = JobPythonOrigin(
+        job_name="foo_pipe",
         repository_origin=RepositoryPythonOrigin(
             executable_path="my_python",
             code_pointer=FileCodePointer(
@@ -188,7 +188,7 @@ def test_reconstruct_from_origin():
 
     recon_pipeline = recon_pipeline_from_origin(origin)
 
-    assert recon_pipeline.pipeline_name == origin.pipeline_name
+    assert recon_pipeline.pipeline_name == origin.job_name
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
     assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
     assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path

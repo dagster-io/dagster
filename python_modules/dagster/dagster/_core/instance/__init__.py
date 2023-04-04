@@ -43,7 +43,7 @@ from dagster._core.errors import (
     DagsterRunConflict,
 )
 from dagster._core.log_manager import DagsterLogRecord
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -963,7 +963,7 @@ class DagsterInstance(DynamicPartitionsStore):
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
-        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        pipeline_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
@@ -1043,7 +1043,7 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         solid_selection: Optional[Sequence[str]] = None,
         external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
-        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        pipeline_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
@@ -1246,7 +1246,7 @@ class DagsterInstance(DynamicPartitionsStore):
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
         external_pipeline_origin: Optional["ExternalPipelineOrigin"],
-        pipeline_code_origin: Optional[PipelinePythonOrigin],
+        pipeline_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
@@ -1344,7 +1344,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(
             external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
         )
-        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin)
+        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", JobPythonOrigin)
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
@@ -1475,7 +1475,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
         parent_pipeline_snapshot: Optional[PipelineSnapshot],
         solid_selection: Optional[Sequence[str]] = None,
-        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        pipeline_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -2056,7 +2056,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
         check.inst(
             run.pipeline_code_origin,
-            PipelinePythonOrigin,
+            JobPythonOrigin,
             "Python origin must be set for submitted runs",
         )
 

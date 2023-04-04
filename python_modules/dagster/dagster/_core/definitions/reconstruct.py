@@ -35,7 +35,7 @@ from dagster._core.code_pointer import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.selector import parse_solid_selection
@@ -364,8 +364,8 @@ class ReconstructablePipeline(
         )
         return inst  # type: ignore  # (illegible runtime check)
 
-    def get_python_origin(self) -> PipelinePythonOrigin:
-        return PipelinePythonOrigin(self.pipeline_name, self.repository.get_python_origin())
+    def get_python_origin(self) -> JobPythonOrigin:
+        return JobPythonOrigin(self.pipeline_name, self.repository.get_python_origin())
 
     def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()

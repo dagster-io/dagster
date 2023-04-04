@@ -18,7 +18,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import (
@@ -235,7 +235,7 @@ class DagsterRun(
             ("pipeline_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
             ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
-            ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+            ("pipeline_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
         ],
     )
@@ -260,7 +260,7 @@ class DagsterRun(
         pipeline_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
         external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
-        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
+        pipeline_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
     ):
         check.invariant(
@@ -324,7 +324,7 @@ class DagsterRun(
                 external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
             ),
             pipeline_code_origin=check.opt_inst_param(
-                pipeline_code_origin, "pipeline_code_origin", PipelinePythonOrigin
+                pipeline_code_origin, "pipeline_code_origin", JobPythonOrigin
             ),
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False

@@ -11,7 +11,7 @@ from dagster._core.host_representation.origin import (
 )
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.storage.pipeline_run import (
@@ -40,8 +40,8 @@ def test_queued_pipeline_origin_check():
         "foo",
     )
 
-    fake_code_origin = PipelinePythonOrigin(
-        pipeline_name="foo",
+    fake_code_origin = JobPythonOrigin(
+        job_name="foo",
         repository_origin=RepositoryPythonOrigin(
             sys.executable,
             code_pointer,

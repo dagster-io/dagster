@@ -3,7 +3,7 @@ from enum import Enum
 from typing import NamedTuple, Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
@@ -16,7 +16,7 @@ class LaunchRunContext(NamedTuple):
     workspace: Optional[IWorkspace]
 
     @property
-    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
+    def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
         return self.dagster_run.pipeline_code_origin
 
 
@@ -28,7 +28,7 @@ class ResumeRunContext(NamedTuple):
     resume_attempt_number: Optional[int] = None
 
     @property
-    def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
+    def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
         return self.dagster_run.pipeline_code_origin
 
 

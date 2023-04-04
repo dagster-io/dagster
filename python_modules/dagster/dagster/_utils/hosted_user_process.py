@@ -17,17 +17,17 @@ from dagster._core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 
 if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.host_representation.handle import RepositoryHandle
 
 
-def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> ReconstructablePipeline:
-    check.inst_param(origin, "origin", PipelinePythonOrigin)
+def recon_pipeline_from_origin(origin: JobPythonOrigin) -> ReconstructablePipeline:
+    check.inst_param(origin, "origin", JobPythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
-    return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
+    return recon_repo.get_reconstructable_pipeline(origin.job_name)
 
 
 def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "ReconstructableRepository":

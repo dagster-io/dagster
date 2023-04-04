@@ -43,7 +43,7 @@ from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
@@ -431,9 +431,9 @@ class ExternalPipeline(RepresentedPipeline):
     def handle(self) -> JobHandle:
         return self._handle
 
-    def get_python_origin(self) -> PipelinePythonOrigin:
+    def get_python_origin(self) -> JobPythonOrigin:
         repository_python_origin = self.repository_handle.get_python_origin()
-        return PipelinePythonOrigin(self.name, repository_python_origin)
+        return JobPythonOrigin(self.name, repository_python_origin)
 
     def get_external_origin(self) -> ExternalPipelineOrigin:
         return self.handle.get_external_origin()

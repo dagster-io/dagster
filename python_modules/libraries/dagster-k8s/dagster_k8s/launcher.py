@@ -224,13 +224,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/job": pipeline_origin.job_name,
                 "dagster/run-id": run.run_id,
             },
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": pipeline_origin.pipeline_name,
+                    "value": pipeline_origin.job_name,
                 },
                 *container_context.env,
             ],

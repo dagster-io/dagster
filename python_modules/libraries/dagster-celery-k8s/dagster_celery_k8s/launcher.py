@@ -11,7 +11,7 @@ from dagster._core.events import EngineEventData
 from dagster._core.execution.retries import RetryMode
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -160,7 +160,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        pipeline_origin = cast(PipelinePythonOrigin, context.pipeline_code_origin)
+        pipeline_origin = cast(JobPythonOrigin, context.pipeline_code_origin)
         repository_origin = pipeline_origin.repository_origin
 
         job_image = repository_origin.container_image
@@ -217,10 +217,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/job": pipeline_origin.job_name,
                 "dagster/run-id": run.run_id,
             },
-            env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": pipeline_origin.pipeline_name}],
+            env_vars=[{"name": "DAGSTER_RUN_JOB_NAME", "value": pipeline_origin.job_name}],
         )
 
         job_namespace = exc_config.get("job_namespace", self.job_namespace)

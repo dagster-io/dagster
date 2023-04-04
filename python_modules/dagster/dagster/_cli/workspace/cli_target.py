@@ -31,7 +31,7 @@ from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -527,7 +527,7 @@ def job_target_argument(f: T_Callable) -> T_Callable:
     return apply_click_params(job_repository_target_argument(f), job_option())
 
 
-def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> PipelinePythonOrigin:
+def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> JobPythonOrigin:
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
     provided_name = kwargs.get("job_name")
 
@@ -551,7 +551,7 @@ def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> PipelinePython
     else:
         pipeline_name = provided_name
 
-    return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
+    return JobPythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
 def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:

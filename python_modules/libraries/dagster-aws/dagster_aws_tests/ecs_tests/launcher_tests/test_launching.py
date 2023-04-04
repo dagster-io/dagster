@@ -11,7 +11,7 @@ from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
-from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import (
     DEFAULT_LINUX_RESOURCES,
@@ -1109,8 +1109,8 @@ def test_overrides_too_long(
 ):
     large_container_context = {i: "boom" for i in range(10000)}
 
-    mock_pipeline_code_origin = PipelinePythonOrigin(
-        pipeline_name="test",
+    mock_pipeline_code_origin = JobPythonOrigin(
+        job_name="test",
         repository_origin=RepositoryPythonOrigin(
             executable_path="/",
             code_pointer=FileCodePointer(

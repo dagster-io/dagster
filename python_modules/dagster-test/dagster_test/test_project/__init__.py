@@ -27,7 +27,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
-    PipelinePythonOrigin,
+    JobPythonOrigin,
     RepositoryPythonOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
@@ -154,7 +154,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         the test that creates the ReconstructablePipeline. As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
+        return JobPythonOrigin(
             self.pipeline_name,
             RepositoryPythonOrigin(
                 executable_path="python",
@@ -187,7 +187,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return PipelinePythonOrigin(
+        return JobPythonOrigin(
             self._pipeline_index.name,
             RepositoryPythonOrigin(
                 executable_path="python",
