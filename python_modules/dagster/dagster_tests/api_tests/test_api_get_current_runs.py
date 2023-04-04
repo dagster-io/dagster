@@ -2,7 +2,7 @@ import time
 
 from dagster._core.host_representation.handle import JobHandle
 from dagster._core.test_utils import create_run_for_test, instance_for_test, poll_for_event
-from dagster._grpc.server import ExecuteExternalPipelineArgs
+from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult, StartRunResult
 from dagster._serdes.serdes import deserialize_value
 
@@ -22,7 +22,7 @@ def test_launch_run_grpc():
 
             res = deserialize_value(
                 api_client.start_run(
-                    ExecuteExternalPipelineArgs(
+                    ExecuteExternalJobArgs(
                         pipeline_origin=job_handle.get_external_origin(),
                         pipeline_run_id=run_id,
                         instance_ref=instance.get_ref(),

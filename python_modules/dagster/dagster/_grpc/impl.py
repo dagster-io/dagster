@@ -58,7 +58,7 @@ from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
-from .types import ExecuteExternalPipelineArgs
+from .types import ExecuteExternalJobArgs
 
 
 class RunInSubprocessComplete:
@@ -179,9 +179,7 @@ def _run_in_subprocess(
 ):
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_value(
-            serialized_execute_run_args, ExecuteExternalPipelineArgs
-        )
+        execute_run_args = deserialize_value(serialized_execute_run_args, ExecuteExternalJobArgs)
 
         with (
             DagsterInstance.from_ref(execute_run_args.instance_ref)

@@ -26,7 +26,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import (
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     open_server_process,
     wait_for_grpc_server,
 )
@@ -628,7 +628,7 @@ def test_load_with_secrets_loader_instance_ref():
 
                 res = deserialize_value(
                     client.start_run(
-                        ExecuteExternalPipelineArgs(
+                        ExecuteExternalJobArgs(
                             pipeline_origin=job_origin,
                             pipeline_run_id=run.run_id,
                             instance_ref=instance.get_ref(),

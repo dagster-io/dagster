@@ -23,7 +23,7 @@ from .types import (
     CanCancelExecutionResult as CanCancelExecutionResult,
     CancelExecutionRequest as CancelExecutionRequest,
     CancelExecutionResult as CancelExecutionResult,
-    ExecuteExternalPipelineArgs as ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs as ExecuteExternalJobArgs,
     ExecuteRunArgs as ExecuteRunArgs,
     ExecuteStepArgs as ExecuteStepArgs,
     ExecutionPlanSnapshotArgs as ExecutionPlanSnapshotArgs,

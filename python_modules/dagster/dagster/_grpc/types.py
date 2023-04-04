@@ -181,10 +181,12 @@ class ResumeRunArgs(
         ]
 
 
-@whitelist_for_serdes
-class ExecuteExternalPipelineArgs(
+@whitelist_for_serdes(
+    storage_name="_ExecuteExternalPipelineArgs",
+)
+class ExecuteExternalJobArgs(
     NamedTuple(
-        "_ExecuteExternalPipelineArgs",
+        "_ExecuteExternalJobArgs",
         [
             ("pipeline_origin", ExternalJobOrigin),
             ("pipeline_run_id", str),
@@ -198,7 +200,7 @@ class ExecuteExternalPipelineArgs(
         pipeline_run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
-        return super(ExecuteExternalPipelineArgs, cls).__new__(
+        return super(ExecuteExternalJobArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
                 pipeline_origin,

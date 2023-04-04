@@ -52,7 +52,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     @staticmethod
     def launch_run_from_grpc_client(instance, run, grpc_client):
         # defer for perf
-        from dagster._grpc.types import ExecuteExternalPipelineArgs, StartRunResult
+        from dagster._grpc.types import ExecuteExternalJobArgs, StartRunResult
 
         instance.add_run_tags(
             run.run_id,
@@ -73,7 +73,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         res = deserialize_value(
             grpc_client.start_run(
-                ExecuteExternalPipelineArgs(
+                ExecuteExternalJobArgs(
                     pipeline_origin=run.external_job_origin,
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),

@@ -24,7 +24,7 @@ from .server import GrpcServerProcess
 from .types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
@@ -445,8 +445,8 @@ class DagsterGrpcClient:
 
         return res.serialized_can_cancel_execution_result
 
-    def start_run(self, execute_run_args: ExecuteExternalPipelineArgs):
-        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
+    def start_run(self, execute_run_args: ExecuteExternalJobArgs):
+        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalJobArgs)
 
         with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:  # type: ignore  # (possible none)
             try:

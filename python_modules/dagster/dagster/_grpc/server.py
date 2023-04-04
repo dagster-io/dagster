@@ -66,7 +66,7 @@ from .types import (
     CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
-    ExecuteExternalPipelineArgs,
+    ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     GetCurrentImageResult,
@@ -708,7 +708,7 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             execute_external_pipeline_args = deserialize_value(
                 request.serialized_execute_run_args,
-                ExecuteExternalPipelineArgs,
+                ExecuteExternalJobArgs,
             )
             run_id = execute_external_pipeline_args.pipeline_run_id
 
