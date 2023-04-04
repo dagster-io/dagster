@@ -613,7 +613,7 @@ def _evaluate_sensor(
     if not sensor_runtime_data.run_requests:
         if sensor_runtime_data.pipeline_run_reactions:
             for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
-                origin_run_id = check.not_none(pipeline_run_reaction.pipeline_run).run_id
+                origin_run_id = check.not_none(pipeline_run_reaction.dagster_run).run_id
                 if pipeline_run_reaction.error:
                     context.logger.error(
                         f"Got a reaction request for run {origin_run_id} but execution errorred:"
@@ -634,7 +634,7 @@ def _evaluate_sensor(
                     status = (
                         pipeline_run_reaction.run_status.value
                         if pipeline_run_reaction.run_status
-                        else check.not_none(pipeline_run_reaction.pipeline_run).status.value
+                        else check.not_none(pipeline_run_reaction.dagster_run).status.value
                     )
                     # log to the original pipeline run
                     message = (
@@ -642,7 +642,7 @@ def _evaluate_sensor(
                         f"{status} of run {origin_run_id}."
                     )
                     instance.report_engine_event(
-                        message=message, pipeline_run=pipeline_run_reaction.pipeline_run
+                        message=message, pipeline_run=pipeline_run_reaction.dagster_run
                     )
                     context.logger.info(
                         f"Completed a reaction request for run {origin_run_id}: {message}"

@@ -47,8 +47,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .sensor_definition import (
+    DagsterRunReaction,
     DefaultSensorStatus,
-    PipelineRunReaction,
     RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
@@ -600,7 +600,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
         def _wrapped_fn(
             context: SensorEvaluationContext,
-        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction, SensorResult]]:
+        ) -> Iterator[Union[RunRequest, SkipReason, DagsterRunReaction, SensorResult]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -771,7 +771,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 yield sensor_return
                             elif isinstance(
                                 sensor_return,
-                                (RunRequest, SkipReason, PipelineRunReaction),
+                                (RunRequest, SkipReason, DagsterRunReaction),
                             ):
                                 yield sensor_return
                             else:
@@ -793,7 +793,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # The sensor machinery would
                 # * report back to the original run if success
                 # * update cursor and job state
-                yield PipelineRunReaction(
+                yield DagsterRunReaction(
                     pipeline_run=pipeline_run,
                     run_status=run_status,
                     error=serializable_error,

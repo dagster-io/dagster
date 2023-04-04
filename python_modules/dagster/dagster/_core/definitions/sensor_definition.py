@@ -57,8 +57,8 @@ from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
+    DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
-    PipelineRunReaction,
     RunRequest,
     SensorResult,
     SkipReason,
@@ -353,11 +353,11 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorResult]],
+    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
-    PipelineRunReaction,
+    DagsterRunReaction,
     SensorResult,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
@@ -552,7 +552,7 @@ class SensorDefinition:
             SensorEvaluationFunction,
             Callable[
                 [SensorEvaluationContext],
-                Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+                Iterator[Union[SkipReason, RunRequest, DagsterRunReaction]],
             ],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
@@ -657,7 +657,7 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
-        pipeline_run_reactions: List[PipelineRunReaction] = []
+        pipeline_run_reactions: List[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
@@ -667,7 +667,7 @@ class SensorDefinition:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorResult))
+            check.inst(item, (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -692,11 +692,9 @@ class SensorDefinition:
                 run_requests = [item]
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
-            elif isinstance(item, PipelineRunReaction):
+            elif isinstance(item, DagsterRunReaction):
                 pipeline_run_reactions = (
-                    [cast(PipelineRunReaction, item)]
-                    if isinstance(item, PipelineRunReaction)
-                    else []
+                    [cast(DagsterRunReaction, item)] if isinstance(item, DagsterRunReaction) else []
                 )
             else:
                 check.failed(f"Unexpected type {type(item)} in sensor result")
@@ -707,11 +705,11 @@ class SensorDefinition:
                     " returned."
                 )
 
-            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            check.is_list(result, (SkipReason, RunRequest, DagsterRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
             pipeline_run_reactions = [
-                item for item in result if isinstance(item, PipelineRunReaction)
+                item for item in result if isinstance(item, DagsterRunReaction)
             ]
 
             if has_skip:
@@ -866,7 +864,7 @@ class SensorExecutionData(
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
-            ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
+            ("pipeline_run_reactions", Optional[Sequence[DagsterRunReaction]]),
             ("captured_log_key", Optional[Sequence[str]]),
             (
                 "dynamic_partitions_requests",
@@ -882,7 +880,7 @@ class SensorExecutionData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
-        pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
+        pipeline_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
         captured_log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
@@ -892,7 +890,7 @@ class SensorExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
         check.opt_sequence_param(
-            pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
+            pipeline_run_reactions, "pipeline_run_reactions", DagsterRunReaction
         )
         check.opt_list_param(captured_log_key, "captured_log_key", str)
         check.opt_sequence_param(

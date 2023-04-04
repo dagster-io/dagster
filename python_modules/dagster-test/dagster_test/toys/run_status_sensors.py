@@ -11,7 +11,7 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
 )
-from dagster._core.definitions.run_request import PipelineRunReaction
+from dagster._core.definitions.run_request import DagsterRunReaction
 
 
 @op
@@ -99,7 +99,7 @@ def fails_sensor(context):
 )
 def success_sensor_with_pipeline_run_reaction(context):
     """Some users do this, so here's a way to test it out."""
-    return PipelineRunReaction(context.dagster_run)
+    return DagsterRunReaction(context.dagster_run)
 
 
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
