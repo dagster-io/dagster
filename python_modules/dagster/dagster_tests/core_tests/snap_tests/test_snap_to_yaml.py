@@ -5,7 +5,7 @@ from dagster import Field, job, op
 from dagster._config.field import resolve_to_config_type
 from dagster._config.snap import snap_from_config_type
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.host_representation import InProcessRepositoryLocationOrigin
+from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -34,7 +34,7 @@ def external_repository_for_module(module_name, attribute=None, repository_name=
         attribute=attribute,
     )
 
-    location = InProcessRepositoryLocationOrigin(
+    location = InProcessCodeLocationOrigin(
         loadable_target_origin=loadable_target_origin, location_name=module_name
     ).create_location()
 
