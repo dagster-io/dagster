@@ -109,10 +109,10 @@ from dagster._config.structured_config import (
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )
-from dagster._config.structured_config.resource_verification import (
-    ConfigVerifiable as ConfigVerifiable,
-    VerificationResult as VerificationResult,
-    VerificationStatus as VerificationStatus,
+from dagster._config.structured_config.readiness_check import (
+    ReadinessCheckedResource as ReadinessCheckedResource,
+    ReadinessCheckResult as ReadinessCheckResult,
+    ReadinessCheckStatus as ReadinessCheckStatus,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn
 from dagster._core.definitions.asset_out import AssetOut as AssetOut

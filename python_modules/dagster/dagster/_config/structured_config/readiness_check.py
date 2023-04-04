@@ -5,29 +5,27 @@ from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class VerificationStatus(Enum):
+class ReadinessCheckStatus(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
 
 
 @whitelist_for_serdes
-class VerificationResult(NamedTuple):
-    status: VerificationStatus
+class ReadinessCheckResult(NamedTuple):
+    status: ReadinessCheckStatus
     message: Optional[str]
 
     @classmethod
     def success(cls, message: Optional[str] = None):
-        """Create a successful verification result.
-        """
-        return cls(VerificationStatus.SUCCESS, message)
+        """Create a successful readiness check result."""
+        return cls(ReadinessCheckStatus.SUCCESS, message)
 
     @classmethod
     def failure(cls, message: Optional[str] = None):
-        """Create a failed verification result.
-        """
-        return cls(VerificationStatus.FAILURE, message)
+        """Create a failed readiness check result."""
+        return cls(ReadinessCheckStatus.FAILURE, message)
 
 
-class ConfigVerifiable:
-    def verify_config(self) -> VerificationResult:
+class ReadinessCheckedResource:
+    def readiness_check(self) -> ReadinessCheckResult:
         raise NotImplementedError()
