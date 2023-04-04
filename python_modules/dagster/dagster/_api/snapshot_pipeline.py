@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient
 
 
-def sync_get_external_pipeline_subset_grpc(
+def sync_get_external_job_subset_grpc(
     api_client: "DagsterGrpcClient",
     pipeline_origin: ExternalJobOrigin,
     solid_selection: Optional[Sequence[str]] = None,

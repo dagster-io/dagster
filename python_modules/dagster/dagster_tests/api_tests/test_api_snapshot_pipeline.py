@@ -1,7 +1,7 @@
 import sys
 
 import pytest
-from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
+from dagster._api.snapshot_pipeline import sync_get_external_job_subset_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalJobSubsetResult
 from dagster._core.host_representation.handle import JobHandle
@@ -11,7 +11,7 @@ from .utils import get_bar_repo_code_location
 
 
 def _test_job_subset_grpc(job_handle, api_client, solid_selection=None):
-    return sync_get_external_pipeline_subset_grpc(
+    return sync_get_external_job_subset_grpc(
         api_client, job_handle.get_external_origin(), solid_selection=solid_selection
     )
 
