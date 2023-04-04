@@ -131,7 +131,7 @@ def get_test_project_recon_job(
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
-        ).get_reconstructable_pipeline(job_name)
+        ).get_reconstructable_job(job_name)
     )
 
 

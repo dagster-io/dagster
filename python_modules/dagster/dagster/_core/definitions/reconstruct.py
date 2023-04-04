@@ -115,7 +115,7 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_pipeline(self, name: str) -> ReconstructableJob:
+    def get_reconstructable_job(self, name: str) -> ReconstructableJob:
         return ReconstructableJob(self, name)
 
     @classmethod

@@ -716,7 +716,7 @@ class DagsterApiServer(DagsterApiServicer):
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
                 execute_external_pipeline_args.job_origin.external_repository_origin.repository_name
             ]
-            recon_pipeline = recon_repo.get_reconstructable_pipeline(
+            recon_pipeline = recon_repo.get_reconstructable_job(
                 execute_external_pipeline_args.job_origin.job_name
             )
 

@@ -338,7 +338,7 @@ class InProcessCodeLocation(CodeLocation):
     def get_reconstructable_pipeline(self, repository_name: str, name: str) -> ReconstructableJob:
         return self._loaded_repositories.reconstructables_by_name[
             repository_name
-        ].get_reconstructable_pipeline(name)
+        ].get_reconstructable_job(name)
 
     def _get_repo_def(self, name: str) -> RepositoryDefinition:
         return self._loaded_repositories.definitions_by_name[name]
