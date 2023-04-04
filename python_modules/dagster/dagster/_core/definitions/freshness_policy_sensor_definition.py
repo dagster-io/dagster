@@ -1,15 +1,14 @@
-from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
+from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
 
 import pendulum
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -25,15 +24,13 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 
+from ..decorator_utils import get_function_params
 from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
     SensorType,
     SkipReason,
-    get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
-    validate_and_get_resource_dict,
 )
 
 if TYPE_CHECKING:
@@ -93,7 +90,6 @@ class FreshnessPolicySensorContext(
             ("minutes_late", PublicAttr[Optional[float]]),
             ("previous_minutes_late", PublicAttr[Optional[float]]),
             ("instance", PublicAttr[DagsterInstance]),
-            ("resources", Resources),
         ],
     )
 ):
@@ -117,7 +113,6 @@ class FreshnessPolicySensorContext(
         minutes_late: Optional[float],
         previous_minutes_late: Optional[float],
         instance: DagsterInstance,
-        resources: Optional[Resources] = None,
     ):
         minutes_late = check.opt_numeric_param(minutes_late, "minutes_late")
         previous_minutes_late = check.opt_numeric_param(
@@ -133,7 +128,6 @@ class FreshnessPolicySensorContext(
             if previous_minutes_late is not None
             else None,
             instance=check.inst_param(instance, "instance", DagsterInstance),
-            resources=resources or ScopedResourcesBuilder.build_empty(),
         )
 
 
@@ -145,7 +139,6 @@ def build_freshness_policy_sensor_context(
     minutes_late: Optional[float],
     previous_minutes_late: Optional[float] = None,
     instance: Optional[DagsterInstance] = None,
-    resources: Optional[Resources] = None,
 ) -> FreshnessPolicySensorContext:
     """Builds freshness policy sensor context from provided parameters.
 
@@ -179,7 +172,6 @@ def build_freshness_policy_sensor_context(
         minutes_late=minutes_late,
         previous_minutes_late=previous_minutes_late,
         instance=instance or DagsterInstance.ephemeral(),
-        resources=resources,
     )
 
 
@@ -203,11 +195,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_selection: AssetSelection,
-        freshness_policy_sensor_fn: Callable[..., None],
+        freshness_policy_sensor_fn: Callable[[FreshnessPolicySensorContext], None],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        required_resource_keys: Optional[Set[str]] = None,
     ):
         check.str_param(name, "name")
         check.inst_param(asset_selection, "asset_selection", AssetSelection)
@@ -217,15 +208,6 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
         self._freshness_policy_sensor_fn = check.callable_param(
             freshness_policy_sensor_fn, "freshness_policy_sensor_fn"
-        )
-
-        resource_arg_names: Set[str] = {
-            arg.name for arg in get_resource_args(freshness_policy_sensor_fn)
-        }
-
-        combined_required_resource_keys = (
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            | resource_arg_names
         )
 
         def _wrapped_fn(context: SensorEvaluationContext):
@@ -270,31 +252,21 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                     asset_key=asset_key,
                 )
 
-                resource_args_populated = validate_and_get_resource_dict(
-                    context.resources, name, resource_arg_names
-                )
-                context_param_name = get_context_param_name(freshness_policy_sensor_fn)
-                freshness_context = FreshnessPolicySensorContext(
-                    sensor_name=name,
-                    asset_key=asset_key,
-                    freshness_policy=freshness_policy,
-                    minutes_late=minutes_late_by_key[asset_key],
-                    previous_minutes_late=previous_minutes_late_by_key.get(asset_key),
-                    instance=context.instance,
-                    resources=context.resources,
-                )
-
                 with user_code_error_boundary(
                     FreshnessPolicySensorExecutionError,
                     lambda: f'Error occurred during the execution of sensor "{name}".',
                 ):
-                    context_param = (
-                        {context_param_name: freshness_context} if context_param_name else {}
-                    )
                     result = freshness_policy_sensor_fn(
-                        **context_param,
-                        **resource_args_populated,
+                        FreshnessPolicySensorContext(
+                            sensor_name=name,
+                            asset_key=asset_key,
+                            freshness_policy=freshness_policy,
+                            minutes_late=minutes_late_by_key[asset_key],
+                            previous_minutes_late=previous_minutes_late_by_key.get(asset_key),
+                            instance=context.instance,
+                        )
                     )
+
                 if result is not None:
                     raise DagsterInvalidDefinitionError(
                         "Functions decorated by `@freshness_policy_sensor` may not return or yield"
@@ -311,29 +283,50 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             default_status=default_status,
-            required_resource_keys=combined_required_resource_keys,
         )
 
-    def __call__(self, *args, **kwargs) -> None:
-        context_param_name = get_context_param_name(self._freshness_policy_sensor_fn)
+    def __call__(self, *args, **kwargs):
+        if has_at_least_one_parameter(self._freshness_policy_sensor_fn):
+            if len(args) + len(kwargs) == 0:
+                raise DagsterInvalidInvocationError(
+                    "Freshness policy sensor function expected context argument, but no context"
+                    " argument was provided when invoking."
+                )
+            if len(args) + len(kwargs) > 1:
+                raise DagsterInvalidInvocationError(
+                    "Freshness policy sensor invocation received multiple arguments. Only a first "
+                    "positional context parameter should be provided when invoking."
+                )
 
-        sensor_context = get_sensor_context_from_args_or_kwargs(
-            self._freshness_policy_sensor_fn,
-            args,
-            kwargs,
-            context_type=FreshnessPolicySensorContext,
-        )
-        context_param = (
-            {context_param_name: sensor_context} if context_param_name and sensor_context else {}
-        )
+            context_param_name = get_function_params(self._freshness_policy_sensor_fn)[0].name
 
-        resources = validate_and_get_resource_dict(
-            sensor_context.resources if sensor_context else ScopedResourcesBuilder.build_empty(),
-            self._name,
-            self._required_resource_keys,
-        )
+            if args:
+                context = check.opt_inst_param(
+                    args[0], context_param_name, FreshnessPolicySensorContext
+                )
+            else:
+                if context_param_name not in kwargs:
+                    raise DagsterInvalidInvocationError(
+                        "Freshness policy sensor invocation expected argument"
+                        f" '{context_param_name}'."
+                    )
+                context = check.opt_inst_param(
+                    kwargs[context_param_name],
+                    context_param_name,
+                    FreshnessPolicySensorContext,
+                )
 
-        return self._freshness_policy_sensor_fn(**context_param, **resources)
+            if not context:
+                raise DagsterInvalidInvocationError(
+                    "Context must be provided for direct invocation of freshness policy sensor."
+                )
+
+            return self._freshness_policy_sensor_fn(context)
+
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Freshness policy sensor must accept a context argument."
+            )
 
     @property
     def sensor_type(self) -> SensorType:
@@ -348,7 +341,7 @@ def freshness_policy_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-) -> Callable[[Callable[..., None]], FreshnessPolicySensorDefinition,]:
+) -> Callable[[Callable[[FreshnessPolicySensorContext], None]], FreshnessPolicySensorDefinition,]:
     """Define a sensor that reacts to the status of a given set of asset freshness policies, where the
     decorated function will be evaluated on every tick for each asset in the selection that has a
     FreshnessPolicy defined.
@@ -369,7 +362,9 @@ def freshness_policy_sensor(
             status can be overridden from Dagit or via the GraphQL API.
     """
 
-    def inner(fn: Callable[..., None]) -> FreshnessPolicySensorDefinition:
+    def inner(
+        fn: Callable[[FreshnessPolicySensorContext], None]
+    ) -> FreshnessPolicySensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
