@@ -20,7 +20,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.snap import JobSnapshot, create_pipeline_snapshot_id
+from dagster._core.snap import JobSnapshot, create_job_snapshot_id
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
@@ -52,7 +52,7 @@ lambda_version = lambda: the_job
 
 
 def pid(pipeline_def):
-    return create_pipeline_snapshot_id(JobSnapshot.from_job_def(pipeline_def))
+    return create_job_snapshot_id(JobSnapshot.from_job_def(pipeline_def))
 
 
 @job

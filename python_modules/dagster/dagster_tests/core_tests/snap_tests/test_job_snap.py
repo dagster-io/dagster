@@ -7,7 +7,7 @@ from dagster._core.snap import (
     DependencyStructureIndex,
     JobSnapshot,
     NodeInvocationSnap,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
     snap_from_config_type,
 )
 from dagster._core.snap.dep_snapshot import (
@@ -53,7 +53,7 @@ def test_empty_pipeline_snap_props(snapshot):
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
-    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+    snapshot.assert_match(create_job_snapshot_id(pipeline_snapshot))
 
 
 def test_pipeline_snap_all_props(snapshot):
@@ -74,7 +74,7 @@ def test_pipeline_snap_all_props(snapshot):
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
-    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+    snapshot.assert_match(create_job_snapshot_id(pipeline_snapshot))
 
 
 def test_noop_deps_snap():
@@ -109,7 +109,7 @@ def test_two_invocations_deps_snap(snapshot):
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
-    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+    snapshot.assert_match(create_job_snapshot_id(pipeline_snapshot))
 
 
 def test_basic_dep():
@@ -179,7 +179,7 @@ def test_basic_dep_fan_out(snapshot):
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
-    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+    snapshot.assert_match(create_job_snapshot_id(pipeline_snapshot))
 
 
 def test_basic_fan_in(snapshot):
@@ -220,7 +220,7 @@ def test_basic_fan_in(snapshot):
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
-    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+    snapshot.assert_match(create_job_snapshot_id(pipeline_snapshot))
 
 
 def _dict_has_stable_hashes(hydrated_map, snapshot_config_snap_map):

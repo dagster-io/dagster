@@ -65,5 +65,5 @@ from .node import (
 )
 from .pipeline_snapshot import (
     JobSnapshot as JobSnapshot,
-    create_pipeline_snapshot_id as create_pipeline_snapshot_id,
+    create_job_snapshot_id as create_job_snapshot_id,
 )

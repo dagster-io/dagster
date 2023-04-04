@@ -54,7 +54,7 @@ from .node import (
 )
 
 
-def create_pipeline_snapshot_id(snapshot: "JobSnapshot") -> str:
+def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:
     check.inst_param(snapshot, "snapshot", JobSnapshot)
     return create_snapshot_id(snapshot)
 
@@ -164,7 +164,7 @@ class JobSnapshot(
         lineage = None
         if job_def.op_selection_data:
             lineage = PipelineSnapshotLineage(
-                parent_snapshot_id=create_pipeline_snapshot_id(
+                parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
                 node_selection=sorted(job_def.op_selection_data.op_selection),
@@ -172,7 +172,7 @@ class JobSnapshot(
             )
         if job_def.asset_selection_data:
             lineage = PipelineSnapshotLineage(
-                parent_snapshot_id=create_pipeline_snapshot_id(
+                parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
                 asset_selection=job_def.asset_selection_data.asset_selection,

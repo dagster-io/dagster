@@ -41,7 +41,7 @@ from dagster._core.snap import (
     ExecutionPlanSnapshot,
     JobSnapshot,
     create_execution_plan_snapshot_id,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
 )
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.tags import (
@@ -814,7 +814,7 @@ class SqlRunStorage(RunStorage):
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
-            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+            snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,

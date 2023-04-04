@@ -28,7 +28,7 @@ from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordi
 from dagster._core.secrets.env_file import EnvFileLoader
 from dagster._core.snap import (
     create_execution_plan_snapshot_id,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
     snapshot_from_execution_plan,
 )
 from dagster._core.storage.sqlite_storage import (
@@ -256,7 +256,7 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.job_snapshot_id == create_pipeline_snapshot_id(noop_job.get_pipeline_snapshot())
+        assert run.job_snapshot_id == create_job_snapshot_id(noop_job.get_pipeline_snapshot())
 
 
 def test_create_execution_plan_snapshot():

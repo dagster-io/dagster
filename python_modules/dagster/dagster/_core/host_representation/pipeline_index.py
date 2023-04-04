@@ -6,7 +6,7 @@ from dagster._config import ConfigSchemaSnapshot
 from dagster._core.snap import (
     DependencyStructureIndex,
     JobSnapshot,
-    create_pipeline_snapshot_id,
+    create_job_snapshot_id,
 )
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
@@ -87,7 +87,7 @@ class PipelineIndex:
     def pipeline_snapshot_id(self) -> str:
         with self._memo_lock:
             if not self._pipeline_snapshot_id:
-                self._pipeline_snapshot_id = create_pipeline_snapshot_id(self.pipeline_snapshot)
+                self._pipeline_snapshot_id = create_job_snapshot_id(self.pipeline_snapshot)
             return self._pipeline_snapshot_id
 
     def has_dagster_type_name(self, type_name: str) -> bool:

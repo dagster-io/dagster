@@ -1,6 +1,6 @@
 from dagster import GraphOut, In, Out, graph, job, op
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
+from dagster._core.snap import create_job_snapshot_id, snapshot_from_execution_plan
 from dagster._serdes import serialize_pp
 
 
@@ -19,7 +19,7 @@ def test_create_noop_execution_plan(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_pipeline_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
             )
         )
     )
@@ -44,7 +44,7 @@ def test_create_execution_plan_with_dep(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_pipeline_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
             )
         )
     )
@@ -84,7 +84,7 @@ def test_create_with_graph(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_pipeline_snapshot_id(do_comps.get_pipeline_snapshot()),
+                create_job_snapshot_id(do_comps.get_pipeline_snapshot()),
             )
         )
     )
@@ -105,7 +105,7 @@ def test_create_noop_execution_plan_with_tags(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_pipeline_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
             )
         )
     )

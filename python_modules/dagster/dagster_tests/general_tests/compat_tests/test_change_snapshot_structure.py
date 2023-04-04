@@ -1,6 +1,6 @@
 from dagster._core.host_representation import ExternalExecutionPlan
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
+from dagster._core.snap import create_execution_plan_snapshot_id, create_job_snapshot_id
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
@@ -22,7 +22,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 
         # It is the pipeline snapshot that changed
         # Verify that snapshot ids are not equal. This changed in 0.7.10
-        created_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        created_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
         assert created_snapshot_id != old_pipeline_snapshot_id
 
         # verify that both are accessible off of the historical pipeline

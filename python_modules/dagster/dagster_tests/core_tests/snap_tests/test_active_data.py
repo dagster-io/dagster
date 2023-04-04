@@ -12,7 +12,7 @@ from dagster._core.host_representation import (
 from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+from dagster._core.snap.pipeline_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_pp
@@ -84,7 +84,7 @@ def test_external_pipeline_data(snapshot):
 def test_external_repo_shared_index(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly
 
-    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
             instance, LoadableTargetOrigin(python_file=__file__)
@@ -106,7 +106,7 @@ def test_external_repo_shared_index(snapshot_mock):
 def test_external_repo_shared_index_threaded(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
 
-    snapshot_mock.side_effect = create_pipeline_snapshot_id
+    snapshot_mock.side_effect = create_job_snapshot_id
     with instance_for_test() as instance:
         with in_process_test_workspace(
             instance, LoadableTargetOrigin(python_file=__file__)

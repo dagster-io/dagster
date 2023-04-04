@@ -21,7 +21,7 @@ from dagster._core.host_representation import (
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.snap import create_pipeline_snapshot_id
+from dagster._core.snap import create_job_snapshot_id
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.pipeline_run import (
@@ -214,8 +214,8 @@ class TestRunStorage:
         pipeline_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
         pipeline_snapshot_a = pipeline_def_a.get_pipeline_snapshot()
         pipeline_snapshot_b = pipeline_def_b.get_pipeline_snapshot()
-        pipeline_snapshot_a_id = create_pipeline_snapshot_id(pipeline_snapshot_a)
-        pipeline_snapshot_b_id = create_pipeline_snapshot_id(pipeline_snapshot_b)
+        pipeline_snapshot_a_id = create_job_snapshot_id(pipeline_snapshot_a)
+        pipeline_snapshot_b_id = create_job_snapshot_id(pipeline_snapshot_b)
 
         assert storage.add_pipeline_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
         assert storage.add_pipeline_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
@@ -895,7 +895,7 @@ class TestRunStorage:
     def test_add_get_snapshot(self, storage):
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
         fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
@@ -915,7 +915,7 @@ class TestRunStorage:
 
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
 
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
@@ -1376,7 +1376,7 @@ class TestRunStorage:
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
-        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
         new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
 
         storage.add_snapshot(pipeline_snapshot, snapshot_id=new_pipeline_snapshot_id)
