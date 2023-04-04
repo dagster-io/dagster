@@ -19,8 +19,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
+    IJob,
     InputDefinition,
-    IPipeline,
     Node,
     NodeHandle,
     NodeOutput,
@@ -100,7 +100,7 @@ class _PlanBuilder:
 
     def __init__(
         self,
-        pipeline: IPipeline,
+        pipeline: IJob,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
@@ -117,7 +117,7 @@ class _PlanBuilder:
                     " identical to passed-in repository_load_data."
                 ),
             )
-        self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
+        self.pipeline = check.inst_param(pipeline, "pipeline", IJob)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
@@ -968,7 +968,7 @@ class ExecutionPlan(
 
     @staticmethod
     def build(
-        pipeline: IPipeline,
+        pipeline: IJob,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         known_state: Optional[KnownExecutionState] = None,
@@ -984,7 +984,7 @@ class ExecutionPlan(
         Once we've processed the entire pipeline, we invoke _PlanBuilder.build() to construct the
         ExecutionPlan object.
         """
-        check.inst_param(pipeline, "pipeline", IPipeline)
+        check.inst_param(pipeline, "pipeline", IJob)
         check.inst_param(resolved_run_config, "resolved_run_config", ResolvedRunConfig)
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         known_state = check.opt_inst_param(
@@ -1198,7 +1198,7 @@ def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
 
 
 def _check_persistent_storage_requirement(
-    pipeline: IPipeline,
+    pipeline: IJob,
     resolved_run_config: ResolvedRunConfig,
 ) -> None:
     pipeline_def = pipeline.get_definition()

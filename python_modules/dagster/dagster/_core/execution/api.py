@@ -17,7 +17,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions import IPipeline, JobDefinition
+from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
@@ -67,12 +67,12 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(
-    pipeline: IPipeline,
+    pipeline: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(pipeline, "pipeline", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -172,7 +172,7 @@ def execute_run_iterator(
 
 
 def execute_run(
-    pipeline: IPipeline,
+    pipeline: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
@@ -199,7 +199,7 @@ def execute_run(
             " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(pipeline, "pipeline", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -472,7 +472,7 @@ def execute_job(
 
 @telemetry_wrapper
 def _logged_execute_job(
-    job_arg: Union[IPipeline, JobDefinition],
+    job_arg: Union[IJob, JobDefinition],
     instance: DagsterInstance,
     run_config: Optional[Mapping[str, object]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -521,7 +521,7 @@ def _logged_execute_job(
 
 
 def _reexecute_job(
-    job_arg: Union[IPipeline, JobDefinition],
+    job_arg: Union[IJob, JobDefinition],
     parent_run_id: str,
     run_config: Optional[Mapping[str, object]] = None,
     step_selection: Optional[Sequence[str]] = None,
@@ -594,14 +594,14 @@ def _reexecute_job(
 
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    pipeline: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(pipeline, "pipeline", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
@@ -628,7 +628,7 @@ def execute_plan_iterator(
 
 def execute_plan(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    pipeline: IJob,
     instance: DagsterInstance,
     dagster_run: DagsterRun,
     run_config: Optional[Mapping[str, object]] = None,
@@ -638,7 +638,7 @@ def execute_plan(
     execute_pipeline() above.
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(pipeline, "pipeline", IJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     run_config = check.opt_mapping_param(run_config, "run_config")
@@ -656,17 +656,17 @@ def execute_plan(
     )
 
 
-def _check_pipeline(job_arg: Union[JobDefinition, IPipeline]) -> IPipeline:
+def _check_pipeline(job_arg: Union[JobDefinition, IJob]) -> IJob:
     # backcompat
     if isinstance(job_arg, JobDefinition):
         job_arg = InMemoryPipeline(job_arg)
 
-    check.inst_param(job_arg, "job_arg", IPipeline)
+    check.inst_param(job_arg, "job_arg", IJob)
     return job_arg
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline,
+    pipeline: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> ExecutionPlan:
@@ -703,7 +703,7 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    pipeline: Union[IPipeline, JobDefinition],
+    pipeline: Union[IJob, JobDefinition],
     run_config: Optional[Mapping[str, object]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -898,12 +898,12 @@ class ExecuteRunWithPlanIterable:
 
 
 def _check_execute_job_args(
-    job_arg: Union[JobDefinition, IPipeline],
+    job_arg: Union[JobDefinition, IJob],
     run_config: Optional[Mapping[str, object]],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]] = None,
 ) -> Tuple[
-    IPipeline,
+    IJob,
     Optional[Mapping],
     Mapping[str, str],
     Optional[AbstractSet[str]],
@@ -935,7 +935,7 @@ def _check_execute_job_args(
 
 def _resolve_reexecute_step_selection(
     instance: DagsterInstance,
-    pipeline: IPipeline,
+    pipeline: IJob,
     run_config: Optional[Mapping],
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
@@ -962,8 +962,8 @@ def _resolve_reexecute_step_selection(
 
 
 def _job_with_repository_load_data(
-    job_arg: Union[JobDefinition, IPipeline],
-) -> Tuple[Union[JobDefinition, IPipeline], Optional[RepositoryLoadData]]:
+    job_arg: Union[JobDefinition, IJob],
+) -> Tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
     """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
     a ReconstructablePipeline with this repository load data baked in.
     """

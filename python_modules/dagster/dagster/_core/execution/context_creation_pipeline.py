@@ -25,7 +25,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import ExecutorDefinition, JobDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
 from dagster._core.events import DagsterEvent
@@ -82,7 +82,7 @@ def initialize_console_manager(
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
 class ContextCreationData(NamedTuple):
-    pipeline: IPipeline
+    pipeline: IJob
     resolved_run_config: ResolvedRunConfig
     dagster_run: DagsterRun
     executor_def: ExecutorDefinition
@@ -96,7 +96,7 @@ class ContextCreationData(NamedTuple):
 
 
 def create_context_creation_data(
-    pipeline: IPipeline,
+    pipeline: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -176,7 +176,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 
 
 def execution_context_event_generator(
-    pipeline: IPipeline,
+    pipeline: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -250,7 +250,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             ...,
             Iterator[Union[DagsterEvent, PlanOrchestrationContext]],
         ],
-        pipeline: IPipeline,
+        pipeline: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -279,7 +279,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
 
 
 def orchestration_context_event_generator(
-    pipeline: IPipeline,
+    pipeline: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -345,7 +345,7 @@ def orchestration_context_event_generator(
 class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext]):
     def __init__(
         self,
-        pipeline: IPipeline,
+        pipeline: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -399,7 +399,7 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
 @contextmanager
 def scoped_pipeline_context(
     execution_plan: ExecutionPlan,
-    pipeline: IPipeline,
+    pipeline: IJob,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
     instance: DagsterInstance,
@@ -416,7 +416,7 @@ def scoped_pipeline_context(
     events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IPipeline)
+    check.inst_param(pipeline, "pipeline", IJob)
     check.mapping_param(run_config, "run_config", key_type=str)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)

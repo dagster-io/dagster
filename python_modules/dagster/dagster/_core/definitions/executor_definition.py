@@ -12,7 +12,7 @@ from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
@@ -439,7 +439,7 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
         _check_non_ephemeral_instance(init_context.instance)
 
 
-def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
+def _check_intra_process_pipeline(pipeline: IJob) -> None:
     from dagster._core.definitions import JobDefinition
 
     if not isinstance(pipeline, ReconstructablePipeline):

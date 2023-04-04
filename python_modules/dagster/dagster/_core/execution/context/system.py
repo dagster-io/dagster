@@ -30,7 +30,7 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -95,7 +95,7 @@ class IPlanContext(ABC):
         raise NotImplementedError()
 
     @property
-    def pipeline(self) -> IPipeline:
+    def pipeline(self) -> IJob:
         return self.plan_data.pipeline
 
     @property
@@ -167,7 +167,7 @@ class PlanData(NamedTuple):
     pipeline definition and resources.
     """
 
-    pipeline: IPipeline
+    pipeline: IJob
     dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"

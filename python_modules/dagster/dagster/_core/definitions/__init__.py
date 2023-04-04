@@ -74,7 +74,7 @@ from .output import (
     OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
-from .pipeline_base import IPipeline as IPipeline
+from .pipeline_base import IJob as IJob
 from .reconstruct import (
     ReconstructablePipeline as ReconstructablePipeline,
     build_reconstructable_job as build_reconstructable_job,

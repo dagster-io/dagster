@@ -43,7 +43,7 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 
 from .events import AssetKey
-from .pipeline_base import IPipeline
+from .pipeline_base import IJob
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
@@ -184,7 +184,7 @@ class ReconstructablePipeline(
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
         ],
     ),
-    IPipeline,
+    IJob,
 ):
     """Defines a reconstructable pipeline. When your pipeline/job must cross process boundaries,
     Dagster must know how to reconstruct the pipeline/job on the other side of the process boundary.

@@ -39,7 +39,7 @@ from typing_extensions import ParamSpec
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.reconstruct import (
     ReconstructablePipeline,
     ReconstructableRepository,
@@ -578,7 +578,7 @@ def log_external_repo_stats(
 def log_repo_stats(
     instance: DagsterInstance,
     source: str,
-    pipeline: Optional[IPipeline] = None,
+    pipeline: Optional[IJob] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -586,7 +586,7 @@ def log_repo_stats(
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.opt_inst_param(pipeline, "pipeline", IPipeline)
+    check.opt_inst_param(pipeline, "pipeline", IJob)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     def _get_num_dynamic_partitioned_assets(asset_defs: Sequence[AssetsDefinition]) -> int:
