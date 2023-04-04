@@ -102,11 +102,11 @@ def get_toys_sensors():
 
         slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
-        run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
+        run_page_url = f"{base_url}/instance/runs/{context.dagster_run.run_id}"
         channel = "#toy-test"
         message = "\n".join(
             [
-                f'Pipeline "{context.pipeline_run.job_name}" failed.',
+                f'Pipeline "{context.dagster_run.job_name}" failed.',
                 f"error: {context.failure_event.message}",
                 f"run_page_url: {run_page_url}",
             ]

@@ -1,5 +1,4 @@
 import logging
-import warnings
 from contextlib import ExitStack
 from datetime import datetime
 from typing import (
@@ -234,14 +233,6 @@ class RunStatusSensorContext:
     @property
     def partition_key(self) -> Optional[str]:
         return self._partition_key
-
-    @property
-    def pipeline_run(self) -> DagsterRun:
-        warnings.warn(
-            "`RunStatusSensorContext.pipeline_run` is deprecated as of 0.13.0; use "
-            "`RunStatusSensorContext.dagster_run` instead."
-        )
-        return self.dagster_run
 
     def __enter__(self) -> "RunStatusSensorContext":
         self._cm_scope_entered = True

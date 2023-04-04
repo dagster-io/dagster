@@ -50,8 +50,8 @@ def _build_slack_blocks_and_text(
     else:
         if isinstance(context, RunFailureSensorContext):
             text = (
-                f'*Job "{context.pipeline_run.job_name}" failed.'
-                f' `{context.pipeline_run.run_id.split("-")[0]}`*'
+                f'*Job "{context.dagster_run.job_name}" failed.'
+                f' `{context.dagster_run.run_id.split("-")[0]}`*'
             )
         else:
             text = (
@@ -77,7 +77,7 @@ def _build_slack_blocks_and_text(
 
     if dagit_base_url:
         if isinstance(context, RunFailureSensorContext):
-            url = f"{dagit_base_url}/instance/runs/{context.pipeline_run.run_id}"
+            url = f"{dagit_base_url}/instance/runs/{context.dagster_run.run_id}"
         else:
             url = f"{dagit_base_url}/assets/{'/'.join(context.asset_key.path)}"
         blocks.append(
