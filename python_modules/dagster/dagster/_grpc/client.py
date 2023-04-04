@@ -33,8 +33,8 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
-    ResourceVerificationRequest,
-    ResourceVerificationResult,
+    ResourceReadinessCheckRequest,
+    ResourceReadinessCheckResult,
     SensorExecutionArgs,
     UserCodeExecutionRequest,
     UserCodeExecutionResult,
@@ -514,16 +514,16 @@ class DagsterGrpcClient:
             res.serialized_user_code_execution_result, UserCodeExecutionResult
         ).unpack_as(response_type)
 
-    def resource_verification(
-        self, resource_verification: ResourceVerificationRequest
-    ) -> ResourceVerificationResult:
+    def resource_readiness_check(
+        self, resource_readiness_check: ResourceReadinessCheckRequest
+    ) -> ResourceReadinessCheckResult:
         check.inst_param(
-            resource_verification, "resource_verification", ResourceVerificationRequest
+            resource_readiness_check, "resource_readiness_check", ResourceReadinessCheckRequest
         )
         return self.user_code_execution(
-            UserCodeExecutionType.RESOURCE_VERIFICATION,
-            resource_verification,
-            ResourceVerificationResult,
+            UserCodeExecutionType.RESOURCE_READINESS_CHECK,
+            resource_readiness_check,
+            ResourceReadinessCheckResult,
         )
 
 

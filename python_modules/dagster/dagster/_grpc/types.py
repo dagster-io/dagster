@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence, Type, TypeVar
 
 import dagster._check as check
-from dagster._config.structured_config.resource_verification import VerificationResult
+from dagster._config.structured_config.readiness_check import ReadinessCheckResult
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -737,9 +737,9 @@ class GetCurrentRunsResult(
 
 
 @whitelist_for_serdes
-class ResourceVerificationRequest(
+class ResourceReadinessCheckRequest(
     NamedTuple(
-        "_ResourceVerificationRequest",
+        "_ResourceReadinessCheckRequest",
         [
             ("repository_origin", ExternalRepositoryOrigin),
             ("instance_ref", Optional[InstanceRef]),
@@ -753,7 +753,7 @@ class ResourceVerificationRequest(
         instance_ref: Optional[InstanceRef],
         resource_name: str,
     ):
-        return super(ResourceVerificationRequest, cls).__new__(
+        return super(ResourceReadinessCheckRequest, cls).__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", ExternalRepositoryOrigin
@@ -764,21 +764,23 @@ class ResourceVerificationRequest(
 
 
 @whitelist_for_serdes
-class ResourceVerificationResult(
+class ResourceReadinessCheckResult(
     NamedTuple(
-        "_ResourceVerificationResult",
+        "_ResourceReadinessCheckResult",
         [
-            ("response", VerificationResult),
+            ("response", ReadinessCheckResult),
             ("serializable_error_info", Optional[SerializableErrorInfo]),
         ],
     )
 ):
     def __new__(
-        cls, response: VerificationResult, serializable_error_info: Optional[SerializableErrorInfo]
+        cls,
+        response: ReadinessCheckResult,
+        serializable_error_info: Optional[SerializableErrorInfo],
     ):
-        return super(ResourceVerificationResult, cls).__new__(
+        return super(ResourceReadinessCheckResult, cls).__new__(
             cls,
-            response=check.inst_param(response, "response", VerificationResult),
+            response=check.inst_param(response, "response", ReadinessCheckResult),
             serializable_error_info=check.opt_inst_param(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),
@@ -793,15 +795,15 @@ class UserCodeExecutionType(Enum):
     UserCodeExecutionRequest and UserCodeExecutionResult types.
     """
 
-    RESOURCE_VERIFICATION = "resource_verification"
+    RESOURCE_READINESS_CHECK = "resource_readiness_check"
 
 
 T = TypeVar("T")
 
 EXECUTION_TYPE_TO_DATA_MAP = {
-    UserCodeExecutionType.RESOURCE_VERIFICATION: (
-        ResourceVerificationRequest,
-        ResourceVerificationResult,
+    UserCodeExecutionType.RESOURCE_READINESS_CHECK: (
+        ResourceReadinessCheckRequest,
+        ResourceReadinessCheckResult,
     ),
 }
 REQUEST_CLASS_TO_EXECUTION_TYPE = {v[0]: k for k, v in EXECUTION_TYPE_TO_DATA_MAP.items()}

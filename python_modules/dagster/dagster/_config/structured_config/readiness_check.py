@@ -20,7 +20,7 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 if TYPE_CHECKING:
     from dagster._core.host_representation.external import ExternalResource
     from dagster._core.scheduler.instigation import InstigatorTick, TickStatus
-    from dagster._grpc.types import ResourceVerificationResult
+    from dagster._grpc.types import ResourceReadinessCheckResult
 
 
 @whitelist_for_serdes
@@ -50,7 +50,7 @@ class ReadinessCheckedResource:
         raise NotImplementedError()
 
 
-class _ResourceVerificationContext:
+class _ResourceReadinessCheckContext:
     def __init__(
         self,
         external_resource: "ExternalResource",
@@ -95,7 +95,7 @@ class _ResourceVerificationContext:
     def _write(self) -> None:
         self._instance.update_tick(self._tick)
 
-    def __enter__(self) -> "_ResourceVerificationContext":
+    def __enter__(self) -> "_ResourceReadinessCheckContext":
         return self
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
@@ -111,15 +111,17 @@ class _ResourceVerificationContext:
             )
 
 
-def launch_resource_verification(
+def launch_resource_readiness_check(
     repo_def: RepositoryDefinition,
     instance_ref: Optional[InstanceRef],
     resource_name: str,
-) -> "ResourceVerificationResult":
-    from dagster._grpc.types import ResourceVerificationResult
+) -> "ResourceReadinessCheckResult":
+    from dagster._grpc.types import ResourceReadinessCheckResult
 
     serializable_error_info = None
-    response = VerificationResult(VerificationStatus.FAILURE, "Error executing verification check")
+    response = ReadinessCheckResult(
+        ReadinessCheckStatus.FAILURE, "Error executing readiness_check check"
+    )
 
     try:
         with DagsterInstance.from_ref(check.not_none(instance_ref)) as instance:
@@ -135,12 +137,12 @@ def launch_resource_verification(
             res_context = build_init_resource_context(
                 instance=instance, resources=resources_to_build
             )
-            resource = cast(ConfigVerifiable, getattr(res_context.resources, resource_name))
-            response = resource.verify_config()
+            resource = cast(ReadinessCheckedResource, getattr(res_context.resources, resource_name))
+            response = resource.readiness_check()
 
     except Exception:
         serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-    return ResourceVerificationResult(
+    return ResourceReadinessCheckResult(
         response=response, serializable_error_info=serializable_error_info
     )

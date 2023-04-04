@@ -5,11 +5,11 @@ from typing import Any, Optional
 import pytest
 from dagster import (
     ConfigurableResource,
-    ConfigVerifiable,
     DagsterInstance,
     Definitions,
-    VerificationResult,
-    VerificationStatus,
+    ReadinessCheckedResource,
+    ReadinessCheckResult,
+    ReadinessCheckStatus,
     job,
     op,
 )
@@ -58,7 +58,7 @@ def instance_fixture(instance_session_scoped) -> Any:
 
 def create_workspace_load_target(attribute: Optional[str] = SINGLETON_REPOSITORY_NAME):
     return ModuleTarget(
-        module_name="dagster_tests.core_tests.resource_tests.verifiable_resources.test_grpc",
+        module_name="dagster_tests.core_tests.resource_tests.readiness_check.test_grpc",
         attribute=None,
         working_directory=os.path.dirname(__file__),
         location_name="test_location",
@@ -86,7 +86,7 @@ def external_repo_fixture(workspace_context: WorkspaceProcessContext):
 def loadable_target_origin() -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
-        module_name="dagster_tests.core_tests.resource_tests.verifiable_resources.test_grpc",
+        module_name="dagster_tests.core_tests.resource_tests.readiness_check.test_grpc",
         working_directory=os.getcwd(),
         attribute=None,
     )
@@ -102,27 +102,27 @@ def the_job() -> Any:
     the_op()
 
 
-class MyVerifiableResource(ConfigurableResource, ConfigVerifiable):
+class MyReadinessCheckedResource(ConfigurableResource, ReadinessCheckedResource):
     a_str: str
 
-    def verify_config(self) -> VerificationResult:
+    def readiness_check(self) -> ReadinessCheckResult:
         if self.a_str == "foo":
-            return VerificationResult.success("asdf")
+            return ReadinessCheckResult.success("asdf")
         else:
-            return VerificationResult.failure("qwer")
+            return ReadinessCheckResult.failure("qwer")
 
 
-class MyUnverifiableResource(ConfigurableResource, ConfigVerifiable):
-    def verify_config(self) -> VerificationResult:
+class MyUncheckableResource(ConfigurableResource, ReadinessCheckedResource):
+    def readiness_check(self) -> ReadinessCheckResult:
         raise Exception("failure")
 
 
 the_repo = Definitions(
     jobs=[the_job],
     resources={
-        "success_resource": MyVerifiableResource(a_str="foo"),
-        "failure_resource": MyVerifiableResource(a_str="bar"),
-        "exception_resource": MyUnverifiableResource(),
+        "success_resource": MyReadinessCheckedResource(a_str="foo"),
+        "failure_resource": MyReadinessCheckedResource(a_str="bar"),
+        "exception_resource": MyUncheckableResource(),
     },
 )
 
@@ -152,47 +152,47 @@ def test_base_resource(
         )
         == []
     )
-    result = code_location.launch_resource_verification(
+    result = code_location.launch_resource_readiness_check(
         external_repo.get_external_origin(), instance, "success_resource"
     )
-    assert result.response == VerificationResult.success("asdf")
+    assert result.response == ReadinessCheckResult.success("asdf")
     ticks = instance.get_ticks(
         origin_id=external_repo.get_external_origin_id(), selector_id="success_resource"
     )
     assert len(ticks) == 1
     assert ticks[0].status == TickStatus.SUCCESS
     assert ticks[0].cursor == "asdf"
-    assert ticks[0].instigator_type == InstigatorType.VERIFICATION
+    assert ticks[0].instigator_type == InstigatorType.READINESS_CHECK
 
     # Try another success run
-    result = code_location.launch_resource_verification(
+    result = code_location.launch_resource_readiness_check(
         external_repo.get_external_origin(), instance, "success_resource"
     )
-    assert result.response == VerificationResult.success("asdf")
+    assert result.response == ReadinessCheckResult.success("asdf")
     ticks = instance.get_ticks(
         origin_id=external_repo.get_external_origin_id(), selector_id="success_resource"
     )
     assert len(ticks) == 2
 
-    # A failed (non-exception) verification should still create a successful run
-    result = code_location.launch_resource_verification(
+    # A failed (non-exception) readiness_check should still create a successful run
+    result = code_location.launch_resource_readiness_check(
         external_repo.get_external_origin(), instance, "failure_resource"
     )
-    assert result.response == VerificationResult.failure("qwer")
+    assert result.response == ReadinessCheckResult.failure("qwer")
     ticks = instance.get_ticks(
         origin_id=external_repo.get_external_origin_id(), selector_id="failure_resource"
     )
     assert len(ticks) == 1
     assert ticks[0].status == TickStatus.SKIPPED
     assert ticks[0].cursor == "qwer"
-    assert ticks[0].instigator_type == InstigatorType.VERIFICATION
+    assert ticks[0].instigator_type == InstigatorType.READINESS_CHECK
 
-    # When an exception is raised in the verification, the run should fail
-    result = code_location.launch_resource_verification(
+    # When an exception is raised in the readiness_check, the run should fail
+    result = code_location.launch_resource_readiness_check(
         external_repo.get_external_origin(), instance, "exception_resource"
     )
-    assert result.response == VerificationResult(
-        VerificationStatus.FAILURE, "Error executing verification check"
+    assert result.response == ReadinessCheckResult(
+        ReadinessCheckStatus.FAILURE, "Error executing readiness_check check"
     )
     assert result.serializable_error_info
     ticks = instance.get_ticks(
@@ -200,7 +200,7 @@ def test_base_resource(
     )
     assert len(ticks) == 1
     assert ticks[0].is_failure
-    assert ticks[0].instigator_type == InstigatorType.VERIFICATION
+    assert ticks[0].instigator_type == InstigatorType.READINESS_CHECK
 
 
 def test_resource_not_found(
@@ -224,11 +224,11 @@ def test_resource_not_found(
 
     assert instance.get_runs() == []
 
-    result = code_location.launch_resource_verification(
+    result = code_location.launch_resource_readiness_check(
         external_repo.get_external_origin(), instance, "non_existent_resource"
     )
 
-    assert result.response.status == VerificationStatus.FAILURE
+    assert result.response.status == ReadinessCheckStatus.FAILURE
     assert (
         result.response.message
         and "Resource non_existent_resource not found" in result.response.message
@@ -242,16 +242,16 @@ def test_in_process_code_location() -> None:
             SINGLETON_REPOSITORY_NAME,
         )
 
-        result = external_repo_origin.code_location_origin.create_location().launch_resource_verification(
+        result = external_repo_origin.code_location_origin.create_location().launch_resource_readiness_check(
             origin=external_repo_origin,
             instance=instance,
             resource_name="success_resource",
         )
-        assert result.response == VerificationResult.success("asdf")
+        assert result.response == ReadinessCheckResult.success("asdf")
 
-        result = external_repo_origin.code_location_origin.create_location().launch_resource_verification(
+        result = external_repo_origin.code_location_origin.create_location().launch_resource_readiness_check(
             origin=external_repo_origin,
             instance=instance,
             resource_name="failure_resource",
         )
-        assert result.response == VerificationResult.failure("qwer")
+        assert result.response == ReadinessCheckResult.failure("qwer")

@@ -20,7 +20,7 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster._config.structured_config.resource_verification import launch_resource_verification
+from dagster._config.structured_config.readiness_check import launch_resource_readiness_check
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -68,8 +68,8 @@ from dagster._grpc.impl import (
 from dagster._grpc.types import (
     GetCurrentImageResult,
     GetCurrentRunsResult,
-    ResourceVerificationRequest,
-    ResourceVerificationResult,
+    ResourceReadinessCheckRequest,
+    ResourceReadinessCheckResult,
 )
 from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
@@ -169,12 +169,12 @@ class CodeLocation(AbstractContextManager):
         """
 
     @abstractmethod
-    def launch_resource_verification(
+    def launch_resource_readiness_check(
         self,
         origin: ExternalRepositoryOrigin,
         instance: DagsterInstance,
         resource_name: str,
-    ) -> ResourceVerificationResult:
+    ) -> ResourceReadinessCheckResult:
         pass
 
     @abstractmethod
@@ -558,14 +558,14 @@ class InProcessCodeLocation(CodeLocation):
     def get_dagster_library_versions(self) -> Mapping[str, str]:
         return DagsterLibraryRegistry.get()
 
-    def launch_resource_verification(
+    def launch_resource_readiness_check(
         self,
         origin: ExternalRepositoryOrigin,
         instance: DagsterInstance,
         resource_name: str,
-    ) -> ResourceVerificationResult:
+    ) -> ResourceReadinessCheckResult:
         definition = self._get_repo_def(origin.repository_name)
-        return launch_resource_verification(definition, instance.get_ref(), resource_name)
+        return launch_resource_readiness_check(definition, instance.get_ref(), resource_name)
 
 
 class GrpcServerCodeLocation(CodeLocation):
@@ -748,16 +748,16 @@ class GrpcServerCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self.external_repositories
 
-    def launch_resource_verification(
+    def launch_resource_readiness_check(
         self,
         origin: ExternalRepositoryOrigin,
         instance: DagsterInstance,
         resource_name: str,
-    ) -> ResourceVerificationResult:
-        from dagster._config.structured_config.resource_verification import (
-            VerificationResult,
-            VerificationStatus,
-            _ResourceVerificationContext,
+    ) -> ResourceReadinessCheckResult:
+        from dagster._config.structured_config.readiness_check import (
+            ReadinessCheckResult,
+            ReadinessCheckStatus,
+            _ResourceReadinessCheckContext,
         )
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler.instigation import TickData, TickStatus
@@ -770,8 +770,8 @@ class GrpcServerCodeLocation(CodeLocation):
         tick = instance.create_tick(
             TickData(
                 instigator_origin_id=origin.get_id(),
-                instigator_name=f"resource_verification_{resource_name}",
-                instigator_type=InstigatorType.VERIFICATION,
+                instigator_name=f"resource_readiness_check_{resource_name}",
+                instigator_type=InstigatorType.READINESS_CHECK,
                 status=TickStatus.STARTED,
                 timestamp=timestamp,
                 selector_id=resource_name,
@@ -782,18 +782,20 @@ class GrpcServerCodeLocation(CodeLocation):
                 origin.repository_name
             ].get_external_resource(resource_name)
         except KeyError:
-            return ResourceVerificationResult(
-                VerificationResult.failure(f"Resource {resource_name} not found"), None
+            return ResourceReadinessCheckResult(
+                ReadinessCheckResult.failure(f"Resource {resource_name} not found"), None
             )
         logger = get_dagster_logger()
-        tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.VERIFICATION)
+        tick_retention_settings = instance.get_tick_retention_settings(
+            InstigatorType.READINESS_CHECK
+        )
 
-        with _ResourceVerificationContext(
+        with _ResourceReadinessCheckContext(
             external_resource, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             try:
-                result = self.client.resource_verification(
-                    ResourceVerificationRequest(
+                result = self.client.resource_readiness_check(
+                    ResourceReadinessCheckRequest(
                         repository_origin=origin,
                         instance_ref=instance.get_ref(),
                         resource_name=resource_name,
@@ -806,7 +808,7 @@ class GrpcServerCodeLocation(CodeLocation):
                 else:
                     tick_context.update_state(
                         TickStatus.SUCCESS
-                        if result.response.status == VerificationStatus.SUCCESS
+                        if result.response.status == ReadinessCheckStatus.SUCCESS
                         else TickStatus.SKIPPED,
                     )
                     tick_context.update_cursor(result.response.message)
@@ -825,8 +827,8 @@ class GrpcServerCodeLocation(CodeLocation):
                             error=error_data,
                             failure_count=tick_context.failure_count,
                         )
-                        return ResourceVerificationResult(
-                            VerificationResult.failure("Unable to reach user code server"),
+                        return ResourceReadinessCheckResult(
+                            ReadinessCheckResult.failure("Unable to reach user code server"),
                             error_data,
                         )
 
@@ -837,8 +839,9 @@ class GrpcServerCodeLocation(CodeLocation):
                         error=error_data,
                         failure_count=tick_context.failure_count + 1,
                     )
-                    return ResourceVerificationResult(
-                        VerificationResult.failure("Error verifying resource"), error_data
+                    return ResourceReadinessCheckResult(
+                        ReadinessCheckResult.failure("Error in readiness check for resource"),
+                        error_data,
                     )
 
     def get_external_execution_plan(

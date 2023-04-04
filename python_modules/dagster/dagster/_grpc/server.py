@@ -21,8 +21,8 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._config.structured_config.resource_verification import (
-    launch_resource_verification,
+from dagster._config.structured_config.readiness_check import (
+    launch_resource_readiness_check,
 )
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructableRepository
@@ -80,8 +80,8 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
-    ResourceVerificationRequest,
-    ResourceVerificationResult,
+    ResourceReadinessCheckRequest,
+    ResourceReadinessCheckResult,
     SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
@@ -838,14 +838,14 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def _resource_verification(
-        self, resource_verification_request: ResourceVerificationRequest
-    ) -> ResourceVerificationResult:
-        definition = self._get_repo_for_origin(resource_verification_request.repository_origin)
-        return launch_resource_verification(
+    def _resource_readiness_check(
+        self, resource_readiness_check_request: ResourceReadinessCheckRequest
+    ) -> ResourceReadinessCheckResult:
+        definition = self._get_repo_for_origin(resource_readiness_check_request.repository_origin)
+        return launch_resource_readiness_check(
             repo_def=definition,
             instance_ref=self._instance_ref,
-            resource_name=resource_verification_request.resource_name,
+            resource_name=resource_readiness_check_request.resource_name,
         )
 
     def UserCodeExecution(self, request: Any, _context) -> api_pb2.UserCodeExecutionResult:
@@ -854,10 +854,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
         if (
             user_code_execution_request.execution_type
-            == UserCodeExecutionType.RESOURCE_VERIFICATION
+            == UserCodeExecutionType.RESOURCE_READINESS_CHECK
         ):
-            result = self._resource_verification(
-                user_code_execution_request.unpack_as(ResourceVerificationRequest)
+            result = self._resource_readiness_check(
+                user_code_execution_request.unpack_as(ResourceReadinessCheckRequest)
             )
         else:
             raise NotImplementedError(
