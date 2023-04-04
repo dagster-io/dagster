@@ -14,7 +14,7 @@ import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.host_representation import ExternalJob, ExternalRepository
 from dagster._core.host_representation.external_data import (
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
@@ -59,6 +59,6 @@ def external_pipeline_from_recon_pipeline(
         pipeline_def = recon_pipeline.get_definition()
 
     return ExternalJob(
-        external_pipeline_data_from_def(pipeline_def),
+        external_job_data_from_def(pipeline_def),
         repository_handle=repository_handle,
     )

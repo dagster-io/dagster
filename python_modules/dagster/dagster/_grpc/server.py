@@ -27,7 +27,7 @@ from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import (
     ExternalRepositoryErrorData,
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
@@ -548,7 +548,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
             job_def = self._get_repo_for_origin(repository_origin).get_job(request.job_name)
-            ser_job_data = serialize_value(external_pipeline_data_from_def(job_def))
+            ser_job_data = serialize_value(external_job_data_from_def(job_def))
             return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)  # type: ignore
         except Exception:
             return api_pb2.ExternalJobReply(  # type: ignore

@@ -6,7 +6,7 @@ import pendulum
 from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
 from dagster._core.host_representation import (
-    external_pipeline_data_from_def,
+    external_job_data_from_def,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
@@ -77,7 +77,7 @@ def test_external_repository_data(snapshot):
 
 
 def test_external_pipeline_data(snapshot):
-    snapshot.assert_match(serialize_pp(external_pipeline_data_from_def(foo_job)))
+    snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
 
 
 @mock.patch("dagster._core.host_representation.pipeline_index.create_job_snapshot_id")

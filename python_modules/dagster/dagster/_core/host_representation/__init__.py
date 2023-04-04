@@ -33,7 +33,7 @@ from .external_data import (
     ExternalScheduleExecutionErrorData as ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData as ExternalSensorExecutionErrorData,
     ExternalTargetData as ExternalTargetData,
-    external_pipeline_data_from_def as external_pipeline_data_from_def,
+    external_job_data_from_def as external_job_data_from_def,
     external_repository_data_from_def as external_repository_data_from_def,
 )
 from .handle import (

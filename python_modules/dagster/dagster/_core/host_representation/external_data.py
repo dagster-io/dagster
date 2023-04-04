@@ -1215,7 +1215,7 @@ def external_repository_data_from_def(
         )
     else:
         pipeline_datas = sorted(
-            list(map(external_pipeline_data_from_def, pipelines)),
+            list(map(external_job_data_from_def, pipelines)),
             key=lambda pd: pd.name,
         )
         job_refs = None
@@ -1483,24 +1483,24 @@ def external_asset_graph_from_defs(
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalJobData:
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+def external_job_data_from_def(job_def: JobDefinition) -> ExternalJobData:
+    check.inst_param(job_def, "job_def", JobDefinition)
     return ExternalJobData(
-        name=pipeline_def.name,
-        job_snapshot=pipeline_def.get_job_snapshot(),
-        parent_job_snapshot=pipeline_def.get_parent_job_snapshot(),
-        active_presets=active_presets_from_job_def(pipeline_def),
+        name=job_def.name,
+        job_snapshot=job_def.get_job_snapshot(),
+        parent_job_snapshot=job_def.get_parent_job_snapshot(),
+        active_presets=active_presets_from_job_def(job_def),
     )
 
 
-def external_job_ref_from_def(pipeline_def: JobDefinition) -> ExternalJobRef:
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+def external_job_ref_from_def(job_def: JobDefinition) -> ExternalJobRef:
+    check.inst_param(job_def, "job_def", JobDefinition)
 
     return ExternalJobRef(
-        name=pipeline_def.name,
-        snapshot_id=pipeline_def.get_job_snapshot_id(),
-        parent_snapshot_id=None,
-        active_presets=active_presets_from_job_def(pipeline_def),
+        name=job_def.name,
+        snapshot_id=job_def.get_job_snapshot_id(),
+        parent_snapshot_id=parent_snapshot_id,
+        active_presets=active_presets_from_job_def(job_def),
     )
 
 
