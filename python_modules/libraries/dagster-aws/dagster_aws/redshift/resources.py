@@ -1,23 +1,26 @@
 import abc
 from contextlib import contextmanager
+from typing import Optional, cast
 
 import psycopg2
 import psycopg2.extensions
 from dagster import (
-    Field,
-    IntSource,
-    StringSource,
     _check as check,
     resource,
 )
+from dagster._config.structured_config import (
+    ConfigurableResourceFactory,
+)
+from dagster._core.execution.context.init import InitResourceContext
+from pydantic import Field as PyField
 
 
 class RedshiftError(Exception):
     pass
 
 
-class _BaseRedshiftResource(abc.ABC):
-    def __init__(self, context):
+class BaseRedshiftClient(abc.ABC):
+    def __init__(self, context: InitResourceContext):
         # Extract parameters from resource config
         self.conn_args = {
             k: context.resource_config.get(k)
@@ -47,7 +50,7 @@ class _BaseRedshiftResource(abc.ABC):
         pass
 
 
-class RedshiftResource(_BaseRedshiftResource):
+class RedshiftClient(BaseRedshiftClient):
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         """Synchronously execute a single query against Redshift. Will return a list of rows, where
         each row is a tuple of values, e.g. SELECT 1 will return [(1,)].
@@ -203,7 +206,7 @@ class RedshiftResource(_BaseRedshiftResource):
                 conn.commit()
 
 
-class FakeRedshiftResource(_BaseRedshiftResource):
+class FakeRedshiftClient(BaseRedshiftClient):
     QUERY_RESULT = [(1,)]
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
@@ -272,67 +275,69 @@ class FakeRedshiftResource(_BaseRedshiftResource):
             return [self.QUERY_RESULT] * 3
 
 
-def define_redshift_config():
-    """Redshift configuration.
+class RedshiftResource(ConfigurableResourceFactory[RedshiftClient]):
+    """This resource enables connecting to a Redshift cluster and issuing queries against that
+    cluster.
 
-    See the Redshift documentation for reference:
+    Example:
+        .. code-block:: python
 
-    https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-to-cluster.html
+            from dagster import build_op_context, op
+            from dagster_aws.redshift import RedshiftResource
+
+            @op(required_resource_keys={'redshift'})
+            def example_redshift_op(context):
+                return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
+
+            redshift_configured = RedshiftResource(
+                host='my-redshift-cluster.us-east-1.redshift.amazonaws.com',
+                port=5439,
+                user='dagster',
+                password='dagster',
+                database='dev',
+            )
+            context = build_op_context(resources={'redshift': redshift_configured})
+            assert example_redshift_op(context) == [(1,)]
+
     """
-    return {
-        "host": Field(StringSource, description="Redshift host", is_required=True),
-        "port": Field(
-            IntSource, description="Redshift port", is_required=False, default_value=5439
+
+    host: str = PyField(..., description="Redshift host")
+    port: int = PyField(5439, description="Redshift port")
+    user: Optional[str] = PyField(None, description="Username for Redshift connection")
+    password: Optional[str] = PyField(None, description="Password for Redshift connection")
+    database: Optional[str] = PyField(
+        None,
+        description=(
+            "Name of the default database to use. After login, you can use USE DATABASE to change"
+            " the database."
         ),
-        "user": Field(
-            StringSource,
-            description="Username for Redshift connection",
-            is_required=False,
+    )
+    autocommit: Optional[bool] = PyField(None, description="Whether to autocommit queries")
+    connect_timeout: int = PyField(
+        5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
+    )
+    sslmode: str = PyField(
+        "require",
+        description=(
+            "SSL mode to use. See the Redshift documentation for reference:"
+            " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
         ),
-        "password": Field(
-            StringSource,
-            description="Password for Redshift connection",
-            is_required=False,
-        ),
-        "database": Field(
-            StringSource,
-            description=(
-                "Name of the default database to use. After login, you can use USE DATABASE"
-                " to change the database."
-            ),
-            is_required=False,
-        ),
-        "autocommit": Field(
-            bool,
-            description=(
-                "None by default, which honors the Redshift parameter AUTOCOMMIT. Set to "
-                "True or False to enable or disable autocommit mode in the session, respectively."
-            ),
-            is_required=False,
-        ),
-        "connect_timeout": Field(
-            int,
-            description="Connection timeout in seconds. 5 seconds by default",
-            is_required=False,
-            default_value=5,
-        ),
-        "sslmode": Field(
-            str,
-            description=(
-                "SSL mode to use. See the Redshift documentation for more information on usage:"
-                " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
-            ),
-            is_required=False,
-            default_value="require",
-        ),
-    }
+    )
+
+    def create_resource(self, context: InitResourceContext) -> RedshiftClient:
+        return RedshiftClient(context)
+
+
+class FakeRedshiftResource(RedshiftResource):
+    def create_resource(self, context: InitResourceContext) -> FakeRedshiftClient:
+        return FakeRedshiftClient(context)
 
 
 @resource(
-    config_schema=define_redshift_config(),
+    config_schema=RedshiftResource.to_config_schema(),
     description="Resource for connecting to the Redshift data warehouse",
 )
-def redshift_resource(context):
+def redshift_resource(context) -> RedshiftClient:
     """This resource enables connecting to a Redshift cluster and issuing queries against that
     cluster.
 
@@ -357,16 +362,16 @@ def redshift_resource(context):
             assert example_redshift_op(context) == [(1,)]
 
     """
-    return RedshiftResource(context)
+    return RedshiftResource.from_resource_context(context)
 
 
 @resource(
-    config_schema=define_redshift_config(),
+    config_schema=FakeRedshiftResource.to_config_schema(),
     description=(
         "Fake resource for connecting to the Redshift data warehouse. Usage is identical "
         "to the real redshift_resource. Will always return [(1,)] for the single query case and "
         "[[(1,)], [(1,)], [(1,)]] for the multi query case."
     ),
 )
-def fake_redshift_resource(context):
-    return FakeRedshiftResource(context)
+def fake_redshift_resource(context) -> FakeRedshiftClient:
+    return cast(FakeRedshiftClient, FakeRedshiftResource.from_resource_context(context))

@@ -3,16 +3,18 @@ import io
 import os
 import time
 import uuid
+from typing import Optional
 from urllib.parse import urlparse
 
 import boto3
 from botocore.stub import Stubber
 from dagster import (
-    Field,
-    StringSource,
+    ConfigurableResourceFactory,
     _check as check,
     resource,
 )
+from dagster._core.execution.context.init import InitResourceContext
+from pydantic import Field as PyField
 
 
 class AthenaError(Exception):
@@ -23,7 +25,7 @@ class AthenaTimeout(AthenaError):
     pass
 
 
-class AthenaResource:
+class AthenaClient:
     def __init__(self, client, workgroup="primary", polling_interval=5, max_polls=120):
         check.invariant(
             polling_interval >= 0, "polling_interval must be greater than or equal to 0"
@@ -97,7 +99,7 @@ class AthenaResource:
         return results
 
 
-class FakeAthenaResource(AthenaResource):
+class FakeAthenaClient(AthenaClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.polling_interval = 0
@@ -196,47 +198,84 @@ class FakeAthenaResource(AthenaResource):
         )
 
 
-def athena_config():
-    """Athena configuration."""
-    return {
-        "workgroup": Field(
-            str,
-            description=(
-                "The Athena WorkGroup."
-                " https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html"
-            ),
-            is_required=False,
-            default_value="primary",
+class BaseAthenaResource(ConfigurableResourceFactory[AthenaClient]):
+    workgroup: str = PyField(
+        "primary",
+        description=(
+            "The Athena WorkGroup to use."
+            " https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html"
         ),
-        "polling_interval": Field(
-            int,
-            description=(
-                "Time in seconds between checks to see if a query execution is finished. 5 seconds"
-                " by default. Must be non-negative."
-            ),
-            is_required=False,
-            default_value=5,
+    )
+    polling_interval: int = PyField(
+        5,
+        description=(
+            "Time in seconds between checks to see if a query execution is finished. 5 seconds"
+            " by default. Must be non-negative."
         ),
-        "max_polls": Field(
-            int,
-            description=(
-                "Number of times to poll before timing out. 120 attempts by default. When coupled"
-                " with the default polling_interval, queries will timeout after 10 minutes (120 * 5"
-                " seconds). Must be greater than 0."
-            ),
-            is_required=False,
-            default_value=120,
+    )
+    max_polls: int = PyField(
+        120,
+        description=(
+            "Number of times to poll before timing out. 120 attempts by default. When coupled"
+            " with the default polling_interval, queries will timeout after 10 minutes (120 * 5"
+            " seconds). Must be greater than 0."
         ),
-        "aws_access_key_id": Field(StringSource, is_required=False),
-        "aws_secret_access_key": Field(StringSource, is_required=False),
-    }
+    )
+    aws_access_key_id: Optional[str] = PyField(
+        None, description="AWS access key ID for authentication purposes."
+    )
+    aws_secret_access_key: Optional[str] = PyField(
+        None, description="AWS secret access key for authentication purposes."
+    )
+
+
+class AthenaResource(BaseAthenaResource):
+    """This resource enables connecting to AWS Athena and issuing queries against it.
+
+    Example:
+        .. code-block:: python
+
+                from dagster import build_op_context, op
+                from dagster_aws.athena import AthenaResource
+
+                @op(required_resource_keys={"athena"})
+                def example_athena_op(context):
+                    return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
+
+                context = build_op_context(resources={"athena": AthenaResource})
+                assert example_athena_op(context) == [("1",)]
+
+    """
+
+    def create_resource(self, context: InitResourceContext) -> AthenaClient:
+        client = boto3.client(
+            "athena",
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+        )
+        return AthenaClient(
+            client=client,
+            workgroup=self.workgroup,
+            polling_interval=self.polling_interval,
+            max_polls=self.max_polls,
+        )
+
+
+class FakeAthenaResource(BaseAthenaResource):
+    def create_resource(self, context: InitResourceContext) -> FakeAthenaClient:
+        return FakeAthenaClient(
+            client=boto3.client("athena", region_name="us-east-1"),
+            workgroup=self.workgroup,
+            polling_interval=self.polling_interval,
+            max_polls=self.max_polls,
+        )
 
 
 @resource(
-    config_schema=athena_config(),
+    config_schema=BaseAthenaResource.to_config_schema(),
     description="Resource for connecting to AWS Athena",
 )
-def athena_resource(context):
+def athena_resource(context: InitResourceContext) -> AthenaClient:
     """This resource enables connecting to AWS Athena and issuing queries against it.
 
     Example:
@@ -253,27 +292,12 @@ def athena_resource(context):
                 assert example_athena_op(context) == [("1",)]
 
     """
-    client = boto3.client(
-        "athena",
-        aws_access_key_id=context.resource_config.get("aws_access_key_id"),
-        aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
-    )
-    return AthenaResource(
-        client=client,
-        workgroup=context.resource_config.get("workgroup"),
-        polling_interval=context.resource_config.get("polling_interval"),
-        max_polls=context.resource_config.get("max_polls"),
-    )
+    return AthenaResource.from_resource_context(context)
 
 
 @resource(
-    config_schema=athena_config(),
+    config_schema=BaseAthenaResource.to_config_schema(),
     description="Fake resource for connecting to AWS Athena",
 )
-def fake_athena_resource(context):
-    return FakeAthenaResource(
-        client=boto3.client("athena", region_name="us-east-1"),
-        workgroup=context.resource_config.get("workgroup"),
-        polling_interval=context.resource_config.get("polling_interval"),
-        max_polls=context.resource_config.get("max_polls"),
-    )
+def fake_athena_resource(context: InitResourceContext) -> AthenaClient:
+    return FakeAthenaResource.from_resource_context(context)
