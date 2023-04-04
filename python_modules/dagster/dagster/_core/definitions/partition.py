@@ -714,8 +714,8 @@ class DynamicPartitionsDefinition(
             partitions_def_name=self._validated_name(), partition_key=partition_key
         )
 
-    def get_pending_partition(self, partition_key: str) -> PendingPartition:
-        return PendingPartition(partition_key)
+    def get_pending_partition(self, partition_key: str) -> Partition:
+        return Partition(partition_key, partition_key)
 
     def request_for_adding_partitions(
         self, partition_keys: Sequence[str]
@@ -781,40 +781,34 @@ class PartitionedConfig(Generic[T_cov]):
         partition_key: str,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
-        check_valid_partition_key=True,
     ) -> Mapping[str, Any]:
         """Generates the run config corresponding to a partition key.
 
         Args:
             partition_key (str): the key for a partition that should be used to generate a run config.
         """
-        if check_valid_partition_key:
-            partition = self._key_to_partition(
-                partition_key, current_time, dynamic_partitions_store
-            )
-        else:
-            partition = Partition(partition_key, partition_key)
+        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        return self.get_run_config_for_partition(partition)
 
+    def get_run_config_for_partition(
+        self,
+        partition: Partition,
+    ) -> Mapping[str, Any]:
+        """Generates the run config corresponding to a partition.
+
+        Args:
+            partition: the partition that should be used to generate a run config.
+        """
         return copy.deepcopy(self.run_config_for_partition_fn(partition))
 
-    def get_tags_for_partition_key(
+    def get_tags_for_partition(
         self,
-        partition_key: str,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        current_time: Optional[datetime] = None,
+        partition: Partition,
         job_name: Optional[str] = None,
-        check_valid_partition_key=True,
     ) -> Mapping[str, str]:
         from dagster._core.host_representation.external_data import (
             external_partition_set_name_for_job_name,
         )
-
-        if check_valid_partition_key:
-            partition = self._key_to_partition(
-                partition_key, current_time, dynamic_partitions_store
-            )
-        else:
-            partition = Partition(partition_key, partition_key)
 
         user_tags = (
             validate_tags(self._tags_for_partition_fn(partition), allow_reserved_tags=False)
@@ -832,6 +826,16 @@ class PartitionedConfig(Generic[T_cov]):
         # `PartitionSetDefinition` has been deleted but we still need to attach this special tag in
         # order for reexecution against partitions to work properly.
         return {**user_tags, **system_tags}
+
+    def get_tags_for_partition_key(
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
+        job_name: Optional[str] = None,
+    ) -> Mapping[str, str]:
+        partition = self._key_to_partition(partition_key, current_time, dynamic_partitions_store)
+        return self.get_tags_for_partition(partition, job_name)
 
     def _key_to_partition(
         self,

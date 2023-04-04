@@ -232,45 +232,39 @@ class RunRequest(
                     f" '{partitions_def.name}' is invalid. After dynamic partitions requests are"
                     " applied, it does not exist in the set of valid partition keys."
                 )
+
+            partition = partitions_def.get_pending_partition(self.partition_key)
+
         else:
             # Relies on the partitions def to throw an error if the partition does not exist
-            partitions_def.get_partition(
+            partition = partitions_def.get_partition(
                 self.partition_key,
                 current_time=current_time,
                 dynamic_partitions_store=dynamic_partitions_store,
             )
 
-        get_run_request_tags = lambda partition_key: (
+        get_run_request_tags = lambda partition: (
             {
                 **self.tags,
-                **partitioned_config.get_tags_for_partition_key(
-                    partition_key,
-                    dynamic_partitions_store=dynamic_partitions_store,
-                    current_time=current_time,
+                **partitioned_config.get_tags_for_partition(
+                    partition,
                     job_name=target_definition.name,
-                    check_valid_partition_key=False,
                 ),
             }
             if self.tags
-            else partitioned_config.get_tags_for_partition_key(
-                partition_key,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
+            else partitioned_config.get_tags_for_partition(
+                partition,
                 job_name=target_definition.name,
-                check_valid_partition_key=False,
             )
         )
 
         return self.with_replaced_attrs(
             run_config=self.run_config
             if self.run_config
-            else partitioned_config.get_run_config_for_partition_key(
-                self.partition_key,
-                dynamic_partitions_store=dynamic_partitions_store,
-                current_time=current_time,
-                check_valid_partition_key=False,
+            else partitioned_config.get_run_config_for_partition(
+                partition,
             ),
-            tags=get_run_request_tags(self.partition_key),
+            tags=get_run_request_tags(partition),
         )
 
     def has_resolved_partition(self) -> bool:
