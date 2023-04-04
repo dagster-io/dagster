@@ -70,7 +70,7 @@ def execute_run_command(input_json):
                 buffer.append(serialize_value(event))
 
             return_code = _execute_run_command_body(
-                args.pipeline_run_id,
+                args.run_id,
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,
@@ -349,7 +349,7 @@ def execute_step_command(input_json, compressed_input_json):
             if args.instance_ref
             else DagsterInstance.get()
         ) as instance:
-            pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+            pipeline_run = instance.get_run_by_id(args.run_id)
 
             buff = []
 
@@ -376,12 +376,12 @@ def _execute_step_command_body(
         check.inst(
             pipeline_run,
             DagsterRun,
-            f"Pipeline run with id '{args.pipeline_run_id}' not found for step execution",
+            f"Pipeline run with id '{args.run_id}' not found for step execution",
         )
         check.inst(
             pipeline_run.job_code_origin,
             JobPythonOrigin,
-            f"Pipeline run with id '{args.pipeline_run_id}' does not include an origin.",
+            f"Pipeline run with id '{args.run_id}' does not include an origin.",
         )
 
         location_name = (

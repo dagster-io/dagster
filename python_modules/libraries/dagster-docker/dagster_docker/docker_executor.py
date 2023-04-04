@@ -172,7 +172,7 @@ class DockerStepHandler(StepHandler):
         return client
 
     def _get_container_name(self, execute_step_args: ExecuteStepArgs):
-        run_id = execute_step_args.pipeline_run_id
+        run_id = execute_step_args.run_id
         step_keys_to_execute = check.not_none(execute_step_args.step_keys_to_execute)
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]

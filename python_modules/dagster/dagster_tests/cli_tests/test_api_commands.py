@@ -222,9 +222,9 @@ def test_execute_run_fail_pipeline():
             assert "RUN_FAILURE" in result.stdout, f"no match, result: {result}"
 
             with mock.patch(
-                "dagster._core.execution.api.pipeline_execution_iterator"
-            ) as _mock_pipeline_execution_iterator:
-                _mock_pipeline_execution_iterator.side_effect = Exception("Framework error")
+                "dagster._core.execution.api.job_execution_iterator"
+            ) as _mock_job_execution_iterator:
+                _mock_job_execution_iterator.side_effect = Exception("Framework error")
 
                 run = create_run_for_test(
                     instance, pipeline_name="foo", run_id="new_run_framework_error"
@@ -271,7 +271,7 @@ def test_execute_run_cannot_load():
 
             assert result.exit_code != 0
 
-            assert "Pipeline run with id 'FOOBAR' not found for run execution" in str(
+            assert "Run with id 'FOOBAR' not found for run execution" in str(
                 result.exception
             ), f"no match, result: {result.stdout}"
 
@@ -317,8 +317,8 @@ def test_execute_step():
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=job_handle.get_python_origin(),
-                pipeline_run_id=run.run_id,
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
             )
@@ -378,8 +378,8 @@ def test_execute_step_with_secrets_loader():
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=recon_job.get_python_origin(),
-                pipeline_run_id=run.run_id,
+                job_origin=recon_job.get_python_origin(),
+                run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
             )
@@ -412,8 +412,8 @@ def test_execute_step_with_env():
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=job_handle.get_python_origin(),
-                pipeline_run_id=run.run_id,
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
             )
@@ -447,8 +447,8 @@ def test_execute_step_non_compressed():
             )
 
             args = ExecuteStepArgs(
-                pipeline_origin=job_handle.get_python_origin(),
-                pipeline_run_id=run.run_id,
+                job_origin=job_handle.get_python_origin(),
+                run_id=run.run_id,
                 step_keys_to_execute=None,
                 instance_ref=instance.get_ref(),
             )
@@ -480,8 +480,8 @@ def test_execute_step_1():
             result = runner_execute_step(
                 runner,
                 ExecuteStepArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
                 ).get_command_args()[
@@ -537,8 +537,8 @@ def test_execute_step_verify_step():
             runner_execute_step(
                 runner,
                 ExecuteStepArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     step_keys_to_execute=None,
                     instance_ref=instance.get_ref(),
                 ).get_command_args()[5:],
@@ -574,8 +574,8 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             result = runner.invoke(
                 api.execute_step_command,
                 ExecuteStepArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     step_keys_to_execute=["fake_step"],
                     instance_ref=instance.get_ref(),
                     should_verify_step=True,

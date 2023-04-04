@@ -201,8 +201,8 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     pipeline_origin = plan_context.reconstructable_pipeline.get_python_origin()
 
     execute_step_args = ExecuteStepArgs(
-        pipeline_origin=pipeline_origin,
-        pipeline_run_id=plan_context.dagster_run.run_id,
+        job_origin=pipeline_origin,
+        run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),
@@ -309,12 +309,12 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         api_client = DagsterKubernetesClient.production_client()
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
+        pipeline_run = instance.get_run_by_id(execute_step_args.run_id)
 
         check.inst(
             pipeline_run,
             DagsterRun,
-            f"Could not load run {execute_step_args.pipeline_run_id}",
+            f"Could not load run {execute_step_args.run_id}",
         )
         step_key = execute_step_args.step_keys_to_execute[0]
 
@@ -348,7 +348,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = get_k8s_job_name(execute_step_args.pipeline_run_id, step_key)
+        k8s_name_key = get_k8s_job_name(execute_step_args.run_id, step_key)
 
         retry_state = execute_step_args.known_state.get_retry_state()
 
@@ -372,7 +372,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             labels={
                 "dagster/job": pipeline_run.job_name,
                 "dagster/op": step_key,
-                "dagster/run-id": execute_step_args.pipeline_run_id,
+                "dagster/run-id": execute_step_args.run_id,
             },
             env_vars=[
                 {
@@ -448,7 +448,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 job_name=job_name,
                 namespace=job_namespace,
                 instance=instance,
-                run_id=execute_step_args.pipeline_run_id,
+                run_id=execute_step_args.run_id,
                 wait_timeout=job_wait_timeout,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:

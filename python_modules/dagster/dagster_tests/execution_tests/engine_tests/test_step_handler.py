@@ -53,8 +53,8 @@ def test_step_handler_context():
         )
 
         args = ExecuteStepArgs(
-            pipeline_origin=recon_pipeline.get_python_origin(),
-            pipeline_run_id=run.run_id,
+            job_origin=recon_pipeline.get_python_origin(),
+            run_id=run.run_id,
             step_keys_to_execute=run.step_keys_to_execute,
             instance_ref=None,
         )

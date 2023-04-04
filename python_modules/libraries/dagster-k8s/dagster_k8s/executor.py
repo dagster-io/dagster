@@ -196,7 +196,7 @@ class K8sStepHandler(StepHandler):
         step_key = self._get_step_key(step_handler_context)
 
         name_key = get_k8s_job_name(
-            step_handler_context.execute_step_args.pipeline_run_id,
+            step_handler_context.execute_step_args.run_id,
             step_key,
         )
 
@@ -225,7 +225,7 @@ class K8sStepHandler(StepHandler):
 
         if not job_config.job_image:
             job_config = job_config.with_image(
-                step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
+                step_handler_context.execute_step_args.job_origin.repository_origin.container_image
             )
 
         if not job_config.job_image:
@@ -241,7 +241,7 @@ class K8sStepHandler(StepHandler):
             labels={
                 "dagster/job": step_handler_context.dagster_run.job_name,
                 "dagster/op": step_key,
-                "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
+                "dagster/run-id": step_handler_context.execute_step_args.run_id,
             },
             env_vars=[
                 *step_handler_context.execute_step_args.get_command_env(),

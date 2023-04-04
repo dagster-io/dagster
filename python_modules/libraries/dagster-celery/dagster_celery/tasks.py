@@ -19,9 +19,9 @@ def create_task(celery_app, **task_kwargs):
             check.dict_param(
                 execute_step_args_packed,
                 "execute_step_args_packed",
-            )
+            ),
+            as_type=ExecuteStepArgs,
         )
-        check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
 
         check.dict_param(executable_dict, "executable_dict")
 
@@ -30,8 +30,8 @@ def create_task(celery_app, **task_kwargs):
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
 
-        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
-        check.invariant(pipeline_run, f"Could not load run {execute_step_args.pipeline_run_id}")
+        pipeline_run = instance.get_run_by_id(execute_step_args.run_id)
+        check.invariant(pipeline_run, f"Could not load run {execute_step_args.run_id}")
 
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 

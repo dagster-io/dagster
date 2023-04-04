@@ -35,7 +35,7 @@ class StepHandlerContext:
     def dagster_run(self) -> DagsterRun:
         # lazy load
         if not self._pipeline_run:
-            run_id = self.execute_step_args.pipeline_run_id
+            run_id = self.execute_step_args.run_id
             run = self._instance.get_run_by_id(run_id)
             if run is None:
                 check.failed(f"Failed to load run {run_id}")

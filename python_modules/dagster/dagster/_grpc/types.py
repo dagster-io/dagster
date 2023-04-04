@@ -216,14 +216,19 @@ class ExecuteExternalJobArgs(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ExecuteStepArgs(
     NamedTuple(
         "_ExecuteStepArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", JobPythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
             ("instance_ref", Optional[InstanceRef]),
             ("retry_mode", Optional[RetryMode]),
@@ -234,8 +239,8 @@ class ExecuteStepArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: JobPythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
         instance_ref: Optional[InstanceRef] = None,
         retry_mode: Optional[RetryMode] = None,
@@ -244,8 +249,8 @@ class ExecuteStepArgs(
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", JobPythonOrigin),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            job_origin=check.inst_param(job_origin, "job_origin", JobPythonOrigin),
+            run_id=check.str_param(run_id, "run_id"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
@@ -266,7 +271,7 @@ class ExecuteStepArgs(
         be used to pass the args to Click using an env var.
         """
         return (
-            _get_entry_point(self.pipeline_origin)
+            _get_entry_point(self.job_origin)
             + ["api", "execute_step"]
             + (
                 ["--compressed-input-json", self._get_compressed_args()]
