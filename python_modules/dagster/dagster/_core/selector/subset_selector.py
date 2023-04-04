@@ -130,7 +130,7 @@ def generate_asset_dep_graph(
     return {"upstream": upstream, "downstream": downstream}
 
 
-def generate_dep_graph(pipeline_def: "JobDefinition") -> DependencyGraph[str]:
+def generate_dep_graph(job_def: "JobDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
@@ -156,9 +156,9 @@ def generate_dep_graph(pipeline_def: "JobDefinition") -> DependencyGraph[str]:
             ```
     """
     dependency_structure = check.inst_param(
-        pipeline_def.dependency_structure, "dependency_structure", DependencyStructure
+        job_def.dependency_structure, "dependency_structure", DependencyStructure
     )
-    item_names = [i.name for i in pipeline_def.nodes]
+    item_names = [i.name for i in job_def.nodes]
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
     graph: Dict[Direction, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
