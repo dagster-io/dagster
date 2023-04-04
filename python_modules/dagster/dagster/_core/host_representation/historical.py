@@ -7,7 +7,7 @@ from .pipeline_index import JobIndex
 from .represented import RepresentedJob
 
 
-class HistoricalPipeline(RepresentedJob):
+class HistoricalJob(RepresentedJob):
     """HistoricalPipeline represents a pipeline that executed in the past
     and has been reloaded into process by querying the instance. Notably
     the user must pass in the pipeline snapshot id that was originally
@@ -18,16 +18,16 @@ class HistoricalPipeline(RepresentedJob):
 
     def __init__(
         self,
-        pipeline_snapshot: JobSnapshot,
-        identifying_pipeline_snapshot_id: str,
-        parent_pipeline_snapshot: Optional[JobSnapshot],
+        job_snapshot: JobSnapshot,
+        identifying_job_snapshot_id: str,
+        parent_job_snapshot: Optional[JobSnapshot],
     ):
-        self._snapshot = check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
+        self._snapshot = check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
         self._parent_snapshot = check.opt_inst_param(
-            parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot
+            parent_job_snapshot, "parent_job_snapshot", JobSnapshot
         )
-        self._identifying_pipeline_snapshot_id = check.str_param(
-            identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"
+        self._identifying_job_snapshot_id = check.str_param(
+            identifying_job_snapshot_id, "identifying_job_snapshot_id"
         )
         self._index = None
 
@@ -42,7 +42,7 @@ class HistoricalPipeline(RepresentedJob):
 
     @property
     def identifying_job_snapshot_id(self):
-        return self._identifying_pipeline_snapshot_id
+        return self._identifying_job_snapshot_id
 
     @property
     def computed_job_snapshot_id(self):

@@ -40,7 +40,7 @@ from .handle import (
     JobHandle as JobHandle,
     RepositoryHandle as RepositoryHandle,
 )
-from .historical import HistoricalPipeline as HistoricalPipeline
+from .historical import HistoricalJob as HistoricalJob
 from .origin import (
     IN_PROCESS_NAME as IN_PROCESS_NAME,
     CodeLocationOrigin as CodeLocationOrigin,

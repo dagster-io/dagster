@@ -6,7 +6,7 @@ import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedJob
 from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.historical import HistoricalPipeline
+from dagster._core.host_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.pipeline_run import RunsFilter
@@ -432,7 +432,7 @@ class ISolidDefinitionMixin:
         from .asset_graph import GrapheneAssetNode
 
         # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
-        if isinstance(self._represented_pipeline, HistoricalPipeline):
+        if isinstance(self._represented_pipeline, HistoricalJob):
             return []
         else:
             assert isinstance(self._represented_pipeline, ExternalPipeline)

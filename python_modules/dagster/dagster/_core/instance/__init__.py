@@ -107,7 +107,7 @@ if TYPE_CHECKING:
         ExternalJobOrigin,
         ExternalPipeline,
         ExternalSensor,
-        HistoricalPipeline,
+        HistoricalJob,
     )
     from dagster._core.host_representation.external import ExternalSchedule
     from dagster._core.launcher import RunLauncher
@@ -901,8 +901,8 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.has_snapshot(snapshot_id)
 
     @traced
-    def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalPipeline":
-        from dagster._core.host_representation import HistoricalPipeline
+    def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalJob":
+        from dagster._core.host_representation import HistoricalJob
 
         snapshot = self._run_storage.get_pipeline_snapshot(snapshot_id)
         parent_snapshot = (
@@ -910,7 +910,7 @@ class DagsterInstance(DynamicPartitionsStore):
             if snapshot.lineage_snapshot
             else None
         )
-        return HistoricalPipeline(snapshot, snapshot_id, parent_snapshot)
+        return HistoricalJob(snapshot, snapshot_id, parent_snapshot)
 
     @traced
     def has_historical_pipeline(self, snapshot_id: str) -> bool:
