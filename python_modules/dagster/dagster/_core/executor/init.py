@@ -41,7 +41,3 @@ class InitExecutorContext(
             executor_config=check.mapping_param(executor_config, "executor_config", key_type=str),
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
-
-    @property
-    def pipeline(self) -> IJob:
-        return self.job

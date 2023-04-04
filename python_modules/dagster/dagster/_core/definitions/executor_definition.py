@@ -433,7 +433,7 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
     requirements_lst = init_context.executor_def.get_requirements(init_context.executor_config)
 
     if ExecutorRequirement.RECONSTRUCTABLE_JOB in requirements_lst:
-        _check_intra_process_pipeline(init_context.pipeline)
+        _check_intra_process_pipeline(init_context.job)
 
     if ExecutorRequirement.NON_EPHEMERAL_INSTANCE in requirements_lst:
         _check_non_ephemeral_instance(init_context.instance)
