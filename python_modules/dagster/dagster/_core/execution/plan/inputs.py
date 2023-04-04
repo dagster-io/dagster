@@ -555,14 +555,14 @@ class FromConfig(
             input_name=input_name,
         )
 
-    def get_associated_input_def(self, pipeline_def: JobDefinition) -> InputDefinition:
+    def get_associated_input_def(self, job_def: JobDefinition) -> InputDefinition:
         """Returns the InputDefinition along the potential composition InputMapping chain
         that the config was provided at.
         """
         if self.node_handle:
-            return pipeline_def.get_node(self.node_handle).input_def_named(self.input_name)
+            return job_def.get_node(self.node_handle).input_def_named(self.input_name)
         else:
-            return pipeline_def.graph.input_def_named(self.input_name)
+            return job_def.graph.input_def_named(self.input_name)
 
     def get_associated_config(self, resolved_run_config: ResolvedRunConfig):
         """Returns the config specified, potentially specified at any point along graph composition
