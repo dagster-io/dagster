@@ -34,10 +34,10 @@ export function allPartitionsRange({
 }: {
   partitionKeys: string[];
 }): PartitionDimensionSelectionRange {
-  return [
-    {idx: 0, key: partitionKeys[0]},
-    {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]},
-  ];
+  return {
+    start: {idx: 0, key: partitionKeys[0]},
+    end: {idx: partitionKeys.length - 1, key: partitionKeys[partitionKeys.length - 1]},
+  };
 }
 
 export function spanTextToSelections(
@@ -64,20 +64,20 @@ export function spanTextToSelections(
         throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
       }
       result.selectedKeys.push(...allPartitionKeys.slice(allStartIdx, allEndIdx + 1));
-      result.selectedRanges.push([
-        {idx: allStartIdx, key: allPartitionKeys[allStartIdx]},
-        {idx: allEndIdx, key: allPartitionKeys[allEndIdx]},
-      ]);
+      result.selectedRanges.push({
+        start: {idx: allStartIdx, key: allPartitionKeys[allStartIdx]},
+        end: {idx: allEndIdx, key: allPartitionKeys[allEndIdx]},
+      });
     } else if (term.includes('*')) {
       const [prefix, suffix] = term.split('*');
 
       let start = -1;
       const close = (end: number) => {
         result.selectedKeys.push(...allPartitionKeys.slice(start, end + 1));
-        result.selectedRanges.push([
-          {idx: start, key: allPartitionKeys[start]},
-          {idx: end, key: allPartitionKeys[end]},
-        ]);
+        result.selectedRanges.push({
+          start: {idx: start, key: allPartitionKeys[start]},
+          end: {idx: end, key: allPartitionKeys[end]},
+        });
         start = -1;
       };
 
@@ -101,10 +101,10 @@ export function spanTextToSelections(
         throw new Error(`Could not find partition: ${term}`);
       }
       result.selectedKeys.push(term);
-      result.selectedRanges.push([
-        {idx, key: term},
-        {idx, key: term},
-      ]);
+      result.selectedRanges.push({
+        start: {idx, key: term},
+        end: {idx, key: term},
+      });
     }
   }
 

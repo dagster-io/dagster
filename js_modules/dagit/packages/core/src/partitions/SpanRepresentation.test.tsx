@@ -62,10 +62,10 @@ describe('SpanRepresentation', () => {
       const result = spanTextToSelections(MOCK_PARTITIONS, '2022-01-01');
       expect(result.selectedKeys).toEqual(['2022-01-01']);
       expect(result.selectedRanges).toEqual([
-        [
-          {idx: 0, key: '2022-01-01'},
-          {idx: 0, key: '2022-01-01'},
-        ],
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 0, key: '2022-01-01'},
+        },
       ]);
     });
     it('should parse comma-separated values', () => {
@@ -73,28 +73,25 @@ describe('SpanRepresentation', () => {
 
       expect(result.selectedKeys).toEqual(['2022-01-01', '2022-01-02', '2022-01-03']);
       expect(result.selectedRanges).toEqual([
-        [
-          {idx: 0, key: '2022-01-01'},
-          {idx: 0, key: '2022-01-01'},
-        ],
-        [
-          {idx: 1, key: '2022-01-02'},
-          {idx: 1, key: '2022-01-02'},
-        ],
-        [
-          {idx: 2, key: '2022-01-03'},
-          {idx: 2, key: '2022-01-03'},
-        ],
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 0, key: '2022-01-01'},
+        },
+        {
+          start: {idx: 1, key: '2022-01-02'},
+          end: {idx: 1, key: '2022-01-02'},
+        },
+        {
+          start: {idx: 2, key: '2022-01-03'},
+          end: {idx: 2, key: '2022-01-03'},
+        },
       ]);
     });
     it('should parse spans using the [...] syntax', () => {
       const result = spanTextToSelections(MOCK_PARTITIONS, '[2022-01-01...2022-01-03]');
       expect(result.selectedKeys).toEqual(['2022-01-01', '2022-01-02', '2022-01-03']);
       expect(result.selectedRanges).toEqual([
-        [
-          {idx: 0, key: '2022-01-01'},
-          {idx: 2, key: '2022-01-03'},
-        ],
+        {start: {idx: 0, key: '2022-01-01'}, end: {idx: 2, key: '2022-01-03'}},
       ]);
     });
     it('should parse a multi-span string', () => {
@@ -111,18 +108,18 @@ describe('SpanRepresentation', () => {
         '2022-01-07',
       ]);
       expect(result.selectedRanges).toEqual([
-        [
-          {idx: 0, key: '2022-01-01'},
-          {idx: 2, key: '2022-01-03'},
-        ],
-        [
-          {idx: 4, key: '2022-01-05'},
-          {idx: 4, key: '2022-01-05'},
-        ],
-        [
-          {idx: 5, key: '2022-01-06'},
-          {idx: 6, key: '2022-01-07'},
-        ],
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 2, key: '2022-01-03'},
+        },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 4, key: '2022-01-05'},
+        },
+        {
+          start: {idx: 5, key: '2022-01-06'},
+          end: {idx: 6, key: '2022-01-07'},
+        },
       ]);
     });
     it('should throw an exception if the string is invalid', () => {
