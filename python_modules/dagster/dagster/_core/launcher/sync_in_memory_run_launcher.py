@@ -39,7 +39,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        recon_pipeline = recon_pipeline_from_origin(context.pipeline_code_origin)  # type: ignore
+        recon_pipeline = recon_pipeline_from_origin(context.job_code_origin)  # type: ignore
         execute_run(recon_pipeline, context.dagster_run, self._instance)
 
     def terminate(self, run_id):

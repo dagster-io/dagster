@@ -16,7 +16,7 @@ class LaunchRunContext(NamedTuple):
     workspace: Optional[IWorkspace]
 
     @property
-    def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
+    def job_code_origin(self) -> Optional[JobPythonOrigin]:
         return self.dagster_run.job_code_origin
 
 
@@ -28,7 +28,7 @@ class ResumeRunContext(NamedTuple):
     resume_attempt_number: Optional[int] = None
 
     @property
-    def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
+    def job_code_origin(self) -> Optional[JobPythonOrigin]:
         return self.dagster_run.job_code_origin
 
 

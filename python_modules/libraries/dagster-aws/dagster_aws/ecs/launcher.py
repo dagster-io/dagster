@@ -340,7 +340,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
-        pipeline_origin = check.not_none(context.pipeline_code_origin)
+        pipeline_origin = check.not_none(context.job_code_origin)
         image = pipeline_origin.repository_origin.container_image
 
         # ECS limits overrides to 8192 characters including json formatting
