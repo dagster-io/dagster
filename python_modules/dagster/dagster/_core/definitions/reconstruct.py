@@ -591,7 +591,7 @@ def build_reconstructable_job(
 
     pointer = CustomPointer(reconstructor_pointer, _reconstructable_args, _reconstructable_kwargs)
 
-    pipeline_def = pipeline_def_from_pointer(pointer)
+    pipeline_def = job_def_from_pointer(pointer)
 
     return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
@@ -608,7 +608,7 @@ def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
     # to get the pipeline on demand in order to get name, we could avoid this.
-    pipeline_def = pipeline_def_from_pointer(pointer)
+    pipeline_def = job_def_from_pointer(pointer)
     return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
         job_name=pipeline_def.name,
@@ -709,7 +709,7 @@ def def_from_pointer(
     return _check_is_loadable(target())
 
 
-def pipeline_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
+def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
     from .job_definition import JobDefinition
 
     target = def_from_pointer(pointer)
