@@ -1,13 +1,16 @@
 import logging
 import warnings
+from contextlib import ExitStack
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Callable,
     Iterator,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
     overload,
@@ -18,11 +21,14 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.scoped_resources_builder import (
+    Resources,
+    ScopedResourcesBuilder,
+)
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
@@ -41,7 +47,6 @@ from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition
 from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
@@ -54,11 +59,15 @@ from .sensor_definition import (
     SensorResult,
     SensorType,
     SkipReason,
+    get_context_param_name,
+    get_sensor_context_from_args_or_kwargs,
+    validate_and_get_resource_dict,
 )
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.definitions.selector import (
         CodeLocationSelector,
         JobSelector,
@@ -66,12 +75,12 @@ if TYPE_CHECKING:
     )
 
 RunStatusSensorEvaluationFunction: TypeAlias = Union[
-    Callable[[], RawSensorEvaluationFunctionReturn],
-    Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn],
+    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., RawSensorEvaluationFunctionReturn],
 ]
 RunFailureSensorEvaluationFn: TypeAlias = Union[
-    Callable[[], RawSensorEvaluationFunctionReturn],
-    Callable[["RunFailureSensorContext"], RawSensorEvaluationFunctionReturn],
+    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., RawSensorEvaluationFunctionReturn],
 ]
 
 
@@ -116,13 +125,35 @@ class RunStatusSensorContext:
         log (logging.Logger): the logger for the given sensor evaluation
     """
 
-    def __init__(self, sensor_name, dagster_run, dagster_event, instance, context=None):
+    def __init__(
+        self,
+        sensor_name,
+        dagster_run,
+        dagster_event,
+        instance,
+        context=None,
+        resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    ) -> None:
+        self._exit_stack = ExitStack()
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._context = check.opt_inst_param(context, "context", SensorEvaluationContext)
+        self._context: Optional[SensorEvaluationContext] = check.opt_inst_param(
+            context, "context", SensorEvaluationContext
+        )
         self._logger: Optional[logging.Logger] = None
+
+        if self._context and self._context.resource_defs:
+            resources = {
+                **(self._context.resource_defs),
+                **(resources or {}),
+            }
+
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
+        self._cm_scope_entered = False
 
     def for_run_failure(self):
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -133,6 +164,49 @@ class RunStatusSensorContext:
             instance=self._instance,
             context=self._context,
         )
+
+    @property
+    def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
+        return self._resource_defs
+
+    @property
+    def resources(self) -> Resources:
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            """
+            This is similar to what we do in e.g. the op context - we set up a resource
+            building context manager, and immediately enter it. This is so that in cases
+            where a user is not using any context-manager based resources, they don't
+            need to enter this SensorEvaluationContext themselves.
+
+            For example:
+
+            my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
+
+            will work ok, but for a CM resource we must do
+
+            with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+                my_sensor(context)
+            """
+
+            instance = self.instance if self._instance else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
+                )
+
+        return self._resources
 
     @public
     @property
@@ -173,6 +247,14 @@ class RunStatusSensorContext:
         )
         return self.dagster_run
 
+    def __enter__(self) -> "RunStatusSensorContext":
+        self._cm_scope_entered = True
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._exit_stack.close()
+        self._logger = None
+
 
 class RunFailureSensorContext(RunStatusSensorContext):
     """The ``context`` object available to a decorated function of ``run_failure_sensor``.
@@ -194,6 +276,7 @@ def build_run_status_sensor_context(
     dagster_instance: DagsterInstance,
     dagster_run: DagsterRun,
     context: Optional[SensorEvaluationContext] = None,
+    resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> RunStatusSensorContext:
     """Builds run status sensor context from provided parameters.
 
@@ -230,6 +313,7 @@ def build_run_status_sensor_context(
         dagster_run=dagster_run,
         dagster_event=dagster_event,
         context=context,
+        resources=resources,
     )
 
 
@@ -365,7 +449,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
+            return fn(context.for_run_failure())  # fmt: skip
 
         return _run_failure_sensor
 
@@ -426,6 +510,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[ExecutableDefinition] = None,
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
             CodeLocationSelector,
@@ -453,6 +538,13 @@ class RunStatusSensorDefinition(SensorDefinition):
             ),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
+
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
+
+        combined_required_resource_keys = (
+            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
+            | resource_arg_names
+        )
 
         # coerce CodeLocationSelectors to RepositorySelectors with repo name "__repository__"
         monitored_jobs = [
@@ -610,31 +702,32 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 serializable_error = None
 
-                try:
-                    with user_code_error_boundary(
-                        RunStatusSensorExecutionError,
-                        lambda: f'Error occurred during the execution sensor "{name}".',
-                    ):
-                        if has_at_least_one_parameter(run_status_sensor_fn):
-                            # one user code invocation maps to one failure event
-                            sensor_return = run_status_sensor_fn(
-                                RunStatusSensorContext(
-                                    sensor_name=name,
-                                    dagster_run=pipeline_run,
-                                    dagster_event=event_log_entry.dagster_event,
-                                    instance=context.instance,
-                                    context=context,
-                                )
-                            )
-                        else:
-                            sensor_return = run_status_sensor_fn()  # type: ignore
+                resource_args_populated = validate_and_get_resource_dict(
+                    context.resources, name, resource_arg_names
+                )
 
-                        if sensor_return is not None:
-                            context.update_cursor(
-                                RunStatusSensorCursor(
-                                    record_id=storage_id,
-                                    update_timestamp=update_timestamp.isoformat(),
-                                ).to_json()
+                try:
+                    with RunStatusSensorContext(
+                        sensor_name=name,
+                        dagster_run=pipeline_run,
+                        dagster_event=event_log_entry.dagster_event,
+                        instance=context.instance,
+                        context=context,
+                        resources=context.resource_defs,
+                    ) as sensor_context:
+                        with user_code_error_boundary(
+                            RunStatusSensorExecutionError,
+                            lambda: f'Error occurred during the execution sensor "{name}".',
+                        ):
+                            # one user code invocation maps to one failure event
+                            context_param_name = get_context_param_name(run_status_sensor_fn)
+                            context_param = (
+                                {context_param_name: sensor_context} if context_param_name else {}
+                            )
+
+                            sensor_return = run_status_sensor_fn(
+                                **context_param,
+                                **resource_args_populated,
                             )
 
                             if isinstance(sensor_return, SensorResult):
@@ -683,49 +776,25 @@ class RunStatusSensorDefinition(SensorDefinition):
             default_status=default_status,
             job=request_job,
             jobs=request_jobs,
+            required_resource_keys=combined_required_resource_keys,
         )
 
-    def __call__(self, *args, **kwargs):
-        if has_at_least_one_parameter(self._run_status_sensor_fn):
-            if len(args) + len(kwargs) == 0:
-                raise DagsterInvalidInvocationError(
-                    "Run status sensor function expected context argument, but no context argument "
-                    "was provided when invoking."
-                )
-            if len(args) + len(kwargs) > 1:
-                raise DagsterInvalidInvocationError(
-                    "Run status sensor invocation received multiple arguments. Only a first "
-                    "positional context parameter should be provided when invoking."
-                )
+    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+        context_param_name = get_context_param_name(self._run_status_sensor_fn)
+        context = get_sensor_context_from_args_or_kwargs(
+            self._run_status_sensor_fn,
+            args,
+            kwargs,
+            context_type=RunStatusSensorContext,
+        )
+        context_param = {context_param_name: context} if context_param_name and context else {}
 
-            context_param_name = get_function_params(self._run_status_sensor_fn)[0].name
-
-            if args:
-                context = check.opt_inst_param(args[0], context_param_name, RunStatusSensorContext)
-            else:
-                if context_param_name not in kwargs:
-                    raise DagsterInvalidInvocationError(
-                        f"Run status sensor invocation expected argument '{context_param_name}'."
-                    )
-                context = check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, RunStatusSensorContext
-                )
-
-            if not context:
-                raise DagsterInvalidInvocationError(
-                    "Context must be provided for direct invocation of run status sensor."
-                )
-
-            return self._run_status_sensor_fn(context)
-
-        else:
-            if len(args) + len(kwargs) > 0:
-                raise DagsterInvalidInvocationError(
-                    "Run status sensor decorated function has no arguments, but arguments were "
-                    "provided to invocation."
-                )
-
-            return self._run_status_sensor_fn()
+        resources = validate_and_get_resource_dict(
+            context.resources if context else ScopedResourcesBuilder.build_empty(),
+            self._name,
+            self._required_resource_keys,
+        )
+        return self._run_status_sensor_fn(**context_param, **resources)
 
     @property
     def sensor_type(self) -> SensorType:
