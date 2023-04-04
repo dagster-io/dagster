@@ -7,7 +7,7 @@ from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
-def external_pipeline_from_location(
+def external_job_from_location(
     code_location: CodeLocation,
     external_pipeline_origin: ExternalJobOrigin,
     solid_selection: Optional[Sequence[str]],

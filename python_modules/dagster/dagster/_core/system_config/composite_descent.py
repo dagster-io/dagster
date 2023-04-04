@@ -40,17 +40,17 @@ _ROOT_HANDLE = NodeHandle("root", None)
 class DescentStack(
     NamedTuple("_DescentStack", [("pipeline_def", JobDefinition), ("handle", NodeHandle)])
 ):
-    def __new__(cls, pipeline_def: JobDefinition, handle: NodeHandle):
+    def __new__(cls, job_def: JobDefinition, handle: NodeHandle):
         return super(DescentStack, cls).__new__(
             cls,
-            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", JobDefinition),
+            pipeline_def=check.inst_param(job_def, "job_def", JobDefinition),
             handle=check.inst_param(handle, "handle", NodeHandle),
         )
 
     @property
     def current_container(self) -> GraphDefinition:
         if self.handle == _ROOT_HANDLE:
-            return self.pipeline_def.graph
+            return self.job_def.graph
         else:
             assert isinstance(self.current_node, GraphNode)
             return self.current_node.definition
@@ -58,7 +58,7 @@ class DescentStack(
     @property
     def current_node(self) -> Node:
         assert self.handle is not None
-        return self.pipeline_def.get_node(self.handle)
+        return self.job_def.get_node(self.handle)
 
     @property
     def current_handle_str(self) -> str:
@@ -309,7 +309,7 @@ def _get_error_lambda(current_stack: DescentStack) -> Callable[[], str]:
         'instantiated at stack "{stack_str}".'
     ).format(
         described_node=current_stack.current_node.describe_node(),
-        described_target=current_stack.pipeline_def.describe_target(),
+        described_target=current_stack.job_def.describe_target(),
         stack_str=":".join(current_stack.handle.path),
     )
 
@@ -339,7 +339,7 @@ def raise_composite_descent_config_error(
 
     solid = descent_stack.current_node
     message = "In job {job_name} at stack {stack}: \n".format(
-        job_name=descent_stack.pipeline_def.name,
+        job_name=descent_stack.job_def.name,
         stack=":".join(descent_stack.handle.path),
     )
     message += (

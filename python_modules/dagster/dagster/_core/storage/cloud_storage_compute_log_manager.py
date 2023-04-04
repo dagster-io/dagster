@@ -207,10 +207,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_Dags
     #
     ###############################################
     @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(self, dagster_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
         log_key = self.local_manager.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.job_name
+            dagster_run.run_id, step_key or dagster_run.job_name
         )
         with self.local_manager.capture_logs(log_key):
             yield
@@ -220,11 +220,11 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_Dags
     def get_local_path(self, run_id, key, io_type):
         return self.local_manager.get_local_path(run_id, key, io_type)
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    def on_watch_start(self, dagster_run, step_key):
+        self.local_manager.on_watch_start(dagster_run, step_key)
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
+    def on_watch_finish(self, dagster_run, step_key):
+        self.local_manager.on_watch_finish(dagster_run, step_key)
 
     def is_watch_completed(self, run_id, key):
         return self.local_manager.is_watch_completed(run_id, key) or self.cloud_storage_has_logs(

@@ -508,10 +508,6 @@ class RunsFilter(
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 
-    @property
-    def pipeline_name(self) -> Optional[str]:
-        return self.job_name
-
     @staticmethod
     def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
