@@ -872,8 +872,8 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.mode
 
     @property
-    def pipeline_name(self) -> str:
-        return self._external_partition_set_data.pipeline_name
+    def job_name(self) -> str:
+        return self._external_partition_set_data.job_name
 
     @property
     def repository_handle(self) -> RepositoryHandle:

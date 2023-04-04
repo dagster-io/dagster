@@ -205,15 +205,13 @@ def submit_backfill_runs(
         pipeline_selector = PipelineSelector(
             location_name=code_location.name,
             repository_name=repo_name,
-            pipeline_name=external_partition_set.pipeline_name,
+            pipeline_name=external_partition_set.job_name,
             solid_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
         external_pipeline = code_location.get_external_pipeline(pipeline_selector)
     else:
-        external_pipeline = external_repo.get_full_external_job(
-            external_partition_set.pipeline_name
-        )
+        external_pipeline = external_repo.get_full_external_job(external_partition_set.job_name)
     for partition_data in result.partition_data:
         # Refresh the code location in case the workspace has reloaded mid-backfill
         workspace = create_workspace()
@@ -346,7 +344,7 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
 
     runs = instance.get_runs(
         RunsFilter(
-            pipeline_name=external_partition_set.pipeline_name,
+            pipeline_name=external_partition_set.job_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,
                 PARTITION_NAME_TAG: partition_name,

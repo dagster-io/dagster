@@ -270,7 +270,7 @@ class GraphenePartitionSet(graphene.ObjectType):
 
         super().__init__(
             name=external_partition_set.name,
-            pipeline_name=external_partition_set.pipeline_name,
+            pipeline_name=external_partition_set.job_name,
             solid_selection=external_partition_set.solid_selection,
             mode=external_partition_set.mode,
         )

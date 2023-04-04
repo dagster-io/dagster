@@ -677,7 +677,7 @@ def _execute_backfill_command_at_location(
         (
             external_partition_set
             for external_partition_set in external_repo.get_external_partition_sets()
-            if external_partition_set.pipeline_name == external_job.name
+            if external_partition_set.job_name == external_job.name
         ),
         None,
     )
