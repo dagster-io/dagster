@@ -57,8 +57,8 @@ def test_execute_run():
 
             input_json = serialize_value(
                 ExecuteRunArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -116,8 +116,8 @@ def test_execute_run_with_secrets_loader():
 
             input_json = serialize_value(
                 ExecuteRunArgs(
-                    pipeline_origin=recon_job.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=recon_job.get_python_origin(),
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -147,8 +147,8 @@ def test_execute_run_with_secrets_loader():
 
         input_json = serialize_value(
             ExecuteRunArgs(
-                pipeline_origin=recon_job.get_python_origin(),
-                pipeline_run_id=run.run_id,
+                job_origin=recon_job.get_python_origin(),
+                run_id=run.run_id,
                 instance_ref=instance.get_ref(),
             )
         )
@@ -185,8 +185,8 @@ def test_execute_run_fail_pipeline():
 
             input_json = serialize_value(
                 ExecuteRunArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             )
@@ -208,8 +208,8 @@ def test_execute_run_fail_pipeline():
 
             input_json_raise_on_failure = serialize_value(
                 ExecuteRunArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id=run.run_id,
+                    job_origin=job_handle.get_python_origin(),
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=True,
                 )
@@ -232,8 +232,8 @@ def test_execute_run_fail_pipeline():
 
                 input_json_raise_on_failure = serialize_value(
                     ExecuteRunArgs(
-                        pipeline_origin=job_handle.get_python_origin(),
-                        pipeline_run_id=run.run_id,
+                        job_origin=job_handle.get_python_origin(),
+                        run_id=run.run_id,
                         instance_ref=instance.get_ref(),
                         set_exit_code_on_failure=True,
                     )
@@ -258,8 +258,8 @@ def test_execute_run_cannot_load():
 
             input_json = serialize_value(
                 ExecuteRunArgs(
-                    pipeline_origin=job_handle.get_python_origin(),
-                    pipeline_run_id="FOOBAR",
+                    job_origin=job_handle.get_python_origin(),
+                    run_id="FOOBAR",
                     instance_ref=instance.get_ref(),
                 )
             )

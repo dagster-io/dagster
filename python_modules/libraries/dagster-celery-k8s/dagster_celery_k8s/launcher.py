@@ -203,8 +203,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         from dagster._cli.api import ExecuteRunArgs
 
         run_args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=pipeline_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()

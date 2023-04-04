@@ -357,8 +357,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
 
         args = ExecuteRunArgs(
-            pipeline_origin=stripped_pipeline_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=stripped_pipeline_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
         command = args.get_command_args()
