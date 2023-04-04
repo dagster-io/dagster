@@ -26,6 +26,7 @@ jobs:
           echo "Base ref is $GITHUB_BASE_REF"
           echo "Head ref is $GITHUB_HEAD_REF"
           git fetch origin $GITHUB_HEAD_REF
+          git fetch origin $GITHUB_BASE_REF
           CHANGED_MDX_FILES=$(git diff --name-only "$GITHUB_BASE_REF"..."$GITHUB_HEAD_REF" -- '*.mdx')
           CHANGES_ENTRY=$(echo "$CHANGED_MDX_FILES" | sed 's/\.mdx$//' | sed 's/^docs\/content/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
