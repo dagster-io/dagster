@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from dagster import (
     AssetKey,
@@ -11,12 +11,9 @@ from dagster import (
 )
 from pydantic import Field as PyField
 
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import generate_materializations
-
-if TYPE_CHECKING:
-    from dagster_fivetran import FivetranResource
 
 
 class SyncConfig(Config):
@@ -67,7 +64,7 @@ class SyncConfig(Config):
     ),
     tags={"kind": "fivetran"},
 )
-def fivetran_sync_op(config: SyncConfig, fivetran: "FivetranResource") -> Any:
+def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
     the details of the Fivetran connector after the sync successfully completes, as well as details
@@ -138,7 +135,7 @@ class FivetranResyncConfig(SyncConfig):
 )
 def fivetran_resync_op(
     config: FivetranResyncConfig,
-    fivetran: "FivetranResource",
+    fivetran: FivetranResource,
 ) -> Any:
     """Executes a Fivetran historical resync for a given ``connector_id``, and polls until that resync
     completes, raising an error if it is unsuccessful. It outputs a FivetranOutput which contains
