@@ -296,7 +296,7 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
     )
 
 
-def log_pipeline_event(pipeline_context: IPlanContext, event: "DagsterEvent") -> None:
+def log_job_event(pipeline_context: IPlanContext, event: "DagsterEvent") -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -431,7 +431,7 @@ class DagsterEvent(
             pid=os.getpid(),
         )
 
-        log_pipeline_event(pipeline_context, event)
+        log_job_event(pipeline_context, event)
 
         return event
 
