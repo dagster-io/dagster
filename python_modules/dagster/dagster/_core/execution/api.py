@@ -115,7 +115,7 @@ def execute_run_iterator(
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
                         (
-                            f"{dagster_run.pipeline_name} ({dagster_run.run_id}) started a new"
+                            f"{dagster_run.job_name} ({dagster_run.run_id}) started a new"
                             f" run worker while the run was already in state {dagster_run.status}."
                             " This most frequently happens when the run worker unexpectedly stops"
                             " and is restarted by the cluster. Marking the run as failed."
@@ -133,7 +133,7 @@ def execute_run_iterator(
             desc=(
                 "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
                 "resuming from a run worker failure".format(
-                    dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
+                    dagster_run.job_name, dagster_run.run_id, dagster_run.status
                 )
             ),
         )
@@ -215,7 +215,7 @@ def execute_run(
         dagster_run.status == DagsterRunStatus.NOT_STARTED
         or dagster_run.status == DagsterRunStatus.STARTING,
         desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
+            dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
     if dagster_run.solids_to_execute or dagster_run.asset_selection:
@@ -684,7 +684,7 @@ def _get_execution_plan_from_run(
         and pipeline.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.pipeline_name,
+            dagster_run.job_name,
             execution_plan_snapshot,
         )
 

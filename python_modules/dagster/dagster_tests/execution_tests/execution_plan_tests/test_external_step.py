@@ -303,7 +303,7 @@ def define_sleepy_job():
 
 def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> IStepContext:
     run = DagsterRun(
-        pipeline_name="foo_job",
+        job_name="foo_job",
         run_id=str(uuid.uuid4()),
         run_config=make_run_config(scratch_dir, "external"),
     )

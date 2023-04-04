@@ -98,9 +98,7 @@ def terminate_pipeline_execution(
     run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
-    location_name = (
-        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
-    )
+    location_name = run.external_job_origin.location_name if run.external_job_origin else None
 
     if location_name:
         assert_permission_for_location(
@@ -131,7 +129,7 @@ def terminate_pipeline_execution(
                     "Exception while attempting to force-terminate run. Run will still be marked as"
                     " canceled."
                 ),
-                pipeline_name=run.pipeline_name,
+                pipeline_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
@@ -160,9 +158,7 @@ def delete_pipeline_run(
     if not run:
         return GrapheneRunNotFoundError(run_id)
 
-    location_name = (
-        run.external_pipeline_origin.location_name if run.external_pipeline_origin else None
-    )
+    location_name = run.external_job_origin.location_name if run.external_job_origin else None
     if location_name:
         assert_permission_for_location(
             graphene_info, Permissions.DELETE_PIPELINE_RUN, location_name
@@ -231,7 +227,7 @@ async def gen_events_for_run(
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
                 messages=[
-                    from_event_record(record.event_log_entry, run.pipeline_name)
+                    from_event_record(record.event_log_entry, run.job_name)
                     for record in connection.records
                 ],
                 hasMorePastEvents=connection.has_more,
@@ -253,7 +249,7 @@ async def gen_events_for_run(
             event, cursor = await queue.get()
             yield GraphenePipelineRunLogsSubscriptionSuccess(
                 run=GrapheneRun(record),
-                messages=[from_event_record(event, run.pipeline_name)],
+                messages=[from_event_record(event, run.job_name)],
                 hasMorePastEvents=False,
                 cursor=cursor,
             )

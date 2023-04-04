@@ -203,7 +203,7 @@ def test_execution_plan_snapshot_backcompat():
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.pipeline_snapshot_id)
+                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", new_plan_snapshot)
                 _validate_execution_plan(rebuilt_plan)
 

@@ -120,7 +120,7 @@ class DockerStepHandler(StepHandler):
         from . import DockerRunLauncher
 
         image = cast(
-            JobPythonOrigin, step_handler_context.dagster_run.pipeline_code_origin
+            JobPythonOrigin, step_handler_context.dagster_run.job_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image

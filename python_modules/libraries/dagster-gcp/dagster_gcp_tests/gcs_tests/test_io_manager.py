@@ -95,7 +95,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(pipeline_name=inty_job.name, run_id=run_id, run_config=run_config)
+    pipeline_run = DagsterRun(job_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(

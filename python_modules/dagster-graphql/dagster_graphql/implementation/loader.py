@@ -95,7 +95,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                fetched[record.dagster_run.pipeline_name].append(record)
+                fetched[record.dagster_run.job_name].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_RUNS:
             schedule_names = [

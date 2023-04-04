@@ -75,7 +75,7 @@ def do_test_single_write_read(instance):
     instance.create_run_for_pipeline(pipeline_def=job_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
-    assert run.pipeline_name == "job_def"
+    assert run.job_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
     assert list(instance.get_runs()) == []
@@ -256,9 +256,7 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
-            noop_job.get_pipeline_snapshot()
-        )
+        assert run.job_snapshot_id == create_pipeline_snapshot_id(noop_job.get_pipeline_snapshot())
 
 
 def test_create_execution_plan_snapshot():

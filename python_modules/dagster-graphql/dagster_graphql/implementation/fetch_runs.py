@@ -403,9 +403,7 @@ def get_logs_for_run(
 
     conn = instance.get_records_for_run(run_id, cursor=cursor, limit=limit)
     return GrapheneEventConnection(
-        events=[
-            from_event_record(record.event_log_entry, run.pipeline_name) for record in conn.records
-        ],
+        events=[from_event_record(record.event_log_entry, run.job_name) for record in conn.records],
         cursor=conn.cursor,
         hasMore=conn.has_more,
     )

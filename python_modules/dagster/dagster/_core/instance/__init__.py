@@ -1077,7 +1077,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         return DagsterRun(
-            pipeline_name=pipeline_name,
+            job_name=pipeline_name,
             run_id=run_id,
             run_config=run_config,
             asset_selection=asset_selection,
@@ -1088,10 +1088,10 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot_id=pipeline_snapshot_id,
+            job_snapshot_id=pipeline_snapshot_id,
             execution_plan_snapshot_id=execution_plan_snapshot_id,
-            external_pipeline_origin=external_pipeline_origin,
-            pipeline_code_origin=pipeline_code_origin,
+            external_job_origin=external_pipeline_origin,
+            job_code_origin=pipeline_code_origin,
             has_repository_load_data=execution_plan_snapshot is not None
             and execution_plan_snapshot.repository_load_data is not None,
         )
@@ -1180,7 +1180,7 @@ class DagsterInstance(DynamicPartitionsStore):
             DagsterEventType,
         )
 
-        pipeline_name = dagster_run.pipeline_name
+        pipeline_name = dagster_run.job_name
 
         for step in execution_plan_snapshot.steps:
             if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -1443,7 +1443,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         return self.create_run(
-            pipeline_name=parent_run.pipeline_name,
+            pipeline_name=parent_run.job_name,
             run_id=None,
             run_config=run_config,
             solids_to_execute=parent_run.solids_to_execute,
@@ -1902,7 +1902,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         run_id = run_id if run_id else pipeline_run.run_id  # type: ignore
-        pipeline_name = pipeline_name if pipeline_name else pipeline_run.pipeline_name  # type: ignore
+        pipeline_name = pipeline_name if pipeline_name else pipeline_run.job_name  # type: ignore
 
         engine_event_data = check.opt_inst_param(
             engine_event_data,
@@ -1961,7 +1961,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
-            pipeline_name=run.pipeline_name,
+            pipeline_name=run.job_name,
             message=message,
         )
         self.report_dagster_event(canceling_event, run_id=run.run_id)
@@ -1983,7 +1983,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=pipeline_run.job_name,
             message=message,
         )
         self.report_dagster_event(
@@ -2006,7 +2006,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=pipeline_run.job_name,
             message=message,
         )
         self.report_dagster_event(
@@ -2050,12 +2050,12 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         check.inst(
-            run.external_pipeline_origin,
+            run.external_job_origin,
             ExternalPipelineOrigin,
             "External pipeline origin must be set for submitted runs",
         )
         check.inst(
-            run.pipeline_code_origin,
+            run.job_code_origin,
             JobPythonOrigin,
             "Python origin must be set for submitted runs",
         )
@@ -2104,7 +2104,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-            pipeline_name=run.pipeline_name,
+            pipeline_name=run.job_name,
         )
         self.report_dagster_event(launch_started_event, run_id=run.run_id)
 

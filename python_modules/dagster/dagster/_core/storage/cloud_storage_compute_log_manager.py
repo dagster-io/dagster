@@ -210,7 +210,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_Dags
     def _watch_logs(self, pipeline_run, step_key=None):
         # proxy watching to the local compute log manager, interacting with the filesystem
         log_key = self.local_manager.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
+            pipeline_run.run_id, step_key or pipeline_run.job_name
         )
         with self.local_manager.capture_logs(log_key):
             yield

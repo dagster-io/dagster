@@ -17,7 +17,7 @@ class LaunchRunContext(NamedTuple):
 
     @property
     def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
-        return self.dagster_run.pipeline_code_origin
+        return self.dagster_run.job_code_origin
 
 
 class ResumeRunContext(NamedTuple):
@@ -29,7 +29,7 @@ class ResumeRunContext(NamedTuple):
 
     @property
     def pipeline_code_origin(self) -> Optional[JobPythonOrigin]:
-        return self.dagster_run.pipeline_code_origin
+        return self.dagster_run.job_code_origin
 
 
 @whitelist_for_serdes

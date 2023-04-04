@@ -382,7 +382,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             assert (
                 args
                 == ExecuteRunArgs(
-                    pipeline_origin=run.pipeline_code_origin,
+                    pipeline_origin=run.job_code_origin,
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=None,
@@ -446,7 +446,7 @@ def test_raise_on_error(kubeconfig_file):
             assert (
                 args
                 == ExecuteRunArgs(
-                    pipeline_origin=run.pipeline_code_origin,
+                    pipeline_origin=run.job_code_origin,
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                     set_exit_code_on_failure=True,

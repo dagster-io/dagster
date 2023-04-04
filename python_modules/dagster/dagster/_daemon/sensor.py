@@ -790,14 +790,14 @@ def _fetch_existing_runs(
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
         if (
-            run.external_pipeline_origin is None
+            run.external_job_origin is None
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):
             valid_runs.append(run)
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
-            run.external_pipeline_origin is not None
-            and run.external_pipeline_origin.external_repository_origin.get_selector_id()
+            run.external_job_origin is not None
+            and run.external_job_origin.external_repository_origin.get_selector_id()
             == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
             and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
         ):

@@ -85,11 +85,11 @@ def get_pipeline_reference_or_raise(
         list(pipeline_run.solids_to_execute) if pipeline_run.solids_to_execute else None
     )
 
-    if pipeline_run.pipeline_snapshot_id is None:
-        return GrapheneUnknownPipeline(pipeline_run.pipeline_name, solid_selection)
+    if pipeline_run.job_snapshot_id is None:
+        return GrapheneUnknownPipeline(pipeline_run.job_name, solid_selection)
 
     return _get_pipeline_snapshot_from_instance(
-        graphene_info.context.instance, pipeline_run.pipeline_snapshot_id
+        graphene_info.context.instance, pipeline_run.job_snapshot_id
     )
 
 

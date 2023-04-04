@@ -269,7 +269,7 @@ def execute_k8s_job(
         component="k8s_job_op",
         user_defined_k8s_config=user_defined_k8s_config,
         labels={
-            "dagster/job": context.pipeline_run.pipeline_name,
+            "dagster/job": context.pipeline_run.job_name,
             "dagster/op": context.op.name,
             "dagster/run-id": context.pipeline_run.run_id,
         },

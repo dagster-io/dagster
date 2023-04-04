@@ -193,7 +193,7 @@ def test_restart_running_run_worker():
 
         assert any(
             [
-                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker"
+                f"{pipeline_run.job_name} ({pipeline_run.run_id}) started a new run worker"
                 " while the run was already in state DagsterRunStatus.STARTED. "
                 in event.message
                 for event in events

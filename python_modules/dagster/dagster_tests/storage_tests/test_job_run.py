@@ -50,17 +50,17 @@ def test_queued_pipeline_origin_check():
     )
 
     DagsterRun(
-        pipeline_name="foo",
+        job_name="foo",
         status=DagsterRunStatus.QUEUED,
-        external_pipeline_origin=fake_pipeline_origin,
-        pipeline_code_origin=fake_code_origin,
+        external_job_origin=fake_pipeline_origin,
+        job_code_origin=fake_code_origin,
     )
 
     with pytest.raises(check.CheckError):
-        DagsterRun(pipeline_name="foo", status=DagsterRunStatus.QUEUED)
+        DagsterRun(job_name="foo", status=DagsterRunStatus.QUEUED)
 
     with pytest.raises(check.CheckError):
-        DagsterRun(pipeline_name="foo").with_status(DagsterRunStatus.QUEUED)
+        DagsterRun(job_name="foo").with_status(DagsterRunStatus.QUEUED)
 
 
 def test_in_progress_statuses():

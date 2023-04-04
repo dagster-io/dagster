@@ -92,8 +92,8 @@ def core_execute_run(
     if inject_env_vars:
         try:
             location_name = (
-                pipeline_run.external_pipeline_origin.location_name
-                if pipeline_run.external_pipeline_origin
+                pipeline_run.external_job_origin.location_name
+                if pipeline_run.external_job_origin
                 else None
             )
 

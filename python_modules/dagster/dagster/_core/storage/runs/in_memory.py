@@ -41,7 +41,7 @@ class InMemoryRunStorage(SqlRunStorage):
         if preload:
             for payload in preload:
                 self.add_pipeline_snapshot(
-                    payload.pipeline_snapshot, payload.pipeline_run.pipeline_snapshot_id
+                    payload.pipeline_snapshot, payload.pipeline_run.job_snapshot_id
                 )
                 self.add_execution_plan_snapshot(
                     payload.execution_plan_snapshot, payload.pipeline_run.execution_plan_snapshot_id

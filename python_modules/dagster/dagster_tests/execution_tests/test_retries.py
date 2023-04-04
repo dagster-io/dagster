@@ -207,7 +207,7 @@ def test_retry_deferral():
         events = execute_plan(
             create_execution_plan(job_def),
             InMemoryPipeline(job_def),
-            dagster_run=DagsterRun(pipeline_name="retry_limits", run_id="42"),
+            dagster_run=DagsterRun(job_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,
         )

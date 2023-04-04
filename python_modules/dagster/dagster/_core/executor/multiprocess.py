@@ -81,7 +81,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
             yield DagsterEvent.step_worker_started(
                 log_manager,
-                self.pipeline_run.pipeline_name,
+                self.pipeline_run.job_name,
                 message=f'Executing step "{self.step_key}" in subprocess.',
                 metadata={
                     "pid": MetadataValue.text(str(os.getpid())),

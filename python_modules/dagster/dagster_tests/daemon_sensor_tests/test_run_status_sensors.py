@@ -1031,9 +1031,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
                 TickStatus.SUCCESS,
             )
 
-            run_request_runs = [
-                r for r in instance.get_runs() if r.pipeline_name == "the_other_job"
-            ]
+            run_request_runs = [r for r in instance.get_runs() if r.job_name == "the_other_job"]
             assert len(run_request_runs) == 1
             assert run_request_runs[0].status == DagsterRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1042,9 +1040,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             # ensure that the success of the run launched by the sensor doesn't trigger the sensor
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
-            run_request_runs = [
-                r for r in instance.get_runs() if r.pipeline_name == "the_other_job"
-            ]
+            run_request_runs = [r for r in instance.get_runs() if r.job_name == "the_other_job"]
             assert len(run_request_runs) == 1
 
             ticks = instance.get_ticks(

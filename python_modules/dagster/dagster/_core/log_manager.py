@@ -366,7 +366,7 @@ class DagsterLogManager(logging.Logger):
         if dagster_run:
             logging_metadata = DagsterLoggingMetadata(
                 run_id=dagster_run.run_id,
-                pipeline_name=dagster_run.pipeline_name,
+                pipeline_name=dagster_run.job_name,
                 pipeline_tags=dagster_run.tags,
             )
         else:

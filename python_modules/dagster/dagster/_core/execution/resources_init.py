@@ -146,7 +146,7 @@ def _core_resource_initialization_event_generator(
                 " provided"
             ),
         )
-        pipeline_name = cast(DagsterRun, dagster_run).pipeline_name
+        pipeline_name = cast(DagsterRun, dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
@@ -283,7 +283,7 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(DagsterRun, dagster_run).pipeline_name,
+                    cast(DagsterRun, dagster_run).job_name,
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,

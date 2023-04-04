@@ -102,13 +102,13 @@ def _execute_run_command_body(
     )
 
     check.inst(
-        pipeline_run.pipeline_code_origin,
+        pipeline_run.job_code_origin,
         JobPythonOrigin,
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
-        cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
+        cast(JobPythonOrigin, pipeline_run.job_code_origin)
     )
 
     pid = os.getpid()
@@ -207,13 +207,13 @@ def _resume_run_command_body(
         f"Pipeline run with id '{pipeline_run_id}' not found for run execution.",
     )
     check.inst(
-        pipeline_run.pipeline_code_origin,
+        pipeline_run.job_code_origin,
         JobPythonOrigin,
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
-        cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
+        cast(JobPythonOrigin, pipeline_run.job_code_origin)
     )
 
     pid = os.getpid()
@@ -379,14 +379,14 @@ def _execute_step_command_body(
             f"Pipeline run with id '{args.pipeline_run_id}' not found for step execution",
         )
         check.inst(
-            pipeline_run.pipeline_code_origin,
+            pipeline_run.job_code_origin,
             JobPythonOrigin,
             f"Pipeline run with id '{args.pipeline_run_id}' does not include an origin.",
         )
 
         location_name = (
-            pipeline_run.external_pipeline_origin.location_name
-            if pipeline_run.external_pipeline_origin
+            pipeline_run.external_job_origin.location_name
+            if pipeline_run.external_job_origin
             else None
         )
 
@@ -396,7 +396,7 @@ def _execute_step_command_body(
 
         yield DagsterEvent.step_worker_started(
             log_manager,
-            pipeline_run.pipeline_name,
+            pipeline_run.job_name,
             message="Step worker started"
             + (f' for "{single_step_key}".' if single_step_key else "."),
             metadata={"pid": MetadataValue.text(str(os.getpid()))},
@@ -421,9 +421,7 @@ def _execute_step_command_body(
             repository_load_data = None
 
         recon_pipeline = (
-            recon_pipeline_from_origin(
-                cast(JobPythonOrigin, pipeline_run.pipeline_code_origin)
-            )
+            recon_pipeline_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .subset_for_execution_from_existing_pipeline(
                 pipeline_run.solids_to_execute, pipeline_run.asset_selection

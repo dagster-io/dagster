@@ -509,7 +509,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
         return sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
+            run.external_job_origin.external_repository_origin.code_location_origin.location_name  # type: ignore  # (possible none)
         )
 
     def _get_container_name(self, container_context) -> str:

@@ -250,7 +250,7 @@ class Manager:
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
         # in the `reconstitute_pipeline_context` call
         pipeline_run = DagsterRun(
-            pipeline_name=pipeline_def.name,
+            job_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,
             step_keys_to_execute=None,

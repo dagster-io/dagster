@@ -250,9 +250,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
 
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(pipeline_run.run_id, step_key or pipeline_run.job_name)
         with self.capture_logs(log_key):
             yield
 
@@ -295,7 +293,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def get_key(self, pipeline_run: DagsterRun, step_key: Optional[str]):
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        return step_key or pipeline_run.pipeline_name
+        return step_key or pipeline_run.job_name
 
     def is_watch_completed(self, run_id: str, key: str) -> bool:
         log_key = self.build_log_key_for_run(run_id, key)
@@ -307,9 +305,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def on_watch_finish(self, pipeline_run: DagsterRun, step_key: Optional[str] = None):
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
         check.opt_str_param(step_key, "step_key")
-        log_key = self.build_log_key_for_run(
-            pipeline_run.run_id, step_key or pipeline_run.pipeline_name
-        )
+        log_key = self.build_log_key_for_run(pipeline_run.run_id, step_key or pipeline_run.job_name)
         touchpath = self.complete_artifact_path(log_key)
         touch_file(touchpath)
 

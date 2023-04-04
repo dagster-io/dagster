@@ -44,7 +44,7 @@ def in_job_manager(
 
         pipeline_run_dict = pack_value(
             DagsterRun(
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 run_id=run_id,
                 run_config=None,
                 step_keys_to_execute=None,

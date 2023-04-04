@@ -317,6 +317,6 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
     assert instance.get_execution_plan_snapshot(
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]
-    assert instance.get_pipeline_snapshot(auto_run.pipeline_snapshot_id).node_names == [
+    assert instance.get_pipeline_snapshot(auto_run.job_snapshot_id).node_names == [
         "do_something"
     ]

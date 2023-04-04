@@ -385,8 +385,8 @@ class GrapheneRun(graphene.ObjectType):
 
     def _get_permission_value(self, permission: Permissions, graphene_info: ResolveInfo) -> bool:
         location_name = (
-            self._pipeline_run.external_pipeline_origin.location_name
-            if self._pipeline_run.external_pipeline_origin
+            self._pipeline_run.external_job_origin.location_name
+            if self._pipeline_run.external_job_origin
             else None
         )
 
@@ -411,9 +411,9 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
         return (
             GrapheneRepositoryOrigin(
-                self._pipeline_run.external_pipeline_origin.external_repository_origin
+                self._pipeline_run.external_job_origin.external_repository_origin
             )
-            if self._pipeline_run.external_pipeline_origin
+            if self._pipeline_run.external_job_origin
             else None
         )
 
@@ -421,10 +421,10 @@ class GrapheneRun(graphene.ObjectType):
         return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run)
 
     def resolve_pipelineName(self, _graphene_info: ResolveInfo):
-        return self._pipeline_run.pipeline_name
+        return self._pipeline_run.job_name
 
     def resolve_jobName(self, _graphene_info: ResolveInfo):
-        return self._pipeline_run.pipeline_name
+        return self._pipeline_run.job_name
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
         return self._pipeline_run.solid_selection
@@ -436,10 +436,10 @@ class GrapheneRun(graphene.ObjectType):
         return self._pipeline_run.solids_to_execute
 
     def resolve_pipelineSnapshotId(self, _graphene_info: ResolveInfo):
-        return self._pipeline_run.pipeline_snapshot_id
+        return self._pipeline_run.job_snapshot_id
 
     def resolve_parentPipelineSnapshotId(self, graphene_info: ResolveInfo):
-        pipeline_snapshot_id = self._pipeline_run.pipeline_snapshot_id
+        pipeline_snapshot_id = self._pipeline_run.job_snapshot_id
         if (
             pipeline_snapshot_id is not None
             and graphene_info.context.instance.has_pipeline_snapshot(pipeline_snapshot_id)
@@ -466,8 +466,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_executionPlan(self, graphene_info: ResolveInfo):
         if not (
-            self._pipeline_run.execution_plan_snapshot_id
-            and self._pipeline_run.pipeline_snapshot_id
+            self._pipeline_run.execution_plan_snapshot_id and self._pipeline_run.job_snapshot_id
         ):
             return None
 
@@ -535,7 +534,7 @@ class GrapheneRun(graphene.ObjectType):
         conn = graphene_info.context.instance.get_records_for_run(self.run_id, cursor=afterCursor)
         return GrapheneEventConnection(
             events=[
-                from_event_record(record.event_log_entry, self._pipeline_run.pipeline_name)
+                from_event_record(record.event_log_entry, self._pipeline_run.job_name)
                 for record in conn.records
             ],
             cursor=conn.cursor,

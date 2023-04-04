@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 def _default_failure_email_body(context) -> str:
     return "<br>".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
+            f"Pipeline {context.pipeline_run.job_name} failed!",
             f"Run ID: {context.pipeline_run.run_id}",
             f"Mode: {context.pipeline_run.mode}",
             f"Error: {context.failure_event.message}",
@@ -29,7 +29,7 @@ def _default_failure_email_body(context) -> str:
 
 
 def _default_failure_email_subject(context) -> str:
-    return f"Dagster Run Failed: {context.pipeline_run.pipeline_name}"
+    return f"Dagster Run Failed: {context.pipeline_run.job_name}"
 
 
 EMAIL_MESSAGE = """From: {email_from}
@@ -158,7 +158,7 @@ def make_email_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.pipeline_run.pipeline_name} failed!"
+                    f"Job {context.pipeline_run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 

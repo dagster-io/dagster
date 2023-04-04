@@ -127,14 +127,14 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
 
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_pipeline", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -148,12 +148,12 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = DagsterRun(pipeline_name="foo_pipeline", run_id="bar_run")
+        run = DagsterRun(job_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # noqa: PLW0603
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
+                self._run_storage.add_run(DagsterRun(job_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True  # noqa: PLW0603
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:

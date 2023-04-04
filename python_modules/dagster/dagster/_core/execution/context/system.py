@@ -112,7 +112,7 @@ class IPlanContext(ABC):
 
     @property
     def pipeline_name(self) -> str:
-        return self.dagster_run.pipeline_name
+        return self.dagster_run.job_name
 
     @property
     def job_name(self) -> str:

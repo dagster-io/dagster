@@ -239,7 +239,7 @@ class K8sStepHandler(StepHandler):
             component="step_worker",
             user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
             labels={
-                "dagster/job": step_handler_context.dagster_run.pipeline_name,
+                "dagster/job": step_handler_context.dagster_run.job_name,
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
@@ -247,7 +247,7 @@ class K8sStepHandler(StepHandler):
                 *step_handler_context.execute_step_args.get_command_env(),
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": step_handler_context.dagster_run.pipeline_name,
+                    "value": step_handler_context.dagster_run.job_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
                 *container_context.env,

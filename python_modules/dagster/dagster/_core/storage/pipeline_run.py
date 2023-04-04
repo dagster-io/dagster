@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -216,12 +216,18 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # of Dagster, but is read back in as a DagsterRun.
     storage_name="PipelineRun",
     old_fields={"mode": None},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "job_snapshot_id": "pipeline_snapshot_id",
+        "external_job_origin": "external_pipeline_origin",
+        "job_code_origin": "pipeline_code_origin",
+    },
 )
 class DagsterRun(
     NamedTuple(
         "_DagsterRun",
         [
-            ("pipeline_name", str),
+            ("job_name", PublicAttr[str]),
             ("run_id", str),
             ("run_config", Mapping[str, object]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
@@ -232,10 +238,10 @@ class DagsterRun(
             ("tags", Mapping[str, str]),
             ("root_run_id", Optional[str]),
             ("parent_run_id", Optional[str]),
-            ("pipeline_snapshot_id", Optional[str]),
+            ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
-            ("pipeline_code_origin", Optional[JobPythonOrigin]),
+            ("external_job_origin", Optional["ExternalPipelineOrigin"]),
+            ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
         ],
     )
@@ -246,7 +252,7 @@ class DagsterRun(
 
     def __new__(
         cls,
-        pipeline_name: str,
+        job_name: str,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -257,10 +263,10 @@ class DagsterRun(
         tags: Optional[Mapping[str, str]] = None,
         root_run_id: Optional[str] = None,
         parent_run_id: Optional[str] = None,
-        pipeline_snapshot_id: Optional[str] = None,
+        job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
-        pipeline_code_origin: Optional[JobPythonOrigin] = None,
+        external_job_origin: Optional["ExternalPipelineOrigin"] = None,
+        job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
     ):
         check.invariant(
@@ -292,10 +298,10 @@ class DagsterRun(
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
-                external_pipeline_origin,
-                "external_pipeline_origin",
+                external_job_origin,
+                "external_job_origin",
                 ExternalPipelineOrigin,
-                "external_pipeline_origin is required for queued runs",
+                "external_job_origin is required for queued runs",
             )
 
         if run_id is None:
@@ -303,7 +309,7 @@ class DagsterRun(
 
         return super(DagsterRun, cls).__new__(
             cls,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             solid_selection=solid_selection,
@@ -316,15 +322,15 @@ class DagsterRun(
             tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
             root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
             parent_run_id=check.opt_str_param(parent_run_id, "parent_run_id"),
-            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.opt_str_param(job_snapshot_id, "job_snapshot_id"),
             execution_plan_snapshot_id=check.opt_str_param(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
-            external_pipeline_origin=check.opt_inst_param(
-                external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+            external_job_origin=check.opt_inst_param(
+                external_job_origin, "external_job_origin", ExternalPipelineOrigin
             ),
-            pipeline_code_origin=check.opt_inst_param(
-                pipeline_code_origin, "pipeline_code_origin", JobPythonOrigin
+            job_code_origin=check.opt_inst_param(
+                job_code_origin, "job_code_origin", JobPythonOrigin
             ),
             has_repository_load_data=check.opt_bool_param(
                 has_repository_load_data, "has_repository_load_data", default=False
@@ -338,7 +344,7 @@ class DagsterRun(
             from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
             check.inst(
-                self.external_pipeline_origin,
+                self.external_job_origin,
                 ExternalPipelineOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
@@ -349,7 +355,7 @@ class DagsterRun(
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         check.inst_param(origin, "origin", ExternalPipelineOrigin)
-        return self._replace(external_pipeline_origin=origin)
+        return self._replace(external_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
@@ -362,12 +368,12 @@ class DagsterRun(
 
     def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
-        if self.external_pipeline_origin:
+        if self.external_job_origin:
             # tag the run with a label containing the repository name / location name, to allow for
             # per-repository filtering of runs from dagit.
             repository_tags[
                 REPOSITORY_LABEL_TAG
-            ] = self.external_pipeline_origin.external_repository_origin.get_label()
+            ] = self.external_job_origin.external_repository_origin.get_label()
 
         if not self.tags:
             return repository_tags
@@ -403,11 +409,6 @@ class DagsterRun(
     def previous_run_id(self) -> Optional[str]:
         # Compat
         return self.parent_run_id
-
-    @public
-    @property
-    def job_name(self) -> str:
-        return self.pipeline_name
 
     @staticmethod
     def tags_for_schedule(schedule) -> Mapping[str, str]:

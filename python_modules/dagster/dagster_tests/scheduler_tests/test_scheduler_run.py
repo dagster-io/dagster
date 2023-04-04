@@ -2409,9 +2409,7 @@ def test_stale_asset_selection_never_materialized(
     with pendulum.test(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         wait_for_all_runs_to_start(instance)
-        schedule_run = next(
-            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
-        )
+        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
         assert schedule_run is not None
         assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
         validate_run_started(
@@ -2439,9 +2437,7 @@ def test_stale_asset_selection_empty(
     with pendulum.test(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         wait_for_all_runs_to_start(instance)
-        schedule_run = next(
-            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
-        )
+        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
         assert schedule_run is None
 
 
@@ -2465,9 +2461,7 @@ def test_stale_asset_selection_subset(
     with pendulum.test(freeze_datetime):
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         wait_for_all_runs_to_start(instance)
-        schedule_run = next(
-            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
-        )
+        schedule_run = next((r for r in instance.get_runs() if r.job_name == "asset_job"), None)
         assert schedule_run is not None
         assert schedule_run.asset_selection == {AssetKey("asset2")}
         validate_run_started(

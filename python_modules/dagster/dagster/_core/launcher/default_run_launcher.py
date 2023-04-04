@@ -74,7 +74,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalPipelineArgs(
-                    pipeline_origin=run.external_pipeline_origin,
+                    pipeline_origin=run.external_job_origin,
                     pipeline_run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -103,7 +103,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
-        external_pipeline_origin = check.not_none(run.external_pipeline_origin)
+        external_pipeline_origin = check.not_none(run.external_job_origin)
         code_location = context.workspace.get_code_location(
             external_pipeline_origin.external_repository_origin.code_location_origin.location_name
         )

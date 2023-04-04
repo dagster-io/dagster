@@ -86,11 +86,11 @@ def launch_reexecution_from_parent_run(
     parent_run = check.not_none(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
-    origin = check.not_none(parent_run.external_pipeline_origin)
+    origin = check.not_none(parent_run.external_job_origin)
     selector = PipelineSelector(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
-        pipeline_name=parent_run.pipeline_name,
+        pipeline_name=parent_run.job_name,
         solid_selection=None,
     )
 

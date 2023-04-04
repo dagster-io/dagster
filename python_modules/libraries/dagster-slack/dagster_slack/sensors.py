@@ -50,7 +50,7 @@ def _build_slack_blocks_and_text(
     else:
         if isinstance(context, RunFailureSensorContext):
             text = (
-                f'*Job "{context.pipeline_run.pipeline_name}" failed.'
+                f'*Job "{context.pipeline_run.job_name}" failed.'
                 f' `{context.pipeline_run.run_id.split("-")[0]}`*'
             )
         else:
@@ -181,7 +181,7 @@ def make_slack_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return (
-                    f"Job {context.pipeline_run.pipeline_name} failed!"
+                    f"Job {context.pipeline_run.job_name} failed!"
                     f"Error: {context.failure_event.message}"
                 )
 

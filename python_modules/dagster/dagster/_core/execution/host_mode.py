@@ -140,10 +140,10 @@ def host_mode_execution_context_event_generator(
             error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
             event = DagsterEvent.pipeline_failure(
-                pipeline_context_or_name=pipeline_run.pipeline_name,
+                pipeline_context_or_name=pipeline_run.job_name,
                 context_msg=(
                     "Pipeline failure during initialization for pipeline"
-                    f' "{pipeline_run.pipeline_name}". This may be due to a failure in initializing'
+                    f' "{pipeline_run.job_name}". This may be due to a failure in initializing'
                     " the executor or one of the loggers."
                 ),
                 error_info=error_info,
@@ -185,7 +185,7 @@ def execute_run_host_mode(
         pipeline_run.status == DagsterRunStatus.NOT_STARTED
         or pipeline_run.status == DagsterRunStatus.STARTING,
         desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            pipeline_run.job_name, pipeline_run.run_id, pipeline_run.status
         ),
     )
 
@@ -200,7 +200,7 @@ def execute_run_host_mode(
         check.not_none(pipeline_run.execution_plan_snapshot_id)
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
-        pipeline_run.pipeline_name,
+        pipeline_run.job_name,
         execution_plan_snapshot,
     )
     pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)

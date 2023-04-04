@@ -480,7 +480,7 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    run = DagsterRun(job_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
@@ -533,7 +533,7 @@ def test_fan_in_should_skip_step():
         graph_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    run = DagsterRun(job_name="optional_outputs_composite", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -600,7 +600,7 @@ def test_configured_input_should_skip_step():
 
     # ensure should_skip_step behave the same as execute_job
     instance = DagsterInstance.ephemeral()
-    run = DagsterRun(pipeline_name="my_job", run_id=make_new_run_id())
+    run = DagsterRun(job_name="my_job", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(
             my_job,

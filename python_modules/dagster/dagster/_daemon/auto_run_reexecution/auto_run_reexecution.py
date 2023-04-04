@@ -87,14 +87,14 @@ def retry_run(
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
     workspace = workspace_context.create_request_context()
-    if not failed_run.external_pipeline_origin:
+    if not failed_run.external_job_origin:
         instance.report_engine_event(
             "Run does not have an external pipeline origin, unable to retry the run.",
             failed_run,
         )
         return
 
-    origin = failed_run.external_pipeline_origin.external_repository_origin
+    origin = failed_run.external_job_origin.external_repository_origin
     code_location = workspace.get_code_location(origin.code_location_origin.location_name)
     repo_name = origin.repository_name
 
@@ -110,10 +110,10 @@ def retry_run(
 
     external_repo = code_location.get_repository(repo_name)
 
-    if not external_repo.has_external_job(failed_run.pipeline_name):
+    if not external_repo.has_external_job(failed_run.job_name):
         instance.report_engine_event(
             (
-                f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable"
+                f"Could not find job {failed_run.job_name} in repository {repo_name}, unable"
                 " to retry the run. It was likely renamed or deleted."
             ),
             failed_run,
@@ -124,7 +124,7 @@ def retry_run(
         PipelineSelector(
             location_name=origin.code_location_origin.location_name,
             repository_name=repo_name,
-            pipeline_name=failed_run.pipeline_name,
+            pipeline_name=failed_run.job_name,
             solid_selection=failed_run.solid_selection,
             asset_selection=None
             if failed_run.asset_selection is None

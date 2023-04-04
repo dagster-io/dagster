@@ -118,15 +118,15 @@ class TestRunStorage:
         external_pipeline_origin=None,
     ):
         return DagsterRun(
-            pipeline_name=pipeline_name,
+            job_name=pipeline_name,
             run_id=run_id,
             run_config=None,
             tags=tags,
             status=status,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot_id=pipeline_snapshot_id,
-            external_pipeline_origin=external_pipeline_origin,
+            job_snapshot_id=pipeline_snapshot_id,
+            external_job_origin=external_pipeline_origin,
         )
 
     def test_basic_storage(self, storage):
@@ -142,13 +142,13 @@ class TestRunStorage:
         assert len(runs) == 1
         run = runs[0]
         assert run.run_id == run_id
-        assert run.pipeline_name == "some_pipeline"
+        assert run.job_name == "some_pipeline"
         assert run.tags
         assert run.tags.get("foo") == "bar"
         assert storage.has_run(run_id)
         fetched_run = _get_run_by_id(storage, run_id)
         assert fetched_run.run_id == run_id
-        assert fetched_run.pipeline_name == "some_pipeline"
+        assert fetched_run.job_name == "some_pipeline"
 
     def test_clear(self, storage):
         if not self.can_delete_runs():
@@ -871,7 +871,7 @@ class TestRunStorage:
             pytest.skip("storage cannot delete")
 
         run_id = "some_run_id"
-        run = DagsterRun(run_id=run_id, pipeline_name="a_pipeline", tags={"foo": "bar"})
+        run = DagsterRun(run_id=run_id, job_name="a_pipeline", tags={"foo": "bar"})
 
         storage.add_run(run)
 
@@ -886,7 +886,7 @@ class TestRunStorage:
         double_run_id = "double_run_id"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        run = DagsterRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
+        run = DagsterRun(run_id=double_run_id, job_name=pipeline_def.name)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
@@ -919,8 +919,8 @@ class TestRunStorage:
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
-            pipeline_snapshot_id=pipeline_snapshot_id,
+            job_name=pipeline_def.name,
+            job_snapshot_id=pipeline_snapshot_id,
         )
 
         assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
@@ -947,8 +947,8 @@ class TestRunStorage:
 
         run_with_missing_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
-            pipeline_snapshot_id="nope",
+            job_name=pipeline_def.name,
+            job_snapshot_id="nope",
         )
 
         with pytest.raises(DagsterSnapshotDoesNotExist):
@@ -1455,7 +1455,7 @@ class TestRunStorage:
         c_two = _add_run("c_pipeline", tags={"a": "B"})
 
         runs_by_job = {
-            run.pipeline_name: run
+            run.job_name: run
             for run in storage.get_runs(
                 bucket_by=JobBucket(
                     job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
@@ -1469,7 +1469,7 @@ class TestRunStorage:
 
         # fetch with a runs filter applied
         runs_by_job = {
-            run.pipeline_name: run
+            run.job_name: run
             for run in storage.get_runs(
                 filters=RunsFilter(tags={"a": "A"}),
                 bucket_by=JobBucket(

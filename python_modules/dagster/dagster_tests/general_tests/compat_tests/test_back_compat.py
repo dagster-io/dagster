@@ -193,7 +193,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
-        assert run.pipeline_snapshot_id is None
+        assert run.job_snapshot_id is None
 
         result = noop_job.execute_in_process(instance=instance)
 
@@ -206,7 +206,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         new_run = instance.get_run_by_id(new_run_id)
 
-        assert new_run.pipeline_snapshot_id
+        assert new_run.job_snapshot_id
 
 
 def test_downgrade_and_upgrade():
@@ -545,7 +545,7 @@ def test_op_handle_node_handle():
 
 def test_pipeline_run_dagster_run():
     # serialize in current code
-    test_run = DagsterRun(pipeline_name="test")
+    test_run = DagsterRun(job_name="test")
     test_str = serialize_value(test_run)
 
     # deserialize in "legacy" code
@@ -572,7 +572,7 @@ def test_pipeline_run_dagster_run():
 
     result = deserialize_value(test_str, whitelist_map=legacy_env)
     assert isinstance(result, PipelineRun)
-    assert result.pipeline_name == test_run.pipeline_name
+    assert result.pipeline_name == test_run.job_name
 
 
 def test_pipeline_run_status_dagster_run_status():

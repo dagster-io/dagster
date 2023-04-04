@@ -681,14 +681,14 @@ class RunStatusSensorDefinition(SensorDefinition):
                     not job_match
                     and
                     # the pipeline has a repository (not manually executed)
-                    pipeline_run.external_pipeline_origin
+                    pipeline_run.external_job_origin
                     and
                     # the pipeline belongs to the current repository
-                    pipeline_run.external_pipeline_origin.external_repository_origin.repository_name
+                    pipeline_run.external_job_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
                     if monitored_jobs:
-                        if pipeline_run.pipeline_name in map(lambda x: x.name, current_repo_jobs):
+                        if pipeline_run.job_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
                         job_match = True
@@ -697,12 +697,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     # check if the run is one of the jobs specified by JobSelector or RepositorySelector (ie in another repo)
                     # make a JobSelector for the run in question
                     external_repository_origin = check.not_none(
-                        pipeline_run.external_pipeline_origin
+                        pipeline_run.external_job_origin
                     ).external_repository_origin
                     run_job_selector = JobSelector(
                         location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
-                        job_name=pipeline_run.pipeline_name,
+                        job_name=pipeline_run.job_name,
                     )
                     if run_job_selector in other_repo_jobs:
                         job_match = True

@@ -124,12 +124,12 @@ class SqlRunStorage(RunStorage):
     def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
 
-        if pipeline_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
-            pipeline_run.pipeline_snapshot_id
+        if pipeline_run.job_snapshot_id and not self.has_pipeline_snapshot(
+            pipeline_run.job_snapshot_id
         ):
             raise DagsterSnapshotDoesNotExist(
                 "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=pipeline_run.pipeline_snapshot_id
+                    ss_id=pipeline_run.job_snapshot_id
                 )
             )
 
@@ -139,10 +139,10 @@ class SqlRunStorage(RunStorage):
 
         runs_insert = RunsTable.insert().values(
             run_id=pipeline_run.run_id,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=pipeline_run.job_name,
             status=pipeline_run.status.value,
             run_body=serialize_value(pipeline_run),
-            snapshot_id=pipeline_run.pipeline_snapshot_id,
+            snapshot_id=pipeline_run.job_snapshot_id,
             partition=partition,
             partition_set=partition_set,
         )
