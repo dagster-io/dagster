@@ -345,13 +345,11 @@ class ReconstructableJob(
 
     @staticmethod
     def for_file(python_file: str, fn_name: str) -> ReconstructableJob:
-        return bootstrap_standalone_recon_pipeline(
-            FileCodePointer(python_file, fn_name, os.getcwd())
-        )
+        return bootstrap_standalone_recon_job(FileCodePointer(python_file, fn_name, os.getcwd()))
 
     @staticmethod
     def for_module(module: str, fn_name: str) -> ReconstructableJob:
-        return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
+        return bootstrap_standalone_recon_job(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
@@ -496,7 +494,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
         python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
     )
 
-    return bootstrap_standalone_recon_pipeline(pointer)
+    return bootstrap_standalone_recon_job(pointer)
 
 
 @experimental
@@ -606,7 +604,7 @@ build_reconstructable_pipeline = build_reconstructable_job
 build_reconstructable_target = build_reconstructable_job
 
 
-def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> ReconstructableJob:
+def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
     # to get the pipeline on demand in order to get name, we could avoid this.
