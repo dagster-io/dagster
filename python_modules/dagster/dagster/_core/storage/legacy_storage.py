@@ -181,8 +181,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         ).rehydrate(as_type=DagsterStorage)
         return LegacyRunStorage(storage, inst_data=inst_data)
 
-    def add_run(self, pipeline_run: "DagsterRun") -> "DagsterRun":
-        return self._storage.run_storage.add_run(pipeline_run)
+    def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
+        return self._storage.run_storage.add_run(dagster_run)
 
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
         return self._storage.run_storage.handle_run_event(run_id, event)
@@ -250,16 +250,16 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._storage.run_storage.has_snapshot(snapshot_id)
 
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
-        return self._storage.run_storage.has_pipeline_snapshot(pipeline_snapshot_id)
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
+        return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
+    def add_job_snapshot(
+        self, job_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
     ) -> str:
-        return self._storage.run_storage.add_pipeline_snapshot(pipeline_snapshot, snapshot_id)
+        return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> "JobSnapshot":
-        return self._storage.run_storage.get_pipeline_snapshot(pipeline_snapshot_id)
+    def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnapshot":
+        return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id)

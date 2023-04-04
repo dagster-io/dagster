@@ -43,14 +43,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     """
 
     @abstractmethod
-    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         """Add a run to storage.
 
         If a run already exists with the same ID, raise DagsterRunAlreadyExists
         If the run's snapshot ID does not exist raise DagsterSnapshotDoesNotExist
 
         Args:
-            pipeline_run (PipelineRun): The run to add.
+            dagster_run (DagsterRun): The run to add.
         """
 
     @abstractmethod
@@ -233,17 +233,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
                 calculated using a different hash function than the current code.
         """
         if isinstance(snapshot, JobSnapshot):
-            self.add_pipeline_snapshot(snapshot, snapshot_id)
+            self.add_job_snapshot(snapshot, snapshot_id)
         else:
             self.add_execution_plan_snapshot(snapshot, snapshot_id)
 
     def has_snapshot(self, snapshot_id: str):
-        return self.has_pipeline_snapshot(snapshot_id) or self.has_execution_plan_snapshot(
-            snapshot_id
-        )
+        return self.has_job_snapshot(snapshot_id) or self.has_execution_plan_snapshot(snapshot_id)
 
     @abstractmethod
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         """Check to see if storage contains a pipeline snapshot.
 
         Args:
@@ -254,9 +252,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: JobSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -265,22 +261,22 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         that snapshot ID.
 
         Args:
-            pipeline_snapshot (PipelineSnapshot)
+            job_snapshot (PipelineSnapshot)
             snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
                 snapshot id will be generated from a hash of the snapshot. This should only be used
                 in debugging, where we might want to import a historical run whose snapshots were
                 calculated using a different hash function than the current code.
 
         Return:
-            str: The pipeline_snapshot_id
+            str: The job_snapshot_id
         """
 
     @abstractmethod
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> JobSnapshot:
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
         """Fetch a snapshot by ID.
 
         Args:
-            pipeline_snapshot_id (str)
+            job_snapshot_id (str)
 
         Returns:
             PipelineSnapshot

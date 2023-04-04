@@ -121,28 +121,26 @@ class SqlRunStorage(RunStorage):
 
         return row
 
-    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
-        if pipeline_run.job_snapshot_id and not self.has_pipeline_snapshot(
-            pipeline_run.job_snapshot_id
-        ):
+        if dagster_run.job_snapshot_id and not self.has_job_snapshot(dagster_run.job_snapshot_id):
             raise DagsterSnapshotDoesNotExist(
                 "Snapshot {ss_id} does not exist in run storage".format(
-                    ss_id=pipeline_run.job_snapshot_id
+                    ss_id=dagster_run.job_snapshot_id
                 )
             )
 
-        has_tags = pipeline_run.tags and len(pipeline_run.tags) > 0
-        partition = pipeline_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
-        partition_set = pipeline_run.tags.get(PARTITION_SET_TAG) if has_tags else None
+        has_tags = dagster_run.tags and len(dagster_run.tags) > 0
+        partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
+        partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
 
         runs_insert = RunsTable.insert().values(
-            run_id=pipeline_run.run_id,
-            pipeline_name=pipeline_run.job_name,
-            status=pipeline_run.status.value,
-            run_body=serialize_value(pipeline_run),
-            snapshot_id=pipeline_run.job_snapshot_id,
+            run_id=dagster_run.run_id,
+            pipeline_name=dagster_run.job_name,
+            status=dagster_run.status.value,
+            run_body=serialize_value(dagster_run),
+            snapshot_id=dagster_run.job_snapshot_id,
             partition=partition,
             partition_set=partition_set,
         )
@@ -152,17 +150,17 @@ class SqlRunStorage(RunStorage):
             except db_exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            tags_to_insert = pipeline_run.tags_for_storage()
+            tags_to_insert = dagster_run.tags_for_storage()
             if tags_to_insert:
                 conn.execute(
                     RunTagsTable.insert(),
                     [
-                        dict(run_id=pipeline_run.run_id, key=k, value=v)
+                        dict(run_id=dagster_run.run_id, key=k, value=v)
                         for k, v in tags_to_insert.items()
                     ],
                 )
 
-        return pipeline_run
+        return dagster_run
 
     def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
         check.str_param(run_id, "run_id")
@@ -803,28 +801,26 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             conn.execute(query)
 
-    def has_pipeline_snapshot(self, pipeline_snapshot_id: str) -> bool:
-        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        return self._has_snapshot_id(pipeline_snapshot_id)
+    def has_job_snapshot(self, job_snapshot_id: str) -> bool:
+        check.str_param(job_snapshot_id, "job_snapshot_id")
+        return self._has_snapshot_id(job_snapshot_id)
 
-    def add_pipeline_snapshot(
-        self, pipeline_snapshot: JobSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
-        check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
+    def add_job_snapshot(self, job_snapshot: JobSnapshot, snapshot_id: Optional[str] = None) -> str:
+        check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
         check.opt_str_param(snapshot_id, "snapshot_id")
 
         if not snapshot_id:
-            snapshot_id = create_job_snapshot_id(pipeline_snapshot)
+            snapshot_id = create_job_snapshot_id(job_snapshot)
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
-            snapshot_obj=pipeline_snapshot,
+            snapshot_obj=job_snapshot,
             snapshot_type=SnapshotType.PIPELINE,
         )
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> JobSnapshot:
-        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        return self._get_snapshot(pipeline_snapshot_id)  # type: ignore  # (allowed to return None?)
+    def get_job_snapshot(self, job_snapshot_id: str) -> JobSnapshot:
+        check.str_param(job_snapshot_id, "job_snapshot_id")
+        return self._get_snapshot(job_snapshot_id)  # type: ignore  # (allowed to return None?)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")

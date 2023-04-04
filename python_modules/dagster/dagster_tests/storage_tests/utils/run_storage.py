@@ -217,8 +217,8 @@ class TestRunStorage:
         pipeline_snapshot_a_id = create_job_snapshot_id(pipeline_snapshot_a)
         pipeline_snapshot_b_id = create_job_snapshot_id(pipeline_snapshot_b)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
-        assert storage.add_pipeline_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
+        assert storage.add_job_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
+        assert storage.add_job_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
 
         one = make_new_run_id()
         two = make_new_run_id()
@@ -897,7 +897,7 @@ class TestRunStorage:
         pipeline_snapshot = pipeline_def.get_job_snapshot()
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+        assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
         fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
         assert fetched_pipeline_snapshot
         assert serialize_pp(fetched_pipeline_snapshot) == serialize_pp(pipeline_snapshot)
@@ -925,7 +925,7 @@ class TestRunStorage:
 
         assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
 
-        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+        assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
 
         assert serialize_pp(storage.get_pipeline_snapshot(pipeline_snapshot_id)) == serialize_pp(
             pipeline_snapshot
