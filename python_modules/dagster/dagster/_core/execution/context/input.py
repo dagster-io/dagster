@@ -185,10 +185,6 @@ class InputContext:
             )
         return self._job_name
 
-    @property
-    def pipeline_name(self) -> str:
-        return self.job_name
-
     @public
     @property
     def op_def(self) -> "OpDefinition":
