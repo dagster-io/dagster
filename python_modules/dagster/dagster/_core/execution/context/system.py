@@ -330,7 +330,7 @@ class PlanExecutionContext(IPlanContext):
         )
 
     @property
-    def pipeline_def(self) -> JobDefinition:
+    def job_def(self) -> JobDefinition:
         return self._execution_data.pipeline_def
 
     @property
@@ -520,7 +520,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # Enable step output capture if there are any hooks which will receive them.
         # Expect in the future that hooks may control whether or not they get outputs,
         # but for now presence of any will cause output capture.
-        if self.pipeline_def.get_all_hooks_for_handle(self.node_handle):
+        if self.job_def.get_all_hooks_for_handle(self.node_handle):
             self._step_output_capture = {}
 
         self._output_metadata: Dict[str, Any] = {}
@@ -555,20 +555,16 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.solid.definition
 
     @property
-    def pipeline_def(self) -> JobDefinition:
-        return self._execution_data.pipeline_def
-
-    @property
     def job_def(self) -> "JobDefinition":
         return self._execution_data.pipeline_def
 
     @property
     def solid(self) -> OpNode:
-        return self.pipeline_def.get_op(self._step.node_handle)
+        return self.job_def.get_op(self._step.node_handle)
 
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
-        return self.pipeline_def.get_retry_policy_for_handle(self.node_handle)
+        return self.job_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
         return f'op "{str(self.node_handle)}"'
@@ -576,7 +572,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
-            self.pipeline_def.get_node(step_output.node_handle)
+            self.job_def.get_node(step_output.node_handle)
             .output_def_named(step_output.name)
             .io_manager_key
         )
@@ -587,7 +583,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
         return get_output_context(
             self.execution_plan,
-            self.pipeline_def,
+            self.job_def,
             self.resolved_run_config,
             step_output_handle,
             self._get_source_run_id(step_output_handle),
@@ -620,7 +616,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             # will be set to None for 0.15 release.
             upstream_output = get_output_context(
                 self.execution_plan,
-                self.pipeline_def,
+                self.job_def,
                 self.resolved_run_config,
                 source_handle,
                 self._get_source_run_id(source_handle),
@@ -633,7 +629,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             upstream_output = artificial_output_context
 
-        asset_key = self.pipeline_def.asset_layer.asset_key_for_input(
+        asset_key = self.job_def.asset_layer.asset_key_for_input(
             node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
@@ -643,10 +639,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
         asset_partitions_def = (
-            self.pipeline_def.asset_layer.partitions_def_for_asset(asset_key) if asset_key else None
+            self.job_def.asset_layer.partitions_def_for_asset(asset_key) if asset_key else None
         )
         return InputContext(
-            job_name=self.pipeline_def.name,
+            job_name=self.job_def.name,
             name=name,
             op_def=self.op_def,
             config=config,
@@ -846,7 +842,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if len(step_outputs) == 0:
             return False
         else:
-            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.node_handle, step_outputs[0].name
             )
             return asset_info is not None
@@ -877,7 +873,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def fetch_external_input_asset_records(self) -> None:
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
-            asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.node_handle, step_output.name
             )
             if asset_info is None or not asset_info.is_required:
@@ -886,9 +882,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         all_dep_keys: List[AssetKey] = []
         for output_key in output_keys:
-            if output_key not in self.pipeline_def.asset_layer._asset_deps:  # noqa: SLF001
+            if output_key not in self.job_def.asset_layer._asset_deps:  # noqa: SLF001
                 continue
-            dep_keys = self.pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            dep_keys = self.job_def.asset_layer.upstream_assets_for_asset(output_key)
             for key in dep_keys:
                 if key not in all_dep_keys and key not in output_keys:
                     all_dep_keys.append(key)
@@ -924,7 +920,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             del self._input_asset_records[key]
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
-        asset_layer = self.pipeline_def.asset_layer
+        asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         return (
@@ -949,7 +945,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return partition_key_ranges[0]
 
     def asset_partitions_subset_for_input(self, input_name: str) -> PartitionsSubset:
-        asset_layer = self.pipeline_def.asset_layer
+        asset_layer = self.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
@@ -991,7 +987,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
-        asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
+        asset_info = self.job_def.asset_layer.asset_info_for_output(
             node_handle=self.node_handle, output_name=output_name
         )
         if asset_info:

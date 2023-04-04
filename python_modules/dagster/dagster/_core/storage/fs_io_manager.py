@@ -249,7 +249,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
             with path.open("wb") as file:
                 pickle.dump(obj, file, PICKLE_PROTOCOL)
         except (AttributeError, RecursionError, ImportError, pickle.PicklingError) as e:
-            executor = context.step_context.pipeline_def.executor_def
+            executor = context.step_context.job_def.executor_def
 
             if isinstance(e, RecursionError):
                 # if obj can't be pickled because of RecursionError then __str__() will also

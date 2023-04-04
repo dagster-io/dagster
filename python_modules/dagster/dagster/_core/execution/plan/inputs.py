@@ -144,7 +144,7 @@ class FromSourceAsset(
         from dagster._core.events import DagsterEvent
         from dagster._core.execution.context.output import OutputContext
 
-        asset_layer = step_context.pipeline_def.asset_layer
+        asset_layer = step_context.job_def.asset_layer
 
         input_asset_key = asset_layer.asset_key_for_input(
             self.node_handle, input_name=self.input_name
@@ -441,7 +441,7 @@ class FromStepOutput(
     ) -> "InputContext":
         resolved_io_manager_key = (
             step_context.execution_plan.get_manager_key(
-                self.step_output_handle, step_context.pipeline_def
+                self.step_output_handle, step_context.job_def
             )
             if io_manager_key is None
             else io_manager_key
@@ -487,7 +487,7 @@ class FromStepOutput(
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
-                source_handle, step_context.pipeline_def
+                source_handle, step_context.job_def
             )
             input_manager = step_context.get_io_manager(source_handle)
             check.invariant(
@@ -589,7 +589,7 @@ class FromConfig(
             msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
             log_manager=step_context.log,
         ):
-            dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
+            dagster_type = self.get_associated_input_def(step_context.job_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
             yield loader.construct_from_config_value(
@@ -633,7 +633,7 @@ class FromDirectInputValue(
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
     ) -> Iterator[object]:
-        job_def = step_context.pipeline_def
+        job_def = step_context.job_def
         yield job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: JobDefinition) -> Set[str]:
@@ -674,7 +674,7 @@ class FromDefaultValue(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Iterator[object]:
-        yield self._load_value(step_context.pipeline_def)
+        yield self._load_value(step_context.job_def)
 
     def compute_version(
         self,

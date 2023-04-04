@@ -192,7 +192,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def pipeline_def(self) -> JobDefinition:
         """PipelineDefinition: The currently executing pipeline."""
-        return self._step_execution_context.pipeline_def
+        return self._step_execution_context.job_def
 
     @public
     @property
@@ -247,7 +247,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
 
         """
-        return self._step_execution_context.pipeline_def.get_node(self.node_handle)
+        return self._step_execution_context.job_def.get_node(self.node_handle)
 
     @property
     def op(self) -> Node:
@@ -415,7 +415,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_output(output_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
         )
         if result is None:
@@ -430,7 +430,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_input(input_name)
-        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+        result = self._step_execution_context.job_def.asset_layer.partitions_def_for_asset(
             asset_key
         )
         if result is None:

@@ -326,7 +326,7 @@ class OutputContext:
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
-        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        result = self.step_context.job_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
