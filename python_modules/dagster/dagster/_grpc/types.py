@@ -464,12 +464,17 @@ class PartitionSetExecutionParamArgs(
         )
 
 
-@whitelist_for_serdes
-class PipelineSubsetSnapshotArgs(
+@whitelist_for_serdes(
+    storage_name="PipelineSubsetSnapshotArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+    },
+)
+class JobSubsetSnapshotArgs(
     NamedTuple(
-        "_PipelineSubsetSnapshotArgs",
+        "_JobSubsetSnapshotArgs",
         [
-            ("pipeline_origin", ExternalJobOrigin),
+            ("job_origin", ExternalJobOrigin),
             ("solid_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
@@ -477,13 +482,13 @@ class PipelineSubsetSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalJobOrigin,
+        job_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
-        return super(PipelineSubsetSnapshotArgs, cls).__new__(
+        return super(JobSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", ExternalJobOrigin),
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
             solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,

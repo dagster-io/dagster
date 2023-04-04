@@ -71,12 +71,12 @@ from .types import (
     ExternalScheduleExecutionArgs,
     GetCurrentImageResult,
     GetCurrentRunsResult,
+    JobSubsetSnapshotArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
@@ -500,16 +500,16 @@ class DagsterApiServer(DagsterApiServicer):
     ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore
         pipeline_subset_snapshot_args = deserialize_value(
             request.serialized_pipeline_subset_snapshot_args,
-            PipelineSubsetSnapshotArgs,
+            JobSubsetSnapshotArgs,
         )
 
         return api_pb2.ExternalPipelineSubsetSnapshotReply(  # type: ignore
             serialized_external_pipeline_subset_result=serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
-                        pipeline_subset_snapshot_args.pipeline_origin.external_repository_origin
+                        pipeline_subset_snapshot_args.job_origin.external_repository_origin
                     ),
-                    pipeline_subset_snapshot_args.pipeline_origin.job_name,
+                    pipeline_subset_snapshot_args.job_origin.job_name,
                     pipeline_subset_snapshot_args.solid_selection,
                     pipeline_subset_snapshot_args.asset_selection,
                 )

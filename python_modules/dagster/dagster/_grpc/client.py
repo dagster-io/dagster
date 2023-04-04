@@ -27,10 +27,10 @@ from .types import (
     ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    JobSubsetSnapshotArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs,
     SensorExecutionArgs,
 )
 from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
@@ -285,7 +285,7 @@ class DagsterGrpcClient:
         check.inst_param(
             pipeline_subset_snapshot_args,
             "pipeline_subset_snapshot_args",
-            PipelineSubsetSnapshotArgs,
+            JobSubsetSnapshotArgs,
         )
 
         res = self._query(

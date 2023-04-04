@@ -5,7 +5,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster._core.host_representation.origin import ExternalJobOrigin
-from dagster._grpc.types import PipelineSubsetSnapshotArgs
+from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
@@ -27,8 +27,8 @@ def sync_get_external_pipeline_subset_grpc(
 
     result = deserialize_value(
         api_client.external_pipeline_subset(
-            pipeline_subset_snapshot_args=PipelineSubsetSnapshotArgs(
-                pipeline_origin=pipeline_origin,
+            pipeline_subset_snapshot_args=JobSubsetSnapshotArgs(
+                job_origin=pipeline_origin,
                 solid_selection=solid_selection,
                 asset_selection=asset_selection,
             ),
