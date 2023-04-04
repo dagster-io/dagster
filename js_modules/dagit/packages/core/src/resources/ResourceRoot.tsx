@@ -57,7 +57,7 @@ const remapName = (inName: string): string => {
   return inName;
 };
 
-const succinctType = (resourceType: string | undefined): string | null => {
+export const succinctType = (resourceType: string | undefined): string | null => {
   return resourceType?.split('.').pop() || null;
 };
 
