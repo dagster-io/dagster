@@ -217,6 +217,66 @@ def my_directory_sensor_with_skip_reasons():
 
 ---
 
+## Using resources in sensors
+
+Dagster's [resources](/concepts/resources) system can be used with sensors to make it easier to call out to external systems and to make components of a sensor easier to plug in for testing purposes.
+
+To specify resource dependencies, annotate the resource as a parameter to the sensor's function. Resources are provided by attaching them to your <PyObject object="Definitions" /> call.
+
+Here, a resource is provided which provides access to an external API. The same resource could be used in the job that the sensor triggers.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_sensor endbefore=end_new_resource_on_sensor dedent=4
+from dagster import (
+    sensor,
+    RunRequest,
+    SensorEvaluationContext,
+    ConfigurableResource,
+    job,
+    Definitions,
+    RunConfig,
+)
+import requests
+from typing import List
+
+class UsersAPI(ConfigurableResource):
+    url: str
+
+    def fetch_users(self) -> List[str]:
+        return requests.get(self.url).json()
+
+@job
+def process_user():
+    ...
+
+@sensor(job=process_user)
+def process_new_users_sensor(
+    context: SensorEvaluationContext,
+    users_api: UsersAPI,
+):
+    last_user = int(context.cursor) if context.cursor else 0
+    users = users_api.fetch_users()
+
+    num_users = len(users)
+    for user_id in users[last_user:]:
+        yield RunRequest(
+            run_key=user_id,
+            run_config=RunConfig(ops={"insert_user": {"user_id": user_id}}),
+            tags={},
+        )
+
+    context.update_cursor(str(num_users))
+
+defs = Definitions(
+    jobs=[process_user],
+    sensors=[process_new_users_sensor],
+    resources={"users_api": UsersAPI("https://my-api.com/users")},
+)
+```
+
+For more information on resources, see the [resources](/concepts/resources#using-resources-with-schedules) concept page.
+
+---
+
 ## Testing sensors
 
 <TabGroup>
@@ -332,6 +392,34 @@ def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
         assert validate_run_config(log_file_job, run_request.run_config)
+```
+
+#### Testing sensors with resources
+
+For sensors which utilize [resources](/concepts/resources), you can provide the necessary resources when invoking the sensor function.
+
+Below is a test for the `process_new_users_sensor` that we defined [above](#using-resources-in-sensors) which uses the `users_api` resource.
+
+```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
+from dagster import build_sensor_context, validate_run_config
+
+def test_process_new_users_sensor():
+    class MockUsersAPI(ConfigurableResource):
+        def fetch_users(self) -> List[str]:
+            return ["1", "2", "3"]
+
+    # You can build resources into the sensor context
+    context = build_sensor_context(
+        resources={"users_api": MockUsersAPI()},
+    )
+    run_requests = process_new_users_sensor(context)
+    assert len(run_requests) == 3
+
+    # You can also supply resources as kwargs to the sensor function
+    context = build_sensor_context()
+    run_request = process_new_users_sensor(context, users_api=MockUsersAPI())
+    run_requests = process_new_users_sensor(context)
+    assert len(run_requests) == 3
 ```
 
 </TabItem>

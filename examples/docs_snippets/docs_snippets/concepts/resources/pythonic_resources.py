@@ -744,6 +744,30 @@ def new_resource_on_sensor() -> None:
     )
     # end_new_resource_on_sensor
 
+    # start_test_resource_on_sensor
+
+    from dagster import build_sensor_context, validate_run_config
+
+    def test_process_new_users_sensor():
+        class MockUsersAPI(ConfigurableResource):
+            def fetch_users(self) -> List[str]:
+                return ["1", "2", "3"]
+
+        # You can build resources into the sensor context
+        context = build_sensor_context(
+            resources={"users_api": MockUsersAPI()},
+        )
+        run_requests = process_new_users_sensor(context)
+        assert len(run_requests) == 3
+
+        # You can also supply resources as kwargs to the sensor function
+        context = build_sensor_context()
+        run_request = process_new_users_sensor(context, users_api=MockUsersAPI())
+        run_requests = process_new_users_sensor(context)
+        assert len(run_requests) == 3
+
+        # end_test_resource_on_sensor
+
 
 def new_resource_on_schedule() -> None:
     # start_new_resource_on_schedule
@@ -788,3 +812,32 @@ def new_resource_on_schedule() -> None:
         resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
     )
     # end_new_resource_on_schedule
+    # start_test_resource_on_schedule
+
+    from dagster import build_schedule_context, validate_run_config
+
+    def test_process_data_schedule():
+        # You can build resources into the schedule context
+        context = build_schedule_context(
+            scheduled_execution_time=datetime.datetime(2020, 1, 1),
+            resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
+        )
+        run_request = process_data_schedule(context)
+        assert (
+            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+            == "2020-01-01"
+        )
+
+        # You can also supply resources as kwargs to the schedule function
+        context = build_schedule_context(
+            scheduled_execution_time=datetime.datetime(2020, 1, 1)
+        )
+        run_request = process_data_schedule(
+            context, date_formatter=DateFormatter(format="%Y-%m-%d")
+        )
+        assert (
+            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+            == "2020-01-01"
+        )
+
+    # end_test_resource_on_schedule
