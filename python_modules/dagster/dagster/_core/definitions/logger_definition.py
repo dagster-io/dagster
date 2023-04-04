@@ -68,7 +68,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 args[0],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
             )
             return logger_invocation_result(self, context)
         else:
@@ -80,7 +80,7 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
                 kwargs[context_param_name],
                 context_param_name,
                 UnboundInitLoggerContext,
-                default=UnboundInitLoggerContext(logger_config=None, pipeline_def=None),
+                default=UnboundInitLoggerContext(logger_config=None, job_def=None),
             )
 
             return logger_invocation_result(self, context)
@@ -194,6 +194,4 @@ def build_init_logger_context(
         ),
     )
 
-    return UnboundInitLoggerContext(
-        logger_config=logger_config, pipeline_def=pipeline_def or job_def
-    )
+    return UnboundInitLoggerContext(logger_config=logger_config, job_def=pipeline_def or job_def)
