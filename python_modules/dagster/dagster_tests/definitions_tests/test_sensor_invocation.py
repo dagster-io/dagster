@@ -48,7 +48,6 @@ from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.execution.build_resources import build_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
@@ -103,8 +102,8 @@ def test_sensor_invocation_args():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Sensor invocation received multiple non-resource arguments. Only a first positional"
-            " context parameter should be provided when invoking."
+            "Sensor invocation received multiple arguments. Only a first positional context "
+            "parameter should be provided when invoking."
         ),
     ):
         basic_sensor_with_context(context, _arbitrary_context=None)
@@ -135,103 +134,6 @@ def test_sensor_invocation_resources() -> None:
             build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
     ).run_config == {"foo": "foo"}
-
-
-def test_sensor_invocation_resources_direct() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
-    def basic_sensor_resource_req(my_resource: MyResource):
-        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
-            " provided."
-        ),
-    ):
-        basic_sensor_resource_req()
-
-    # Can pass resource through context
-    assert cast(
-        RunRequest,
-        basic_sensor_resource_req(
-            context=build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
-        ),
-    ).run_config == {"foo": "foo"}
-
-    # Can pass resource directly
-    assert cast(
-        RunRequest,
-        basic_sensor_resource_req(my_resource=MyResource(a_str="foo")),
-    ).run_config == {"foo": "foo"}
-
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "If directly invoking a sensor, you may not provide resources as"
-            " positional"
-            " arguments, only as keyword arguments."
-        ),
-    ):
-        # We don't allow providing resources as args, this adds too much complexity
-        # They must be kwargs, and we will error accordingly
-        assert cast(
-            RunRequest,
-            basic_sensor_resource_req(MyResource(a_str="foo")),
-        ).run_config == {"foo": "foo"}
-
-    # Can pass resource directly with context
-    assert cast(
-        RunRequest,
-        basic_sensor_resource_req(build_sensor_context(), my_resource=MyResource(a_str="foo")),
-    ).run_config == {"foo": "foo"}
-
-    # Test with context arg requirement
-    @sensor(job_name="foo_pipeline")
-    def basic_sensor_with_context_resource_req(my_resource: MyResource, context):
-        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
-
-    assert cast(
-        RunRequest,
-        basic_sensor_with_context_resource_req(
-            build_sensor_context(), my_resource=MyResource(a_str="foo")
-        ),
-    ).run_config == {"foo": "foo"}
-
-
-def test_sensor_invocation_resources_direct_many() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    # Test no arg invocation
-    @sensor(job_name="foo_pipeline")
-    def basic_sensor_resource_req(my_resource: MyResource, my_other_resource: MyResource):
-        return RunRequest(
-            run_key=None,
-            run_config={"foo": my_resource.a_str, "bar": my_other_resource.a_str},
-            tags={},
-        )
-
-    # Can pass resource directly
-    assert cast(
-        RunRequest,
-        basic_sensor_resource_req(
-            my_other_resource=MyResource(a_str="bar"), my_resource=MyResource(a_str="foo")
-        ),
-    ).run_config == {"foo": "foo", "bar": "bar"}
-
-    # Pass resources both directly and in context
-    assert cast(
-        RunRequest,
-        basic_sensor_resource_req(
-            context=build_sensor_context(resources={"my_other_resource": MyResource(a_str="bar")}),
-            my_resource=MyResource(a_str="foo"),
-        ),
-    ).run_config == {"foo": "foo", "bar": "bar"}
 
 
 def test_sensor_invocation_resources_context_manager() -> None:
@@ -275,135 +177,6 @@ def test_sensor_invocation_resources_deferred() -> None:
     with context as open_context:
         with pytest.raises(Exception):
             basic_sensor_resource_req(open_context)
-
-
-def test_multi_asset_sensor_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    @op
-    def an_op():
-        return 1
-
-    @job
-    def the_job():
-        an_op()
-
-    @asset
-    def asset_a():
-        return 1
-
-    @asset
-    def asset_b():
-        return 1
-
-    @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
-    def a_and_b_sensor(context, my_resource: MyResource):
-        asset_events = context.latest_materialization_records_by_key()
-        if all(asset_events.values()):
-            context.advance_all_cursors()
-            return RunRequest(
-                run_key=context.cursor, run_config={"foo": my_resource.a_str}, tags={}
-            )
-
-    @repository
-    def my_repo():
-        return [asset_a, asset_b, a_and_b_sensor]
-
-    with instance_for_test() as instance:
-        materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
-            instance=instance,
-            repository_def=my_repo,
-            resources={"my_resource": MyResource(a_str="bar")},
-        )
-        assert cast(RunRequest, a_and_b_sensor(ctx)).run_config == {"foo": "bar"}
-
-
-def test_freshness_policy_sensor_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    @freshness_policy_sensor(asset_selection=AssetSelection.all())
-    def freshness_sensor(context, my_resource: MyResource) -> None:
-        assert context.minutes_late == 10
-        assert context.previous_minutes_late is None
-        assert my_resource.a_str == "bar"
-
-    with build_resources({"my_resource": MyResource(a_str="bar")}) as resources:
-        context = build_freshness_policy_sensor_context(
-            sensor_name="status_sensor",
-            asset_key=AssetKey("a"),
-            freshness_policy=FreshnessPolicy(maximum_lag_minutes=30),
-            minutes_late=10,
-            # This is a bit gross right now, but FressnessPolicySensorContext is not a subclass of
-            # SensorEvaluationContext and isn't set up to be a context manager
-            # Direct invocation of freshness policy sensors should be rare anyway
-            resources=resources,
-        )
-
-        freshness_sensor(context)
-
-
-def test_run_status_sensor_invocation_resources() -> None:
-    class MyResource(ConfigurableResource):
-        a_str: str
-
-    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
-    def status_sensor(context, my_resource: MyResource):
-        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
-        assert my_resource.a_str == "bar"
-
-    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
-    def status_sensor_no_context(my_resource: MyResource):
-        assert my_resource.a_str == "bar"
-
-    @op
-    def succeeds():
-        return 1
-
-    @job
-    def my_job_2():
-        succeeds()
-
-    instance = DagsterInstance.ephemeral()
-    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
-
-    dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
-
-    context = build_run_status_sensor_context(
-        sensor_name="status_sensor",
-        dagster_instance=instance,
-        dagster_run=dagster_run,
-        dagster_event=dagster_event,
-        resources={"my_resource": MyResource(a_str="bar")},
-    )
-
-    status_sensor(context)
-    status_sensor_no_context(context)
-
-    # also keeps resources from nested `context`
-    context = build_run_status_sensor_context(
-        sensor_name="status_sensor",
-        dagster_instance=instance,
-        dagster_run=dagster_run,
-        dagster_event=dagster_event,
-        context=build_sensor_context(resources={"my_resource": MyResource(a_str="bar")}),
-    )
-
-    status_sensor(context)
-    status_sensor_no_context(context)
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=(
-            "Resource with key 'my_resource' required by sensor 'status_sensor_no_context' was not"
-            " provided."
-        ),
-    ):
-        status_sensor_no_context()
 
 
 def test_instance_access_built_sensor():
