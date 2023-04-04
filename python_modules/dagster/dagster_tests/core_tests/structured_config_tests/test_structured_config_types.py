@@ -202,6 +202,60 @@ def test_struct_config_mapping() -> None:
     assert executed["yes"]
 
 
+def test_struct_config_mapping_list() -> None:
+    class AnOpConfig(Config):
+        a_list_of_string_to_int_mapping: List[Mapping[str, int]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_list_of_string_to_int_mapping == [{"foo": 1, "bar": 2}]
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {"a_list_of_string_to_int_mapping": [{"foo": 1, "bar": 2}]}
+                }
+            }
+        }
+    )
+    assert executed["yes"]
+
+
+def test_complex_config_schema() -> None:
+    class AnOpConfig(Config):
+        a_complex_thing: Mapping[int, List[Mapping[str, Optional[int]]]]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_complex_thing == {5: [{"foo": 1, "bar": 2, "baz": None}]}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {"a_complex_thing": {5: [{"foo": 1, "bar": 2, "baz": None}]}}
+                }
+            }
+        }
+    )
+    assert executed["yes"]
+
+
 @pytest.mark.skip(reason="not yet supported")
 def test_struct_config_optional_nested() -> None:
     class ANestedConfig(Config):

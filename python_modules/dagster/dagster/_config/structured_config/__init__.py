@@ -806,7 +806,10 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
         return Field(config=wrapped_config_type, description=inferred_field.description)
     else:
-        config_type = _config_type_for_pydantic_field(pydantic_field)
+        if pydantic_field.sub_fields:
+            config_type = _convert_pydantic_field(pydantic_field.sub_fields[0]).config_type
+        else:
+            config_type = _config_type_for_pydantic_field(pydantic_field)
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
