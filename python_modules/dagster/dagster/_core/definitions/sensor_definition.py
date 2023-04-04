@@ -529,7 +529,7 @@ class SensorDefinition:
         if job_name:
             targets = [
                 RepoRelativeTarget(
-                    pipeline_name=check.str_param(job_name, "job_name"),
+                    job_name=check.str_param(job_name, "job_name"),
                     solid_selection=None,
                 )
             ]
@@ -776,7 +776,7 @@ class SensorDefinition:
             return context.repository_def.get_job(job_name)
 
         has_multiple_targets = len(self._targets) > 1
-        target_names = [target.pipeline_name for target in self._targets]
+        target_names = [target.job_name for target in self._targets]
 
         if run_requests and len(self._targets) == 0 and not self._asset_selection:
             raise Exception(
@@ -844,7 +844,7 @@ class SensorDefinition:
                 f"Cannot use `job_name` property for sensor {self.name}, which targets multiple"
                 " jobs."
             )
-        return self._targets[0].pipeline_name
+        return self._targets[0].job_name
 
     @public
     @property

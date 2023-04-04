@@ -1752,8 +1752,8 @@ def external_sensor_data_from_def(
         }
     else:
         target_dict = {
-            target.pipeline_name: ExternalTargetData(
-                pipeline_name=target.pipeline_name,
+            target.job_name: ExternalTargetData(
+                pipeline_name=target.job_name,
                 mode=DEFAULT_MODE_NAME,
                 solid_selection=target.solid_selection,
             )
@@ -1762,7 +1762,7 @@ def external_sensor_data_from_def(
 
     return ExternalSensorData(
         name=sensor_def.name,
-        pipeline_name=first_target.pipeline_name if first_target else None,
+        pipeline_name=first_target.job_name if first_target else None,
         mode=None,
         solid_selection=first_target.solid_selection if first_target else None,
         target_dict=target_dict,

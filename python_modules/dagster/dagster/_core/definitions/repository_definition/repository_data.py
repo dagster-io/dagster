@@ -498,7 +498,7 @@ class CachingRepositoryData(RepositoryData):
             return sensor
 
         for target in sensor.targets:
-            if target.pipeline_name not in job_names:
+            if target.job_name not in job_names:
                 raise DagsterInvalidDefinitionError(
                     f'SensorDefinition "{sensor.name}" targets job "{sensor.job_name}" '
                     "which was not found in this repository."
