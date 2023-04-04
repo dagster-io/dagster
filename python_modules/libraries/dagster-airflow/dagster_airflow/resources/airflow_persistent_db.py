@@ -2,7 +2,6 @@ import importlib
 import os
 from typing import List, Optional
 
-from packaging import version
 import airflow
 from airflow.models.connection import Connection
 from dagster import (
@@ -14,21 +13,12 @@ from dagster import (
     _check as check,
 )
 
-from airflow import __version__ as airflow_version
 from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
     create_airflow_connections,
     is_airflow_2_loaded_in_environment,
     serialize_connections,
 )
-
-
-def _is_airflow_2_3():
-    # in sphinx context, airflow.__version__ is set to
-    # this string, version.parse errors trying to parse it
-    if str(airflow_version) == "airflow.__version__":
-        return False
-    return version.parse(str(airflow_version)) >= version.parse("2.3.0")
 
 
 class AirflowPersistentDatabase(AirflowDatabase):
@@ -40,7 +30,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 
     @staticmethod
     def _initialize_database(uri: str, connections: List[Connection] = []):
-        if _is_airflow_2_3():
+        if is_airflow_2_loaded_in_environment("2.3.0"):
             os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
             importlib.reload(airflow.configuration)
             importlib.reload(airflow.settings)
