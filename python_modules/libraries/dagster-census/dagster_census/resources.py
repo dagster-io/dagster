@@ -159,7 +159,7 @@ class CensusResource:
 
             sync_id = response_dict["data"]["sync_id"]
 
-            if response_dict["status"] == "working":
+            if response_dict["data"]["status"] == "working":
                 self._log.debug(
                     f"Sync {sync_id} still running after {datetime.datetime.now() - poll_start}."
                 )
