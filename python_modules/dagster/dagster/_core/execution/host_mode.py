@@ -27,7 +27,7 @@ from dagster._loggers import default_system_loggers
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .api import ExecuteRunWithPlanIterable, pipeline_execution_iterator
+from .api import ExecuteRunWithPlanIterable, job_execution_iterator
 from .context.logger import InitLoggerContext
 from .context.system import PlanData, PlanOrchestrationContext
 from .context_creation_pipeline import PlanOrchestrationContextManager
@@ -207,7 +207,7 @@ def execute_run_host_mode(
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
-        iterator=pipeline_execution_iterator,
+        iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=host_mode_execution_context_event_generator,
             pipeline=pipeline,

@@ -13,7 +13,7 @@ from .api import (
     ExecuteRunWithPlanIterable,
     create_execution_plan,
     ephemeral_instance_if_missing,
-    pipeline_execution_iterator,
+    job_execution_iterator,
 )
 from .context_creation_pipeline import (
     PlanOrchestrationContextManager,
@@ -58,7 +58,7 @@ def core_execute_in_process(
 
         execute_run_iterable = ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            iterator=pipeline_execution_iterator,
+            iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,

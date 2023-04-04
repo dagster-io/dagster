@@ -154,7 +154,7 @@ def execute_run_iterator(
     return iter(
         ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
-            iterator=pipeline_execution_iterator,
+            iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
@@ -235,7 +235,7 @@ def execute_run(
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
-        iterator=pipeline_execution_iterator,
+        iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=orchestration_context_event_generator,
             pipeline=pipeline,
@@ -746,7 +746,7 @@ def create_execution_plan(
     )
 
 
-def pipeline_execution_iterator(
+def job_execution_iterator(
     pipeline_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
@@ -817,7 +817,7 @@ def pipeline_execution_iterator(
                 )
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.FAILURE:
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     "Execution was interrupted for a run that was already in a failure state.",
                     EngineEventData(),
                 )

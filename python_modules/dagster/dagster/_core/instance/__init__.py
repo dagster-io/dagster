@@ -1527,8 +1527,8 @@ class DagsterInstance(DynamicPartitionsStore):
             return get_run()
 
     @traced
-    def add_run(self, pipeline_run: DagsterRun) -> DagsterRun:
-        return self._run_storage.add_run(pipeline_run)
+    def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
+        return self._run_storage.add_run(dagster_run)
 
     @traced
     def add_snapshot(
