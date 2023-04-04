@@ -302,7 +302,7 @@ def log_job_event(pipeline_context: IPlanContext, event: "DagsterEvent") -> None
 
     pipeline_context.log.log_dagster_event(
         level=log_level,
-        msg=event.message or f"{event_type} for pipeline {pipeline_context.pipeline_name}",
+        msg=event.message or f"{event_type} for pipeline {pipeline_context.job_name}",
         dagster_event=event,
     )
 
@@ -400,7 +400,7 @@ class DagsterEvent(
     ) -> "DagsterEvent":
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
-            job_name=step_context.pipeline_name,
+            job_name=step_context.job_name,
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
@@ -428,7 +428,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
-            job_name=job_context.pipeline_name,
+            job_name=job_context.job_name,
             message=check.opt_str_param(message, "message"),
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
             step_handle=step_handle,
@@ -939,7 +939,7 @@ class DagsterEvent(
             DagsterEventType.RUN_START,
             job_context,
             message='Started execution of run for "{pipeline_name}".'.format(
-                pipeline_name=job_context.pipeline_name
+                pipeline_name=job_context.job_name
             ),
         )
 
@@ -949,7 +949,7 @@ class DagsterEvent(
             DagsterEventType.RUN_SUCCESS,
             job_context,
             message='Finished execution of run for "{pipeline_name}".'.format(
-                pipeline_name=job_context.pipeline_name
+                pipeline_name=job_context.job_name
             ),
         )
 
@@ -965,7 +965,7 @@ class DagsterEvent(
                 DagsterEventType.RUN_FAILURE,
                 job_context_or_name,
                 message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
-                    pipeline_name=job_context_or_name.pipeline_name,
+                    pipeline_name=job_context_or_name.job_name,
                     context_msg=context_msg,
                 ),
                 event_specific_data=JobFailureData(error_info),
@@ -994,7 +994,7 @@ class DagsterEvent(
             DagsterEventType.RUN_CANCELED,
             job_context,
             message='Execution of run for "{pipeline_name}" canceled.'.format(
-                pipeline_name=job_context.pipeline_name
+                pipeline_name=job_context.job_name
             ),
             event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
@@ -1277,7 +1277,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            job_name=step_context.pipeline_name,
+            job_name=step_context.job_name,
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
@@ -1301,7 +1301,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            job_name=step_context.pipeline_name,
+            job_name=step_context.job_name,
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
@@ -1326,7 +1326,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            job_name=step_context.pipeline_name,
+            job_name=step_context.job_name,
             step_handle=step_context.step.handle,
             node_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,

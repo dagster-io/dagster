@@ -418,7 +418,7 @@ def _type_check_and_store_output(
         resolve_step_output_versions(
             step_context.job_def, step_context.execution_plan, step_context.resolved_run_config
         ).get(step_output_handle)
-        if MEMOIZED_RUN_TAG in step_context.pipeline.get_definition().tags
+        if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
         else None
     )
 

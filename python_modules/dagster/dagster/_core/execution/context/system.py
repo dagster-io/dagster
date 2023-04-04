@@ -95,7 +95,7 @@ class IPlanContext(ABC):
         raise NotImplementedError()
 
     @property
-    def pipeline(self) -> IJob:
+    def job(self) -> IJob:
         return self.plan_data.pipeline
 
     @property
@@ -111,12 +111,8 @@ class IPlanContext(ABC):
         return self.dagster_run.run_config
 
     @property
-    def pipeline_name(self) -> str:
-        return self.dagster_run.job_name
-
-    @property
     def job_name(self) -> str:
-        return self.pipeline_name
+        return self.dagster_run.job_name
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -184,7 +180,7 @@ class ExecutionData(NamedTuple):
 
     scoped_resources_builder: ScopedResourcesBuilder
     resolved_run_config: ResolvedRunConfig
-    pipeline_def: JobDefinition
+    job_def: JobDefinition
 
 
 class IStepContext(IPlanContext):
@@ -226,12 +222,12 @@ class PlanOrchestrationContext(IPlanContext):
         return self._plan_data
 
     @property
-    def reconstructable_pipeline(self) -> ReconstructableJob:
-        if not isinstance(self.pipeline, ReconstructableJob):
+    def reconstructable_job(self) -> ReconstructableJob:
+        if not isinstance(self.job, ReconstructableJob):
             raise DagsterInvariantViolationError(
                 "reconstructable_pipeline property must be a ReconstructablePipeline"
             )
-        return self.pipeline
+        return self.job
 
     @property
     def log(self) -> DagsterLogManager:
@@ -331,7 +327,7 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def job_def(self) -> JobDefinition:
-        return self._execution_data.pipeline_def
+        return self._execution_data.job_def
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
@@ -349,7 +345,7 @@ class PlanExecutionContext(IPlanContext):
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         from dagster._core.definitions.job_definition import JobDefinition
 
-        pipeline_def = self._execution_data.pipeline_def
+        pipeline_def = self._execution_data.job_def
         if not isinstance(pipeline_def, JobDefinition):
             check.failed(
                 "Can only call 'partitions_def', when using jobs, not legacy pipelines",
@@ -556,7 +552,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def job_def(self) -> "JobDefinition":
-        return self._execution_data.pipeline_def
+        return self._execution_data.job_def
 
     @property
     def solid(self) -> OpNode:

@@ -119,7 +119,7 @@ def _submit_task(app, plan_context, step, queue, priority, known_state):
     task = create_task(app)
     task_signature = task.si(
         execute_step_args_packed=pack_value(execute_step_args),
-        executable_dict=plan_context.reconstructable_pipeline.to_dict(),
+        executable_dict=plan_context.reconstructable_job.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority,

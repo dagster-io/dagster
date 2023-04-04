@@ -198,7 +198,7 @@ class CeleryK8sJobExecutor(Executor):
 def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
-    pipeline_origin = plan_context.reconstructable_pipeline.get_python_origin()
+    pipeline_origin = plan_context.reconstructable_job.get_python_origin()
 
     execute_step_args = ExecuteStepArgs(
         job_origin=pipeline_origin,

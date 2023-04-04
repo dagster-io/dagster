@@ -123,7 +123,7 @@ def step_context_to_step_run_ref(
 
     retry_mode = step_context.retry_mode
 
-    recon_pipeline = step_context.pipeline
+    recon_pipeline = step_context.job
     if package_dir:
         if isinstance(recon_pipeline, ReconstructableJob) and isinstance(
             recon_pipeline.repository.pointer, FileCodePointer

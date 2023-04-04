@@ -210,7 +210,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def pipeline_name(self) -> str:
         """str: The name of the currently executing pipeline."""
-        return self._step_execution_context.pipeline_name
+        return self._step_execution_context.job_name
 
     @public
     @property

@@ -145,7 +145,7 @@ class MultiprocessExecutor(Executor):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        pipeline = plan_context.reconstructable_pipeline
+        pipeline = plan_context.reconstructable_job
 
         multiproc_ctx = multiprocessing.get_context(self._start_method)
         if self._start_method == "forkserver":
