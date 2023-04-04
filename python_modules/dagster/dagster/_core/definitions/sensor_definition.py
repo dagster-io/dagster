@@ -25,6 +25,9 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+)
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import (
     Resources,
@@ -44,9 +47,15 @@ from ..decorator_utils import (
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import PipelineRunReaction, RunRequest, SkipReason
+from .run_request import (
+    PipelineRunReaction,
+    RunRequest,
+    SensorResult,
+    SkipReason,
+)
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
@@ -143,6 +152,7 @@ class SensorEvaluationContext:
             else None
         )
         self._logger: Optional[InstigationLogger] = None
+        self._cursor_updated = False
 
     def __enter__(self) -> "SensorEvaluationContext":
         self._cm_scope_entered = True
@@ -239,6 +249,11 @@ class SensorEvaluationContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+        self._cursor_updated = True
+
+    @property
+    def cursor_updated(self) -> bool:
+        return self._cursor_updated
 
     @public
     @property
@@ -284,11 +299,12 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
     PipelineRunReaction,
+    SensorResult,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
@@ -555,22 +571,49 @@ class SensorDefinition:
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
+        run_requests: List[RunRequest] = []
+        pipeline_run_reactions: List[PipelineRunReaction] = []
+        updated_cursor = context.cursor
 
-        run_requests: List[RunRequest]
-        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
-            run_requests = []
-            pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = (
-                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
-            )
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorResult))
+
+            if isinstance(item, SensorResult):
+                run_requests = list(item.run_requests) if item.run_requests else []
+                skip_message = (
+                    item.skip_reason.skip_message
+                    if item.skip_reason
+                    else (None if run_requests else "Sensor function returned an empty result")
+                )
+
+                if item.cursor and context.cursor_updated:
+                    raise DagsterInvariantViolationError(
+                        "SensorResult.cursor cannot be set if context.update_cursor() was called."
+                    )
+                updated_cursor = item.cursor
+
+            elif isinstance(item, RunRequest):
+                run_requests = [item]
+            elif isinstance(item, SkipReason):
+                skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            elif isinstance(item, PipelineRunReaction):
+                pipeline_run_reactions = (
+                    [cast(PipelineRunReaction, item)]
+                    if isinstance(item, PipelineRunReaction)
+                    else []
+                )
+            else:
+                check.failed(f"Unexpected type {type(item)} in sensor result")
         else:
+            if any(isinstance(item, SensorResult) for item in result):
+                check.failed(
+                    "When a SensorResult is returned from a sensor, it must be the only object"
+                    " returned."
+                )
+
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
@@ -592,17 +635,14 @@ class SensorDefinition:
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
-        self.check_valid_run_requests(run_requests)
-
-        if self._asset_selection:
-            run_requests = [
-                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
-            ]
+        resolved_run_requests = self.resolve_run_requests(
+            run_requests, context, self._asset_selection
+        )
 
         return SensorExecutionData(
-            run_requests,
+            resolved_run_requests,
             skip_message,
-            context.cursor,
+            updated_cursor,
             pipeline_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
@@ -616,17 +656,33 @@ class SensorDefinition:
     def load_targets(
         self,
     ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        """Returns job/graph definitions that have been directly passed into the sensor definition.
+        Any jobs or graphs that are referenced by name will not be loaded.
+        """
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
                 targets.append(target.load())
         return targets
 
-    def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
+    def resolve_run_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        context: SensorEvaluationContext,
+        asset_selection: Optional[AssetSelection],
+    ) -> Sequence[RunRequest]:
+        def _get_repo_job_by_name(context: SensorEvaluationContext, job_name: str) -> JobDefinition:
+            if context.repository_def is None:
+                raise DagsterInvariantViolationError(
+                    "Must provide repository def to build_sensor_context when yielding partitioned"
+                    " run requests"
+                )
+            return context.repository_def.get_job(job_name)
+
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
 
-        if run_requests and not self._targets and not self._asset_selection:
+        if run_requests and len(self._targets) == 0 and not self._asset_selection:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
@@ -634,17 +690,50 @@ class SensorDefinition:
                 "decorator."
             )
 
+        if asset_selection:
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
+            ]
+
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
+        # Run requests may contain an invalid target, or a partition key that does not exist.
+        # We will resolve these run requests, applying the target and partition config/tags.
+        resolved_run_requests = []
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
                 raise Exception(
-                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
-                    f"specify job_name for the requested run. Expected one of: {target_names}"
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not"
+                    " specify job_name for the requested run. Expected one of:"
+                    f" {target_names}"
                 )
-            elif run_request.job_name and run_request.job_name not in target_names:
+            elif (
+                run_request.job_name
+                and run_request.job_name not in target_names
+                and not asset_selection
+            ):
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
+
+            if run_request.partition_key and not run_request.has_resolved_partition():
+                selected_job = _get_repo_job_by_name(
+                    context, run_request.job_name if run_request.job_name else target_names[0]
+                )
+                resolved_run_requests.append(
+                    run_request.with_resolved_tags_and_config(
+                        target_definition=selected_job,
+                        current_time=None,
+                        dynamic_partitions_store=dynamic_partitions_store,
+                    )
+                )
+            else:
+                resolved_run_requests.append(run_request)
+
+        return resolved_run_requests
 
     @property
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
@@ -731,7 +820,7 @@ def wrap_sensor_evaluation(
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
                 yield item
-        elif isinstance(result, (SkipReason, RunRequest)):
+        elif isinstance(result, (SkipReason, RunRequest, SensorResult)):
             yield result
 
         elif result is not None:

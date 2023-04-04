@@ -2391,7 +2391,7 @@ type PartitionBackfill {
   error: PythonError
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
-  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  assetBackfillData: AssetBackfillData
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
 }
@@ -2403,12 +2403,23 @@ enum BulkActionStatus {
   CANCELED
 }
 
+type AssetBackfillData {
+  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
+  rootAssetTargetedRanges: [PartitionKeyRange!]
+  rootAssetTargetedPartitions: [String]
+}
+
 type AssetPartitionsStatusCounts {
   assetKey: AssetKey!
   numPartitionsTargeted: Int!
   numPartitionsRequested: Int!
   numPartitionsCompleted: Int!
   numPartitionsFailed: Int!
+}
+
+type PartitionKeyRange {
+  start: String!
+  end: String!
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError

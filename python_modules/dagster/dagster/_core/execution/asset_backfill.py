@@ -27,6 +27,7 @@ from dagster._core.definitions.assets_job import is_base_asset_job_name
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterBackfillFailedError
@@ -89,6 +90,24 @@ class AssetBackfillData(NamedTuple):
         return list(
             self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
         )
+
+    def get_target_root_partitions_subset(self) -> Optional[PartitionsSubset]:
+        root_asset_keys = (
+            AssetSelection.keys(*self.target_subset.asset_keys)
+            .sources()
+            .resolve(self.target_subset.asset_graph)
+        )
+
+        if (
+            not root_asset_keys
+            or self.target_subset.asset_graph.get_partitions_def(next(iter(root_asset_keys)))
+            is None
+        ):
+            return None
+
+        # An asset backfill must target the same partitions for the root assets
+        # Return the partitions subset for the first root asset
+        return self.target_subset.get_partitions_subset(next(iter(root_asset_keys)))
 
     def get_num_partitions(self) -> Optional[int]:
         """Only valid when the same number of partitions are targeted in every asset.
@@ -410,9 +429,9 @@ def submit_run_request(
 def _get_implicit_job_name_for_assets(
     asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
-    job_names = set(asset_graph.get_job_names(asset_keys[0]))
+    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_job_names(asset_key))
+        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 
