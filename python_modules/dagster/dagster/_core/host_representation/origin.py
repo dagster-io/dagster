@@ -376,8 +376,8 @@ class ExternalRepositoryOrigin(
     def get_label(self) -> str:
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
-        return ExternalPipelineOrigin(self, pipeline_name)
+    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalJobOrigin":
+        return ExternalJobOrigin(self, pipeline_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
         return ExternalInstigatorOrigin(self, instigator_name)
@@ -386,26 +386,28 @@ class ExternalRepositoryOrigin(
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
 
-@whitelist_for_serdes
-class ExternalPipelineOrigin(
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineOrigin", storage_field_names={"job_name": "pipeline_name"}
+)
+class ExternalJobOrigin(
     NamedTuple(
-        "_ExternalPipelineOrigin",
-        [("external_repository_origin", ExternalRepositoryOrigin), ("pipeline_name", str)],
+        "_ExternalJobOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("job_name", str)],
     )
 ):
     """Serializable representation of an ExternalPipeline that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, pipeline_name: str):
-        return super(ExternalPipelineOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, job_name: str):
+        return super(ExternalJobOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.str_param(job_name, "job_name"),
         )
 
     def get_id(self) -> str:

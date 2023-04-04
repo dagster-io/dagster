@@ -5,7 +5,7 @@ import pytest
 from dagster._check import CheckError
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
@@ -27,7 +27,7 @@ from dagster._serdes import deserialize_value, serialize_value
 
 def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
-    fake_pipeline_origin = ExternalPipelineOrigin(
+    fake_pipeline_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(
             InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(

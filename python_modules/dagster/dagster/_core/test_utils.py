@@ -39,7 +39,7 @@ from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -396,7 +396,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def submit_run(self, context: SubmitRunContext):
         pipeline_run = context.pipeline_run
-        check.inst(pipeline_run.external_job_origin, ExternalPipelineOrigin)
+        check.inst(pipeline_run.external_job_origin, ExternalJobOrigin)
         self._queue.append(pipeline_run)
         return pipeline_run
 

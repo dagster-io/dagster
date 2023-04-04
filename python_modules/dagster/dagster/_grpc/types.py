@@ -10,7 +10,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 from dagster._core.host_representation.origin import (
     CodeLocationOrigin,
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance.ref import InstanceRef
@@ -24,7 +24,7 @@ class ExecutionPlanSnapshotArgs(
     NamedTuple(
         "_ExecutionPlanSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
+            ("pipeline_origin", ExternalJobOrigin),
             ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
@@ -38,7 +38,7 @@ class ExecutionPlanSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
+        pipeline_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -50,9 +50,7 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", ExternalJobOrigin),
             solid_selection=check.opt_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -173,7 +171,7 @@ class ExecuteExternalPipelineArgs(
     NamedTuple(
         "_ExecuteExternalPipelineArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
+            ("pipeline_origin", ExternalJobOrigin),
             ("pipeline_run_id", str),
             ("instance_ref", Optional[InstanceRef]),
         ],
@@ -181,7 +179,7 @@ class ExecuteExternalPipelineArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
+        pipeline_origin: ExternalJobOrigin,
         pipeline_run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
@@ -190,7 +188,7 @@ class ExecuteExternalPipelineArgs(
             pipeline_origin=check.inst_param(
                 pipeline_origin,
                 "pipeline_origin",
-                ExternalPipelineOrigin,
+                ExternalJobOrigin,
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
@@ -225,9 +223,7 @@ class ExecuteStepArgs(
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", JobPythonOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", JobPythonOrigin),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -447,7 +443,7 @@ class PipelineSubsetSnapshotArgs(
     NamedTuple(
         "_PipelineSubsetSnapshotArgs",
         [
-            ("pipeline_origin", ExternalPipelineOrigin),
+            ("pipeline_origin", ExternalJobOrigin),
             ("solid_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
@@ -455,15 +451,13 @@ class PipelineSubsetSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalPipelineOrigin,
+        pipeline_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
-            ),
+            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", ExternalJobOrigin),
             solid_selection=check.sequence_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,

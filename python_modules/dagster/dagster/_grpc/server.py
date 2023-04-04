@@ -390,7 +390,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._get_repo_for_origin(
                 execution_plan_args.pipeline_origin.external_repository_origin
             ),
-            execution_plan_args.pipeline_origin.pipeline_name,
+            execution_plan_args.pipeline_origin.job_name,
             execution_plan_args,
         )
         return api_pb2.ExecutionPlanSnapshotReply(
@@ -511,7 +511,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(
                         pipeline_subset_snapshot_args.pipeline_origin.external_repository_origin
                     ),
-                    pipeline_subset_snapshot_args.pipeline_origin.pipeline_name,
+                    pipeline_subset_snapshot_args.pipeline_origin.job_name,
                     pipeline_subset_snapshot_args.solid_selection,
                     pipeline_subset_snapshot_args.asset_selection,
                 )
@@ -719,7 +719,7 @@ class DagsterApiServer(DagsterApiServicer):
                 execute_external_pipeline_args.pipeline_origin.external_repository_origin.repository_name
             ]
             recon_pipeline = recon_repo.get_reconstructable_pipeline(
-                execute_external_pipeline_args.pipeline_origin.pipeline_name
+                execute_external_pipeline_args.pipeline_origin.job_name
             )
 
         except:

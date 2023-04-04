@@ -36,7 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.host_representation.origin import ExternalJobOrigin
 from dagster._core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -1160,7 +1160,7 @@ class SqlRunStorage(RunStorage):
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalPipelineOrigin) -> None:
+    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalJobOrigin) -> None:
         new_label = job_origin.external_repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(

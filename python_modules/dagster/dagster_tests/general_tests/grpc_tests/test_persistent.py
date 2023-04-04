@@ -10,7 +10,7 @@ from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
@@ -618,7 +618,7 @@ def test_load_with_secrets_loader_instance_ref():
                 run = create_run_for_test(instance, pipeline_name="needs_env_var_job")
                 run_id = run.run_id
 
-                job_origin = ExternalPipelineOrigin(
+                job_origin = ExternalJobOrigin(
                     pipeline_name="needs_env_var_job",
                     external_repository_origin=ExternalRepositoryOrigin(
                         repository_name="needs_env_var_repo",

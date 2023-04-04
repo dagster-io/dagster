@@ -38,8 +38,8 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
+    ExternalJobOrigin,
     ExternalPartitionSetOrigin,
-    ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -435,7 +435,7 @@ class ExternalPipeline(RepresentedPipeline):
         repository_python_origin = self.repository_handle.get_python_origin()
         return JobPythonOrigin(self.name, repository_python_origin)
 
-    def get_external_origin(self) -> ExternalPipelineOrigin:
+    def get_external_origin(self) -> ExternalJobOrigin:
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self) -> str:

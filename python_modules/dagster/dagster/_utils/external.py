@@ -4,19 +4,19 @@ import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.host_representation import CodeLocation
 from dagster._core.host_representation.external import ExternalPipeline
-from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
 def external_pipeline_from_location(
     code_location: CodeLocation,
-    external_pipeline_origin: ExternalPipelineOrigin,
+    external_pipeline_origin: ExternalJobOrigin,
     solid_selection: Optional[Sequence[str]],
 ) -> ExternalPipeline:
     check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin)
+    check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalJobOrigin)
 
     repo_name = external_pipeline_origin.external_repository_origin.repository_name
-    pipeline_name = external_pipeline_origin.pipeline_name
+    pipeline_name = external_pipeline_origin.job_name
 
     check.invariant(
         code_location.has_repository(repo_name),

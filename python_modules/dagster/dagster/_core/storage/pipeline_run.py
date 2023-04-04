@@ -36,7 +36,7 @@ from .tags import (
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
-    from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")
@@ -240,7 +240,7 @@ class DagsterRun(
             ("parent_run_id", Optional[str]),
             ("job_snapshot_id", Optional[str]),
             ("execution_plan_snapshot_id", Optional[str]),
-            ("external_job_origin", Optional["ExternalPipelineOrigin"]),
+            ("external_job_origin", Optional["ExternalJobOrigin"]),
             ("job_code_origin", Optional[JobPythonOrigin]),
             ("has_repository_load_data", bool),
         ],
@@ -265,7 +265,7 @@ class DagsterRun(
         parent_run_id: Optional[str] = None,
         job_snapshot_id: Optional[str] = None,
         execution_plan_snapshot_id: Optional[str] = None,
-        external_job_origin: Optional["ExternalPipelineOrigin"] = None,
+        external_job_origin: Optional["ExternalJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         has_repository_load_data: Optional[bool] = None,
     ):
@@ -294,13 +294,13 @@ class DagsterRun(
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.host_representation.origin import ExternalJobOrigin
 
         if status == DagsterRunStatus.QUEUED:
             check.inst_param(
                 external_job_origin,
                 "external_job_origin",
-                ExternalPipelineOrigin,
+                ExternalJobOrigin,
                 "external_job_origin is required for queued runs",
             )
 
@@ -327,7 +327,7 @@ class DagsterRun(
                 execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
             external_job_origin=check.opt_inst_param(
-                external_job_origin, "external_job_origin", ExternalPipelineOrigin
+                external_job_origin, "external_job_origin", ExternalJobOrigin
             ),
             job_code_origin=check.opt_inst_param(
                 job_code_origin, "job_code_origin", JobPythonOrigin
@@ -341,20 +341,20 @@ class DagsterRun(
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
-            from dagster._core.host_representation.origin import ExternalPipelineOrigin
+            from dagster._core.host_representation.origin import ExternalJobOrigin
 
             check.inst(
                 self.external_job_origin,
-                ExternalPipelineOrigin,
+                ExternalJobOrigin,
                 "external_pipeline_origin is required for queued runs",
             )
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    def with_job_origin(self, origin: "ExternalJobOrigin") -> Self:
+        from dagster._core.host_representation.origin import ExternalJobOrigin
 
-        check.inst_param(origin, "origin", ExternalPipelineOrigin)
+        check.inst_param(origin, "origin", ExternalJobOrigin)
         return self._replace(external_job_origin=origin)
 
     def with_tags(self, tags: Mapping[str, str]) -> Self:

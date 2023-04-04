@@ -21,7 +21,7 @@ from dagster._core.host_representation import (
 )
 from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
 )
 from dagster._core.instance import DagsterInstance
@@ -207,7 +207,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-        return ExternalPipelineOrigin(
+        return ExternalJobOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 code_location_origin=InProcessCodeLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(

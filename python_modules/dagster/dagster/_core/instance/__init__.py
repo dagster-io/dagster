@@ -104,8 +104,8 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
         CodeLocation,
+        ExternalJobOrigin,
         ExternalPipeline,
-        ExternalPipelineOrigin,
         ExternalSensor,
         HistoricalPipeline,
     )
@@ -962,7 +962,7 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str] = None,
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
+        external_pipeline_origin: Optional["ExternalJobOrigin"] = None,
         pipeline_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
@@ -1042,7 +1042,7 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_pipeline_snapshot: Optional[PipelineSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         solid_selection: Optional[Sequence[str]] = None,
-        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
+        external_pipeline_origin: Optional["ExternalJobOrigin"] = None,
         pipeline_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
@@ -1245,11 +1245,11 @@ class DagsterInstance(DynamicPartitionsStore):
         asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        external_pipeline_origin: Optional["ExternalPipelineOrigin"],
+        external_pipeline_origin: Optional["ExternalJobOrigin"],
         pipeline_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
         from dagster._core.definitions.utils import validate_tags
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.host_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
         check.str_param(pipeline_name, "pipeline_name")
@@ -1342,7 +1342,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # the information just in the run or in another process.
 
         check.opt_inst_param(
-            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+            external_pipeline_origin, "external_pipeline_origin", ExternalJobOrigin
         )
         check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", JobPythonOrigin)
 
@@ -2040,7 +2040,7 @@ class DagsterInstance(DynamicPartitionsStore):
         Args:
             run_id (str): The id of the run.
         """
-        from dagster._core.host_representation import ExternalPipelineOrigin
+        from dagster._core.host_representation import ExternalJobOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
@@ -2051,7 +2051,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.inst(
             run.external_job_origin,
-            ExternalPipelineOrigin,
+            ExternalJobOrigin,
             "External pipeline origin must be set for submitted runs",
         )
         check.inst(

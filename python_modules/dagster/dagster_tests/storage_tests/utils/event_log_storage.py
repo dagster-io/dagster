@@ -51,7 +51,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepSuccessDat
 from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.host_representation.origin import (
-    ExternalPipelineOrigin,
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
     InProcessCodeLocationOrigin,
 )
@@ -85,7 +85,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_pipeline_origin=ExternalPipelineOrigin(
+                external_pipeline_origin=ExternalJobOrigin(
                     ExternalRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(

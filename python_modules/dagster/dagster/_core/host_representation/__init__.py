@@ -45,7 +45,7 @@ from .origin import (
     IN_PROCESS_NAME as IN_PROCESS_NAME,
     CodeLocationOrigin as CodeLocationOrigin,
     ExternalInstigatorOrigin as ExternalInstigatorOrigin,
-    ExternalPipelineOrigin as ExternalPipelineOrigin,
+    ExternalJobOrigin as ExternalJobOrigin,
     ExternalRepositoryOrigin as ExternalRepositoryOrigin,
     GrpcServerCodeLocationOrigin as GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin as InProcessCodeLocationOrigin,
