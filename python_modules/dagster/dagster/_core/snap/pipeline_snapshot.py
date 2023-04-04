@@ -59,7 +59,7 @@ def create_pipeline_snapshot_id(snapshot: "JobSnapshot") -> str:
     return create_snapshot_id(snapshot)
 
 
-class PipelineSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
+class JobSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     # v0
     # v1:
     #     - lineage added
@@ -90,7 +90,7 @@ class PipelineSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
 # serialization.
 @whitelist_for_serdes(
     storage_name="PipelineSnapshot",
-    serializer=PipelineSnapshotSerializer,
+    serializer=JobSnapshotSerializer,
     skip_when_empty_fields={"metadata"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
