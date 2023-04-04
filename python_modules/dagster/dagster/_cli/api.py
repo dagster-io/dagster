@@ -267,8 +267,8 @@ def get_step_stats_by_key(instance, dagster_run, step_keys_to_execute):
     return step_stats_by_key
 
 
-def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
-    step_stats_by_key = get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute)
+def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
+    step_stats_by_key = get_step_stats_by_key(instance, dagster_run, step_keys_to_execute)
 
     for step_key in step_keys_to_execute:
         step_stat_for_key = step_stats_by_key.get(step_key)
@@ -290,7 +290,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
             instance.report_engine_event(
                 "Attempted to run {step_key} again even though it was already started. "
                 "Exiting to prevent re-running the step.".format(step_key=step_key),
-                pipeline_run,
+                dagster_run,
             )
             return False
         elif current_attempt > 1 and step_stat_for_key:
@@ -302,7 +302,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
                     "Attempted to run retry attempt {current_attempt} for step {step_key} again "
                     "even though it was already started. Exiting to prevent re-running "
                     "the step.".format(current_attempt=current_attempt, step_key=step_key),
-                    pipeline_run,
+                    dagster_run,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
@@ -311,7 +311,7 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
                 "but there is no record of the original attempt".format(
                     current_attempt=current_attempt, step_key=step_key
                 ),
-                pipeline_run,
+                dagster_run,
             )
             return False
 
