@@ -579,5 +579,5 @@ def __getattr__(name: str) -> TypingAny:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-def __dir__(_self: ModuleType) -> Sequence[str]:
+def __dir__() -> Sequence[str]:
     return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]
