@@ -82,7 +82,7 @@ def initialize_console_manager(
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
 class ContextCreationData(NamedTuple):
-    pipeline: IJob
+    job: IJob
     resolved_run_config: ResolvedRunConfig
     dagster_run: DagsterRun
     executor_def: ExecutorDefinition
@@ -91,8 +91,8 @@ class ContextCreationData(NamedTuple):
     execution_plan: ExecutionPlan
 
     @property
-    def pipeline_def(self) -> JobDefinition:
-        return self.pipeline.get_definition()
+    def job_def(self) -> JobDefinition:
+        return self.job.get_definition()
 
 
 def create_context_creation_data(
@@ -108,7 +108,7 @@ def create_context_creation_data(
     executor_def = pipeline_def.executor_def
 
     return ContextCreationData(
-        pipeline=pipeline,
+        job=pipeline,
         resolved_run_config=resolved_run_config,
         dagster_run=dagster_run,
         executor_def=executor_def,
@@ -124,7 +124,7 @@ def create_plan_data(
     context_creation_data: "ContextCreationData", raise_on_error: bool, retry_mode: RetryMode
 ) -> PlanData:
     return PlanData(
-        job=context_creation_data.pipeline,
+        job=context_creation_data.job,
         dagster_run=context_creation_data.dagster_run,
         instance=context_creation_data.instance,
         execution_plan=context_creation_data.execution_plan,
@@ -140,7 +140,7 @@ def create_execution_data(
     return ExecutionData(
         scoped_resources_builder=scoped_resources_builder,
         resolved_run_config=context_creation_data.resolved_run_config,
-        job_def=context_creation_data.pipeline_def,
+        job_def=context_creation_data.job_def,
     )
 
 
@@ -386,7 +386,7 @@ def _validate_plan_with_context(
 def create_executor(context_creation_data: ContextCreationData) -> "Executor":
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
     init_context = InitExecutorContext(
-        job=context_creation_data.pipeline,
+        job=context_creation_data.job,
         executor_def=context_creation_data.executor_def,
         executor_config=context_creation_data.resolved_run_config.execution.execution_engine_config,
         instance=context_creation_data.instance,
@@ -448,7 +448,7 @@ def create_log_manager(
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     pipeline_def, resolved_run_config, dagster_run = (
-        context_creation_data.pipeline_def,
+        context_creation_data.job_def,
         context_creation_data.resolved_run_config,
         context_creation_data.dagster_run,
     )
