@@ -387,10 +387,8 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
-            self._get_repo_for_origin(
-                execution_plan_args.pipeline_origin.external_repository_origin
-            ),
-            execution_plan_args.pipeline_origin.job_name,
+            self._get_repo_for_origin(execution_plan_args.job_origin.external_repository_origin),
+            execution_plan_args.job_origin.job_name,
             execution_plan_args,
         )
         return api_pb2.ExecutionPlanSnapshotReply(

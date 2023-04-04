@@ -506,7 +506,7 @@ def get_external_execution_plan_snapshot(
                 instance_ref=args.instance_ref,
                 repository_load_data=repo_def.repository_load_data,
             ),
-            args.pipeline_snapshot_id,
+            args.job_snapshot_id,
         )
     except:
         return ExecutionPlanSnapshotErrorData(

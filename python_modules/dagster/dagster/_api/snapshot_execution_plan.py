@@ -46,12 +46,12 @@ def sync_get_external_execution_plan_grpc(
     result = deserialize_value(
         api_client.execution_plan_snapshot(
             execution_plan_snapshot_args=ExecutionPlanSnapshotArgs(
-                pipeline_origin=pipeline_origin,
+                job_origin=pipeline_origin,
                 solid_selection=solid_selection,
                 run_config=run_config,
                 mode=DEFAULT_MODE_NAME,
                 step_keys_to_execute=step_keys_to_execute,
-                pipeline_snapshot_id=pipeline_snapshot_id,
+                job_snapshot_id=pipeline_snapshot_id,
                 known_state=known_state,
                 instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
                 asset_selection=asset_selection,

@@ -220,7 +220,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 repository_name="demo_execution_repo",
             ),
-            pipeline_name=self._pipeline_index.name,
+            job_name=self._pipeline_index.name,
         )
 
 

@@ -619,7 +619,7 @@ def test_load_with_secrets_loader_instance_ref():
                 run_id = run.run_id
 
                 job_origin = ExternalJobOrigin(
-                    pipeline_name="needs_env_var_job",
+                    job_name="needs_env_var_job",
                     external_repository_origin=ExternalRepositoryOrigin(
                         repository_name="needs_env_var_repo",
                         code_location_origin=RegisteredCodeLocationOrigin("not_used"),

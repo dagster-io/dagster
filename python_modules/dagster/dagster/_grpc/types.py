@@ -19,16 +19,21 @@ from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "job_snapshot_id": "pipeline_snapshot_id",
+    }
+)
 class ExecutionPlanSnapshotArgs(
     NamedTuple(
         "_ExecutionPlanSnapshotArgs",
         [
-            ("pipeline_origin", ExternalJobOrigin),
+            ("job_origin", ExternalJobOrigin),
             ("solid_selection", Sequence[str]),
             ("run_config", Mapping[str, object]),
             ("step_keys_to_execute", Optional[Sequence[str]]),
-            ("pipeline_snapshot_id", str),
+            ("job_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
@@ -38,11 +43,11 @@ class ExecutionPlanSnapshotArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalJobOrigin,
+        job_origin: ExternalJobOrigin,
         solid_selection: Sequence[str],
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
-        pipeline_snapshot_id: str,
+        job_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -50,7 +55,7 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", ExternalJobOrigin),
+            job_origin=check.inst_param(job_origin, "job_origin", ExternalJobOrigin),
             solid_selection=check.opt_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
@@ -59,7 +64,7 @@ class ExecutionPlanSnapshotArgs(
             step_keys_to_execute=check.opt_nullable_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.str_param(job_snapshot_id, "job_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             asset_selection=check.opt_nullable_set_param(
