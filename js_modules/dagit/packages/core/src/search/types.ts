@@ -8,6 +8,7 @@ export enum SearchResultType {
   Schedule,
   Sensor,
   Solid,
+  Resource,
 }
 
 export type SearchResult = {
