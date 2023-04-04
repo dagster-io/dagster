@@ -62,7 +62,7 @@ from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
-from .config_scaffolder import scaffold_pipeline_config
+from .config_scaffolder import scaffold_job_config
 from .utils import get_instance_for_service
 
 T = TypeVar("T")
@@ -593,7 +593,7 @@ def do_scaffold_command(
     check.callable_param(printer, "printer")
     check.bool_param(skip_non_required, "skip_non_required")
 
-    config_dict = scaffold_pipeline_config(pipeline_def, skip_non_required=skip_non_required)
+    config_dict = scaffold_job_config(pipeline_def, skip_non_required=skip_non_required)
     yaml_string = dump_run_config_yaml(config_dict)
     printer(yaml_string)
 
