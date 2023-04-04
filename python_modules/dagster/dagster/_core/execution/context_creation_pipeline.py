@@ -466,7 +466,7 @@ def create_log_manager(
                     InitLoggerContext(
                         resolved_run_config.loggers.get(logger_key, {}).get("config"),
                         logger_def,
-                        pipeline_def=pipeline_def,
+                        job_def=pipeline_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -479,7 +479,7 @@ def create_log_manager(
                     InitLoggerContext(
                         logger_config,
                         logger_def,
-                        pipeline_def=pipeline_def,
+                        job_def=pipeline_def,
                         run_id=dagster_run.run_id,
                     )
                 )
@@ -511,7 +511,7 @@ def create_context_free_log_manager(
                 InitLoggerContext(
                     logger_config,
                     logger_def,
-                    pipeline_def=None,
+                    job_def=None,
                     run_id=dagster_run.run_id,
                 )
             )

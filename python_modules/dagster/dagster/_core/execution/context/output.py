@@ -84,7 +84,7 @@ class OutputContext:
 
     _step_key: Optional[str]
     _name: Optional[str]
-    _pipeline_name: Optional[str]
+    _job_name: Optional[str]
     _run_id: Optional[str]
     _metadata: ArbitraryMetadataMapping
     _user_generated_metadata: Mapping[str, MetadataValue]
@@ -109,7 +109,7 @@ class OutputContext:
         self,
         step_key: Optional[str] = None,
         name: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         run_id: Optional[str] = None,
         metadata: Optional[ArbitraryMetadataMapping] = None,
         mapping_key: Optional[str] = None,
@@ -130,7 +130,7 @@ class OutputContext:
 
         self._step_key = step_key
         self._name = name
-        self._pipeline_name = pipeline_name
+        self._job_name = job_name
         self._run_id = run_id
         self._metadata = metadata or {}
         self._mapping_key = mapping_key
@@ -204,14 +204,14 @@ class OutputContext:
         return self._name
 
     @property
-    def pipeline_name(self) -> str:
-        if self._pipeline_name is None:
+    def job_name(self) -> str:
+        if self._job_name is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access pipeline_name, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return self._pipeline_name
+        return self._job_name
 
     @public
     @property
@@ -759,7 +759,7 @@ def get_output_context(
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
-        pipeline_name=pipeline_def.name,
+        job_name=pipeline_def.name,
         run_id=run_id,
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
@@ -864,7 +864,7 @@ def build_output_context(
     return OutputContext(
         step_key=step_key,
         name=name,
-        pipeline_name=None,
+        job_name=None,
         run_id=run_id,
         metadata=metadata,
         mapping_key=mapping_key,

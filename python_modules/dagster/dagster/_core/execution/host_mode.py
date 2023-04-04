@@ -99,7 +99,7 @@ def host_mode_execution_context_event_generator(
             logger_def.logger_fn(
                 InitLoggerContext(
                     logger_config,
-                    pipeline_def=None,
+                    job_def=None,
                     logger_def=logger_def,
                     run_id=pipeline_run.run_id,
                 )

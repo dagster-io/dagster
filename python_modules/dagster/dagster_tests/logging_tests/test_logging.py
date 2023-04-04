@@ -268,7 +268,7 @@ def test_colored_console_logger_with_integer_log_level():
         InitLoggerContext(
             {"name": "dagster", "log_level": 4},
             colored_console_logger,
-            pipeline_def=pipe,
+            job_def=pipe,
         )
     )
 
