@@ -5,7 +5,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedJob
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
@@ -435,7 +435,7 @@ class ISolidDefinitionMixin:
         if isinstance(self._represented_pipeline, HistoricalJob):
             return []
         else:
-            assert isinstance(self._represented_pipeline, ExternalPipeline)
+            assert isinstance(self._represented_pipeline, ExternalJob)
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.code_location_origin
             location = graphene_info.context.get_code_location(origin.location_name)

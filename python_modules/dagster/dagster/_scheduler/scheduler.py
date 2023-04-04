@@ -19,7 +19,7 @@ from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -726,7 +726,7 @@ def _create_scheduler_run(
     schedule_time: datetime.datetime,
     code_location: CodeLocation,
     external_schedule: ExternalSchedule,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_request: RunRequest,
 ) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id

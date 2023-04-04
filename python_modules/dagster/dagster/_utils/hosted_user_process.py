@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster._core.host_representation import ExternalPipeline, ExternalRepository
+from dagster._core.host_representation import ExternalJob, ExternalRepository
 from dagster._core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -58,7 +58,7 @@ def external_pipeline_from_recon_pipeline(
     else:
         pipeline_def = recon_pipeline.get_definition()
 
-    return ExternalPipeline(
+    return ExternalJob(
         external_pipeline_data_from_def(pipeline_def),
         repository_handle=repository_handle,
     )

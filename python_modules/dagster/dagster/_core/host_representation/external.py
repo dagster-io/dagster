@@ -55,9 +55,9 @@ from .external_data import (
     DEFAULT_MODE_NAME,
     EnvVarConsumer,
     ExternalAssetNode,
+    ExternalJobData,
     ExternalJobRef,
     ExternalPartitionSetData,
-    ExternalPipelineData,
     ExternalPresetData,
     ExternalRepositoryData,
     ExternalResourceData,
@@ -87,14 +87,14 @@ class ExternalRepository:
         self,
         external_repository_data: ExternalRepositoryData,
         repository_handle: RepositoryHandle,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
+        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
     ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
 
         if external_repository_data.external_pipeline_datas is not None:
-            self._job_map: Dict[str, Union[ExternalPipelineData, ExternalJobRef]] = {
+            self._job_map: Dict[str, Union[ExternalJobData, ExternalJobRef]] = {
                 d.name: d for d in external_repository_data.external_pipeline_datas
             }
             self._deferred_snapshots: bool = False
@@ -124,7 +124,7 @@ class ExternalRepository:
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
-        self._cached_jobs: Dict[str, ExternalPipeline] = {}
+        self._cached_jobs: Dict[str, ExternalJob] = {}
 
     @property
     def name(self) -> str:
@@ -212,7 +212,7 @@ class ExternalRepository:
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
 
-    def get_full_external_job(self, job_name: str) -> ExternalPipeline:
+    def get_full_external_job(self, job_name: str) -> ExternalJob:
         check.str_param(job_name, "job_name")
         check.invariant(
             self.has_external_job(job_name), f'No external job named "{job_name}" found'
@@ -224,15 +224,15 @@ class ExternalRepository:
                     if not isinstance(job_item, ExternalJobRef):
                         check.failed("unexpected job item")
                     external_ref = job_item
-                    external_data: Optional[ExternalPipelineData] = None
+                    external_data: Optional[ExternalJobData] = None
                 else:
-                    if not isinstance(job_item, ExternalPipelineData):
+                    if not isinstance(job_item, ExternalJobData):
                         check.failed("unexpected job item")
                     external_data = job_item
                     external_ref = None
 
-                self._cached_jobs[job_name] = ExternalPipeline(
-                    external_pipeline_data=external_data,
+                self._cached_jobs[job_name] = ExternalJob(
+                    external_job_data=external_data,
                     repository_handle=self.handle,
                     external_job_ref=external_ref,
                     ref_to_data_fn=self._ref_to_data_fn,
@@ -240,7 +240,7 @@ class ExternalRepository:
 
             return self._cached_jobs[job_name]
 
-    def get_all_external_jobs(self) -> Sequence[ExternalPipeline]:
+    def get_all_external_jobs(self) -> Sequence[ExternalJob]:
         return [self.get_full_external_job(pn) for pn in self._job_map]
 
     @property
@@ -286,34 +286,34 @@ class ExternalRepository:
         return self.handle.display_metadata
 
 
-class ExternalPipeline(RepresentedJob):
-    """ExternalPipeline is a object that represents a loaded job definition that
+class ExternalJob(RepresentedJob):
+    """ExternalJob is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
     """
 
     def __init__(
         self,
-        external_pipeline_data: Optional[ExternalPipelineData],
+        external_job_data: Optional[ExternalJobData],
         repository_handle: RepositoryHandle,
         external_job_ref: Optional[ExternalJobRef] = None,
-        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalPipelineData]] = None,
+        ref_to_data_fn: Optional[Callable[[ExternalJobRef], ExternalJobData]] = None,
     ):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.opt_inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
+        check.opt_inst_param(external_job_data, "external_job_data", ExternalJobData)
 
         self._repository_handle = repository_handle
 
         self._memo_lock = RLock()
         self._index: Optional[JobIndex] = None
 
-        self._data = external_pipeline_data
+        self._data = external_job_data
         self._ref = external_job_ref
         self._ref_to_data_fn = ref_to_data_fn
 
-        if external_pipeline_data:
-            self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
-            self._name = external_pipeline_data.name
+        if external_job_data:
+            self._active_preset_dict = {ap.name: ap for ap in external_job_data.active_presets}
+            self._name = external_job_data.name
             self._snapshot_id = self._job_index.job_snapshot_id
 
         elif external_job_ref:
@@ -332,8 +332,8 @@ class ExternalPipeline(RepresentedJob):
         with self._memo_lock:
             if self._index is None:
                 self._index = JobIndex(
-                    self.external_pipeline_data.pipeline_snapshot,
-                    self.external_pipeline_data.parent_pipeline_snapshot,
+                    self.external_job_data.job_snapshot,
+                    self.external_job_data.parent_job_snapshot,
                 )
             return self._index
 
@@ -350,7 +350,7 @@ class ExternalPipeline(RepresentedJob):
         return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
-    def external_pipeline_data(self):
+    def external_job_data(self):
         with self._memo_lock:
             if self._data is None:
                 if self._ref is None or self._ref_to_data_fn is None:

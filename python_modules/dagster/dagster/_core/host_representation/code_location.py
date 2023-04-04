@@ -29,8 +29,8 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import ExternalPipelineSubsetResult
 from dagster._core.host_representation.external import (
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
     ExternalRepository,
 )
 from dagster._core.host_representation.external_data import (
@@ -115,7 +115,7 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_pipeline: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
@@ -123,7 +123,7 @@ class CodeLocation(AbstractContextManager):
     ) -> ExternalExecutionPlan:
         pass
 
-    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
@@ -144,7 +144,7 @@ class CodeLocation(AbstractContextManager):
                 f" {subset_result.error}"
             )
 
-        return ExternalPipeline(external_data, repo_handle)
+        return ExternalJob(external_data, repo_handle)
 
     @abstractmethod
     def get_subset_external_pipeline_result(
@@ -375,13 +375,13 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_pipeline: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
         check.mapping_param(run_config, "run_config")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -716,13 +716,13 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_pipeline: ExternalJob,
         run_config: Mapping[str, Any],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
         run_config = check.mapping_param(run_config, "run_config")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)

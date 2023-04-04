@@ -105,7 +105,7 @@ class ExternalRepositoryData(
             ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
             ("external_sensor_datas", Sequence["ExternalSensorData"]),
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
-            ("external_pipeline_datas", Optional[Sequence["ExternalPipelineData"]]),
+            ("external_pipeline_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
@@ -119,7 +119,7 @@ class ExternalRepositoryData(
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
         external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
-        external_pipeline_datas: Optional[Sequence["ExternalPipelineData"]] = None,
+        external_pipeline_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
@@ -146,7 +146,7 @@ class ExternalRepositoryData(
                 of_type=ExternalAssetNode,
             ),
             external_pipeline_datas=check.opt_nullable_sequence_param(
-                external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
+                external_pipeline_datas, "external_pipeline_datas", of_type=ExternalJobData
             ),
             external_job_refs=check.opt_nullable_sequence_param(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
@@ -164,7 +164,7 @@ class ExternalRepositoryData(
     def has_pipeline_data(self):
         return self.external_pipeline_datas is not None
 
-    def get_external_pipeline_datas(self) -> Sequence["ExternalPipelineData"]:
+    def get_external_pipeline_datas(self) -> Sequence["ExternalJobData"]:
         if self.external_pipeline_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
         return self.external_pipeline_datas
@@ -181,7 +181,7 @@ class ExternalRepositoryData(
 
         for external_pipeline_data in self.external_pipeline_datas:
             if external_pipeline_data.name == name:
-                return external_pipeline_data.pipeline_snapshot
+                return external_pipeline_data.job_snapshot
 
         check.failed("Could not find pipeline snapshot named " + name)
 
@@ -231,7 +231,7 @@ class ExternalPipelineSubsetResult(
         [
             ("success", bool),
             ("error", Optional[SerializableErrorInfo]),
-            ("external_pipeline_data", Optional["ExternalPipelineData"]),
+            ("external_pipeline_data", Optional["ExternalJobData"]),
         ],
     )
 ):
@@ -239,43 +239,50 @@ class ExternalPipelineSubsetResult(
         cls,
         success: bool,
         error: Optional[SerializableErrorInfo] = None,
-        external_pipeline_data: Optional["ExternalPipelineData"] = None,
+        external_pipeline_data: Optional["ExternalJobData"] = None,
     ):
         return super(ExternalPipelineSubsetResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             external_pipeline_data=check.opt_inst_param(
-                external_pipeline_data, "external_pipeline_data", ExternalPipelineData
+                external_pipeline_data, "external_pipeline_data", ExternalJobData
             ),
         )
 
 
-@whitelist_for_serdes(old_fields={"is_job": True})
-class ExternalPipelineData(
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineData",
+    storage_field_names={
+        "job_snapshot": "pipeline_snapshot",
+        "parent_job_snapshot": "parent_pipeline_snapshot",
+    },
+    old_fields={"is_job": True},
+)
+class ExternalJobData(
     NamedTuple(
-        "_ExternalPipelineData",
+        "_ExternalJobData",
         [
             ("name", str),
-            ("pipeline_snapshot", JobSnapshot),
+            ("job_snapshot", JobSnapshot),
             ("active_presets", Sequence["ExternalPresetData"]),
-            ("parent_pipeline_snapshot", Optional[JobSnapshot]),
+            ("parent_job_snapshot", Optional[JobSnapshot]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        pipeline_snapshot: JobSnapshot,
+        job_snapshot: JobSnapshot,
         active_presets: Sequence["ExternalPresetData"],
-        parent_pipeline_snapshot: Optional[JobSnapshot],
+        parent_job_snapshot: Optional[JobSnapshot],
     ):
-        return super(ExternalPipelineData, cls).__new__(
+        return super(ExternalJobData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_snapshot=check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot),
-            parent_pipeline_snapshot=check.opt_inst_param(
-                parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot
+            job_snapshot=check.inst_param(job_snapshot, "job_snapshot", JobSnapshot),
+            parent_job_snapshot=check.opt_inst_param(
+                parent_job_snapshot, "parent_job_snapshot", JobSnapshot
             ),
             active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
@@ -1470,12 +1477,12 @@ def external_asset_graph_from_defs(
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalPipelineData:
+def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalJobData:
     check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
-    return ExternalPipelineData(
+    return ExternalJobData(
         name=pipeline_def.name,
-        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-        parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+        job_snapshot=pipeline_def.get_pipeline_snapshot(),
+        parent_job_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         active_presets=active_presets_from_job_def(pipeline_def),
     )
 

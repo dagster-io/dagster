@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Tuple, cast
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
@@ -58,7 +58,7 @@ def is_resume_retry(execution_params: ExecutionParams) -> bool:
 
 def create_valid_pipeline_run(
     graphene_info: "ResolveInfo",
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     execution_params: ExecutionParams,
 ) -> DagsterRun:
     ensure_valid_config(external_pipeline, execution_params.run_config)

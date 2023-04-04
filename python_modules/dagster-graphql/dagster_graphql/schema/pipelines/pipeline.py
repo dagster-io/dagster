@@ -5,7 +5,7 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
+from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalJob
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
 from dagster._core.host_representation.represented import RepresentedJob
 from dagster._core.storage.pipeline_run import (
@@ -721,7 +721,7 @@ class GrapheneIPipelineSnapshotMixin:
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> Sequence[GrapheneRun]:
         pipeline = self.get_represented_pipeline()
-        if isinstance(pipeline, ExternalPipeline):
+        if isinstance(pipeline, ExternalJob):
             runs_filter = RunsFilter(
                 pipeline_name=pipeline.name,
                 tags={
@@ -734,7 +734,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_schedules(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_pipeline()
-        if not isinstance(represented_pipeline, ExternalPipeline):
+        if not isinstance(represented_pipeline, ExternalJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # schedules
             return []
@@ -745,7 +745,7 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_sensors(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_pipeline()
-        if not isinstance(represented_pipeline, ExternalPipeline):
+        if not isinstance(represented_pipeline, ExternalJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # sensors
             return []
@@ -850,7 +850,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def __init__(self, external_pipeline, batch_loader=None):
         super().__init__()
         self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalPipeline
+            external_pipeline, "external_pipeline", ExternalJob
         )
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple pipelines
@@ -913,7 +913,7 @@ class GrapheneJob(GraphenePipeline):
     def __init__(self, external_pipeline, batch_loader=None):
         super().__init__()
         self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalPipeline
+            external_pipeline, "external_pipeline", ExternalJob
         )
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple pipelines
@@ -941,7 +941,7 @@ class GrapheneGraph(graphene.ObjectType):
 
     def __init__(self, external_pipeline, solid_handle_id=None):
         self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalPipeline
+            external_pipeline, "external_pipeline", ExternalJob
         )
         self._solid_handle_id = check.opt_str_param(solid_handle_id, "solid_handle_id")
         super().__init__()

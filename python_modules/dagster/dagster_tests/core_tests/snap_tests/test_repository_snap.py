@@ -12,7 +12,7 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
-    ExternalPipelineData,
+    ExternalJobData,
     external_repository_data_from_def,
 )
 from dagster._core.host_representation.external_data import (
@@ -40,9 +40,9 @@ def test_repository_snap_all_props():
 
     assert external_repo_data.name == "noop_repo"
     assert len(external_repo_data.external_pipeline_datas) == 1
-    assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
+    assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalJobData)
 
-    pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
+    pipeline_snapshot = external_repo_data.external_pipeline_datas[0].job_snapshot
     assert isinstance(pipeline_snapshot, JobSnapshot)
     assert pipeline_snapshot.name == "noop_job"
     assert pipeline_snapshot.description is None

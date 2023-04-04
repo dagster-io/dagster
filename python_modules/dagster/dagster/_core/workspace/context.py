@@ -20,8 +20,8 @@ from dagster._core.host_representation import (
     CodeLocation,
     CodeLocationOrigin,
     ExternalExecutionPlan,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
@@ -215,7 +215,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             selector.repository_name
         ).has_external_job(selector.pipeline_name)
 
-    def get_full_external_job(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_full_external_job(self, selector: PipelineSelector) -> ExternalJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
@@ -224,7 +224,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalPipeline,
+        external_pipeline: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],

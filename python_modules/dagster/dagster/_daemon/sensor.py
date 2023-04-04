@@ -37,7 +37,7 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation.code_location import CodeLocation
-from dagster._core.host_representation.external import ExternalPipeline, ExternalSensor
+from dagster._core.host_representation.external import ExternalJob, ExternalSensor
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -817,7 +817,7 @@ def _get_or_create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_request: RunRequest,
     target_data: ExternalTargetData,
     existing_runs_by_key: Mapping[str, DagsterRun],
@@ -852,7 +852,7 @@ def _create_sensor_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_sensor: ExternalSensor,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_request: RunRequest,
     target_data: ExternalTargetData,
 ) -> DagsterRun:

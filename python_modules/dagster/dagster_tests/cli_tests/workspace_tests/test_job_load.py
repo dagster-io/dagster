@@ -2,7 +2,7 @@ import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
-from dagster._core.host_representation import ExternalPipeline
+from dagster._core.host_representation import ExternalJob
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
@@ -28,7 +28,7 @@ def load_pipeline_via_cli_runner(cli_args):
 def successfully_load_pipeline_via_cli(cli_args):
     result, external_pipeline = load_pipeline_via_cli_runner(cli_args)
     assert result.exit_code == 0, result
-    assert isinstance(external_pipeline, ExternalPipeline)
+    assert isinstance(external_pipeline, ExternalJob)
     return external_pipeline
 
 
@@ -57,7 +57,7 @@ def get_all_loading_combos():
 @pytest.mark.parametrize("cli_args", get_all_loading_combos())
 def test_valid_loading_combos_single_pipeline_code_location(cli_args):
     external_pipeline = successfully_load_pipeline_via_cli(cli_args)
-    assert isinstance(external_pipeline, ExternalPipeline)
+    assert isinstance(external_pipeline, ExternalJob)
     assert external_pipeline.name == "hello_world_job"
 
 

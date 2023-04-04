@@ -54,7 +54,7 @@ from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
     from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
@@ -542,14 +542,14 @@ def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
     external_repo: "ExternalRepository",
-    external_pipeline: Optional["ExternalPipeline"] = None,
+    external_pipeline: Optional["ExternalJob"] = None,
 ):
-    from dagster._core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster._core.host_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.opt_inst_param(external_pipeline, "external_pipeline", ExternalJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()

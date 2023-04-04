@@ -38,7 +38,7 @@ from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.host_representation import (
     CodeLocation,
-    ExternalPipeline,
+    ExternalJob,
     ExternalRepository,
     RepositoryHandle,
 )
@@ -483,7 +483,7 @@ def _create_external_pipeline_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_repo: ExternalRepository,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
@@ -492,7 +492,7 @@ def _create_external_pipeline_run(
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
@@ -546,12 +546,12 @@ def _create_external_pipeline_run(
 
 
 def _check_execute_external_pipeline_args(
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)

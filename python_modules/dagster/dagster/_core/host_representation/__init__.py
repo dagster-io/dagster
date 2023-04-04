@@ -8,8 +8,8 @@ that have been persisted. e.g. HistoricalPipeline
 
 from .external import (
     ExternalExecutionPlan as ExternalExecutionPlan,
+    ExternalJob as ExternalJob,
     ExternalPartitionSet as ExternalPartitionSet,
-    ExternalPipeline as ExternalPipeline,
     ExternalRepository as ExternalRepository,
     ExternalSchedule as ExternalSchedule,
     ExternalSensor as ExternalSensor,
@@ -17,6 +17,7 @@ from .external import (
 from .external_data import (
     ExternalExecutionParamsData as ExternalExecutionParamsData,
     ExternalExecutionParamsErrorData as ExternalExecutionParamsErrorData,
+    ExternalJobData as ExternalJobData,
     ExternalJobRef as ExternalJobRef,
     ExternalPartitionConfigData as ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData as ExternalPartitionExecutionErrorData,
@@ -24,7 +25,6 @@ from .external_data import (
     ExternalPartitionSetData as ExternalPartitionSetData,
     ExternalPartitionSetExecutionParamData as ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData as ExternalPartitionTagsData,
-    ExternalPipelineData as ExternalPipelineData,
     ExternalPipelineSubsetResult as ExternalPipelineSubsetResult,
     ExternalPresetData as ExternalPresetData,
     ExternalRepositoryData as ExternalRepositoryData,

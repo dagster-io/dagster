@@ -104,8 +104,8 @@ if TYPE_CHECKING:
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation import (
         CodeLocation,
+        ExternalJob,
         ExternalJobOrigin,
-        ExternalPipeline,
         ExternalSensor,
         HistoricalJob,
     )
@@ -1377,7 +1377,7 @@ class DagsterInstance(DynamicPartitionsStore):
         *,
         parent_run: DagsterRun,
         code_location: "CodeLocation",
-        external_pipeline: "ExternalPipeline",
+        external_pipeline: "ExternalJob",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -1387,11 +1387,11 @@ class DagsterInstance(DynamicPartitionsStore):
             ReexecutionStrategy,
         )
         from dagster._core.execution.plan.state import KnownExecutionState
-        from dagster._core.host_representation import CodeLocation, ExternalPipeline
+        from dagster._core.host_representation import CodeLocation, ExternalJob
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
         check.opt_mapping_param(run_config, "run_config", key_type=str)

@@ -33,7 +33,7 @@ from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import (
     ExternalExecutionPlan,
-    ExternalPipeline,
+    ExternalJob,
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
@@ -367,9 +367,7 @@ def execute_asset_backfill_iteration(
         # finished in order to display the final partition statuses in the UI.
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
-    pipeline_and_execution_plan_cache: Dict[
-        int, Tuple[ExternalPipeline, ExternalExecutionPlan]
-    ] = {}
+    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]] = {}
 
     for run_request in result.run_requests:
         yield None
@@ -391,7 +389,7 @@ def submit_run_request(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
-    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalPipeline, ExternalExecutionPlan]],
+    pipeline_and_execution_plan_cache: Dict[int, Tuple[ExternalJob, ExternalExecutionPlan]],
 ) -> None:
     """Creates and submits a run for the given run request."""
     repo_handle = asset_graph.get_repository_handle(

@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.host_representation import CodeLocation
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.origin import ExternalJobOrigin
 
 
@@ -11,7 +11,7 @@ def external_pipeline_from_location(
     code_location: CodeLocation,
     external_pipeline_origin: ExternalJobOrigin,
     solid_selection: Optional[Sequence[str]],
-) -> ExternalPipeline:
+) -> ExternalJob:
     check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_pipeline_origin, "external_pipeline_origin", ExternalJobOrigin)
 

@@ -14,7 +14,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
 from dagster._core.execution.context.output import build_output_context
 from dagster._core.host_representation import (
-    ExternalPipeline,
+    ExternalJob,
     ExternalSchedule,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
@@ -169,7 +169,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         )
 
 
-class ReOriginatedExternalPipelineForTest(ExternalPipeline):
+class ReOriginatedExternalPipelineForTest(ExternalJob):
     def __init__(
         self, external_pipeline, container_image=None, container_context=None, filename=None
     ):
@@ -177,7 +177,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalPipelineForTest, self).__init__(
-            external_pipeline.external_pipeline_data,
+            external_pipeline.external_job_data,
             external_pipeline.repository_handle,
         )
 

@@ -52,7 +52,7 @@ from dagster._utils.hosted_user_process import recon_repository_from_origin
 if TYPE_CHECKING:
     from dagster._core.workspace.context import WorkspaceProcessContext
 
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 
 WORKSPACE_TARGET_WARNING = (
     "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
@@ -771,7 +771,7 @@ def get_external_repository_from_kwargs(
 def get_external_job_from_external_repo(
     external_repo: ExternalRepository,
     provided_name: Optional[str],
-) -> ExternalPipeline:
+) -> ExternalJob:
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_name, "provided_name")
 

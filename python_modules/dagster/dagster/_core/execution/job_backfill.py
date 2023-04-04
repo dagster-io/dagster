@@ -10,8 +10,8 @@ from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     CodeLocation,
+    ExternalJob,
     ExternalPartitionSet,
-    ExternalPipeline,
 )
 from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionParamData,
@@ -239,7 +239,7 @@ def submit_backfill_runs(
 def create_backfill_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     external_partition_set: ExternalPartitionSet,
     backfill_job: PartitionBackfill,
     partition_data: ExternalPartitionExecutionParamData,

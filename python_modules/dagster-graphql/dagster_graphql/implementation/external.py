@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import PipelineSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalPipeline
+from dagster._core.host_representation import ExternalJob
 from dagster._core.host_representation.external import ExternalExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -28,21 +28,21 @@ if TYPE_CHECKING:
 def get_full_external_pipeline_or_raise(
     graphene_info: "ResolveInfo",
     selector: PipelineSelector,
-) -> ExternalPipeline:
+) -> ExternalJob:
     check.inst_param(selector, "selector", PipelineSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
 
 
 def get_external_pipeline_or_raise(
     graphene_info: "ResolveInfo", selector: PipelineSelector
-) -> ExternalPipeline:
+) -> ExternalJob:
     check.inst_param(selector, "selector", PipelineSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector)
 
 
 def _get_external_pipeline_or_raise(
     graphene_info: "ResolveInfo", selector: PipelineSelector, ignore_subset: bool = False
-) -> ExternalPipeline:
+) -> ExternalJob:
     from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
     from ..schema.pipelines.pipeline import GraphenePipeline
 
@@ -70,10 +70,10 @@ def _get_external_pipeline_or_raise(
     return external_pipeline
 
 
-def ensure_valid_config(external_pipeline: ExternalPipeline, run_config: object) -> object:
+def ensure_valid_config(external_pipeline: ExternalJob, run_config: object) -> object:
     from ..schema.pipelines.config import GrapheneRunConfigValidationInvalid
 
-    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
     # do not type check run_config so that validate_config_from_snap throws
 
     validated_config = validate_config_from_snap(
@@ -94,7 +94,7 @@ def ensure_valid_config(external_pipeline: ExternalPipeline, run_config: object)
 
 def get_external_execution_plan_or_raise(
     graphene_info: "ResolveInfo",
-    external_pipeline: ExternalPipeline,
+    external_pipeline: ExternalJob,
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],

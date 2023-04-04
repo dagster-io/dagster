@@ -17,7 +17,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import CodeLocation, ExternalRepository
-from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalJob
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalDynamicPartitionsDefinitionData,
@@ -178,7 +178,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
     _node_definition_snap: Optional[Union[GraphDefSnap, OpDefSnap]]
-    _external_pipeline: Optional[ExternalPipeline]
+    _external_pipeline: Optional[ExternalJob]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
@@ -320,7 +320,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return loader
 
-    def get_external_pipeline(self) -> ExternalPipeline:
+    def get_external_pipeline(self) -> ExternalJob:
         if self._external_pipeline is None:
             check.invariant(
                 len(self._external_asset_node.job_names) >= 1,
