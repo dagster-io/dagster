@@ -95,7 +95,7 @@ DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"external_job_datas": "external_pipeline_datas"})
 class ExternalRepositoryData(
     NamedTuple(
         "_ExternalRepositoryData",
@@ -105,7 +105,7 @@ class ExternalRepositoryData(
             ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
             ("external_sensor_datas", Sequence["ExternalSensorData"]),
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
-            ("external_pipeline_datas", Optional[Sequence["ExternalJobData"]]),
+            ("external_job_datas", Optional[Sequence["ExternalJobData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
@@ -119,7 +119,7 @@ class ExternalRepositoryData(
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
         external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
-        external_pipeline_datas: Optional[Sequence["ExternalJobData"]] = None,
+        external_job_datas: Optional[Sequence["ExternalJobData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
@@ -145,8 +145,8 @@ class ExternalRepositoryData(
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
             ),
-            external_pipeline_datas=check.opt_nullable_sequence_param(
-                external_pipeline_datas, "external_pipeline_datas", of_type=ExternalJobData
+            external_job_datas=check.opt_nullable_sequence_param(
+                external_job_datas, "external_job_datas", of_type=ExternalJobData
             ),
             external_job_refs=check.opt_nullable_sequence_param(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
@@ -161,36 +161,36 @@ class ExternalRepositoryData(
             ),
         )
 
-    def has_pipeline_data(self):
-        return self.external_pipeline_datas is not None
+    def has_job_data(self):
+        return self.external_job_datas is not None
 
-    def get_external_pipeline_datas(self) -> Sequence["ExternalJobData"]:
-        if self.external_pipeline_datas is None:
+    def get_external_job_datas(self) -> Sequence["ExternalJobData"]:
+        if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
-        return self.external_pipeline_datas
+        return self.external_job_datas
 
     def get_external_job_refs(self) -> Sequence["ExternalJobRef"]:
         if self.external_job_refs is None:
             check.failed("Snapshots were not deferred, external_job_refs not loaded")
         return self.external_job_refs
 
-    def get_pipeline_snapshot(self, name):
+    def get_job_snapshot(self, name):
         check.str_param(name, "name")
-        if self.external_pipeline_datas is None:
+        if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_pipeline_data in self.external_pipeline_datas:
+        for external_pipeline_data in self.external_job_datas:
             if external_pipeline_data.name == name:
                 return external_pipeline_data.job_snapshot
 
         check.failed("Could not find pipeline snapshot named " + name)
 
-    def get_external_pipeline_data(self, name):
+    def get_external_job_data(self, name):
         check.str_param(name, "name")
-        if self.external_pipeline_datas is None:
+        if self.external_job_datas is None:
             check.failed("Snapshots were deferred, external_pipeline_data not loaded")
 
-        for external_pipeline_data in self.external_pipeline_datas:
+        for external_pipeline_data in self.external_job_datas:
             if external_pipeline_data.name == name:
                 return external_pipeline_data
 
@@ -1270,7 +1270,7 @@ def external_repository_data_from_def(
             key=lambda sd: sd.name,
         ),
         external_asset_graph_data=asset_graph,
-        external_pipeline_datas=pipeline_datas,
+        external_job_datas=pipeline_datas,
         external_job_refs=job_refs,
         external_resource_data=sorted(
             [

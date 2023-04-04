@@ -93,9 +93,9 @@ class ExternalRepository:
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
 
-        if external_repository_data.external_pipeline_datas is not None:
+        if external_repository_data.external_job_datas is not None:
             self._job_map: Dict[str, Union[ExternalJobData, ExternalJobRef]] = {
-                d.name: d for d in external_repository_data.external_pipeline_datas
+                d.name: d for d in external_repository_data.external_job_datas
             }
             self._deferred_snapshots: bool = False
             self._ref_to_data_fn = None

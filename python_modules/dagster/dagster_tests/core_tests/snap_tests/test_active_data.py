@@ -53,7 +53,7 @@ def test_external_repository_data(snapshot):
         return [foo_job, foo_schedule]
 
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.get_external_pipeline_data("foo_job")
+    assert external_repo_data.get_external_job_data("foo_job")
     assert external_repo_data.get_external_schedule_data("foo_schedule")
 
     job_partition_set_data = external_repo_data.get_external_partition_set_data(

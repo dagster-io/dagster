@@ -125,7 +125,7 @@ def test_defer_snapshots(instance):
         external_repository_data = deserialize_value(ser_repo_data, ExternalRepositoryData)
 
         assert len(external_repository_data.external_job_refs) == 6
-        assert external_repository_data.external_pipeline_datas is None
+        assert external_repository_data.external_job_datas is None
 
         repo = ExternalRepository(
             external_repository_data,
