@@ -6,9 +6,9 @@ on:
       - 'release-*'
     paths:
       - docs/**
-  pull_request:
-    paths:
-      - docs/**
+  pull_request: {}
+    # paths:
+    #   - docs/**
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.ref }}
