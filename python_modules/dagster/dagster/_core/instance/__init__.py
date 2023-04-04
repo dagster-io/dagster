@@ -47,9 +47,9 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
+    DagsterRunStatsSnapshot,
     DagsterRunStatus,
     JobBucket,
-    PipelineRunStatsSnapshot,
     RunPartitionData,
     RunRecord,
     RunsFilter,
@@ -921,7 +921,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.get_execution_plan_snapshot(snapshot_id)
 
     @traced
-    def get_run_stats(self, run_id: str) -> PipelineRunStatsSnapshot:
+    def get_run_stats(self, run_id: str) -> DagsterRunStatsSnapshot:
         return self._event_storage.get_stats_for_run(run_id)
 
     @traced

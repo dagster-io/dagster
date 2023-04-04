@@ -8,8 +8,8 @@ from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
 from dagster._core.storage.pipeline_run import (
+    DagsterRunStatsSnapshot,
     DagsterRunStatus,
-    PipelineRunStatsSnapshot,
     RunRecord,
     RunsFilter,
 )
@@ -381,7 +381,7 @@ class GrapheneRun(graphene.ObjectType):
         )
         self._pipeline_run = pipeline_run
         self._run_record = record
-        self._run_stats: Optional[PipelineRunStatsSnapshot] = None
+        self._run_stats: Optional[DagsterRunStatsSnapshot] = None
 
     def _get_permission_value(self, permission: Permissions, graphene_info: ResolveInfo) -> bool:
         location_name = (

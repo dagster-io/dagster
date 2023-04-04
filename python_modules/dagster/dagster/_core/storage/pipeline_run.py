@@ -96,10 +96,10 @@ FINISHED_STATUSES = [
 ]
 
 
-@whitelist_for_serdes
-class PipelineRunStatsSnapshot(
+@whitelist_for_serdes(storage_name="PipelineRunStatsSnapshot")
+class DagsterRunStatsSnapshot(
     NamedTuple(
-        "_PipelineRunStatsSnapshot",
+        "_DagsterRunStatsSnapshot",
         [
             ("run_id", str),
             ("steps_succeeded", int),
@@ -125,7 +125,7 @@ class PipelineRunStatsSnapshot(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(PipelineRunStatsSnapshot, cls).__new__(
+        return super(DagsterRunStatsSnapshot, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             steps_succeeded=check.int_param(steps_succeeded, "steps_succeeded"),

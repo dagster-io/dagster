@@ -47,8 +47,8 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.pipeline_run import (
         DagsterRun,
+        DagsterRunStatsSnapshot,
         JobBucket,
-        PipelineRunStatsSnapshot,
         RunPartitionData,
         RunRecord,
         RunsFilter,
@@ -385,7 +385,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Iterable["EventLogEntry"]:
         return self._storage.event_log_storage.get_logs_for_run(run_id, cursor, of_type, limit)
 
-    def get_stats_for_run(self, run_id: str) -> "PipelineRunStatsSnapshot":
+    def get_stats_for_run(self, run_id: str) -> "DagsterRunStatsSnapshot":
         return self._storage.event_log_storage.get_stats_for_run(run_id)
 
     def get_step_stats_for_run(
