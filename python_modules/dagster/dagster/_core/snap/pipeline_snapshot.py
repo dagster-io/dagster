@@ -107,7 +107,7 @@ class JobSnapshot(
             ("node_defs_snapshot", NodeDefsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
             ("mode_def_snaps", Sequence[ModeDefSnap]),
-            ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
+            ("lineage_snapshot", Optional["JobLineageSnapshot"]),
             ("graph_def_name", str),
             ("metadata", Mapping[str, MetadataValue]),
         ],
@@ -123,7 +123,7 @@ class JobSnapshot(
         node_defs_snapshot: NodeDefsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
         mode_def_snaps: Sequence[ModeDefSnap],
-        lineage_snapshot: Optional["PipelineSnapshotLineage"],
+        lineage_snapshot: Optional["JobLineageSnapshot"],
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
     ):
@@ -150,7 +150,7 @@ class JobSnapshot(
                 mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap
             ),
             lineage_snapshot=check.opt_inst_param(
-                lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
+                lineage_snapshot, "lineage_snapshot", JobLineageSnapshot
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
             metadata=normalize_metadata(
@@ -163,7 +163,7 @@ class JobSnapshot(
         check.inst_param(job_def, "job_def", JobDefinition)
         lineage = None
         if job_def.op_selection_data:
-            lineage = PipelineSnapshotLineage(
+            lineage = JobLineageSnapshot(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
@@ -171,7 +171,7 @@ class JobSnapshot(
                 nodes_to_execute=job_def.op_selection_data.resolved_op_selection,
             )
         if job_def.asset_selection_data:
-            lineage = PipelineSnapshotLineage(
+            lineage = JobLineageSnapshot(
                 parent_snapshot_id=create_job_snapshot_id(
                     cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
@@ -401,14 +401,15 @@ def construct_config_type_from_snap(
 
 
 @whitelist_for_serdes(
+    storage_name="PipelineSnapshotLineage",
     storage_field_names={
         "node_selection": "solid_selection",
         "nodes_to_execute": "solids_to_execute",
     },
 )
-class PipelineSnapshotLineage(
+class JobLineageSnapshot(
     NamedTuple(
-        "_PipelineSnapshotLineage",
+        "_JobLineageSnapshot",
         [
             ("parent_snapshot_id", str),
             ("node_selection", Optional[Sequence[str]]),
@@ -425,7 +426,7 @@ class PipelineSnapshotLineage(
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.opt_set_param(nodes_to_execute, "nodes_to_execute", of_type=str)
-        return super(PipelineSnapshotLineage, cls).__new__(
+        return super(JobLineageSnapshot, cls).__new__(
             cls,
             check.str_param(parent_snapshot_id, parent_snapshot_id),
             node_selection,
