@@ -9,7 +9,7 @@ from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.snap.pipeline_snapshot import JobSnapshot
 
-from .pipeline_index import PipelineIndex
+from .pipeline_index import JobIndex
 
 
 class RepresentedPipeline(ABC):
@@ -22,7 +22,7 @@ class RepresentedPipeline(ABC):
 
     @property
     @abstractmethod
-    def _pipeline_index(self) -> PipelineIndex:
+    def _pipeline_index(self) -> JobIndex:
         ...
 
     @property
@@ -47,25 +47,25 @@ class RepresentedPipeline(ABC):
 
     @property
     def pipeline_snapshot(self) -> JobSnapshot:
-        return self._pipeline_index.pipeline_snapshot
+        return self._pipeline_index.job_snapshot
 
     @property
     def parent_pipeline_snapshot(self) -> Optional[JobSnapshot]:
-        return self._pipeline_index.parent_pipeline_snapshot
+        return self._pipeline_index.parent_job_snapshot
 
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self._pipeline_index.job_snapshot.lineage_snapshot.node_selection
+            if self._pipeline_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
-            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            self._pipeline_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            if self._pipeline_index.job_snapshot.lineage_snapshot
             else None
         )
 
@@ -91,7 +91,7 @@ class RepresentedPipeline(ABC):
 
     @property
     def mode_def_snaps(self) -> Sequence[ModeDefSnap]:
-        return self._pipeline_index.pipeline_snapshot.mode_def_snaps
+        return self._pipeline_index.job_snapshot.mode_def_snaps
 
     def get_mode_def_snap(self, mode_name: str) -> ModeDefSnap:
         return self._pipeline_index.get_mode_def_snap(mode_name)
@@ -114,4 +114,4 @@ class RepresentedPipeline(ABC):
     # Graph
 
     def get_graph_name(self) -> str:
-        return self._pipeline_index.pipeline_snapshot.graph_def_name
+        return self._pipeline_index.job_snapshot.graph_def_name

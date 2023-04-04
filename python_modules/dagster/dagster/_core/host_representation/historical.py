@@ -3,7 +3,7 @@ from typing import Optional
 import dagster._check as check
 from dagster._core.snap import JobSnapshot
 
-from .pipeline_index import PipelineIndex
+from .pipeline_index import JobIndex
 from .represented import RepresentedPipeline
 
 
@@ -34,7 +34,7 @@ class HistoricalPipeline(RepresentedPipeline):
     @property
     def _pipeline_index(self):
         if self._index is None:
-            self._index = PipelineIndex(
+            self._index = JobIndex(
                 self._snapshot,
                 self._parent_snapshot,
             )
@@ -46,4 +46,4 @@ class HistoricalPipeline(RepresentedPipeline):
 
     @property
     def computed_pipeline_snapshot_id(self):
-        return self._pipeline_index.pipeline_snapshot_id
+        return self._pipeline_index.job_snapshot_id

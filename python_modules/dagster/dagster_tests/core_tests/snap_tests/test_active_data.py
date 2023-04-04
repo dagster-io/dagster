@@ -80,7 +80,7 @@ def test_external_pipeline_data(snapshot):
     snapshot.assert_match(serialize_pp(external_pipeline_data_from_def(foo_job)))
 
 
-@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+@mock.patch("dagster._core.host_representation.pipeline_index.create_job_snapshot_id")
 def test_external_repo_shared_index(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly
 
@@ -102,7 +102,7 @@ def test_external_repo_shared_index(snapshot_mock):
             assert snapshot_mock.call_count == 1
 
 
-@mock.patch("dagster._core.host_representation.pipeline_index.create_pipeline_snapshot_id")
+@mock.patch("dagster._core.host_representation.pipeline_index.create_job_snapshot_id")
 def test_external_repo_shared_index_threaded(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
 
