@@ -321,14 +321,14 @@ def test_mode_column_migration():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         assert "mode" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "mode" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="72686963a802")
 
@@ -610,14 +610,14 @@ def test_start_time_end_time():
         assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
         assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
-        assert instance.create_run_for_pipeline(_test)
+        assert instance.create_run_for_job(_test)
 
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 

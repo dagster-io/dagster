@@ -149,7 +149,7 @@ def create_run_for_test(
     solid_selection=None,
 ):
     return instance.create_run(
-        pipeline_name=pipeline_name,
+        job_name=pipeline_name,
         run_id=run_id,
         run_config=run_config,
         solids_to_execute=solids_to_execute,
@@ -158,11 +158,11 @@ def create_run_for_test(
         tags=tags,
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
-        pipeline_snapshot=pipeline_snapshot,
+        job_snapshot=pipeline_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=parent_pipeline_snapshot,
-        external_pipeline_origin=external_pipeline_origin,
-        pipeline_code_origin=pipeline_code_origin,
+        parent_job_snapshot=parent_pipeline_snapshot,
+        external_job_origin=external_pipeline_origin,
+        job_code_origin=pipeline_code_origin,
         asset_selection=asset_selection,
         solid_selection=solid_selection,
     )

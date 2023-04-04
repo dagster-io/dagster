@@ -260,29 +260,29 @@ def other_external_pipeline(other_workspace):
 
 @pytest.fixture
 def run(instance, pipeline, external_pipeline):
-    return instance.create_run_for_pipeline(
+    return instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
 
 
 @pytest.fixture
 def other_run(instance, pipeline, other_external_pipeline):
-    return instance.create_run_for_pipeline(
+    return instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=other_external_pipeline.get_external_origin(),
-        pipeline_code_origin=other_external_pipeline.get_python_origin(),
+        external_job_origin=other_external_pipeline.get_external_origin(),
+        job_code_origin=other_external_pipeline.get_python_origin(),
     )
 
 
 @pytest.fixture
 def launch_run(pipeline, external_pipeline, workspace):
     def _launch_run(instance):
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
         instance.launch_run(run.run_id, workspace)
 
@@ -327,10 +327,10 @@ def custom_workspace(custom_instance, image):
 
 @pytest.fixture
 def custom_run(custom_instance, pipeline, external_pipeline):
-    return custom_instance.create_run_for_pipeline(
+    return custom_instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
 
 
@@ -485,10 +485,10 @@ def launch_run_with_container_context(
             )
         )
 
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=python_origin,
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=python_origin,
         )
         instance.launch_run(run.run_id, workspace)
 

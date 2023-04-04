@@ -207,7 +207,7 @@ class _EventListenerLogHandler(logging.Handler):
             elif event.run_id:
                 self._instance.report_engine_event(
                     "Exception while writing logger call to event log",
-                    pipeline_name=event.pipeline_name,
+                    job_name=event.pipeline_name,
                     run_id=event.run_id,
                     step_key=event.step_key,
                     engine_event_data=EngineEventData(
@@ -889,11 +889,11 @@ class DagsterInstance(DynamicPartitionsStore):
         return records[0]
 
     @traced
-    def get_pipeline_snapshot(self, snapshot_id: str) -> "JobSnapshot":
+    def get_job_snapshot(self, snapshot_id: str) -> "JobSnapshot":
         return self._run_storage.get_pipeline_snapshot(snapshot_id)
 
     @traced
-    def has_pipeline_snapshot(self, snapshot_id: str) -> bool:
+    def has_job_snapshot(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
     @traced
@@ -901,7 +901,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.has_snapshot(snapshot_id)
 
     @traced
-    def get_historical_pipeline(self, snapshot_id: str) -> "HistoricalJob":
+    def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
         from dagster._core.host_representation import HistoricalJob
 
         snapshot = self._run_storage.get_pipeline_snapshot(snapshot_id)
@@ -913,7 +913,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return HistoricalJob(snapshot, snapshot_id, parent_snapshot)
 
     @traced
-    def has_historical_pipeline(self, snapshot_id: str) -> bool:
+    def has_historical_job(self, snapshot_id: str) -> bool:
         return self._run_storage.has_pipeline_snapshot(snapshot_id)
 
     @traced
@@ -949,7 +949,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Sequence[DagsterRun]]]:
         return self._run_storage.get_run_group(run_id)
 
-    def create_run_for_pipeline(
+    def create_run_for_job(
         self,
         pipeline_def: "JobDefinition",
         execution_plan: Optional["ExecutionPlan"] = None,
@@ -962,8 +962,8 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str] = None,
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        external_pipeline_origin: Optional["ExternalJobOrigin"] = None,
-        pipeline_code_origin: Optional[JobPythonOrigin] = None,
+        external_job_origin: Optional["ExternalJobOrigin"] = None,
+        job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
         from dagster._core.definitions.job_definition import JobDefinition
@@ -1005,7 +1005,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         return self.create_run(
-            pipeline_name=pipeline_def.name,
+            job_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,
             solid_selection=solid_selection,
@@ -1016,14 +1016,14 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=pipeline_def.get_job_snapshot(),
+            job_snapshot=pipeline_def.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
                 pipeline_def.get_job_snapshot_id(),
             ),
-            parent_pipeline_snapshot=pipeline_def.get_parent_job_snapshot(),
-            external_pipeline_origin=external_pipeline_origin,
-            pipeline_code_origin=pipeline_code_origin,
+            parent_job_snapshot=pipeline_def.get_parent_job_snapshot(),
+            external_job_origin=external_pipeline_origin,
+            job_code_origin=pipeline_code_origin,
         )
 
     def _construct_run_with_snapshots(
@@ -1231,7 +1231,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def create_run(
         self,
         *,
-        pipeline_name: str,
+        job_name: str,
         run_id: Optional[str],
         run_config: Optional[Mapping[str, object]],
         status: Optional[DagsterRunStatus],
@@ -1240,19 +1240,19 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str],
         step_keys_to_execute: Optional[Sequence[str]],
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
-        pipeline_snapshot: Optional[JobSnapshot],
-        parent_pipeline_snapshot: Optional[JobSnapshot],
+        job_snapshot: Optional[JobSnapshot],
+        parent_job_snapshot: Optional[JobSnapshot],
         asset_selection: Optional[AbstractSet[AssetKey]],
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
-        external_pipeline_origin: Optional["ExternalJobOrigin"],
-        pipeline_code_origin: Optional[JobPythonOrigin],
+        external_job_origin: Optional["ExternalJobOrigin"],
+        job_code_origin: Optional[JobPythonOrigin],
     ) -> DagsterRun:
         from dagster._core.definitions.utils import validate_tags
         from dagster._core.host_representation.origin import ExternalJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 
-        check.str_param(pipeline_name, "pipeline_name")
+        check.str_param(job_name, "pipeline_name")
         check.opt_str_param(
             run_id, "run_id"
         )  # will be assigned to make_new_run_id() lower in callstack
@@ -1287,12 +1287,12 @@ class DagsterInstance(DynamicPartitionsStore):
         # The pipeline_snapshot should always be set in production scenarios. In tests
         # we have sometimes omitted it out of convenience.
 
-        check.opt_inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
-        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot)
+        check.opt_inst_param(job_snapshot, "pipeline_snapshot", JobSnapshot)
+        check.opt_inst_param(parent_job_snapshot, "parent_pipeline_snapshot", JobSnapshot)
 
-        if parent_pipeline_snapshot:
+        if parent_job_snapshot:
             check.invariant(
-                pipeline_snapshot,
+                job_snapshot,
                 "If parent_pipeline_snapshot is set, pipeline_snapshot should also be.",
             )
 
@@ -1341,13 +1341,11 @@ class DagsterInstance(DynamicPartitionsStore):
         # If these are not set the created run will never be able to be relaunched from
         # the information just in the run or in another process.
 
-        check.opt_inst_param(
-            external_pipeline_origin, "external_pipeline_origin", ExternalJobOrigin
-        )
-        check.opt_inst_param(pipeline_code_origin, "pipeline_code_origin", JobPythonOrigin)
+        check.opt_inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
+        check.opt_inst_param(job_code_origin, "pipeline_code_origin", JobPythonOrigin)
 
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name=pipeline_name,
+            pipeline_name=job_name,
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
             asset_selection=asset_selection,
@@ -1358,11 +1356,11 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=validated_tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=pipeline_snapshot,
+            pipeline_snapshot=job_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
-            parent_pipeline_snapshot=parent_pipeline_snapshot,
-            external_pipeline_origin=external_pipeline_origin,
-            pipeline_code_origin=pipeline_code_origin,
+            parent_pipeline_snapshot=parent_job_snapshot,
+            external_pipeline_origin=external_job_origin,
+            pipeline_code_origin=job_code_origin,
         )
 
         pipeline_run = self._run_storage.add_run(pipeline_run)
@@ -1377,7 +1375,7 @@ class DagsterInstance(DynamicPartitionsStore):
         *,
         parent_run: DagsterRun,
         code_location: "CodeLocation",
-        external_pipeline: "ExternalJob",
+        external_job: "ExternalJob",
         strategy: "ReexecutionStrategy",
         extra_tags: Optional[Mapping[str, Any]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -1391,7 +1389,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
         check.inst_param(code_location, "code_location", CodeLocation)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+        check.inst_param(external_job, "external_job", ExternalJob)
         check.inst_param(strategy, "strategy", ReexecutionStrategy)
         check.opt_mapping_param(extra_tags, "extra_tags", key_type=str)
         check.opt_mapping_param(run_config, "run_config", key_type=str)
@@ -1402,8 +1400,8 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id = parent_run.run_id
 
         tags = merge_dicts(
-            external_pipeline.tags,
-            # these can differ from external_pipeline.tags if tags were added at launch time
+            external_job.tags,
+            # these can differ from external_job.tags if tags were added at launch time
             parent_run.tags if use_parent_run_tags else {},
             extra_tags or {},
             {
@@ -1435,7 +1433,7 @@ class DagsterInstance(DynamicPartitionsStore):
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 
         external_execution_plan = code_location.get_external_execution_plan(
-            external_pipeline,
+            external_job,
             run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
@@ -1443,7 +1441,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         return self.create_run(
-            pipeline_name=parent_run.job_name,
+            job_name=parent_run.job_name,
             run_id=None,
             run_config=run_config,
             solids_to_execute=parent_run.solids_to_execute,
@@ -1452,18 +1450,18 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=external_pipeline.job_snapshot,
+            job_snapshot=external_job.job_snapshot,
             execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-            parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
+            parent_job_snapshot=external_job.parent_job_snapshot,
             solid_selection=parent_run.solid_selection,
             asset_selection=parent_run.asset_selection,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
 
     def register_managed_run(
         self,
-        pipeline_name: str,
+        job_name: str,
         run_id: str,
         run_config: Optional[Mapping[str, object]],
         solids_to_execute: Optional[AbstractSet[str]],
@@ -1471,11 +1469,11 @@ class DagsterInstance(DynamicPartitionsStore):
         tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
-        pipeline_snapshot: Optional[JobSnapshot],
+        job_snapshot: Optional[JobSnapshot],
         execution_plan_snapshot: Optional[ExecutionPlanSnapshot],
-        parent_pipeline_snapshot: Optional[JobSnapshot],
+        parent_job_snapshot: Optional[JobSnapshot],
         solid_selection: Optional[Sequence[str]] = None,
-        pipeline_code_origin: Optional[JobPythonOrigin] = None,
+        job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # The usage of this method is limited to dagster-airflow, specifically in Dagster
         # Operators that are executed in Airflow. Because a common workflow in Airflow is to
@@ -1489,7 +1487,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # https://github.com/dagster-io/dagster/issues/2412
 
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name=pipeline_name,
+            pipeline_name=job_name,
             run_id=run_id,
             run_config=run_config,
             solid_selection=solid_selection,
@@ -1499,10 +1497,10 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=pipeline_snapshot,
+            pipeline_snapshot=job_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
-            parent_pipeline_snapshot=parent_pipeline_snapshot,
-            pipeline_code_origin=pipeline_code_origin,
+            parent_pipeline_snapshot=parent_job_snapshot,
+            pipeline_code_origin=job_code_origin,
         )
 
         def get_run() -> DagsterRun:
@@ -1880,11 +1878,11 @@ class DagsterInstance(DynamicPartitionsStore):
     def report_engine_event(
         self,
         message: str,
-        pipeline_run: Optional[DagsterRun] = None,
+        dagster_run: Optional[DagsterRun] = None,
         engine_event_data: Optional[EngineEventData] = None,
         cls: Optional[Type[object]] = None,
         step_key: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         run_id: Optional[str] = None,
     ) -> DagsterEvent:
         """Report a EngineEvent that occurred outside of a pipeline execution context."""
@@ -1892,17 +1890,17 @@ class DagsterInstance(DynamicPartitionsStore):
 
         check.opt_class_param(cls, "cls")
         check.str_param(message, "message")
-        check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun)
+        check.opt_inst_param(dagster_run, "pipeline_run", DagsterRun)
         check.opt_str_param(run_id, "run_id")
-        check.opt_str_param(pipeline_name, "pipeline_name")
+        check.opt_str_param(job_name, "pipeline_name")
 
         check.invariant(
-            pipeline_run or (pipeline_name and run_id),
+            dagster_run or (job_name and run_id),
             "Must include either pipeline_run or pipeline_name and run_id",
         )
 
-        run_id = run_id if run_id else pipeline_run.run_id  # type: ignore
-        pipeline_name = pipeline_name if pipeline_name else pipeline_run.job_name  # type: ignore
+        run_id = run_id if run_id else dagster_run.run_id  # type: ignore
+        job_name = job_name if job_name else dagster_run.job_name  # type: ignore
 
         engine_event_data = check.opt_inst_param(
             engine_event_data,
@@ -1920,7 +1918,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.ENGINE_EVENT.value,
-            job_name=pipeline_name,
+            job_name=job_name,
             message=message,
             event_specific_data=engine_event_data,
             step_key=step_key,
@@ -1992,11 +1990,11 @@ class DagsterInstance(DynamicPartitionsStore):
         return dagster_event
 
     def report_run_failed(
-        self, pipeline_run: DagsterRun, message: Optional[str] = None
+        self, dagster_run: DagsterRun, message: Optional[str] = None
     ) -> DagsterEvent:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+        check.inst_param(dagster_run, "dagster_run", DagsterRun)
 
         message = check.opt_str_param(
             message,
@@ -2006,12 +2004,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-            job_name=pipeline_run.job_name,
+            job_name=dagster_run.job_name,
             message=message,
         )
-        self.report_dagster_event(
-            dagster_event, run_id=pipeline_run.run_id, log_level=logging.ERROR
-        )
+        self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
 
     # directories

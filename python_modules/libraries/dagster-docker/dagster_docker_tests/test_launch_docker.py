@@ -60,11 +60,11 @@ def test_launch_docker_no_network(aws_env):
                 orig_pipeline,
                 container_image=docker_image,
             )
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
             instance.launch_run(run.run_id, workspace)
 
@@ -143,11 +143,11 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
                     orig_pipeline,
                     container_image=docker_image,
                 )
-                run = instance.create_run_for_pipeline(
+                run = instance.create_run_for_job(
                     pipeline_def=recon_pipeline.get_definition(),
                     run_config=run_config,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                    external_job_origin=external_pipeline.get_external_origin(),
+                    job_code_origin=external_pipeline.get_python_origin(),
                 )
                 instance.launch_run(run.run_id, workspace)
 
@@ -208,11 +208,11 @@ def test_terminate_launched_docker_run(aws_env):
                 container_image=docker_image,
             )
 
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
 
             run_id = run.run_id
@@ -274,11 +274,11 @@ def test_launch_docker_invalid_image(aws_env):
         ):
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
 
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
 
             with pytest.raises(
@@ -402,11 +402,11 @@ def _test_launch(
         ):
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
 
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=recon_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=recon_pipeline.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)

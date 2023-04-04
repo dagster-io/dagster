@@ -162,7 +162,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if not client:
             self._instance.report_engine_event(
                 message="Unable to get grpc client to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False

@@ -252,7 +252,7 @@ def _synthesize_events(
             **(run_config if run_config else {}),
         }
 
-        pipeline_run = instance.create_run_for_pipeline(a_job, run_id=run_id, run_config=run_config)
+        pipeline_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
         result = execute_run(InMemoryJob(a_job), pipeline_run, instance)
 
         if check_success:
@@ -1344,7 +1344,7 @@ class TestEventLogStorage:
             # first run
             execute_run(
                 InMemoryJob(a_job),
-                instance.create_run_for_pipeline(
+                instance.create_run_for_job(
                     a_job,
                     run_id="1",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1362,7 +1362,7 @@ class TestEventLogStorage:
             events = []
             execute_run(
                 InMemoryJob(a_job),
-                instance.create_run_for_pipeline(
+                instance.create_run_for_job(
                     a_job,
                     run_id="2",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1378,7 +1378,7 @@ class TestEventLogStorage:
             events = []
             execute_run(
                 InMemoryJob(a_job),
-                instance.create_run_for_pipeline(
+                instance.create_run_for_job(
                     a_job,
                     run_id="3",
                     run_config={"loggers": {"callback": {}, "console": {}}},
@@ -1529,7 +1529,7 @@ class TestEventLogStorage:
                 storage.register_instance(instance)
 
             run_id = make_new_run_id()
-            run = instance.create_run_for_pipeline(a_job, run_id=run_id)
+            run = instance.create_run_for_job(a_job, run_id=run_id)
 
             instance.report_engine_event(
                 "blah blah",

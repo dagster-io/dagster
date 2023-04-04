@@ -147,8 +147,8 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(
 def test_temporary_error_or_deletion_after_instance_check():
     instance = mock.MagicMock()
 
-    instance.has_historical_pipeline.return_value = True
-    instance.get_historical_pipeline.return_value = None
+    instance.has_historical_job.return_value = True
+    instance.get_historical_job.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
         _get_pipeline_snapshot_from_instance(instance, "kjdkfjd")

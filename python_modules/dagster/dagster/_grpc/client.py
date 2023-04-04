@@ -461,7 +461,7 @@ class DagsterGrpcClient:
                 pipeline_run = instance.get_run_by_id(execute_run_args.run_id)
                 instance.report_engine_event(
                     message="Unexpected error in IPC client",
-                    pipeline_run=pipeline_run,
+                    dagster_run=pipeline_run,
                     engine_event_data=EngineEventData.engine_error(
                         serializable_error_info_from_exc_info(sys.exc_info())
                     ),

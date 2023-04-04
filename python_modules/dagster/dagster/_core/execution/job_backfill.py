@@ -279,7 +279,7 @@ def create_backfill_run(
         return instance.create_reexecuted_run(
             parent_run=last_run,
             code_location=code_location,
-            external_pipeline=external_pipeline,
+            external_job=external_pipeline,
             strategy=ReexecutionStrategy.FROM_FAILURE,
             extra_tags=tags,
             run_config=partition_data.run_config,
@@ -316,10 +316,10 @@ def create_backfill_run(
     )
 
     return instance.create_run(
-        pipeline_snapshot=external_pipeline.job_snapshot,
+        job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
-        pipeline_name=external_pipeline.name,
+        parent_job_snapshot=external_pipeline.parent_job_snapshot,
+        job_name=external_pipeline.name,
         run_id=make_new_run_id(),
         solids_to_execute=solids_to_execute,
         run_config=partition_data.run_config,
@@ -328,8 +328,8 @@ def create_backfill_run(
         root_run_id=root_run_id,
         parent_run_id=parent_run_id,
         status=DagsterRunStatus.NOT_STARTED,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
         solid_selection=solid_selection,
         asset_selection=frozenset(backfill_job.asset_selection)
         if backfill_job.asset_selection

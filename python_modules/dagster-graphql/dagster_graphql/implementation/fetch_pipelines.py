@@ -42,10 +42,10 @@ def _get_pipeline_snapshot_from_instance(
     from ..schema.errors import GraphenePipelineSnapshotNotFoundError
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
-    if not instance.has_pipeline_snapshot(snapshot_id):
+    if not instance.has_job_snapshot(snapshot_id):
         raise UserFacingGraphQLError(GraphenePipelineSnapshotNotFoundError(snapshot_id))
 
-    historical_pipeline = instance.get_historical_pipeline(snapshot_id)
+    historical_pipeline = instance.get_historical_job(snapshot_id)
 
     if not historical_pipeline:
         # Either a temporary error or it has been deleted in the interim

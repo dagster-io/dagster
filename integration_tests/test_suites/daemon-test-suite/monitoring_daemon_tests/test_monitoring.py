@@ -124,11 +124,11 @@ def test_docker_monitoring():
                     orig_pipeline, container_image=docker_image
                 )
 
-                run = instance.create_run_for_pipeline(
+                run = instance.create_run_for_job(
                     pipeline_def=recon_pipeline.get_definition(),
                     run_config=run_config,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                    external_job_origin=external_pipeline.get_external_origin(),
+                    job_code_origin=external_pipeline.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):
@@ -211,11 +211,11 @@ def test_docker_monitoring_run_out_of_attempts():
                     orig_pipeline, container_image=docker_image
                 )
 
-                run = instance.create_run_for_pipeline(
+                run = instance.create_run_for_job(
                     pipeline_def=recon_pipeline.get_definition(),
                     run_config=run_config,
-                    external_pipeline_origin=external_pipeline.get_external_origin(),
-                    pipeline_code_origin=external_pipeline.get_python_origin(),
+                    external_job_origin=external_pipeline.get_external_origin(),
+                    job_code_origin=external_pipeline.get_python_origin(),
                 )
 
                 with log_run_events(instance, run.run_id):

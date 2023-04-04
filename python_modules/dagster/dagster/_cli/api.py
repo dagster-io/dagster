@@ -447,7 +447,7 @@ def _execute_step_command_body(
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield instance.report_engine_event(
             message="Step execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             step_key=single_step_key,
         )
         raise

@@ -81,7 +81,7 @@ def test_host_run_worker():
             run_config,
         )
 
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             pipeline_def=job_with_resources,
             execution_plan=execution_plan,
             run_config=run_config,
@@ -129,7 +129,7 @@ def test_custom_executor_fn():
             run_config,
         )
 
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=job_with_resources,
             execution_plan=execution_plan,
             run_config=run_config,

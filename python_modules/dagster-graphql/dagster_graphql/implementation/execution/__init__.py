@@ -129,7 +129,7 @@ def terminate_pipeline_execution(
                     "Exception while attempting to force-terminate run. Run will still be marked as"
                     " canceled."
                 ),
-                pipeline_name=run.job_name,
+                job_name=run.job_name,
                 run_id=run.run_id,
                 engine_event_data=EngineEventData(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),

@@ -91,7 +91,7 @@ def test_using_file_system_for_subplan():
 
     resolved_run_config = ResolvedRunConfig.build(foo_job)
     execution_plan = ExecutionPlan.build(InMemoryJob(foo_job), resolved_run_config)
-    run = instance.create_run_for_pipeline(pipeline_def=foo_job, execution_plan=execution_plan)
+    run = instance.create_run_for_job(pipeline_def=foo_job, execution_plan=execution_plan)
     assert execution_plan.get_step_by_key("return_one")
 
     return_one_step_events = list(
@@ -139,7 +139,7 @@ def test_using_file_system_for_subplan_multiprocessing():
             foo_job,
             resolved_run_config,
         )
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline_def=foo_job.get_definition(), execution_plan=execution_plan
         )
 
@@ -200,7 +200,7 @@ def test_execute_step_wrong_step_key():
         InMemoryJob(foo_job),
         resolved_run_config,
     )
-    run = instance.create_run_for_pipeline(pipeline_def=foo_job, execution_plan=execution_plan)
+    run = instance.create_run_for_job(pipeline_def=foo_job, execution_plan=execution_plan)
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
@@ -240,7 +240,7 @@ def test_using_file_system_for_subplan_missing_input():
         InMemoryJob(foo_job),
         resolved_run_config,
     )
-    run = instance.create_run_for_pipeline(pipeline_def=foo_job, execution_plan=execution_plan)
+    run = instance.create_run_for_job(pipeline_def=foo_job, execution_plan=execution_plan)
 
     events = execute_plan(
         execution_plan.build_subset_plan(["add_one"], foo_job, resolved_run_config),
@@ -267,7 +267,7 @@ def test_using_file_system_for_subplan_invalid_step():
         resolved_run_config,
     )
 
-    run = instance.create_run_for_pipeline(pipeline_def=foo_job, execution_plan=execution_plan)
+    run = instance.create_run_for_job(pipeline_def=foo_job, execution_plan=execution_plan)
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
@@ -308,7 +308,7 @@ def test_using_repository_data():
             == "2"
         )
 
-        run = instance.create_run_for_pipeline(pipeline_def=job_def, execution_plan=execution_plan)
+        run = instance.create_run_for_job(pipeline_def=job_def, execution_plan=execution_plan)
 
         execute_plan(
             execution_plan=execution_plan,

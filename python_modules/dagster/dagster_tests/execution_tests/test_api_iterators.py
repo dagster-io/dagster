@@ -73,7 +73,7 @@ def test_execute_run_iterator():
             logger_defs={"callback": construct_event_logger(event_callback)},
             executor_def=in_process_executor,
         )
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             pipeline_def=job_def,
             run_config={"loggers": {"callback": {}}},
         )
@@ -99,7 +99,7 @@ def test_execute_run_iterator():
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             pipeline_def=job_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.SUCCESS)
@@ -122,7 +122,7 @@ def test_execute_run_iterator():
                 "run_monitoring": {"enabled": True},
             }
         ) as run_monitoring_instance:
-            dagster_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 pipeline_def=job_def,
                 run_config={"loggers": {"callback": {}}},
             ).with_status(DagsterRunStatus.CANCELING)
@@ -152,7 +152,7 @@ def test_execute_run_iterator():
                     resume_from_failure=True,
                 )
 
-        dagster_run = instance.create_run_for_pipeline(
+        dagster_run = instance.create_run_for_job(
             pipeline_def=job_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.CANCELED)
@@ -178,7 +178,7 @@ def test_restart_running_run_worker():
             resource_defs={"a": resource_a, "b": resource_b},
             logger_defs={"callback": construct_event_logger(event_callback)},
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.STARTED)
@@ -211,7 +211,7 @@ def test_start_run_worker_after_run_failure():
             resource_defs={"a": resource_a, "b": resource_b},
             logger_defs={"callback": construct_event_logger(event_callback)},
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.FAILURE)
@@ -237,7 +237,7 @@ def test_execute_canceled_state():
             resource_defs={"a": resource_a, "b": resource_b},
             logger_defs={"callback": construct_event_logger(event_callback)},
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.CANCELED)
@@ -257,7 +257,7 @@ def test_execute_canceled_state():
             in logs[0].message
         )
 
-        iter_run = instance.create_run_for_pipeline(
+        iter_run = instance.create_run_for_job(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.CANCELED)
@@ -288,7 +288,7 @@ def test_execute_run_bad_state():
             resource_defs={"a": resource_a, "b": resource_b},
             logger_defs={"callback": construct_event_logger(event_callback)},
         )
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=pipeline_def,
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.SUCCESS)
@@ -321,7 +321,7 @@ def test_execute_plan_iterator():
         run_config = {"loggers": {"callback": {}}}
 
         execution_plan = create_execution_plan(pipeline, run_config=run_config)
-        pipeline_run = instance.create_run_for_pipeline(
+        pipeline_run = instance.create_run_for_job(
             pipeline_def=pipeline,
             run_config={"loggers": {"callback": {}}},
             execution_plan=execution_plan,
@@ -349,7 +349,7 @@ def test_execute_plan_iterator():
 def test_run_fails_while_loading_code():
     with instance_for_test() as instance:
         recon_pipeline = reconstructable(simple_job)
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline_def=simple_job,
             run_config={},
         )

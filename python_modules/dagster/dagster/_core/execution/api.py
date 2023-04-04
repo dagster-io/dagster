@@ -499,7 +499,7 @@ def _logged_execute_job(
 
     log_repo_stats(instance=instance, pipeline=job_arg, source="execute_pipeline")
 
-    dagster_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_job(
         pipeline_def=job_arg.get_definition(),
         run_config=run_config,
         solid_selection=op_selection,
@@ -567,7 +567,7 @@ def _reexecute_job(
                 solid_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
-        dagster_run = execute_instance.create_run_for_pipeline(
+        dagster_run = execute_instance.create_run_for_job(
             pipeline_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,

@@ -156,11 +156,11 @@ def test_successful_run(
         workspace.get_code_location("test").get_repository("nope").get_full_external_job("noop_job")
     )
 
-    dagster_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_job(
         pipeline_def=noop_job,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     run_id = dagster_run.run_id
 
@@ -206,7 +206,7 @@ def test_successful_run_from_pending(
     assert call_counts.get("get_definitions_called_b") == "1"
 
     created_run = instance.create_run(
-        pipeline_name="my_cool_asset_job",
+        job_name="my_cool_asset_job",
         run_id="xyzabc",
         run_config=None,
         solids_to_execute=None,
@@ -215,11 +215,11 @@ def test_successful_run_from_pending(
         tags=None,
         root_run_id=None,
         parent_run_id=None,
-        pipeline_snapshot=external_job.job_snapshot,
+        job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_job.parent_job_snapshot,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         solid_selection=None,
     )
@@ -290,10 +290,10 @@ def test_invalid_instance_run():
                             .get_full_external_job("noop_job")
                         )
 
-                        run = instance.create_run_for_pipeline(
-                            pipeline_def=noop_job,
-                            external_pipeline_origin=external_job.get_external_origin(),
-                            pipeline_code_origin=external_job.get_python_origin(),
+                        run = instance.create_run_for_job(
+                            job_def=noop_job,
+                            external_job_origin=external_job.get_external_origin(),
+                            job_code_origin=external_job.get_python_origin(),
                         )
                         with pytest.raises(
                             DagsterLaunchFailedError,
@@ -327,11 +327,11 @@ def test_crashy_run(
         .get_full_external_job("crashy_job")
     )
 
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=crashy_job,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -376,11 +376,11 @@ def test_exity_run(
         .get_full_external_job("exity_job")
     )
 
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=exity_job,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -422,11 +422,11 @@ def test_terminated_run(
         .get_repository("nope")
         .get_full_external_job("sleepy_job")
     )
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=sleepy_job,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -504,11 +504,11 @@ def test_cleanup_after_force_terminate(
         .get_repository("nope")
         .get_full_external_job("sleepy_job")
     )
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=sleepy_job,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
 
     run_id = run.run_id
@@ -605,12 +605,12 @@ def test_single_op_selection_execution(
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=math_diamond,
         run_config=run_config,
         solid_selection=["return_one"],
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
 
@@ -644,12 +644,12 @@ def test_multi_op_selection_execution(
         .get_full_external_job("math_diamond")
     )
 
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=math_diamond,
         run_config=run_config,
         solid_selection=["return_one", "multiply_by_2"],
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
 
@@ -685,11 +685,11 @@ def test_engine_events(
         .get_repository("nope")
         .get_full_external_job("math_diamond")
     )
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline_def=math_diamond,
         run_config=run_config,
-        external_pipeline_origin=external_job.get_external_origin(),
-        pipeline_code_origin=external_job.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
     )
     run_id = run.run_id
 

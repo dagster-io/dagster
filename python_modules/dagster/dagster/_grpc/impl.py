@@ -141,7 +141,7 @@ def core_execute_run(
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         yield instance.report_engine_event(
             message="Run execution terminated by interrupt",
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
         raise
     except Exception:

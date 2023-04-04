@@ -562,7 +562,7 @@ def test_interrupt_step_launcher():
             event_types = []
 
             with instance_for_test() as instance:
-                dagster_run = instance.create_run_for_pipeline(
+                dagster_run = instance.create_run_for_job(
                     define_sleepy_job(),
                     run_config=sleepy_run_config,
                 )

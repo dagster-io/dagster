@@ -406,7 +406,7 @@ def test_executor_not_created_for_execute_plan():
     instance = DagsterInstance.ephemeral()
     pipe = define_diamond_job()
     plan = create_execution_plan(pipe)
-    job_def = instance.create_run_for_pipeline(pipe, plan)
+    job_def = instance.create_run_for_job(pipe, plan)
 
     results = execute_plan(
         plan,

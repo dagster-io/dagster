@@ -526,7 +526,7 @@ def _create_external_pipeline_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     return instance.create_run(
-        pipeline_name=pipeline_name,
+        job_name=pipeline_name,
         run_id=run_id,
         run_config=run_config,
         solids_to_execute=external_pipeline.solids_to_execute,
@@ -536,11 +536,11 @@ def _create_external_pipeline_run(
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline.job_snapshot,
+        job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        parent_job_snapshot=external_pipeline.parent_job_snapshot,
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
         asset_selection=None,
     )
 

@@ -120,10 +120,10 @@ def test_launcher_fargate_spot(
     environment,
 ):
     instance = instance_fargate_spot
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -147,10 +147,10 @@ def test_launcher_fargate_spot(
     assert task["capacityProviderName"] == "FARGATE_SPOT"
 
     # Override capacity provider strategy with tags
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
     instance.add_run_tags(
         run.run_id,
@@ -196,10 +196,10 @@ def test_launcher_dont_use_current_task(
     environment,
 ):
     instance = instance_dont_use_current_task
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
 
     cluster = instance.run_launcher.run_task_kwargs["cluster"]
@@ -564,10 +564,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -598,10 +598,10 @@ def test_default_task_definition_resources(
             },
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -632,10 +632,10 @@ def test_default_task_definition_resources(
             "run_resources": {"cpu": "2048", "memory": "4096", "ephemeral_storage": 36},
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
         initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -706,10 +706,10 @@ def test_launching_with_task_definition_dict(
             "container_name": container_name,
         }
     ) as instance:
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -756,10 +756,10 @@ def test_launching_with_task_definition_dict(
         assert "execute_run" in override["command"]
         assert run.run_id in str(override["command"])
 
-        second_run = run = instance.create_run_for_pipeline(
+        second_run = run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
 
         instance.launch_run(second_run.run_id, workspace)
@@ -801,10 +801,10 @@ def test_launching_custom_task_definition(
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             pipeline,
-            external_pipeline_origin=external_pipeline.get_external_origin(),
-            pipeline_code_origin=external_pipeline.get_python_origin(),
+            external_job_origin=external_pipeline.get_external_origin(),
+            job_code_origin=external_pipeline.get_python_origin(),
         )
 
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -895,10 +895,10 @@ def test_launcher_run_resources(
     pipeline,
 ):
     instance = instance_with_resources
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
 
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -1030,10 +1030,10 @@ def test_status(
 ):
     instance = instance_with_log_group
 
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=external_pipeline.get_python_origin(),
     )
 
     instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
@@ -1122,10 +1122,10 @@ def test_overrides_too_long(
         ),
     )
 
-    run = instance.create_run_for_pipeline(
+    run = instance.create_run_for_job(
         pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=mock_pipeline_code_origin,
+        external_job_origin=external_pipeline.get_external_origin(),
+        job_code_origin=mock_pipeline_code_origin,
     )
 
     instance.launch_run(run.run_id, workspace)

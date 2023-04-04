@@ -648,7 +648,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_job)
-    dagster_run = instance.create_run_for_pipeline(the_job, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_job(the_job, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,

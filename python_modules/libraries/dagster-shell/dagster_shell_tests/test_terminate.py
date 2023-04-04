@@ -68,10 +68,10 @@ def test_terminate_kills_subproc():
                 .get_repository("sleepy_repo")
                 .get_full_external_job("sleepy_job")
             )
-            pipeline_run = instance.create_run_for_pipeline(
-                pipeline_def=sleepy_job,
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+            pipeline_run = instance.create_run_for_job(
+                job_def=sleepy_job,
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
 
             run_id = pipeline_run.run_id

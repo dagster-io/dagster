@@ -47,7 +47,7 @@ class DebugRunPayload(
             version=dagster_version,
             pipeline_run=run,
             event_list=instance.all_logs(run.run_id),
-            pipeline_snapshot=instance.get_pipeline_snapshot(run.job_snapshot_id),
+            pipeline_snapshot=instance.get_job_snapshot(run.job_snapshot_id),
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
             ),

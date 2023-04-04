@@ -265,7 +265,7 @@ def _get_runs_data(result, run_id):
 class TestDeleteRunReadonly(ReadonlyGraphQLContextTestMatrix):
     def test_delete_runs_permission_readonly(self, graphql_context: WorkspaceRequestContext):
         repo = get_repo_at_time_1()
-        run_id = graphql_context.instance.create_run_for_pipeline(
+        run_id = graphql_context.instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED.value
         ).run_id
 
@@ -764,10 +764,10 @@ def test_filtered_runs():
 def test_filtered_runs_status():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        _ = instance.create_run_for_pipeline(
+        _ = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
-        run_id_2 = instance.create_run_for_pipeline(
+        run_id_2 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
@@ -785,13 +785,13 @@ def test_filtered_runs_status():
 def test_filtered_runs_multiple_statuses():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        _ = instance.create_run_for_pipeline(
+        _ = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
-        run_id_2 = instance.create_run_for_pipeline(
+        run_id_2 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
-        run_id_3 = instance.create_run_for_pipeline(
+        run_id_3 = instance.create_run_for_job(
             repo.get_job("foo_job"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
@@ -811,17 +811,17 @@ def test_filtered_runs_multiple_filters():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
 
-        started_run_with_tags = instance.create_run_for_pipeline(
+        started_run_with_tags = instance.create_run_for_job(
             repo.get_job("foo_job"),
             status=DagsterRunStatus.STARTED,
             tags={"foo": "bar"},
         )
-        failed_run_with_tags = instance.create_run_for_pipeline(
+        failed_run_with_tags = instance.create_run_for_job(
             repo.get_job("foo_job"),
             status=DagsterRunStatus.FAILURE,
             tags={"foo": "bar"},
         )
-        started_run_without_tags = instance.create_run_for_pipeline(
+        started_run_without_tags = instance.create_run_for_job(
             repo.get_job("foo_job"),
             status=DagsterRunStatus.STARTED,
             tags={"baz": "boom"},
@@ -849,12 +849,8 @@ def test_filtered_runs_multiple_filters():
 def test_filtered_runs_count():
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
-        instance.create_run_for_pipeline(
-            repo.get_job("foo_job"), status=DagsterRunStatus.STARTED
-        ).run_id
-        instance.create_run_for_pipeline(
-            repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE
-        ).run_id
+        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.STARTED).run_id
+        instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.FAILURE).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
                 context,
@@ -874,7 +870,7 @@ def test_run_group():
         root_run_id = runs[-1].run_id
         for _ in range(3):
             # https://github.com/dagster-io/dagster/issues/2433
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 foo_job,
                 parent_run_id=root_run_id,
                 root_run_id=root_run_id,

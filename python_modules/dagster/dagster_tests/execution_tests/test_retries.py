@@ -248,9 +248,7 @@ def test_step_retry_fixed_wait(environment):
             env = dict(environment)
             env["ops"] = {"fail_first_and_wait": {"config": tempdir}}
 
-            dagster_run = instance.create_run_for_pipeline(
-                define_retry_wait_fixed_job(), run_config=env
-            )
+            dagster_run = instance.create_run_for_job(define_retry_wait_fixed_job(), run_config=env)
 
             event_iter = execute_run_iterator(
                 reconstructable(define_retry_wait_fixed_job),

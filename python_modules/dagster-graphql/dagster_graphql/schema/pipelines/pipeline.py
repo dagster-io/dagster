@@ -441,11 +441,10 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_parentPipelineSnapshotId(self, graphene_info: ResolveInfo):
         pipeline_snapshot_id = self._pipeline_run.job_snapshot_id
-        if (
-            pipeline_snapshot_id is not None
-            and graphene_info.context.instance.has_pipeline_snapshot(pipeline_snapshot_id)
+        if pipeline_snapshot_id is not None and graphene_info.context.instance.has_job_snapshot(
+            pipeline_snapshot_id
         ):
-            snapshot = graphene_info.context.instance.get_pipeline_snapshot(pipeline_snapshot_id)
+            snapshot = graphene_info.context.instance.get_job_snapshot(pipeline_snapshot_id)
             if snapshot.lineage_snapshot is not None:
                 return snapshot.lineage_snapshot.parent_snapshot_id
         return None

@@ -152,10 +152,10 @@ def test_run_status_sensor(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             failure_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -191,10 +191,10 @@ def test_run_status_sensor(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             foo_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -264,10 +264,10 @@ def test_run_failure_sensor(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             failure_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -323,10 +323,10 @@ def test_run_failure_sensor_that_fails(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             failure_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -398,10 +398,10 @@ def test_run_failure_sensor_filtered(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job_2")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             failure_job_2,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -429,10 +429,10 @@ def test_run_failure_sensor_filtered(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             failure_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)
@@ -525,18 +525,18 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
             with pendulum.test(freeze_datetime):
                 external_job = external_repo.get_full_external_job("hanging_job")
                 # start run 1
-                run1 = instance.create_run_for_pipeline(
+                run1 = instance.create_run_for_job(
                     hanging_job,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime.add(seconds=60)
                 # start run 2
-                run2 = instance.create_run_for_pipeline(
+                run2 = instance.create_run_for_job(
                     hanging_job,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
                 freeze_datetime = freeze_datetime.add(seconds=60)
@@ -724,15 +724,15 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
         with pendulum.test(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import success_job
 
-            dagster_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 success_job,
-                external_pipeline_origin=external_success_job.get_external_origin(),
-                pipeline_code_origin=external_success_job.get_python_origin(),
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
             )
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
@@ -822,15 +822,15 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
         with pendulum.test(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import success_job
 
-            dagster_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 success_job,
-                external_pipeline_origin=external_success_job.get_external_origin(),
-                pipeline_code_origin=external_success_job.get_python_origin(),
+                external_job_origin=external_success_job.get_external_origin(),
+                job_code_origin=external_success_job.get_python_origin(),
             )
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
@@ -869,15 +869,15 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
         with pendulum.test(freeze_datetime):
             external_another_success_job = job_repo.get_full_external_job("another_success_job")
 
-            # this unfortunate API (create_run_for_pipeline) requires the importation
+            # this unfortunate API (create_run_for_job) requires the importation
             # of the in-memory job object even though it is dealing mostly with
             # "external" objects
             from .locations_for_xlocation_sensor_test.success_job_def import another_success_job
 
-            dagster_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 another_success_job,
-                external_pipeline_origin=external_another_success_job.get_external_origin(),
-                pipeline_code_origin=external_another_success_job.get_python_origin(),
+                external_job_origin=external_another_success_job.get_external_origin(),
+                job_code_origin=external_another_success_job.get_python_origin(),
             )
 
             instance.submit_run(dagster_run.run_id, workspace_context.create_request_context())
@@ -941,7 +941,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 
         with pendulum.test(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 the_job,
                 external_pipeline_origin=external_job.get_external_origin(),
                 pipeline_code_origin=external_job.get_python_origin(),
@@ -1004,10 +1004,10 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
 
         with pendulum.test(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 the_job,
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
             instance.submit_run(run.run_id, workspace_context.create_request_context())
             wait_for_all_runs_to_finish(instance)
@@ -1158,10 +1158,10 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
 
             with pendulum.test(freeze_datetime):
                 external_job = the_other_repo.get_full_external_job("the_job")
-                run = the_other_instance.create_run_for_pipeline(
+                run = the_other_instance.create_run_for_job(
                     the_job,
-                    external_pipeline_origin=external_job.get_external_origin(),
-                    pipeline_code_origin=external_job.get_python_origin(),
+                    external_job_origin=external_job.get_external_origin(),
+                    job_code_origin=external_job.get_python_origin(),
                 )
                 the_other_instance.submit_run(
                     run.run_id, the_other_workspace_context.create_request_context()
@@ -1220,7 +1220,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 
         with pendulum.test(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
-            run = instance.create_run_for_pipeline(
+            run = instance.create_run_for_job(
                 the_job,
                 external_pipeline_origin=external_job.get_external_origin(),
                 pipeline_code_origin=external_job.get_python_origin(),
@@ -1276,10 +1276,10 @@ def test_logging_run_status_sensor(
 
     with pendulum.test(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
-        run = instance.create_run_for_pipeline(
+        run = instance.create_run_for_job(
             foo_job,
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.submit_run(run.run_id, workspace_context.create_request_context())
         wait_for_all_runs_to_finish(instance)

@@ -294,7 +294,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 message="Unable to terminate dagster job: can_terminate returned {}.".format(
                     can_terminate
                 ),
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
@@ -312,7 +312,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             if termination_result:
                 self._instance.report_engine_event(
                     message="Dagster Job was terminated successfully.",
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             else:
@@ -321,7 +321,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                         "Dagster Job was not terminated successfully; delete_job returned {}"
                         .format(termination_result)
                     ),
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             return termination_result
@@ -330,7 +330,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 message=(
                     "Dagster Job was not terminated successfully; encountered error in delete_job"
                 ),
-                pipeline_run=run,
+                dagster_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),

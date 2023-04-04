@@ -159,7 +159,7 @@ def test_interrupt_resource_teardown():
             # launch a thread the waits until the file is written to launch an interrupt
             Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 
-            dagster_run = instance.create_run_for_pipeline(
+            dagster_run = instance.create_run_for_job(
                 write_a_file_job,
                 run_config={
                     "ops": {"write_a_file_resource_op": {"config": {"tempfile": success_tempfile}}}

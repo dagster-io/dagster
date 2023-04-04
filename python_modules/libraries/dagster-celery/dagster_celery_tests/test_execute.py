@@ -88,7 +88,7 @@ def test_terminate_pipeline_on_celery(
     result_types = []
     interrupt_thread = None
 
-    dagster_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_job(
         pipeline_def=recon_job.get_definition(),
         run_config=run_config,
     )

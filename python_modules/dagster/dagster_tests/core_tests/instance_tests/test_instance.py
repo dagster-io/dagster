@@ -72,7 +72,7 @@ def do_test_single_write_read(instance):
     def job_def():
         pass
 
-    instance.create_run_for_pipeline(pipeline_def=job_def, run_id=run_id)
+    instance.create_run_for_job(job_def=job_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
     assert run.job_name == "job_def"

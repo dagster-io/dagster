@@ -136,7 +136,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                     docker_image=docker_image,
                 )
             ),
-            pipeline_run=run,
+            dagster_run=run,
             cls=self.__class__,
         )
 
@@ -200,7 +200,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         if not container:
             self._instance.report_engine_event(
                 message="Unable to get docker container to send termination request to.",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False

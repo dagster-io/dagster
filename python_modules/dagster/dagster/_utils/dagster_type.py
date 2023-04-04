@@ -46,7 +46,7 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline)
-    pipeline_run = instance.create_run_for_pipeline(pipeline_def)
+    pipeline_run = instance.create_run_for_job(pipeline_def)
     with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
         type_check_context = context.for_type(dagster_type)
         try:

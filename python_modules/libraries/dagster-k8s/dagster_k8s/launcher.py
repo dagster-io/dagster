@@ -316,7 +316,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         if not can_terminate:
             self._instance.report_engine_event(
                 message=f"Unable to terminate run; can_terminate returned {can_terminate}",
-                pipeline_run=run,
+                dagster_run=run,
                 cls=self.__class__,
             )
             return False
@@ -334,7 +334,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             if termination_result:
                 self._instance.report_engine_event(
                     message="Run was terminated successfully.",
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             else:
@@ -342,14 +342,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     message="Run was not terminated successfully; delete_job returned {}".format(
                         termination_result
                     ),
-                    pipeline_run=run,
+                    dagster_run=run,
                     cls=self.__class__,
                 )
             return termination_result
         except Exception:
             self._instance.report_engine_event(
                 message="Run was not terminated successfully; encountered error in delete_job",
-                pipeline_run=run,
+                dagster_run=run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 ),

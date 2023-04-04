@@ -28,7 +28,7 @@ def test_execution_plan_simple_two_steps():
     pipeline_def = define_two_int_pipeline()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
-    pipeline_run = instance.create_run_for_pipeline(
+    pipeline_run = instance.create_run_for_job(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
 
@@ -80,7 +80,7 @@ def test_execution_plan_two_outputs():
     execution_plan = create_execution_plan(pipeline_def)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
+    pipeline_run = instance.create_run_for_job(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
     events = execute_plan(
@@ -109,7 +109,7 @@ def test_reentrant_execute_plan():
     pipeline_def = GraphDefinition(name="has_tag_pipeline", node_defs=[has_tag]).to_job()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def)
-    pipeline_run = instance.create_run_for_pipeline(
+    pipeline_run = instance.create_run_for_job(
         pipeline_def=pipeline_def, tags={"foo": "bar"}, execution_plan=execution_plan
     )
     execute_plan(
