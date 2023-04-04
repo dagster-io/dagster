@@ -11,7 +11,7 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from packaging import version
 
 
-def is_airflow_2_loaded_in_environment(version_to_check="2.0.0") -> bool:
+def is_airflow_2_loaded_in_environment(version_to_check: str = "2.0.0") -> bool:
     # in sphinx context, airflow.__version__ is set to
     # this string, version.parse errors trying to parse it
     if str(airflow_version) == "airflow.__version__":
