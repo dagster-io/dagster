@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+const withMarkdoc = require('@markdoc/next.js');
+
 const redirectUrls = require('./util/redirectUrls.json');
 
-module.exports = {
+module.exports = withMarkdoc()({
   async redirects() {
     return [
       {
@@ -42,4 +44,5 @@ module.exports = {
 
     return config;
   },
-};
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdoc'],
+});
