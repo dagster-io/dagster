@@ -335,6 +335,17 @@ class PartitionsDefinition(ABC, Generic[T_cov]):
     ) -> int:
         return len(self.get_partition_keys(current_time, dynamic_partitions_store))
 
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        return partition_key in self.get_partition_keys(
+            current_time=current_time,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
+
 
 def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
     for partition_key in partition_keys:
@@ -681,6 +692,23 @@ class DynamicPartitionsDefinition(
                 partitions_def_name=self._validated_name()
             )
             return [Partition(key) for key in partitions]
+
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        if dynamic_partitions_store is None:
+            check.failed(
+                "The instance is not available to load partitions. You may be seeing this error"
+                " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                " is older than 1.1.18."
+            )
+
+        return dynamic_partitions_store.has_dynamic_partition(
+            partitions_def_name=self._validated_name(), partition_key=partition_key
+        )
 
 
 class PartitionedConfig(Generic[T_cov]):
