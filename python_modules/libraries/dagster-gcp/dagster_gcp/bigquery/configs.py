@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 """
 
-from dagster import Array, Bool, Field, IntSource, String, StringSource
+from dagster import Array, Bool, Field, IntSource, Noneable, String, StringSource
 
 from .types import (
     BQCreateDisposition,
@@ -33,7 +33,20 @@ def bq_resource_config():
         is_required=False,
     )
 
-    return {"project": project, "location": location}
+    gcp_credentials = Field(
+        Noneable(StringSource),
+        is_required=False,
+        default_value=None,
+        description=(
+            "GCP authentication credentials. If provided, a temporary file will be created"
+            " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
+            " temporary file. To avoid issues with newlines in the keys, you must base64"
+            " encode the key. You can retrieve the base64 encoded key with this shell"
+            " command: cat $GOOGLE_AUTH_CREDENTIALS | base64"
+        ),
+    )
+
+    return {"project": project, "location": location, "gcp_credentials": gcp_credentials}
 
 
 def _define_shared_fields():
