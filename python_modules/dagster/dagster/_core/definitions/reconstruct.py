@@ -115,8 +115,8 @@ class ReconstructableRepository(
     def get_definition(self) -> "RepositoryDefinition":
         return repository_def_from_pointer(self.pointer, self.repository_load_data)
 
-    def get_reconstructable_pipeline(self, name: str) -> ReconstructablePipeline:
-        return ReconstructablePipeline(self, name)
+    def get_reconstructable_pipeline(self, name: str) -> ReconstructableJob:
+        return ReconstructableJob(self, name)
 
     @classmethod
     def for_file(
@@ -172,13 +172,18 @@ class ReconstructableRepository(
         return self._hash
 
 
-@whitelist_for_serdes
-class ReconstructablePipeline(
+@whitelist_for_serdes(
+    storage_name="ReconstructablePipeline",
+    storage_field_names={
+        "job_name": "pipeline_name",
+    },
+)
+class ReconstructableJob(
     NamedTuple(
-        "_ReconstructablePipeline",
+        "_ReconstructableJob",
         [
             ("repository", ReconstructableRepository),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("solid_selection_str", Optional[str]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
             ("asset_selection", Optional[AbstractSet[AssetKey]]),
@@ -186,18 +191,18 @@ class ReconstructablePipeline(
     ),
     IJob,
 ):
-    """Defines a reconstructable pipeline. When your pipeline/job must cross process boundaries,
-    Dagster must know how to reconstruct the pipeline/job on the other side of the process boundary.
+    """Defines a reconstructable job. When your job must cross process boundaries, Dagster must know
+    how to reconstruct the job on the other side of the process boundary.
 
     Args:
         repository (ReconstructableRepository): The reconstructable representation of the repository
-            the pipeline/job belongs to.
-        pipeline_name (str): The name of the pipeline/job.
+            the job belongs to.
+        job_name (str): The name of the job.
         solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
-            solid/op selection. None if no selection is specified, i.e. the entire pipeline/job will
+            solid/op selection. None if no selection is specified, i.e. the entire job will
             be run.
         solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
-            is specified, i.e. the entire pipeline/job will be run.
+            is specified, i.e. the entire job will be run.
         asset_selection (Optional[FrozenSet[AssetKey]]) A set of assets to execute. None if no selection
             is specified, i.e. the entire job will be run.
     """
@@ -205,17 +210,17 @@ class ReconstructablePipeline(
     def __new__(
         cls,
         repository: ReconstructableRepository,
-        pipeline_name: str,
+        job_name: str,
         solid_selection_str: Optional[str] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", AssetKey)
-        return super(ReconstructablePipeline, cls).__new__(
+        return super(ReconstructableJob, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
             solids_to_execute=solids_to_execute,
             asset_selection=asset_selection,
@@ -223,7 +228,7 @@ class ReconstructablePipeline(
 
     def with_repository_load_data(
         self, metadata: Optional["RepositoryLoadData"]
-    ) -> ReconstructablePipeline:
+    ) -> ReconstructableJob:
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @property
@@ -235,7 +240,7 @@ class ReconstructablePipeline(
     @lru_cache(maxsize=1)
     def get_definition(self) -> Union[JobDefinition, "JobDefinition"]:
         return self.repository.get_definition().get_maybe_subset_job_def(
-            self.pipeline_name,
+            self.job_name,
             self.solid_selection,
             self.asset_selection,
             self.solids_to_execute,
@@ -249,12 +254,12 @@ class ReconstructablePipeline(
         solids_to_execute: Optional[AbstractSet[str]],
         solid_selection: Optional[Sequence[str]],
         asset_selection: Optional[AbstractSet[AssetKey]],
-    ) -> "ReconstructablePipeline":
+    ) -> "ReconstructableJob":
         # no selection
         if solid_selection is None and solids_to_execute is None and asset_selection is None:
-            return ReconstructablePipeline(
+            return ReconstructableJob(
                 repository=self.repository,
-                pipeline_name=self.pipeline_name,
+                job_name=self.job_name,
             )
 
         from dagster._core.definitions import JobDefinition
@@ -269,9 +274,9 @@ class ReconstructablePipeline(
                 # when the pre-resolution info is unavailable (e.g. subset from existing run),
                 # we need to fill the solid_selection in order to pass the value down to deeper stack.
                 solid_selection = list(solids_to_execute) if solids_to_execute else None
-            return ReconstructablePipeline(
+            return ReconstructableJob(
                 repository=self.repository,
-                pipeline_name=self.pipeline_name,
+                job_name=self.job_name,
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=None,
                 asset_selection=asset_selection,
@@ -284,9 +289,9 @@ class ReconstructablePipeline(
             if solid_selection and solids_to_execute is None:
                 # when post-resolution query is unavailable, resolve the query
                 solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
-            return ReconstructablePipeline(
+            return ReconstructableJob(
                 repository=self.repository,
-                pipeline_name=self.pipeline_name,
+                job_name=self.job_name,
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
             )
@@ -297,7 +302,7 @@ class ReconstructablePipeline(
         self,
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "ReconstructablePipeline":
+    ) -> "ReconstructableJob":
         # take a list of unresolved selection queries
         check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
@@ -311,11 +316,11 @@ class ReconstructablePipeline(
             solids_to_execute=None, solid_selection=solid_selection, asset_selection=asset_selection
         )
 
-    def subset_for_execution_from_existing_pipeline(
+    def subset_for_execution_from_existing_job(
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> ReconstructablePipeline:
+    ) -> ReconstructableJob:
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
 
@@ -335,29 +340,29 @@ class ReconstructablePipeline(
 
     def describe(self) -> str:
         return '"{name}" in repository ({repo})'.format(
-            repo=self.repository.pointer.describe, name=self.pipeline_name
+            repo=self.repository.pointer.describe, name=self.job_name
         )
 
     @staticmethod
-    def for_file(python_file: str, fn_name: str) -> ReconstructablePipeline:
+    def for_file(python_file: str, fn_name: str) -> ReconstructableJob:
         return bootstrap_standalone_recon_pipeline(
             FileCodePointer(python_file, fn_name, os.getcwd())
         )
 
     @staticmethod
-    def for_module(module: str, fn_name: str) -> ReconstructablePipeline:
+    def for_module(module: str, fn_name: str) -> ReconstructableJob:
         return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
 
     @staticmethod
-    def from_dict(val: Mapping[str, Any]) -> ReconstructablePipeline:
+    def from_dict(val: Mapping[str, Any]) -> ReconstructableJob:
         check.mapping_param(val, "val")
 
         inst = unpack_value(val)
         check.invariant(
-            isinstance(inst, ReconstructablePipeline),
+            isinstance(inst, ReconstructableJob),
             "Deserialized object is not instance of ReconstructablePipeline, got {type}".format(
                 type=type(inst)
             ),
@@ -365,7 +370,7 @@ class ReconstructablePipeline(
         return inst  # type: ignore  # (illegible runtime check)
 
     def get_python_origin(self) -> JobPythonOrigin:
-        return JobPythonOrigin(self.pipeline_name, self.repository.get_python_origin())
+        return JobPythonOrigin(self.job_name, self.repository.get_python_origin())
 
     def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
@@ -379,10 +384,7 @@ class ReconstructablePipeline(
         return None
 
 
-ReconstructableJob = ReconstructablePipeline
-
-
-def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructablePipeline:
+def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
     function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
     or a function decorated with :py:func:`@job <dagster.job>`.
@@ -478,7 +480,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructablePi
             and hasattr(target, "__name__")
             and getattr(inspect.getmodule(target), "__name__", None) != "__main__"
         ):
-            return ReconstructablePipeline.for_module(target.__module__, target.__name__)
+            return ReconstructableJob.for_module(target.__module__, target.__name__)
     except:
         pass
 
@@ -504,7 +506,7 @@ def build_reconstructable_job(
     reconstructable_args: Optional[Tuple[object]] = None,
     reconstructable_kwargs: Optional[Mapping[str, object]] = None,
     reconstructor_working_directory: Optional[str] = None,
-) -> ReconstructablePipeline:
+) -> ReconstructableJob:
     """Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructablePipeline`.
 
     When your job must cross process boundaries, e.g., for execution on multiple nodes or in
@@ -593,9 +595,9 @@ def build_reconstructable_job(
 
     pipeline_def = pipeline_def_from_pointer(pointer)
 
-    return ReconstructablePipeline(
+    return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
-        pipeline_name=pipeline_def.name,
+        job_name=pipeline_def.name,
     )
 
 
@@ -604,14 +606,14 @@ build_reconstructable_pipeline = build_reconstructable_job
 build_reconstructable_target = build_reconstructable_job
 
 
-def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> ReconstructablePipeline:
+def bootstrap_standalone_recon_pipeline(pointer: CodePointer) -> ReconstructableJob:
     # So this actually straps the the pipeline for the sole
     # purpose of getting the pipeline name. If we changed ReconstructablePipeline
     # to get the pipeline on demand in order to get name, we could avoid this.
     pipeline_def = pipeline_def_from_pointer(pointer)
-    return ReconstructablePipeline(
+    return ReconstructableJob(
         repository=ReconstructableRepository(pointer),  # creates ephemeral repo
-        pipeline_name=pipeline_def.name,
+        job_name=pipeline_def.name,
     )
 
 

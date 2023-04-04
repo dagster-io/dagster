@@ -17,7 +17,7 @@ from dagster._core.definitions.partition import (
     PartitionedConfig,
     PartitionsDefinition,
 )
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
@@ -79,13 +79,13 @@ def _report_run_failed_if_not_finished(
 
 
 def core_execute_run(
-    recon_pipeline: ReconstructablePipeline,
+    recon_pipeline: ReconstructableJob,
     pipeline_run: DagsterRun,
     instance: DagsterInstance,
     inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
-    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
+    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructableJob)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 

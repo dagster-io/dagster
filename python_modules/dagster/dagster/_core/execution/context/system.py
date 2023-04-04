@@ -32,7 +32,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
@@ -226,8 +226,8 @@ class PlanOrchestrationContext(IPlanContext):
         return self._plan_data
 
     @property
-    def reconstructable_pipeline(self) -> ReconstructablePipeline:
-        if not isinstance(self.pipeline, ReconstructablePipeline):
+    def reconstructable_pipeline(self) -> ReconstructableJob:
+        if not isinstance(self.pipeline, ReconstructableJob):
             raise DagsterInvariantViolationError(
                 "reconstructable_pipeline property must be a ReconstructablePipeline"
             )

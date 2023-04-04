@@ -20,7 +20,7 @@ from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grp
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
@@ -335,9 +335,7 @@ class InProcessCodeLocation(CodeLocation):
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
-    def get_reconstructable_pipeline(
-        self, repository_name: str, name: str
-    ) -> ReconstructablePipeline:
+    def get_reconstructable_pipeline(self, repository_name: str, name: str) -> ReconstructableJob:
         return self._loaded_repositories.reconstructables_by_name[
             repository_name
         ].get_reconstructable_pipeline(name)
@@ -392,7 +390,7 @@ class InProcessCodeLocation(CodeLocation):
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_pipeline(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
-            ).subset_for_execution_from_existing_pipeline(
+            ).subset_for_execution_from_existing_job(
                 external_pipeline.solids_to_execute,
                 external_pipeline.asset_selection,
             ),

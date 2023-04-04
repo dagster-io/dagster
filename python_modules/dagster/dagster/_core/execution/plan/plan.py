@@ -30,7 +30,7 @@ from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.executor_definition import ExecutorRequirement
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -108,7 +108,7 @@ class _PlanBuilder:
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
     ):
-        if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
+        if isinstance(pipeline, ReconstructableJob) and repository_load_data is not None:
             check.invariant(
                 pipeline.repository.repository_load_data == repository_load_data,
                 (

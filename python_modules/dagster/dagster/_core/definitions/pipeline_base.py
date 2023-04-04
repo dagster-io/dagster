@@ -42,7 +42,7 @@ class IJob(ABC):
         pass
 
     @abstractmethod
-    def subset_for_execution_from_existing_pipeline(
+    def subset_for_execution_from_existing_job(
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
@@ -118,7 +118,7 @@ class InMemoryJob(IJob, object):
         solids_to_execute = self._resolve_op_selection(solid_selection) if solid_selection else None
         return self._subset_for_execution(solids_to_execute, solid_selection, asset_selection)
 
-    def subset_for_execution_from_existing_pipeline(
+    def subset_for_execution_from_existing_job(
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,

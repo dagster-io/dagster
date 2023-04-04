@@ -36,7 +36,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import (
     ReexecutionOptions,
@@ -616,9 +616,7 @@ def test_multiproc_launcher_with_repository_load_data():
                 file_relative_path(__file__, "test_external_step.py"),
                 fn_name="pending_repo",
             )
-            recon_job = ReconstructablePipeline(
-                repository=recon_repo, pipeline_name="all_asset_job"
-            )
+            recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
             with execute_job(
                 recon_job,

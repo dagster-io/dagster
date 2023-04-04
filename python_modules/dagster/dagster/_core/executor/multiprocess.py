@@ -8,7 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
@@ -326,7 +326,7 @@ class MultiprocessExecutor(Executor):
 
 def execute_step_out_of_process(
     multiproc_ctx: MultiprocessingBaseContext,
-    pipeline: ReconstructablePipeline,
+    pipeline: ReconstructableJob,
     step_context: IStepContext,
     step: ExecutionStep,
     errors: Dict[int, SerializableErrorInfo],

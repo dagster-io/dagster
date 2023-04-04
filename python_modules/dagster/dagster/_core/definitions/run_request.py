@@ -281,6 +281,9 @@ class RunRequest(
 
 @whitelist_for_serdes(
     storage_name="PipelineRunReaction",
+    storage_field_names={
+        "dagster_run": "pipeline_run",
+    },
 )
 class DagsterRunReaction(
     NamedTuple(

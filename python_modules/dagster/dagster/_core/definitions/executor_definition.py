@@ -13,7 +13,7 @@ from dagster._core.definitions.configurable import (
     NamedConfigurableDefinition,
 )
 from dagster._core.definitions.pipeline_base import IJob
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
@@ -442,7 +442,7 @@ def check_cross_process_constraints(init_context: "InitExecutorContext") -> None
 def _check_intra_process_pipeline(pipeline: IJob) -> None:
     from dagster._core.definitions import JobDefinition
 
-    if not isinstance(pipeline, ReconstructablePipeline):
+    if not isinstance(pipeline, ReconstructableJob):
         target = "job" if isinstance(pipeline.get_definition(), JobDefinition) else "pipeline"
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes with the {target}"

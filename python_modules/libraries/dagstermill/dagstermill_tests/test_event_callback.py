@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import execute_run
@@ -16,7 +16,7 @@ def test_event_callback_logging():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    pipeline = ReconstructablePipeline.for_module(
+    pipeline = ReconstructableJob.for_module(
         "dagstermill.examples.repository",
         "hello_logging_job",
     )

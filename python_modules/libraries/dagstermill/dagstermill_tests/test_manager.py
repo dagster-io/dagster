@@ -12,7 +12,7 @@ from dagster import (
     ResourceDefinition,
 )
 from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
@@ -38,7 +38,7 @@ def in_job_manager(
         marshal_dir = tempfile.mkdtemp()
 
         if not executable_dict:
-            executable_dict = ReconstructablePipeline.for_module(
+            executable_dict = ReconstructableJob.for_module(
                 "dagstermill.examples.repository", "hello_world_job"
             ).to_dict()
 
@@ -111,7 +111,7 @@ def test_yield_unserializable_result():
     with in_job_manager(
         pipeline_name="hello_world_output_job",
         node_handle=NodeHandle("hello_world_output", None),
-        executable_dict=ReconstructablePipeline.for_module(
+        executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
             "hello_world_output_job",
         ).to_dict(),
@@ -157,7 +157,7 @@ def test_in_job_manager_op_config():
     with in_job_manager(
         pipeline_name="hello_world_config_job",
         node_handle=NodeHandle("hello_world_config", None),
-        executable_dict=ReconstructablePipeline.for_module(
+        executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
             "hello_world_config_job",
         ).to_dict(),
@@ -174,7 +174,7 @@ def test_in_job_manager_op_config():
                 "goodbye_config": {"config": {"farewell": "goodbye"}},
             }
         },
-        executable_dict=ReconstructablePipeline.for_module(
+        executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
             "hello_world_config_job",
         ).to_dict(),
@@ -193,7 +193,7 @@ def test_in_job_manager_op_config():
                 "goodbye_config": {"config": {"farewell": "goodbye"}},
             }
         },
-        executable_dict=ReconstructablePipeline.for_module(
+        executable_dict=ReconstructableJob.for_module(
             "dagstermill.examples.repository",
             "hello_world_config_job",
         ).to_dict(),
@@ -209,7 +209,7 @@ def test_in_job_manager_with_resources():
     try:
         with in_job_manager(
             pipeline_name="resource_job",
-            executable_dict=ReconstructablePipeline.for_module(
+            executable_dict=ReconstructableJob.for_module(
                 "dagstermill.examples.repository",
                 "resource_job",
             ).to_dict(),

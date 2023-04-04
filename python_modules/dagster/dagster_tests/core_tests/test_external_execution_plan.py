@@ -296,7 +296,7 @@ def test_using_repository_data():
             file_relative_path(__file__, "test_external_execution_plan.py"),
             fn_name="pending_repo",
         )
-        recon_job = ReconstructableJob(repository=recon_repo, pipeline_name="all_asset_job")
+        recon_job = ReconstructableJob(repository=recon_repo, job_name="all_asset_job")
 
         execution_plan = create_execution_plan(recon_job, repository_load_data=repository_load_data)
 

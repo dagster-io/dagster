@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, cast
 import dagster._check as check
 from dagster._config import Field, StringSource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster._core.errors import raise_execution_interrupts
@@ -125,10 +125,10 @@ def step_context_to_step_run_ref(
 
     recon_pipeline = step_context.pipeline
     if package_dir:
-        if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
+        if isinstance(recon_pipeline, ReconstructableJob) and isinstance(
             recon_pipeline.repository.pointer, FileCodePointer
         ):
-            recon_pipeline = ReconstructablePipeline(
+            recon_pipeline = ReconstructableJob(
                 repository=ReconstructableRepository(
                     pointer=ModuleCodePointer(
                         _module_in_package_dir(
@@ -143,7 +143,7 @@ def step_context_to_step_run_ref(
                     container_context=recon_pipeline.repository.container_context,
                     repository_load_data=step_context.plan_data.execution_plan.repository_load_data,
                 ),
-                pipeline_name=recon_pipeline.pipeline_name,
+                job_name=recon_pipeline.job_name,
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
@@ -188,7 +188,7 @@ def step_run_ref_to_step_context(
 
     solids_to_execute = step_run_ref.dagster_run.solids_to_execute
     if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
+        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_job(
             frozenset(solids_to_execute) if solids_to_execute else None,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )

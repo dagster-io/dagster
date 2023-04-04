@@ -423,7 +423,7 @@ def _execute_step_command_body(
         recon_pipeline = (
             recon_pipeline_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
-            .subset_for_execution_from_existing_pipeline(
+            .subset_for_execution_from_existing_job(
                 pipeline_run.solids_to_execute, pipeline_run.asset_selection
             )
         )

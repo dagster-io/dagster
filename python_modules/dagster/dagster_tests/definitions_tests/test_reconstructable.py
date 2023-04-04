@@ -188,7 +188,7 @@ def test_reconstruct_from_origin():
 
     recon_pipeline = recon_pipeline_from_origin(origin)
 
-    assert recon_pipeline.pipeline_name == origin.job_name
+    assert recon_pipeline.job_name == origin.job_name
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
     assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
     assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path

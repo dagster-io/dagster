@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import pytest
 from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.test_utils import instance_for_test
@@ -33,7 +33,7 @@ def cleanup_result_notebook(result: ExecutionResult):
 @contextmanager
 def exec_for_test(job_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", job_name)
+    recon_pipeline = ReconstructableJob.for_module("dagstermill.examples.repository", job_name)
 
     with instance_for_test() as instance:
         try:
@@ -118,7 +118,7 @@ def test_custom_io_manager_key():
 @pytest.mark.notebook_test
 def test_error_notebook_saved_asset():
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module(
+    recon_pipeline = ReconstructableJob.for_module(
         "dagstermill.examples.repository", "error_notebook_asset_job"
     )
 

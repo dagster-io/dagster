@@ -2,7 +2,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteStepArgs
@@ -27,7 +27,7 @@ def create_task(celery_app, **task_kwargs):
 
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
 
-        pipeline = ReconstructablePipeline.from_dict(executable_dict)
+        pipeline = ReconstructableJob.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
 
         pipeline_run = instance.get_run_by_id(execute_step_args.run_id)

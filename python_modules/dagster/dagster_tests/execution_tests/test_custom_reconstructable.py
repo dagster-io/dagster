@@ -3,7 +3,7 @@ import sys
 
 import pytest
 from dagster import job, op, reconstructable
-from dagster._core.definitions import ReconstructablePipeline, build_reconstructable_pipeline
+from dagster._core.definitions import ReconstructableJob, build_reconstructable_pipeline
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 
@@ -84,7 +84,7 @@ def test_build_reconstructable_pipeline_serdes():
 
         reconstructable_bar_job_dict = reconstructable_bar_job.to_dict()
 
-        reconstructed_bar_job = ReconstructablePipeline.from_dict(reconstructable_bar_job_dict)
+        reconstructed_bar_job = ReconstructableJob.from_dict(reconstructable_bar_job_dict)
 
         reconstructed_bar_job_def = reconstructed_bar_job.get_definition()
 

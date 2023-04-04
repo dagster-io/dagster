@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Any, Mapping, Optional, Sequence
 
 import dask
 import dask.distributed
@@ -13,13 +13,17 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._utils import iterate_with_context
 
 # Dask resource requirements are specified under this key
@@ -115,31 +119,29 @@ def dask_executor(init_context):
 
 
 def query_on_dask_worker(
-    dependencies,
-    recon_pipeline,
-    pipeline_run,
-    run_config,
-    step_keys,
-    instance_ref,
-    known_state,
-):
+    dependencies: Any,
+    recon_job: ReconstructableJob,
+    dagster_run: DagsterRun,
+    run_config: Optional[Mapping[str, object]],
+    step_keys: Optional[Sequence[str]],
+    instance_ref: InstanceRef,
+    known_state: Optional[KnownExecutionState],
+) -> Sequence[DagsterEvent]:
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
     with DagsterInstance.from_ref(instance_ref) as instance:
-        subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
-        )
+        subset_job = recon_job.subset_for_execution_from_existing_job(dagster_run.solids_to_execute)
 
         execution_plan = create_execution_plan(
-            subset_pipeline,
+            subset_job,
             run_config=run_config,
             step_keys_to_execute=step_keys,
             known_state=known_state,
         )
 
         return execute_plan(
-            execution_plan, subset_pipeline, instance, pipeline_run, run_config=run_config
+            execution_plan, subset_job, instance, dagster_run, run_config=run_config
         )
 
 
@@ -163,7 +165,7 @@ class DaskExecutor(Executor):
     def retries(self):
         return RetryMode.DISABLED
 
-    def execute(self, plan_context, execution_plan):
+    def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
@@ -250,12 +252,12 @@ class DaskExecutor(Executor):
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
-                    recon_pipeline = plan_context.reconstructable_pipeline
+                    recon_job = plan_context.reconstructable_job
 
                     future = client.submit(
                         query_on_dask_worker,
                         dependencies,
-                        recon_pipeline,
+                        recon_job,
                         plan_context.dagster_run,
                         run_config,
                         [step.key],
@@ -278,7 +280,7 @@ class DaskExecutor(Executor):
                     check.inst(step_event, DagsterEvent)
                     yield step_event
 
-    def build_dict(self, pipeline_name):
+    def build_dict(self, job_name):
         """Returns a dict we can use for kwargs passed to dask client instantiation.
 
         Intended to be used like:
@@ -288,7 +290,7 @@ class DaskExecutor(Executor):
 
         """
         if self.cluster_type in ["yarn", "pbs", "moab", "sge", "lsf", "slurm", "oar", "kube"]:
-            dask_cfg = {"name": pipeline_name}
+            dask_cfg = {"name": job_name}
         else:
             dask_cfg = {}
 

@@ -3,7 +3,7 @@ import os
 from dagster import executor, fs_io_manager, op, reconstructable, resource
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.executor_definition import multiprocess_executor
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.host_mode import execute_run_host_mode
 from dagster._core.execution.retries import RetryMode
@@ -45,7 +45,7 @@ _explode_pid = {"pid": None}
 
 # Will throw if the run worker pid tries to access the definition, but subprocesses (the step
 # workers) can access the definition
-class ExplodingTestPipeline(ReconstructablePipeline):
+class ExplodingTestPipeline(ReconstructableJob):
     def __new__(
         cls,
         repository,
@@ -90,7 +90,7 @@ def test_host_run_worker():
         recon_pipeline = reconstructable(job_with_resources)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
+            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.job_name),
             dagster_run,
             instance,
             executor_defs=[multiprocess_executor],
@@ -138,7 +138,7 @@ def test_custom_executor_fn():
         recon_pipeline = reconstructable(job_with_resources)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.pipeline_name),
+            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.job_name),
             pipeline_run,
             instance,
             executor_defs=[test_executor],

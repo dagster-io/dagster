@@ -21,7 +21,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryJob
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context
@@ -135,7 +135,7 @@ class Manager:
         check.mapping_param(instance_ref_dict, "instance_ref_dict")
         check.str_param(step_key, "step_key")
 
-        pipeline = ReconstructablePipeline.from_dict(executable_dict)
+        pipeline = ReconstructableJob.from_dict(executable_dict)
         pipeline_def = pipeline.get_definition()
 
         try:

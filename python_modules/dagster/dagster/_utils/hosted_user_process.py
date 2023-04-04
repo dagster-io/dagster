@@ -11,7 +11,7 @@ to be the case.
 from typing import TYPE_CHECKING
 
 import dagster._check as check
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.host_representation import ExternalJob, ExternalRepository
 from dagster._core.host_representation.external_data import (
     external_pipeline_data_from_def,
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.handle import RepositoryHandle
 
 
-def recon_pipeline_from_origin(origin: JobPythonOrigin) -> ReconstructablePipeline:
+def recon_pipeline_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
     check.inst_param(origin, "origin", JobPythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
     return recon_repo.get_reconstructable_pipeline(origin.job_name)

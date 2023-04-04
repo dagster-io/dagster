@@ -41,7 +41,7 @@ import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 from dagster._core.definitions.pipeline_base import IJob
 from dagster._core.definitions.reconstruct import (
-    ReconstructablePipeline,
+    ReconstructableJob,
     ReconstructableRepository,
     get_ephemeral_repository_name,
 )
@@ -600,7 +600,7 @@ def log_repo_stats(
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        if isinstance(pipeline, ReconstructablePipeline):
+        if isinstance(pipeline, ReconstructableJob):
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repository = pipeline.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)

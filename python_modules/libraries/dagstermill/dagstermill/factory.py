@@ -20,7 +20,7 @@ from dagster._config.pythonic_config import Config, infer_schema_from_config_cla
 from dagster._config.pythonic_config.utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
@@ -123,7 +123,7 @@ def get_papermill_parameters(
     marshal_dir = os.path.normpath(os.path.join(temp_dir, "dagstermill", str(run_id), "marshal"))
     mkdir_p(marshal_dir)
 
-    if not isinstance(step_context.pipeline, ReconstructablePipeline):
+    if not isinstance(step_context.pipeline, ReconstructableJob):
         if compute_descriptor == "asset":
             raise DagstermillError(
                 "Can't execute a dagstermill asset that is not reconstructable. "

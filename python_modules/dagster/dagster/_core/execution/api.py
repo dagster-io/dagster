@@ -20,7 +20,7 @@ from dagster._annotations import experimental
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryJob
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, EngineEventData
@@ -142,13 +142,13 @@ def execute_run_iterator(
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+        pipeline = pipeline.subset_for_execution_from_existing_job(
             frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
             asset_selection=dagster_run.asset_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructablePipeline):
+    if isinstance(pipeline, ReconstructableJob):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
@@ -222,13 +222,13 @@ def execute_run(
         # when `execute_run` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+        pipeline = pipeline.subset_for_execution_from_existing_job(
             frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
             dagster_run.asset_selection,
         )
 
     execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructablePipeline):
+    if isinstance(pipeline, ReconstructableJob):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
@@ -425,7 +425,7 @@ def execute_job(
     Returns:
       :py:class:`JobExecutionResult`: The result of job execution.
     """
-    check.inst_param(job, "job", ReconstructablePipeline)
+    check.inst_param(job, "job", ReconstructableJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
 
@@ -607,7 +607,7 @@ def execute_plan_iterator(
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
-    if isinstance(pipeline, ReconstructablePipeline):
+    if isinstance(pipeline, ReconstructableJob):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
@@ -714,7 +714,7 @@ def create_execution_plan(
     pipeline = _check_pipeline(pipeline)
 
     # If you have repository_load_data, make sure to use it when building plan
-    if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
+    if isinstance(pipeline, ReconstructableJob) and repository_load_data is not None:
         pipeline = pipeline.with_repository_load_data(repository_load_data)
 
     pipeline_def = pipeline.get_definition()
@@ -967,7 +967,7 @@ def _job_with_repository_load_data(
     """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
     a ReconstructablePipeline with this repository load data baked in.
     """
-    if isinstance(job_arg, ReconstructablePipeline):
+    if isinstance(job_arg, ReconstructableJob):
         # Unless this ReconstructablePipeline alread has repository_load_data attached, this will
         # force the repository_load_data to be computed from scratch.
         repository_load_data = job_arg.repository.get_definition().repository_load_data

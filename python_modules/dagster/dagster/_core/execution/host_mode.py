@@ -9,7 +9,7 @@ from dagster._core.definitions.executor_definition import (
     check_cross_process_constraints,
     multi_or_in_process_executor,
 )
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.run_config import selector_for_named_defs
 from dagster._core.errors import (
     DagsterError,
@@ -34,7 +34,7 @@ from .context_creation_pipeline import PlanOrchestrationContextManager
 
 
 def _get_host_mode_executor(
-    recon_pipeline: ReconstructablePipeline,
+    recon_pipeline: ReconstructableJob,
     run_config: Mapping[str, object],
     executor_defs: Sequence[ExecutorDefinition],
     instance: DagsterInstance,
@@ -70,7 +70,7 @@ def _get_host_mode_executor(
 
 
 def host_mode_execution_context_event_generator(
-    pipeline: ReconstructablePipeline,
+    pipeline: ReconstructableJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     pipeline_run: DagsterRun,
@@ -81,7 +81,7 @@ def host_mode_execution_context_event_generator(
     resume_from_failure: bool = False,
 ) -> Iterator[Union[PlanOrchestrationContext, DagsterEvent]]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
+    check.inst_param(pipeline, "pipeline", ReconstructableJob)
 
     check.dict_param(run_config, "run_config", key_type=str)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
@@ -161,13 +161,13 @@ def host_mode_execution_context_event_generator(
 
 
 def execute_run_host_mode(
-    pipeline: ReconstructablePipeline,
+    pipeline: ReconstructableJob,
     pipeline_run: DagsterRun,
     instance: DagsterInstance,
     executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ) -> Sequence[DagsterEvent]:
-    check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
+    check.inst_param(pipeline, "pipeline", ReconstructableJob)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
@@ -189,7 +189,7 @@ def execute_run_host_mode(
         ),
     )
 
-    pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+    pipeline = pipeline.subset_for_execution_from_existing_job(
         solids_to_execute=frozenset(pipeline_run.solids_to_execute)
         if pipeline_run.solids_to_execute
         else None,

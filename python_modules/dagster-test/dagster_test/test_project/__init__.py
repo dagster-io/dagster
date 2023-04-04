@@ -8,7 +8,7 @@ from typing import Any, Mapping, Optional
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.build_resources import build_resources
@@ -135,15 +135,15 @@ def get_test_project_recon_job(
     )
 
 
-class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
+class ReOriginatedReconstructablePipelineForTest(ReconstructableJob):
     def __new__(
         cls,
-        reconstructable_pipeline,
+        reconstructable_pipeline: ReconstructableJob,
     ):
         return super(ReOriginatedReconstructablePipelineForTest, cls).__new__(
             cls,
             reconstructable_pipeline.repository,
-            reconstructable_pipeline.pipeline_name,
+            reconstructable_pipeline.job_name,
             reconstructable_pipeline.solid_selection_str,
             reconstructable_pipeline.solids_to_execute,
         )
@@ -155,7 +155,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         work, we need to inject this one.
         """
         return JobPythonOrigin(
-            self.pipeline_name,
+            self.job_name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
