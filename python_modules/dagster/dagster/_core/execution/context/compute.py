@@ -367,7 +367,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         """
-        AssetKey: The asset key for the given output, referenced by name.
+        Get the asset key for a given output, referenced by name.
+
+        Args:
+            output_name (str): The name of the output to get the asset key for.
+        
+        Returns:
+            AssetKey: The asset key of the output.
         """
         asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
@@ -380,7 +386,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         """
-        AssetKey: The asset key for the given input, referenced by name.
+        Get the asset key for a given input, referenced by name.
+
+        Args:
+            input_name (str): The name of the input to get the asset key for.
+
+        Returns:
+            AssetKey: The asset key of the input.
         """
         key = self.pipeline_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
@@ -401,7 +413,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
-        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        """
+        Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
@@ -432,14 +445,35 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         self, output_name: str = "result"
     ) -> PartitionKeyRange:
         """
-        PartitionKeyRange: The partition key range for the output asset, referenced by name.
+        Get the partition key range for a given output, referenced by name.
+
+        Args:
+            output_name (str): The name of the output to get the partition key range for.
+
+        Returns:
+            PartitionKeyRange: The partition key range for the output asset.
+
+        Raises:
+            CheckError: If there is no output asset with that name, or the asset does not
+                have partitions.
         """
         return self._step_execution_context.asset_partition_key_range_for_output(output_name)
 
     @public
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         """
-        PartitionKeyRange: The partition key range for the input asset, referenced by name.
+        Get the partition key range for a given input, referenced by name.
+
+        Args:
+            input_name (str): The name of the input to get the partition key range for.
+
+        Returns:
+            PartitionKeyRange: The partition key range for the input asset.
+
+        Raises:
+            CheckError: If there is no input asset with that name, or the asset does not
+                have partitions.
+        
         """
         return self._step_execution_context.asset_partition_key_range_for_input(input_name)
 
