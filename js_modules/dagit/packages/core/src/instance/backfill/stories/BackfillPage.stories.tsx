@@ -139,7 +139,7 @@ const FailedResponse = buildBackfillDetailsQuery(
   '1',
   buildPartitionBackfill({
     backfillId: '1',
-    status: BulkActionStatus.Failed,
+    status: BulkActionStatus.FAILED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
     assetPartitionsStatusCounts: [
