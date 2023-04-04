@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster._core.host_representation.external_data import ExternalJobSubsetResult
 from dagster._core.host_representation.origin import ExternalJobOrigin
 from dagster._grpc.types import JobSubsetSnapshotArgs
 from dagster._serdes import deserialize_value
@@ -17,7 +17,7 @@ def sync_get_external_pipeline_subset_grpc(
     pipeline_origin: ExternalJobOrigin,
     solid_selection: Optional[Sequence[str]] = None,
     asset_selection: Optional[Sequence[AssetKey]] = None,
-) -> ExternalPipelineSubsetResult:
+) -> ExternalJobSubsetResult:
     from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
@@ -33,7 +33,7 @@ def sync_get_external_pipeline_subset_grpc(
                 asset_selection=asset_selection,
             ),
         ),
-        ExternalPipelineSubsetResult,
+        ExternalJobSubsetResult,
     )
 
     if result.error:

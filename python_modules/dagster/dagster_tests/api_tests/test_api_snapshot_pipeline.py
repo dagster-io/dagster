@@ -3,7 +3,7 @@ import sys
 import pytest
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster._core.host_representation.external_data import ExternalJobSubsetResult
 from dagster._core.host_representation.handle import JobHandle
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -22,9 +22,9 @@ def test_pipeline_snapshot_api_grpc(instance):
         api_client = code_location.client
 
         external_pipeline_subset_result = _test_job_subset_grpc(job_handle, api_client)
-        assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
+        assert isinstance(external_pipeline_subset_result, ExternalJobSubsetResult)
         assert external_pipeline_subset_result.success is True
-        assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
+        assert external_pipeline_subset_result.external_job_data.name == "foo"
 
 
 def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
@@ -35,9 +35,9 @@ def test_pipeline_with_valid_subset_snapshot_api_grpc(instance):
         external_pipeline_subset_result = _test_job_subset_grpc(
             job_handle, api_client, ["do_something"]
         )
-        assert isinstance(external_pipeline_subset_result, ExternalPipelineSubsetResult)
+        assert isinstance(external_pipeline_subset_result, ExternalJobSubsetResult)
         assert external_pipeline_subset_result.success is True
-        assert external_pipeline_subset_result.external_pipeline_data.name == "foo"
+        assert external_pipeline_subset_result.external_job_data.name == "foo"
 
 
 def test_pipeline_with_invalid_subset_snapshot_api_grpc(instance):

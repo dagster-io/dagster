@@ -32,13 +32,13 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.host_representation import external_pipeline_data_from_def
 from dagster._core.host_representation.external_data import (
+    ExternalJobSubsetResult,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
-    ExternalPipelineSubsetResult,
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
@@ -274,11 +274,9 @@ def get_external_pipeline_subset_result(
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
         external_pipeline_data = external_pipeline_data_from_def(definition)
-        return ExternalPipelineSubsetResult(
-            success=True, external_pipeline_data=external_pipeline_data
-        )
+        return ExternalJobSubsetResult(success=True, external_job_data=external_pipeline_data)
     except Exception:
-        return ExternalPipelineSubsetResult(
+        return ExternalJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
         )
 

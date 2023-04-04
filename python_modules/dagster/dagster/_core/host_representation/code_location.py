@@ -26,7 +26,7 @@ from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalPipelineSubsetResult
+from dagster._core.host_representation import ExternalJobSubsetResult
 from dagster._core.host_representation.external import (
     ExternalExecutionPlan,
     ExternalJob,
@@ -137,7 +137,7 @@ class CodeLocation(AbstractContextManager):
         repo_handle = self.get_repository(selector.repository_name).handle
 
         subset_result = self.get_subset_external_pipeline_result(selector)
-        external_data = subset_result.external_pipeline_data
+        external_data = subset_result.external_job_data
         if external_data is None:
             check.failed(
                 f"Failed to fetch subset data, success: {subset_result.success} error:"
@@ -149,7 +149,7 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
-    ) -> ExternalPipelineSubsetResult:
+    ) -> ExternalJobSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead.
@@ -354,7 +354,7 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
-    ) -> ExternalPipelineSubsetResult:
+    ) -> ExternalJobSubsetResult:
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -748,7 +748,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_subset_external_pipeline_result(
         self, selector: PipelineSelector
-    ) -> "ExternalPipelineSubsetResult":
+    ) -> "ExternalJobSubsetResult":
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,

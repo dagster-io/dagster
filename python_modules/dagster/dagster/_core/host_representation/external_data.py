@@ -224,14 +224,17 @@ class ExternalRepositoryData(
         check.failed("Could not find sensor data named " + name)
 
 
-@whitelist_for_serdes
-class ExternalPipelineSubsetResult(
+@whitelist_for_serdes(
+    storage_name="ExternalPipelineSubsetResult",
+    storage_field_names={"external_job_data": "external_pipeline_data"},
+)
+class ExternalJobSubsetResult(
     NamedTuple(
         "_ExternalPipelineSubsetResult",
         [
             ("success", bool),
             ("error", Optional[SerializableErrorInfo]),
-            ("external_pipeline_data", Optional["ExternalJobData"]),
+            ("external_job_data", Optional["ExternalJobData"]),
         ],
     )
 ):
@@ -239,14 +242,14 @@ class ExternalPipelineSubsetResult(
         cls,
         success: bool,
         error: Optional[SerializableErrorInfo] = None,
-        external_pipeline_data: Optional["ExternalJobData"] = None,
+        external_job_data: Optional["ExternalJobData"] = None,
     ):
-        return super(ExternalPipelineSubsetResult, cls).__new__(
+        return super(ExternalJobSubsetResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
-            external_pipeline_data=check.opt_inst_param(
-                external_pipeline_data, "external_pipeline_data", ExternalJobData
+            external_job_data=check.opt_inst_param(
+                external_job_data, "external_job_data", ExternalJobData
             ),
         )
 
