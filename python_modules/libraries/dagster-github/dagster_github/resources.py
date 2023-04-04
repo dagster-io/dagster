@@ -65,7 +65,7 @@ class GithubResource(ConfigurableResource):
         now = int(time.time())
         # JWT expiration time (10 minute maximum)
         expires = now + (10 * 60)
-        encoded_token = jwt.encode(
+        encoded_token = jwt.encode(  # type: ignore
             {
                 # issued at time
                 "iat": now,
