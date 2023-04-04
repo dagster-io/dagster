@@ -30,7 +30,7 @@ from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
-    DagsterK8sPipelineStatusException,
+    DagsterK8sJobStatusException,
     DagsterK8sTimeoutError,
     DagsterK8sUnrecoverableAPIError,
     DagsterKubernetesClient,
@@ -456,7 +456,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 pipeline_run, step_key, err, instance=instance
             )
             events.append(step_failure_event)
-        except DagsterK8sPipelineStatusException:
+        except DagsterK8sJobStatusException:
             instance.report_engine_event(
                 "Terminating Kubernetes Job because dagster run status is not STARTED",
                 pipeline_run,
