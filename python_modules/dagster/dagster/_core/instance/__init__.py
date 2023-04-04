@@ -1016,10 +1016,10 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+            pipeline_snapshot=pipeline_def.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                pipeline_def.get_pipeline_snapshot_id(),
+                pipeline_def.get_job_snapshot_id(),
             ),
             parent_pipeline_snapshot=pipeline_def.get_parent_job_snapshot(),
             external_pipeline_origin=external_pipeline_origin,

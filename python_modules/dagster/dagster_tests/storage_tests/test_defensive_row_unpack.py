@@ -87,7 +87,7 @@ def test_correctly_fetch_decompress_parse_snapshot():
     def noop_job():
         noop_op()
 
-    noop_pipeline_snapshot = noop_job.get_pipeline_snapshot()
+    noop_pipeline_snapshot = noop_job.get_job_snapshot()
 
     mock_logger = mock.MagicMock()
     assert (

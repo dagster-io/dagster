@@ -256,16 +256,14 @@ def test_create_job_snapshot():
 
         run = instance.get_run_by_id(result.run_id)
 
-        assert run.job_snapshot_id == create_job_snapshot_id(noop_job.get_pipeline_snapshot())
+        assert run.job_snapshot_id == create_job_snapshot_id(noop_job.get_job_snapshot())
 
 
 def test_create_execution_plan_snapshot():
     with instance_for_test() as instance:
         execution_plan = create_execution_plan(noop_job)
 
-        ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, noop_job.get_pipeline_snapshot_id()
-        )
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, noop_job.get_job_snapshot_id())
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
 
         result = execute_job(reconstructable(noop_job), instance=instance)

@@ -29,9 +29,9 @@ def create_run(instance, **kwargs):
             external_pipeline_origin=handle.get_external_origin(),
             pipeline_code_origin=handle.get_python_origin(),
             pipeline_name=handle.job_name,
-            pipeline_snapshot=foo.get_pipeline_snapshot(),
+            pipeline_snapshot=foo.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan, foo.get_pipeline_snapshot_id()
+                execution_plan, foo.get_job_snapshot_id()
             ),
             **kwargs,
         )

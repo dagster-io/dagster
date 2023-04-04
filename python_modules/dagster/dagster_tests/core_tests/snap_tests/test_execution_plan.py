@@ -19,7 +19,7 @@ def test_create_noop_execution_plan(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_job_snapshot()),
             )
         )
     )
@@ -44,7 +44,7 @@ def test_create_execution_plan_with_dep(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_job_snapshot()),
             )
         )
     )
@@ -84,7 +84,7 @@ def test_create_with_graph(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_job_snapshot_id(do_comps.get_pipeline_snapshot()),
+                create_job_snapshot_id(do_comps.get_job_snapshot()),
             )
         )
     )
@@ -105,7 +105,7 @@ def test_create_noop_execution_plan_with_tags(snapshot):
         serialize_pp(
             snapshot_from_execution_plan(
                 execution_plan,
-                create_job_snapshot_id(noop_job.get_pipeline_snapshot()),
+                create_job_snapshot_id(noop_job.get_job_snapshot()),
             )
         )
     )

@@ -212,8 +212,8 @@ class TestRunStorage:
         assert storage
         pipeline_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         pipeline_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot_a = pipeline_def_a.get_pipeline_snapshot()
-        pipeline_snapshot_b = pipeline_def_b.get_pipeline_snapshot()
+        pipeline_snapshot_a = pipeline_def_a.get_job_snapshot()
+        pipeline_snapshot_b = pipeline_def_b.get_job_snapshot()
         pipeline_snapshot_a_id = create_job_snapshot_id(pipeline_snapshot_a)
         pipeline_snapshot_b_id = create_job_snapshot_id(pipeline_snapshot_b)
 
@@ -894,7 +894,7 @@ class TestRunStorage:
 
     def test_add_get_snapshot(self, storage):
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot = pipeline_def.get_job_snapshot()
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
@@ -913,7 +913,7 @@ class TestRunStorage:
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot = pipeline_def.get_job_snapshot()
 
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
@@ -961,7 +961,7 @@ class TestRunStorage:
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         execution_plan = create_execution_plan(pipeline_def)
         ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
+            execution_plan, pipeline_def.get_job_snapshot_id()
         )
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
@@ -1375,7 +1375,7 @@ class TestRunStorage:
 
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot = pipeline_def.get_job_snapshot()
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
         new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
 

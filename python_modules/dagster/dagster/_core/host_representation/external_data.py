@@ -1498,7 +1498,7 @@ def external_job_ref_from_def(pipeline_def: JobDefinition) -> ExternalJobRef:
 
     return ExternalJobRef(
         name=pipeline_def.name,
-        snapshot_id=pipeline_def.get_pipeline_snapshot_id(),
+        snapshot_id=pipeline_def.get_job_snapshot_id(),
         parent_snapshot_id=None,
         active_presets=active_presets_from_job_def(pipeline_def),
     )

@@ -660,7 +660,7 @@ class JobDefinition:
         )
 
     @property
-    def is_subset_pipeline(self) -> bool:
+    def is_subset_job(self) -> bool:
         return bool(self._subset_selection_data)
 
     def get_job_def_for_subset_selection(
@@ -845,25 +845,25 @@ class JobDefinition:
         )
 
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
-        return self.get_pipeline_snapshot().config_schema_snapshot
+        return self.get_job_snapshot().config_schema_snapshot
 
-    def get_pipeline_snapshot(self) -> "JobSnapshot":
-        return self.get_pipeline_index().job_snapshot
+    def get_job_snapshot(self) -> "JobSnapshot":
+        return self.get_job_index().job_snapshot
 
-    def get_pipeline_index(self) -> "JobIndex":
+    def get_job_index(self) -> "JobIndex":
         from dagster._core.host_representation import JobIndex
         from dagster._core.snap import JobSnapshot
 
         return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
 
-    def get_pipeline_snapshot_id(self) -> str:
-        return self.get_pipeline_index().job_snapshot_id
+    def get_job_snapshot_id(self) -> str:
+        return self.get_job_index().job_snapshot_id
 
     def get_parent_job_snapshot(self) -> Optional["JobSnapshot"]:
         if self.op_selection_data:
-            return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+            return self.op_selection_data.parent_job_def.get_job_snapshot()
         elif self.asset_selection_data:
-            return self.asset_selection_data.parent_job_def.get_pipeline_snapshot()
+            return self.asset_selection_data.parent_job_def.get_job_snapshot()
         else:
             return None
 
@@ -1281,7 +1281,7 @@ def _create_run_config_schema(
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
     ignored_nodes: Sequence[Node] = []
-    if job_def.is_subset_pipeline:
+    if job_def.is_subset_job:
         if isinstance(job_def.graph, SubselectedGraphDefinition):  # op selection provided
             ignored_nodes = job_def.graph.get_top_level_omitted_nodes()
         elif job_def.asset_selection_data:

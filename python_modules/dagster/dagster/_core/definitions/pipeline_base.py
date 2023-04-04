@@ -90,7 +90,7 @@ class InMemoryJob(IJob, object):
             )
         if self._pipeline_def.is_subset_job:
             return InMemoryJob(
-                self._job_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
+                self._job_def.parent_job_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
                 solid_selection=solid_selection,
                 solids_to_execute=solids_to_execute,
             )
