@@ -362,7 +362,7 @@ def test_run_fails_while_loading_code():
             DagsterEvent(
                 message="run monitoring killed it",
                 event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                pipeline_name="simple_job",
+                job_name="simple_job",
             ),
         )
 

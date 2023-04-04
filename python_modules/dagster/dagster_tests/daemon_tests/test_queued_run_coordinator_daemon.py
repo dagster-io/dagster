@@ -99,7 +99,7 @@ def create_queued_run(instance, job_handle, **kwargs):
     )
     enqueued_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-        pipeline_name=run.job_name,
+        job_name=run.job_name,
     )
     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
     return instance.get_run_by_id(run.run_id)

@@ -139,8 +139,8 @@ def host_mode_execution_context_event_generator(
             )
             error_info = serializable_error_info_from_exc_info(user_facing_exc_info)
 
-            event = DagsterEvent.pipeline_failure(
-                pipeline_context_or_name=pipeline_run.job_name,
+            event = DagsterEvent.job_failure(
+                job_context_or_name=pipeline_run.job_name,
                 context_msg=(
                     "Pipeline failure during initialization for pipeline"
                     f' "{pipeline_run.job_name}". This may be due to a failure in initializing'

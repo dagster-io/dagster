@@ -33,7 +33,7 @@ class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
 def _create_success_event(instance, run):
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.RUN_SUCCESS.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="yay success",
     )
     event_record = EventLogEntry(

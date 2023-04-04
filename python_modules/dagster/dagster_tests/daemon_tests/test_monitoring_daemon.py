@@ -114,7 +114,7 @@ def logger():
 def report_starting_event(instance, run, timestamp):
     launch_started_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-        pipeline_name=run.job_name,
+        job_name=run.job_name,
     )
 
     event_record = EventLogEntry(

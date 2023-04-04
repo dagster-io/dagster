@@ -320,7 +320,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-            pipeline_name=run.job_name,
+            job_name=run.job_name,
         )
 
         instance.report_dagster_event(launch_started_event, run_id=run.run_id)
@@ -392,7 +392,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     # Re-submit the run into the queue
                     enqueued_event = DagsterEvent(
                         event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                        pipeline_name=run.job_name,
+                        job_name=run.job_name,
                     )
                     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
                     return False

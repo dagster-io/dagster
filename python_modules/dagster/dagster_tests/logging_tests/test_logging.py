@@ -122,7 +122,7 @@ def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
     dagster_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
-        pipeline_name="error_monster",
+        job_name="error_monster",
         step_key="start.materialization.output.result.0",
         node_handle=NodeHandle("start", None),
         step_kind_value="MATERIALIZATION_THUNK",

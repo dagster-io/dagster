@@ -1402,7 +1402,7 @@ def test_asset_selection_reconstructable():
             ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
 
             events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
-            assert len([event for event in events if event.is_pipeline_success]) == 1
+            assert len([event for event in events if event.is_job_success]) == 1
 
             materialization_planned = list(
                 instance.get_event_records(

@@ -702,7 +702,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
             ),
         )
         storage.handle_run_event(
@@ -710,7 +710,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
             ),
         )
 
@@ -1321,7 +1321,7 @@ class TestRunStorage:
         dagster_pipeline_start_event = DagsterEvent(
             message="a message",
             event_type_value=DagsterEventType.PIPELINE_START.value,
-            pipeline_name="pipeline_name",
+            job_name="pipeline_name",
             step_key=None,
             node_handle=None,
             step_kind_value=None,
@@ -1337,7 +1337,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
                 step_key=None,
                 node_handle=None,
                 step_kind_value=None,
@@ -1352,7 +1352,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
                 step_key=None,
                 node_handle=None,
                 step_kind_value=None,
@@ -1412,7 +1412,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_START.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
             ),
         )
 
@@ -1426,7 +1426,7 @@ class TestRunStorage:
             DagsterEvent(
                 message="a message",
                 event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-                pipeline_name="pipeline_name",
+                job_name="pipeline_name",
             ),
         )
 

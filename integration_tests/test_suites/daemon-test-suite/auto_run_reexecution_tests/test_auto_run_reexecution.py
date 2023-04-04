@@ -46,7 +46,7 @@ def test_filter_runs_to_should_retry(instance):
 
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
@@ -156,7 +156,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
@@ -190,7 +190,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     # retries once the new run failed
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(
@@ -214,7 +214,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     # doesn't retry a third time
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="foo",
+        job_name="foo",
         message="",
     )
     event_record = EventLogEntry(

@@ -213,10 +213,10 @@ def test_invalid_instance():
         assert len(result.all_events) == 1
         assert result.all_events[0].is_failure
         assert (
-            result.all_events[0].pipeline_failure_data.error.cls_name
+            result.all_events[0].job_failure_data.error.cls_name
             == "DagsterUnmetExecutorRequirementsError"
         )
-        assert "non-ephemeral instance" in result.all_events[0].pipeline_failure_data.error.message
+        assert "non-ephemeral instance" in result.all_events[0].job_failure_data.error.message
 
 
 def test_no_handle():

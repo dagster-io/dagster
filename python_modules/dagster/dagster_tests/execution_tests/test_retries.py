@@ -265,7 +265,7 @@ def test_step_retry_fixed_wait(environment):
                     start_wait = time.time()
                 if event.is_step_restarted:
                     end_wait = time.time()
-                if event.is_pipeline_success:
+                if event.is_job_success:
                     success = True
 
             assert success

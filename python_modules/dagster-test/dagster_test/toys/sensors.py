@@ -132,7 +132,7 @@ def get_toys_sensors():
             run_config={
                 "ops": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "ops": asset_event.pipeline_name}
+                        "config": {"asset_key": ["model"], "ops": asset_event.job_name}
                     }
                 }
             },

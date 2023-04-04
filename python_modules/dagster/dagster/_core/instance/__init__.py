@@ -1217,7 +1217,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                            pipeline_name=pipeline_name,
+                            job_name=pipeline_name,
                             message=(
                                 f"{pipeline_name} intends to materialize asset"
                                 f" {asset_key.to_string()}"
@@ -1868,7 +1868,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         self._event_storage.store_event(event)
 
-        if event.is_dagster_event and event.get_dagster_event().is_pipeline_event:
+        if event.is_dagster_event and event.get_dagster_event().is_job_event:
             self._run_storage.handle_run_event(run_id, event.get_dagster_event())
 
         for sub in self._subscribers[run_id]:
@@ -1920,7 +1920,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.ENGINE_EVENT.value,
-            pipeline_name=pipeline_name,
+            job_name=pipeline_name,
             message=message,
             event_specific_data=engine_event_data,
             step_key=step_key,
@@ -1941,7 +1941,7 @@ class DagsterInstance(DynamicPartitionsStore):
         event_record = EventLogEntry(
             user_message="",
             level=log_level,
-            pipeline_name=dagster_event.pipeline_name,
+            pipeline_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
             timestamp=time.time(),
@@ -1961,7 +1961,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
-            pipeline_name=run.job_name,
+            job_name=run.job_name,
             message=message,
         )
         self.report_dagster_event(canceling_event, run_id=run.run_id)
@@ -1983,7 +1983,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
-            pipeline_name=pipeline_run.job_name,
+            job_name=pipeline_run.job_name,
             message=message,
         )
         self.report_dagster_event(
@@ -2006,7 +2006,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-            pipeline_name=pipeline_run.job_name,
+            job_name=pipeline_run.job_name,
             message=message,
         )
         self.report_dagster_event(
@@ -2104,7 +2104,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         launch_started_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
-            pipeline_name=run.job_name,
+            job_name=run.job_name,
         )
         self.report_dagster_event(launch_started_event, run_id=run.run_id)
 

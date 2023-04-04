@@ -38,7 +38,7 @@ def test_metadata_event_tags():
 def test_construct_log_string_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
-        pipeline_name="my_job",
+        job_name="my_job",
         step_key="op2",
         node_handle=NodeHandle("op2", None),
         step_kind_value="COMPUTE",
@@ -78,7 +78,7 @@ def test_construct_log_string_for_log():
 def make_log_string(error, error_source=None):
     step_failure_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
-        pipeline_name="my_job",
+        job_name="my_job",
         step_key="op2",
         node_handle=NodeHandle("op2", None),
         step_kind_value="COMPUTE",

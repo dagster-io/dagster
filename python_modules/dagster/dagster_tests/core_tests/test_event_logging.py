@@ -62,12 +62,8 @@ def test_empty_job():
     assert result.success
     assert events
 
-    assert (
-        single_dagster_event(events, DagsterEventType.PIPELINE_START).pipeline_name == "empty_job"
-    )
-    assert (
-        single_dagster_event(events, DagsterEventType.PIPELINE_SUCCESS).pipeline_name == "empty_job"
-    )
+    assert single_dagster_event(events, DagsterEventType.PIPELINE_START).job_name == "empty_job"
+    assert single_dagster_event(events, DagsterEventType.PIPELINE_SUCCESS).job_name == "empty_job"
 
 
 def test_single_op_job_success():
@@ -95,7 +91,7 @@ def test_single_op_job_success():
     assert events
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
-    assert start_event.pipeline_name == "single_op_job"
+    assert start_event.job_name == "single_op_job"
     assert start_event.dagster_event.solid_name == "op_one"
 
     # persisted logging tags contain pipeline_name but not pipeline_tags
@@ -107,7 +103,7 @@ def test_single_op_job_success():
     assert output_event.dagster_event.step_output_data.output_name == "result"
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
-    assert success_event.pipeline_name == "single_op_job"
+    assert success_event.job_name == "single_op_job"
     assert success_event.dagster_event.solid_name == "op_one"
 
     assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)
@@ -137,13 +133,13 @@ def test_single_op_job_failure():
     assert not result.success
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
-    assert start_event.pipeline_name == "single_op_job"
+    assert start_event.job_name == "single_op_job"
 
     assert start_event.dagster_event.solid_name == "op_one"
     assert start_event.level == logging.DEBUG
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
-    assert failure_event.pipeline_name == "single_op_job"
+    assert failure_event.job_name == "single_op_job"
 
     assert failure_event.dagster_event.solid_name == "op_one"
     assert failure_event.level == logging.ERROR

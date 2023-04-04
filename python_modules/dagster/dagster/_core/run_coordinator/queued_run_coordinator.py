@@ -229,7 +229,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
             enqueued_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                pipeline_name=pipeline_run.job_name,
+                job_name=pipeline_run.job_name,
             )
             self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
         else:

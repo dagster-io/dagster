@@ -758,7 +758,7 @@ def pipeline_execution_iterator(
     """
     # TODO: restart event?
     if not pipeline_context.resume_from_failure:
-        yield DagsterEvent.pipeline_start(pipeline_context)
+        yield DagsterEvent.job_start(pipeline_context)
 
     pipeline_exception_info = None
     pipeline_canceled_info = None
@@ -794,7 +794,7 @@ def pipeline_execution_iterator(
         if pipeline_canceled_info:
             reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
             if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
-                event = DagsterEvent.pipeline_canceled(pipeline_context, pipeline_canceled_info)
+                event = DagsterEvent.job_canceled(pipeline_context, pipeline_canceled_info)
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
                 # This happens if the run was force-terminated but was still able to send
                 # a cancellation request
@@ -822,7 +822,7 @@ def pipeline_execution_iterator(
                     EngineEventData(),
                 )
             else:
-                event = DagsterEvent.pipeline_failure(
+                event = DagsterEvent.job_failure(
                     pipeline_context,
                     (
                         "Execution was interrupted unexpectedly. "
@@ -831,18 +831,18 @@ def pipeline_execution_iterator(
                     pipeline_canceled_info,
                 )
         elif pipeline_exception_info:
-            event = DagsterEvent.pipeline_failure(
+            event = DagsterEvent.job_failure(
                 pipeline_context,
                 "An exception was thrown during execution.",
                 pipeline_exception_info,
             )
         elif failed_steps:
-            event = DagsterEvent.pipeline_failure(
+            event = DagsterEvent.job_failure(
                 pipeline_context,
                 f"Steps failed: {failed_steps}.",
             )
         else:
-            event = DagsterEvent.pipeline_success(pipeline_context)
+            event = DagsterEvent.job_success(pipeline_context)
         if not generator_closed:
             yield event
 
