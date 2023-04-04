@@ -729,7 +729,7 @@ class ExternalSensor:
         return self._handle
 
     @property
-    def pipeline_name(self) -> Optional[str]:
+    def job_name(self) -> Optional[str]:
         target = self._get_single_target()
         return target.pipeline_name if target else None
 
@@ -749,9 +749,9 @@ class ExternalSensor:
         else:
             return None
 
-    def get_target_data(self, pipeline_name: Optional[str] = None) -> Optional[ExternalTargetData]:
-        if pipeline_name:
-            return self._external_sensor_data.target_dict[pipeline_name]
+    def get_target_data(self, job_name: Optional[str] = None) -> Optional[ExternalTargetData]:
+        if job_name:
+            return self._external_sensor_data.target_dict[job_name]
         else:
             return self._get_single_target()
 
