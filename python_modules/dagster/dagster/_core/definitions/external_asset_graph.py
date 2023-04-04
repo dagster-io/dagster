@@ -53,7 +53,7 @@ class ExternalAssetGraph(AssetGraph):
             is_observable_by_key=is_observable_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
-        self._job_names_by_key = job_names_by_key
+        self._materialization_job_names_by_key = job_names_by_key
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
@@ -108,7 +108,9 @@ class ExternalAssetGraph(AssetGraph):
             if not node.is_source
         }
         job_names_by_key = {
-            node.asset_key: node.job_names for _, node in repo_handle_external_asset_nodes
+            node.asset_key: node.job_names
+            for _, node in repo_handle_external_asset_nodes
+            if not node.is_source
         }
         code_versions_by_key = {
             node.asset_key: node.code_version
@@ -184,8 +186,14 @@ class ExternalAssetGraph(AssetGraph):
     def get_repository_handle(self, asset_key: AssetKey) -> RepositoryHandle:
         return self._repo_handles_by_key[asset_key]
 
-    def get_job_names(self, asset_key: AssetKey) -> Iterable[str]:
-        return self._job_names_by_key[asset_key]
+    def get_materialization_job_names(self, asset_key: AssetKey) -> Iterable[str]:
+        """Returns the names of jobs that materialize this asset."""
+        return self._materialization_job_names_by_key[asset_key]
 
-    def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
-        return [k for k in self.all_asset_keys if job_name in self.get_job_names(k)]
+    def get_materialization_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
+        """Returns asset keys that are targeted for materialization in the given job."""
+        return [
+            k
+            for k in self.non_source_asset_keys
+            if job_name in self.get_materialization_job_names(k)
+        ]

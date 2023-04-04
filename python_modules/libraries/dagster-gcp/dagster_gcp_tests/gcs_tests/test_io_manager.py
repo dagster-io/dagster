@@ -242,4 +242,4 @@ def test_nothing(gcs_bucket):
     assert len(handled_output_events) == 2
 
     for event in handled_output_events:
-        assert len(event.event_specific_data.metadata_entries) == 0
+        assert len(event.event_specific_data.metadata) == 0

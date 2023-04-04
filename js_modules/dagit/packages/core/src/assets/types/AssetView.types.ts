@@ -66,6 +66,7 @@ export type AssetViewDefinitionQuery = {
               };
             }>;
           }>;
+          requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -15766,6 +15767,7 @@ export type AssetViewDefinitionNodeFragment = {
       };
     }>;
   }>;
+  requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;

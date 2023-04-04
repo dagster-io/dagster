@@ -80,12 +80,17 @@ export async function makeSVGPortable(svg: SVGElement) {
     }
     const nodeStyles = window.getComputedStyle(node);
     for (const idx of Object.keys(nodeStyles)) {
-      const attrName: string = nodeStyles[idx];
+      const attrName: string = (nodeStyles as any)[idx];
       if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
         continue;
       }
-      if (!node.style[attrName] && nodeStyles[attrName] !== baseStyles[attrName]) {
-        node.style[attrName] = await makeAttributeValuePortable(nodeStyles[attrName]);
+      if (
+        !(node.style as any)[attrName] &&
+        (nodeStyles as any)[attrName] !== (baseStyles as any)[attrName]
+      ) {
+        (node.style as any)[attrName] = await makeAttributeValuePortable(
+          (nodeStyles as any)[attrName],
+        );
       }
       if (node instanceof HTMLElement) {
         node.style.boxSizing = 'border-box';
@@ -102,12 +107,12 @@ export async function makeSVGPortable(svg: SVGElement) {
   // Apply styles inherited from the surrounding document to the base SVG element. This
   // sets things like the line-height, font smoothing, etc.
   for (const idx of Object.keys(baseStyles)) {
-    const attrName: string = baseStyles[idx];
+    const attrName: string = (baseStyles as any)[idx];
     if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
       continue;
     }
-    if (!svg.style[attrName]) {
-      svg.style[attrName] = baseStyles[attrName];
+    if (!(svg.style as any)[attrName]) {
+      (svg.style as any)[attrName] = (baseStyles as any)[attrName];
     }
   }
 

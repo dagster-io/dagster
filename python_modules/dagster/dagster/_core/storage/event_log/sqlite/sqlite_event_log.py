@@ -149,7 +149,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return bool(engine.dialect.has_table(engine.connect(), table_name))
 
     def path_for_shard(self, run_id: str) -> str:
-        return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
+        return os.path.join(self._base_dir, f"{run_id}.db")
 
     def conn_string_for_shard(self, shard_name: str) -> str:
         check.str_param(shard_name, "shard_name")

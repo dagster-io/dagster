@@ -1,7 +1,5 @@
 import os
-import subprocess
 import sys
-import warnings
 from contextlib import contextmanager
 from threading import Event
 from typing import Any, Iterator, Optional, Sequence, Tuple
@@ -493,46 +491,13 @@ class DagsterGrpcClient:
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
 
-class EphemeralDagsterGrpcClient(DagsterGrpcClient):
-    """A client that tells the server process that created it to shut down once it leaves a
-    context manager.
-    """
-
-    def __init__(self, server_process=None, *args, **kwargs):
-        self._server_process = check.inst_param(server_process, "server_process", subprocess.Popen)
-        super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
-
-    def cleanup_server(self) -> None:
-        if self._server_process:
-            if self._server_process.poll() is None:
-                try:
-                    self.shutdown_server()
-                except DagsterUserCodeUnreachableError:
-                    pass
-            self._server_process = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, _exception_type, _exception_value, _traceback):
-        self.cleanup_server()
-
-    def __del__(self):
-        if self._server_process:
-            warnings.warn(
-                "Managed gRPC client is being destroyed without signalling to server that "
-                "it should shutdown. This may result in server processes living longer than "
-                "they need to. To fix this, wrap the client in a contextmanager."
-            )
-
-
 @contextmanager
 def ephemeral_grpc_api_client(
     loadable_target_origin: Optional[LoadableTargetOrigin] = None,
     force_port: bool = False,
     max_retries: int = 10,
     max_workers: Optional[int] = None,
-) -> Iterator[EphemeralDagsterGrpcClient]:
+) -> Iterator[DagsterGrpcClient]:
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.bool_param(force_port, "force_port")
     check.int_param(max_retries, "max_retries")
@@ -546,5 +511,6 @@ def ephemeral_grpc_api_client(
             force_port=force_port,
             max_retries=max_retries,
             max_workers=max_workers,
-        ).create_ephemeral_client() as client:
-            yield client
+            wait_on_exit=True,
+        ) as server_process:
+            yield server_process.create_client()

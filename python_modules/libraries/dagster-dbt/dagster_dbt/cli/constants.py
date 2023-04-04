@@ -71,7 +71,7 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
     "dbt_executable": Field(
         config=StringSource,
         is_required=False,
-        description="Path to the dbt executable. Default is {}".format(DEFAULT_DBT_EXECUTABLE),
+        description=f"Path to the dbt executable. Default is {DEFAULT_DBT_EXECUTABLE}",
         default_value=DEFAULT_DBT_EXECUTABLE,
     ),
     "ignore_handled_error": Field(

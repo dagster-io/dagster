@@ -52,7 +52,7 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
 def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -83,7 +83,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
 def test_before_submit(
     crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",
@@ -130,7 +130,7 @@ def test_before_submit(
 def test_crash_after_submit(
     crash_signal: Signals, instance: DagsterInstance, external_repo: ExternalRepository
 ):
-    external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+    external_partition_set = external_repo.get_external_partition_set("the_job_partition_set")
     instance.add_backfill(
         PartitionBackfill(
             backfill_id="simple",

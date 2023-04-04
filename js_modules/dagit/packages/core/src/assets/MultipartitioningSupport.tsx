@@ -147,12 +147,12 @@ export function assembleRangesFromTransitions(
   for (const transition of transitions) {
     const last = depths[depths.length - 1];
     if (last && last.idx === transition.idx) {
-      last[transition.state] = (last[transition.state] || 0) + transition.delta;
+      (last as any)[transition.state] = ((last as any)[transition.state] || 0) + transition.delta;
     } else {
       depths.push({
         ...(last || {}),
         idx: transition.idx,
-        [transition.state]: (last?.[transition.state] || 0) + transition.delta,
+        [transition.state]: ((last as any)?.[transition.state] || 0) + transition.delta,
       });
     }
   }

@@ -1,4 +1,3 @@
-import datetime
 import math
 import os
 import random
@@ -25,7 +24,7 @@ from dagster import (
     repository,
     resource,
 )
-from dagster._core.definitions.decorators import daily_schedule, schedule
+from dagster._core.definitions.decorators import schedule
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
@@ -273,6 +272,7 @@ def define_docker_celery_pipeline():
     @resource
     def resource_with_output():
         print("writing to stdout")  # noqa: T201
+        print("{}")  # noqa: T201
         return 42
 
     @op(required_resource_keys={"resource_with_output"})
@@ -461,12 +461,12 @@ def define_resources_limit_pipeline():
 
 
 def define_schedules():
-    @daily_schedule(
+    @schedule(
+        cron_schedule="@daily",
         name="daily_optional_outputs",
         job_name=optional_outputs.name,
-        start_date=datetime.datetime(2020, 1, 1),
     )
-    def daily_optional_outputs(_date):
+    def daily_optional_outputs(_context):
         return {}
 
     @schedule(
@@ -530,7 +530,7 @@ def define_resource_pipeline():
         finally:
             context.log.info("tearing down s3_resource_with_context_manager")
             bucket = "dagster-scratch-80542c2"
-            key = "resource_termination_test/{}".format(context.run_id)
+            key = f"resource_termination_test/{context.run_id}"
             s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
 
     @op(required_resource_keys={"s3_resource_with_context_manager"})
@@ -568,9 +568,9 @@ def define_fan_in_fan_out_pipeline():
     def construct_fan_in_level(source, level, fanout):
         fan_outs = []
         for i in range(0, fanout):
-            fan_outs.append(add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source))
+            fan_outs.append(add_one_fan.alias(f"add_one_fan_{level}_{i}")(source))
 
-        return sum_fan_in.alias("sum_{}".format(level))(fan_outs)
+        return sum_fan_in.alias(f"sum_{level}")(fan_outs)
 
     @pipeline(mode_defs=celery_mode_defs())
     def fan_in_fan_out_pipeline():

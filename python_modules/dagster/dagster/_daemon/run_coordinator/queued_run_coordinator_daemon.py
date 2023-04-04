@@ -3,7 +3,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Dict, Iterable, List, Optional, Sequence
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence
 
 from dagster import (
     DagsterEvent,
@@ -37,9 +37,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     store and launches them.
     """
 
-    def __init__(self, interval_seconds):
+    def __init__(self, interval_seconds) -> None:
         self._exit_stack = ExitStack()
-        self._executor = None
+        self._executor: Optional[ThreadPoolExecutor] = None
         self._location_timeouts_lock = threading.Lock()
         self._location_timeouts: Dict[str, float] = {}
         super().__init__(interval_seconds)
@@ -57,11 +57,11 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._executor = None
-        self._exit_stack.pop_all()
+        self._exit_stack.close()
         super().__exit__(_exception_type, _exception_value, _traceback)
 
     @classmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         return "QUEUED_RUN_COORDINATOR"
 
     def run_iteration(
@@ -94,7 +94,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         runs_to_dequeue: List[DagsterRun],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
-    ):
+    ) -> Iterator[None]:
         if run_coordinator.dequeue_use_threads:
             yield from self._dequeue_runs_iter_threaded(
                 workspace_process_context,
@@ -133,7 +133,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         max_workers: Optional[int],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
-    ):
+    ) -> Iterator[None]:
         num_dequeued_runs = 0
 
         for future in as_completed(
@@ -160,7 +160,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         runs_to_dequeue: List[DagsterRun],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
-    ):
+    ) -> Iterator[None]:
         num_dequeued_runs = 0
         workspace = workspace_process_context.create_request_context()
         for run in runs_to_dequeue:
@@ -255,7 +255,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         return batch
 
-    def _get_queued_runs(self, instance):
+    def _get_queued_runs(self, instance: DagsterInstance) -> Sequence[DagsterRun]:
         queued_runs_filter = RunsFilter(statuses=[DagsterRunStatus.QUEUED])
 
         # Reversed for fifo ordering
@@ -266,7 +266,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs: Iterable[DagsterRun]) -> Sequence[DagsterRun]:
-        def get_priority(run):
+        def get_priority(run: DagsterRun) -> int:
             priority_tag_value = run.tags.get(PRIORITY_TAG, "0")
             try:
                 return int(priority_tag_value)
@@ -276,7 +276,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
-    def _is_location_pausing_dequeues(self, location_name, now):
+    def _is_location_pausing_dequeues(self, location_name: str, now: float) -> bool:
         with self._location_timeouts_lock:
             return (
                 location_name in self._location_timeouts

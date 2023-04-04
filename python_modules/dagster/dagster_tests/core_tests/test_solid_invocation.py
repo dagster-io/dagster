@@ -1,23 +1,30 @@
 import asyncio
+from datetime import datetime
 from functools import partial
 
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DailyPartitionsDefinition,
     DynamicOut,
     DynamicOutput,
     ExpectationResult,
     Failure,
     Field,
     In,
+    MultiPartitionsDefinition,
     Noneable,
     Nothing,
     Out,
     Output,
     RetryRequested,
     Selector,
+    StaticPartitionsDefinition,
+    TimeWindow,
+    asset,
     build_op_context,
     op,
     resource,
@@ -47,24 +54,7 @@ def test_solid_invocation_no_arg():
     result = basic_solid()
     assert result == 5
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "Compute function of op 'basic_solid' has no context "
-            "argument, but context was provided when invoking."
-        ),
-    ):
-        basic_solid(build_op_context())
-
-    # Ensure alias is accounted for in error message
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match=(
-            "Compute function of op 'aliased_basic_solid' has no context "
-            "argument, but context was provided when invoking."
-        ),
-    ):
-        basic_solid.alias("aliased_basic_solid")(build_op_context())
+    basic_solid(build_op_context())
 
     with pytest.raises(
         DagsterInvalidInvocationError,
@@ -662,7 +652,7 @@ def test_output_sent_multiple_times():
         ("pipeline_def", None),
         ("pipeline_name", None),
         ("mode_def", None),
-        ("solid_handle", None),
+        ("node_handle", None),
         ("solid", None),
         ("get_step_execution_context", None),
     ],
@@ -1187,3 +1177,83 @@ def test_required_resource_keys_no_context_invocation():
         ),
     ):
         uses_resource_no_context(None)
+
+
+def test_assets_def_invocation():
+    @asset()
+    def my_asset(context):
+        assert context.assets_def == my_asset
+
+    @op
+    def non_asset_op(context):
+        context.assets_def
+
+    with build_op_context(
+        partition_key="2023-02-02",
+    ) as context:
+        my_asset(context)
+
+        with pytest.raises(DagsterInvalidPropertyError, match="does not have an assets definition"):
+            non_asset_op(context)
+
+
+def test_partitions_time_window_asset_invocation():
+    partitions_def = DailyPartitionsDefinition(start_date=datetime(2023, 1, 1))
+
+    @asset(
+        partitions_def=partitions_def,
+    )
+    def partitioned_asset(context):
+        start, end = context.asset_partitions_time_window_for_output()
+        assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
+        assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
+
+    context = build_op_context(
+        partition_key="2023-02-02",
+    )
+    partitioned_asset(context)
+
+
+def test_multipartitioned_time_window_asset_invocation():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context):
+        time_window = TimeWindow(
+            start=pendulum.instance(
+                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+            ),
+            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+        )
+        assert context.asset_partitions_time_window_for_output() == time_window
+        return 1
+
+    context = build_op_context(
+        partition_key="2020-01-01|a",
+    )
+    my_asset(context)
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "static2": StaticPartitionsDefinition(["a", "b"]),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def static_multipartitioned_asset(context):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="with a single time dimension",
+        ):
+            context.asset_partitions_time_window_for_output()
+
+    context = build_op_context(
+        partition_key="a|a",
+    )
+    static_multipartitioned_asset(context)

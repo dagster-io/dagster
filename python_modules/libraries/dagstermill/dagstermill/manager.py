@@ -150,7 +150,7 @@ class Manager:
         dagster_run = unpack_value(pipeline_run_dict, DagsterRun)
 
         node_handle = NodeHandle.from_dict(node_handle_kwargs)
-        op = pipeline_def.get_solid(node_handle)
+        op = pipeline_def.get_node(node_handle)
         op_def = op.definition
 
         self.marshal_dir = marshal_dir
@@ -390,7 +390,7 @@ class Manager:
         # deferred import for perf
         import scrapbook
 
-        event_id = "event-{event_uuid}".format(event_uuid=str(uuid.uuid4()))
+        event_id = f"event-{str(uuid.uuid4())}"
         out_file_path = os.path.join(self.marshal_dir, event_id)
         with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))

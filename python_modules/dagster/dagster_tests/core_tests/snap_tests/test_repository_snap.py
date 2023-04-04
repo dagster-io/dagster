@@ -1,17 +1,25 @@
 from typing import Dict, List
 
-from dagster import Definitions, asset, job, op, repository
+from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._core.definitions.definitions_class import BindResourcesToJobs
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
+)
+from dagster._core.host_representation.external_data import (
+    NestedResource,
+    NestedResourceType,
+    ResourceJobUsageEntry,
 )
 from dagster._core.snap import PipelineSnapshot
 
@@ -69,6 +77,148 @@ def test_repository_snap_definitions_resources_basic():
     assert external_repo_data.external_resource_data[0].resource_snapshot.name == "foo"
     assert external_repo_data.external_resource_data[0].resource_snapshot.description is None
     assert external_repo_data.external_resource_data[0].configured_values == {}
+
+
+def test_repository_snap_definitions_resources_nested() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner)},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 1
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+
+    assert len(foo) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(
+        NestedResourceType.ANONYMOUS, "MyInnerResource"
+    )
+
+
+def test_repository_snap_definitions_resources_nested_top_level() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    defs = Definitions(
+        resources={"foo": MyOuterResource(inner=inner), "inner": inner},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
+
+    assert len(foo) == 1
+    assert len(inner) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+
+    assert len(inner[0].parent_resources) == 1
+    assert "foo" in inner[0].parent_resources
+    assert inner[0].parent_resources["foo"] == "inner"
+
+
+def test_repository_snap_definitions_function_style_resources_nested() -> None:
+    @resource
+    def my_inner_resource() -> str:
+        return "foo"
+
+    @resource(required_resource_keys={"inner"})
+    def my_outer_resource(context: InitResourceContext) -> str:
+        return context.resources.inner + "bar"
+
+    defs = Definitions(
+        resources={"foo": my_outer_resource, "inner": my_inner_resource},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    inner = [data for data in external_repo_data.external_resource_data if data.name == "inner"]
+
+    assert len(foo) == 1
+    assert len(inner) == 1
+
+    assert len(foo[0].nested_resources) == 1
+    assert "inner" in foo[0].nested_resources
+    assert foo[0].nested_resources["inner"] == NestedResource(NestedResourceType.TOP_LEVEL, "inner")
+
+    assert len(inner[0].parent_resources) == 1
+    assert "foo" in inner[0].parent_resources
+    assert inner[0].parent_resources["foo"] == "inner"
+
+
+def test_repository_snap_definitions_resources_nested_many() -> None:
+    class MyInnerResource(ConfigurableResource):
+        a_str: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    class MyOutermostResource(ConfigurableResource):
+        inner: MyOuterResource
+
+    inner = MyInnerResource(a_str="wrapped")
+    outer = MyOuterResource(inner=inner)
+    defs = Definitions(
+        resources={
+            "outermost": MyOutermostResource(inner=outer),
+            "outer": outer,
+        },
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    outermost = [
+        data for data in external_repo_data.external_resource_data if data.name == "outermost"
+    ]
+    assert len(outermost) == 1
+
+    assert len(outermost[0].nested_resources) == 1
+    assert "inner" in outermost[0].nested_resources
+    assert outermost[0].nested_resources["inner"] == NestedResource(
+        NestedResourceType.TOP_LEVEL, "outer"
+    )
+
+    outer = [data for data in external_repo_data.external_resource_data if data.name == "outer"]
+    assert len(outer) == 1
+
+    assert len(outer[0].nested_resources) == 1
+    assert "inner" in outer[0].nested_resources
+    assert outer[0].nested_resources["inner"] == NestedResource(
+        NestedResourceType.ANONYMOUS, "MyInnerResource"
+    )
 
 
 def test_repository_snap_definitions_resources_complex():
@@ -201,3 +351,219 @@ def test_repository_snap_definitions_env_vars() -> None:
     assert {consumer.name for consumer in env_vars["MY_CONFIG_NESTED_STRING"]} == {"quuz"}
     assert "MY_CONFIG_LIST_NESTED_STRING" in env_vars
     assert {consumer.name for consumer in env_vars["MY_CONFIG_LIST_NESTED_STRING"]} == {"quuz"}
+
+
+def test_repository_snap_definitions_resources_assets_usage() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset
+    def my_asset(foo: MyResource):
+        pass
+
+    @asset
+    def my_other_asset(foo: MyResource, bar: MyResource):
+        pass
+
+    @asset
+    def my_third_asset():
+        pass
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset, my_third_asset],
+        resources={
+            "foo": MyResource(a_str="foo"),
+            "bar": MyResource(a_str="bar"),
+            "baz": MyResource(a_str="baz"),
+        },
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 3
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert sorted(foo[0].asset_keys_using, key=lambda k: "".join(k.path)) == [
+        AssetKey("my_asset"),
+        AssetKey("my_other_asset"),
+    ]
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert bar[0].asset_keys_using == [
+        AssetKey("my_other_asset"),
+    ]
+
+    baz = [data for data in external_repo_data.external_resource_data if data.name == "baz"]
+    assert len(baz) == 1
+
+    assert baz[0].asset_keys_using == []
+
+
+def test_repository_snap_definitions_function_style_resources_assets_usage() -> None:
+    @resource
+    def my_resource() -> str:
+        return "foo"
+
+    @asset
+    def my_asset(foo: Resource[str]):
+        pass
+
+    @asset
+    def my_other_asset(foo: Resource[str]):
+        pass
+
+    @asset
+    def my_third_asset():
+        pass
+
+    defs = Definitions(
+        assets=[my_asset, my_other_asset, my_third_asset],
+        resources={"foo": my_resource},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 1
+
+    foo = external_repo_data.external_resource_data[0]
+
+    assert sorted(foo.asset_keys_using, key=lambda k: "".join(k.path)) == [
+        AssetKey("my_asset"),
+        AssetKey("my_other_asset"),
+    ]
+
+
+def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
+    return {
+        entry.job_name: sorted([handle.to_string() for handle in entry.node_handles])
+        for entry in entries
+    }
+
+
+def test_repository_snap_definitions_resources_job_op_usage() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(foo: MyResource):
+        pass
+
+    @op
+    def my_other_op(foo: MyResource, bar: MyResource):
+        pass
+
+    @op
+    def my_third_op():
+        pass
+
+    @op
+    def my_op_in_other_job(foo: MyResource):
+        pass
+
+    @job
+    def my_first_job() -> None:
+        my_op()
+        my_other_op()
+        my_third_op()
+
+    @job
+    def my_second_job() -> None:
+        my_op_in_other_job()
+        my_op_in_other_job()
+
+    defs = Definitions(
+        jobs=BindResourcesToJobs([my_first_job, my_second_job]),
+        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert _to_dict(foo[0].job_ops_using) == {
+        "my_first_job": ["my_op", "my_other_op"],
+        # There's two of these because the same op is used twice in the same job
+        "my_second_job": ["my_op_in_other_job", "my_op_in_other_job_2"],
+    }
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert _to_dict(bar[0].job_ops_using) == {
+        "my_first_job": ["my_other_op"],
+    }
+
+
+def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(foo: MyResource):
+        pass
+
+    @op
+    def my_other_op(foo: MyResource, bar: MyResource):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+        my_other_op()
+
+    @op
+    def my_third_op(foo: MyResource):
+        pass
+
+    @graph
+    def my_other_graph():
+        my_third_op()
+
+    @job
+    def my_job() -> None:
+        my_graph()
+        my_other_graph()
+        my_op()
+        my_op()
+
+    defs = Definitions(
+        jobs=BindResourcesToJobs([my_job]),
+        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert _to_dict(foo[0].job_ops_using) == {
+        "my_job": [
+            "my_graph.my_op",
+            "my_graph.my_other_op",
+            "my_op",
+            "my_op_2",
+            "my_other_graph.my_third_op",
+        ]
+    }
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert _to_dict(bar[0].job_ops_using) == {"my_job": ["my_graph.my_other_op"]}

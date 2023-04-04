@@ -105,6 +105,7 @@ from dagster._config.structured_config import (
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
     ConfigurableResource as ConfigurableResource,
+    ConfigurableResourceFactory as ConfigurableResourceFactory,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )
@@ -265,8 +266,10 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
+    DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiPartitionMapping as MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
     SpecificPartitionsPartitionMapping as SpecificPartitionsPartitionMapping,
@@ -573,7 +576,7 @@ def __getattr__(name: str) -> TypingAny:
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
     else:
-        raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 def __dir__(_self: ModuleType) -> Sequence[str]:

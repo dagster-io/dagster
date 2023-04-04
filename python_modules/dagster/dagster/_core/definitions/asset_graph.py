@@ -78,7 +78,7 @@ class AssetGraph:
         """Non-source asset keys that have no non-source parents."""
         from .asset_selection import AssetSelection
 
-        return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
+        return AssetSelection.keys(*self.non_source_asset_keys).roots().resolve(self)
 
     @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
@@ -136,6 +136,10 @@ class AssetGraph:
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._asset_dep_graph["upstream"].keys()
+
+    @property
+    def non_source_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._asset_dep_graph["upstream"].keys() - self._source_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)
@@ -370,6 +374,23 @@ class AssetGraph:
         return [
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
         ]
+
+    @cached_method
+    def get_downstream_freshness_policies(
+        self, *, asset_key: AssetKey
+    ) -> AbstractSet[FreshnessPolicy]:
+        downstream_policies = set().union(
+            *(
+                self.get_downstream_freshness_policies(asset_key=child_key)
+                for child_key in self.get_children(asset_key)
+                if child_key != asset_key
+            )
+        )
+        current_policy = self.freshness_policies_by_key.get(asset_key)
+        if self.get_partitions_def(asset_key) is None and current_policy is not None:
+            downstream_policies.add(current_policy)
+
+        return downstream_policies
 
     def has_self_dependency(self, asset_key: AssetKey) -> bool:
         return asset_key in self.get_parents(asset_key)

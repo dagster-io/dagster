@@ -15,7 +15,7 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster._core.definitions.metadata import MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
@@ -98,13 +98,13 @@ def _execute_run_command_body(
 
     pipeline_run: DagsterRun = check.not_none(
         instance.get_run_by_id(pipeline_run_id),
-        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+        f"Pipeline run with id '{pipeline_run_id}' not found for run execution.",
     )
 
     check.inst(
         pipeline_run.pipeline_code_origin,
         PipelinePythonOrigin,
-        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+        f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
@@ -113,7 +113,7 @@ def _execute_run_command_body(
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for run (pid: {pid}).".format(pid=pid),
+        f"Started process for run (pid: {pid}).",
         pipeline_run,
         EngineEventData.in_process(pid),
     )
@@ -147,7 +147,7 @@ def _execute_run_command_body(
                     )
 
         instance.report_engine_event(
-            "Process for run exited (pid: {pid}).".format(pid=pid),
+            f"Process for run exited (pid: {pid}).",
             pipeline_run,
         )
 
@@ -204,12 +204,12 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = None, None
     pipeline_run = check.not_none(
         instance.get_run_by_id(pipeline_run_id),  # type: ignore
-        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+        f"Pipeline run with id '{pipeline_run_id}' not found for run execution.",
     )
     check.inst(
         pipeline_run.pipeline_code_origin,
         PipelinePythonOrigin,
-        "Pipeline run with id '{}' does not include an origin.".format(pipeline_run_id),
+        f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
     recon_pipeline = recon_pipeline_from_origin(
@@ -218,7 +218,7 @@ def _resume_run_command_body(
 
     pid = os.getpid()
     instance.report_engine_event(
-        "Started process for resuming pipeline (pid: {pid}).".format(pid=pid),
+        f"Started process for resuming pipeline (pid: {pid}).",
         pipeline_run,
         EngineEventData.in_process(pid),
     )
@@ -253,7 +253,7 @@ def _resume_run_command_body(
                         pipeline_run,
                     )
         instance.report_engine_event(
-            "Process for pipeline exited (pid: {pid}).".format(pid=pid),
+            f"Process for pipeline exited (pid: {pid}).",
             pipeline_run,
         )
 
@@ -376,12 +376,12 @@ def _execute_step_command_body(
         check.inst(
             pipeline_run,
             DagsterRun,
-            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
+            f"Pipeline run with id '{args.pipeline_run_id}' not found for step execution",
         )
         check.inst(
             pipeline_run.pipeline_code_origin,
             PipelinePythonOrigin,
-            "Pipeline run with id '{}' does not include an origin.".format(args.pipeline_run_id),
+            f"Pipeline run with id '{args.pipeline_run_id}' does not include an origin.",
         )
 
         location_name = (
@@ -399,11 +399,7 @@ def _execute_step_command_body(
             pipeline_run.pipeline_name,
             message="Step worker started"
             + (f' for "{single_step_key}".' if single_step_key else "."),
-            metadata_entries=(
-                [
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ]
-            ),
+            metadata={"pid": MetadataValue.text(str(os.getpid()))},
             step_key=single_step_key,
         )
 

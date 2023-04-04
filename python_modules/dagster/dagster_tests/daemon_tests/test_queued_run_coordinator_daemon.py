@@ -167,7 +167,7 @@ def test_get_queued_runs_max_runs(
     ) as instance:
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
         # fill run store with ongoing runs
-        in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(num_in_progress_runs)]
+        in_progress_run_ids = [f"in_progress-run-{i}" for i in range(num_in_progress_runs)]
         for i, run_id in enumerate(in_progress_run_ids):
             # get a selection of all in progress statuses
             status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
@@ -179,7 +179,7 @@ def test_get_queued_runs_max_runs(
             )
 
         # add more queued runs than should be launched
-        queued_run_ids = ["queued-run-{}".format(i) for i in range(max_runs + 1)]
+        queued_run_ids = [f"queued-run-{i}" for i in range(max_runs + 1)]
         for run_id in queued_run_ids:
             create_queued_run(
                 instance,
@@ -203,7 +203,7 @@ def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipel
         bounded_ctx = workspace_context.copy_for_test_instance(instance)
 
         # create ongoing runs
-        in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(5)]
+        in_progress_run_ids = [f"in_progress-run-{i}" for i in range(5)]
         for i, run_id in enumerate(in_progress_run_ids):
             # get a selection of all in progress statuses
             status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
@@ -215,7 +215,7 @@ def test_disable_max_concurrent_runs_limit(use_threads, workspace_context, pipel
             )
 
         # add more queued runs
-        queued_run_ids = ["queued-run-{}".format(i) for i in range(6)]
+        queued_run_ids = [f"queued-run-{i}" for i in range(6)]
         for run_id in queued_run_ids:
             create_queued_run(
                 instance,

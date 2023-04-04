@@ -208,7 +208,8 @@ def _get_deps(
             if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
-                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
+                # make a copy to avoid mutating the actual dictionary
+                queue = list(parent_node_info.get("depends_on", {}).get("nodes", []))
                 while queue:
                     candidate_parent_id = queue.pop()
                     if candidate_parent_id in visited:
@@ -891,7 +892,7 @@ def load_assets_from_dbt_manifest(
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [
-            dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
+            dbt_assets_def.with_attributes(input_asset_key_replacements=input_key_replacements)
         ]
     else:
         dbt_assets = [dbt_assets_def]

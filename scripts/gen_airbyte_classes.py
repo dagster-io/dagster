@@ -125,7 +125,7 @@ class RawType(SchemaType):
         if self.type_str in CHECK_MAPPING:
             return CHECK_MAPPING[self.type_str].format(name, name)
         scope = f"{scope}." if scope else ""
-        return "check.inst_param({}, '{}', {}{})".format(name, name, scope, self.type_str)
+        return f"check.inst_param({name}, '{name}', {scope}{self.type_str})"
 
 
 class ListType(SchemaType):
@@ -141,7 +141,7 @@ class ListType(SchemaType):
         return f"List[{self.inner.annotation(scope, quote, hide_default)}]"
 
     def get_check(self, name: str, scope: Optional[str] = None):
-        return "check.list_param({}, '{}', {})".format(name, name, self.inner.annotation(scope))
+        return f"check.list_param({name}, '{name}', {self.inner.annotation(scope)})"
 
 
 class OptType(SchemaType):

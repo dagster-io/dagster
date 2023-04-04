@@ -11,7 +11,10 @@ import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 
 interface AnchorButtonProps
-  extends Omit<React.ComponentProps<typeof BlueprintAnchorButton>, 'loading' | 'onClick' | 'type'>,
+  extends Omit<
+      React.ComponentProps<typeof BlueprintAnchorButton>,
+      'loading' | 'onClick' | 'onFocus' | 'type'
+    >,
     LinkProps {
   label?: React.ReactNode;
 }

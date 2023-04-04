@@ -264,7 +264,7 @@ const BackfillRunStatus = ({
   // Coerce the data from the backend into PartitionState, collapsing the counts.
   const partitionCounts = Object.entries(counts).reduce((partitionCounts, [runStatus, count]) => {
     const key = runStatusToPartitionState(runStatus as RunStatus);
-    partitionCounts[key] = (partitionCounts[key] || 0) + count;
+    (partitionCounts as any)[key] = ((partitionCounts as any)[key] || 0) + count;
     return partitionCounts;
   }, {});
 
@@ -292,9 +292,9 @@ const BackfillRunStatus = ({
     />
   ) : (
     <RunStatusTagsWithCounts
-      succeededCount={partitionCounts[PartitionState.SUCCESS]}
-      inProgressCount={partitionCounts[PartitionState.STARTED]}
-      failedCount={partitionCounts[PartitionState.FAILURE]}
+      succeededCount={(partitionCounts as any)[PartitionState.SUCCESS]}
+      inProgressCount={(partitionCounts as any)[PartitionState.STARTED]}
+      failedCount={(partitionCounts as any)[PartitionState.FAILURE]}
     />
   );
 };

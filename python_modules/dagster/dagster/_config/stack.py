@@ -87,7 +87,7 @@ def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
                 comp = ":" + entry.field_name
                 comps.append(comp)
             elif isinstance(entry, EvaluationStackListItemEntry):
-                comps.append("[{i}]".format(i=entry.list_index))
+                comps.append(f"[{entry.list_index}]")
             elif isinstance(entry, EvaluationStackMapKeyEntry):
                 comp = ":" + repr(entry.map_key) + ":key"
                 comps.append(comp)

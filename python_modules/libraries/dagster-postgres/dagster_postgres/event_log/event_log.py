@@ -181,7 +181,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             res = result.fetchone()
             result.close()
             conn.execute(
-                """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
+                f"""NOTIFY {CHANNEL_NAME}, %s; """,
                 (res[0] + "_" + str(res[1]),),  # type: ignore
             )
             event_id = res[1]  # type: ignore

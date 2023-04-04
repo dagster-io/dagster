@@ -23,7 +23,6 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
@@ -34,13 +33,14 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import make_readonly_value
+from dagster._utils import hash_collection
 
 from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import (
     SINGLETON_REPOSITORY_NAME as SINGLETON_REPOSITORY_NAME,
     VALID_REPOSITORY_DATA_DICT_KEYS as VALID_REPOSITORY_DATA_DICT_KEYS,
-    RepositoryListDefinition,
+    PendingRepositoryListDefinition as PendingRepositoryListDefinition,
+    RepositoryListDefinition as RepositoryListDefinition,
 )
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ class RepositoryLoadData(
     def __new__(cls, cached_data_by_key: Mapping[str, Sequence[AssetsDefinitionCacheableData]]):
         return super(RepositoryLoadData, cls).__new__(
             cls,
-            cached_data_by_key=make_readonly_value(
+            cached_data_by_key=(
                 check.mapping_param(
                     cached_data_by_key,
                     "cached_data_by_key",
@@ -70,6 +70,16 @@ class RepositoryLoadData(
                 )
             ),
         )
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has a `RepositoryLoadData` attribute
+    # - `RepositoryLoadData` has collection attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 class RepositoryDefinition:
@@ -173,6 +183,9 @@ class RepositoryDefinition:
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()
 
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        return self._repository_data.get_resource_key_mapping()
+
     @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
@@ -213,13 +226,6 @@ class RepositoryDefinition:
             List[JobDefinition]: All jobs in the repository.
         """
         return self._repository_data.get_all_jobs()
-
-    @property
-    def partition_set_defs(self) -> Sequence[PartitionSetDefinition]:
-        return self._repository_data.get_all_partition_sets()
-
-    def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
-        return self._repository_data.get_partition_set(name)
 
     @public
     @property
@@ -410,6 +416,7 @@ class PendingRepositoryDefinition:
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
         _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        _resource_key_mapping: Optional[Mapping[int, str]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -423,6 +430,7 @@ class PendingRepositoryDefinition:
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
         self._top_level_resources = _top_level_resources
+        self._resource_key_mapping = _resource_key_mapping
 
     @property
     def name(self) -> str:
@@ -469,6 +477,7 @@ class PendingRepositoryDefinition:
             default_executor_def=self._default_executor_def,
             default_logger_defs=self._default_logger_defs,
             top_level_resources=self._top_level_resources,
+            resource_key_mapping=self._resource_key_mapping,
         )
 
         return RepositoryDefinition(

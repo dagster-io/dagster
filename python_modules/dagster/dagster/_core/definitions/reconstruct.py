@@ -40,7 +40,7 @@ from dagster._core.origin import (
 )
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._utils import frozenlist, make_readonly_value
+from dagster._utils import hash_collection
 
 from .events import AssetKey
 from .pipeline_base import IPipeline
@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
     check.str_param(pipeline_name, "pipeline_name")
-    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
+    return f"__repository__{pipeline_name}"
 
 
 @whitelist_for_serdes
@@ -94,12 +94,12 @@ class ReconstructableRepository(
             container_image=check.opt_str_param(container_image, "container_image"),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                check.sequence_param(entry_point, "entry_point", of_type=str)
                 if entry_point is not None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_context=(
-                make_readonly_value(check.mapping_param(container_context, "container_context"))
+                check.mapping_param(container_context, "container_context")
                 if container_context is not None
                 else None
             ),
@@ -162,6 +162,15 @@ class ReconstructableRepository(
 
     def get_python_origin_id(self) -> str:
         return self.get_python_origin().get_id()
+
+    # Allow this to be hashed for use in `lru_cache`. This is needed because:
+    # - `ReconstructablePipeline` uses `lru_cache`
+    # - `ReconstructablePipeline` has a `ReconstructableRepository` attribute
+    # - `ReconstructableRepository` has `Sequence` attributes that are unhashable by default
+    def __hash__(self) -> int:
+        if not hasattr(self, "_hash"):
+            self._hash = hash_collection(self)
+        return self._hash
 
 
 @whitelist_for_serdes

@@ -178,7 +178,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'chained_failure_pipeline'
+                            'name': 'chained_failure_job'
                         },
                         'solidHandle': {
                             'handleID': 'after_failure'
@@ -194,7 +194,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'chained_failure_pipeline'
+                            'name': 'chained_failure_job'
                         },
                         'solidHandle': {
                             'handleID': 'always_succeed'
@@ -386,7 +386,7 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'chained_failure_pipeline'
+                            'name': 'chained_failure_job'
                         },
                         'solidHandle': {
                             'handleID': 'conditionally_fail'
@@ -1045,6 +1045,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'hanging_partition_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_partition_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_partition_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'hard_fail_or_0'
                 },
                 'invocations': [
@@ -1646,6 +1662,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'return_int'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'return_integer'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'integers'
+                        },
+                        'solidHandle': {
+                            'handleID': 'return_integer'
                         }
                     }
                 ]

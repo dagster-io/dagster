@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    MetadataValue,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
@@ -65,6 +65,8 @@ from .external_data import (
     ExternalSensorData,
     ExternalSensorMetadata,
     ExternalTargetData,
+    NestedResource,
+    ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -346,7 +348,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names_in_topological_order(self):
-        return self._pipeline_index.pipeline_snapshot.solid_names_in_topological_order
+        return self._pipeline_index.pipeline_snapshot.node_names_in_topological_order
 
     @property
     def external_pipeline_data(self):
@@ -365,7 +367,7 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.node_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -373,7 +375,7 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.pipeline_snapshot.lineage_snapshot.solids_to_execute
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.nodes_to_execute
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
             else None
         )
@@ -392,7 +394,7 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names(self) -> Sequence[str]:
-        return self._pipeline_index.pipeline_snapshot.solid_names
+        return self._pipeline_index.pipeline_snapshot.node_names
 
     def has_solid_invocation(self, solid_name: str):
         check.str_param(solid_name, "solid_name")
@@ -428,7 +430,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def metadata(self) -> Sequence[MetadataEntry]:
+    def metadata(self) -> Mapping[str, MetadataValue]:
         return self._pipeline_index.pipeline_snapshot.metadata
 
     @property
@@ -576,6 +578,30 @@ class ExternalResource:
     @property
     def config_schema_snap(self) -> ConfigSchemaSnapshot:
         return self._external_resource_data.config_schema_snap
+
+    @property
+    def nested_resources(self) -> Dict[str, NestedResource]:
+        return self._external_resource_data.nested_resources
+
+    @property
+    def parent_resources(self) -> Dict[str, str]:
+        return self._external_resource_data.parent_resources
+
+    @property
+    def resource_type(self) -> str:
+        return self._external_resource_data.resource_type
+
+    @property
+    def is_top_level(self) -> bool:
+        return self._external_resource_data.is_top_level
+
+    @property
+    def asset_keys_using(self) -> List[AssetKey]:
+        return self._external_resource_data.asset_keys_using
+
+    @property
+    def job_ops_using(self) -> List[ResourceJobUsageEntry]:
+        return self._external_resource_data.job_ops_using
 
 
 class ExternalSchedule:

@@ -123,13 +123,10 @@ from .decorators import (
     asset as asset,
     asset_sensor as asset_sensor,
     config_mapping as config_mapping,
-    daily_schedule as daily_schedule,
     failure_hook as failure_hook,
     graph as graph,
     hook_decorator as hook_decorator,
-    hourly_schedule as hourly_schedule,
     job as job,
-    monthly_schedule as monthly_schedule,
     multi_asset as multi_asset,
     op as op,
     pipeline as pipeline,
@@ -137,7 +134,6 @@ from .decorators import (
     schedule as schedule,
     sensor as sensor,
     success_hook as success_hook,
-    weekly_schedule as weekly_schedule,
 )
 from .graph_definition import GraphDefinition as GraphDefinition
 from .job_definition import JobDefinition as JobDefinition
@@ -157,9 +153,7 @@ from .partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
     PartitionedConfig as PartitionedConfig,
-    PartitionScheduleDefinition as PartitionScheduleDefinition,
     PartitionsDefinition as PartitionsDefinition,
-    PartitionSetDefinition as PartitionSetDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
     dynamic_partitioned_config as dynamic_partitioned_config,
     static_partitioned_config as static_partitioned_config,
@@ -167,14 +161,15 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange as PartitionKeyRange
 from .partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
+    DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiPartitionMapping as MultiPartitionMapping,
     MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
 )
 from .partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
-    schedule_from_partitions as schedule_from_partitions,
 )
 from .pipeline_definition import PipelineDefinition as PipelineDefinition
 from .preset import PresetDefinition as PresetDefinition

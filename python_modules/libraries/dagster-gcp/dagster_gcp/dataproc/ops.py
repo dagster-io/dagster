@@ -39,7 +39,7 @@ def _dataproc_compute(context):
             result = cluster.submit_job(job_config)
 
             job_id = result["reference"]["jobId"]
-            context.log.info("Submitted job ID {}".format(job_id))
+            context.log.info(f"Submitted job ID {job_id}")
             cluster.wait_for_job(job_id, wait_timeout=job_timeout)
 
     else:
@@ -48,7 +48,7 @@ def _dataproc_compute(context):
         result = context.resources.dataproc.submit_job(job_config)
 
         job_id = result["reference"]["jobId"]
-        context.log.info("Submitted job ID {}".format(job_id))
+        context.log.info(f"Submitted job ID {job_id}")
         context.resources.dataproc.wait_for_job(job_id, wait_timeout=job_timeout)
 
 

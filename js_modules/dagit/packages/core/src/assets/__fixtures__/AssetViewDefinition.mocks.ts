@@ -100,6 +100,12 @@ export const AssetViewDefinitionSourceAsset: MockedResponse<AssetViewDefinitionQ
           },
           metadataEntries: [],
           type: null,
+          requiredResources: [
+            {
+              __typename: 'ResourceRequirement',
+              resourceKey: 'foo',
+            },
+          ],
         },
         __typename: 'Asset',
       },
@@ -158,6 +164,12 @@ export const AssetViewDefinitionSDA: MockedResponse<AssetViewDefinitionQuery> = 
           },
           metadataEntries: [],
           type: null,
+          requiredResources: [
+            {
+              __typename: 'ResourceRequirement',
+              resourceKey: 'foo',
+            },
+          ],
         },
         __typename: 'Asset',
       },

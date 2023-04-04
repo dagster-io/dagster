@@ -2,6 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -18,7 +19,12 @@ const fuseOptions = {
   useExtendedSearch: true,
 };
 
-const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
+const bootstrapDataToSearchResults = (input: {
+  data?: SearchBootstrapQuery;
+  includeResources: boolean;
+}) => {
+  const {data, includeResources} = input;
+
   if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
     return new Fuse([]);
   }
@@ -36,7 +42,14 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
-        const {name: repoName, partitionSets, pipelines, schedules, sensors} = repo;
+        const {
+          name: repoName,
+          partitionSets,
+          pipelines,
+          schedules,
+          sensors,
+          allTopLevelResourceDetails,
+        } = repo;
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPathForHuman(repoName, locationName);
 
@@ -77,6 +90,15 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           type: SearchResultType.Sensor,
         }));
 
+        const allResources: SearchResult[] = includeResources
+          ? allTopLevelResourceDetails.map((resource) => ({
+              label: resource.name,
+              description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
+              href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
+              type: SearchResultType.Resource,
+            }))
+          : [];
+
         const allPartitionSets: SearchResult[] = partitionSets
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
           .map((partitionSet) => ({
@@ -96,6 +118,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           ...allSchedules,
           ...allSensors,
           ...allPartitionSets,
+          ...allResources,
         ];
       }, [] as SearchResult[]),
     ];
@@ -134,9 +157,13 @@ export const useRepoSearch = () => {
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
   ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY);
 
-  const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults(bootstrapData), [
-    bootstrapData,
-  ]);
+  const {flagSidebarResources} = useFeatureFlags();
+
+  const bootstrapFuse = React.useMemo(
+    () =>
+      bootstrapDataToSearchResults({data: bootstrapData, includeResources: flagSidebarResources}),
+    [bootstrapData, flagSidebarResources],
+  );
   const secondaryFuse = React.useMemo(() => secondaryDataToSearchResults(secondaryData), [
     secondaryData,
   ]);
@@ -190,6 +217,9 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
                     id
                     name
                     pipelineName
+                  }
+                  allTopLevelResourceDetails {
+                    name
                   }
                 }
               }

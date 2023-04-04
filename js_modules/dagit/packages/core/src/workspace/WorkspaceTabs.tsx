@@ -2,6 +2,7 @@ import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {TabLink} from '../ui/TabLink';
 
@@ -17,6 +18,7 @@ interface Props<TData> {
 
 export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {repoAddress, refreshState, tab} = props;
+  const {flagSidebarResources} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -35,6 +37,13 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
         />
         <TabLink id="graphs" title="Graphs" to={workspacePathFromAddress(repoAddress, '/graphs')} />
         <TabLink id="ops" title="Ops" to={workspacePathFromAddress(repoAddress, '/ops')} />
+        {flagSidebarResources && (
+          <TabLink
+            id="resources"
+            title="Resources"
+            to={workspacePathFromAddress(repoAddress, '/resources')}
+          />
+        )}
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

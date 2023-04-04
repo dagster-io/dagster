@@ -30,7 +30,6 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionSetDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -42,7 +41,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .repository_data import CachingRepositoryData, _get_partition_set_from_schedule
+from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 
@@ -93,6 +92,7 @@ def build_caching_repository_data_from_list(
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> CachingRepositoryData:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -103,7 +103,6 @@ def build_caching_repository_data_from_list(
     pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
     coerced_graphs: Dict[str, JobDefinition] = {}
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
-    partition_sets: Dict[str, PartitionSetDefinition[object]] = {}
     schedules: Dict[str, ScheduleDefinition] = {}
     unresolved_partitioned_asset_schedules: Dict[
         str, UnresolvedPartitionedAssetScheduleDefinition
@@ -129,12 +128,6 @@ def build_caching_repository_data_from_list(
                     "is a reserved name. Please rename the job."
                 )
             pipelines_or_jobs[definition.name] = definition
-        elif isinstance(definition, PartitionSetDefinition):
-            if definition.name in partition_sets:
-                raise DagsterInvalidDefinitionError(
-                    f"Duplicate partition set definition found for partition set {definition.name}"
-                )
-            partition_sets[definition.name] = definition
         elif isinstance(definition, SensorDefinition):
             if definition.name in schedule_and_sensor_names:
                 raise DagsterInvalidDefinitionError(
@@ -150,17 +143,6 @@ def build_caching_repository_data_from_list(
             schedule_and_sensor_names.add(definition.name)
 
             schedules[definition.name] = definition
-            partition_set_def = _get_partition_set_from_schedule(definition)
-            if partition_set_def:
-                if (
-                    partition_set_def.name in partition_sets
-                    and partition_set_def != partition_sets[partition_set_def.name]
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        "Duplicate partition set definition found for partition set "
-                        f"{partition_set_def.name}"
-                    )
-                partition_sets[partition_set_def.name] = partition_set_def
 
         elif isinstance(definition, UnresolvedPartitionedAssetScheduleDefinition):
             if definition.name in schedule_and_sensor_names:
@@ -319,13 +301,13 @@ def build_caching_repository_data_from_list(
     return CachingRepositoryData(
         pipelines=pipelines,
         jobs=jobs,
-        partition_sets=partition_sets,
         schedules=schedules,
         sensors=sensors,
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
         top_level_resources=top_level_resources or {},
         utilized_env_vars=utilized_env_vars,
+        resource_key_mapping=resource_key_mapping or {},
     )
 
 
@@ -336,9 +318,7 @@ def build_caching_repository_data_from_dict(
     check.invariant(
         set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS),
         "Bad dict: must not contain keys other than {{{valid_keys}}}: found {bad_keys}.".format(
-            valid_keys=", ".join(
-                ["'{key}'".format(key=key) for key in VALID_REPOSITORY_DATA_DICT_KEYS]
-            ),
+            valid_keys=", ".join([f"'{key}'" for key in VALID_REPOSITORY_DATA_DICT_KEYS]),
             bad_keys=", ".join(
                 [
                     "'{key}'"
@@ -395,6 +375,7 @@ def build_caching_repository_data_from_dict(
         assets_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
+        resource_key_mapping={},
     )
 
 

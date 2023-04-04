@@ -18,6 +18,7 @@ export const StateColors = {
   SUCCESS: Colors.Green500,
   FAILURE: Colors.Red500,
   SKIPPED: Colors.Gray500,
+  IN_PROGRESS: Colors.Gray200,
 };
 
 export const SidebarOpExecutionGraphs: React.FC<{

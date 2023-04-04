@@ -1,5 +1,3 @@
-import {all} from 'deepmerge';
-
 import {
   PartitionDimensionSelection,
   PartitionDimensionSelectionRange,
@@ -83,8 +81,10 @@ export function spanTextToSelections(
         start = -1;
       };
 
-      for (let idx = 0; idx < all.length; idx++) {
-        const match = all[idx].startsWith(prefix) && all[idx].endsWith(suffix);
+      // todo bengotow: Was this change correct??
+      for (let idx = 0; idx < allPartitionKeys.length; idx++) {
+        const match =
+          allPartitionKeys[idx].startsWith(prefix) && allPartitionKeys[idx].endsWith(suffix);
         if (match && start === -1) {
           start = idx;
         }
@@ -93,7 +93,7 @@ export function spanTextToSelections(
         }
       }
       if (start !== -1) {
-        close(all.length - 1);
+        close(allPartitionKeys.length - 1);
       }
     } else {
       const idx = allPartitionKeys.indexOf(term);

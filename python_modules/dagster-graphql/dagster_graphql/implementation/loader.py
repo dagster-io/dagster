@@ -428,7 +428,7 @@ class CrossRepoAssetDependedByLoader:
 
     def get_cross_repo_dependent_assets(
         self, repository_location_name: str, repository_name: str, asset_key: AssetKey
-    ) -> List[ExternalAssetDependedBy]:
+    ) -> Sequence[ExternalAssetDependedBy]:
         _, external_asset_deps = self._build_cross_repo_deps()
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []

@@ -112,6 +112,7 @@ def invoke_compute_fn(
     if resource_args:
         for resource_name, arg_name in resource_args.items():
             args_to_pass[arg_name] = getattr(context.resources, resource_name)
+
     return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
 
 
@@ -240,7 +241,7 @@ def validate_and_coerce_op_result_to_iterator(
                             output_name=output_def.name,
                             value=dynamic_output.value,
                             mapping_key=dynamic_output.mapping_key,
-                            metadata_entries=list(dynamic_output.metadata_entries),
+                            metadata=dynamic_output.metadata,
                         )
             elif isinstance(element, Output):
                 if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
@@ -259,7 +260,7 @@ def validate_and_coerce_op_result_to_iterator(
                     yield Output(
                         output_name=output_def.name,
                         value=element.value,
-                        metadata_entries=element.metadata_entries,
+                        metadata=element.metadata,
                         data_version=element.data_version,
                     )
             else:

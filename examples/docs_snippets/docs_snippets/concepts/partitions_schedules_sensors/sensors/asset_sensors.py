@@ -38,6 +38,31 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 
 # end_asset_sensor_marker
 
+# start_asset_sensor_test_marker
+from dagster import DagsterInstance, build_sensor_context, materialize
+
+
+def test_my_asset_sensor():
+    @asset
+    def my_table():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    ctx = build_sensor_context(instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], SkipReason)
+
+    materialize([my_table], instance=instance)
+
+    result = list(my_asset_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], RunRequest)
+
+
+# end_asset_sensor_test_marker
+
 
 def send_alert(_msg: str) -> None:
     return

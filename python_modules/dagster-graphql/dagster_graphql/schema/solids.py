@@ -7,8 +7,8 @@ from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedPipeline
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline
-from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
-from dagster._core.snap.solid import InputMappingSnap, OutputMappingSnap
+from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
+from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.pipeline_run import RunsFilter
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -65,7 +65,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
-        return list(iterate_metadata_entries(self._input_def_snap.metadata_entries))
+        return list(iterate_metadata_entries(self._input_def_snap.metadata))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):
@@ -113,7 +113,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
-        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
+        return list(iterate_metadata_entries(self._output_def_snap.metadata))
 
 
 class GrapheneInput(graphene.ObjectType):
@@ -142,7 +142,7 @@ class GrapheneInput(graphene.ObjectType):
         self._input_name = check.str_param(input_name, "input_name")
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(
-            self._solid_invocation_snap.solid_def_name
+            self._solid_invocation_snap.node_def_name
         )
         self._input_def_snap = self._solid_def_snap.get_input_snap(input_name)
 
@@ -165,7 +165,7 @@ class GrapheneInput(graphene.ObjectType):
             GrapheneOutput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                output_handle_snap.solid_name,
+                output_handle_snap.node_name,
                 output_handle_snap.output_name,
             )
             for output_handle_snap in self._current_dep_structure.get_upstream_outputs(
@@ -196,7 +196,7 @@ class GrapheneOutput(graphene.ObjectType):
         self._output_name = check.str_param(output_name, "output_name")
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(
-            self._solid_invocation_snap.solid_def_name
+            self._solid_invocation_snap.node_def_name
         )
         self._output_def_snap = self._solid_def_snap.get_output_snap(output_name)
         super().__init__()
@@ -219,7 +219,7 @@ class GrapheneOutput(graphene.ObjectType):
             GrapheneInput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                input_handle_snap.solid_name,
+                input_handle_snap.node_name,
                 input_handle_snap.input_name,
             )
             for input_handle_snap in self._current_dep_structure.get_downstream_inputs(
@@ -258,7 +258,7 @@ class GrapheneInputMapping(graphene.ObjectType):
         return GrapheneInput(
             self._represented_pipeline,
             self._current_dep_index,
-            self._input_mapping_snap.mapped_solid_name,
+            self._input_mapping_snap.mapped_node_name,
             self._input_mapping_snap.mapped_input_name,
         )
 
@@ -300,7 +300,7 @@ class GrapheneOutputMapping(graphene.ObjectType):
         return GrapheneOutput(
             self._represented_pipeline,
             self._current_dep_index,
-            self._output_mapping_snap.mapped_solid_name,
+            self._output_mapping_snap.mapped_node_name,
             self._output_mapping_snap.mapped_output_name,
         )
 
@@ -329,7 +329,7 @@ def build_solids(represented_pipeline, current_dep_index):
     return sorted(
         [
             GrapheneSolid(represented_pipeline, solid_name, current_dep_index)
-            for solid_name in current_dep_index.solid_invocation_names
+            for solid_name in current_dep_index.node_invocation_names
         ],
         key=lambda solid: solid.name,
     )
@@ -343,15 +343,15 @@ def _build_solid_handles(
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
     all_handle: List[GrapheneSolidHandle] = []
-    for solid_invocation in current_dep_index.solid_invocations:
-        solid_name, solid_def_name = solid_invocation.solid_name, solid_invocation.solid_def_name
+    for solid_invocation in current_dep_index.node_invocations:
+        solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(
             solid=GrapheneSolid(represented_pipeline, solid_name, current_dep_index),
             handle=NodeHandle(solid_name, parent.handleID if parent else None),
             parent=parent if parent else None,
         )
         solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        if isinstance(solid_def_snap, CompositeSolidDefSnap):
+        if isinstance(solid_def_snap, GraphDefSnap):
             all_handle += _build_solid_handles(
                 represented_pipeline,
                 represented_pipeline.get_dep_structure_index(solid_def_name),
@@ -459,7 +459,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        if not isinstance(_solid_def_snap, SolidDefSnap):
+        if not isinstance(_solid_def_snap, OpDefSnap):
             check.failed("Expected SolidDefSnap")
         self._solid_def_snap = _solid_def_snap
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
@@ -531,7 +531,7 @@ class GrapheneSolid(graphene.ObjectType):
         )
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(
-            self._solid_invocation_snap.solid_def_name
+            self._solid_invocation_snap.node_def_name
         )
         super().__init__(name=solid_name)
 
@@ -547,7 +547,7 @@ class GrapheneSolid(graphene.ObjectType):
         return self._solid_invocation_snap.is_dynamic_mapped
 
     def get_is_composite(self) -> bool:
-        return isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        return isinstance(self._solid_def_snap, GraphDefSnap)
 
     def get_pipeline_name(self) -> str:
         return self._represented_pipeline.name
@@ -562,7 +562,7 @@ class GrapheneSolid(graphene.ObjectType):
             GrapheneInput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                self._solid_invocation_snap.solid_name,
+                self._solid_invocation_snap.node_name,
                 input_def_snap.name,
             )
             for input_def_snap in self._solid_def_snap.input_def_snaps
@@ -573,7 +573,7 @@ class GrapheneSolid(graphene.ObjectType):
             GrapheneOutput(
                 self._represented_pipeline,
                 self._current_dep_structure,
-                self._solid_invocation_snap.solid_name,
+                self._solid_invocation_snap.node_name,
                 output_def_snap.name,
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
@@ -683,7 +683,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
     def resolve_output_mappings(
         self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneOutputMapping]:
-        assert isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        assert isinstance(self._solid_def_snap, GraphDefSnap)
         return [
             GrapheneOutputMapping(
                 self._represented_pipeline,
@@ -695,7 +695,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         ]
 
     def resolve_input_mappings(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneInputMapping]:
-        assert isinstance(self._solid_def_snap, CompositeSolidDefSnap)
+        assert isinstance(self._solid_def_snap, GraphDefSnap)
         return [
             GrapheneInputMapping(
                 self._represented_pipeline,
@@ -741,13 +741,13 @@ def build_solid_definition(
 
     solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
 
-    if isinstance(solid_def_snap, SolidDefSnap):
+    if isinstance(solid_def_snap, OpDefSnap):
         return GrapheneSolidDefinition(represented_pipeline, solid_def_snap.name)
 
-    if isinstance(solid_def_snap, CompositeSolidDefSnap):
+    if isinstance(solid_def_snap, GraphDefSnap):
         return GrapheneCompositeSolidDefinition(represented_pipeline, solid_def_snap.name)
 
-    check.failed("Unknown solid definition type {type}".format(type=type(solid_def_snap)))
+    check.failed(f"Unknown solid definition type {type(solid_def_snap)}")
 
 
 types = [

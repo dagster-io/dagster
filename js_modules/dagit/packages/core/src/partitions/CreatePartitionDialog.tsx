@@ -148,7 +148,7 @@ export const CreatePartitionDialog = ({
       case 'UnauthorizedError': {
         showCustomAlert({
           title: 'Could not add partition',
-          body: 'You do not have permission to do this.',
+          body: data.message ?? 'You do not have permission to do this.',
         });
         break;
       }

@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional
+from typing import List, Optional
 
 import dagster
 import pydantic
@@ -15,7 +15,7 @@ from dagster import (
     op,
     validate_run_config,
 )
-from dagster._config.config_type import ConfigTypeKind
+from dagster._config.config_type import ConfigTypeKind, Noneable
 from dagster._config.field_utils import convert_potential_field
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
@@ -321,11 +321,10 @@ def test_nested_struct_config():
     assert executed["yes"]
 
 
-def test_direct_op_invocation():
+def test_direct_op_invocation() -> None:
     class MyBasicOpConfig(Config):
         foo: str
 
-    # Limitation: for now direct invocation still requires the op to have a context argument.
     @op
     def basic_op(context, config: MyBasicOpConfig):
         assert config.foo == "bar"
@@ -337,6 +336,60 @@ def test_direct_op_invocation():
 
     with pytest.raises(DagsterInvalidConfigError):
         basic_op(build_op_context(op_config={"baz": "qux"}))
+
+    @op
+    def basic_op_no_context(config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op_no_context(build_op_context(op_config={"foo": "bar"}))
+
+    with pytest.raises(AssertionError):
+        basic_op_no_context(build_op_context(op_config={"foo": "qux"}))
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op_no_context(build_op_context(op_config={"baz": "qux"}))
+
+
+def test_direct_op_invocation_complex_config() -> None:
+    class MyBasicOpConfig(Config):
+        foo: str
+        bar: bool
+        baz: int
+        qux: List[str]
+
+    @op
+    def basic_op(context, config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op(build_op_context(op_config={"foo": "bar", "bar": True, "baz": 1, "qux": ["a", "b"]}))
+
+    with pytest.raises(AssertionError):
+        basic_op(
+            build_op_context(op_config={"foo": "qux", "bar": True, "baz": 1, "qux": ["a", "b"]})
+        )
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op(
+            build_op_context(op_config={"foo": "bar", "bar": "true", "baz": 1, "qux": ["a", "b"]})
+        )
+
+    @op
+    def basic_op_no_context(config: MyBasicOpConfig):
+        assert config.foo == "bar"
+
+    basic_op_no_context(
+        build_op_context(op_config={"foo": "bar", "bar": True, "baz": 1, "qux": ["a", "b"]})
+    )
+
+    with pytest.raises(AssertionError):
+        basic_op_no_context(
+            build_op_context(op_config={"foo": "qux", "bar": True, "baz": 1, "qux": ["a", "b"]})
+        )
+
+    with pytest.raises(DagsterInvalidConfigError):
+        basic_op_no_context(
+            build_op_context(op_config={"foo": "bar", "bar": "true", "baz": 1, "qux": ["a", "b"]})
+        )
 
 
 def test_validate_run_config():
@@ -518,12 +571,12 @@ def test_int_source_default():
     )
 
 
-def test_optional_string_source_default():
+def test_optional_string_source_default() -> None:
     class RawStringConfigSchema(Config):
         a_str: Optional[str]
 
     assert print_config_type_to_string(
-        {"a_str": dagster.Field(StringSource, is_required=False)}
+        {"a_str": dagster.Field(Noneable(StringSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
@@ -531,12 +584,12 @@ def test_optional_string_source_default():
     assert RawStringConfigSchema(a_str=None).a_str is None
 
 
-def test_optional_string_source_with_default_none():
+def test_optional_string_source_with_default_none() -> None:
     class RawStringConfigSchema(Config):
         a_str: Optional[str] = None
 
     assert print_config_type_to_string(
-        {"a_str": dagster.Field(StringSource, is_required=False)}
+        {"a_str": dagster.Field(Noneable(StringSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawStringConfigSchema).config_type
     )
@@ -545,23 +598,23 @@ def test_optional_string_source_with_default_none():
     assert RawStringConfigSchema(a_str=None).a_str is None
 
 
-def test_optional_bool_source_default():
+def test_optional_bool_source_default() -> None:
     class RawBoolConfigSchema(Config):
         a_bool: Optional[bool]
 
     assert print_config_type_to_string(
-        {"a_bool": dagster.Field(BoolSource, is_required=False)}
+        {"a_bool": dagster.Field(Noneable(BoolSource))}
     ) == print_config_type_to_string(
         infer_schema_from_config_class(RawBoolConfigSchema).config_type
     )
 
 
-def test_optional_int_source_default():
+def test_optional_int_source_default() -> None:
     class OptionalInt(Config):
         an_int: Optional[int]
 
     assert print_config_type_to_string(
-        {"an_int": dagster.Field(IntSource, is_required=False)}
+        {"an_int": dagster.Field(Noneable(IntSource))}
     ) == print_config_type_to_string(infer_schema_from_config_class(OptionalInt).config_type)
 
 

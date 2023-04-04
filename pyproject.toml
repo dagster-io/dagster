@@ -199,7 +199,6 @@ select = [
   # (pyflakes) use all pyflakes rules
   "F",
 
-
   # (isort) detect improperly sorted imports
   "I001",
 
@@ -221,6 +220,9 @@ select = [
 
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
+
+  # (f-strings) use f-strings instead of .format()
+  "UP032",
 
   # (invalid escape sequence) flag errant backslashes
   "W605",

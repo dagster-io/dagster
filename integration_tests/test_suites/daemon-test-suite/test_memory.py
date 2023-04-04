@@ -75,14 +75,7 @@ def test_no_memory_leaks():
                 "module": "dagster.core.run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
-            "run_launcher": {
-                "class": "DefaultRunLauncher",
-                "module": "dagster.core.launcher.default_run_launcher",
-                "config": {
-                    "wait_for_processes": False,
-                },
-            },
-        }
+        },
     ) as instance:
         with get_example_repo(instance) as repo:
             external_schedule = repo.get_external_schedule("always_run_schedule")
@@ -94,7 +87,6 @@ def test_no_memory_leaks():
             with daemon_controller_from_instance(
                 instance,
                 workspace_load_target=workspace_load_target(),
-                wait_for_processes_on_exit=True,
             ) as controller:
                 start_time = time.time()
 

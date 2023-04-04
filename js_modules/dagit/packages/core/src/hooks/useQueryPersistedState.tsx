@@ -68,15 +68,16 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   const location = useLocation();
   const history = useHistory();
 
-  // We stash the query string into a ref so that the setter can operate on the /current/
-  // location even if the user retains it and calls it after other query string changes.
-  currentQueryString = qs.parse(location.search, {ignoreQueryPrefix: true});
-
-  const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
-
   // Note: If you have provided defaults and no encoder/decoder, the `value` exposed by
   // useQueryPersistedState only includes those keys so other params don't leak into your value.
-  const qsDecoded = decode ? decode(qsWithDefaults) : inferTypeOfQueryParams<T>(qsWithDefaults);
+  const qsDecoded = React.useMemo(() => {
+    // We stash the query string into a ref so that the setter can operate on the /current/
+    // location even if the user retains it and calls it after other query string changes.
+    currentQueryString = qs.parse(location.search, {ignoreQueryPrefix: true});
+
+    const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
+    return decode ? decode(qsWithDefaults) : inferTypeOfQueryParams<T>(qsWithDefaults);
+  }, [location.search, decode, defaults]);
 
   // If `decode` yields a non-primitive type (eg: object or array), by default we yield
   // an object with a new identity on every render. To prevent possible render loops caused by
@@ -97,6 +98,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       }
 
       currentQueryString = next;
+
       history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
     },
     [history, encode, location.pathname, options],

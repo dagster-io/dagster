@@ -9,7 +9,7 @@ def create_db_conn_string(base_dir: str, db_name: str) -> str:
     check.str_param(db_name, "db_name")
 
     path_components = os.path.abspath(base_dir).split(os.sep)
-    db_file = "{}.db".format(db_name)
+    db_file = f"{db_name}.db"
     return "sqlite:///{}".format("/".join(path_components + [db_file]))
 
 

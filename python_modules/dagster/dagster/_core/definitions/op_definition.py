@@ -23,6 +23,7 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.op_invocation import op_invocation_result
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
     InputManagerRequirement,
@@ -30,7 +31,6 @@ from dagster._core.definitions.resource_requirement import (
     OutputManagerRequirement,
     ResourceRequirement,
 )
-from dagster._core.definitions.solid_invocation import op_invocation_result
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
@@ -430,12 +430,11 @@ class OpDefinition(NodeDefinition):
                     return op_invocation_result(self, context, *args, **kwargs_sans_context)
 
             else:
+                context = None
                 if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
-                    raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has no context argument,"
-                        " but context was provided when invoking."
-                    )
-                return op_invocation_result(self, None, *args, **kwargs)
+                    context = cast(UnboundOpExecutionContext, args[0])
+                    args = args[1:]
+                return op_invocation_result(self, context, *args, **kwargs)
 
 
 def _resolve_output_defs_from_outs(

@@ -16,7 +16,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
@@ -27,13 +26,13 @@ from dagster._core.errors import (
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
+    DependencyMapping,
     DependencyStructure,
     DynamicCollectDependencyDefinition,
     GraphNode,
@@ -43,10 +42,11 @@ from .dependency import (
     NodeHandle,
     NodeInvocation,
     NodeOutput,
+    OpNode,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
-from .metadata import RawMetadataValue, normalize_metadata
+from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
@@ -67,26 +67,26 @@ class PipelineDefinition:
 
     A pipeline is made up of
 
-    - Solids, each of which is a single functional unit of data computation.
-    - Dependencies, which determine how the values produced by solids as their outputs flow from
-      one solid to another. This tells Dagster how to arrange solids, and potentially multiple
-      aliased instances of solids, into a directed, acyclic graph (DAG) of compute.
+    - Nodes, each of which is a single functional unit of data computation.
+    - Dependencies, which determine how the values produced by nodes as their outputs flow from
+      one node to another. This tells Dagster how to arrange nodes, and potentially multiple
+      aliased instances of nodes, into a directed, acyclic graph (DAG) of compute.
     - Modes, which can be used to attach resources, custom loggers, custom system storage
       options, and custom executors to a pipeline, and to switch between them.
     - Presets, which can be used to ship common combinations of pipeline config options in Python
       code, and to switch between them.
 
     Args:
-        solid_defs (Sequence[SolidDefinition]): The set of solids used in this pipeline.
+        node_defs (Sequence[NodeDefinition]): The set of nodes used in this pipeline.
         name (str): The name of the pipeline. Must be unique within any
             :py:class:`RepositoryDefinition` containing the pipeline.
         description (Optional[str]): A human-readable description of the pipeline.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
-            A structure that declares the dependencies of each solid's inputs on the outputs of
-            other solids in the pipeline. Keys of the top level dict are either the string names of
-            solids in the pipeline or, in the case of aliased solids,
+            A structure that declares the dependencies of each node's inputs on the outputs of
+            other nodes in the pipeline. Keys of the top level dict are either the string names of
+            nodes in the pipeline or, in the case of aliased nodes,
             :py:class:`NodeInvocations <NodeInvocation>`. Values of the top level dict are
-            themselves dicts, which map input names belonging to the solid or aliased solid to
+            themselves dicts, which map input names belonging to the node or aliased node to
             :py:class:`DependencyDefinitions <DependencyDefinition>`.
         mode_defs (Optional[Sequence[ModeDefinition]]): The set of modes in which this pipeline can
             operate. Modes are used to attach resources, custom loggers, custom system storage
@@ -94,7 +94,7 @@ class PipelineDefinition:
             resource and logging implementations between local test and production runs.
         preset_defs (Optional[Sequence[PresetDefinition]]): A set of preset collections of configuration
             options that may be used to execute a pipeline. A preset consists of an environment
-            dict, an optional subset of solids to execute, and a mode selection. Presets can be used
+            dict, an optional subset of nodes to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution run of the pipeline.
@@ -102,26 +102,26 @@ class PipelineDefinition:
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
         hook_defs (Optional[AbstractSet[HookDefinition]]): A set of hook definitions applied to the
-            pipeline. When a hook is applied to a pipeline, it will be attached to all solid
+            pipeline. When a hook is applied to a pipeline, it will be attached to all node
             instances within the pipeline.
-        solid_retry_policy (Optional[RetryPolicy]): The default retry policy for all solids in
-            this pipeline. Only used if retry policy is not defined on the solid definition or
-            solid invocation.
+        op_retry_policy (Optional[RetryPolicy]): The default retry policy for all nodes in
+            this pipeline. Only used if retry policy is not defined on the node definition or
+            node invocation.
         asset_layer (Optional[AssetLayer]): Structured object containing all definition-time asset
             information for this pipeline.
 
 
-        _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
+        _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using node subsets.
 
     Examples:
         .. code-block:: python
 
-            @solid
+            @op
             def return_one(_):
                 return 1
 
 
-            @solid(input_defs=[InputDefinition('num')], required_resource_keys={'op'})
+            @op(input_defs=[InputDefinition('num')], required_resource_keys={'op'})
             def apply_op(context, num):
                 return context.resources.op(num)
 
@@ -146,7 +146,7 @@ class PipelineDefinition:
 
             pipeline_def = PipelineDefinition(
                 name='basic',
-                solid_defs=[return_one, apply_op],
+                node_defs=[return_one, apply_op],
                 dependencies={'apply_op': {'num': DependencyDefinition('return_one')}},
                 mode_defs=[add_mode],
                 preset_defs=[add_three_preset],
@@ -157,11 +157,11 @@ class PipelineDefinition:
     _graph_def: GraphDefinition
     _description: Optional[str]
     _tags: Mapping[str, str]
-    _metadata: Sequence[MetadataEntry]
+    _metadata: Mapping[str, MetadataValue]
     _current_level_node_defs: Sequence[NodeDefinition]
     _mode_definitions: Sequence[ModeDefinition]
     _hook_defs: AbstractSet[HookDefinition]
-    _solid_retry_policy: Optional[RetryPolicy]
+    _op_retry_policy: Optional[RetryPolicy]
     _preset_defs: Sequence[PresetDefinition]
     _preset_dict: Dict[str, PresetDefinition]
     _asset_layer: AssetLayer
@@ -174,25 +174,24 @@ class PipelineDefinition:
 
     def __init__(
         self,
-        solid_defs: Optional[Sequence[NodeDefinition]] = None,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+            Union[DependencyMapping[str], DependencyMapping[NodeInvocation]]
         ] = None,
         mode_defs: Optional[Sequence[ModeDefinition]] = None,
         preset_defs: Optional[Sequence[PresetDefinition]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        solid_retry_policy: Optional[RetryPolicy] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
         graph_def: Optional[GraphDefinition] = None,
         _parent_pipeline_def: Optional[
             "PipelineDefinition"
         ] = None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         _should_validate_resource_requirements: bool = True,
     ):
         # If a graph is specified directly use it
@@ -206,13 +205,13 @@ class PipelineDefinition:
                 check.failed("name must be set provided")
             self._name = name
 
-            if solid_defs is None:
-                check.failed("solid_defs must be provided")
+            if node_defs is None:
+                check.failed("node_defs must be provided")
 
             self._graph_def = GraphDefinition(
                 name=name,
                 dependencies=dependencies,
-                node_defs=solid_defs,
+                node_defs=node_defs,
                 input_mappings=None,
                 output_mappings=None,
                 config=None,
@@ -224,9 +223,9 @@ class PipelineDefinition:
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
 
-        metadata_entries = check.opt_sequence_param(metadata_entries, "metadata_entries")
-        metadata = check.opt_mapping_param(metadata, "metadata")
-        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
 
         self._current_level_node_defs = self._graph_def.node_defs
 
@@ -249,8 +248,8 @@ class PipelineDefinition:
             seen_modes.add(mode_def.name)
 
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        self._solid_retry_policy = check.opt_inst_param(
-            solid_retry_policy, "solid_retry_policy", RetryPolicy
+        self._op_retry_policy = check.opt_inst_param(
+            op_retry_policy, "op_retry_policy", RetryPolicy
         )
 
         self._preset_defs = check.opt_sequence_param(preset_defs, "preset_defs", PresetDefinition)
@@ -357,11 +356,11 @@ class PipelineDefinition:
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
+        return merge_dicts(self._graph_def.tags, self._tags)
 
     @property
-    def metadata(self) -> Sequence[MetadataEntry]:
-        return self._metadata_entries
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._metadata
 
     @property
     def description(self) -> Optional[str]:
@@ -376,9 +375,7 @@ class PipelineDefinition:
         return self._graph_def.dependency_structure
 
     @property
-    def dependencies(
-        self,
-    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+    def dependencies(self) -> DependencyMapping[NodeInvocation]:
         return self._graph_def.dependencies
 
     def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
@@ -450,7 +447,7 @@ class PipelineDefinition:
 
         if mode_def is None:
             check.failed(
-                "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self.name),
+                f"Could not find mode {mode} in pipeline {self.name}",
             )
 
         return mode_def
@@ -471,34 +468,41 @@ class PipelineDefinition:
         return list(self._all_node_defs.values())
 
     @property
-    def top_level_solid_defs(self) -> Sequence[NodeDefinition]:
+    def top_level_node_defs(self) -> Sequence[NodeDefinition]:
         return self._current_level_node_defs
 
-    def solid_def_named(self, name: str) -> NodeDefinition:
+    def node_def_named(self, name: str) -> NodeDefinition:
         check.str_param(name, "name")
 
-        check.invariant(name in self._all_node_defs, "{} not found".format(name))
+        check.invariant(name in self._all_node_defs, f"{name} not found")
         return self._all_node_defs[name]
 
-    def has_solid_def(self, name: str) -> bool:
+    def has_node(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._all_node_defs
 
-    def get_solid(self, handle: NodeHandle) -> Node:
+    def get_node(self, handle: NodeHandle) -> Node:
         return self._graph_def.get_node(handle)
 
-    def has_solid_named(self, name: str) -> bool:
+    def get_op(self, handle: NodeHandle) -> OpNode:
+        node = self.get_node(handle)
+        assert isinstance(
+            node, OpNode
+        ), f"Tried to retrieve node {handle} as op, but it represents a nested graph."
+        return node
+
+    def has_node_named(self, name: str) -> bool:
         return self._graph_def.has_node_named(name)
 
-    def solid_named(self, name: str) -> Node:
+    def get_node_named(self, name: str) -> Node:
         return self._graph_def.node_named(name)
 
     @property
-    def solids(self) -> Sequence[Node]:
+    def nodes(self) -> Sequence[Node]:
         return self._graph_def.nodes
 
     @property
-    def solids_in_topological_order(self) -> Sequence[Node]:
+    def nodes_in_topological_order(self) -> Sequence[Node]:
         return self._graph_def.nodes_in_topological_order
 
     def all_dagster_types(self) -> Iterable[DagsterType]:
@@ -511,10 +515,10 @@ class PipelineDefinition:
         return self._graph_def.dagster_type_named(name)
 
     def get_pipeline_subset_def(
-        self, solids_to_execute: Optional[AbstractSet[str]]
+        self, nodes_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineDefinition":
         return (
-            self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
+            self if nodes_to_execute is None else _get_pipeline_subset_def(self, nodes_to_execute)
         )
 
     def has_preset(self, name: str) -> bool:
@@ -566,7 +570,7 @@ class PipelineDefinition:
         return None
 
     @property
-    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
+    def nodes_to_execute(self) -> Optional[FrozenSet[str]]:
         return None
 
     @property
@@ -578,14 +582,14 @@ class PipelineDefinition:
         return self._asset_layer
 
     def get_all_hooks_for_handle(self, handle: NodeHandle) -> FrozenSet[HookDefinition]:
-        """Gather all the hooks for the given solid from all places possibly attached with a hook.
+        """Gather all the hooks for the given node from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
-        * Solid (solid invocation)
+        * Node (node invocation)
         * PipelineDefinition
 
         Args:
-            handle (NodeHandle): The solid's handle
+            handle (NodeHandle): The node's handle
 
         Returns:
             FrozenSet[HookDefinition]
@@ -599,39 +603,39 @@ class PipelineDefinition:
             lineage.append(current.name)
             current = current.parent
 
-        # hooks on top-level solid
+        # hooks on top-level node
         name = lineage.pop()
-        solid = self._graph_def.node_named(name)
-        hook_defs = hook_defs.union(solid.hook_defs)
+        node = self._graph_def.node_named(name)
+        hook_defs = hook_defs.union(node.hook_defs)
 
-        # hooks on non-top-level solids
+        # hooks on non-top-level nodes
         while lineage:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
-            definition = cast(GraphDefinition, solid.definition)
-            solid = definition.node_named(name)
-            hook_defs = hook_defs.union(solid.hook_defs)
+            definition = cast(GraphDefinition, node.definition)
+            node = definition.node_named(name)
+            hook_defs = hook_defs.union(node.hook_defs)
 
-        # hooks applied to a pipeline definition will run on every solid
+        # hooks applied to a pipeline definition will run on every node
         hook_defs = hook_defs.union(self.hook_defs)
 
         return frozenset(hook_defs)
 
     def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
-        solid = self.get_solid(handle)
-        definition = solid.definition
+        node = self.get_node(handle)
+        definition = node.definition
 
-        if solid.retry_policy:
-            return solid.retry_policy
+        if node.retry_policy:
+            return node.retry_policy
         elif isinstance(definition, OpDefinition) and definition.retry_policy:
             return definition.retry_policy
 
-        # could be expanded to look in composite_solid / graph containers
+        # could be expanded to look in graph containers
         else:
-            return self._solid_retry_policy
+            return self._op_retry_policy
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
-        """Apply a set of hooks to all solid instances within the pipeline."""
+        """Apply a set of hooks to all node instances within the pipeline."""
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
@@ -642,7 +646,7 @@ class PipelineDefinition:
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
-            solid_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             _parent_pipeline_def=self._parent_pipeline_def,
         )
 
@@ -667,14 +671,14 @@ class PipelineDefinition:
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solids_to_execute(self) -> FrozenSet[str]:
+    def nodes_to_execute(self) -> FrozenSet[str]:
         return frozenset(self._graph_def.node_names())
 
     @property
-    def solid_selection(self) -> Sequence[str]:
-        # we currently don't pass the real solid_selection (the solid query list) down here.
-        # so in the short-term, to make the call sites cleaner, we will convert the solids to execute
-        # to a list
+    def node_selection(self) -> Sequence[str]:
+        # we currently don't pass the real node_selection (the node query list) down here. so in
+        # the short-term, to make the call sites cleaner, we will convert the nodes to execute to a
+        # list
         return self._graph_def.node_names()
 
     @property
@@ -690,63 +694,63 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return True
 
     def get_pipeline_subset_def(
-        self, _solids_to_execute: Optional[AbstractSet[str]]
+        self, _nodes_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
-def _dep_key_of(solid: Node) -> NodeInvocation:
+def _dep_key_of(node: Node) -> NodeInvocation:
     return NodeInvocation(
-        name=solid.definition.name,
-        alias=solid.name,
-        tags=solid.tags,
-        hook_defs=solid.hook_defs,
-        retry_policy=solid.retry_policy,
+        name=node.definition.name,
+        alias=node.name,
+        tags=node.tags,
+        hook_defs=node.hook_defs,
+        retry_policy=node.retry_policy,
     )
 
 
 def _get_pipeline_subset_def(
     pipeline_def: PipelineDefinition,
-    solids_to_execute: AbstractSet[str],
+    nodes_to_execute: AbstractSet[str],
 ) -> "PipelineSubsetDefinition":
     """Build a pipeline which is a subset of another pipeline.
-    Only includes the solids which are in solids_to_execute.
+    Only includes the nodes which are in nodes_to_execute.
     """
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
+    check.set_param(nodes_to_execute, "nodes_to_execute", of_type=str)
     graph = pipeline_def.graph
-    for solid_name in solids_to_execute:
-        if not graph.has_node_named(solid_name):
+    for node_name in nodes_to_execute:
+        if not graph.has_node_named(node_name):
             raise DagsterInvalidSubsetError(
                 "{target_type} {pipeline_name} has no {node_type} named {name}.".format(
                     target_type=pipeline_def.target_type,
                     pipeline_name=pipeline_def.name,
-                    name=solid_name,
+                    name=node_name,
                     node_type="ops" if pipeline_def.is_job else "solids",
                 ),
             )
 
     # go in topo order to ensure deps dict is ordered
-    solids = list(
-        filter(lambda solid: solid.name in solids_to_execute, graph.nodes_in_topological_order)
+    nodes = list(
+        filter(lambda node: node.name in nodes_to_execute, graph.nodes_in_topological_order)
     )
 
     deps: Dict[
-        Union[str, NodeInvocation],
+        NodeInvocation,
         Dict[str, IDependencyDefinition],
-    ] = {_dep_key_of(solid): {} for solid in solids}
+    ] = {_dep_key_of(node): {} for node in nodes}
 
-    for node in solids:
+    for node in nodes:
         for node_input in node.inputs():
             if graph.dependency_structure.has_direct_dep(node_input):
                 node_output = pipeline_def.dependency_structure.get_direct_dep(node_input)
-                if node_output.node.name in solids_to_execute:
+                if node_output.node.name in nodes_to_execute:
                     deps[_dep_key_of(node)][node_input.input_def.name] = DependencyDefinition(
                         node=node_output.node.name, output=node_output.output_def.name
                     )
             elif graph.dependency_structure.has_dynamic_fan_in_dep(node_input):
                 node_output = graph.dependency_structure.get_dynamic_fan_in_dep(node_input)
-                if node_output.node.name in solids_to_execute:
+                if node_output.node.name in nodes_to_execute:
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
@@ -764,7 +768,7 @@ def _get_pipeline_subset_def(
                             node=node_output.node.name, output=node_output.output_def.name
                         )
                         for node_output in outputs
-                        if node_output.node.name in solids_to_execute
+                        if node_output.node.name in nodes_to_execute
                     ]
                 )
             # else input is unconnected
@@ -772,7 +776,7 @@ def _get_pipeline_subset_def(
     try:
         sub_pipeline_def = PipelineSubsetDefinition(
             name=pipeline_def.name,  # should we change the name for subsetted pipeline?
-            solid_defs=list({solid.definition for solid in solids}),
+            node_defs=list({node.definition for node in nodes}),
             mode_defs=pipeline_def.mode_definitions,
             dependencies=deps,
             _parent_pipeline_def=pipeline_def,
@@ -786,7 +790,7 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for"
+            f"The attempted subset {str_format_set(nodes_to_execute)} for"
             f" {pipeline_def.target_type} {pipeline_def.name} results in an invalid"
             f" {pipeline_def.target_type}"
         ) from exc
@@ -796,7 +800,7 @@ def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
         if isinstance(node, GraphNode):
-            yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
+            yield from _iterate_all_nodes(node.definition.node_dict)
 
 
 def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Mapping[str, NodeDefinition]:
@@ -829,44 +833,44 @@ def _create_run_config_schema(
     )
     from .run_config_schema import RunConfigSchema
 
-    # When executing with a subset pipeline, include the missing solids
+    # When executing with a subset pipeline, include the missing nodes
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    ignored_solids: Sequence[Node] = []
+    ignored_nodes: Sequence[Node] = []
     if isinstance(pipeline_def, JobDefinition) and pipeline_def.is_subset_pipeline:
         if isinstance(pipeline_def.graph, SubselectedGraphDefinition):  # op selection provided
-            ignored_solids = pipeline_def.graph.get_top_level_omitted_nodes()
+            ignored_nodes = pipeline_def.graph.get_top_level_omitted_nodes()
         elif pipeline_def.asset_selection_data:
             parent_job = pipeline_def
             while parent_job.asset_selection_data:
                 parent_job = parent_job.asset_selection_data.parent_job_def
 
-            ignored_solids = [
-                solid
-                for solid in parent_job.graph.nodes
-                if not pipeline_def.has_solid_named(solid.name)
+            ignored_nodes = [
+                node
+                for node in parent_job.graph.nodes
+                if not pipeline_def.has_node_named(node.name)
             ]
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")
 
-        ignored_solids = [
-            solid
-            for solid in pipeline_def.parent_pipeline_def.graph.nodes
-            if not pipeline_def.has_solid_named(solid.name)
+        ignored_nodes = [
+            node
+            for node in pipeline_def.parent_pipeline_def.graph.nodes
+            if not pipeline_def.has_node_named(node.name)
         ]
     else:
-        ignored_solids = []
+        ignored_nodes = []
 
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
-            solids=pipeline_def.graph.nodes,
+            nodes=pipeline_def.graph.nodes,
             graph_def=pipeline_def.graph,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,
-            ignored_solids=ignored_solids,
+            ignored_nodes=ignored_nodes,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
             direct_inputs=get_direct_input_values_from_job(pipeline_def),

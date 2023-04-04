@@ -27,6 +27,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
+from dagster._core.events import HandledOutputData
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from upath import UPath
@@ -409,10 +410,8 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
         [my_asset],
         resources={"io_manager": manager},
     )
-    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
-
-    assert handled_output_events[0].event_specific_data.metadata_entries[  # type: ignore[index,union-attr]
-        1
-    ].value.value == get_length(
-        json_data
-    )
+    handled_output_data = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))[
+        0
+    ].event_specific_data
+    assert isinstance(handled_output_data, HandledOutputData)
+    assert handled_output_data.metadata["length"] == MetadataValue.int(get_length(json_data))

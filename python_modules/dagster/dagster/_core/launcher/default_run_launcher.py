@@ -5,8 +5,6 @@ from typing_extensions import Self
 
 import dagster._seven as seven
 from dagster import (
-    Bool,
-    Field,
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
@@ -28,19 +26,12 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
     """Launches runs against running GRPC servers."""
 
     def __init__(
-        self, inst_data: Optional[ConfigurableClassData] = None, wait_for_processes: bool = False
+        self,
+        inst_data: Optional[ConfigurableClassData] = None,
     ):
         self._inst_data = inst_data
 
-        # Whether to wait for any processes that were used to launch runs to finish
-        # before disposing of this launcher. Primarily useful for test cleanup where
-        # we want to make sure that resources used by the test are cleaned up before
-        # the test ends.
-        self._wait_for_processes = check.bool_param(wait_for_processes, "wait_for_processes")
-
         self._run_ids = set()
-
-        self._locations_to_wait_for = []
 
         super().__init__()
 
@@ -50,15 +41,13 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls) -> UserConfigSchema:
-        return {"wait_for_processes": Field(Bool, is_required=False)}
+        return {}
 
     @classmethod
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DefaultRunLauncher(
-            inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
-        )
+        return DefaultRunLauncher(inst_data=inst_data)
 
     @staticmethod
     def launch_run_from_grpc_client(instance, run, grpc_client):
@@ -130,9 +119,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         self._run_ids.add(run.run_id)
-
-        if self._wait_for_processes:
-            self._locations_to_wait_for.append(code_location)
 
     def _get_grpc_client_for_termination(self, run_id):
         # defer for perf
@@ -218,19 +204,3 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             total_time += interval
             time.sleep(interval)
             interval = interval * 2
-
-    def dispose(self):
-        # defer for perf
-        from dagster._core.host_representation.code_location import (
-            GrpcServerCodeLocation,
-        )
-        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
-
-        if not self._wait_for_processes:
-            return
-
-        for location in self._locations_to_wait_for:
-            if isinstance(location, GrpcServerCodeLocation) and isinstance(
-                location.grpc_server_registry, GrpcServerRegistry
-            ):
-                location.grpc_server_registry.wait_for_processes()

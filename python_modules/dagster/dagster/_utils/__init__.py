@@ -20,18 +20,21 @@ from enum import Enum
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
     ContextManager,
     Dict,
     Generator,
     Generic,
+    Hashable,
     Iterator,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -52,6 +55,10 @@ else:
     from pathlib2 import Path
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        RepositoryDefinition,
+    )
     from dagster._core.events import DagsterEvent
 
 K = TypeVar("K")
@@ -211,91 +218,55 @@ def mkdir_p(path: str) -> str:
             raise
 
 
-# TODO: Make frozendict generic for type annotations
-# https://github.com/dagster-io/dagster/issues/3641
-class frozendict(dict):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyDict")
+def hash_collection(
+    collection: Union[
+        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], Tuple[Any, ...], NamedTuple
+    ]
+) -> int:
+    """Hash a mutable collection or immutable collection containing mutable elements.
 
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item
-    #  in __reduce__ tuple). Since we want to disable __setitem__ and still inherit dict, we
-    # override this behavior by defining __reduce__. We return the 3rd item in the tuple, which is
-    # passed to __setstate__, allowing us to restore the frozendict.
+    This is useful for hashing Dagster-specific NamedTuples that contain mutable lists or dicts.
+    The default NamedTuple __hash__ function assumes the contents of the NamedTuple are themselves
+    hashable, and will throw an error if they are not. This can occur when trying to e.g. compute a
+    cache key for the tuple for use with `lru_cache`.
 
-    def __reduce__(self):
-        return (frozendict, (), dict(self))
+    This alternative implementation will recursively process collection elements to convert basic
+    lists and dicts to tuples prior to hashing. It is recommended to cache the result:
 
-    def __setstate__(self, state):
-        self.__init__(state)
+    Example:
+        .. code-block:: python
 
-    __setitem__ = __readonly__
-    __delitem__ = __readonly__
-    pop = __readonly__
-    popitem = __readonly__
-    clear = __readonly__
-    update = __readonly__
-    setdefault = __readonly__  # type: ignore[assignment]
-    del __readonly__
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-
-class frozenlist(list):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyList")
-
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # Like frozendict, implement __reduce__ and __setstate__ to handle pickling.
-    # Otherwise, __setstate__ will be called to restore the frozenlist, causing
-    # a RuntimeError because frozenlist is not mutable.
-
-    def __reduce__(self):
-        return (frozenlist, (), list(self))
-
-    def __setstate__(self, state):
-        self.__init__(state)
-
-    __setitem__ = __readonly__
-    __delitem__ = __readonly__
-    append = __readonly__
-    clear = __readonly__
-    extend = __readonly__
-    insert = __readonly__
-    pop = __readonly__
-    remove = __readonly__
-    reverse = __readonly__
-    sort = __readonly__  # type: ignore[assignment]
-
-    def __hash__(self):
-        return hash(tuple(self))
+            def __hash__(self):
+                if not hasattr(self, '_hash'):
+                    self._hash = hash_named_tuple(self)
+                return self._hash
+    """
+    assert isinstance(
+        collection, (list, dict, set, tuple)
+    ), f"Cannot hash collection of type {type(collection)}"
+    return hash(make_hashable(collection))
 
 
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:
+def make_hashable(value: Union[List[Any], Set[Any]]) -> Tuple[Any, ...]:
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
+def make_hashable(value: Dict[Any, Any]) -> Tuple[Tuple[Any, Any]]:
     ...
 
 
 @overload
-def make_readonly_value(value: T) -> T:
+def make_hashable(value: Any) -> Any:
     ...
 
 
-def make_readonly_value(value: Any) -> Any:
-    if isinstance(value, list):
-        return frozenlist(list(map(make_readonly_value, value)))
-    elif isinstance(value, dict):
-        return frozendict({key: make_readonly_value(value) for key, value in value.items()})
-    elif isinstance(value, set):
-        return frozenset(map(make_readonly_value, value))
+def make_hashable(value: Any) -> Any:
+    if isinstance(value, dict):
+        return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
+    elif isinstance(value, (list, tuple, set)):
+        return tuple([make_hashable(x) for x in value])
     else:
         return value
 
@@ -481,24 +452,6 @@ def datetime_as_float(dt: datetime.datetime) -> float:
     return float((dt - EPOCH).total_seconds())
 
 
-# hashable frozen string to string dict
-class frozentags(frozendict, Mapping[str, str]):
-    def __init__(self, *args, **kwargs):
-        super(frozentags, self).__init__(*args, **kwargs)
-        check.dict_param(self, "self", key_type=str, value_type=str)
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-    def updated_with(self, new_tags):
-        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
-        updated = dict(self)
-        for key, value in new_tags.items():
-            updated[key] = value
-
-        return frozentags(updated)
-
-
 T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 
@@ -544,7 +497,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
                     self.object,
                     "self.object",
                     self.object_cls,
-                    "generator never yielded object of type {}".format(self.object_cls.__name__),
+                    f"generator never yielded object of type {self.object_cls.__name__}",
                 )
 
     def get_object(self) -> T_GeneratedContext:
@@ -735,3 +688,49 @@ def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
 
 def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
     return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[True] = ...,
+) -> "RepositoryDefinition":
+    ...
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[False] = ...,
+) -> Optional["RepositoryDefinition"]:
+    ...
+
+
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = None,
+    repository: Optional["RepositoryDefinition"] = None,
+    error_on_none: bool = True,
+) -> Optional["RepositoryDefinition"]:
+    """Normalizes the arguments that take a RepositoryDefinition or Definitions object to a
+    RepositoryDefinition.
+
+    This is intended to handle both the case where a single argument takes a
+    `Union[RepositoryDefinition, Definitions]` or separate keyword arguments accept
+    `RepositoryDefinition` or `Definitions`.
+    """
+    from dagster._core.definitions.definitions_class import Definitions
+
+    if (definitions_or_repository and repository) or (
+        error_on_none and not (definitions_or_repository or repository)
+    ):
+        check.failed("Exactly one of `definitions` or `repository_def` must be provided.")
+    elif isinstance(definitions_or_repository, Definitions):
+        return definitions_or_repository.get_repository_def()
+    elif definitions_or_repository:
+        return definitions_or_repository
+    elif repository:
+        return repository
+    else:
+        return None

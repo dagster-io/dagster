@@ -48,12 +48,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
 
     # assert 1 == 0
     assert file_contents.count("Running command:") == 1
-    assert (
-        file_contents.count(
-            "command for dt {execution_date_fmt}".format(execution_date_fmt=execution_date_fmt)
-        )
-        == 2
-    )
+    assert file_contents.count(f"command for dt {execution_date_fmt}") == 2
     assert file_contents.count("Command exited with return code 0") == 1
 
 

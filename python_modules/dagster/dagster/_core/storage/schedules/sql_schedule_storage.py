@@ -204,7 +204,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if not self.get_instigator_state(origin_id, selector_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(id=origin_id)
+                f"InstigatorState {origin_id} is not present in storage"
             )
 
         with self.connect() as conn:
@@ -489,7 +489,7 @@ class SqlScheduleStorage(ScheduleStorage):
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
                     if print_fn:
-                        print_fn("Skipping already applied migration: {}".format(migration_name))
+                        print_fn(f"Skipping already applied migration: {migration_name}")
                     continue
             if print_fn:
                 print_fn(f"Starting data migration: {migration_name}")

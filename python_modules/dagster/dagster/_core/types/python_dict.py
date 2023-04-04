@@ -71,7 +71,7 @@ class _TypedPythonDict(DagsterType):
         )  # True if value_type has a DagsterTypeLoader, meaning we can load the input from config,
         # otherwise False.
         super(_TypedPythonDict, self).__init__(
-            key="TypedPythonDict.{}.{}".format(key_type.key, value_type.key),
+            key=f"TypedPythonDict.{key_type.key}.{value_type.key}",
             name=None,
             loader=(
                 TypedDictLoader(self.key_type, self.value_type) if can_get_from_config else None

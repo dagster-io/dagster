@@ -172,7 +172,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
         """
-        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.op_name))
+        return cast(OpDefinition, self._pipeline_def.node_def_named(self.op_name))
 
     @property
     def node(self) -> Node:
@@ -186,7 +186,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             "0.17.0",
             "use the 'op_def' property instead.",
         )
-        return self.pipeline_def.get_solid(self.node_handle)
+        return self.pipeline_def.get_node(self.node_handle)
 
     @public
     @property

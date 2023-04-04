@@ -5,16 +5,18 @@ from typing import AbstractSet, Iterable, Union
 import pytest
 from dagster import (
     AssetIn,
+    AssetOut,
     DailyPartitionsDefinition,
     SourceAsset,
     TimeWindowPartitionMapping,
+    multi_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from typing_extensions import TypeAlias
 
-earth = SourceAsset("earth")
+earth = SourceAsset("earth", group_name="planets")
 
 
 @asset(group_name="ladies")
@@ -97,7 +99,8 @@ def test_asset_selection_downstream(all_assets: _AssetList):
 
 
 def test_asset_selection_groups(all_assets: _AssetList):
-    sel = AssetSelection.groups("ladies")
+    sel = AssetSelection.groups("ladies", "planets")
+    # should not include source assets
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
 
 
@@ -247,3 +250,18 @@ def test_self_dep():
     assert AssetSelection.keys("a").upstream(include_self=False).resolve([a]) == set()
     assert AssetSelection.keys("a").sources().resolve([a]) == {a.key}
     assert AssetSelection.keys("a").sinks().resolve([a]) == {a.key}
+
+
+def test_from_coercible_multi_asset():
+    @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()})
+    def my_multi_asset():
+        ...
+
+    @asset
+    def other_asset():
+        ...
+
+    assert (
+        AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
+        == my_multi_asset.keys
+    )

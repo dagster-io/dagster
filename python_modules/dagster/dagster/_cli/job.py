@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import click
 import pendulum
@@ -41,16 +41,20 @@ from dagster._core.host_representation import (
     ExternalRepository,
     RepositoryHandle,
 )
-from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
+from dagster._core.host_representation.external_data import (
+    ExternalPartitionNamesData,
+    ExternalPartitionSetExecutionParamData,
+)
 from dagster._core.instance import DagsterInstance
-from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
+from dagster._core.snap import NodeInvocationSnap, PipelineSnapshot
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
@@ -61,6 +65,7 @@ from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
 
+T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
@@ -77,7 +82,7 @@ def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Cal
 
 @job_cli.command(
     name="list",
-    help="List the jobs in a repository. {warning}".format(warning=WORKSPACE_TARGET_WARNING),
+    help=f"List the jobs in a repository. {WORKSPACE_TARGET_WARNING}",
 )
 @job_repository_target_argument
 def job_list_command(**kwargs):
@@ -89,7 +94,7 @@ def execute_list_command(cli_args, print_fn):
         with get_external_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
         ) as external_repository:
-            title = "Repository {name}".format(name=external_repository.name)
+            title = f"Repository {external_repository.name}"
             print_fn(title)
             print_fn("*" * len(title))
             first = True
@@ -105,7 +110,7 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.pipeline_snapshot.solid_names_in_topological_order:
+                for solid_name in job.pipeline_snapshot.node_names_in_topological_order:
                     print_fn("    " + solid_name)
 
 
@@ -173,9 +178,9 @@ def print_ops(
     printer.line(f"Job: {pipeline_snapshot.name}")
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            printer.line(f"Op: {solid.solid_name}")
+            printer.line(f"Op: {solid.node_name}")
 
 
 def print_job(
@@ -189,7 +194,7 @@ def print_job(
     print_description(printer, pipeline_snapshot.description)
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
+    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
             print_op(printer, pipeline_snapshot, solid)
 
@@ -215,20 +220,20 @@ def format_description(desc: str, indent: str):
 def print_op(
     printer: IndentingPrinter,
     pipeline_snapshot: PipelineSnapshot,
-    solid_invocation_snap: SolidInvocationSnap,
+    solid_invocation_snap: NodeInvocationSnap,
 ) -> None:
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
-    check.inst_param(solid_invocation_snap, "solid_invocation_snap", SolidInvocationSnap)
-    printer.line(f"Op: {solid_invocation_snap.solid_name}")
+    check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
+    printer.line(f"Op: {solid_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
         for input_dep_snap in solid_invocation_snap.input_dep_snaps:
             with printer.with_indent():
-                printer.line("Input: {name}".format(name=input_dep_snap.input_name))
+                printer.line(f"Input: {input_dep_snap.input_name}")
 
         printer.line("Outputs:")
         for output_def_snap in pipeline_snapshot.get_node_def_snap(
-            solid_invocation_snap.solid_def_name
+            solid_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
 
@@ -334,7 +339,7 @@ def execute_execute_command(
     result = do_execute_command(pipeline, instance, config, mode, tags, solid_selection, preset)
 
     if not result.success:
-        raise click.ClickException("Pipeline run {} resulted in failure.".format(result.run_id))
+        raise click.ClickException(f"Pipeline run {result.run_id} resulted in failure.")
 
     return result
 
@@ -433,7 +438,7 @@ def do_execute_command(
 )
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option("--run-id", type=click.STRING, help="The ID to give to the launched job run")
-def job_launch_command(**kwargs):
+def job_launch_command(**kwargs) -> DagsterRun:
     with DagsterInstance.get() as instance:
         return execute_launch_command(instance, kwargs)
 
@@ -442,7 +447,7 @@ def job_launch_command(**kwargs):
 def execute_launch_command(
     instance: DagsterInstance,
     kwargs: Mapping[str, str],
-):
+) -> DagsterRun:
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
     check.inst_param(instance, "instance", DagsterInstance)
@@ -729,9 +734,13 @@ def job_backfill_command(**kwargs):
         execute_backfill_command(kwargs, click.echo, instance)
 
 
-def execute_backfill_command(cli_args, print_fn, instance):
+def execute_backfill_command(
+    cli_args: ClickArgMapping, print_fn: PrintFn, instance: DagsterInstance
+) -> None:
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=cli_args) as workspace:
-        code_location = get_code_location_from_workspace(workspace, cli_args.get("location"))
+        code_location = get_code_location_from_workspace(
+            workspace, check.opt_str_elem(cli_args, "location")
+        )
         _execute_backfill_command_at_location(
             cli_args,
             print_fn,
@@ -742,45 +751,33 @@ def execute_backfill_command(cli_args, print_fn, instance):
 
 
 def _execute_backfill_command_at_location(
-    cli_args,
-    print_fn,
-    instance,
-    workspace,
-    code_location,
-):
+    cli_args: ClickArgMapping,
+    print_fn: PrintFn,
+    instance: DagsterInstance,
+    workspace: IWorkspace,
+    code_location: CodeLocation,
+) -> None:
     external_repo = get_external_repository_from_code_location(
-        code_location, cli_args.get("repository")
+        code_location, check.opt_str_elem(cli_args, "repository")
     )
 
-    external_pipeline = get_external_job_from_external_repo(external_repo, cli_args.get("job_name"))
+    external_job = get_external_job_from_external_repo(
+        external_repo, check.opt_str_elem(cli_args, "job_name")
+    )
 
     noprompt = cli_args.get("noprompt")
 
-    pipeline_partition_set_names = {
-        external_partition_set.name: external_partition_set
-        for external_partition_set in external_repo.get_external_partition_sets()
-        if external_partition_set.pipeline_name == external_pipeline.name
-    }
+    job_partition_set = next(
+        (
+            external_partition_set
+            for external_partition_set in external_repo.get_external_partition_sets()
+            if external_partition_set.pipeline_name == external_job.name
+        ),
+        None,
+    )
 
-    if not pipeline_partition_set_names:
-        raise click.UsageError(f"No partition sets found for job `{external_pipeline.name}`")
-    partition_set_name = cli_args.get("partition_set")
-    if not partition_set_name:
-        if len(pipeline_partition_set_names) == 1:
-            partition_set_name = next(iter(pipeline_partition_set_names.keys()))
-        elif noprompt:
-            raise click.UsageError("No partition set specified (see option `--partition-set`)")
-        else:
-            partition_set_name = click.prompt(
-                "Select a partition set to use for backfill: {}".format(
-                    ", ".join(x for x in pipeline_partition_set_names.keys())
-                )
-            )
-
-    partition_set = pipeline_partition_set_names.get(partition_set_name)
-
-    if not partition_set:
-        raise click.UsageError("No partition set found named `{}`".format(partition_set_name))
+    if not job_partition_set:
+        raise click.UsageError(f"Job `{external_job.name}` is not partitioned.")
 
     run_tags = get_tags_from_args(cli_args)
 
@@ -791,35 +788,37 @@ def _execute_backfill_command_at_location(
 
     try:
         partition_names_or_error = code_location.get_external_partition_names(
-            partition_set, instance=instance
+            job_partition_set, instance=instance
         )
     except Exception as e:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
-            "Failure fetching partition names: {error_message}".format(
-                error_message=error_info.message
-            ),
+            f"Failure fetching partition names: {error_info.message}",
             serialized_error_info=error_info,
         ) from e
+    if not isinstance(partition_names_or_error, ExternalPartitionNamesData):
+        raise DagsterBackfillFailedError(
+            f"Failure fetching partition names: {partition_names_or_error.error}"
+        )
 
     partition_names = gen_partition_names_from_args(
         partition_names_or_error.partition_names, cli_args
     )
 
     # Print backfill info
-    print_fn("\n Job: {}".format(external_pipeline.name))
-    print_fn("   Partitions: {}\n".format(print_partition_format(partition_names, indent_level=15)))
+    print_fn(f"\n Job: {external_job.name}")
+    print_fn(f"   Partitions: {print_partition_format(partition_names, indent_level=15)}\n")
 
     # Confirm and launch
     if noprompt or click.confirm(
-        "Do you want to proceed with the backfill ({} partitions)?".format(len(partition_names))
+        f"Do you want to proceed with the backfill ({len(partition_names)} partitions)?"
     ):
         print_fn("Launching runs... ")
 
         backfill_id = make_new_backfill_id()
         backfill_job = PartitionBackfill(
             backfill_id=backfill_id,
-            partition_set_origin=partition_set.get_external_origin(),
+            partition_set_origin=job_partition_set.get_external_origin(),
             status=BulkActionStatus.REQUESTED,
             partition_names=partition_names,
             from_failure=False,
@@ -831,7 +830,7 @@ def _execute_backfill_command_at_location(
             partition_execution_data = (
                 code_location.get_external_partition_set_execution_param_data(
                     repository_handle=repo_handle,
-                    partition_set_name=partition_set_name,
+                    partition_set_name=job_partition_set.name,
                     partition_names=partition_names,
                     instance=instance,
                 )
@@ -841,7 +840,7 @@ def _execute_backfill_command_at_location(
             instance.add_backfill(
                 backfill_job.with_status(BulkActionStatus.FAILED).with_error(error_info)
             )
-            return print_fn("Backfill failed: {}".format(error_info))
+            raise DagsterBackfillFailedError(f"Backfill failed: {error_info}")
 
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
@@ -849,8 +848,8 @@ def _execute_backfill_command_at_location(
             pipeline_run = create_backfill_run(
                 instance,
                 code_location,
-                external_pipeline,
-                partition_set,
+                external_job,
+                job_partition_set,
                 backfill_job,
                 partition_data,
             )
@@ -859,13 +858,15 @@ def _execute_backfill_command_at_location(
 
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 
-        print_fn("Launched backfill job `{}`".format(backfill_id))
+        print_fn(f"Launched backfill job `{backfill_id}`")
 
     else:
         print_fn("Aborted!")
 
 
-def gen_partition_names_from_args(partition_names, kwargs):
+def gen_partition_names_from_args(
+    partition_names: Sequence[str], kwargs: ClickArgMapping
+) -> Sequence[str]:
     partition_selector_args = [
         bool(kwargs.get("all")),
         bool(kwargs.get("partitions")),
@@ -880,7 +881,9 @@ def gen_partition_names_from_args(partition_names, kwargs):
         return partition_names
 
     if kwargs.get("partitions"):
-        selected_args = [s.strip() for s in kwargs.get("partitions").split(",") if s.strip()]
+        selected_args = [
+            s.strip() for s in check.str_elem(kwargs, "partitions").split(",") if s.strip()
+        ]
         selected_partitions = [
             partition for partition in partition_names if partition in selected_args
         ]
@@ -896,7 +899,7 @@ def gen_partition_names_from_args(partition_names, kwargs):
     return partition_names[start:end]
 
 
-def print_partition_format(partitions, indent_level):
+def print_partition_format(partitions: Sequence[str], indent_level: int) -> str:
     if not IS_WINDOWS and sys.stdout.isatty():
         _, tty_width = os.popen("stty size", "r").read().split()
         screen_width = min(250, int(tty_width))
@@ -914,7 +917,7 @@ def print_partition_format(partitions, indent_level):
     return "\n" + "\n".join(lines)
 
 
-def split_chunk(lst, n):
+def split_chunk(lst: Sequence[T], n: int) -> Iterator[Sequence[T]]:
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
 
@@ -924,6 +927,6 @@ def validate_partition_slice(partition_names: Sequence[str], name: str, value) -
     if value is None:
         return 0 if is_start else len(partition_names)
     if value not in partition_names:
-        raise click.UsageError("invalid value {} for {}".format(value, name))
+        raise click.UsageError(f"invalid value {value} for {name}")
     index = partition_names.index(value)
     return index if is_start else index + 1

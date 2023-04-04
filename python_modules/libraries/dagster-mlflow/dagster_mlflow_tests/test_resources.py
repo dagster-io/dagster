@@ -238,8 +238,9 @@ def test_set_all_tags(mock_mlflow_set_tags, context):
     "experiment", [None, MagicMock(experiment_id="1"), MagicMock(experiment_id="lol")]
 )
 def test_get_current_run_id(context, experiment, run_df):
-    # Given: an initialization of the mlflow object
-    mlf = MlFlow(context)
+    with patch.object(MlFlow, "_setup"):
+        # Given: an initialization of the mlflow object
+        mlf = MlFlow(context)
 
     with patch("mlflow.search_runs", return_value=run_df):
         # when: _get_current_run_id is called
@@ -305,8 +306,9 @@ def test_set_active_run(context, run_id):
 def test_set_active_run_parent_zero(child_context):
     # Given: a parent_run_id of zero
     child_context.resource_config["parent_run_id"] = 0
-    # : an initialization of the mlflow object
-    mlf = MlFlow(child_context)
+    with patch.object(MlFlow, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlow
+        mlf = MlFlow(child_context)
 
     with patch.object(MlFlow, "_start_run") as mock_start_run:
         # And _set_active_run is called with run_id
@@ -325,7 +327,8 @@ def test_set_active_run_parent_zero(child_context):
 @pytest.mark.parametrize("num_of_params", (90, 101, 223))
 def test_log_params(mock_log_params, context, num_of_params, string_maker):
     # Given: init of MlFlow
-    mlf = MlFlow(context)
+    with patch.object(MlFlow, "_setup"):
+        mlf = MlFlow(context)
     # And: a set of parameters
     param = {string_maker(5): string_maker(5) for _ in range(num_of_params)}
     # When: log_params is called
@@ -338,7 +341,8 @@ def test_log_params(mock_log_params, context, num_of_params, string_maker):
 @pytest.mark.parametrize("num_of_params", (90, 200))
 def test_chunks(context, num_of_params, string_maker, chunk):
     # Given: init of MLFlow
-    mlf = MlFlow(context)
+    with patch.object(MlFlow, "_setup"):
+        mlf = MlFlow(context)
     # And: a dictionary
     D = {string_maker(5): string_maker(5) for _ in range(num_of_params)}
     # When: dictionary is chunked

@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import uuid
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
@@ -39,7 +40,6 @@ from dagster._serdes import deserialize_value, serialize_value, whitelist_for_se
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster._utils import (
     find_free_port,
-    frozenlist,
     get_run_crash_explanation,
     safe_tempfile_path_unmanaged,
 )
@@ -237,7 +237,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._serializable_load_error = None
 
         self._entry_point = (
-            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+            check.sequence_param(entry_point, "entry_point", of_type=str)
             if entry_point is not None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
@@ -1032,11 +1032,7 @@ class CouldNotStartServerProcess(Exception):
     def __init__(self, port=None, socket=None):
         super(CouldNotStartServerProcess, self).__init__(
             "Could not start server with "
-            + (
-                "port {port}".format(port=port)
-                if port is not None
-                else "socket {socket}".format(socket=socket)
-            )
+            + (f"port {port}" if port is not None else f"socket {socket}")
         )
 
 
@@ -1092,24 +1088,24 @@ def open_server_process(
 
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
-    subprocess_args = (
-        get_python_environment_entry_point(executable_path or sys.executable)
-        + ["api", "grpc"]
-        + ["--lazy-load-user-code"]
-        + (["--port", str(port)] if port else [])
-        + (["--socket", socket] if socket else [])
-        + (["-n", str(max_workers)] if max_workers else [])
-        + (["--heartbeat"] if heartbeat else [])
-        + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
-        + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
-        + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
-        + (["--log-level", log_level])
-        # only use the Python environment if it has been explicitly set in the workspace
-        + (["--use-python-environment-entry-point"] if executable_path else [])
-        + (["--inject-env-vars-from-instance"])
-        + (["--instance-ref", serialize_value(instance_ref)])
-        + (["--location-name", location_name] if location_name else [])
-    )
+    subprocess_args = [
+        *get_python_environment_entry_point(executable_path or sys.executable),
+        *["api", "grpc"],
+        *["--lazy-load-user-code"],
+        *(["--port", str(port)] if port else []),
+        *(["--socket", socket] if socket else []),
+        *(["-n", str(max_workers)] if max_workers else []),
+        *(["--heartbeat"] if heartbeat else []),
+        *(["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else []),
+        *(["--fixed-server-id", fixed_server_id] if fixed_server_id else []),
+        *(["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else []),
+        *(["--log-level", log_level]),
+        # only use the Python environment if it has been explicitly set in the workspace,
+        *(["--use-python-environment-entry-point"] if executable_path else []),
+        *(["--inject-env-vars-from-instance"]),
+        *(["--instance-ref", serialize_value(instance_ref)]),
+        *(["--location-name", location_name] if location_name else []),
+    ]
 
     if loadable_target_origin:
         subprocess_args += loadable_target_origin.get_cli_args()
@@ -1193,6 +1189,7 @@ class GrpcServerProcess:
         cwd: Optional[str] = None,
         log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
+        wait_on_exit=False,
     ):
         self.port = None
         self.socket = None
@@ -1255,17 +1252,54 @@ class GrpcServerProcess:
         else:
             self.server_process = server_process
 
+        self._wait_on_exit = wait_on_exit
+
+        self._waited = False
+        self._shutdown = False
+
     @property
     def pid(self):
         return self.server_process.pid
 
     def wait(self, timeout=30):
+        self._waited = True
         if self.server_process.poll() is None:
             seven.wait_for_process(self.server_process, timeout=timeout)
 
-    def create_ephemeral_client(self):
-        from dagster._grpc.client import EphemeralDagsterGrpcClient
+    def __enter__(self):
+        return self
 
-        return EphemeralDagsterGrpcClient(
-            port=self.port, socket=self.socket, server_process=self.server_process
-        )
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self.shutdown_server()
+
+        if self._wait_on_exit:
+            self.wait()
+
+    def shutdown_server(self):
+        if not self._shutdown:
+            self._shutdown = True
+            if self.server_process.poll() is None:
+                try:
+                    self.create_client().shutdown_server()
+                except DagsterUserCodeUnreachableError:
+                    pass
+
+    def __del__(self):
+        if not self._shutdown:
+            warnings.warn(
+                "GrpcServerProcess is being destroyed without signalling to server that "
+                "it should shut down. This may result in server processes living longer than "
+                "they need to. To fix this, wrap the GrpcServerProcess in a contextmanager or "
+                "call shutdown_server on it."
+            )
+
+        if not self._waited and os.getenv("STRICT_GRPC_SERVER_PROCESS_WAIT"):
+            warnings.warn(
+                "GrpcServerProcess is being destroyed without waiting for the process to "
+                + "fully terminate. This can cause test instability."
+            )
+
+    def create_client(self):
+        from dagster._grpc.client import DagsterGrpcClient
+
+        return DagsterGrpcClient(port=self.port, socket=self.socket)

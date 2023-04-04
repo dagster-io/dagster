@@ -9,7 +9,6 @@ from dagster import (
     DagsterEventType,
     DagsterInstance,
     Executor,
-    MetadataEntry,
     _check as check,
     executor,
     multiple_process_executor_requirements,
@@ -232,7 +231,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key="{queue}.execute_step_k8s_job".format(queue=queue),
+        routing_key=f"{queue}.execute_step_k8s_job",
     )
 
 
@@ -315,20 +314,20 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.inst(
             pipeline_run,
             DagsterRun,
-            "Could not load run {}".format(execute_step_args.pipeline_run_id),
+            f"Could not load run {execute_step_args.pipeline_run_id}",
         )
         step_key = execute_step_args.step_keys_to_execute[0]
 
         celery_worker_name = self.request.hostname
         celery_pod_name = os.environ.get("HOSTNAME")
         instance.report_engine_event(
-            "Task for step {step_key} picked up by Celery".format(step_key=step_key),
+            f"Task for step {step_key} picked up by Celery",
             pipeline_run,
             EngineEventData(
-                [
-                    MetadataEntry("Celery worker name", value=celery_worker_name),
-                    MetadataEntry("Celery worker Kubernetes Pod name", value=celery_pod_name),
-                ]
+                {
+                    "Celery worker name": celery_worker_name,
+                    "Celery worker Kubernetes Pod name": celery_pod_name,
+                }
             ),
             CeleryK8sJobExecutor,
             step_key=step_key,
@@ -339,9 +338,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "Not scheduling step because dagster run status is not STARTED",
                 pipeline_run,
                 EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                    ]
+                    {
+                        "Step key": step_key,
+                    }
                 ),
                 CeleryK8sJobExecutor,
                 step_key=step_key,
@@ -390,19 +389,17 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         # Post event for starting execution
         job_name = job.metadata.name
         engine_event = instance.report_engine_event(
-            'Executing step "{}" in Kubernetes job {}.'.format(step_key, job_name),
+            f'Executing step "{step_key}" in Kubernetes job {job_name}.',
             pipeline_run,
             EngineEventData(
-                [
-                    MetadataEntry("Step key", value=step_key),
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Job image", value=job_config.job_image),
-                    MetadataEntry("Image pull policy", value=job_config.image_pull_policy),
-                    MetadataEntry("Image pull secrets", value=str(job_config.image_pull_secrets)),
-                    MetadataEntry(
-                        "Service account name", value=str(job_config.service_account_name)
-                    ),
-                ],
+                {
+                    "Step key": step_key,
+                    "Kubernetes Job name": job_name,
+                    "Job image": job_config.job_image,
+                    "Image pull policy": job_config.image_pull_policy,
+                    "Image pull secrets": str(job_config.image_pull_secrets),
+                    "Service account name": str(job_config.service_account_name),
+                },
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryK8sJobExecutor,
@@ -421,10 +418,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     "exists, proceeding with existing job.".format(job_name, step_key),
                     pipeline_run,
                     EngineEventData(
-                        [
-                            MetadataEntry("Step key", value=step_key),
-                            MetadataEntry("Kubernetes Job name", value=job_name),
-                        ],
+                        {
+                            "Step key": step_key,
+                            "Kubernetes Job name": job_name,
+                        },
                         marker_end=DELEGATE_MARKER,
                     ),
                     CeleryK8sJobExecutor,
@@ -436,9 +433,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     "exiting.".format(job_name, step_key),
                     pipeline_run,
                     EngineEventData(
-                        [
-                            MetadataEntry("Step key", value=step_key),
-                        ],
+                        {
+                            "Step key": step_key,
+                        },
                         error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,
@@ -464,11 +461,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "Terminating Kubernetes Job because dagster run status is not STARTED",
                 pipeline_run,
                 EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                        MetadataEntry("Kubernetes Job name", value=job_name),
-                        MetadataEntry("Kubernetes Job namespace", value=job_namespace),
-                    ]
+                    {
+                        "Step key": step_key,
+                        "Kubernetes Job name": job_name,
+                        "Kubernetes Job namespace": job_namespace,
+                    }
                 ),
                 CeleryK8sJobExecutor,
                 step_key=step_key,
@@ -488,9 +485,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                    ],
+                    {
+                        "Step key": step_key,
+                    },
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
@@ -506,9 +503,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [
-                        MetadataEntry("Step key", value=step_key),
-                    ],
+                    {
+                        "Step key": step_key,
+                    },
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
@@ -520,7 +517,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         engine_event = instance.report_engine_event(
             "Retrieving logs from Kubernetes Job pods",
             pipeline_run,
-            EngineEventData([MetadataEntry("Pod names", value="\n".join(pod_names))]),
+            EngineEventData({"Pod names": "\n".join(pod_names)}),
             CeleryK8sJobExecutor,
             step_key=step_key,
         )
@@ -539,9 +536,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     ),
                     pipeline_run,
                     EngineEventData(
-                        [
-                            MetadataEntry("Step key", value=step_key),
-                        ],
+                        {
+                            "Step key": step_key,
+                        },
                         error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,

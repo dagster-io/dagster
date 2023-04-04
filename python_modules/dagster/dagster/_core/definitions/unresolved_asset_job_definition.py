@@ -1,15 +1,12 @@
-import operator
 from collections import defaultdict
 from datetime import datetime
-from functools import reduce
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
-from dagster._core.selector.subset_selector import parse_clause
 from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
@@ -23,10 +20,10 @@ if TYPE_CHECKING:
         JobDefinition,
         PartitionedConfig,
         PartitionsDefinition,
-        PartitionSetDefinition,
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 
 
 class UnresolvedAssetJobDefinition(
@@ -76,34 +73,6 @@ class UnresolvedAssetJobDefinition(
             executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
         )
 
-    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        from dagster._core.definitions import PartitionedConfig, PartitionSetDefinition
-
-        if self.partitions_def is None:
-            return None
-
-        partitioned_config = PartitionedConfig.from_flexible_config(
-            self.config, self.partitions_def
-        )
-
-        tags_fn = (
-            partitioned_config
-            and partitioned_config.tags_for_partition_fn
-            or (lambda _: cast(Dict[str, str], {}))
-        )
-        run_config_fn = (
-            partitioned_config
-            and partitioned_config.run_config_for_partition_fn
-            or (lambda _: cast(Dict[str, str], {}))
-        )
-        return PartitionSetDefinition(
-            job_name=self.name,
-            name=f"{self.name}_partition_set",
-            partitions_def=self.partitions_def,
-            run_config_fn_for_partition=run_config_fn,
-            tags_fn_for_partition=tags_fn,
-        )
-
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -135,36 +104,52 @@ class UnresolvedAssetJobDefinition(
         """
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
+            PartitionedConfig,
         )
 
-        partition_set = self.get_partition_set_def()
-        if not partition_set:
+        deprecation_warning(
+            "UnresolvedAssetJobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
+        if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
-            if not instance:
-                check.failed(
-                    "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "dynamic partition set"
-                )
+        partitioned_config = PartitionedConfig.from_flexible_config(
+            self.config, self.partitions_def
+        )
 
-        partition = partition_set.get_partition(
+        if isinstance(self.partitions_def, DynamicPartitionsDefinition) and not instance:
+            check.failed(
+                "Must provide a dagster instance when calling run_request_for_partition on a "
+                "dynamic partition set"
+            )
+
+        partition = self.partitions_def.get_partition(
             partition_key, dynamic_partitions_store=instance, current_time=current_time
         )
-        run_request_tags = (
-            {**tags, **partition_set.tags_for_partition(partition)}
-            if tags
-            else partition_set.tags_for_partition(partition)
+        run_config = (
+            run_config
+            if run_config is not None
+            else partitioned_config.get_run_config_for_partition_key(
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
+            )
         )
+        run_request_tags = {
+            **(tags or {}),
+            **partitioned_config.get_tags_for_partition_key(
+                partition_key, instance, current_time=current_time, job_name=self.name
+            ),
+        }
 
         return RunRequest(
             job_name=self.name,
             run_key=run_key,
-            run_config=run_config
-            if run_config is not None
-            else partition_set.run_config_for_partition(partition),
+            run_config=run_config,
             tags=run_request_tags,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     def resolve(
@@ -254,36 +239,9 @@ class UnresolvedAssetJobDefinition(
         )
 
 
-def _selection_from_string(string: str) -> "AssetSelection":
-    from dagster._core.definitions import AssetSelection
-
-    if string == "*":
-        return AssetSelection.all()
-
-    parts = parse_clause(string)
-    if not parts:
-        check.failed(f"Invalid selection string: {string}")
-    u, item, d = parts
-
-    selection: AssetSelection = AssetSelection.keys(item)
-    if u:
-        selection = selection.upstream(u)
-    if d:
-        selection = selection.downstream(d)
-    return selection
-
-
 def define_asset_job(
     name: str,
-    selection: Optional[
-        Union[
-            str,
-            Sequence[str],
-            Sequence[AssetKey],
-            Sequence[Union["AssetsDefinition", "SourceAsset"]],
-            "AssetSelection",
-        ]
-    ] = None,
+    selection: Optional["CoercibleToAssetSelection"] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
@@ -398,34 +356,13 @@ def define_asset_job(
             )
 
     """
-    from dagster._core.definitions import AssetsDefinition, AssetSelection, SourceAsset
+    from dagster._core.definitions import AssetSelection
 
     # convert string-based selections to AssetSelection objects
-    resolved_selection: AssetSelection
     if selection is None:
         resolved_selection = AssetSelection.all()
-    elif isinstance(selection, str):
-        resolved_selection = _selection_from_string(selection)
-    elif isinstance(selection, AssetSelection):
-        resolved_selection = selection
-    elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
-        resolved_selection = reduce(
-            operator.or_, [_selection_from_string(cast(str, s)) for s in selection]
-        )
-    elif isinstance(selection, list) and all(
-        isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
-    ):
-        resolved_selection = AssetSelection.keys(
-            *(el.key for el in cast(Sequence[Union[AssetsDefinition, SourceAsset]], selection))
-        )
-    elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
-        resolved_selection = AssetSelection.keys(*cast(Sequence[AssetKey], selection))
     else:
-        check.failed(
-            "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
-            " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
-            f" {type(selection)}."
-        )
+        resolved_selection = AssetSelection.from_coercible(selection)
 
     return UnresolvedAssetJobDefinition(
         name=name,

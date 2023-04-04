@@ -260,6 +260,7 @@ class GrpcServerRegistry(AbstractContextManager):
                         dead_process_indexes.append(index)
 
                 for index in reversed(dead_process_indexes):
+                    self._all_processes[index].wait()
                     del self._all_processes[index]
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -268,7 +269,10 @@ class GrpcServerRegistry(AbstractContextManager):
             self._cleanup_thread.join()
 
         for process in self._all_processes:
-            process.create_ephemeral_client().cleanup_server()
+            process.shutdown_server()
+
+        if self.instance.code_server_settings.get("wait_for_local_processes_on_shutdown", False):
+            self.wait_for_processes()
 
     def wait_for_processes(self) -> None:
         # Wait for any processes created by this registry. Generally not needed outside

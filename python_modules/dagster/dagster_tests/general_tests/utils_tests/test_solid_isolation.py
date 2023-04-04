@@ -212,7 +212,7 @@ def test_graph_with_no_output_mappings():
 
 def test_execute_nested_graphs():
     nested_graph_pipeline = nesting_graph_pipeline(2, 2)
-    nested_composite_solid = nested_graph_pipeline.solids[0].definition
+    nested_composite_solid = nested_graph_pipeline.nodes[0].definition
 
     res = execute_solid(nested_composite_solid)
 

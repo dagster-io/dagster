@@ -25,15 +25,10 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
-    install_requires=[
-        "dagster",
-        "mlflow<1.27",
-        "pandas",
-    ],
+    install_requires=["dagster", "mlflow", "pandas"],
     zip_safe=False,
 )

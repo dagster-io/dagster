@@ -1,4 +1,4 @@
-from dagster import Field, StringSource, resource
+from dagster import Field, Noneable, StringSource, resource
 from dagster._utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
@@ -32,6 +32,40 @@ S3_SESSION_CONFIG = {
         str,
         description="Specifies a profile to connect that session",
         is_required=False,
+    ),
+    "use_ssl": Field(
+        bool,
+        description="Whether or not to use SSL. By default, SSL is used.",
+        is_required=False,
+        default_value=True,
+    ),
+    "verify": Field(
+        Noneable(str),
+        description=(
+            "Whether or not to verify SSL certificates. By default SSL certificates are verified."
+            " You can also specify this argument if you want to use a different CA cert bundle than"
+            " the one used by botocore."
+        ),
+        is_required=False,
+        default_value=None,
+    ),
+    "aws_access_key_id": Field(
+        Noneable(StringSource),
+        description="The access key to use when creating the client.",
+        is_required=False,
+        default_value=None,
+    ),
+    "aws_secret_access_key": Field(
+        Noneable(StringSource),
+        description="The secret key to use when creating the client.",
+        is_required=False,
+        default_value=None,
+    ),
+    "aws_session_token": Field(
+        Noneable(StringSource),
+        description="The session token to use when creating the client.",
+        is_required=False,
+        default_value=None,
     ),
 }
 
@@ -94,7 +128,17 @@ def s3_resource(context):
               profile_name: "dev"
               # Optional[str]: Specifies a custom profile for S3 session. Default is default
               # profile as specified in ~/.aws/credentials file
-
+              use_ssl: true
+              # Optional[bool]: Whether or not to use SSL. By default, SSL is used.
+              verify: None
+              # Optional[str]: Whether or not to verify SSL certificates. By default SSL certificates are verified.
+              # You can also specify this argument if you want to use a different CA cert bundle than the one used by botocore."
+              aws_access_key_id: None
+              # Optional[str]: The access key to use when creating the client.
+              aws_secret_access_key: None
+              # Optional[str]: The secret key to use when creating the client.
+              aws_session_token: None
+              # Optional[str]:  The session token to use when creating the client.
     """
     return construct_s3_client(
         max_attempts=context.resource_config["max_attempts"],
@@ -102,6 +146,11 @@ def s3_resource(context):
         endpoint_url=context.resource_config.get("endpoint_url"),
         use_unsigned_session=context.resource_config["use_unsigned_session"],
         profile_name=context.resource_config.get("profile_name"),
+        use_ssl=context.resource_config.get("use_ssl"),
+        verify=context.resource_config.get("verify"),
+        aws_access_key_id=context.resource_config.get("aws_access_key_id"),
+        aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
+        aws_session_token=context.resource_config.get("aws_session_token"),
     )
 
 
@@ -126,6 +175,11 @@ def s3_file_manager(context):
             endpoint_url=context.resource_config.get("endpoint_url"),
             use_unsigned_session=context.resource_config["use_unsigned_session"],
             profile_name=context.resource_config.get("profile_name"),
+            use_ssl=context.resource_config.get("use_ssl"),
+            verify=context.resource_config.get("verify"),
+            aws_access_key_id=context.resource_config.get("aws_access_key_id"),
+            aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
+            aws_session_token=context.resource_config.get("aws_session_token"),
         ),
         s3_bucket=context.resource_config["s3_bucket"],
         s3_base_key=context.resource_config["s3_prefix"],

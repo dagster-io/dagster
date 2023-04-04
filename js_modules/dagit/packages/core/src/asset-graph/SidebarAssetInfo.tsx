@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useFeatureFlags} from '../app/Flags';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -16,15 +17,20 @@ import {DependsOnSelfBanner} from '../assets/DependsOnSelfBanner';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
-import {usePartitionHealthData} from '../assets/usePartitionHealthData';
+import {
+  healthRefreshHintFromLiveData,
+  usePartitionHealthData,
+} from '../assets/usePartitionHealthData';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
+import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
 import {SidebarAssetQuery, SidebarAssetQueryVariables} from './types/SidebarAssetInfo.types';
@@ -34,10 +40,17 @@ export const SidebarAssetInfo: React.FC<{
   liveData: LiveDataForNode;
 }> = ({assetNode, liveData}) => {
   const assetKey = assetNode.assetKey;
-  const partitionHealthData = usePartitionHealthData([assetKey]);
+  const partitionHealthRefreshHint = healthRefreshHintFromLiveData(liveData);
+  const partitionHealthData = usePartitionHealthData(
+    [assetKey],
+    partitionHealthRefreshHint,
+    'background',
+  );
+
   const {data} = useQuery<SidebarAssetQuery, SidebarAssetQueryVariables>(SIDEBAR_ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
+  const {flagSidebarResources} = useFeatureFlags();
 
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
@@ -108,6 +121,27 @@ export const SidebarAssetInfo: React.FC<{
               type={assetConfigSchema}
               typesInScope={assetConfigSchema.recursiveConfigTypes}
             />
+          </Box>
+        </SidebarSection>
+      )}
+
+      {asset.requiredResources.length > 0 && (
+        <SidebarSection title="Required Resources">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            {asset.requiredResources.map((resource) => (
+              <ResourceContainer key={resource.resourceKey}>
+                <Icon name="resource" color={Colors.Gray700} />
+                {flagSidebarResources && repoAddress ? (
+                  <Link
+                    to={workspacePathFromAddress(repoAddress, `/resources/${resource.resourceKey}`)}
+                  >
+                    <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                  </Link>
+                ) : (
+                  <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                )}
+              </ResourceContainer>
+            ))}
           </Box>
         </SidebarSection>
       )}
@@ -209,6 +243,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
         id
         name
       }
+    }
+    requiredResources {
+      resourceKey
     }
 
     ...AssetNodeOpMetadataFragment

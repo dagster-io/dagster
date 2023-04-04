@@ -22,14 +22,12 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._utils.merger import merge_dicts
 
 from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import RepositoryListDefinition
@@ -56,6 +54,10 @@ class RepositoryData(ABC):
         Returns:
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
+
+    @abstractmethod
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        pass
 
     @abstractmethod
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
@@ -152,53 +154,6 @@ class RepositoryData(ABC):
             raise DagsterInvariantViolationError(f"Could not find job {job_name} in repository")
         return match
 
-    def get_partition_set_names(self):
-        """Get the names of all partition sets in the repository.
-
-        Returns:
-            List[str]
-        """
-        return [partition_set.name for partition_set in self.get_all_partition_sets()]
-
-    def has_partition_set(self, partition_set_name: str) -> bool:
-        """Check if a partition set with a given name is present in the repository.
-
-        Args:
-            partition_set_name (str): The name of the partition set.
-
-        Returns:
-            bool
-        """
-        return partition_set_name in self.get_partition_set_names()
-
-    def get_all_partition_sets(self) -> Sequence[PartitionSetDefinition]:
-        """Return all partition sets in the repository as a list.
-
-        Returns:
-            List[PartitionSetDefinition]: All partition sets in the repository.
-        """
-        return []
-
-    def get_partition_set(self, partition_set_name: str) -> PartitionSetDefinition:
-        """Get a partition set by name.
-
-        Args:
-            partition_set_name (str): Name of the partition set to retrieve.
-
-        Returns:
-            PartitionSetDefinition: The partition set definition corresponding to the given name.
-        """
-        partition_sets_with_name = [
-            partition_set
-            for partition_set in self.get_all_partition_sets()
-            if partition_set.name == partition_set_name
-        ]
-        if not partition_sets_with_name:
-            raise DagsterInvariantViolationError(
-                f"Could not find partition set {partition_set_name} in repository"
-            )
-        return partition_sets_with_name[0]
-
     @public
     def get_schedule_names(self) -> Sequence[str]:
         """Get the names of all schedules in the repository.
@@ -274,7 +229,6 @@ class RepositoryData(ABC):
         # force load of all lazy constructed code artifacts
         self.get_all_pipelines()
         self.get_all_jobs()
-        self.get_all_partition_sets()
         self.get_all_schedules()
         self.get_all_sensors()
         self.get_source_assets_by_key()
@@ -291,22 +245,20 @@ class CachingRepositoryData(RepositoryData):
         self,
         pipelines: Mapping[str, Union[PipelineDefinition, Resolvable[PipelineDefinition]]],
         jobs: Mapping[str, Union[JobDefinition, Resolvable[JobDefinition]]],
-        partition_sets: Mapping[
-            str, Union[PartitionSetDefinition, Resolvable[PartitionSetDefinition]]
-        ],
         schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
         sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
         source_assets_by_key: Mapping[AssetKey, SourceAsset],
         assets_defs_by_key: Mapping[AssetKey, "AssetsDefinition"],
         top_level_resources: Mapping[str, ResourceDefinition],
         utilized_env_vars: Mapping[str, AbstractSet[str]],
+        resource_key_mapping: Mapping[int, str],
     ):
         """Constructs a new CachingRepositoryData object.
 
-        You may pass pipeline, job, partition_set, and schedule definitions directly, or you may pass
-        callables with no arguments that will be invoked to lazily construct definitions when
-        accessed by name. This can be helpful for performance when there are many definitions in a
-        repository, or when constructing the definitions is costly.
+        You may pass pipeline, job, and schedule definitions directly, or you may pass callables
+        with no arguments that will be invoked to lazily construct definitions when accessed by
+        name. This can be helpful for performance when there are many definitions in a repository,
+        or when constructing the definitions is costly.
 
         Note that when lazily constructing a definition, the name of the definition must match its
         key in its dictionary index, or a :py:class:`DagsterInvariantViolationError` will be thrown
@@ -317,8 +269,6 @@ class CachingRepositoryData(RepositoryData):
                 The pipeline definitions belonging to the repository.
             jobs (Mapping[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
                 The job definitions belonging to the repository.
-            partition_sets (Mapping[str, Union[PartitionSetDefinition, Callable[[], PartitionSetDefinition]]]):
-                The partition sets belonging to the repository.
             schedules (Mapping[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
             sensors (Mapping[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
@@ -335,12 +285,6 @@ class CachingRepositoryData(RepositoryData):
             pipelines, "pipelines", key_type=str, value_type=(PipelineDefinition, FunctionType)
         )
         check.mapping_param(jobs, "jobs", key_type=str, value_type=(JobDefinition, FunctionType))
-        check.mapping_param(
-            partition_sets,
-            "partition_sets",
-            key_type=str,
-            value_type=(PartitionSetDefinition, FunctionType),
-        )
         check.mapping_param(
             schedules, "schedules", key_type=str, value_type=(ScheduleDefinition, FunctionType)
         )
@@ -360,6 +304,9 @@ class CachingRepositoryData(RepositoryData):
             utilized_env_vars,
             "utilized_resources",
             key_type=str,
+        )
+        check.mapping_param(
+            resource_key_mapping, "resource_key_mapping", key_type=int, value_type=str
         )
 
         self._pipelines = CacheingDefinitionIndex(
@@ -385,42 +332,15 @@ class CachingRepositoryData(RepositoryData):
             schedules,
             self._validate_schedule,
         )
-        schedule_partition_sets = filter(
-            None,
-            [
-                _get_partition_set_from_schedule(schedule)
-                for schedule in self._schedules.get_all_definitions()
-            ],
-        )
+        # load all schedules to force validation
+        self._schedules.get_all_definitions()
+
         self._source_assets_by_key = source_assets_by_key
         self._assets_defs_by_key = assets_defs_by_key
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
+        self._resource_key_mapping = resource_key_mapping
 
-        def load_partition_sets_from_pipelines() -> Sequence[PartitionSetDefinition]:
-            job_partition_sets = []
-            for pipeline in self.get_all_pipelines():
-                if isinstance(pipeline, JobDefinition):
-                    job_partition_set = pipeline.get_partition_set_def()
-
-                    if job_partition_set:
-                        # should only return a partition set if this was constructed using the job
-                        # API, with a partitioned config
-                        job_partition_sets.append(job_partition_set)
-
-            return job_partition_sets
-
-        self._partition_sets = CacheingDefinitionIndex(
-            PartitionSetDefinition,
-            "PartitionSetDefinition",
-            "partition set",
-            merge_dicts(
-                {partition_set.name: partition_set for partition_set in schedule_partition_sets},
-                partition_sets,
-            ),
-            self._validate_partition_set,
-            load_partition_sets_from_pipelines,
-        )
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
             "SensorDefinition",
@@ -444,7 +364,6 @@ class CachingRepositoryData(RepositoryData):
                 {
                     'pipelines': Dict[str, Callable[[], PipelineDefinition]],
                     'jobs': Dict[str, Callable[[], JobDefinition]],
-                    'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
                     'schedules': Dict[str, Callable[[], ScheduleDefinition]]
                 }
 
@@ -463,11 +382,12 @@ class CachingRepositoryData(RepositoryData):
         default_executor_def: Optional[ExecutorDefinition] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        resource_key_mapping: Optional[Mapping[int, str]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
+            repository_definitions (List[Union[PipelineDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
@@ -480,6 +400,7 @@ class CachingRepositoryData(RepositoryData):
             default_executor_def=default_executor_def,
             default_logger_defs=default_logger_defs,
             top_level_resources=top_level_resources,
+            resource_key_mapping=resource_key_mapping,
         )
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
@@ -492,6 +413,9 @@ class CachingRepositoryData(RepositoryData):
             List[str]
         """
         return [*self._pipelines.get_definition_names(), *self.get_job_names()]
+
+    def get_resource_key_mapping(self) -> Mapping[int, str]:
+        return self._resource_key_mapping
 
     def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.
@@ -603,52 +527,6 @@ class CachingRepositoryData(RepositoryData):
         """
         check.str_param(job_name, "job_name")
         return self._jobs.get_definition(job_name)
-
-    def get_partition_set_names(self) -> Sequence[str]:
-        """Get the names of all partition sets in the repository.
-
-        Returns:
-            List[str]
-        """
-        return self._partition_sets.get_definition_names()
-
-    def has_partition_set(self, partition_set_name: str) -> bool:
-        """Check if a partition set with a given name is present in the repository.
-
-        Args:
-            partition_set_name (str): The name of the partition set.
-
-        Returns:
-            bool
-        """
-        check.str_param(partition_set_name, "partition_set_name")
-        return self._partition_sets.has_definition(partition_set_name)
-
-    def get_all_partition_sets(self) -> Sequence[PartitionSetDefinition]:
-        """Return all partition sets in the repository as a list.
-
-        Note that this will construct any partition set that has not yet been constructed.
-
-        Returns:
-            List[PartitionSetDefinition]: All partition sets in the repository.
-        """
-        return self._partition_sets.get_all_definitions()
-
-    def get_partition_set(self, partition_set_name: str) -> PartitionSetDefinition:
-        """Get a partition set by name.
-
-        If this partition set has not yet been constructed, only this partition set is constructed,
-        and will be cached for future calls.
-
-        Args:
-            partition_set_name (str): Name of the partition set to retrieve.
-
-        Returns:
-            PartitionSetDefinition: The partition set definition corresponding to the given name.
-        """
-        check.str_param(partition_set_name, "partition_set_name")
-
-        return self._partition_sets.get_definition(partition_set_name)
 
     def get_schedule_names(self) -> Sequence[str]:
         """Get the names of all schedules in the repository.
@@ -763,32 +641,3 @@ class CachingRepositoryData(RepositoryData):
                 )
 
         return sensor
-
-    def _validate_partition_set(
-        self, partition_set: PartitionSetDefinition
-    ) -> PartitionSetDefinition:
-        return partition_set
-
-
-def _get_partition_set_from_schedule(
-    schedule: ScheduleDefinition,
-) -> Optional[PartitionSetDefinition]:
-    """With the legacy APIs, partition sets can live on schedules. With the non-legacy APIs,
-    they live on jobs. Pulling partition sets from schedules causes problems with unresolved asset
-    jobs, because two different instances of the same logical partition set end up getting created
-    - one on the schedule and one on the the resolved job.
-
-    To avoid this problem, we avoid pulling partition sets off of schedules that target unresolved
-    asset jobs. This works, because the partition set still gets pulled directly off the asset job
-    elsewhere.
-
-    When we remove the legacy APIs, we should be able to stop pulling partition sets off of
-    schedules entirely and remove this entire code path.
-    """
-    if (
-        isinstance(schedule, PartitionScheduleDefinition)
-        and not schedule.targets_unresolved_asset_job
-    ):
-        return schedule.get_partition_set()
-    else:
-        return None

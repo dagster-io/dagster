@@ -1,5 +1,92 @@
 # Changelog
 
+# 1.2.4 (core) / 0.18.4 (libraries)
+
+### New
+
+- Further performance improvements to the asset reconciliation sensor.
+- Performance improvements to asset backfills with large numbers of partitions.
+- New `AssetsDefinition.to_source_assets` to method convert a set of assets to `SourceAsset` objects.
+- (experimental) Added partition mapping that defines dependency relationships between different `MultiPartitionsDefinitions`.
+- [dagster-mlflow] Removed the `mlflow` pin from the `dagster-mlflow` package.
+- [ui] Syntax highlighting now supported in rendered markdown code blocks (from metadata).
+
+### Bugfixes
+
+- When using `build_asset_reconciliation_sensor`, in some cases duplicate runs could be produced for the same partition of an asset. This has been fixed.
+- When using Pythonic configuration for resources, aliased field names would cause an error. This has been fixed.
+- Fixed an issue where `context.asset_partitions_time_window_for_output` threw an error when an asset was directly invoked with `build_op_context`.
+- [dagster-dbt] In some cases, use of ephemeral dbt models could cause the dagster representation of the dbt dependency graph to become incorrect. This has been fixed.
+- [celery-k8s] Fixed a bug that caused JSON deserialization errors when an Op or Asset emitted JSON that doesn't represent a `DagsterEvent`.
+- Fixed an issue where launching a large backfill while running `dagster dev` would sometimes fail with a connection error after running for a few minutes.
+- Fixed an issue where `dagster dev` would sometimes hang when running Dagster code that attempted to read in input via stdin.
+- Fixed an issue where runs that take a long time to import code would sometimes continue running even after they were stopped by [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) for taking too long to start.
+- Fixed an issue where `AssetSelection.groups()` would simultaneously select both source and regular assets and consequently raise an error.
+- Fixed an issue where `BindResourcesToJobs` would raise errors encapsulating jobs which had config specified at definition-time.
+- Fixed Pythonic config objects erroring when omitting optional values rather than specifying `None`.
+- Fixed Pythonic config and resources not supporting Enum values.
+- `DagsterInstance.local_temp` and `DagsterInstance.ephemeral` now use object instance scoped local artifact storage temporary directories instead of a shared process scoped one, removing a class of thread safety errors that could manifest on initialization.
+- Improved direct invocation behavior for ops and assets which specify resource dependencies as parameters, for instance:
+
+  ```python
+  class MyResource(ConfigurableResource):
+      pass
+
+  @op
+  def my_op(x: int, y: int, my_resource: MyResource) -> int:
+      return x + y
+
+  my_op(4, 5, my_resource=MyResource())
+  ```
+
+- [dagster-azure] Fixed an issue with an AttributeError being thrown when using the async `DefaultAzureCredential` (thanks [@mpicard](https://github.com/mpicard))
+- [ui] Fixed an issue introduced in 1.2.3 in which no log levels were selected by default when viewing Run logs, which made it appear as if there were no logs at all.
+
+### Deprecations
+
+- The `environment_vars` argument to `ScheduleDefinition` is deprecated (the argument is currently non-functional; environment variables no longer need to be whitelisted for schedules)
+
+### Community Contributions
+
+- Typos fixed in [CHANGES.md](http://CHANGES.md) (thanks [@fridiculous](https://github.com/fridiculous))
+- Links to telemetry docs fixed (thanks [@Abbe98](https://github.com/Abbe98))
+- `--path-prefix` can now be supplied via Helm chart (thanks [@mpicard](https://github.com/mpicard))
+
+### Documentation
+
+- New machine learning pipeline with Dagster guide
+- New example of multi-asset conditional materialization
+- New tutorial section about scheduling
+- New images on the Dagster README
+
+# 1.2.3 (core) / 0.18.3 (libraries)
+
+### New
+
+- Jobs defined via `define_asset_job` now auto-infer their partitions definitions if not explicitly defined.
+- Observable source assets can now be run as part of a job via `define_asset_job`. This allows putting them on a schedule/sensor.
+- Added an `instance` property to the `HookContext` object that is passed into [Op Hook](https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#op-hooks) functions, which can be used to access the current `DagsterInstance` object for the hook.
+- (experimental) Dynamic partitions definitions can now exist as dimensions of multi-partitions definitions.
+- [dagster-pandas] New `create_table_schema_metadata_from_dataframe` function to generate a `TableSchemaMetadataValue` from a Pandas DataFrame. Thanks [@AndyBys](https://github.com/AndyBys)!
+- [dagster-airflow] New option for setting `dag_run` configuration on the integration’s database resources.
+- [ui] The asset partitions page now links to the most recent failed or in-progress run for the selected partition.
+- [ui] Asset descriptions have been moved to the top in the asset sidebar.
+- [ui] Log filter switches have been consolidated into a single control, and selected log levels will be persisted locally so that the same selections are used by default when viewing a run.
+- [ui] You can now customize the hour formatting in timestamp display: 12-hour, 24-hour, or automatic (based on your browser locale). This option can be found in User Settings.
+
+### Bugfixes
+
+- In certain situations a few of the first partitions displayed as “unpartitioned” in the health bar despite being materialized. This has now been fixed, but users may need to run `dagster asset wipe-partitions-status-cache` to see the partitions displayed.
+- Starting `1.1.18`, users with a gRPC server that could not access the Dagster instance on user code deployments would see an error when launching backfills as the instance could not instantiate. This has been fixed.
+- Previously, incorrect partition status counts would display for static partitions definitions with duplicate keys. This has been fixed.
+- In some situations, having SourceAssets could prevent the `build_asset_reconciliation_sensor` from kicking off runs of downstream assets. This has been fixed.
+- The `build_asset_reconciliation_sensor` is now much more performant in cases where unpartitioned assets are upstream or downstream of static-partitioned assets with a large number of partitions.
+- [dagster-airflow] Fixed an issue were the persistent Airflow DB resource required the user to set the correct Airflow database URI environment variable.
+- [dagster-celery-k8s] Fixed an issue where run monitoring failed when setting the `jobNamespace` field in the Dagster Helm chart when using the `CeleryK8sRunLauncher`.
+- [ui] Filtering on the asset partitions page no longer results in keys being presented out of order in the left sidebar in some scenarios.
+- [ui] Launching an asset backfill outside an asset job page now supports partition mapping, even if your selection shares a partition space.
+- [ui] In the run timeline, date/time display at the top of the timeline was sometimes broken for users not using the `en-US` browser locale. This has been fixed.
+
 # 1.2.2 (core) / 0.18.2 (libraries)
 
 ### New
@@ -8,7 +95,7 @@
 - Users can now opt in to have resources provided to `Definitions` bind to their jobs. Opt in by wrapping your job definitions in `BindResourcesToJobs`. This will become the default behavior in the future.
 
   ```python
-  @op(required_resource_keys={"foo")
+  @op(required_resource_keys={"foo"})
   def my_op(context)
       print(context.foo)
 

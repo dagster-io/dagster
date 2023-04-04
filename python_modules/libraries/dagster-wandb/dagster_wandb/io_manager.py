@@ -180,7 +180,7 @@ class ArtifactsIOManager(IOManager):
         with self.wandb_run() as run:
             parameters = context.metadata.get("wandb_artifact_configuration", {})  # type: ignore
 
-            serialization_module = parameters.get("serialization_module", {})  # type: ignore
+            serialization_module = parameters.get("serialization_module", {})
             serialization_module_name = serialization_module.get("name", "pickle")
 
             if serialization_module_name not in ACCEPTED_SERIALIZATION_MODULES:
@@ -194,8 +194,8 @@ class ArtifactsIOManager(IOManager):
                 **serialization_module_parameters,
             }
 
-            artifact_type = parameters.get("type", "artifact")  # type: ignore
-            artifact_description = parameters.get("description")  # type: ignore
+            artifact_type = parameters.get("type", "artifact")
+            artifact_description = parameters.get("description")
             artifact_metadata = {
                 "source_integration": "dagster_wandb",
                 "source_integration_version": __version__,
@@ -204,14 +204,14 @@ class ArtifactsIOManager(IOManager):
                 "source_python_version": platform.python_version(),
             }
             if isinstance(obj, Artifact):
-                if parameters.get("name") is not None:  # type: ignore
+                if parameters.get("name") is not None:
                     raise WandbArtifactsIOManagerError(
                         "A 'name' property was provided in the 'wandb_artifact_configuration'"
                         " metadata dictionary. A 'name' property can only be provided for output"
                         " that is not already an Artifact object."
                     )
 
-                if parameters.get("type") is not None:  # type: ignore
+                if parameters.get("type") is not None:
                     raise WandbArtifactsIOManagerError(
                         "A 'type' property was provided in the 'wandb_artifact_configuration'"
                         " metadata dictionary. A 'type' property can only be provided for output"
@@ -248,7 +248,7 @@ class ArtifactsIOManager(IOManager):
                     artifact.description = artifact_description
             else:
                 if context.has_asset_key:
-                    if parameters.get("name") is not None:  # type: ignore
+                    if parameters.get("name") is not None:
                         raise WandbArtifactsIOManagerError(
                             "A 'name' property was provided in the 'wandb_artifact_configuration'"
                             " metadata dictionary. A 'name' property is only required when no"
@@ -259,13 +259,13 @@ class ArtifactsIOManager(IOManager):
                         )
                     artifact_name = context.get_asset_identifier()[0]  # name of asset
                 else:
-                    if parameters.get("name") is None:  # type: ignore
+                    if parameters.get("name") is None:
                         raise WandbArtifactsIOManagerError(
                             "Missing 'name' property in the 'wandb_artifact_configuration' metadata"
                             " dictionary. A 'name' property is required for Artifacts created from"
                             " an @op. Alternatively you can use an @asset."
                         )
-                    artifact_name = parameters.get("name")  # type: ignore
+                    artifact_name = parameters.get("name")
 
                 if context.has_partition_key:
                     artifact_name = f"{artifact_name}.{context.partition_key}"
@@ -418,25 +418,25 @@ class ArtifactsIOManager(IOManager):
                                 ) from exception
 
             # Add any files: https://docs.wandb.ai/ref/python/artifact#add_file
-            add_files = parameters.get("add_files")  # type: ignore
+            add_files = parameters.get("add_files")
             if add_files is not None and len(add_files) > 0:
                 for add_file in add_files:
                     artifact.add_file(**add_file)
 
             # Add any dirs: https://docs.wandb.ai/ref/python/artifact#add_dir
-            add_dirs = parameters.get("add_dirs")  # type: ignore
+            add_dirs = parameters.get("add_dirs")
             if add_dirs is not None and len(add_dirs) > 0:
                 for add_dir in add_dirs:
                     artifact.add_dir(**add_dir)
 
             # Add any reference: https://docs.wandb.ai/ref/python/artifact#add_reference
-            add_references = parameters.get("add_references")  # type: ignore
+            add_references = parameters.get("add_references")
             if add_references is not None and len(add_references) > 0:
                 for add_reference in add_references:
                     artifact.add_reference(**add_reference)
 
             # Augments the aliases
-            aliases = parameters.get("aliases", [])  # type: ignore
+            aliases = parameters.get("aliases", [])
             aliases.append(f"dagster-run-{self.dagster_run_id[0:8]}")
             if "latest" not in aliases:
                 aliases.append("latest")

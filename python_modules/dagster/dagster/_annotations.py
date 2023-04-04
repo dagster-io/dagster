@@ -1,11 +1,13 @@
 import inspect
+import warnings
 from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, Union, cast
+from typing import Any, Callable, Optional, Type, TypeVar, Union, cast
 
 from typing_extensions import Annotated, Final, TypeAlias
 
 import dagster._check as check
 from dagster._utils.backcompat import (
+    ExperimentalWarning,
     experimental_class_warning,
     experimental_decorator_warning,
     experimental_fn_warning,
@@ -133,3 +135,37 @@ def is_experimental(obj: Annotatable, attr: Optional[str] = None) -> bool:
 def _get_target(obj: Annotatable, attr: Optional[str] = None):
     lookup_obj = obj.__dict__[attr] if attr else obj
     return lookup_obj.fget if isinstance(lookup_obj, property) else lookup_obj
+
+
+def quiet_experimental_warnings(obj: T_Annotatable) -> T_Annotatable:
+    """Mark a method/function as ignoring experimental warnings. This quiets any "experimental" warnings
+    emitted inside the passed callable. Useful when we want to use experimental features internally
+    in a way that we don't want to warn users about.
+
+    Usage:
+
+        .. code-block:: python
+
+            @quiet_experimental_warnings
+            def invokes_some_experimental_stuff(my_arg):
+                my_experimental_function(my_arg)
+    """
+    target = _get_target(obj)
+
+    if isinstance(obj, (property, staticmethod, classmethod)):
+        # warning not currently supported for these cases
+        return obj
+
+    if inspect.isfunction(target):
+
+        @wraps(target)
+        def inner(*args, **kwargs) -> Any:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
+                return target(*args, **kwargs)
+
+        return cast(T_Annotatable, inner)
+
+    else:
+        check.failed("obj must be a function or a class")

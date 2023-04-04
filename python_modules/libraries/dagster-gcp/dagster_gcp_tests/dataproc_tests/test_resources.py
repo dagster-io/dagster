@@ -14,8 +14,8 @@ REGION = "us-west1"
 DATAPROC_BASE_URI = "https://dataproc.googleapis.com/v1/projects/{project}/regions/{region}".format(
     project=PROJECT_ID, region=REGION
 )
-DATAPROC_CLUSTERS_URI = "{base_uri}/clusters".format(base_uri=DATAPROC_BASE_URI)
-DATAPROC_JOBS_URI = "{base_uri}/jobs".format(base_uri=DATAPROC_BASE_URI)
+DATAPROC_CLUSTERS_URI = f"{DATAPROC_BASE_URI}/clusters"
+DATAPROC_JOBS_URI = f"{DATAPROC_BASE_URI}/jobs"
 DATAPROC_SCHEMA_URI = "https://www.googleapis.com/discovery/v1/apis/dataproc/v1/rest"
 
 EXPECTED_RESULTS = [
@@ -25,7 +25,7 @@ EXPECTED_RESULTS = [
     (re.escape(DATAPROC_CLUSTERS_URI + "?alt=json"), "POST", {}),
     # Cluster get
     (
-        re.escape(DATAPROC_CLUSTERS_URI + "/{}?alt=json".format(CLUSTER_NAME)),
+        re.escape(DATAPROC_CLUSTERS_URI + f"/{CLUSTER_NAME}?alt=json"),
         "GET",
         {"status": {"state": "RUNNING"}},
     ),
@@ -38,7 +38,7 @@ EXPECTED_RESULTS = [
     # Jobs get
     (re.escape(DATAPROC_JOBS_URI) + r".*?\?alt=json", "GET", {"status": {"state": "DONE"}}),
     # Cluster delete
-    (re.escape(DATAPROC_CLUSTERS_URI + "/{}?alt=json".format(CLUSTER_NAME)), "DELETE", {}),
+    (re.escape(DATAPROC_CLUSTERS_URI + f"/{CLUSTER_NAME}?alt=json"), "DELETE", {}),
 ]
 
 

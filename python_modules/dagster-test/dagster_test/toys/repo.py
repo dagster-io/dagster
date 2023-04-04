@@ -14,13 +14,13 @@ from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
 from dagster_test.toys.conditional_assets import get_conditional_assets_repo
 from dagster_test.toys.cross_repo_assets import (
-    downstream_asset_group1,
-    downstream_asset_group2,
-    upstream_asset_group,
+    downstream_repo1_assets,
+    downstream_repo2_assets,
+    upstream_repo_assets,
 )
 from dagster_test.toys.dynamic import dynamic_job
 from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
-from dagster_test.toys.graph_backed_assets import graph_backed_group
+from dagster_test.toys.graph_backed_assets import graph_backed_asset
 from dagster_test.toys.hammer import hammer_default_executor_job
 from dagster_test.toys.input_managers import df_stats_job
 from dagster_test.toys.log_asset import log_asset_job
@@ -154,6 +154,13 @@ def partitioned_assets_repository():
 
 
 @repository
+def table_metadata_repository():
+    from . import table_metadata
+
+    return load_assets_from_modules([table_metadata])
+
+
+@repository
 def long_asset_keys_repository():
     return [long_asset_keys_group]
 
@@ -165,22 +172,22 @@ def big_honkin_assets_repository():
 
 @repository
 def upstream_assets_repository():
-    return [upstream_asset_group]
+    return upstream_repo_assets
 
 
 @repository
 def downstream_assets_repository1():
-    return [downstream_asset_group1]
+    return downstream_repo1_assets
 
 
 @repository
 def downstream_assets_repository2():
-    return [downstream_asset_group2]
+    return downstream_repo2_assets
 
 
 @repository
 def graph_backed_asset_repository():
-    return [graph_backed_group]
+    return [graph_backed_asset]
 
 
 @repository

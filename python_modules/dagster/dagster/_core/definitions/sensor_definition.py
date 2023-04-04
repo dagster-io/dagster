@@ -25,6 +25,9 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+)
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import (
     Resources,
@@ -38,21 +41,29 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils import normalize_to_repository
 
 from ..decorator_utils import (
-    get_function_params,  # pylint: disable=unused-import
+    get_function_params,
 )
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import PipelineRunReaction, RunRequest, SkipReason
+from .run_request import (
+    PipelineRunReaction,
+    RunRequest,
+    SensorResult,
+    SkipReason,
+)
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
@@ -90,8 +101,14 @@ class SensorEvaluationContext:
         last_run_key (str): DEPRECATED The run key of the RunRequest most recently created by this
             sensor. Use the preferred `cursor` attribute instead.
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
+        repository_def (Optional[RepositoryDefinition]): The repository or that
+            the sensor belongs to. If needed by the sensor top-level resource definitions will be
+            pulled from this repository. You can provide either this or `definitions`.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Example:
         .. code-block:: python
@@ -115,11 +132,10 @@ class SensorEvaluationContext:
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        definitions: Optional["Definitions"] = None,
     ):
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.definitions_class import Definitions
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -129,30 +145,17 @@ class SensorEvaluationContext:
         self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
         self._cursor = check.opt_str_param(cursor, "cursor")
         self._repository_name = check.opt_str_param(repository_name, "repository_name")
-        self._repository_def = repository_def
+        self._repository_def = normalize_to_repository(
+            check.opt_inst_param(definitions, "definitions", Definitions),
+            check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+            error_on_none=False,
+        )
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
 
-        """
-        This is similar to what we do in e.g. the op context - we set up a resource
-        building context manager, and immediately enter it. This is so that in cases
-        where a user is not using any context-manager based resources, they don't
-        need to enter this SensorEvaluationContext themselves.
-        
-        For example:
-        
-        my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
-        
-        will work ok, but for a CM resource we must do
-
-        with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
-            my_sensor(context)
-        """
-
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
         self._cm_scope_entered = False
 
         self._log_key = (
@@ -165,28 +168,53 @@ class SensorEvaluationContext:
             else None
         )
         self._logger: Optional[InstigationLogger] = None
+        self._cursor_updated = False
 
     def __enter__(self) -> "SensorEvaluationContext":
         self._cm_scope_entered = True
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
-    def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
     @property
     def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            """
+            This is similar to what we do in e.g. the op context - we set up a resource
+            building context manager, and immediately enter it. This is so that in cases
+            where a user is not using any context-manager based resources, they don't
+            need to enter this SensorEvaluationContext themselves.
+
+            For example:
+
+            my_sensor(build_sensor_context(resources={"my_resource": my_non_cm_resource})
+
+            will work ok, but for a CM resource we must do
+
+            with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
+                my_sensor(context)
+            """
+
+            instance = self.instance if self._instance or self._instance_ref else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
+                )
+
         return self._resources
 
     @public
@@ -237,6 +265,11 @@ class SensorEvaluationContext:
             cursor (Optional[str]):
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
+        self._cursor_updated = True
+
+    @property
+    def cursor_updated(self) -> bool:
+        return self._cursor_updated
 
     @public
     @property
@@ -282,11 +315,12 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction, SensorResult]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
     PipelineRunReaction,
+    SensorResult,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
@@ -553,22 +587,49 @@ class SensorDefinition:
         result = list(self._evaluation_fn(context))
 
         skip_message: Optional[str] = None
+        run_requests: List[RunRequest] = []
+        pipeline_run_reactions: List[PipelineRunReaction] = []
+        updated_cursor = context.cursor
 
-        run_requests: List[RunRequest]
-        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
-            run_requests = []
-            pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
-            run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = (
-                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
-            )
-            skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, SensorResult))
+
+            if isinstance(item, SensorResult):
+                run_requests = list(item.run_requests) if item.run_requests else []
+                skip_message = (
+                    item.skip_reason.skip_message
+                    if item.skip_reason
+                    else (None if run_requests else "Sensor function returned an empty result")
+                )
+
+                if item.cursor and context.cursor_updated:
+                    raise DagsterInvariantViolationError(
+                        "SensorResult.cursor cannot be set if context.update_cursor() was called."
+                    )
+                updated_cursor = item.cursor
+
+            elif isinstance(item, RunRequest):
+                run_requests = [item]
+            elif isinstance(item, SkipReason):
+                skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            elif isinstance(item, PipelineRunReaction):
+                pipeline_run_reactions = (
+                    [cast(PipelineRunReaction, item)]
+                    if isinstance(item, PipelineRunReaction)
+                    else []
+                )
+            else:
+                check.failed(f"Unexpected type {type(item)} in sensor result")
         else:
+            if any(isinstance(item, SensorResult) for item in result):
+                check.failed(
+                    "When a SensorResult is returned from a sensor, it must be the only object"
+                    " returned."
+                )
+
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
@@ -590,17 +651,14 @@ class SensorDefinition:
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
-        self.check_valid_run_requests(run_requests)
-
-        if self._asset_selection:
-            run_requests = [
-                *_run_requests_with_base_asset_jobs(run_requests, context, self._asset_selection)
-            ]
+        resolved_run_requests = self.resolve_run_requests(
+            run_requests, context, self._asset_selection
+        )
 
         return SensorExecutionData(
-            run_requests,
+            resolved_run_requests,
             skip_message,
-            context.cursor,
+            updated_cursor,
             pipeline_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )
@@ -614,17 +672,33 @@ class SensorDefinition:
     def load_targets(
         self,
     ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+        """Returns job/graph definitions that have been directly passed into the sensor definition.
+        Any jobs or graphs that are referenced by name will not be loaded.
+        """
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
                 targets.append(target.load())
         return targets
 
-    def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
+    def resolve_run_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        context: SensorEvaluationContext,
+        asset_selection: Optional[AssetSelection],
+    ) -> Sequence[RunRequest]:
+        def _get_repo_job_by_name(context: SensorEvaluationContext, job_name: str) -> JobDefinition:
+            if context.repository_def is None:
+                raise DagsterInvariantViolationError(
+                    "Must provide repository def to build_sensor_context when yielding partitioned"
+                    " run requests"
+                )
+            return context.repository_def.get_job(job_name)
+
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
 
-        if run_requests and not self._targets and not self._asset_selection:
+        if run_requests and len(self._targets) == 0 and not self._asset_selection:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
@@ -632,17 +706,50 @@ class SensorDefinition:
                 "decorator."
             )
 
+        if asset_selection:
+            run_requests = [
+                *_run_requests_with_base_asset_jobs(run_requests, context, asset_selection)
+            ]
+
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
+        # Run requests may contain an invalid target, or a partition key that does not exist.
+        # We will resolve these run requests, applying the target and partition config/tags.
+        resolved_run_requests = []
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
                 raise Exception(
-                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
-                    f"specify job_name for the requested run. Expected one of: {target_names}"
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest that did not"
+                    " specify job_name for the requested run. Expected one of:"
+                    f" {target_names}"
                 )
-            elif run_request.job_name and run_request.job_name not in target_names:
+            elif (
+                run_request.job_name
+                and run_request.job_name not in target_names
+                and not asset_selection
+            ):
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
+
+            if run_request.partition_key and not run_request.has_resolved_partition():
+                selected_job = _get_repo_job_by_name(
+                    context, run_request.job_name if run_request.job_name else target_names[0]
+                )
+                resolved_run_requests.append(
+                    run_request.with_resolved_tags_and_config(
+                        target_definition=selected_job,
+                        current_time=None,
+                        dynamic_partitions_store=dynamic_partitions_store,
+                    )
+                )
+            else:
+                resolved_run_requests.append(run_request)
+
+        return resolved_run_requests
 
     @property
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
@@ -729,7 +836,7 @@ def wrap_sensor_evaluation(
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:
                 yield item
-        elif isinstance(result, (SkipReason, RunRequest)):
+        elif isinstance(result, (SkipReason, RunRequest, SensorResult)):
             yield result
 
         elif result is not None:
@@ -751,6 +858,7 @@ def build_sensor_context(
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
     resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    definitions: Optional["Definitions"] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -764,9 +872,13 @@ def build_sensor_context(
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
             If needed by the sensor top-level resource definitions will be pulled from this repository.
+            You can provide either this or `definitions`.
         resources (Optional[Mapping[str, ResourceDefinition]]): A set of resource definitions
             to provide to the sensor. If passed, these will override any resource definitions
             provided by the repository.
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Examples:
         .. code-block:: python
@@ -775,9 +887,17 @@ def build_sensor_context(
             my_sensor(context)
 
     """
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
+
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
+    repository_def = normalize_to_repository(
+        check.opt_inst_param(definitions, "definitions", Definitions),
+        check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+        error_on_none=False,
+    )
 
     return SensorEvaluationContext(
         instance_ref=None,

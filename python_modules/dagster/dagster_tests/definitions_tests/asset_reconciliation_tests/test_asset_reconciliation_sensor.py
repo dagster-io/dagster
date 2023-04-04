@@ -9,6 +9,7 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetMaterialization,
     AssetOut,
     AssetsDefinition,
     AssetSelection,
@@ -27,8 +28,10 @@ from dagster import (
     asset,
     build_asset_reconciliation_sensor,
     build_sensor_context,
+    job,
     materialize_to_memory,
     multi_asset,
+    op,
     repository,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -48,7 +51,6 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
@@ -233,7 +235,7 @@ def run(
 def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey(key) for key in asset_keys],
-        tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+        partition_key=partition_key,
     )
 
 
@@ -381,6 +383,7 @@ freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
 freshness_1d = FreshnessPolicy(maximum_lag_minutes=24 * 60)
 freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+freshness_cron = FreshnessPolicy(cron_schedule="0 7 * * *", maximum_lag_minutes=7 * 60)
 
 # basics
 one_asset = [asset_def("asset1")]
@@ -466,6 +469,12 @@ overlapping_freshness_inf = diamond + [
 overlapping_freshness_none = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=None),
+]
+
+overlapping_freshness_cron = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], freshness_policy=freshness_30m),
+    asset_def("asset3", ["asset1"], freshness_policy=freshness_cron),
 ]
 
 non_subsettable_multi_asset_on_top = [
@@ -733,6 +742,11 @@ scenarios = {
     "partial_run": AssetReconciliationScenario(
         assets=two_assets_in_sequence,
         unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"])],
+        expected_run_requests=[],
+    ),
+    "partial_run_partitioned": AssetReconciliationScenario(
+        assets=two_assets_in_sequence_one_partition,
+        unevaluated_runs=[run(["asset1"], failed_asset_keys=["asset2"], partition_key="a")],
         expected_run_requests=[],
     ),
     ################################################################################################
@@ -1273,6 +1287,17 @@ scenarios = {
         unevaluated_runs=[run(["asset1"])],
         expected_run_requests=[run_request(asset_keys=["asset2"])],
     ),
+    "freshness_overlapping_defer_propagate_with_cron": AssetReconciliationScenario(
+        assets=overlapping_freshness_cron,
+        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=6, tz="UTC"),
+        evaluation_delta=datetime.timedelta(minutes=90),
+        unevaluated_runs=[
+            run(["asset1", "asset2", "asset3"]),
+            run(["asset1"]),
+        ],
+        # don't run asset 3 even though its parent updated as freshness policy will handle it
+        expected_run_requests=[run_request(asset_keys=["asset1", "asset2"])],
+    ),
     "freshness_non_subsettable_multi_asset_on_top": AssetReconciliationScenario(
         assets=non_subsettable_multi_asset_on_top,
         unevaluated_runs=[run([f"asset{i}" for i in range(1, 6)])],
@@ -1399,3 +1424,28 @@ def test_sensor(scenario):
         )
         result2 = reconciliation_sensor(context2)
         assert len(list(result2)) == 0
+
+
+def test_bad_partition_key():
+    assets = [
+        asset_def("hourly1", partitions_def=hourly_partitions_def),
+        asset_def("hourly2", ["hourly1"], partitions_def=hourly_partitions_def),
+    ]
+
+    instance = DagsterInstance.ephemeral()
+
+    @op
+    def materialization_op(context):
+        context.log_event(AssetMaterialization("hourly1", partition="bad partition key"))
+
+    @job
+    def materialization_job():
+        materialization_op()
+
+    materialization_job.execute_in_process(instance=instance)
+
+    scenario = AssetReconciliationScenario(
+        assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
+    )
+    run_requests, _ = scenario.do_scenario(instance)
+    assert len(run_requests) == 0

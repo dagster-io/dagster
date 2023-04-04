@@ -319,7 +319,7 @@ def div_y_var(context, x: Float) -> float:
 
 @op(config_schema=Field(String))
 def hello(context) -> str:
-    return "Hello, {friend}!".format(friend=context.op_config)
+    return f"Hello, {context.op_config}!"
 
 
 @op(config_schema=Field(String))

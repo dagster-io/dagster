@@ -109,6 +109,7 @@ class GrapheneDefaultPartitions(graphene.ObjectType):
     materializedPartitions = non_null_list(graphene.String)
     failedPartitions = non_null_list(graphene.String)
     unmaterializedPartitions = non_null_list(graphene.String)
+    materializingPartitions = non_null_list(graphene.String)
 
     class Meta:
         name = "DefaultPartitions"
@@ -154,6 +155,7 @@ class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
     numFailed = graphene.NonNull(graphene.Int)
+    numMaterializing = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"
@@ -164,7 +166,7 @@ class GrapheneAsset(graphene.ObjectType):
     key = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
-        partitions=graphene.List(graphene.String),
+        partitions=graphene.List(graphene.NonNull(graphene.String)),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
@@ -173,7 +175,7 @@ class GrapheneAsset(graphene.ObjectType):
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
-        partitions=graphene.List(graphene.String),
+        partitions=graphene.List(graphene.NonNull(graphene.String)),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
@@ -202,7 +204,7 @@ class GrapheneAsset(graphene.ObjectType):
     def resolve_assetMaterializations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[Sequence[Optional[str]]] = None,
+        partitions: Optional[Sequence[str]] = None,
         partitionInLast: Optional[int] = None,
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
@@ -232,7 +234,7 @@ class GrapheneAsset(graphene.ObjectType):
     def resolve_assetObservations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[Sequence[Optional[str]]] = None,
+        partitions: Optional[Sequence[str]] = None,
         partitionInLast: Optional[int] = None,
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,

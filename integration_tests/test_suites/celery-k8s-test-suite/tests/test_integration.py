@@ -101,7 +101,7 @@ def test_execute_on_celery_k8s_default(
         namespace=helm_namespace,
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
@@ -131,7 +131,7 @@ def test_execute_on_celery_k8s_job_api(
         namespace=helm_namespace,
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
@@ -164,7 +164,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
@@ -193,7 +193,7 @@ def test_execute_on_celery_k8s_image_from_origin(
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance.get_run_by_id(run_id)
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
@@ -223,7 +223,7 @@ def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagi
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
 
 def test_execute_on_celery_k8s_retry_pipeline(
@@ -244,7 +244,7 @@ def test_execute_on_celery_k8s_retry_pipeline(
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     stats = dagster_instance.get_run_stats(run_id)
     assert stats.steps_succeeded == 1
@@ -296,7 +296,7 @@ def test_execute_on_celery_k8s_with_resource_requirements(
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
 
 def _test_termination(dagit_url, dagster_instance, run_config):
@@ -389,7 +389,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
 
     s3 = boto3.resource("s3", region_name="us-west-1", use_ssl=True, endpoint_url=None).meta.client
     bucket = "dagster-scratch-80542c2"
-    key = "resource_termination_test/{}".format(run_id)
+    key = f"resource_termination_test/{run_id}"
     assert s3.get_object(Bucket=bucket, Key=key)
 
 
@@ -530,7 +530,7 @@ def test_memoization_on_celery_k8s(
                 job_name="dagster-run-%s" % run_id, namespace=helm_namespace
             )
 
-            assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+            assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
             run_ids.append(run_id)
 
@@ -568,4 +568,4 @@ def test_volume_mounts(dagster_docker_image, dagster_instance, helm_namespace, d
         job_name="dagster-run-%s" % run_id, namespace=helm_namespace
     )
 
-    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
+    assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"

@@ -292,7 +292,14 @@ export const buildAssetPartitionDetailMock = (
         __typename: 'AssetNode',
         id: 'test.py.repo.["asset_1"]',
         assetMaterializations: [MaterializationEventFull, MaterializationEventOlder],
-        assetObservations: [BasicObservationEvent],
+        assetObservations: [
+          BasicObservationEvent,
+          {
+            ...BasicObservationEvent,
+            stepKey: 'a_different_step',
+            timestamp: `${Number(BasicObservationEvent.timestamp) + 2 * 60 * 1000}`,
+          },
+        ],
         latestRunForPartition: currentRunStatus
           ? {
               __typename: 'Run',

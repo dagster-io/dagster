@@ -24,12 +24,13 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -54,6 +55,7 @@ from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 T = TypeVar("T")
 
 RunConfig: TypeAlias = Mapping[str, Any]
@@ -158,11 +160,12 @@ class ScheduleEvaluationContext:
         "_log_key",
         "_logger",
         "_repository_name",
+        "_resource_defs",
         "_schedule_name",
         "_resources_cm",
         "_resources",
-        "_resources_contain_cm",
         "_cm_scope_entered",
+        "_repository_def",
     ]
 
     def __init__(
@@ -172,11 +175,9 @@ class ScheduleEvaluationContext:
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        repository_def: Optional["RepositoryDefinition"] = None,
     ):
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
-        from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
 
         self._exit_stack = ExitStack()
         self._instance = None
@@ -198,34 +199,43 @@ class ScheduleEvaluationContext:
         self._repository_name = repository_name
         self._schedule_name = schedule_name
 
-        self._resources_cm = build_resources(resources or {})
-
-        self._resources = self._resources_cm.__enter__()
-
-        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        # Wait to set resources unless they're accessed
+        self._resource_defs = resources
+        self._resources = None
         self._cm_scope_entered = False
+        self._repository_def = check.opt_inst_param(
+            repository_def, "repository_def", RepositoryDefinition
+        )
 
     def __enter__(self) -> "ScheduleEvaluationContext":
         self._cm_scope_entered = True
         return self
 
     def __exit__(self, *exc) -> None:
-        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
-    def __del__(self) -> None:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
-
     @property
     def resources(self) -> Resources:
-        if self._resources_contain_cm and not self._cm_scope_entered:
-            raise DagsterInvariantViolationError(
-                "At least one provided resource is a generator, but attempting to access "
-                "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_sensor_context(...) as context:`"
-            )
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
+        if not self._resources:
+            instance = self.instance if self._instance or self._instance_ref else None
+
+            resources_cm = build_resources(resources=self._resource_defs or {}, instance=instance)
+            self._resources = self._exit_stack.enter_context(resources_cm)
+
+            if isinstance(self._resources, IContainsGenerator) and not self._cm_scope_entered:
+                self._exit_stack.close()
+                raise DagsterInvariantViolationError(
+                    "At least one provided resource is a generator, but attempting to access"
+                    " resources outside of context manager scope. You can use the following syntax"
+                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                )
+
         return self._resources
 
     @public
@@ -289,6 +299,14 @@ class ScheduleEvaluationContext:
     def log_key(self) -> Optional[List[str]]:
         return self._log_key
 
+    @property
+    def repository_def(self) -> "RepositoryDefinition":
+        if not self._repository_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to access repository_def, but no repository_def was provided."
+            )
+        return self._repository_def
+
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
@@ -304,6 +322,7 @@ def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
     resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    repository_def: Optional["RepositoryDefinition"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -320,7 +339,6 @@ def build_schedule_context(
         .. code-block:: python
 
             context = build_schedule_context(instance)
-            daily_schedule.evaluate_tick(context)
 
     """
     check.opt_inst_param(instance, "instance", DagsterInstance)
@@ -331,6 +349,7 @@ def build_schedule_context(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
         resources=resources,
+        repository_def=repository_def,
     )
 
 
@@ -414,8 +433,6 @@ class ScheduleDefinition:
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
-        environment_vars (Optional[dict[str, str]]): The environment variables to set for the
-            schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -438,7 +455,6 @@ class ScheduleDefinition:
             name=self.name,
             cron_schedule=self._cron_schedule,
             job_name=self.job_name,
-            environment_vars=self.environment_vars,
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
@@ -493,6 +509,15 @@ class ScheduleDefinition:
 
         self._description = check.opt_str_param(description, "description")
 
+        if environment_vars is not None:
+            deprecation_warning(
+                "`environment_vars` parameter to `ScheduleDefinition`",
+                "2.0.0",
+                (
+                    "It is no longer necessary. Schedules will have access to all environment"
+                    " variables set in the containing environment, and can safely be deleted."
+                ),
+            )
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
@@ -664,6 +689,7 @@ class ScheduleDefinition:
         return self._cron_schedule  # type: ignore
 
     @public
+    @deprecated
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
@@ -695,6 +721,8 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -735,16 +763,37 @@ class ScheduleDefinition:
             run_requests = result
             skip_message = None
 
-        # clone all the run requests with the required schedule tags
-        run_requests_with_schedule_tags = [
-            request.with_replaced_attrs(
-                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
+        # clone all the run requests with resolved tags and config
+        resolved_run_requests = []
+        for run_request in run_requests:
+            if run_request.partition_key and not run_request.has_resolved_partition():
+                if context.repository_def is None:
+                    raise DagsterInvariantViolationError(
+                        "Must provide repository def to build_schedule_context when yielding"
+                        " partitioned run requests"
+                    )
+
+                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                resolved_request = run_request.with_resolved_tags_and_config(
+                    target_definition=scheduled_target,
+                    current_time=context.scheduled_execution_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+            else:
+                resolved_request = run_request
+
+            resolved_run_requests.append(
+                resolved_request.with_replaced_attrs(
+                    tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
+                )
             )
-            for request in run_requests
-        ]
 
         return ScheduleExecutionData(
-            run_requests=run_requests_with_schedule_tags,
+            run_requests=resolved_run_requests,
             skip_message=skip_message,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )

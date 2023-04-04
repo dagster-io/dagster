@@ -294,13 +294,11 @@ def inner_step(instance, pipeline_run, step_key):
 
 
 def expected_inner_output(step_key):
-    return "\n".join(
-        ["{step_key} inner {num}".format(step_key=step_key, num=i + 1) for i in range(3)]
-    )
+    return "\n".join([f"{step_key} inner {i + 1}" for i in range(3)])
 
 
 def expected_outer_prefix():
-    return "\n".join(["outer {num}".format(num=i + 1) for i in range(3)])
+    return "\n".join([f"outer {i + 1}" for i in range(3)])
 
 
 @pytest.mark.skipif(

@@ -43,7 +43,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 
 def assert_permission_for_location(
     graphene_info: "ResolveInfo", permission: str, location_name: str
-):
+) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
@@ -121,7 +121,7 @@ class ErrorCapture:
 def capture_error(
     fn: Callable[P, T]
 ) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
-    def _fn(*args: P.args, **kwargs: P.kwargs):
+    def _fn(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
@@ -242,3 +242,6 @@ class ExecutionMetadata(
             "rootRunId": self.root_run_id,
             "parentRunId": self.parent_run_id,
         }
+
+
+BackfillParams: TypeAlias = Mapping[str, Any]

@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple, cast
+from typing import Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetKey,
@@ -195,22 +195,9 @@ def get_validated_partition_keys(
             & partition_keys
         )
     elif isinstance(partitions_def, MultiPartitionsDefinition):
-        partition_keys_by_dimension = {
-            dim.name: dim.partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
-            )
-            for dim in partitions_def.partitions_defs
-        }
-        validated_partitions = set()
-        for partition_key in partition_keys:
-            multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
-            if all(
-                key in partition_keys_by_dimension.get(dim, [])
-                for dim, key in cast(
-                    MultiPartitionKey, multipartition_key
-                ).keys_by_dimension.items()
-            ):
-                validated_partitions.add(partition_key)
+        validated_partitions = partitions_def.filter_valid_partition_keys(
+            partition_keys, dynamic_partitions_store
+        )
     else:
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
@@ -255,7 +242,7 @@ def _build_status_cache(
         )
     )
 
-    failed_subset, in_progress_subset, cursor = _build_failed_and_in_progress_partition_subset(
+    failed_subset, in_progress_subset, cursor = build_failed_and_in_progress_partition_subset(
         instance, asset_key, partitions_def, dynamic_partitions_store
     )
 
@@ -271,7 +258,7 @@ def _build_status_cache(
     )
 
 
-def _build_failed_and_in_progress_partition_subset(
+def build_failed_and_in_progress_partition_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,
     partitions_def: PartitionsDefinition,

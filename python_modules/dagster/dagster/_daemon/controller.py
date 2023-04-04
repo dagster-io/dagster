@@ -52,7 +52,7 @@ DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
 
 
 def _sorted_quoted(strings: Iterable[str]) -> str:
-    return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
+    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
 
 
 def create_daemons_from_instance(instance: DagsterInstance) -> Sequence[DagsterDaemon]:
@@ -80,7 +80,6 @@ def daemon_controller_from_instance(
     workspace_load_target: WorkspaceLoadTarget,
     heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-    wait_for_processes_on_exit: bool = False,
     gen_daemons: Callable[
         [DagsterInstance], Iterable[DagsterDaemon]
     ] = create_daemons_from_instance,
@@ -90,33 +89,29 @@ def daemon_controller_from_instance(
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
     grpc_server_registry: Optional[GrpcServerRegistry] = None
-    try:
-        with ExitStack() as stack:
-            grpc_server_registry = stack.enter_context(
-                create_daemon_grpc_server_registry(instance, code_server_log_level)
+    with ExitStack() as stack:
+        grpc_server_registry = stack.enter_context(
+            create_daemon_grpc_server_registry(instance, code_server_log_level)
+        )
+        daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
+        workspace_process_context = stack.enter_context(
+            WorkspaceProcessContext(
+                instance=instance,
+                workspace_load_target=workspace_load_target,
+                grpc_server_registry=grpc_server_registry,
             )
-            daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
-            workspace_process_context = stack.enter_context(
-                WorkspaceProcessContext(
-                    instance=instance,
-                    workspace_load_target=workspace_load_target,
-                    grpc_server_registry=grpc_server_registry,
-                )
+        )
+        controller = stack.enter_context(
+            DagsterDaemonController(
+                workspace_process_context,
+                daemons,
+                heartbeat_interval_seconds=heartbeat_interval_seconds,
+                heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
+                error_interval_seconds=error_interval_seconds,
             )
-            controller = stack.enter_context(
-                DagsterDaemonController(
-                    workspace_process_context,
-                    daemons,
-                    heartbeat_interval_seconds=heartbeat_interval_seconds,
-                    heartbeat_tolerance_seconds=heartbeat_tolerance_seconds,
-                    error_interval_seconds=error_interval_seconds,
-                )
-            )
+        )
 
-            yield controller
-    finally:
-        if wait_for_processes_on_exit and grpc_server_registry:
-            grpc_server_registry.wait_for_processes()
+        yield controller
 
 
 class DagsterDaemonController(AbstractContextManager):
@@ -183,7 +178,7 @@ class DagsterDaemonController(AbstractContextManager):
                     heartbeat_interval_seconds,
                     error_interval_seconds,
                 ),
-                name="dagster-daemon-{daemon_type}".format(daemon_type=daemon_type),
+                name=f"dagster-daemon-{daemon_type}",
                 daemon=True,  # Individual daemons should not outlive controller process
             )
             self._last_healthy_heartbeat_times[daemon_type] = time.time()

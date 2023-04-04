@@ -58,7 +58,7 @@ class GithubResource:
         request = self.client.get(
             "https://api.github.com/app/installations"
             if self.hostname is None
-            else "https://{}/api/v3/app/installations".format(self.hostname),
+            else f"https://{self.hostname}/api/v3/app/installations",
             headers=headers,
         )
         request.raise_for_status()
@@ -71,7 +71,7 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
-            "https://api.github.com/app/installations/{}/access_tokens".format(installation_id)
+            f"https://api.github.com/app/installations/{installation_id}/access_tokens"
             if self.hostname is None
             else "https://{}/api/v3/app/installations/{}/access_tokens".format(
                 self.hostname, installation_id
@@ -103,7 +103,7 @@ class GithubResource:
         request = requests.post(
             "https://api.github.com/graphql"
             if self.hostname is None
-            else "https://{}/api/graphql".format(self.hostname),
+            else f"https://{self.hostname}/api/graphql",
             json={"query": query, "variables": variables},
             headers=headers,
         )

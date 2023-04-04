@@ -68,18 +68,14 @@ def instance_for_test(
         if not temp_dir:
             temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
 
-        # If using the default run launcher, wait for any grpc processes that created runs
-        # during test disposal to finish, since they might also be using this instance's tempdir
+        # wait for any grpc processes that created runs during test disposal to finish,
+        # since they might also be using this instance's tempdir (and to keep each test
+        # isolated / avoid race conditions in newer versions of grpcio when servers are
+        # shutting down and spinning up at the same time)
         instance_overrides = merge_dicts(
             {
-                "run_launcher": {
-                    "class": "DefaultRunLauncher",
-                    "module": "dagster._core.launcher.default_run_launcher",
-                    "config": {
-                        "wait_for_processes": True,
-                    },
-                },
                 "telemetry": {"enabled": False},
+                "code_servers": {"wait_for_local_processes_on_shutdown": True},
             },
             (overrides if overrides else {}),
         )

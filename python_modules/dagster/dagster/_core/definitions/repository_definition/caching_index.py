@@ -13,20 +13,20 @@ from typing import (
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 
-from .valid_definitions import RepositoryLevelDefinition
+from .valid_definitions import T_RepositoryLevelDefinition
 
 
-class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
+class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
     def __init__(
         self,
-        definition_class: Type[RepositoryLevelDefinition],
+        definition_class: Type[T_RepositoryLevelDefinition],
         definition_class_name: str,
         definition_kind: str,
         definitions: Mapping[
-            str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
+            str, Union[T_RepositoryLevelDefinition, Callable[[], T_RepositoryLevelDefinition]]
         ],
-        validation_fn: Callable[[RepositoryLevelDefinition], RepositoryLevelDefinition],
-        lazy_definitions_fn: Optional[Callable[[], Sequence[RepositoryLevelDefinition]]] = None,
+        validation_fn: Callable[[T_RepositoryLevelDefinition], T_RepositoryLevelDefinition],
+        lazy_definitions_fn: Optional[Callable[[], Sequence[T_RepositoryLevelDefinition]]] = None,
     ):
         """Args:
         definitions: A dictionary of definition names to definitions or functions that load
@@ -47,27 +47,27 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
                 ),
             )
 
-        self._definition_class: Type[RepositoryLevelDefinition] = definition_class
+        self._definition_class: Type[T_RepositoryLevelDefinition] = definition_class
         self._definition_class_name = definition_class_name
         self._definition_kind = definition_kind
         self._validation_fn: Callable[
-            [RepositoryLevelDefinition], RepositoryLevelDefinition
+            [T_RepositoryLevelDefinition], T_RepositoryLevelDefinition
         ] = validation_fn
 
         self._definitions: Mapping[
-            str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
+            str, Union[T_RepositoryLevelDefinition, Callable[[], T_RepositoryLevelDefinition]]
         ] = definitions
-        self._definition_cache: Dict[str, RepositoryLevelDefinition] = {}
+        self._definition_cache: Dict[str, T_RepositoryLevelDefinition] = {}
         self._definition_names: Optional[Sequence[str]] = None
 
         self._lazy_definitions_fn: Callable[
-            [], Sequence[RepositoryLevelDefinition]
+            [], Sequence[T_RepositoryLevelDefinition]
         ] = lazy_definitions_fn or (lambda: [])
-        self._lazy_definitions: Optional[Sequence[RepositoryLevelDefinition]] = None
+        self._lazy_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None
 
-        self._all_definitions: Optional[Sequence[RepositoryLevelDefinition]] = None
+        self._all_definitions: Optional[Sequence[T_RepositoryLevelDefinition]] = None
 
-    def _get_lazy_definitions(self) -> Sequence[RepositoryLevelDefinition]:
+    def _get_lazy_definitions(self) -> Sequence[T_RepositoryLevelDefinition]:
         if self._lazy_definitions is None:
             self._lazy_definitions = self._lazy_definitions_fn()
             for definition in self._lazy_definitions:
@@ -98,7 +98,7 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
 
         return definition_name in self.get_definition_names()
 
-    def get_all_definitions(self) -> Sequence[RepositoryLevelDefinition]:
+    def get_all_definitions(self) -> Sequence[T_RepositoryLevelDefinition]:
         if self._all_definitions is not None:
             return self._all_definitions
 
@@ -110,7 +110,7 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         )
         return self._all_definitions
 
-    def get_definition(self, definition_name: str) -> RepositoryLevelDefinition:
+    def get_definition(self, definition_name: str) -> T_RepositoryLevelDefinition:
         check.str_param(definition_name, "definition_name")
 
         if not self.has_definition(definition_name):
@@ -120,10 +120,7 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
                     definition_kind=self._definition_kind,
                     definition_name=definition_name,
                     found_names=", ".join(
-                        [
-                            "'{found_name}'".format(found_name=found_name)
-                            for found_name in self.get_definition_names()
-                        ]
+                        [f"'{found_name}'" for found_name in self.get_definition_names()]
                     ),
                 )
             )
@@ -142,7 +139,7 @@ class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
             return definition
 
     def _validate_and_cache_definition(
-        self, definition: RepositoryLevelDefinition, definition_dict_key: str
+        self, definition: T_RepositoryLevelDefinition, definition_dict_key: str
     ):
         check.invariant(
             isinstance(definition, self._definition_class),

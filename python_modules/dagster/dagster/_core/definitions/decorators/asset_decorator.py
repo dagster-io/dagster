@@ -19,7 +19,7 @@ from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -85,7 +85,7 @@ def asset(
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
-    metadata: Optional[Mapping[str, Any]] = None,
+    metadata: Optional[ArbitraryMetadataMapping] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
@@ -225,7 +225,7 @@ class _Asset:
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         description: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
         required_resource_keys: Optional[Set[str]] = None,
@@ -664,12 +664,12 @@ def graph_asset(
 
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
-            decorated function. The asset's name must be a valid name in dagster (ie only contains
-            letters, numbers, and _) and may not contain python reserved keywords.
+            decorated function. The asset's name must be a valid name in Dagster (ie only contains
+            letters, numbers, and underscores) and may not contain Python reserved keywords.
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
-            the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
-            contains letters, numbers, and _) and may not contain python reserved keywords.
+            the decorated function. Each item in key_prefix must be a valid name in Dagster (ie only
+            contains letters, numbers, and underscores) and may not contain Python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that

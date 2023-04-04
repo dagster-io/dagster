@@ -72,7 +72,7 @@ def construct_spark_shell_command(
     deploy_mode = ["--deploy-mode", deploy_mode] if deploy_mode else []
 
     spark_shell_cmd = (
-        ["{}/bin/spark-submit".format(spark_home), "--class", main_class]
+        [f"{spark_home}/bin/spark-submit", "--class", main_class]
         + master_url
         + deploy_mode
         + parse_spark_config(spark_conf)

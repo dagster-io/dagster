@@ -33,14 +33,22 @@ def monitor_starting_run(
     )
     if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
-            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, which is"
-            f" longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds"
-            " to start. Marking run failed"
+            "Run timed out due to taking longer than"
+            f" {instance.run_monitoring_start_timeout_seconds} seconds to start."
         )
-        logger.info(msg)
-        instance.report_run_failed(run, msg)
 
-    # TODO: consider attempting to resume the run, if the run worker is in a bad status
+        debug_info = None
+        try:
+            debug_info = instance.run_launcher.get_run_worker_debug_info(run)
+        except Exception:
+            logger.exception("Failure fetching debug info for failed run worker")
+
+        if debug_info:
+            msg = msg + f"\n{debug_info}"
+
+        logger.info(msg)
+
+        instance.report_run_failed(run, msg)
 
 
 def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
@@ -81,16 +89,24 @@ def monitor_started_run(
                 attempt_number,
             )
         else:
+            debug_info = ""
+            try:
+                debug_info = instance.run_launcher.get_run_worker_debug_info(run)
+            except Exception:
+                logger.exception("Failure fetching debug info for failed run worker")
+
             if instance.run_launcher.supports_resume_run:
                 msg = (
                     f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
                     " failed, because it has surpassed the configured maximum attempts to resume"
                     f" the run: {instance.run_monitoring_max_resume_run_attempts}."
+                    + (f"\n{debug_info}" if debug_info else "")
                 )
             else:
                 msg = (
                     f"Detected run worker status {check_health_result}. Marking run {run.run_id} as"
                     " failed."
+                    + (f"\n{debug_info}" if debug_info else "")
                 )
             logger.info(msg)
             instance.report_run_failed(run, msg)

@@ -231,6 +231,7 @@ def _create_repository_using_definitions_args(
         if resources
         else {}
     )
+
     resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
@@ -275,6 +276,7 @@ The following jobs are affected: {jobs_text}
         default_executor_def=executor_def,
         default_logger_defs=loggers,
         _top_level_resources=resource_defs,
+        _resource_key_mapping=resource_key_mapping,
     )
     def created_repo():
         return [
