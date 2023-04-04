@@ -604,7 +604,7 @@ def log_repo_stats(
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repository = pipeline.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_pipelines_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
@@ -614,7 +614,7 @@ def log_repo_stats(
             pipeline_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.pipeline_names)
+            num_pipelines_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())

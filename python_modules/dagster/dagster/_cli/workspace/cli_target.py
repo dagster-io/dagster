@@ -534,7 +534,7 @@ def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> JobPythonOrigi
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_definition = recon_repo.get_definition()
 
-    job_names = set(repo_definition.pipeline_names)  # pipeline (all) vs job (non legacy)
+    job_names = set(repo_definition.job_names)  # pipeline (all) vs job (non legacy)
 
     if provided_name is None and len(job_names) == 1:
         pipeline_name = next(iter(job_names))
