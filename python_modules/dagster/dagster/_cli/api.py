@@ -260,9 +260,9 @@ def _resume_run_command_body(
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
 
 
-def get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute):
+def get_step_stats_by_key(instance, dagster_run, step_keys_to_execute):
     # When using the k8s executor, there whould only ever be one step key
-    step_stats = instance.get_run_step_stats(pipeline_run.run_id, step_keys=step_keys_to_execute)
+    step_stats = instance.get_run_step_stats(dagster_run.run_id, step_keys=step_keys_to_execute)
     step_stats_by_key = {step_stat.step_key: step_stat for step_stat in step_stats}
     return step_stats_by_key
 
