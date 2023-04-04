@@ -131,14 +131,19 @@ class ExecuteRunArgs(
         ]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    }
+)
 class ResumeRunArgs(
     NamedTuple(
         "_ResumeRunArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
-            ("pipeline_origin", JobPythonOrigin),
-            ("pipeline_run_id", str),
+            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
+            ("job_origin", JobPythonOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
             ("set_exit_code_on_failure", Optional[bool]),
         ],
@@ -146,19 +151,19 @@ class ResumeRunArgs(
 ):
     def __new__(
         cls,
-        pipeline_origin: JobPythonOrigin,
-        pipeline_run_id: str,
+        job_origin: JobPythonOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
         set_exit_code_on_failure: Optional[bool] = None,
     ):
         return super(ResumeRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
                 JobPythonOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             set_exit_code_on_failure=(
                 True
@@ -169,7 +174,7 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return _get_entry_point(self.job_origin) + [
             "api",
             "resume_run",
             serialize_value(self),

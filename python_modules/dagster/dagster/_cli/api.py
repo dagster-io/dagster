@@ -177,7 +177,7 @@ def resume_run_command(input_json):
                 buffer.append(serialize_value(event))
 
             return_code = _resume_run_command_body(
-                args.pipeline_run_id,
+                args.run_id,
                 instance,
                 send_to_buffer,
                 set_exit_code_on_failure=args.set_exit_code_on_failure or False,

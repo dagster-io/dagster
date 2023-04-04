@@ -170,8 +170,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         docker_image = self._get_docker_image(pipeline_code_origin)
 
         command = ResumeRunArgs(
-            pipeline_origin=pipeline_code_origin,
-            pipeline_run_id=run.run_id,
+            job_origin=pipeline_code_origin,
+            run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         ).get_command_args()
 
