@@ -148,7 +148,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -186,12 +186,12 @@ class UnboundOpExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("run_config", "property"))
 
     @property
-    def pipeline_def(self) -> JobDefinition:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_def", "property"))
+    def job_def(self) -> JobDefinition:
+        raise DagsterInvalidPropertyError(_property_msg("job_def", "property"))
 
     @property
-    def pipeline_name(self) -> str:
-        raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
+    def job_name(self) -> str:
+        raise DagsterInvalidPropertyError(_property_msg("job_name", "property"))
 
     @property
     def log(self) -> DagsterLogManager:
@@ -429,7 +429,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         return self._resources
 
     @property
-    def pipeline_run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
@@ -471,11 +471,11 @@ class BoundOpExecutionContext(OpExecutionContext):
         return run_config
 
     @property
-    def pipeline_def(self) -> JobDefinition:
+    def job_def(self) -> JobDefinition:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_def", "property"))
 
     @property
-    def pipeline_name(self) -> str:
+    def job_name(self) -> str:
         raise DagsterInvalidPropertyError(_property_msg("pipeline_name", "property"))
 
     @property
