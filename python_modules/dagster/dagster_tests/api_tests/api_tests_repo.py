@@ -1,7 +1,17 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, job, op, repository, usable_as_dagster_type
+from dagster import (
+    DynamicPartitionsDefinition,
+    Int,
+    ScheduleDefinition,
+    asset,
+    define_asset_job,
+    job,
+    op,
+    repository,
+    usable_as_dagster_type,
+)
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
@@ -65,6 +75,14 @@ baz_config = PartitionedConfig(
 @job(name="baz", description="Not much tbh", partitions_def=baz_partitions, config=baz_config)
 def baz_job():
     do_input()
+
+
+dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic_partitions")
+
+
+@asset(partitions_def=dynamic_partitions_def)
+def dynamic_asset():
+    return 1
 
 
 def throw_error(_):
@@ -157,7 +175,12 @@ def bar_repo():
             "fail": fail_pipeline,
             "forever": forever_pipeline,
         },
-        "jobs": {"baz": lambda: baz_job},
+        "jobs": {
+            "baz": lambda: baz_job,
+            "dynamic_job": define_asset_job(
+                "dynamic_job", [dynamic_asset], partitions_def=dynamic_partitions_def
+            ).resolve([dynamic_asset], []),
+        },
         "schedules": define_bar_schedules(),
         "sensors": {
             "sensor_foo": sensor_foo,
