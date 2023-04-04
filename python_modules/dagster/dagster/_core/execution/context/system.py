@@ -96,7 +96,7 @@ class IPlanContext(ABC):
 
     @property
     def job(self) -> IJob:
-        return self.plan_data.pipeline
+        return self.plan_data.job
 
     @property
     def dagster_run(self) -> DagsterRun:
@@ -163,7 +163,7 @@ class PlanData(NamedTuple):
     pipeline definition and resources.
     """
 
-    pipeline: IJob
+    job: IJob
     dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
@@ -483,7 +483,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
         self._step = step
         self._required_resource_keys = get_required_resource_keys_for_step(
-            plan_data.pipeline.get_definition(),
+            plan_data.job.get_definition(),
             step,
             plan_data.execution_plan,
         )

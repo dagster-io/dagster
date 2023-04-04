@@ -114,7 +114,7 @@ def host_mode_execution_context_event_generator(
         executor = _get_host_mode_executor(pipeline, run_config, executor_defs, instance)
         execution_context = PlanOrchestrationContext(
             plan_data=PlanData(
-                pipeline=pipeline,
+                job=pipeline,
                 dagster_run=pipeline_run,
                 instance=instance,
                 execution_plan=execution_plan,
