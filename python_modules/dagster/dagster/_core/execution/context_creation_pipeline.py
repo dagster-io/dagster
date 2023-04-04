@@ -96,19 +96,19 @@ class ContextCreationData(NamedTuple):
 
 
 def create_context_creation_data(
-    pipeline: IJob,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
-    pipeline_def = pipeline.get_definition()
+    pipeline_def = job.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
     executor_def = pipeline_def.executor_def
 
     return ContextCreationData(
-        job=pipeline,
+        job=job,
         resolved_run_config=resolved_run_config,
         dagster_run=dagster_run,
         executor_def=executor_def,
