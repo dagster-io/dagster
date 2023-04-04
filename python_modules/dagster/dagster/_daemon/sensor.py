@@ -693,7 +693,7 @@ def _evaluate_sensor(
         pipeline_selector = PipelineSelector(
             location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
-            pipeline_name=target_data.pipeline_name,
+            pipeline_name=target_data.job_name,
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )
@@ -887,7 +887,7 @@ def _create_sensor_run(
     )
 
     return instance.create_run(
-        pipeline_name=target_data.pipeline_name,
+        pipeline_name=target_data.job_name,
         run_id=None,
         run_config=run_request.run_config,
         solids_to_execute=external_pipeline.solids_to_execute,

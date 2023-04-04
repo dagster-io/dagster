@@ -613,7 +613,7 @@ class ExternalSchedule:
 
     @property
     def job_name(self) -> str:
-        return self._external_schedule_data.pipeline_name
+        return self._external_schedule_data.job_name
 
     @property
     def mode(self) -> Optional[str]:
@@ -731,7 +731,7 @@ class ExternalSensor:
     @property
     def job_name(self) -> Optional[str]:
         target = self._get_single_target()
-        return target.pipeline_name if target else None
+        return target.job_name if target else None
 
     @property
     def mode(self) -> Optional[str]:

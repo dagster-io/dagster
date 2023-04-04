@@ -379,14 +379,16 @@ class ExternalPresetData(
         )
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"default_status"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name"}, skip_when_empty_fields={"default_status"}
+)
 class ExternalScheduleData(
     NamedTuple(
         "_ExternalScheduleData",
         [
             ("name", str),
             ("cron_schedule", Union[str, Sequence[str]]),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("environment_vars", Optional[Mapping[str, str]]),
@@ -401,7 +403,7 @@ class ExternalScheduleData(
         cls,
         name,
         cron_schedule,
-        pipeline_name,
+        job_name,
         solid_selection,
         mode,
         environment_vars,
@@ -418,7 +420,7 @@ class ExternalScheduleData(
             cls,
             name=check.str_param(name, "name"),
             cron_schedule=cron_schedule,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
             environment_vars=check.opt_dict_param(environment_vars, "environment_vars"),
@@ -443,17 +445,17 @@ class ExternalScheduleExecutionErrorData(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
 class ExternalTargetData(
     NamedTuple(
         "_ExternalTargetData",
-        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
+        [("job_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
     )
 ):
-    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
+    def __new__(cls, job_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             mode=mode,
             solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
@@ -476,13 +478,16 @@ class ExternalSensorMetadata(
         )
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"default_status", "sensor_type"})
+@whitelist_for_serdes(
+    storage_field_names={"job_name": "pipeline_name"},
+    skip_when_empty_fields={"default_status", "sensor_type"},
+)
 class ExternalSensorData(
     NamedTuple(
         "_ExternalSensorData",
         [
             ("name", str),
-            ("pipeline_name", Optional[str]),
+            ("job_name", Optional[str]),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
@@ -497,7 +502,7 @@ class ExternalSensorData(
     def __new__(
         cls,
         name: str,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
@@ -507,12 +512,12 @@ class ExternalSensorData(
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
     ):
-        if pipeline_name and not target_dict:
+        if job_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
             # version of dagster
             target_dict = {
-                pipeline_name: ExternalTargetData(
-                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+                job_name: ExternalTargetData(
+                    job_name=check.str_param(job_name, "job_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
                     solid_selection=check.opt_nullable_sequence_param(
                         solid_selection, "solid_selection", str
@@ -523,9 +528,7 @@ class ExternalSensorData(
         return super(ExternalSensorData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=check.opt_str_param(
-                pipeline_name, "pipeline_name"
-            ),  # keep legacy field populated
+            job_name=check.opt_str_param(job_name, "job_name"),  # keep legacy field populated
             solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),  # keep legacy field populated
@@ -742,13 +745,13 @@ class ExternalDynamicPartitionsDefinitionData(
         return DynamicPartitionsDefinition(name=self.name)
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"job_name": "pipeline_name"})
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
         [
             ("name", str),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
@@ -758,7 +761,7 @@ class ExternalPartitionSetData(
     def __new__(
         cls,
         name: str,
-        pipeline_name: str,
+        job_name: str,
         solid_selection: Optional[Sequence[str]],
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
@@ -766,7 +769,7 @@ class ExternalPartitionSetData(
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),
@@ -1612,7 +1615,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
     return ExternalScheduleData(
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
-        pipeline_name=schedule_def.job_name,
+        job_name=schedule_def.job_name,
         solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
@@ -1715,7 +1718,7 @@ def external_partition_set_data_from_def(
 
     return ExternalPartitionSetData(
         name=external_partition_set_name_for_job_name(job_def.name),
-        pipeline_name=job_def.name,
+        job_name=job_def.name,
         solid_selection=None,
         mode=DEFAULT_MODE_NAME,
         external_partitions_data=partitions_def_data,
@@ -1746,14 +1749,14 @@ def external_sensor_data_from_def(
     if sensor_def.asset_selection is not None:
         target_dict = {
             base_asset_job_name: ExternalTargetData(
-                pipeline_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
+                job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
             )
             for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
     else:
         target_dict = {
             target.job_name: ExternalTargetData(
-                pipeline_name=target.job_name,
+                job_name=target.job_name,
                 mode=DEFAULT_MODE_NAME,
                 solid_selection=target.solid_selection,
             )
@@ -1762,7 +1765,7 @@ def external_sensor_data_from_def(
 
     return ExternalSensorData(
         name=sensor_def.name,
-        pipeline_name=first_target.job_name if first_target else None,
+        job_name=first_target.job_name if first_target else None,
         mode=None,
         solid_selection=first_target.solid_selection if first_target else None,
         target_dict=target_dict,

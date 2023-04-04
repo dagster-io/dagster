@@ -195,7 +195,7 @@ def get_sensors_for_pipeline(
     results = []
     for external_sensor in external_sensors:
         if pipeline_selector.pipeline_name not in [
-            target.pipeline_name for target in external_sensor.get_external_targets()
+            target.job_name for target in external_sensor.get_external_targets()
         ]:
             continue
 
