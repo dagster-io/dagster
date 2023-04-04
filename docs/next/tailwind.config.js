@@ -9,6 +9,7 @@ module.exports = {
     './components/**/*.{js,jsx,ts,tsx}',
     './layouts/**/*.{js,jsx,ts,tsx}',
     '../content/**/*.mdx',
+    '../content/**/*.md',
   ],
   darkMode: 'class',
   variants: {
