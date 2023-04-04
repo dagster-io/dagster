@@ -23,10 +23,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import (
-    Resources,
-    ScopedResourcesBuilder,
-)
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -449,7 +446,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())  # fmt: skip
+            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
 
         return _run_failure_sensor
 
@@ -714,20 +711,26 @@ class RunStatusSensorDefinition(SensorDefinition):
                         instance=context.instance,
                         context=context,
                         resources=context.resource_defs,
-                    ) as sensor_context:
-                        with user_code_error_boundary(
-                            RunStatusSensorExecutionError,
-                            lambda: f'Error occurred during the execution sensor "{name}".',
-                        ):
-                            # one user code invocation maps to one failure event
-                            context_param_name = get_context_param_name(run_status_sensor_fn)
-                            context_param = (
-                                {context_param_name: sensor_context} if context_param_name else {}
-                            )
+                    ) as sensor_context, user_code_error_boundary(
+                        RunStatusSensorExecutionError,
+                        lambda: f'Error occurred during the execution sensor "{name}".',
+                    ):
+                        context_param_name = get_context_param_name(run_status_sensor_fn)
+                        context_param = (
+                            {context_param_name: sensor_context} if context_param_name else {}
+                        )
 
-                            sensor_return = run_status_sensor_fn(
-                                **context_param,
-                                **resource_args_populated,
+                        sensor_return = run_status_sensor_fn(
+                            **context_param,
+                            **resource_args_populated,
+                        )
+
+                        if sensor_return is not None:
+                            context.update_cursor(
+                                RunStatusSensorCursor(
+                                    record_id=storage_id,
+                                    update_timestamp=update_timestamp.isoformat(),
+                                ).to_json()
                             )
 
                             if isinstance(sensor_return, SensorResult):
