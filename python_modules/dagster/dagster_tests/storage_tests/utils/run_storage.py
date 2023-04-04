@@ -100,7 +100,7 @@ class TestRunStorage:
 
     @classmethod
     def fake_job_origin(cls, job_name, repo_name=None):
-        return cls.fake_repo_target(repo_name).get_pipeline_origin(job_name)
+        return cls.fake_repo_target(repo_name).get_job_origin(job_name)
 
     @classmethod
     def fake_partition_set_origin(cls, partition_set_name):

@@ -376,8 +376,8 @@ class ExternalRepositoryOrigin(
     def get_label(self) -> str:
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalJobOrigin":
-        return ExternalJobOrigin(self, pipeline_name)
+    def get_job_origin(self, job_name: str) -> "ExternalJobOrigin":
+        return ExternalJobOrigin(self, job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
         return ExternalInstigatorOrigin(self, instigator_name)

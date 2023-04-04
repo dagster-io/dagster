@@ -71,7 +71,7 @@ class JobHandle(
         return self.repository_handle.location_name
 
     def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_pipeline_origin(self.job_name)
+        return self.repository_handle.get_external_origin().get_job_origin(self.job_name)
 
     def get_python_origin(self):
         return self.repository_handle.get_python_origin().get_pipeline_origin(self.job_name)
