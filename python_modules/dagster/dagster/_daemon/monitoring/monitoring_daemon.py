@@ -17,7 +17,7 @@ from dagster._core.storage.pipeline_run import (
     RunRecord,
     RunsFilter,
 )
-from dagster._core.storage.tags import MAX_RUNTIME_TAG
+from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -94,6 +94,8 @@ def monitor_started_run(
                     workspace,
                     attempt_number,
                 )
+                # Return rather than immediately checking for a timeout, since we only just resumed
+                return
             else:
                 if instance.run_launcher.supports_resume_run:
                     msg = (
@@ -109,6 +111,8 @@ def monitor_started_run(
                     )
                 logger.info(msg)
                 instance.report_run_failed(run, msg)
+                # Return rather than immediately checking for a timeout, since we just failed
+                return
     check_run_timeout(instance, run_record, logger)
 
 
@@ -156,7 +160,7 @@ def check_run_timeout(
     instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
 ) -> None:
     max_time_str = run_record.dagster_run.tags.get(
-        MAX_RUNTIME_TAG,
+        MAX_RUNTIME_SECONDS_TAG,
     )
     if not max_time_str:
         return
@@ -177,12 +181,15 @@ def check_run_timeout(
             message=f"Canceling due to exceeding maximum runtime of {max_time} seconds.",
         )
         try:
-            instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id)
+            if instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id):
+                instance.report_run_failed(
+                    run_record.dagster_run, f"Exceeded maximum runtime of {max_time} seconds."
+                )
         except:
             instance.report_engine_event(
                 (
                     "Exception while attempting to force-terminate run. Run will still be marked as"
-                    " canceled."
+                    " failed."
                 ),
                 pipeline_name=run_record.dagster_run.job_name,
                 run_id=run_record.dagster_run.run_id,
@@ -190,11 +197,18 @@ def check_run_timeout(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
             )
-            instance.report_run_canceled(
-                run_record.dagster_run,
-                message=(
-                    "Attempted to terminate this run for exceeding maximum runtime, but run"
-                    " termination failed. Forcibly marked as canceled, computational resources may"
-                    " not have been cleaned up."
-                ),
-            )
+        _force_mark_as_failed(instance, run_record.dagster_run.run_id)
+
+
+def _force_mark_as_failed(instance: DagsterInstance, run_id: str) -> None:
+    reloaded_record = check.not_none(
+        instance.get_run_record_by_id(run_id), f"Could not reload run record with run_id {run_id}."
+    )
+
+    if not reloaded_record.dagster_run.is_finished:
+        message = (
+            "This job is being forcibly marked as failed. The "
+            "computational resources created by the run may not have been fully cleaned up."
+        )
+        instance.report_run_failed(reloaded_record.dagster_run, message=message)
+        reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
