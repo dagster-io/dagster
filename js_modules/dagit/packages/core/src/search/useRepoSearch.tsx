@@ -2,6 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
+import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -10,7 +11,6 @@ import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
 import {SearchBootstrapQuery, SearchSecondaryQuery} from './types/useRepoSearch.types';
-import { useFeatureFlags } from '../app/Flags';
 
 const fuseOptions = {
   keys: ['label', 'segments', 'tags', 'type'],
@@ -19,14 +19,15 @@ const fuseOptions = {
   useExtendedSearch: true,
 };
 
-const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery, includeResources: boolean}) => {
+const bootstrapDataToSearchResults = (input: {
+  data?: SearchBootstrapQuery;
+  includeResources: boolean;
+}) => {
   const {data, includeResources} = input;
 
   if (!data?.workspaceOrError || data?.workspaceOrError?.__typename !== 'Workspace') {
     return new Fuse([]);
   }
-
-
 
   const {locationEntries} = data.workspaceOrError;
   const manyRepos = locationEntries.length > 1;
@@ -41,7 +42,14 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery, inclu
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
-        const {name: repoName, partitionSets, pipelines, schedules, sensors, allTopLevelResourceDetails} = repo;
+        const {
+          name: repoName,
+          partitionSets,
+          pipelines,
+          schedules,
+          sensors,
+          allTopLevelResourceDetails,
+        } = repo;
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPathForHuman(repoName, locationName);
 
@@ -82,12 +90,14 @@ const bootstrapDataToSearchResults = (input: {data?: SearchBootstrapQuery, inclu
           type: SearchResultType.Sensor,
         }));
 
-        const allResources: SearchResult[] = includeResources ? allTopLevelResourceDetails.map((resource) => ({
-          label: resource.name,
-          description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
-          href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
-          type: SearchResultType.Resource,
-        })) : [];
+        const allResources: SearchResult[] = includeResources
+          ? allTopLevelResourceDetails.map((resource) => ({
+              label: resource.name,
+              description: manyRepos ? `Resource in ${repoPath}` : 'Resource',
+              href: workspacePath(repoName, locationName, `/resources/${resource.name}`),
+              type: SearchResultType.Resource,
+            }))
+          : [];
 
         const allPartitionSets: SearchResult[] = partitionSets
           .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
@@ -148,10 +158,12 @@ export const useRepoSearch = () => {
   ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY);
 
   const {flagSidebarResources} = useFeatureFlags();
-  
-  const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults({data: bootstrapData, includeResources: flagSidebarResources}), [
-    bootstrapData, flagSidebarResources
-  ]);
+
+  const bootstrapFuse = React.useMemo(
+    () =>
+      bootstrapDataToSearchResults({data: bootstrapData, includeResources: flagSidebarResources}),
+    [bootstrapData, flagSidebarResources],
+  );
   const secondaryFuse = React.useMemo(() => secondaryDataToSearchResults(secondaryData), [
     secondaryData,
   ]);
