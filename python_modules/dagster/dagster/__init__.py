@@ -1,5 +1,4 @@
 import sys
-from types import ModuleType
 
 from . import _module_alias_map
 
