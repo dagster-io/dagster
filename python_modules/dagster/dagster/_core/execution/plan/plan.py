@@ -100,7 +100,7 @@ class _PlanBuilder:
 
     def __init__(
         self,
-        pipeline: IJob,
+        job: IJob,
         resolved_run_config: ResolvedRunConfig,
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: KnownExecutionState,
@@ -108,16 +108,16 @@ class _PlanBuilder:
         tags: Mapping[str, str],
         repository_load_data: Optional[RepositoryLoadData],
     ):
-        if isinstance(pipeline, ReconstructableJob) and repository_load_data is not None:
+        if isinstance(job, ReconstructableJob) and repository_load_data is not None:
             check.invariant(
-                pipeline.repository.repository_load_data == repository_load_data,
+                job.repository.repository_load_data == repository_load_data,
                 (
                     "When building an ExecutionPlan with explicit repository_load_data and a"
-                    " ReconstructablePipeline, the repository_load_data on the pipeline must be"
+                    " ReconstructablePipeline, the repository_load_data on the job must be"
                     " identical to passed-in repository_load_data."
                 ),
             )
-        self.pipeline = check.inst_param(pipeline, "pipeline", IJob)
+        self.job = check.inst_param(job, "job", IJob)
         self.resolved_run_config = check.inst_param(
             resolved_run_config, "resolved_run_config", ResolvedRunConfig
         )
@@ -137,7 +137,7 @@ class _PlanBuilder:
 
     @property
     def pipeline_name(self) -> str:
-        return self.pipeline.get_definition().name
+        return self.job.get_definition().name
 
     def add_step(self, step: IExecutionStep) -> None:
         # Keep track of the step keys we've seen so far to ensure we don't add duplicates
@@ -158,11 +158,11 @@ class _PlanBuilder:
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""
         _check_persistent_storage_requirement(
-            self.pipeline,
+            self.job,
             self.resolved_run_config,
         )
 
-        pipeline_def = self.pipeline.get_definition()
+        pipeline_def = self.job.get_definition()
         root_inputs: List[
             Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
         ] = []
@@ -255,7 +255,7 @@ class _PlanBuilder:
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
-        asset_layer = self.pipeline.get_definition().asset_layer
+        asset_layer = self.job.get_definition().asset_layer
         step_output_map: Dict[NodeOutput, Union[StepOutputHandle, UnresolvedStepOutputHandle]] = {}
         for node in nodes:
             handle = NodeHandle(node.name, parent_handle)
@@ -267,7 +267,7 @@ class _PlanBuilder:
             step_inputs: List[StepInputUnion] = []
             for input_name, input_def in node.definition.input_dict.items():
                 step_input_source = get_step_input_source(
-                    self.pipeline.get_definition(),
+                    self.job.get_definition(),
                     node,
                     input_name,
                     input_def,
@@ -429,7 +429,7 @@ def get_root_graph_input_source(
             "In top-level graph of {described_target}, input {input_name} "
             "must get a value from the inputs section of its configuration."
         ).format(
-            described_target=plan_builder.pipeline.get_definition().describe_target(),
+            described_target=plan_builder.job.get_definition().describe_target(),
             input_name=input_name,
         )
     )
