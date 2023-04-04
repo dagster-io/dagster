@@ -53,12 +53,32 @@ export const runStatusToString = (status: RunStatus) => {
   }
 };
 
+export const runStatusToBackfillStateString = (status: RunStatus) => {
+  switch (status) {
+    case RunStatus.CANCELED:
+    case RunStatus.CANCELING:
+    case RunStatus.FAILURE:
+      return 'Failed';
+    case RunStatus.STARTING:
+    case RunStatus.STARTED:
+      return 'In progress';
+    case RunStatus.QUEUED:
+      return 'Queued';
+    case RunStatus.SUCCESS:
+      return 'Completed';
+    case RunStatus.MANAGED:
+    case RunStatus.NOT_STARTED:
+      return 'Missing';
+    default:
+      return assertUnreachable(status);
+  }
+};
 export const RUN_STATUS_COLORS = {
   QUEUED: Colors.Blue200,
   NOT_STARTED: Colors.Gray600,
-  STARTING: Colors.Gray400,
   MANAGED: Colors.Gray400,
   STARTED: Colors.Blue500,
+  STARTING: Colors.Blue500,
   SUCCESS: Colors.Green500,
   FAILURE: Colors.Red500,
   CANCELING: Colors.Red500,

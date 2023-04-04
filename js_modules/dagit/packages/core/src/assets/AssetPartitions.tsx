@@ -23,6 +23,7 @@ import {
   rangesClippedToSelection,
   keyCountByStateInSelection,
   partitionStatusAtIndex,
+  selectionRangeWithSingleKey,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
 
@@ -77,23 +78,31 @@ export const AssetPartitions: React.FC<Props> = ({
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
 
+  const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
+    params,
+    setParams,
+    dimensionCount: selections.length,
+    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
+  });
+
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const rangesForEachDimension = React.useMemo(
-    () =>
-      selections.map((_s, idx) =>
-        assetHealth
-          ? assetHealth.rangesForSingleDimension(
-              idx,
-              timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-                ? selections[timeDimensionIdx].selectedRanges
-                : undefined,
-            )
-          : [],
+  const rangesForEachDimension = React.useMemo(() => {
+    if (!assetHealth) {
+      return selections.map(() => []);
+    }
+    return selections.map((_s, idx) =>
+      assetHealth.rangesForSingleDimension(
+        idx,
+        idx === 1 && focusedDimensionKeys[0]
+          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0].dimension)]
+          : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
+          ? selections[timeDimensionIdx].selectedRanges
+          : undefined,
       ),
-    [assetHealth, selections, timeDimensionIdx],
-  );
+    );
+  }, [assetHealth, selections, timeDimensionIdx, focusedDimensionKeys]);
 
   // This function returns the list of dimension keys INSIDE the `selections.selectedRanges`
   // specified at the top of the page that MATCH the state filters (success / completed).
@@ -123,7 +132,6 @@ export const AssetPartitions: React.FC<Props> = ({
     }
 
     const rangesInSelection = rangesClippedToSelection(rangesForEachDimension[idx], selectedRanges);
-
     const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return rangesInSelection.flatMap((r) =>
         states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
@@ -145,7 +153,12 @@ export const AssetPartitions: React.FC<Props> = ({
       result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
-          !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
+          !rangesInSelection.some(
+            (r) =>
+              r.start.idx <= idx &&
+              r.end.idx >= idx &&
+              !r.value.includes(AssetPartitionStatus.MISSING),
+          ),
       );
     } else {
       result = matching;
@@ -156,13 +169,6 @@ export const AssetPartitions: React.FC<Props> = ({
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
-
-  const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
-    params,
-    setParams,
-    dimensionCount: selections.length,
-    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
-  });
 
   return (
     <>
@@ -259,7 +265,10 @@ export const AssetPartitions: React.FC<Props> = ({
                     return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
                   }
                   const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
-                  return partitionStatusAtIndex(rangesForEachDimension[idx], dimensionKeyIdx);
+                  return partitionStatusAtIndex(
+                    rangesForEachDimension[idx],
+                    dimensionKeyIdx,
+                  ).filter((s) => statusFilters.includes(s));
                 }}
                 focusedDimensionKey={focusedDimensionKeys[idx]}
                 setFocusedDimensionKey={(dimensionKey) => {

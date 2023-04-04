@@ -145,6 +145,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     if (isRangeDataInverted) {
       dimensionIdx = 1 - dimensionIdx;
     }
+
     if (dimensionIdx === 0 && !otherDimensionSelectedRanges) {
       return removeSubrangesAndJoin(ranges);
     } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
@@ -301,6 +302,17 @@ function removeSubrangesAndJoin(ranges: Range[]): Range[] {
     }
   }
   return result;
+}
+
+export function selectionRangeWithSingleKey(
+  key: string,
+  dim: PartitionHealthDimension,
+): PartitionDimensionSelectionRange {
+  const idx = dim.partitionKeys.indexOf(key);
+  return [
+    {key, idx},
+    {key, idx},
+  ];
 }
 
 // In a follow-up, maybe we make these two data structures share a signature

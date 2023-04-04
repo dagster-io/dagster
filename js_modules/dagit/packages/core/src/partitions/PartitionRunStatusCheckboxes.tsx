@@ -2,7 +2,7 @@ import {Box, Checkbox} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RunStatus} from '../graphql/types';
-import {runStatusToString} from '../runs/RunStatusTag';
+import {runStatusToBackfillStateString} from '../runs/RunStatusTag';
 import {testId} from '../testing/testId';
 
 export function countsByState(partitionKeysForCounts: {partitionKey: string; state: RunStatus}[]) {
@@ -35,7 +35,7 @@ export const PartitionRunStatusCheckboxes: React.FC<{
           disabled={disabled}
           style={{marginBottom: 0, marginLeft: 10, minWidth: 200}}
           checked={value.includes(status) && !disabled}
-          label={`${runStatusToString(status)} (${counts[status]})`}
+          label={`${runStatusToBackfillStateString(status)} (${counts[status]})`}
           onChange={() =>
             onChange(
               value.includes(status) ? value.filter((v) => v !== status) : [...value, status],

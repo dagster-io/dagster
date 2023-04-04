@@ -8,7 +8,7 @@ import {
 } from '../assets/AssetPartitionStatus';
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
-import {runStatusToString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
+import {runStatusToBackfillStateString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
 
 import {assembleIntoSpans} from './SpanRepresentation';
 
@@ -382,7 +382,7 @@ function opRunStatusToColorRanges(
     : assembleIntoSpans(partitionNames, runStatusForKey);
 
   return spans.map((s) => ({
-    label: runStatusToString(s.status),
+    label: runStatusToBackfillStateString(s.status),
     start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
     end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
     style: {

@@ -291,7 +291,9 @@ function buildAssetNodeStatusRow({
         <>
           <AssetLatestRunSpinner liveData={liveData} />
           <Caption style={{flex: 1}} color={Colors.Gray800}>
-            {liveData.partitionStats?.numMaterializing
+            {liveData.partitionStats?.numMaterializing === 1
+              ? `Materializing 1 partition...`
+              : liveData.partitionStats?.numMaterializing
               ? `Materializing ${liveData.partitionStats.numMaterializing} partitions...`
               : `Materializing...`}
           </Caption>
