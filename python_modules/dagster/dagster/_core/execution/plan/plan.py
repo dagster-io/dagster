@@ -136,7 +136,7 @@ class _PlanBuilder:
         )
 
     @property
-    def pipeline_name(self) -> str:
+    def job_name(self) -> str:
         return self.job.get_definition().name
 
     def add_step(self, step: IExecutionStep) -> None:
@@ -331,7 +331,7 @@ class _PlanBuilder:
                 elif has_unresolved_input:
                     new_step = UnresolvedMappedExecutionStep(
                         handle=UnresolvedStepHandle(node_handle=handle),
-                        job_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
                         ),
@@ -341,7 +341,7 @@ class _PlanBuilder:
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        job_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
                         ),
@@ -351,7 +351,7 @@ class _PlanBuilder:
                 else:
                     new_step = ExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        job_name=self.pipeline_name,
+                        job_name=self.job_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
