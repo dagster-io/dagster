@@ -38,12 +38,12 @@ def _resource_type(unique_id: str) -> str:
     return unique_id.split(".")[0]
 
 
-def _get_input_name(node_info: Mapping[str, Any]) -> str:
+def input_name_fn(node_info: Mapping[str, Any]) -> str:
     # * can be present when sources are sharded tables
     return node_info["unique_id"].replace(".", "_").replace("*", "_star")
 
 
-def _get_output_name(node_info: Mapping[str, Any]) -> str:
+def output_name_fn(node_info: Mapping[str, Any]) -> str:
     return node_info["unique_id"].split(".")[-1]
 
 
@@ -138,7 +138,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=_get_output_name(node_info),
+                output_name=output_name_fn(node_info),
                 metadata=metadata,
             )
         else:
