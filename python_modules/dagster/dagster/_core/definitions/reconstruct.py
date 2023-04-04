@@ -57,9 +57,9 @@ if TYPE_CHECKING:
     from .repository_definition import RepositoryDefinition
 
 
-def get_ephemeral_repository_name(pipeline_name: str) -> str:
-    check.str_param(pipeline_name, "pipeline_name")
-    return f"__repository__{pipeline_name}"
+def get_ephemeral_repository_name(job_name: str) -> str:
+    check.str_param(job_name, "job_name")
+    return f"__repository__{job_name}"
 
 
 @whitelist_for_serdes
