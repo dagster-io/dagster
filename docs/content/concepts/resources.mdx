@@ -49,7 +49,7 @@ To provide resource values to your assets and ops, attach them to your <PyObject
 <TabGroup persistentKey="assetsorops">
 <TabItem name="Using software-defined-assets">
 
-#### Using software-defined assets
+### Using software-defined assets
 
 Here, we define a subclass of <PyObject object="ConfigurableResource"/> representing a connection to an external service. We can configure the resource by constructing it in the <PyObject object="Definitions" /> call.
 
@@ -84,7 +84,7 @@ defs = Definitions(
 </TabItem>
 <TabItem name="Using ops and jobs">
 
-#### Using ops
+### Using ops and jobs
 
 Here, we define a subclass of <PyObject object="ConfigurableResource"/> representing a connection to an external service. We can configure the resource by constructing it in the <PyObject object="Definitions" /> call.
 
@@ -234,7 +234,7 @@ defs = Definitions(
 
 If we instead would like the configuration for our credentials to be provided at runtime, we can use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until runtime.
 
-Because `credentials` requires runtime configuration through the launchpad, it must also be passed to the `Definitions` object, so that configuration can be provided at runtime. Nested resources only need to be passed to the `Definitions` object if they require runtime configuration.
+Because `credentials` requires runtime configuration through the launchpad, it must also be passed to the <PyObject object="Definitions" /> object, so that configuration can be provided at runtime. Nested resources only need to be passed to the <PyObject object="Definitions" /> object if they require runtime configuration.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_dep_job_runtime endbefore=end_new_resource_dep_job_runtime dedent=4
 credentials = CredentialsResource.configure_at_launch()
@@ -291,7 +291,9 @@ def test_my_resource_with_context():
 
 ## Defining Pythonic I/O managers
 
-Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called Dagster at runtime to handle the storing and loading of data.
+Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+
+If you are interested in adapting a legacy, function-styled I/O manager, see the [adapting function-style I/O managers section](#adapting-function-style-io-managers).
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4
 from dagster import (
@@ -319,6 +321,8 @@ defs = Definitions(
     resources={"io_manager": MyIOManager(root_path="/tmp/")},
 )
 ```
+
+---
 
 ## Advanced resource patterns
 
