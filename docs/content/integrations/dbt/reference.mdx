@@ -56,9 +56,10 @@ import json
 
 from dagster_dbt import load_assets_from_dbt_manifest
 
-dbt_assets = load_assets_from_dbt_manifest(
-    json.load("path/to/dbt/manifest.json", encoding="utf8"),
-)
+with open("path/to/dbt/manifest.json") as f:
+    manifest_json = json.load(f)
+
+dbt_assets = load_assets_from_dbt_manifest(manifest_json)
 ```
 
 If you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
@@ -77,22 +78,28 @@ If you make any changes to your dbt project that change the structure of the pro
 
 Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> for this purpose. This resource can be configured with CLI flags that are passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> API docs.
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. You can also use the `target` flag to point at an explicit dbt [target](https://docs.getdbt.com/reference/dbt-jinja-functions/target). For a full list of configuration options, refer to the <PyObject module="dagster_dbt" object="dbt_cli_resource" /> API docs.
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
 ```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
+import os
+
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 
 from dagster import with_resources
 
 DBT_PROJECT_PATH = "path/to/dbt_project"
+DBT_TARGET = "hive" if os.getenv("EXECUTION_ENV") == "prod" else "duckdb"
 
 dbt_assets = with_resources(
     load_assets_from_dbt_project(DBT_PROJECT_PATH),
     {
         "dbt": dbt_cli_resource.configured(
-            {"project_dir": DBT_PROJECT_PATH},
+            {
+                "project_dir": DBT_PROJECT_PATH,
+                "target": DBT_TARGET,
+            },
         )
     },
 )
