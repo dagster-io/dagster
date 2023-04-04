@@ -54,7 +54,7 @@ def _get_external_pipeline_or_raise(
     else:
         code_location = ctx.get_code_location(selector.location_name)
         try:
-            external_pipeline = code_location.get_external_pipeline(selector)
+            external_pipeline = code_location.get_external_job(selector)
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             raise UserFacingGraphQLError(

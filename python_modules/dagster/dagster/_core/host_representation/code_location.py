@@ -123,7 +123,7 @@ class CodeLocation(AbstractContextManager):
     ) -> ExternalExecutionPlan:
         pass
 
-    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalJob:
+    def get_external_job(self, selector: PipelineSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
@@ -136,7 +136,7 @@ class CodeLocation(AbstractContextManager):
 
         repo_handle = self.get_repository(selector.repository_name).handle
 
-        subset_result = self.get_subset_external_pipeline_result(selector)
+        subset_result = self.get_subset_external_job_result(selector)
         external_data = subset_result.external_job_data
         if external_data is None:
             check.failed(
@@ -147,9 +147,7 @@ class CodeLocation(AbstractContextManager):
         return ExternalJob(external_data, repo_handle)
 
     @abstractmethod
-    def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
-    ) -> ExternalJobSubsetResult:
+    def get_subset_external_job_result(self, selector: PipelineSelector) -> ExternalJobSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
         `get_external_pipeline` instead.
@@ -335,7 +333,7 @@ class InProcessCodeLocation(CodeLocation):
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
-    def get_reconstructable_pipeline(self, repository_name: str, name: str) -> ReconstructableJob:
+    def get_reconstructable_job(self, repository_name: str, name: str) -> ReconstructableJob:
         return self._loaded_repositories.reconstructables_by_name[
             repository_name
         ].get_reconstructable_job(name)
@@ -352,9 +350,7 @@ class InProcessCodeLocation(CodeLocation):
     def get_repositories(self) -> Mapping[str, ExternalRepository]:
         return self._repositories
 
-    def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
-    ) -> ExternalJobSubsetResult:
+    def get_subset_external_job_result(self, selector: PipelineSelector) -> ExternalJobSubsetResult:
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
@@ -388,7 +384,7 @@ class InProcessCodeLocation(CodeLocation):
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_pipeline(
+            pipeline=self.get_reconstructable_job(
                 external_pipeline.repository_handle.repository_name, external_pipeline.name
             ).subset_for_execution_from_existing_job(
                 external_pipeline.solids_to_execute,
@@ -746,7 +742,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
         return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
-    def get_subset_external_pipeline_result(
+    def get_subset_external_job_result(
         self, selector: PipelineSelector
     ) -> "ExternalJobSubsetResult":
         check.inst_param(selector, "selector", PipelineSelector)

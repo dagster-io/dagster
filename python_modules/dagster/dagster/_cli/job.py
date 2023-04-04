@@ -514,7 +514,7 @@ def _create_external_pipeline_run(
         solid_selection=solid_selection,
     )
 
-    external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = code_location.get_external_job(pipeline_selector)
 
     external_execution_plan = code_location.get_external_execution_plan(
         external_pipeline,

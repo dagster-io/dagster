@@ -634,7 +634,7 @@ def _schedule_runs_at_time(
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_job(pipeline_selector)
 
         run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
         if run:

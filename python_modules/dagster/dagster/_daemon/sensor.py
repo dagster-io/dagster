@@ -697,7 +697,7 @@ def _evaluate_sensor(
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_job(pipeline_selector)
         run = _get_or_create_sensor_run(
             context,
             instance,

@@ -209,7 +209,7 @@ def submit_backfill_runs(
             solid_selection=None,
             asset_selection=backfill_job.asset_selection,
         )
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_job(pipeline_selector)
     else:
         external_pipeline = external_repo.get_full_external_job(external_partition_set.job_name)
     for partition_data in result.partition_data:

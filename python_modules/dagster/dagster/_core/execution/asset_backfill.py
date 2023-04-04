@@ -421,7 +421,7 @@ def submit_run_request(
     if selector_id not in pipeline_and_execution_plan_cache:
         code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
 
-        external_pipeline = code_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(
             external_pipeline,

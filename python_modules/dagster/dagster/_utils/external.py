@@ -31,4 +31,4 @@ def external_pipeline_from_location(
         solid_selection=solid_selection,
     )
 
-    return code_location.get_external_pipeline(pipeline_selector)
+    return code_location.get_external_job(pipeline_selector)

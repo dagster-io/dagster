@@ -95,7 +95,7 @@ class AssetDaemon(IntervalDaemon):
             job_name = check.not_none(asset_graph.get_implicit_job_name_for_assets(asset_keys))
 
             code_location = workspace.get_code_location(location_name)
-            external_pipeline = code_location.get_external_pipeline(
+            external_pipeline = code_location.get_external_job(
                 PipelineSelector(
                     location_name=location_name,
                     repository_name=repository_name,
