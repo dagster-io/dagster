@@ -7,7 +7,7 @@ import requests
 from dagster import ConfigurableResource, resource
 from dagster._config.structured_config import infer_schema_from_config_class
 from dagster._utils.cached_method import cached_method
-from pydantic import Field as PyField
+from pydantic import Field
 
 
 def to_seconds(dt):
@@ -15,25 +15,23 @@ def to_seconds(dt):
 
 
 class GithubResource(ConfigurableResource):
-    github_app_id: int = PyField(
-        ...,
+    github_app_id: int = Field(
         description="Github Application ID, for more info see https://developer.github.com/apps/",
     )
-    github_app_private_rsa_key: str = PyField(
-        ...,
+    github_app_private_rsa_key: str = Field(
         description=(
             "Github Application Private RSA key text, for more info see"
             " https://developer.github.com/apps/"
         ),
     )
-    github_installation_id: Optional[int] = PyField(
+    github_installation_id: Optional[int] = Field(
         None,
         description=(
             "Github Application Installation ID, for more info see"
             " https://developer.github.com/apps/"
         ),
     )
-    github_hostname: Optional[str] = PyField(
+    github_hostname: Optional[str] = Field(
         None,
         description=(
             "Github hostname. Defaults to `api.github.com`, for more info see"
