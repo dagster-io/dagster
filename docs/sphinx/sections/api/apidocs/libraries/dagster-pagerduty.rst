@@ -30,5 +30,12 @@ alerts from within your ops.
 
 .. currentmodule:: dagster_pagerduty
 
+.. autoconfigurable:: PagerDutyService
+  :annotation: ResourceDefinition
+
+
+Legacy
+=========
+
 .. autoconfigurable:: pagerduty_resource
   :annotation: ResourceDefinition
