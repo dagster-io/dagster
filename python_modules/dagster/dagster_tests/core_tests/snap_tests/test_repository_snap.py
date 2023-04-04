@@ -20,7 +20,7 @@ from dagster._core.host_representation.external_data import (
     NestedResourceType,
     ResourceJobUsageEntry,
 )
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 
 
 def test_repository_snap_all_props():
@@ -43,7 +43,7 @@ def test_repository_snap_all_props():
     assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
 
     pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
-    assert isinstance(pipeline_snapshot, PipelineSnapshot)
+    assert isinstance(pipeline_snapshot, JobSnapshot)
     assert pipeline_snapshot.name == "noop_job"
     assert pipeline_snapshot.description is None
     assert pipeline_snapshot.tags == {}

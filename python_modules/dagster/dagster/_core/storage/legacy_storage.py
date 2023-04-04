@@ -43,7 +43,7 @@ if TYPE_CHECKING:
         TickStatus,
     )
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
+    from dagster._core.snap.pipeline_snapshot import JobSnapshot
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.pipeline_run import (
         DagsterRun,
@@ -242,7 +242,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def add_snapshot(
         self,
-        snapshot: Union["PipelineSnapshot", "ExecutionPlanSnapshot"],
+        snapshot: Union["JobSnapshot", "ExecutionPlanSnapshot"],
         snapshot_id: Optional[str] = None,
     ) -> None:
         return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
@@ -254,11 +254,11 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._storage.run_storage.has_pipeline_snapshot(pipeline_snapshot_id)
 
     def add_pipeline_snapshot(
-        self, pipeline_snapshot: "PipelineSnapshot", snapshot_id: Optional[str] = None
+        self, pipeline_snapshot: "JobSnapshot", snapshot_id: Optional[str] = None
     ) -> str:
         return self._storage.run_storage.add_pipeline_snapshot(pipeline_snapshot, snapshot_id)
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> "PipelineSnapshot":
+    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> "JobSnapshot":
         return self._storage.run_storage.get_pipeline_snapshot(pipeline_snapshot_id)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:

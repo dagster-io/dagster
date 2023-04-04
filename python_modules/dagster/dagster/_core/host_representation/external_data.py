@@ -86,7 +86,7 @@ from dagster._core.definitions.sensor_definition import (
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -257,27 +257,25 @@ class ExternalPipelineData(
         "_ExternalPipelineData",
         [
             ("name", str),
-            ("pipeline_snapshot", PipelineSnapshot),
+            ("pipeline_snapshot", JobSnapshot),
             ("active_presets", Sequence["ExternalPresetData"]),
-            ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
+            ("parent_pipeline_snapshot", Optional[JobSnapshot]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        pipeline_snapshot: PipelineSnapshot,
+        pipeline_snapshot: JobSnapshot,
         active_presets: Sequence["ExternalPresetData"],
-        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        parent_pipeline_snapshot: Optional[JobSnapshot],
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            pipeline_snapshot=check.inst_param(
-                pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
-            ),
+            pipeline_snapshot=check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot),
             parent_pipeline_snapshot=check.opt_inst_param(
-                parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
+                parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot
             ),
             active_presets=check.sequence_param(
                 active_presets, "active_presets", of_type=ExternalPresetData

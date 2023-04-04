@@ -7,7 +7,7 @@ from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster._core.snap.pipeline_snapshot import JobSnapshot
 
 from .pipeline_index import PipelineIndex
 
@@ -46,11 +46,11 @@ class RepresentedPipeline(ABC):
         pass
 
     @property
-    def pipeline_snapshot(self) -> PipelineSnapshot:
+    def pipeline_snapshot(self) -> JobSnapshot:
         return self._pipeline_index.pipeline_snapshot
 
     @property
-    def parent_pipeline_snapshot(self) -> Optional[PipelineSnapshot]:
+    def parent_pipeline_snapshot(self) -> Optional[JobSnapshot]:
         return self._pipeline_index.parent_pipeline_snapshot
 
     @property

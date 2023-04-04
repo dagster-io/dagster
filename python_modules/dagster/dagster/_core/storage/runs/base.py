@@ -6,7 +6,7 @@ from typing_extensions import TypedDict
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 from dagster._core.storage.pipeline_run import (
     DagsterRun,
     JobBucket,
@@ -220,7 +220,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     def add_snapshot(
         self,
-        snapshot: Union[PipelineSnapshot, ExecutionPlanSnapshot],
+        snapshot: Union[JobSnapshot, ExecutionPlanSnapshot],
         snapshot_id: Optional[str] = None,
     ) -> None:
         """Add a snapshot to the storage.
@@ -232,7 +232,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
                 in debugging, where we might want to import a historical run whose snapshots were
                 calculated using a different hash function than the current code.
         """
-        if isinstance(snapshot, PipelineSnapshot):
+        if isinstance(snapshot, JobSnapshot):
             self.add_pipeline_snapshot(snapshot, snapshot_id)
         else:
             self.add_execution_plan_snapshot(snapshot, snapshot_id)
@@ -255,7 +255,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     @abstractmethod
     def add_pipeline_snapshot(
-        self, pipeline_snapshot: PipelineSnapshot, snapshot_id: Optional[str] = None
+        self, pipeline_snapshot: JobSnapshot, snapshot_id: Optional[str] = None
     ) -> str:
         """Add a pipeline snapshot to the run store.
 
@@ -276,7 +276,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
+    def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> JobSnapshot:
         """Fetch a snapshot by ID.
 
         Args:

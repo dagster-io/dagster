@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
 from dagster._core.snap import (
     DependencyStructureIndex,
-    PipelineSnapshot,
+    JobSnapshot,
     create_pipeline_snapshot_id,
 )
 from dagster._core.snap.dagster_types import DagsterTypeSnap
@@ -14,8 +14,8 @@ from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 
 
 class PipelineIndex:
-    pipeline_snapshot: PipelineSnapshot
-    parent_pipeline_snapshot: Optional[PipelineSnapshot]
+    pipeline_snapshot: JobSnapshot
+    parent_pipeline_snapshot: Optional[JobSnapshot]
     _node_defs_snaps_index: Mapping[str, Union[OpDefSnap, GraphDefSnap]]
     _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
@@ -24,14 +24,14 @@ class PipelineIndex:
 
     def __init__(
         self,
-        pipeline_snapshot: PipelineSnapshot,
-        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        pipeline_snapshot: JobSnapshot,
+        parent_pipeline_snapshot: Optional[JobSnapshot],
     ):
         self.pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
+            pipeline_snapshot, "pipeline_snapshot", JobSnapshot
         )
         self.parent_pipeline_snapshot = check.opt_inst_param(
-            parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
+            parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot
         )
 
         if self.pipeline_snapshot.lineage_snapshot:

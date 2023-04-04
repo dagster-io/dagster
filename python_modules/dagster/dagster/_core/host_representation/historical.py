@@ -1,7 +1,7 @@
 from typing import Optional
 
 import dagster._check as check
-from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap import JobSnapshot
 
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
@@ -18,13 +18,13 @@ class HistoricalPipeline(RepresentedPipeline):
 
     def __init__(
         self,
-        pipeline_snapshot: PipelineSnapshot,
+        pipeline_snapshot: JobSnapshot,
         identifying_pipeline_snapshot_id: str,
-        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        parent_pipeline_snapshot: Optional[JobSnapshot],
     ):
-        self._snapshot = check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        self._snapshot = check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
         self._parent_snapshot = check.opt_inst_param(
-            parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
+            parent_pipeline_snapshot, "parent_pipeline_snapshot", JobSnapshot
         )
         self._identifying_pipeline_snapshot_id = check.str_param(
             identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"

@@ -5,8 +5,8 @@ from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, j
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
     DependencyStructureIndex,
+    JobSnapshot,
     NodeInvocationSnap,
-    PipelineSnapshot,
     create_pipeline_snapshot_id,
     snap_from_config_type,
 )
@@ -23,8 +23,8 @@ from dagster._serdes import (
 from dagster._serdes.serdes import deserialize_value
 
 
-def serialize_rt(value: PipelineSnapshot) -> PipelineSnapshot:
-    return deserialize_value(serialize_value(value), PipelineSnapshot)
+def serialize_rt(value: JobSnapshot) -> JobSnapshot:
+    return deserialize_value(serialize_value(value), JobSnapshot)
 
 
 def get_noop_pipeline():
@@ -40,11 +40,11 @@ def get_noop_pipeline():
 
 
 def test_empty_pipeline_snap_snapshot(snapshot):
-    snapshot.assert_match(serialize_pp(PipelineSnapshot.from_pipeline_def(get_noop_pipeline())))
+    snapshot.assert_match(serialize_pp(JobSnapshot.from_job_def(get_noop_pipeline())))
 
 
 def test_empty_pipeline_snap_props(snapshot):
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(get_noop_pipeline())
+    pipeline_snapshot = JobSnapshot.from_job_def(get_noop_pipeline())
 
     assert pipeline_snapshot.name == "noop_job"
     assert pipeline_snapshot.description is None
@@ -65,7 +65,7 @@ def test_pipeline_snap_all_props(snapshot):
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
 
     assert pipeline_snapshot.name == "noop_job"
     assert pipeline_snapshot.description == "desc"
@@ -105,7 +105,7 @@ def test_two_invocations_deps_snap(snapshot):
     assert index.get_invocation("one")
     assert index.get_invocation("two")
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(two_op_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(two_op_job)
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
@@ -175,7 +175,7 @@ def test_basic_dep_fan_out(snapshot):
         == dep_structure_snapshot
     )
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(single_dep_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(single_dep_job)
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
@@ -216,7 +216,7 @@ def test_basic_fan_in(snapshot):
         == dep_structure_snapshot
     )
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(fan_in_test)
+    pipeline_snapshot = JobSnapshot.from_job_def(fan_in_test)
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
@@ -257,7 +257,7 @@ def test_deserialize_op_def_snaps_default_field():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Shape)
@@ -284,7 +284,7 @@ def test_deserialize_node_def_snaps_enum():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Enum)
@@ -304,7 +304,7 @@ def test_deserialize_node_def_snaps_strict_shape():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Shape)
@@ -326,7 +326,7 @@ def test_deserialize_node_def_snaps_selector():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Selector)
@@ -347,7 +347,7 @@ def test_deserialize_solid_def_snaps_permissive():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Permissive)
@@ -367,7 +367,7 @@ def test_deserialize_node_def_snaps_array():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Array)
@@ -387,7 +387,7 @@ def test_deserialize_node_def_snaps_map():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Map)
@@ -408,7 +408,7 @@ def test_deserialize_node_def_snaps_map_with_name():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Map)
@@ -430,7 +430,7 @@ def test_deserialize_node_def_snaps_noneable():
     def noop_job():
         noop_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("noop_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     assert isinstance(recevied_config_type, Noneable)
@@ -472,7 +472,7 @@ def test_deserialize_node_def_snaps_multi_type_config(snapshot):
     def noop_job():
         fancy_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
@@ -492,7 +492,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     def noop_job():
         fancy_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
@@ -511,7 +511,7 @@ def test_multi_type_config_array_map(snapshot):
     def noop_job():
         fancy_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
@@ -536,7 +536,7 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     def noop_job():
         fancy_op()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_job)
+    pipeline_snapshot = JobSnapshot.from_job_def(noop_job)
     node_def_snap = pipeline_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = pipeline_snapshot.get_config_type_from_node_def_snap(node_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))

@@ -54,12 +54,12 @@ from .node import (
 )
 
 
-def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
-    check.inst_param(snapshot, "snapshot", PipelineSnapshot)
+def create_pipeline_snapshot_id(snapshot: "JobSnapshot") -> str:
+    check.inst_param(snapshot, "snapshot", JobSnapshot)
     return create_snapshot_id(snapshot)
 
 
-class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
+class PipelineSnapshotSerializer(NamedTupleSerializer["JobSnapshot"]):
     # v0
     # v1:
     #     - lineage added
@@ -89,14 +89,15 @@ class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
 # been called `metadata` instead of `metadata_entries`, so we don't need to rename the field for
 # serialization.
 @whitelist_for_serdes(
+    storage_name="PipelineSnapshot",
     serializer=PipelineSnapshotSerializer,
     skip_when_empty_fields={"metadata"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
-class PipelineSnapshot(
+class JobSnapshot(
     NamedTuple(
-        "_PipelineSnapshot",
+        "_JobSnapshot",
         [
             ("name", str),
             ("description", Optional[str]),
@@ -126,7 +127,7 @@ class PipelineSnapshot(
         graph_def_name: str,
         metadata: Optional[Mapping[str, RawMetadataValue]],
     ):
-        return super(PipelineSnapshot, cls).__new__(
+        return super(JobSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
@@ -158,37 +159,37 @@ class PipelineSnapshot(
         )
 
     @classmethod
-    def from_pipeline_def(cls, pipeline_def: JobDefinition) -> "PipelineSnapshot":
-        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+    def from_job_def(cls, job_def: JobDefinition) -> "JobSnapshot":
+        check.inst_param(job_def, "job_def", JobDefinition)
         lineage = None
-        if pipeline_def.op_selection_data:
+        if job_def.op_selection_data:
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
-                    cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
+                    cls.from_job_def(job_def.op_selection_data.parent_job_def)
                 ),
-                node_selection=sorted(pipeline_def.op_selection_data.op_selection),
-                nodes_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
+                node_selection=sorted(job_def.op_selection_data.op_selection),
+                nodes_to_execute=job_def.op_selection_data.resolved_op_selection,
             )
-        if pipeline_def.asset_selection_data:
+        if job_def.asset_selection_data:
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
-                    cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
+                    cls.from_job_def(job_def.asset_selection_data.parent_job_def)
                 ),
-                asset_selection=pipeline_def.asset_selection_data.asset_selection,
+                asset_selection=job_def.asset_selection_data.asset_selection,
             )
 
-        return PipelineSnapshot(
-            name=pipeline_def.name,
-            description=pipeline_def.description,
-            tags=pipeline_def.tags,
-            metadata=pipeline_def.metadata,
-            config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
-            dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
-            node_defs_snapshot=build_node_defs_snapshot(pipeline_def),
-            dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(pipeline_def.graph),
-            mode_def_snaps=[build_mode_def_snap(pipeline_def)],
+        return JobSnapshot(
+            name=job_def.name,
+            description=job_def.description,
+            tags=job_def.tags,
+            metadata=job_def.metadata,
+            config_schema_snapshot=build_config_schema_snapshot(job_def),
+            dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),
+            node_defs_snapshot=build_node_defs_snapshot(job_def),
+            dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(job_def.graph),
+            mode_def_snaps=[build_mode_def_snap(job_def)],
             lineage_snapshot=lineage,
-            graph_def_name=pipeline_def.graph.name,
+            graph_def_name=job_def.graph.name,
         )
 
     def get_node_def_snap(self, node_def_name: str) -> Union[OpDefSnap, GraphDefSnap]:

@@ -96,7 +96,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.host_representation.pipeline_index import PipelineIndex
     from dagster._core.instance import DagsterInstance
-    from dagster._core.snap import PipelineSnapshot
+    from dagster._core.snap import JobSnapshot
 
     from .run_config_schema import RunConfigSchema
 
@@ -847,21 +847,19 @@ class JobDefinition:
     def get_config_schema_snapshot(self) -> "ConfigSchemaSnapshot":
         return self.get_pipeline_snapshot().config_schema_snapshot
 
-    def get_pipeline_snapshot(self) -> "PipelineSnapshot":
+    def get_pipeline_snapshot(self) -> "JobSnapshot":
         return self.get_pipeline_index().pipeline_snapshot
 
     def get_pipeline_index(self) -> "PipelineIndex":
         from dagster._core.host_representation import PipelineIndex
-        from dagster._core.snap import PipelineSnapshot
+        from dagster._core.snap import JobSnapshot
 
-        return PipelineIndex(
-            PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
-        )
+        return PipelineIndex(JobSnapshot.from_job_def(self), self.get_parent_pipeline_snapshot())
 
     def get_pipeline_snapshot_id(self) -> str:
         return self.get_pipeline_index().pipeline_snapshot_id
 
-    def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
+    def get_parent_pipeline_snapshot(self) -> Optional["JobSnapshot"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
         elif self.asset_selection_data:

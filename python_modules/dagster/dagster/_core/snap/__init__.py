@@ -64,6 +64,6 @@ from .node import (
     build_graph_def_snap as build_graph_def_snap,
 )
 from .pipeline_snapshot import (
-    PipelineSnapshot as PipelineSnapshot,
+    JobSnapshot as JobSnapshot,
     create_pipeline_snapshot_id as create_pipeline_snapshot_id,
 )
