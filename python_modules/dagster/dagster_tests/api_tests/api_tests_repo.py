@@ -10,6 +10,7 @@ from dagster import (
     job,
     op,
     repository,
+    schedule,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
@@ -122,6 +123,11 @@ def bar_pipeline():
     return fail_subset(one())
 
 
+@schedule(job_name="baz", cron_schedule="* * * * *")
+def partitioned_run_request_schedule():
+    return RunRequest(partition_key="a")
+
+
 def define_bar_schedules():
     return {
         "foo_schedule": ScheduleDefinition(
@@ -147,6 +153,7 @@ def define_bar_schedules():
                 else ""
             },
         ),
+        "partitioned_run_request_schedule": partitioned_run_request_schedule,
     }
 
 
