@@ -1,5 +1,5 @@
 from dagster import DependencyDefinition, GraphDefinition, In, Int, Out, Output, op
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 
@@ -40,7 +40,7 @@ def test_execution_plan_simple_two_steps():
 
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(pipeline_def),
         dagster_run=pipeline_run,
         instance=instance,
     )
@@ -85,7 +85,7 @@ def test_execution_plan_two_outputs():
     )
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(pipeline_def),
         dagster_run=pipeline_run,
         instance=instance,
     )
@@ -114,7 +114,7 @@ def test_reentrant_execute_plan():
     )
     execute_plan(
         execution_plan,
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(pipeline_def),
         dagster_run=pipeline_run,
         instance=instance,
     )

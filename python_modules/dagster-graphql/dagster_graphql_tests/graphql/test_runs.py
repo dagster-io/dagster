@@ -3,7 +3,7 @@ from unittest import mock
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.execution.api import execute_run
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -880,7 +880,7 @@ def test_run_group():
                 root_run_id=root_run_id,
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
-            execute_run(InMemoryPipeline(foo_job), run, instance)
+            execute_run(InMemoryJob(foo_job), run, instance)
             runs.append(run)
 
         with define_out_of_process_context(

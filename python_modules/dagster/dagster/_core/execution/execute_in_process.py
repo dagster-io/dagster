@@ -2,7 +2,7 @@ from typing import Any, Dict, FrozenSet, Mapping, Optional, cast
 
 from dagster._core.definitions import GraphDefinition, JobDefinition, Node, NodeHandle, OpDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.instance import DagsterInstance
@@ -33,7 +33,7 @@ def core_execute_in_process(
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_pipeline
-    pipeline = InMemoryPipeline(job_def)
+    pipeline = InMemoryJob(job_def)
 
     _check_top_level_inputs(job_def)
 

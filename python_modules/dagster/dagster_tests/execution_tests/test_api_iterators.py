@@ -9,7 +9,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import (
     DagsterEvent,
@@ -79,7 +79,7 @@ def test_execute_run_iterator():
         )
 
         iterator = execute_run_iterator(
-            InMemoryPipeline(job_def),
+            InMemoryJob(job_def),
             dagster_run,
             instance=instance
             # reconstructable(job_def), dagster_run, instance=instance
@@ -104,9 +104,7 @@ def test_execute_run_iterator():
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.SUCCESS)
 
-        events = list(
-            execute_run_iterator(InMemoryPipeline(job_def), dagster_run, instance=instance)
-        )
+        events = list(execute_run_iterator(InMemoryJob(job_def), dagster_run, instance=instance))
 
         assert any(
             [
@@ -131,7 +129,7 @@ def test_execute_run_iterator():
 
             event = next(
                 execute_run_iterator(
-                    InMemoryPipeline(job_def),
+                    InMemoryJob(job_def),
                     dagster_run,
                     instance=run_monitoring_instance,
                 )
@@ -148,7 +146,7 @@ def test_execute_run_iterator():
                 r"because it's resuming from a run worker failure",
             ):
                 execute_run_iterator(
-                    InMemoryPipeline(job_def),
+                    InMemoryJob(job_def),
                     dagster_run,
                     instance=run_monitoring_instance,
                     resume_from_failure=True,
@@ -159,9 +157,7 @@ def test_execute_run_iterator():
             run_config={"loggers": {"callback": {}}},
         ).with_status(DagsterRunStatus.CANCELED)
 
-        events = list(
-            execute_run_iterator(InMemoryPipeline(job_def), dagster_run, instance=instance)
-        )
+        events = list(execute_run_iterator(InMemoryJob(job_def), dagster_run, instance=instance))
 
         assert len(events) == 1
         assert (
@@ -188,7 +184,7 @@ def test_restart_running_run_worker():
         ).with_status(DagsterRunStatus.STARTED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(InMemoryJob(pipeline_def), pipeline_run, instance=instance)
         )
 
         assert any(
@@ -221,7 +217,7 @@ def test_start_run_worker_after_run_failure():
         ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(InMemoryJob(pipeline_def), pipeline_run, instance=instance)
         )
         assert (
             "Ignoring a run worker that started after the run had already finished."
@@ -248,7 +244,7 @@ def test_execute_canceled_state():
 
         with pytest.raises(DagsterInvariantViolationError):
             execute_run(
-                InMemoryPipeline(pipeline_def),
+                InMemoryJob(pipeline_def),
                 pipeline_run,
                 instance=instance,
             )
@@ -267,7 +263,7 @@ def test_execute_canceled_state():
         ).with_status(DagsterRunStatus.CANCELED)
 
         iter_events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
+            execute_run_iterator(InMemoryJob(pipeline_def), iter_run, instance=instance)
         )
 
         assert len(iter_events) == 1
@@ -304,7 +300,7 @@ def test_execute_run_bad_state():
                 pipeline_run.run_id
             ),
         ):
-            execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run(InMemoryJob(pipeline_def), pipeline_run, instance=instance)
 
 
 def test_execute_plan_iterator():
@@ -333,7 +329,7 @@ def test_execute_plan_iterator():
 
         iterator = execute_plan_iterator(
             execution_plan,
-            InMemoryPipeline(pipeline),
+            InMemoryJob(pipeline),
             pipeline_run,
             instance,
             run_config=run_config,

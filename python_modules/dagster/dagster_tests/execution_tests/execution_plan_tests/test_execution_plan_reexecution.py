@@ -7,7 +7,7 @@ from dagster import DependencyDefinition, In, Int, Out, op
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -183,7 +183,7 @@ def test_execution_plan_reexecution_with_in_memory():
         with pytest.raises(DagsterInvariantViolationError):
             execute_plan(
                 execution_plan.build_subset_plan(["add_two"], job_def, resolved_run_config),
-                InMemoryPipeline(job_def),
+                InMemoryJob(job_def),
                 run_config=run_config,
                 dagster_run=pipeline_run,
                 instance=instance,

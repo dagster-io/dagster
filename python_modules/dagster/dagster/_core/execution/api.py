@@ -19,7 +19,7 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import IJob, JobDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
@@ -659,7 +659,7 @@ def execute_plan(
 def _check_pipeline(job_arg: Union[JobDefinition, IJob]) -> IJob:
     # backcompat
     if isinstance(job_arg, JobDefinition):
-        job_arg = InMemoryPipeline(job_arg)
+        job_arg = InMemoryJob(job_arg)
 
     check.inst_param(job_arg, "job_arg", IJob)
     return job_arg

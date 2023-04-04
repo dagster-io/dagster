@@ -20,7 +20,7 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
@@ -264,7 +264,7 @@ class Manager:
 
         resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
-        pipeline = InMemoryPipeline(pipeline_def)
+        pipeline = InMemoryJob(pipeline_def)
         execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
 
         with scoped_pipeline_context(

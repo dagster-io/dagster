@@ -22,7 +22,7 @@ from dagster import (
     success_hook,
 )
 from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import (
@@ -206,7 +206,7 @@ def test_retry_deferral():
         job_def = define_retry_limit_job()
         events = execute_plan(
             create_execution_plan(job_def),
-            InMemoryPipeline(job_def),
+            InMemoryJob(job_def),
             dagster_run=DagsterRun(job_name="retry_limits", run_id="42"),
             retry_mode=RetryMode.DEFERRED,
             instance=instance,

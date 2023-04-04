@@ -35,7 +35,7 @@ from dagster._core.assets import AssetDetails
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.events import (
     AssetMaterializationPlannedData,
     DagsterEvent,
@@ -253,7 +253,7 @@ def _synthesize_events(
         }
 
         pipeline_run = instance.create_run_for_pipeline(a_job, run_id=run_id, run_config=run_config)
-        result = execute_run(InMemoryPipeline(a_job), pipeline_run, instance)
+        result = execute_run(InMemoryJob(a_job), pipeline_run, instance)
 
         if check_success:
             assert result.success
@@ -1343,7 +1343,7 @@ class TestEventLogStorage:
 
             # first run
             execute_run(
-                InMemoryPipeline(a_job),
+                InMemoryJob(a_job),
                 instance.create_run_for_pipeline(
                     a_job,
                     run_id="1",
@@ -1361,7 +1361,7 @@ class TestEventLogStorage:
             # second run
             events = []
             execute_run(
-                InMemoryPipeline(a_job),
+                InMemoryJob(a_job),
                 instance.create_run_for_pipeline(
                     a_job,
                     run_id="2",
@@ -1377,7 +1377,7 @@ class TestEventLogStorage:
             # third run
             events = []
             execute_run(
-                InMemoryPipeline(a_job),
+                InMemoryJob(a_job),
                 instance.create_run_for_pipeline(
                     a_job,
                     run_id="3",

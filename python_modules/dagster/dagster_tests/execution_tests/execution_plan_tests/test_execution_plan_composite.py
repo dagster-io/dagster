@@ -1,7 +1,7 @@
 from dagster import Field, Int, String, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 
@@ -62,7 +62,7 @@ def test_execution_plan_for_graph():
     )
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(composite_job),
+        InMemoryJob(composite_job),
         run_config=run_config,
         dagster_run=pipeline_run,
         instance=instance,
@@ -102,7 +102,7 @@ def test_execution_plan_for_graph_with_config_mapping():
 
     events = execute_plan(
         execution_plan,
-        InMemoryPipeline(composite_job_with_config_mapping),
+        InMemoryJob(composite_job_with_config_mapping),
         run_config=run_config,
         dagster_run=pipeline_run,
         instance=instance,

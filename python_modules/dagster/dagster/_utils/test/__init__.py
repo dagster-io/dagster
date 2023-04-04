@@ -22,7 +22,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.dependency import Node
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanExecutionContext
@@ -66,7 +66,7 @@ def create_test_pipeline_execution_context(
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryPipeline(pipeline_def),
+        InMemoryJob(pipeline_def),
         execution_plan,
         run_config,
         pipeline_run,

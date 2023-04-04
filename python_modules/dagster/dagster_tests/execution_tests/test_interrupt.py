@@ -18,7 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.test_utils import instance_for_test
@@ -170,7 +170,7 @@ def test_interrupt_resource_teardown():
             # launch a pipeline that writes a file and loops infinitely
             # next time the launched thread wakes up it will send an interrupt
             for event in execute_run_iterator(
-                InMemoryPipeline(write_a_file_job),
+                InMemoryJob(write_a_file_job),
                 dagster_run,
                 instance=instance,
             ):

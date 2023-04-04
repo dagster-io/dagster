@@ -10,7 +10,7 @@ from dagster import (
 )
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -410,7 +410,7 @@ def test_executor_not_created_for_execute_plan():
 
     results = execute_plan(
         plan,
-        InMemoryPipeline(pipe),
+        InMemoryJob(pipe),
         instance,
         job_def,
     )
@@ -483,7 +483,7 @@ def test_fan_out_should_skip_step():
     run = DagsterRun(job_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
-        InMemoryPipeline(optional_outputs),
+        InMemoryJob(optional_outputs),
         instance,
         run,
     )
@@ -542,7 +542,7 @@ def test_fan_in_should_skip_step():
                 "graph_all_upstream_skip.skip_2",
             ],
         ),
-        InMemoryPipeline(optional_outputs_composite),
+        InMemoryJob(optional_outputs_composite),
         instance,
         run,
     )
@@ -564,7 +564,7 @@ def test_fan_in_should_skip_step():
                 "graph_one_upstream_skip.skip",
             ],
         ),
-        InMemoryPipeline(optional_outputs_composite),
+        InMemoryJob(optional_outputs_composite),
         instance,
         run,
     )
@@ -607,7 +607,7 @@ def test_configured_input_should_skip_step():
             step_keys_to_execute=["one"],
             run_config=run_config,
         ),
-        InMemoryPipeline(my_job),
+        InMemoryJob(my_job),
         instance,
         run,
         run_config=run_config,

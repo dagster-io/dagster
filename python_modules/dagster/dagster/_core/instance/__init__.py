@@ -34,7 +34,7 @@ from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checka
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -997,7 +997,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         else:
             execution_plan = create_execution_plan(
-                pipeline=InMemoryPipeline(pipeline_def),
+                pipeline=InMemoryJob(pipeline_def),
                 run_config=run_config,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,

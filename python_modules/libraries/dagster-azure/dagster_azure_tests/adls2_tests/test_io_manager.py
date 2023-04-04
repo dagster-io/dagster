@@ -23,7 +23,7 @@ from dagster import (
     with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.pipeline_base import InMemoryJob
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -102,7 +102,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -113,7 +113,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
+            pipeline=InMemoryJob(job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
@@ -174,7 +174,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     run_id = make_new_run_id()
 
     resolved_run_config = ResolvedRunConfig.build(job, run_config=run_config)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(job), resolved_run_config)
+    execution_plan = ExecutionPlan.build(InMemoryJob(job), resolved_run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
@@ -185,7 +185,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
+            pipeline=InMemoryJob(job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
@@ -214,7 +214,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
-            pipeline=InMemoryPipeline(job),
+            pipeline=InMemoryJob(job),
             dagster_run=pipeline_run,
             run_config=run_config,
             instance=instance,
