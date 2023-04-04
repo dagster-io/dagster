@@ -1180,7 +1180,7 @@ def _update_from_resolved_dynamic_outputs(
         del resolvable_map[key_set]
 
 
-def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
+def can_isolate_steps(job_def: JobDefinition) -> bool:
     """Returns true if every output definition in the pipeline uses an IO manager that's not
     the mem_io_manager.
 
@@ -1188,10 +1188,10 @@ def can_isolate_steps(pipeline_def: JobDefinition) -> bool:
     outputs will be available to other processes.
     """
     output_defs = [
-        output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
+        output_def for node_def in job_def.all_node_defs for output_def in node_def.output_defs
     ]
     for output_def in output_defs:
-        if pipeline_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
+        if job_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
             return False
 
     return True

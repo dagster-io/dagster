@@ -7,7 +7,7 @@ from dagster._core.execution.context.hook import HookContext
 def _default_status_message(context: HookContext, status: str) -> str:
     return "Op {op_name} on job {pipeline_name} {status}!\nRun ID: {run_id}".format(
         op_name=context.op.name,
-        pipeline_name=context.pipeline_name,
+        pipeline_name=context.job_name,
         run_id=context.run_id,
         status=status,
     )
