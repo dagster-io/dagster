@@ -1484,8 +1484,8 @@ def external_pipeline_data_from_def(pipeline_def: JobDefinition) -> ExternalJobD
     check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     return ExternalJobData(
         name=pipeline_def.name,
-        job_snapshot=pipeline_def.get_pipeline_snapshot(),
-        parent_job_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+        job_snapshot=pipeline_def.get_job_snapshot(),
+        parent_job_snapshot=pipeline_def.get_parent_job_snapshot(),
         active_presets=active_presets_from_job_def(pipeline_def),
     )
 

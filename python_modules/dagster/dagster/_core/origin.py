@@ -67,9 +67,9 @@ class RepositoryPythonOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name: str) -> "JobPythonOrigin":
-        check.str_param(pipeline_name, "pipeline_name")
-        return JobPythonOrigin(pipeline_name, self)
+    def get_job_origin(self, job_name: str) -> "JobPythonOrigin":
+        check.str_param(job_name, "pipeline_name")
+        return JobPythonOrigin(job_name, self)
 
 
 @whitelist_for_serdes(

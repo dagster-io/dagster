@@ -1021,7 +1021,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 execution_plan,
                 pipeline_def.get_pipeline_snapshot_id(),
             ),
-            parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
+            parent_pipeline_snapshot=pipeline_def.get_parent_job_snapshot(),
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
         )

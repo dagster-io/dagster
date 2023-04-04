@@ -854,12 +854,12 @@ class JobDefinition:
         from dagster._core.host_representation import JobIndex
         from dagster._core.snap import JobSnapshot
 
-        return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_pipeline_snapshot())
+        return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
 
     def get_pipeline_snapshot_id(self) -> str:
         return self.get_pipeline_index().job_snapshot_id
 
-    def get_parent_pipeline_snapshot(self) -> Optional["JobSnapshot"]:
+    def get_parent_job_snapshot(self) -> Optional["JobSnapshot"]:
         if self.op_selection_data:
             return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
         elif self.asset_selection_data:
