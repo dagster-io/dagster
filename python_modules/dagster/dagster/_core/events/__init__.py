@@ -67,7 +67,7 @@ EventSpecificData = Union[
     "HookErroredData",
     StepRetryData,
     "JobFailureData",
-    "PipelineCanceledData",
+    "JobCanceledData",
     "ObjectStoreOperationResultData",
     "HandledOutputData",
     "LoadedInputData",
@@ -992,7 +992,7 @@ class DagsterEvent(
             message='Execution of run for "{pipeline_name}" canceled.'.format(
                 pipeline_name=pipeline_context.pipeline_name
             ),
-            event_specific_data=PipelineCanceledData(
+            event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
         )
@@ -1589,17 +1589,17 @@ class JobFailureData(
         )
 
 
-@whitelist_for_serdes
-class PipelineCanceledData(
+@whitelist_for_serdes(storage_name="PipelineCanceledData")
+class JobCanceledData(
     NamedTuple(
-        "_PipelineCanceledData",
+        "_JobCanceledData",
         [
             ("error", Optional[SerializableErrorInfo]),
         ],
     )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(PipelineCanceledData, cls).__new__(
+        return super(JobCanceledData, cls).__new__(
             cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 
