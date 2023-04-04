@@ -39,10 +39,8 @@ def test_launch_run_with_unloadable_pipeline_grpc():
             res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
-                        pipeline_origin=original_origin._replace(
-                            pipeline_name="i_am_fake_pipeline"
-                        ),
-                        pipeline_run_id=run_id,
+                        job_origin=original_origin._replace(pipeline_name="i_am_fake_pipeline"),
+                        run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
                 ),
@@ -86,8 +84,8 @@ def test_launch_run_grpc():
             res = deserialize_value(
                 api_client.start_run(
                     ExecuteExternalJobArgs(
-                        pipeline_origin=job_handle.get_external_origin(),
-                        pipeline_run_id=run_id,
+                        job_origin=job_handle.get_external_origin(),
+                        run_id=run_id,
                         instance_ref=instance.get_ref(),
                     )
                 ),
@@ -132,8 +130,8 @@ def test_launch_unloadable_run_grpc():
                 res = deserialize_value(
                     api_client.start_run(
                         ExecuteExternalJobArgs(
-                            pipeline_origin=job_handle.get_external_origin(),
-                            pipeline_run_id=run_id,
+                            job_origin=job_handle.get_external_origin(),
+                            run_id=run_id,
                             instance_ref=other_instance.get_ref(),
                         )
                     ),

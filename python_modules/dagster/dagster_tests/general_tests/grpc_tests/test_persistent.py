@@ -629,8 +629,8 @@ def test_load_with_secrets_loader_instance_ref():
                 res = deserialize_value(
                     client.start_run(
                         ExecuteExternalJobArgs(
-                            pipeline_origin=job_origin,
-                            pipeline_run_id=run.run_id,
+                            job_origin=job_origin,
+                            run_id=run.run_id,
                             instance_ref=instance.get_ref(),
                         )
                     ),

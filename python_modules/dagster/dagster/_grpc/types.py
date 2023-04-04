@@ -182,32 +182,36 @@ class ResumeRunArgs(
 
 
 @whitelist_for_serdes(
-    storage_name="_ExecuteExternalPipelineArgs",
+    storage_name="ExecuteExternalPipelineArgs",
+    storage_field_names={
+        "job_origin": "pipeline_origin",
+        "run_id": "pipeline_run_id",
+    },
 )
 class ExecuteExternalJobArgs(
     NamedTuple(
         "_ExecuteExternalJobArgs",
         [
-            ("pipeline_origin", ExternalJobOrigin),
-            ("pipeline_run_id", str),
+            ("job_origin", ExternalJobOrigin),
+            ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
         ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin: ExternalJobOrigin,
-        pipeline_run_id: str,
+        job_origin: ExternalJobOrigin,
+        run_id: str,
         instance_ref: Optional[InstanceRef],
     ):
         return super(ExecuteExternalJobArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(
-                pipeline_origin,
-                "pipeline_origin",
+            job_origin=check.inst_param(
+                job_origin,
+                "job_origin",
                 ExternalJobOrigin,
             ),
-            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            run_id=check.str_param(run_id, "run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 

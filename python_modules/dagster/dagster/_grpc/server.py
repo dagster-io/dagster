@@ -710,14 +710,14 @@ class DagsterApiServer(DagsterApiServicer):
                 request.serialized_execute_run_args,
                 ExecuteExternalJobArgs,
             )
-            run_id = execute_external_pipeline_args.pipeline_run_id
+            run_id = execute_external_pipeline_args.run_id
 
             # reconstructable required for handing execution off to subprocess
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
-                execute_external_pipeline_args.pipeline_origin.external_repository_origin.repository_name
+                execute_external_pipeline_args.job_origin.external_repository_origin.repository_name
             ]
             recon_pipeline = recon_repo.get_reconstructable_pipeline(
-                execute_external_pipeline_args.pipeline_origin.job_name
+                execute_external_pipeline_args.job_origin.job_name
             )
 
         except:

@@ -74,8 +74,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_value(
             grpc_client.start_run(
                 ExecuteExternalJobArgs(
-                    pipeline_origin=run.external_job_origin,
-                    pipeline_run_id=run.run_id,
+                    job_origin=run.external_job_origin,
+                    run_id=run.run_id,
                     instance_ref=instance.get_ref(),
                 )
             ),

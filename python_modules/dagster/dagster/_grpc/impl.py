@@ -187,15 +187,15 @@ def _run_in_subprocess(
             else nullcontext()
         ) as instance:
             instance = check.not_none(instance)  # noqa: PLW2901
-            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+            pipeline_run = instance.get_run_by_id(execute_run_args.run_id)
 
             if not pipeline_run:
                 raise DagsterRunNotFoundError(
                     "gRPC server could not load run {run_id} in order to execute it. Make sure that"
                     " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.pipeline_run_id
+                        run_id=execute_run_args.run_id
                     ),
-                    invalid_run_id=execute_run_args.pipeline_run_id,
+                    invalid_run_id=execute_run_args.run_id,
                 )
 
             pid = os.getpid()
