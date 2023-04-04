@@ -66,7 +66,7 @@ EventSpecificData = Union[
     "EngineEventData",
     "HookErroredData",
     StepRetryData,
-    "PipelineFailureData",
+    "JobFailureData",
     "PipelineCanceledData",
     "ObjectStoreOperationResultData",
     "HandledOutputData",
@@ -712,9 +712,9 @@ class DagsterEvent(
         return cast(StepMaterializationData, self.event_specific_data).materialization
 
     @property
-    def pipeline_failure_data(self) -> "PipelineFailureData":
+    def pipeline_failure_data(self) -> "JobFailureData":
         _assert_type("pipeline_failure_data", DagsterEventType.RUN_FAILURE, self.event_type)
-        return cast(PipelineFailureData, self.event_specific_data)
+        return cast(JobFailureData, self.event_specific_data)
 
     @property
     def engine_event_data(self) -> "EngineEventData":
@@ -964,7 +964,7 @@ class DagsterEvent(
                     pipeline_name=pipeline_context_or_name.pipeline_name,
                     context_msg=context_msg,
                 ),
-                event_specific_data=PipelineFailureData(error_info),
+                event_specific_data=JobFailureData(error_info),
             )
         else:
             # when the failure happens trying to bring up context, the pipeline_context hasn't been
@@ -973,7 +973,7 @@ class DagsterEvent(
             event = DagsterEvent(
                 event_type_value=DagsterEventType.RUN_FAILURE.value,
                 pipeline_name=pipeline_context_or_name,
-                event_specific_data=PipelineFailureData(error_info),
+                event_specific_data=JobFailureData(error_info),
                 message='Execution of run for "{pipeline_name}" failed. {context_msg}'.format(
                     pipeline_name=pipeline_context_or_name,
                     context_msg=context_msg,
@@ -1574,17 +1574,17 @@ class EngineEventData(
         return EngineEventData(metadata={}, error=error)
 
 
-@whitelist_for_serdes
-class PipelineFailureData(
+@whitelist_for_serdes(storage_name="PipelineFailureData")
+class JobFailureData(
     NamedTuple(
-        "_PipelineFailureData",
+        "_JobFailureData",
         [
             ("error", Optional[SerializableErrorInfo]),
         ],
     )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(PipelineFailureData, cls).__new__(
+        return super(JobFailureData, cls).__new__(
             cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 
