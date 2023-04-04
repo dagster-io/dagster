@@ -612,7 +612,7 @@ class ExternalSchedule:
         return self._external_schedule_data.solid_selection
 
     @property
-    def pipeline_name(self) -> str:
+    def job_name(self) -> str:
         return self._external_schedule_data.pipeline_name
 
     @property

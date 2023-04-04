@@ -152,7 +152,7 @@ def get_schedules_for_pipeline(
 
     results = []
     for external_schedule in external_schedules:
-        if external_schedule.pipeline_name != pipeline_selector.pipeline_name:
+        if external_schedule.job_name != pipeline_selector.pipeline_name:
             continue
 
         schedule_state = graphene_info.context.instance.get_instigator_state(
