@@ -1,6 +1,6 @@
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedJob
 
 from ..errors import (
     GraphenePipelineNotFoundError,
@@ -20,10 +20,10 @@ class GraphenePipelineSnapshot(GrapheneIPipelineSnapshotMixin, graphene.ObjectTy
     def __init__(self, represented_pipeline):
         super().__init__()
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
 
-    def get_represented_pipeline(self):
+    def get_represented_pipeline(self) -> RepresentedJob:
         return self._represented_pipeline
 
 

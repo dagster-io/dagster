@@ -4,10 +4,10 @@ import dagster._check as check
 from dagster._core.snap import JobSnapshot
 
 from .pipeline_index import JobIndex
-from .represented import RepresentedPipeline
+from .represented import RepresentedJob
 
 
-class HistoricalPipeline(RepresentedPipeline):
+class HistoricalPipeline(RepresentedJob):
     """HistoricalPipeline represents a pipeline that executed in the past
     and has been reloaded into process by querying the instance. Notably
     the user must pass in the pipeline snapshot id that was originally
@@ -32,7 +32,7 @@ class HistoricalPipeline(RepresentedPipeline):
         self._index = None
 
     @property
-    def _pipeline_index(self):
+    def _job_index(self):
         if self._index is None:
             self._index = JobIndex(
                 self._snapshot,
@@ -41,9 +41,9 @@ class HistoricalPipeline(RepresentedPipeline):
         return self._index
 
     @property
-    def identifying_pipeline_snapshot_id(self):
+    def identifying_job_snapshot_id(self):
         return self._identifying_pipeline_snapshot_id
 
     @property
-    def computed_pipeline_snapshot_id(self):
-        return self._pipeline_index.job_snapshot_id
+    def computed_job_snapshot_id(self):
+        return self._job_index.job_snapshot_id

@@ -17,7 +17,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
         old_execution_plan_snapshot_id = "2246f8e5a10d21e15fbfa3773d7b2d0bc1fa9d3d"
 
         historical_pipeline = instance.get_historical_pipeline(old_pipeline_snapshot_id)
-        pipeline_snapshot = historical_pipeline.pipeline_snapshot
+        pipeline_snapshot = historical_pipeline.job_snapshot
         ep_snapshot = instance.get_execution_plan_snapshot(old_execution_plan_snapshot_id)
 
         # It is the pipeline snapshot that changed
@@ -26,8 +26,8 @@ def test_run_created_in_0_7_9_snapshot_id_change():
         assert created_snapshot_id != old_pipeline_snapshot_id
 
         # verify that both are accessible off of the historical pipeline
-        assert historical_pipeline.computed_pipeline_snapshot_id == created_snapshot_id
-        assert historical_pipeline.identifying_pipeline_snapshot_id == old_pipeline_snapshot_id
+        assert historical_pipeline.computed_job_snapshot_id == created_snapshot_id
+        assert historical_pipeline.identifying_job_snapshot_id == old_pipeline_snapshot_id
 
         # We also changed execution plan schema in 0.7.11.post1
         assert create_execution_plan_snapshot_id(ep_snapshot) != old_execution_plan_snapshot_id

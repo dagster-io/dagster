@@ -188,7 +188,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         work, we need to inject this one.
         """
         return JobPythonOrigin(
-            self._pipeline_index.name,
+            self._job_index.name,
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
@@ -220,7 +220,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 repository_name="demo_execution_repo",
             ),
-            job_name=self._pipeline_index.name,
+            job_name=self._job_index.name,
         )
 
 

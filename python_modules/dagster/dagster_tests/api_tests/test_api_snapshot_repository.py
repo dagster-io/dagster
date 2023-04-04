@@ -139,7 +139,7 @@ def test_defer_snapshots(instance):
         job = jobs[0]
 
         # basic accessors should not cause a fetch
-        _ = job.computed_pipeline_snapshot_id
+        _ = job.computed_job_snapshot_id
         assert _state.get("cnt", 0) == 0
 
         _ = job.name
@@ -148,14 +148,14 @@ def test_defer_snapshots(instance):
         _ = job.active_presets
         assert _state.get("cnt", 0) == 0
 
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # access should be memoized
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1
 
         # refetching job should share fetched data
         job = repo.get_all_external_jobs()[0]
-        _ = job.pipeline_snapshot
+        _ = job.job_snapshot
         assert _state.get("cnt", 0) == 1

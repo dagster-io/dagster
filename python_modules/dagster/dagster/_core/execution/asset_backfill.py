@@ -440,9 +440,9 @@ def submit_run_request(
     external_pipeline, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
 
     run = instance.create_run(
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
         pipeline_name=external_pipeline.name,
         run_id=None,
         solids_to_execute=None,

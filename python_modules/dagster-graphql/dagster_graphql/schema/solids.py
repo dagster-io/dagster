@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
-from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedJob
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
@@ -40,10 +40,10 @@ class GrapheneInputDefinition(graphene.ObjectType):
         name = "InputDefinition"
 
     def __init__(
-        self, represented_pipeline: RepresentedPipeline, solid_def_name: str, input_def_name: str
+        self, represented_pipeline: RepresentedJob, solid_def_name: str, input_def_name: str
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(input_def_name, "input_def_name")
@@ -56,7 +56,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info: ResolveInfo) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_pipeline.pipeline_snapshot, self._input_def_snap.dagster_type_key
+            self._represented_pipeline.job_snapshot, self._input_def_snap.dagster_type_key
         )
 
     def resolve_solid_definition(
@@ -81,13 +81,13 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def __init__(
         self,
-        represented_pipeline: RepresentedPipeline,
+        represented_pipeline: RepresentedJob,
         solid_def_name: str,
         output_def_name: str,
         is_dynamic: bool,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(output_def_name, "output_def_name")
@@ -103,7 +103,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_pipeline.pipeline_snapshot,
+            self._represented_pipeline.job_snapshot,
             self._output_def_snap.dagster_type_key,
         )
 
@@ -127,13 +127,13 @@ class GrapheneInput(graphene.ObjectType):
 
     def __init__(
         self,
-        represented_pipeline: RepresentedPipeline,
+        represented_pipeline: RepresentedJob,
         current_dep_structure: DependencyStructureIndex,
         solid_name: str,
         input_name: str,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._current_dep_structure = check.inst_param(
             current_dep_structure, "current_dep_structure", DependencyStructureIndex
@@ -187,7 +187,7 @@ class GrapheneOutput(graphene.ObjectType):
 
     def __init__(self, represented_pipeline, current_dep_structure, solid_name, output_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._current_dep_structure = check.inst_param(
             current_dep_structure, "current_dep_structure", DependencyStructureIndex
@@ -243,7 +243,7 @@ class GrapheneInputMapping(graphene.ObjectType):
         input_mapping_snap,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._current_dep_index = check.inst_param(
             current_dep_index, "current_dep_index", DependencyStructureIndex
@@ -281,7 +281,7 @@ class GrapheneOutputMapping(graphene.ObjectType):
         self, represented_pipeline, current_dep_index, solid_def_name, output_mapping_snap
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._current_dep_index = check.inst_param(
             current_dep_index, "current_dep_index", DependencyStructureIndex
@@ -325,7 +325,7 @@ class GrapheneResourceRequirement(graphene.ObjectType):
 
 
 def build_solids(represented_pipeline, current_dep_index):
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     return sorted(
         [
             GrapheneSolid(represented_pipeline, solid_name, current_dep_index)
@@ -336,11 +336,11 @@ def build_solids(represented_pipeline, current_dep_index):
 
 
 def _build_solid_handles(
-    represented_pipeline: RepresentedPipeline,
+    represented_pipeline: RepresentedJob,
     current_dep_index: DependencyStructureIndex,
     parent: Optional["GrapheneSolidHandle"] = None,
 ) -> Sequence["GrapheneSolidHandle"]:
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
     all_handle: List[GrapheneSolidHandle] = []
     for solid_invocation in current_dep_index.node_invocations:
@@ -365,9 +365,9 @@ def _build_solid_handles(
 
 @lru_cache(maxsize=32)
 def build_solid_handles(
-    represented_pipeline: RepresentedPipeline,
+    represented_pipeline: RepresentedJob,
 ) -> Mapping[str, "GrapheneSolidHandle"]:
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     return {
         str(item.handleID): item
         for item in _build_solid_handles(
@@ -389,9 +389,9 @@ class GrapheneISolidDefinition(graphene.Interface):
 
 
 class ISolidDefinitionMixin:
-    def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
+    def __init__(self, represented_pipeline: RepresentedJob, solid_def_name: str):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         check.str_param(solid_def_name, "solid_def_name")
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
@@ -456,8 +456,8 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         interfaces = (GrapheneISolidDefinition,)
         name = "SolidDefinition"
 
-    def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
-        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    def __init__(self, represented_pipeline: RepresentedJob, solid_def_name: str):
+        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
         _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         if not isinstance(_solid_def_snap, OpDefSnap):
             check.failed("Expected SolidDefSnap")
@@ -517,12 +517,12 @@ class GrapheneSolid(graphene.ObjectType):
 
     def __init__(
         self,
-        represented_pipeline: RepresentedPipeline,
+        represented_pipeline: RepresentedJob,
         solid_name: str,
         current_dep_structure: DependencyStructureIndex,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
 
         check.str_param(solid_name, "solid_name")
@@ -665,9 +665,9 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         interfaces = (GrapheneISolidDefinition, GrapheneSolidContainer)
         name = "CompositeSolidDefinition"
 
-    def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
+    def __init__(self, represented_pipeline: RepresentedJob, solid_def_name: str):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         self._comp_solid_dep_index = represented_pipeline.get_dep_structure_index(solid_def_name)
@@ -675,7 +675,9 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_id(self, _graphene_info: ResolveInfo) -> str:
-        return f"{self._represented_pipeline.identifying_pipeline_snapshot_id}:{self._solid_def_snap.name}"
+        return (
+            f"{self._represented_pipeline.identifying_job_snapshot_id}:{self._solid_def_snap.name}"
+        )
 
     def resolve_solids(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneSolid]:
         return build_solids(self._represented_pipeline, self._comp_solid_dep_index)
@@ -734,9 +736,9 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
 
 
 def build_solid_definition(
-    represented_pipeline: RepresentedPipeline, solid_def_name: str
+    represented_pipeline: RepresentedJob, solid_def_name: str
 ) -> Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]:
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.str_param(solid_def_name, "solid_def_name")
 
     solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)

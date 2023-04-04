@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Mapping, Optional
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedJob
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME
 
 from dagster_graphql.schema.errors import GrapheneModeNotFoundError
@@ -43,7 +43,7 @@ def resolve_run_config_schema_or_error(
 @capture_error
 def resolve_is_run_config_valid(
     graphene_info: ResolveInfo,
-    represented_pipeline: RepresentedPipeline,
+    represented_pipeline: RepresentedJob,
     mode: str,
     run_config: Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
@@ -53,7 +53,7 @@ def resolve_is_run_config_valid(
         GrapheneRunConfigValidationInvalid,
     )
 
-    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.str_param(mode, "mode")
     check.dict_param(run_config, "run_config", key_type=str)
 

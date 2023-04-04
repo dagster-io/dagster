@@ -318,9 +318,9 @@ def create_backfill_run(
     )
 
     return instance.create_run(
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
         pipeline_name=external_pipeline.name,
         run_id=make_new_run_id(),
         solids_to_execute=solids_to_execute,

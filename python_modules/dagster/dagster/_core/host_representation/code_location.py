@@ -404,7 +404,7 @@ class InProcessCodeLocation(CodeLocation):
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                external_pipeline.identifying_pipeline_snapshot_id,
+                external_pipeline.identifying_job_snapshot_id,
             )
         )
 
@@ -738,7 +738,7 @@ class GrpcServerCodeLocation(CodeLocation):
             api_client=self.client,
             pipeline_origin=external_pipeline.get_external_origin(),
             run_config=run_config,
-            pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
+            pipeline_snapshot_id=external_pipeline.identifying_job_snapshot_id,
             asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,

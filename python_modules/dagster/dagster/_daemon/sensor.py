@@ -897,9 +897,9 @@ def _create_sensor_run(
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection)

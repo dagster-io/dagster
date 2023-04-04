@@ -7,6 +7,7 @@ from dagster._core.definitions.time_window_partitions import PartitionRangeStatu
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import DEFAULT_MODE_NAME, ExternalPresetData
+from dagster._core.host_representation.represented import RepresentedJob
 from dagster._core.storage.pipeline_run import (
     DagsterRunStatsSnapshot,
     DagsterRunStatus,
@@ -618,14 +619,14 @@ class GrapheneIPipelineSnapshotMixin:
     class Meta:
         name = "IPipelineSnapshotMixin"
 
-    def get_represented_pipeline(self):
+    def get_represented_pipeline(self) -> RepresentedJob:
         raise NotImplementedError()
 
     def resolve_pipeline_snapshot_id(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().identifying_pipeline_snapshot_id
+        return self.get_represented_pipeline().identifying_job_snapshot_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().identifying_pipeline_snapshot_id
+        return self.get_represented_pipeline().identifying_job_snapshot_id
 
     def resolve_name(self, _graphene_info: ResolveInfo):
         return self.get_represented_pipeline().name
@@ -638,7 +639,7 @@ class GrapheneIPipelineSnapshotMixin:
         return sorted(
             list(
                 map(
-                    lambda dt: to_dagster_type(represented_pipeline.pipeline_snapshot, dt.key),
+                    lambda dt: to_dagster_type(represented_pipeline.job_snapshot, dt.key),
                     [t for t in represented_pipeline.dagster_type_snaps if t.name],
                 )
             ),
@@ -657,7 +658,7 @@ class GrapheneIPipelineSnapshotMixin:
             )
 
         return to_dagster_type(
-            represented_pipeline.pipeline_snapshot,
+            represented_pipeline.job_snapshot,
             represented_pipeline.get_dagster_type_by_name(dagsterTypeName).key,
         )
 
@@ -673,7 +674,7 @@ class GrapheneIPipelineSnapshotMixin:
         return [
             GrapheneMode(
                 represented_pipeline.config_schema_snapshot,
-                represented_pipeline.identifying_pipeline_snapshot_id,
+                represented_pipeline.identifying_job_snapshot_id,
                 mode_def_snap,
             )
             for mode_def_snap in sorted(
@@ -706,12 +707,12 @@ class GrapheneIPipelineSnapshotMixin:
         represented_pipeline = self.get_represented_pipeline()
         return [
             GraphenePipelineTag(key=key, value=value)
-            for key, value in represented_pipeline.pipeline_snapshot.tags.items()
+            for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
 
     def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_pipeline()
-        return list(iterate_metadata_entries(represented_pipeline.pipeline_snapshot.metadata))
+        return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
         return self.get_represented_pipeline().solid_selection
@@ -754,7 +755,7 @@ class GrapheneIPipelineSnapshotMixin:
         return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info: ResolveInfo):
-        lineage_snapshot = self.get_represented_pipeline().pipeline_snapshot.lineage_snapshot
+        lineage_snapshot = self.get_represented_pipeline().job_snapshot.lineage_snapshot
         if lineage_snapshot:
             return lineage_snapshot.parent_snapshot_id
         else:
@@ -860,7 +861,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_pipeline.get_external_origin_id()
 
-    def get_represented_pipeline(self):
+    def get_represented_pipeline(self) -> RepresentedJob:
         return self._external_pipeline
 
     def resolve_presets(self, _graphene_info: ResolveInfo):

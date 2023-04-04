@@ -984,7 +984,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for output_def in self.get_node_definition_snap().output_def_snaps:
                 if output_def.name == output_name:
                     return to_dagster_type(
-                        external_pipeline.pipeline_snapshot,
+                        external_pipeline.job_snapshot,
                         output_def.dagster_type_key,
                     )
         return None

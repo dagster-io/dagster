@@ -59,4 +59,4 @@ from .code_location import (
     InProcessCodeLocation as InProcessCodeLocation,
 )
 from .pipeline_index import JobIndex as JobIndex
-from .represented import RepresentedPipeline as RepresentedPipeline
+from .represented import RepresentedJob as RepresentedJob

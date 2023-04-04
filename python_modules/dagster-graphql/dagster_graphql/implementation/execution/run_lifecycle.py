@@ -77,9 +77,9 @@ def create_valid_pipeline_run(
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
     pipeline_run = graphene_info.context.instance.create_run(
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
         pipeline_name=execution_params.selector.pipeline_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id

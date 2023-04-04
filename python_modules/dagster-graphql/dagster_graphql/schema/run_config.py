@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedJob
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
 from .config_types import GrapheneConfigType, to_config_type
@@ -53,7 +53,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     def __init__(self, represented_pipeline, mode):
         super().__init__()
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedJob
         )
         self._mode = check.str_param(mode, "mode")
 

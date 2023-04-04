@@ -110,7 +110,7 @@ def execute_list_command(cli_args, print_fn):
                     print_fn("Description:")
                     print_fn(format_description(job.description, indent=" " * 4))
                 print_fn("Ops: (Execution Order)")
-                for solid_name in job.pipeline_snapshot.node_names_in_topological_order:
+                for solid_name in job.job_snapshot.node_names_in_topological_order:
                     print_fn("    " + solid_name)
 
 
@@ -153,7 +153,7 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
         version=dagster_version,
         kwargs=cli_args,
     ) as external_pipeline:
-        pipeline_snapshot = external_pipeline.pipeline_snapshot
+        pipeline_snapshot = external_pipeline.job_snapshot
 
         if verbose:
             print_job(
@@ -536,9 +536,9 @@ def _create_external_pipeline_run(
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        pipeline_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        parent_pipeline_snapshot=external_pipeline.parent_job_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         asset_selection=None,

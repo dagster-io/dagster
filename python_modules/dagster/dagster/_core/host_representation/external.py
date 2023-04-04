@@ -71,7 +71,7 @@ from .external_data import (
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import JobIndex
-from .represented import RepresentedPipeline
+from .represented import RepresentedJob
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
@@ -286,7 +286,7 @@ class ExternalRepository:
         return self.handle.display_metadata
 
 
-class ExternalPipeline(RepresentedPipeline):
+class ExternalPipeline(RepresentedJob):
     """ExternalPipeline is a object that represents a loaded job definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
@@ -314,7 +314,7 @@ class ExternalPipeline(RepresentedPipeline):
         if external_pipeline_data:
             self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
             self._name = external_pipeline_data.name
-            self._snapshot_id = self._pipeline_index.job_snapshot_id
+            self._snapshot_id = self._job_index.job_snapshot_id
 
         elif external_job_ref:
             self._active_preset_dict = {ap.name: ap for ap in external_job_ref.active_presets}
@@ -328,7 +328,7 @@ class ExternalPipeline(RepresentedPipeline):
         self._handle = JobHandle(self._name, repository_handle)
 
     @property
-    def _pipeline_index(self) -> JobIndex:
+    def _job_index(self) -> JobIndex:
         with self._memo_lock:
             if self._index is None:
                 self._index = JobIndex(
@@ -343,11 +343,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def description(self):
-        return self._pipeline_index.job_snapshot.description
+        return self._job_index.job_snapshot.description
 
     @property
     def solid_names_in_topological_order(self):
-        return self._pipeline_index.job_snapshot.node_names_in_topological_order
+        return self._job_index.job_snapshot.node_names_in_topological_order
 
     @property
     def external_pipeline_data(self):
@@ -366,24 +366,24 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return (
-            self._pipeline_index.job_snapshot.lineage_snapshot.node_selection
-            if self._pipeline_index.job_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.node_selection
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         return (
-            self._pipeline_index.job_snapshot.lineage_snapshot.nodes_to_execute
-            if self._pipeline_index.job_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.nodes_to_execute
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
     @property
     def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return (
-            self._pipeline_index.job_snapshot.lineage_snapshot.asset_selection
-            if self._pipeline_index.job_snapshot.lineage_snapshot
+            self._job_index.job_snapshot.lineage_snapshot.asset_selection
+            if self._job_index.job_snapshot.lineage_snapshot
             else None
         )
 
@@ -393,11 +393,11 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def solid_names(self) -> Sequence[str]:
-        return self._pipeline_index.job_snapshot.node_names
+        return self._job_index.job_snapshot.node_names
 
     def has_solid_invocation(self, solid_name: str):
         check.str_param(solid_name, "solid_name")
-        return self._pipeline_index.has_solid_invocation(solid_name)
+        return self._job_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name: str) -> bool:
         check.str_param(preset_name, "preset_name")
@@ -413,18 +413,18 @@ class ExternalPipeline(RepresentedPipeline):
 
     @property
     def tags(self) -> Mapping[str, object]:
-        return self._pipeline_index.job_snapshot.tags
+        return self._job_index.job_snapshot.tags
 
     @property
     def metadata(self) -> Mapping[str, MetadataValue]:
-        return self._pipeline_index.job_snapshot.metadata
+        return self._job_index.job_snapshot.metadata
 
     @property
-    def computed_pipeline_snapshot_id(self) -> str:
+    def computed_job_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
-    def identifying_pipeline_snapshot_id(self) -> str:
+    def identifying_job_snapshot_id(self) -> str:
         return self._snapshot_id
 
     @property
