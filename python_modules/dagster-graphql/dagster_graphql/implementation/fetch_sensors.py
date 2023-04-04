@@ -56,7 +56,7 @@ def get_sensors_or_error(
         filtered = [
             sensor
             for sensor in sensors
-            if sensor.get_current_instigator_state(sensor_states_by_name.get(sensor.name))
+            if sensor.get_current_instigator_state(sensor_states_by_name.get(sensor.name)).status
             in instigator_statuses
         ]
     else:

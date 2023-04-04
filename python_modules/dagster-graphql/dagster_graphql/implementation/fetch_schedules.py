@@ -125,7 +125,7 @@ def get_schedules_or_error(
             for external_schedule in external_schedules
             if external_schedule.get_current_instigator_state(
                 schedule_states_by_name.get(external_schedule.name)
-            )
+            ).status
             in instigator_statuses
         ]
     else:
