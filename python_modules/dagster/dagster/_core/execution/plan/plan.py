@@ -331,7 +331,7 @@ class _PlanBuilder:
                 elif has_unresolved_input:
                     new_step = UnresolvedMappedExecutionStep(
                         handle=UnresolvedStepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.pipeline_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
                         ),
