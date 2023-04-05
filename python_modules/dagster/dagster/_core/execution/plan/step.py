@@ -380,7 +380,7 @@ class UnresolvedCollectExecutionStep(
         "_UnresolvedCollectExecutionStep",
         [
             ("handle", StepHandle),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
@@ -394,7 +394,7 @@ class UnresolvedCollectExecutionStep(
     def __new__(
         cls,
         handle: StepHandle,
-        pipeline_name: str,
+        job_name: str,
         step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
@@ -402,7 +402,7 @@ class UnresolvedCollectExecutionStep(
         return super(UnresolvedCollectExecutionStep, cls).__new__(
             cls,
             handle=check.inst_param(handle, "handle", StepHandle),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             step_input_dict={
                 si.name: si
                 for si in check.sequence_param(
@@ -491,7 +491,7 @@ class UnresolvedCollectExecutionStep(
 
         return ExecutionStep(
             handle=self.handle,
-            job_name=self.pipeline_name,
+            job_name=self.job_name,
             step_inputs=resolved_inputs,
             step_outputs=self.step_outputs,
             tags=self.tags,

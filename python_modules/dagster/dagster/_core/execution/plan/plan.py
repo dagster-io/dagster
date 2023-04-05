@@ -341,7 +341,7 @@ class _PlanBuilder:
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.pipeline_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
                         ),
