@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Iterator, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
 
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as
@@ -66,6 +66,40 @@ class DagsterInvalidSubsetError(DagsterError):
 
 class DagsterInvalidDeserializationVersionError(DagsterError):
     """Indicates that a serialized value has an unsupported version and cannot be deserialized."""
+
+
+PYTHONIC_CONFIG_ERROR_VERBIAGE = """
+This value can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type
+"""
+
+
+class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
+    """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
+    """
+
+    def __init__(
+        self, config_class: Optional[Type], field_name: Optional[str], invalid_type: Any, **kwargs
+    ):
+        self.invalid_type = invalid_type
+        self.field_name = field_name
+        self.config_class = config_class
+        super(DagsterInvalidPythonicConfigDefinitionError, self).__init__(
+            (
+                "Error defining Dagster config class{config_class}{field_name}.\nUnable"
+                " to resolve config type {invalid_type}. \n\n{PYTHONIC_CONFIG_ERROR_VERBIAGE}"
+            ).format(
+                config_class=f" {repr(config_class)}" if config_class else "",
+                field_name=f"on field '{field_name}'" if field_name else "",
+                invalid_type=repr(invalid_type),
+                PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE,
+            ),
+            **kwargs,
+        )
 
 
 CONFIG_ERROR_VERBIAGE = """
