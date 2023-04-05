@@ -98,7 +98,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         repository_handle = code_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_set_execution_param_data_grpc(
-            code_location.client,  # type: ignore
+            code_location.client,
             repository_handle,
             "dynamic_job_partition_set",
             ["a", "b", "c"],
@@ -108,7 +108,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert len(data.partition_data) == 3
 
         data = sync_get_external_partition_config_grpc(
-            code_location.client,  # type: ignore
+            code_location.client,
             repository_handle,
             "dynamic_job_partition_set",
             "a",
@@ -119,7 +119,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert data.run_config == {}
 
         data = sync_get_external_partition_tags_grpc(
-            code_location.client,  # type: ignore
+            code_location.client,
             repository_handle,
             "dynamic_job_partition_set",
             "a",
@@ -130,7 +130,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
         assert data.tags["dagster/partition"] == "a"
 
         data = sync_get_external_partition_set_execution_param_data_grpc(
-            code_location.client,  # type: ignore
+            code_location.client,
             repository_handle,
             "dynamic_job_partition_set",
             ["nonexistent_partition"],
@@ -141,7 +141,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
             sync_get_external_partition_config_grpc(
-                code_location.client,  # type: ignore
+                code_location.client,
                 repository_handle,
                 "dynamic_job_partition_set",
                 "nonexistent_partition",
@@ -150,7 +150,7 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
 
         with pytest.raises(DagsterUserCodeProcessError, match="No partition for partition key"):
             sync_get_external_partition_tags_grpc(
-                code_location.client,  # type: ignore
+                code_location.client,
                 repository_handle,
                 "dynamic_job_partition_set",
                 "nonexistent_partition",
