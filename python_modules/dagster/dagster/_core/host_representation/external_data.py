@@ -1297,7 +1297,7 @@ def external_repository_data_from_def(
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[JobDefinition],
+    job_defs: Sequence[JobDefinition],
     source_assets_by_key: Mapping[AssetKey, SourceAsset],
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
@@ -1317,7 +1317,7 @@ def external_asset_graph_from_defs(
     descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_asset_key: Dict[AssetKey, str] = {}
 
-    for pipeline_def in pipelines:
+    for pipeline_def in job_defs:
         asset_layer = pipeline_def.asset_layer
         asset_info_by_node_output = asset_layer.asset_info_by_node_output_handle
 
