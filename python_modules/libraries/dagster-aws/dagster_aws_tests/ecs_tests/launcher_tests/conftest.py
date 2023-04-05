@@ -174,7 +174,7 @@ def instance_with_resources(instance_cm):
 
 
 @pytest.fixture
-def instance_dont_use_current_task(instance_cm, subnet):
+def instance_dont_use_current_task(instance_cm, subnet, monkeypatch):
     with instance_cm(
         config={
             "use_current_ecs_task_config": False,
@@ -189,6 +189,8 @@ def instance_dont_use_current_task(instance_cm, subnet):
             },
         }
     ) as dagster_instance:
+        # Not running in an ECS task
+        monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", None)
         yield dagster_instance
 
 

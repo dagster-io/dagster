@@ -84,7 +84,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.logs = boto3.client("logs")
 
         self.task_definition = None
-        self.task_definition_dict = None
+        self.task_definition_dict = {}
         if isinstance(task_definition, str):
             self.task_definition = task_definition
         elif task_definition and "env" in task_definition:
@@ -103,7 +103,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     " set."
                 )
         else:
-            self.task_definition_dict = task_definition
+            self.task_definition_dict = task_definition or {}
 
         self.container_name = container_name
 
@@ -509,7 +509,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         else:
             family = self._get_run_task_definition_family(run)
 
-            if self.task_definition_dict:
+            if self.task_definition_dict or not self.use_current_ecs_task_config:
                 runtime_platform = container_context.runtime_platform
                 is_windows = container_context.runtime_platform.get(
                     "operatingSystemFamily"
