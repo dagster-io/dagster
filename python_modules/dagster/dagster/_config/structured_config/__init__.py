@@ -972,7 +972,10 @@ def _config_type_for_type_on_pydantic_field(
             return convert_potential_field(potential_dagster_type).config_type
         except DagsterInvalidConfigDefinitionError as e:
             raise DagsterInvalidPythonicConfigDefinitionError(
-                config_class=model_cls, field_name=field_name, invalid_type=e.current_value
+                config_class=model_cls,
+                field_name=field_name,
+                invalid_type=e.current_value,
+                is_resource=model_cls and safe_is_subclass(model_cls, ConfigurableResourceFactory),
             )
 
 

@@ -77,13 +77,24 @@ This value can be a:
     - A Pydantic discriminated union type
 """
 
+PYTHONIC_RESOURCE_ADDITIONAL_TYPES = """
+\nIf this value represents a resource dependency, its annotation must either:
+    - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[GitHub]
+"""
+
 
 class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
     """Indicates that you have attempted to construct a Pythonic config or resource class with an invalid value.
     """
 
     def __init__(
-        self, config_class: Optional[Type], field_name: Optional[str], invalid_type: Any, **kwargs
+        self,
+        config_class: Optional[Type],
+        field_name: Optional[str],
+        invalid_type: Any,
+        is_resource: bool = False,
+        **kwargs,
     ):
         self.invalid_type = invalid_type
         self.field_name = field_name
@@ -96,7 +107,8 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
                 config_class=f" {repr(config_class)}" if config_class else "",
                 field_name=f"on field '{field_name}'" if field_name else "",
                 invalid_type=repr(invalid_type),
-                PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE,
+                PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE
+                + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else ""),
             ),
             **kwargs,
         )

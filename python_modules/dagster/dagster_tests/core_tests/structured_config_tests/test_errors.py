@@ -52,6 +52,12 @@ def test_invalid_config_type_nested() -> None:
 
 
 def test_invalid_resource_basic() -> None:
+    class MyUnsupportedType:
+        pass
+
+    class MyBadResource(ConfigurableResource):
+        unsupported_param: MyUnsupportedType
+
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match=(
@@ -59,13 +65,7 @@ def test_invalid_resource_basic() -> None:
             r" '.*MyBadResource'>on field"
             " 'unsupported_param'.\nUnable to resolve config type <class"
             r" '.*MyUnsupportedType'>."
+            r"(?s).*If this value represents a resource dependency, its annotation must either"
         ),
     ):
-
-        class MyUnsupportedType:
-            pass
-
-        class MyBadResource(ConfigurableResource):
-            unsupported_param: MyUnsupportedType
-
         MyBadResource(unsupported_param=MyUnsupportedType())
