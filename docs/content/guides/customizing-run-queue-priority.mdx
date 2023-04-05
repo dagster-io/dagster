@@ -5,7 +5,7 @@ description: "Define custom prioritization rules for your Dagster instance's run
 
 # Customizing run queue priority
 
-Using the `QueuedRunCoordinator` or a custom run coordinator, you can define custom prioritization rules for your Dagster instance’s run queue.
+When using a \[run queue]\(/deployment/run-coordinator, you can define custom prioritization rules for your Dagster instance.
 
 By the end of this guide, you’ll:
 
@@ -17,7 +17,7 @@ By the end of this guide, you’ll:
 
 ## Understanding the run queue
 
-Used by the Dagster daemon, the run queue is a sequence of Dagster runs waiting to be executed. The daemon pulls runs from the queue and calls `launch_run` on submitted runs. It operates as a first-in, first-out priority queue.
+The run queue is a sequence of Dagster runs waiting to be executed. Dagster pulls runs from the queue and calls `launch_run` on submitted runs. It operates as a first-in, first-out priority queue.
 
 For example, if three runs are submitted in the following order:
 
