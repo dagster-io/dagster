@@ -12,7 +12,7 @@ from dagster import (
     _check as check,
     op,
 )
-from pydantic import Field as PyField
+from pydantic import Field
 
 from .utils import execute, execute_script_file
 
@@ -24,14 +24,15 @@ class OutputType(Enum):
 
 
 class ShellOpConfig(Config):
-    env: Optional[Dict[str, str]] = PyField(
-        None, description="An optional dict of environment variables to pass to the subprocess."
+    env: Optional[Dict[str, str]] = Field(
+        default=None,
+        description="An optional dict of environment variables to pass to the subprocess.",
     )
-    output_logging: OutputType = PyField(
+    output_logging: OutputType = Field(
         OutputType.BUFFER.value,
     )
-    cwd: Optional[str] = PyField(
-        None, description="Working directory in which to execute shell script"
+    cwd: Optional[str] = Field(
+        default=None, description="Working directory in which to execute shell script"
     )
 
     def to_execute_params(self) -> Dict[str, Any]:
