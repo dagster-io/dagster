@@ -13,6 +13,7 @@ from typing import (
 )
 
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import DependencyGraph
@@ -37,6 +38,7 @@ class ExternalAssetGraph(AssetGraph):
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        auto_materialize_policies_by_key: Mapping[AssetKey, Optional[AutoMaterializePolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
@@ -50,6 +52,7 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             code_versions_by_key=code_versions_by_key,
             is_observable_by_key=is_observable_by_key,
@@ -108,6 +111,7 @@ class ExternalAssetGraph(AssetGraph):
         )
         group_names_by_key = {}
         freshness_policies_by_key = {}
+        auto_materialize_policies_by_key = {}
         asset_keys_by_atomic_execution_unit_id: Dict[str, Set[AssetKey]] = defaultdict(set)
         repo_handles_by_key = {
             node.asset_key: repo_handle
@@ -155,6 +159,7 @@ class ExternalAssetGraph(AssetGraph):
             )
             group_names_by_key[node.asset_key] = node.group_name
             freshness_policies_by_key[node.asset_key] = node.freshness_policy
+            auto_materialize_policies_by_key[node.asset_key] = node.auto_materialize_policy
 
             if node.atomic_execution_unit_id is not None:
                 asset_keys_by_atomic_execution_unit_id[node.atomic_execution_unit_id].add(
@@ -179,6 +184,7 @@ class ExternalAssetGraph(AssetGraph):
             partition_mappings_by_key=partition_mappings_by_key,
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
