@@ -111,7 +111,20 @@ export const BackfillRow = ({
     <tr>
       <td style={{width: 120}}>
         <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
-          <Link to={`/overview/backfills/${backfill.backfillId}`}>{backfill.backfillId}</Link>
+          <Link
+            to={
+              backfill.isAssetBackfill
+                ? `/overview/backfills/${backfill.backfillId}`
+                : runsPathWithFilters([
+                    {
+                      token: 'tag',
+                      value: `dagster/backfill=${backfill.backfillId}`,
+                    },
+                  ])
+            }
+          >
+            {backfill.backfillId}
+          </Link>
         </Mono>
       </td>
       <td style={{width: 220}}>
