@@ -5,7 +5,6 @@ from dagster import Resource, op
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import TwilioResource, twilio_resource
-from dagster_twilio.resources import TwilioResource
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
