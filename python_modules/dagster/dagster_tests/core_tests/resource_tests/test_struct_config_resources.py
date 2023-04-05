@@ -2283,3 +2283,69 @@ def test_from_resource_context_and_to_config_field_complex() -> None:
         "a": [{"b": 1.0}, {"c": 2.0}],
         "d": [{"e": 3.0}, {"f": 4.0}],
     }
+
+
+@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
+def test_direct_op_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_op(NumResource(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_op_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @op
+    def an_op(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_op(my_resource=NumResource(num=1))
+
+    assert executed["yes"]
+
+
+@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/13384")
+def test_direct_asset_invocation_plain_arg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_asset(NumResource(num=1))
+
+    assert executed["yes"]
+
+
+def test_direct_asset_invocation_kwarg_with_resource_definition_no_inputs_no_context() -> None:
+    class NumResource(ConfigurableResource):
+        num: int
+
+    executed = {}
+
+    @asset
+    def an_asset(my_resource: NumResource) -> None:
+        assert my_resource.num == 1
+        executed["yes"] = True
+
+    an_asset(my_resource=NumResource(num=1))
+
+    assert executed["yes"]
