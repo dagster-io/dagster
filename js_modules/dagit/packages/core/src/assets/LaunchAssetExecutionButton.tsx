@@ -16,7 +16,6 @@ import {
 } from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
-import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -570,13 +569,7 @@ export function executionParamsForAssetJob(
   return {
     mode: 'default',
     executionMetadata: {
-      tags: [
-        ...tags.map((t) => pick(t, ['key', 'value'])),
-        {
-          key: DagsterTag.StepSelection,
-          value: assets.flatMap((o) => o.opNames).join(','),
-        },
-      ],
+      tags: tags.map((t) => pick(t, ['key', 'value'])),
     },
     runConfigData: '{}',
     selector: {

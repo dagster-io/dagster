@@ -317,15 +317,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                   ]
                 : []),
 
-              ...(currentSession.assetSelection
-                ? [
-                    {
-                      key: DagsterTag.StepSelection,
-                      value: currentSession.assetSelection.flatMap((o) => o.opNames).join(','),
-                    },
-                  ]
-                : []),
-
               ...tagsFromSession.map(onlyKeyAndValue),
 
               // note, we apply these last - uniqBy uses the first value it sees for
