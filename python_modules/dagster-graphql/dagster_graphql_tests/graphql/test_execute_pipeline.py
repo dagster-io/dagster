@@ -7,6 +7,7 @@ from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._utils import file_relative_path
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    METADATA_ENTRY_FRAGMENT,
     RUN_EVENTS_QUERY,
     SUBSCRIPTION_QUERY,
 )
@@ -28,7 +29,8 @@ from .utils import (
     sync_execute_get_run_log_data,
 )
 
-STEP_FAILURE_EVENTS_QUERY = """
+STEP_FAILURE_EVENTS_QUERY = (
+    """
 query pipelineRunEvents($runId: ID!) {
   logsForRun(runId: $runId) {
     __typename
@@ -39,6 +41,11 @@ query pipelineRunEvents($runId: ID!) {
           stepKey
           message
           level
+          failureMetadata {
+            metadataEntries {
+              ...metadataEntryFragment
+            }
+          }
           error {
             message
             className
@@ -63,6 +70,8 @@ query pipelineRunEvents($runId: ID!) {
   }
 }
 """
+    + METADATA_ENTRY_FRAGMENT
+)
 
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
@@ -592,23 +601,30 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
 
-        causes = step_run_log_entry["error"]["causes"]
+        assert step_run_log_entry["failureMetadata"]
+        assert step_run_log_entry["failureMetadata"]["metadataEntries"] == [
+            {
+                "__typename": "BoolMetadataEntry",
+                "label": "top_level",
+                "description": None,
+                "boolValue": True,
+            }
+        ]
 
-        assert len(causes) == 3
+        causes = step_run_log_entry["error"]["causes"]
+        assert len(causes) == 2
         assert [cause["message"] for cause in causes] == [
-            "Exception: Even more outer exception\n",
             "Exception: Outer exception\n",
             "Exception: bad programmer, bad\n",
         ]
         assert all([len(cause["stack"]) > 0 for cause in causes])
 
         error_chain = step_run_log_entry["error"]["errorChain"]
-        assert len(error_chain) == 4
+        assert len(error_chain) == 3
         assert [
             (chain_link["error"]["message"], chain_link["isExplicitLink"])
             for chain_link in error_chain
         ] == [
-            ("Exception: Even more outer exception\n", True),
             ("Exception: Outer exception\n", True),
             ("Exception: bad programmer, bad\n", True),
             ("Exception: The inner sanctum\n", False),
