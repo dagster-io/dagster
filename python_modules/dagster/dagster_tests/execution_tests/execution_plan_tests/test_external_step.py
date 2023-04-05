@@ -341,7 +341,7 @@ def test_step_context_to_step_run_ref():
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step
-        assert rehydrated_step.pipeline_name == step.pipeline_name
+        assert rehydrated_step.job_name == step.job_name
         assert rehydrated_step.step_inputs == step.step_inputs
         assert rehydrated_step.step_outputs == step.step_outputs
         assert rehydrated_step.kind == step.kind

@@ -351,7 +351,7 @@ class _PlanBuilder:
                 else:
                     new_step = ExecutionStep(
                         handle=StepHandle(node_handle=handle),
-                        pipeline_name=self.pipeline_name,
+                        job_name=self.pipeline_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
