@@ -326,7 +326,7 @@ class MultiprocessExecutor(Executor):
 
 def execute_step_out_of_process(
     multiproc_ctx: MultiprocessingBaseContext,
-    pipeline: ReconstructableJob,
+    recon_job: ReconstructableJob,
     step_context: IStepContext,
     step: ExecutionStep,
     errors: Dict[int, SerializableErrorInfo],
@@ -341,7 +341,7 @@ def execute_step_out_of_process(
         step_key=step.key,
         instance_ref=step_context.instance.get_ref(),
         term_event=term_events[step.key],
-        recon_pipeline=pipeline,
+        recon_pipeline=recon_job,
         retry_mode=retries,
         known_state=known_state,
         repository_load_data=repository_load_data,
