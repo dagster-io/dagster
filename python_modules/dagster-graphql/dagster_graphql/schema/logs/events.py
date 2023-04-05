@@ -237,7 +237,7 @@ class GrapheneFailureMetadata(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneExecutionStepInputEvent(graphene.ObjectType):
