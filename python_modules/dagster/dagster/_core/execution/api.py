@@ -497,7 +497,7 @@ def _logged_execute_job(
         op_selection=op_selection,
     )
 
-    log_repo_stats(instance=instance, pipeline=job_arg, source="execute_pipeline")
+    log_repo_stats(instance=instance, job=job_arg, source="execute_pipeline")
 
     dagster_run = instance.create_run_for_job(
         job_def=job_arg.get_definition(),
