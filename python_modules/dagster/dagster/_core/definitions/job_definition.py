@@ -1297,7 +1297,7 @@ def _create_run_config_schema(
 
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
-            pipeline_name=job_def.name,
+            job_name=job_def.name,
             nodes=job_def.graph.nodes,
             graph_def=job_def.graph,
             dependency_structure=job_def.graph.dependency_structure,
