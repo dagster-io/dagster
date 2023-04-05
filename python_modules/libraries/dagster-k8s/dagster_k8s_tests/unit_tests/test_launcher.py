@@ -13,7 +13,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
@@ -119,7 +119,7 @@ def test_launcher_with_container_context(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -233,7 +233,7 @@ def test_launcher_with_k8s_config(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -320,7 +320,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -401,7 +401,7 @@ def test_raise_on_error(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -462,7 +462,7 @@ def test_no_postgres(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -528,7 +528,7 @@ def test_check_run_health(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,

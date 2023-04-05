@@ -16,7 +16,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster._utils.merger import merge_dicts
 from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
@@ -340,7 +340,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
@@ -416,7 +416,7 @@ def test_raise_on_error(kubeconfig_file):
                 repository_name=repo_def.name,
                 code_location=location,
             )
-            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+            fake_external_pipeline = external_job_from_recon_job(
                 recon_pipeline,
                 solid_selection=None,
                 repository_handle=repo_handle,
