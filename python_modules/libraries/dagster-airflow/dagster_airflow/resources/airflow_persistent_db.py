@@ -41,7 +41,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
     @staticmethod
     def from_resource_context(context: InitResourceContext) -> "AirflowPersistentDatabase":
         uri = context.resource_config["uri"]
-        AirflowPersistentDatabase._initialize_database(
+        AirflowPersistentDatabase._initialize_database(  # noqa: SLF001
             uri=uri, connections=[Connection(**c) for c in context.resource_config["connections"]]
         )
         return AirflowPersistentDatabase(
