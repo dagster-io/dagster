@@ -975,7 +975,8 @@ def _config_type_for_type_on_pydantic_field(
                 config_class=model_cls,
                 field_name=field_name,
                 invalid_type=e.current_value,
-                is_resource=model_cls and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+                is_resource=model_cls is not None
+                and safe_is_subclass(model_cls, ConfigurableResourceFactory),
             )
 
 
