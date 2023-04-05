@@ -51,6 +51,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         close: () => {
           setSearch('');
           setSelectedFilter(null);
+          setFocusedItemIndex(-1);
           setIsOpen(false);
         },
         createPortal: (portaledElement) => {
@@ -97,6 +98,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             key={`filter:${filter.name}`}
             onClick={() => {
               setSelectedFilter(filter);
+              setFocusedItemIndex(-1);
             }}
             text={
               <Box flex={{direction: 'row', gap: 12}}>
