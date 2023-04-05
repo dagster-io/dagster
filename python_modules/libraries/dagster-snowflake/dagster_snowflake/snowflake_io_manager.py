@@ -163,12 +163,11 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
 
     """
 
-    database: str = Field(..., description="Name of the database to use.")
+    database: str = Field(description="Name of the database to use.")
     account: str = Field(
-        ...,
         description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
     )
-    user: str = Field(..., description="User login name.")
+    user: str = Field(description="User login name.")
     schema_: Optional[str] = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
