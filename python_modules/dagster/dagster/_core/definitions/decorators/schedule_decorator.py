@@ -13,7 +13,10 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+    validate_resource_annotated_function,
+)
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -100,6 +103,7 @@ def schedule(
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
         check.callable_param(fn, "fn")
+        validate_resource_annotated_function(fn)
 
         schedule_name = name or fn.__name__
 
@@ -115,9 +119,7 @@ def schedule(
             validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
         context_param_name = get_context_param_name(fn)
-        resource_arg_names: Set[str] = {
-            arg.name for arg in get_resource_args(fn, err_aggressively=True)
-        }
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:

@@ -29,7 +29,10 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
 )
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+    validate_resource_annotated_function,
+)
 from dagster._core.definitions.resource_definition import (
     Resources,
 )
@@ -558,9 +561,8 @@ class SensorDefinition:
         self._asset_selection = check.opt_inst_param(
             asset_selection, "asset_selection", AssetSelection
         )
-        resource_arg_names: Set[str] = {
-            arg.name for arg in get_resource_args(self._raw_fn, err_aggressively=True)
-        }
+        validate_resource_annotated_function(self._raw_fn)
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,

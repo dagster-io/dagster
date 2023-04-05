@@ -25,7 +25,10 @@ from dagster._core.decorator_utils import (
     positional_arg_name_list,
 )
 from dagster._core.definitions.inference import infer_input_props
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    get_resource_args,
+    validate_resource_annotated_function,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.backcompat import canonicalize_backcompat_args
@@ -74,6 +77,8 @@ class _Op:
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from ..op_definition import OpDefinition
+
+        validate_resource_annotated_function(fn)
 
         if not self.name:
             self.name = fn.__name__
@@ -289,7 +294,7 @@ class DecoratedOpFunction(NamedTuple):
         check.failed("Requested config arg on function that does not have one")
 
     def get_resource_args(self) -> Sequence[Parameter]:
-        return get_resource_args(self.decorated_fn, err_aggressively=True)
+        return get_resource_args(self.decorated_fn)
 
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
