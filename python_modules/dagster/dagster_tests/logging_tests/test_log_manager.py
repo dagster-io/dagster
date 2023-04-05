@@ -21,18 +21,18 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 def test_metadata_event_tags():
     logging_metadata = DagsterLoggingMetadata(
         run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
-        pipeline_name="my_pipeline",
-        pipeline_tags={"foo": "bar"},
+        job_name="my_job",
+        job_tags={"foo": "bar"},
     )
 
     all_tags = logging_metadata.all_tags()
     event_tags = logging_metadata.event_tags()
 
-    assert all_tags["pipeline_name"] == "my_pipeline"
-    assert all_tags["pipeline_tags"] == "{'foo': 'bar'}"
+    assert all_tags["job_name"] == "my_job"
+    assert all_tags["job_tags"] == "{'foo': 'bar'}"
 
-    assert event_tags["pipeline_name"] == "my_pipeline"
-    assert "pipeline_tags" not in event_tags
+    assert event_tags["job_name"] == "my_job"
+    assert "job_tags" not in event_tags
 
 
 def test_construct_log_string_for_event():
@@ -49,7 +49,7 @@ def test_construct_log_string_for_event():
     )
 
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_job"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
 
     dagster_message_props = DagsterMessageProps(
@@ -66,7 +66,7 @@ def test_construct_log_string_for_event():
 
 def test_construct_log_string_for_log():
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_job"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
     dagster_message_props = DagsterMessageProps(orig_message="hear my tale")
     assert (
@@ -91,7 +91,7 @@ def make_log_string(error, error_source=None):
     )
 
     logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_job"
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
     )
     dagster_message_props = DagsterMessageProps(
         orig_message=step_failure_event.message,
@@ -222,7 +222,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
         log_manager=DagsterLogManager(
             dagster_handler=DagsterLogHandler(
                 logging_metadata=DagsterLoggingMetadata(
-                    run_id="123456", pipeline_name="job", step_key="some_step"
+                    run_id="123456", job_name="job", step_key="some_step"
                 ),
                 loggers=[user_logger] if not use_handler else [],
                 handlers=[capture_handler] if use_handler else [],
@@ -267,7 +267,7 @@ def test_log_handler_emit_by_handlers_level():
             dagster_handler=DagsterLogHandler(
                 logging_metadata=DagsterLoggingMetadata(
                     run_id="123456",
-                    pipeline_name="job",
+                    job_name="job",
                     step_key="some_step",
                 ),
                 loggers=[],

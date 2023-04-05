@@ -108,8 +108,8 @@ class DagsterLoggingMetadata(
         "_DagsterLoggingMetadata",
         [
             ("run_id", Optional[str]),
-            ("pipeline_name", Optional[str]),
-            ("pipeline_tags", Mapping[str, str]),
+            ("job_name", Optional[str]),
+            ("job_tags", Mapping[str, str]),
             ("step_key", Optional[str]),
             ("solid_name", Optional[str]),
             ("resource_name", Optional[str]),
@@ -124,8 +124,8 @@ class DagsterLoggingMetadata(
     def __new__(
         cls,
         run_id: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
-        pipeline_tags: Optional[Mapping[str, str]] = None,
+        job_name: Optional[str] = None,
+        job_tags: Optional[Mapping[str, str]] = None,
         step_key: Optional[str] = None,
         solid_name: Optional[str] = None,
         resource_name: Optional[str] = None,
@@ -134,8 +134,8 @@ class DagsterLoggingMetadata(
         return super().__new__(
             cls,
             run_id=run_id,
-            pipeline_name=pipeline_name,
-            pipeline_tags=pipeline_tags or {},
+            job_name=job_name,
+            job_tags=job_tags or {},
             step_key=step_key,
             solid_name=solid_name,
             resource_name=resource_name,
@@ -145,7 +145,7 @@ class DagsterLoggingMetadata(
     @property
     def log_source(self) -> str:
         if self.resource_name is None:
-            return self.pipeline_name or "system"
+            return self.job_name or "system"
         return f"resource:{self.resource_name}"
 
     def all_tags(self) -> Mapping[str, str]:
@@ -154,7 +154,7 @@ class DagsterLoggingMetadata(
 
     def event_tags(self) -> Mapping[str, str]:
         # Exclude pipeline_tags since it can be quite large and can be found on the run
-        return {k: str(v) for k, v in self._asdict().items() if k != "pipeline_tags"}
+        return {k: str(v) for k, v in self._asdict().items() if k != "job_tags"}
 
 
 def construct_log_string(
@@ -366,8 +366,8 @@ class DagsterLogManager(logging.Logger):
         if dagster_run:
             logging_metadata = DagsterLoggingMetadata(
                 run_id=dagster_run.run_id,
-                pipeline_name=dagster_run.job_name,
-                pipeline_tags=dagster_run.tags,
+                job_name=dagster_run.job_name,
+                job_tags=dagster_run.tags,
             )
         else:
             logging_metadata = DagsterLoggingMetadata()
