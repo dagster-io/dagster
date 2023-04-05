@@ -69,11 +69,23 @@ interface ItemProps
 
 export const MenuItem: React.FC<ItemProps> = (props) => {
   const {icon, intent, ...rest} = props;
+  const divRef = React.useRef<HTMLDivElement | null>(null);
+  React.useLayoutEffect(() => {
+    if (props.active) {
+      divRef.current?.querySelector('a')?.focus();
+    }
+  }, [props.active]);
   return (
     <div
       onKeyUp={(e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.currentTarget.querySelector('a')?.click();
+        }
+      }}
+      ref={(el: HTMLDivElement) => {
+        divRef.current = el;
+        if (el && props.active) {
+          divRef.current?.querySelector('a')?.focus();
         }
       }}
     >
@@ -168,8 +180,6 @@ const StyledMenuItem = styled(BlueprintMenuItem)<StyledMenuItemProps>`
   }
 
   &:focus {
-    color: ${({$textColor}) => $textColor};
-    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 2px;
     outline: none;
   }
 `;
