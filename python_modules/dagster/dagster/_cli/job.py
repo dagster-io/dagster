@@ -585,15 +585,15 @@ def execute_scaffold_command(cli_args, print_fn):
 
 
 def do_scaffold_command(
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
     printer: Callable[..., Any],
     skip_non_required: bool,
 ):
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+    check.inst_param(job_def, "job_def", JobDefinition)
     check.callable_param(printer, "printer")
     check.bool_param(skip_non_required, "skip_non_required")
 
-    config_dict = scaffold_job_config(pipeline_def, skip_non_required=skip_non_required)
+    config_dict = scaffold_job_config(job_def, skip_non_required=skip_non_required)
     yaml_string = dump_run_config_yaml(config_dict)
     printer(yaml_string)
 
