@@ -34,6 +34,7 @@ from dagster._core.definitions.definition_config_schema import (
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext
@@ -1108,7 +1109,12 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
 
     # If were are here config is annotated with a primitive type
     # We do a conversion to a type as if it were a type on a pydantic field
-    inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
+    try:
+        inner_config_type = _config_type_for_type_on_pydantic_field(model_cls)
+    except (DagsterInvalidDefinitionError, DagsterInvalidConfigDefinitionError):
+        raise DagsterInvalidPythonicConfigDefinitionError(
+            invalid_type=model_cls, config_class=None, field_name=None
+        )
     return Field(
         config=inner_config_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED
