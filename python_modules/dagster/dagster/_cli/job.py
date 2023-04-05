@@ -56,7 +56,7 @@ from dagster._core.workspace.workspace import IWorkspace
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
@@ -259,7 +259,7 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: ClickArgMap
     )
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
-    job = recon_pipeline_from_origin(job_origin)
+    job = recon_job_from_origin(job_origin)
     run_config = get_run_config_from_file_list(config)
 
     memoized_plan = create_execution_plan(
@@ -326,7 +326,7 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     tags = get_tags_from_args(kwargs)
 
     pipeline_origin = get_job_python_origin_from_kwargs(kwargs)
-    pipeline = recon_pipeline_from_origin(pipeline_origin)
+    pipeline = recon_job_from_origin(pipeline_origin)
     solid_selection = get_solid_selection_from_args(kwargs)
     result = do_execute_command(pipeline, instance, config, tags, solid_selection)
 
@@ -579,7 +579,7 @@ def job_scaffold_command(**kwargs):
 
 def execute_scaffold_command(cli_args, print_fn):
     pipeline_origin = get_job_python_origin_from_kwargs(cli_args)
-    pipeline = recon_pipeline_from_origin(pipeline_origin)
+    pipeline = recon_job_from_origin(pipeline_origin)
     skip_non_required = cli_args["print_only_required"]
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 

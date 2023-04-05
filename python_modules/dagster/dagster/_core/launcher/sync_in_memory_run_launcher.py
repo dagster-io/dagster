@@ -8,7 +8,7 @@ from dagster._core.execution.api import execute_run
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
@@ -39,7 +39,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        recon_pipeline = recon_pipeline_from_origin(context.job_code_origin)  # type: ignore
+        recon_pipeline = recon_job_from_origin(context.job_code_origin)  # type: ignore
         execute_run(recon_pipeline, context.dagster_run, self._instance)
 
     def terminate(self, run_id):

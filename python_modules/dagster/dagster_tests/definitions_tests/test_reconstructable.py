@@ -23,7 +23,7 @@ from dagster._core.origin import (
 from dagster._core.snap import JobSnapshot, create_job_snapshot_id
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin
 
 
 @op
@@ -186,7 +186,7 @@ def test_reconstruct_from_origin():
         ),
     )
 
-    recon_pipeline = recon_pipeline_from_origin(origin)
+    recon_pipeline = recon_job_from_origin(origin)
 
     assert recon_pipeline.job_name == origin.job_name
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer

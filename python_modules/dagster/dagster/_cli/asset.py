@@ -15,7 +15,7 @@ from dagster._core.origin import JobPythonOrigin
 from dagster._core.selector.subset_selector import parse_asset_selection
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._utils.hosted_user_process import (
-    recon_pipeline_from_origin,
+    recon_job_from_origin,
     recon_repository_from_origin,
 )
 from dagster._utils.interrupts import capture_interrupts
@@ -60,7 +60,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
             " PartitionsDefinition"
         )
 
-    reconstructable_job = recon_pipeline_from_origin(
+    reconstructable_job = recon_job_from_origin(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
     partition = kwargs.get("partition")

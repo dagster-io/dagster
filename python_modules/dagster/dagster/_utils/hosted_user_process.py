@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.handle import RepositoryHandle
 
 
-def recon_pipeline_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
+def recon_job_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
     check.inst_param(origin, "origin", JobPythonOrigin)
     recon_repo = recon_repository_from_origin(origin.repository_origin)
     return recon_repo.get_reconstructable_job(origin.job_name)

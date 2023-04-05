@@ -35,7 +35,7 @@ from dagster._grpc.impl import core_execute_run
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.log import configure_loggers
 
@@ -107,9 +107,7 @@ def _execute_run_command_body(
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_pipeline_from_origin(
-        cast(JobPythonOrigin, pipeline_run.job_code_origin)
-    )
+    recon_pipeline = recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -212,9 +210,7 @@ def _resume_run_command_body(
         f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_pipeline_from_origin(
-        cast(JobPythonOrigin, pipeline_run.job_code_origin)
-    )
+    recon_pipeline = recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -421,7 +417,7 @@ def _execute_step_command_body(
             repository_load_data = None
 
         recon_pipeline = (
-            recon_pipeline_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
+            recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .subset_for_execution_from_existing_job(
                 pipeline_run.solids_to_execute, pipeline_run.asset_selection
