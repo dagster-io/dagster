@@ -178,17 +178,17 @@ def check_run_timeout(
 
         instance.report_run_canceling(
             run_record.dagster_run,
-            message=f"Canceling due to exceeding maximum runtime of {max_time} seconds.",
+            message=f"Canceling due to exceeding maximum runtime of {int(max_time)} seconds.",
         )
         try:
             if instance.run_launcher.terminate(run_id=run_record.dagster_run.run_id):
                 instance.report_run_failed(
-                    run_record.dagster_run, f"Exceeded maximum runtime of {max_time} seconds."
+                    run_record.dagster_run, f"Exceeded maximum runtime of {int(max_time)} seconds."
                 )
         except:
             instance.report_engine_event(
                 (
-                    "Exception while attempting to force-terminate run. Run will still be marked as"
+                    "Exception while attempting to terminate run. Run will still be marked as"
                     " failed."
                 ),
                 pipeline_name=run_record.dagster_run.job_name,
