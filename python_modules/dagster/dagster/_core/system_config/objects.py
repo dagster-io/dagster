@@ -262,7 +262,7 @@ def config_map_resources(
 
 
 def config_map_loggers(
-    pipeline_def: JobDefinition,
+    job_def: JobDefinition,
     config_value: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
@@ -289,7 +289,7 @@ def config_map_loggers(
     config_mapped_logger_configs = {}
 
     for logger_key, logger_config in logger_configs.items():
-        logger_def = pipeline_def.loggers.get(logger_key)
+        logger_def = job_def.loggers.get(logger_key)
         if logger_def is None:
             check.failed(f"No logger found for key {logger_key}")
 
