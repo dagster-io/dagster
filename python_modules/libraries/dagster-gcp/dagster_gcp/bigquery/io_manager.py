@@ -200,7 +200,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
         the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
     """
 
-    project: str = Field(..., description="The GCP project to use.")
+    project: str = Field(description="The GCP project to use.")
     dataset: Optional[str] = Field(
         default=None,
         description=(
