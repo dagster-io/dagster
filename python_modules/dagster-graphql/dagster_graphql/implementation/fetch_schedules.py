@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -7,7 +7,7 @@ from dagster._core.definitions.selector import (
     RepositorySelector,
     ScheduleSelector,
 )
-from dagster._core.scheduler.instigation import InstigatorState
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
@@ -99,7 +99,9 @@ def get_scheduler_or_error(graphene_info: ResolveInfo) -> "GrapheneScheduler":
 
 @capture_error
 def get_schedules_or_error(
-    graphene_info: ResolveInfo, repository_selector: RepositorySelector
+    graphene_info: ResolveInfo,
+    repository_selector: RepositorySelector,
+    instigator_statuses: Optional[Set[InstigatorStatus]] = None,
 ) -> "GrapheneSchedules":
     from ..schema.schedules import GrapheneSchedule, GrapheneSchedules
 
@@ -109,20 +111,29 @@ def get_schedules_or_error(
     repository = location.get_repository(repository_selector.repository_name)
     batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     external_schedules = repository.get_external_schedules()
-    schedule_states_by_name = {
-        state.name: state
-        for state in graphene_info.context.instance.all_instigator_state(
-            repository_origin_id=repository.get_external_origin_id(),
-            repository_selector_id=repository_selector.selector_id,
-            instigator_type=InstigatorType.SCHEDULE,
-        )
-    }
+    schedule_states = graphene_info.context.instance.all_instigator_state(
+        repository_origin_id=repository.get_external_origin_id(),
+        repository_selector_id=repository_selector.selector_id,
+        instigator_type=InstigatorType.SCHEDULE,
+        instigator_statuses=instigator_statuses,
+    )
+
+    schedule_states_by_name = {state.name: state for state in schedule_states}
+    if instigator_statuses:
+        filtered = [
+            external_schedule
+            for external_schedule in external_schedules
+            if external_schedule.get_current_instigator_state(
+                schedule_states_by_name.get(external_schedule.name)
+            ).status
+            in instigator_statuses
+        ]
+    else:
+        filtered = external_schedules
 
     results = [
-        GrapheneSchedule(
-            external_schedule, schedule_states_by_name.get(external_schedule.name), batch_loader
-        )
-        for external_schedule in external_schedules
+        GrapheneSchedule(schedule, schedule_states_by_name.get(schedule.name), batch_loader)
+        for schedule in filtered
     ]
 
     return GrapheneSchedules(results=results)

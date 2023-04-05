@@ -79,6 +79,27 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
 }
 """
 
+GET_SENSORS_BY_STATUS_QUERY = """
+query SensorsByStatusQuery($repositorySelector: RepositorySelector!, $status: InstigationStatus) {
+  sensorsOrError(repositorySelector: $repositorySelector, sensorStatus: $status) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensors {
+      results {
+        name
+        sensorState {
+          status
+        }
+      }
+    }
+  }
+}
+"""
+
+
 GET_SENSOR_QUERY = """
 query SensorQuery($sensorSelector: SensorSelector!) {
   sensorOrError(sensorSelector: $sensorSelector) {
@@ -505,6 +526,37 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["sensorsOrError"]["__typename"] == "Sensors"
         results = result.data["sensorsOrError"]["results"]
         snapshot.assert_match(results)
+
+    def test_get_sensors_filtered(self, graphql_context, snapshot):
+        selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSORS_BY_STATUS_QUERY,
+            variables={"repositorySelector": selector, "status": "RUNNING"},
+        )
+
+        assert result.data
+        assert result.data["sensorsOrError"]
+        assert result.data["sensorsOrError"]["__typename"] == "Sensors"
+        results = result.data["sensorsOrError"]["results"]
+        snapshot.assert_match(results)
+        # running status includes automatically running sensors
+        assert "running_in_code_sensor" in {
+            sensor["name"] for sensor in result.data["sensorsOrError"]["results"]
+        }
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSORS_BY_STATUS_QUERY,
+            variables={"repositorySelector": selector, "status": "STOPPED"},
+        )
+        assert result.data
+        assert result.data["sensorsOrError"]
+        assert result.data["sensorsOrError"]["__typename"] == "Sensors"
+        results = result.data["sensorsOrError"]["results"]
+        assert "running_in_code_sensor" not in {
+            sensor["name"] for sensor in result.data["sensorsOrError"]["results"]
+        }
 
     def test_get_sensor(self, graphql_context, snapshot):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
