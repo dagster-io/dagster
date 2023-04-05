@@ -2,7 +2,6 @@ from dagster import (
     Int,
     OpDefinition,
     ResourceDefinition,
-    String,
     _check as check,
 )
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
@@ -70,11 +69,11 @@ def test_two_modes(snapshot):
         mode_defs=[
             ModeDefinition(
                 "mode_one",
-                resource_defs={"value": dummy_resource({"mode_one_field": String})},
+                resource_defs={"value": dummy_resource({"mode_one_field": str})},
             ),
             ModeDefinition(
                 "mode_two",
-                resource_defs={"value": dummy_resource({"mode_two_field": Int})},
+                resource_defs={"value": dummy_resource({"mode_two_field": int})},
             ),
         ],
     )

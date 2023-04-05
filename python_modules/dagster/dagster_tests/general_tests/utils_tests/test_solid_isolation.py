@@ -9,18 +9,18 @@ from dagster import (
     op,
     resource,
 )
+from dagster._check import CheckError
 from dagster._core.definitions.decorators import graph
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster._core.test_utils import nesting_graph_pipeline
+from dagster._core.test_utils import nesting_graph
 from dagster._core.utility_solids import (
-    create_root_solid,
-    create_solid_with_deps,
-    define_stub_solid,
+    create_op_with_deps,
+    create_root_op,
+    create_stub_op,
     input_set,
 )
-from dagster._legacy import ModeDefinition
-from dagster._utils.test import execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_single_solid_in_isolation():
@@ -28,7 +28,7 @@ def test_single_solid_in_isolation():
     def solid_one():
         return 1
 
-    result = execute_solid(solid_one)
+    result = wrap_op_in_graph_and_execute(solid_one)
     assert result.success
     assert result.output_value() == 1
 
@@ -38,7 +38,7 @@ def test_single_solid_with_single():
     def add_one_solid(num):
         return num + 1
 
-    result = execute_solid(add_one_solid, input_values={"num": 2})
+    result = wrap_op_in_graph_and_execute(add_one_solid, input_values={"num": 2})
 
     assert result.success
     assert result.output_value() == 3
@@ -49,7 +49,7 @@ def test_single_solid_with_multiple_inputs():
     def add_solid(num_one, num_two):
         return num_one + num_two
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         add_solid,
         input_values={"num_one": 2, "num_two": 3},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
@@ -67,7 +67,7 @@ def test_single_solid_with_config():
         assert context.op_config == 2
         ran["check_config_for_two"] = True
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         check_config_for_two,
         run_config={"solids": {"check_config_for_two": {"config": 2}}},
     )
@@ -88,18 +88,18 @@ def test_single_solid_with_context_config():
         assert context.resources.num == 2
         ran["count"] += 1
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         check_context_config_for_two,
         run_config={"resources": {"num": {"config": 2}}},
-        mode_def=ModeDefinition(resource_defs={"num": num_resource}),
+        resources={"num": num_resource},
     )
 
     assert result.success
     assert ran["count"] == 1
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         check_context_config_for_two,
-        mode_def=ModeDefinition(resource_defs={"num": num_resource}),
+        resources={"num": num_resource},
     )
 
     assert result.success
@@ -115,7 +115,7 @@ def test_single_solid_error():
         raise SomeError()
 
     with pytest.raises(SomeError) as e_info:
-        execute_solid(throw_error)
+        wrap_op_in_graph_and_execute(throw_error)
 
     assert isinstance(e_info.value, SomeError)
 
@@ -126,7 +126,7 @@ def test_single_solid_type_checking_output_error():
         return "ksjdfkjd"
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(return_string)
+        wrap_op_in_graph_and_execute(return_string)
 
 
 def test_failing_solid_in_isolation():
@@ -138,7 +138,7 @@ def test_failing_solid_in_isolation():
         raise ThisException("nope")
 
     with pytest.raises(ThisException) as e_info:
-        execute_solid(throw_an_error)
+        wrap_op_in_graph_and_execute(throw_an_error)
 
     assert isinstance(e_info.value, ThisException)
 
@@ -152,86 +152,75 @@ def test_graphs():
     def hello_graph():
         return hello()
 
-    result = execute_solid(hello)
+    result = wrap_op_in_graph_and_execute(hello)
     assert result.success
     assert result.output_value() == "hello"
-    assert result.output_values == {"result": "hello"}
 
-    result = execute_solid(hello_graph)
+    result = hello_graph.execute_in_process()
     assert result.success
     assert result.output_value() == "hello"
-    assert result.output_values == {"result": "hello"}
-    assert result.output_values_for_solid("hello") == {"result": "hello"}
-    assert result.output_value_for_handle("hello") == "hello"
-
-    nested_result = result.result_for_node("hello")
-    assert nested_result.success
-    assert nested_result.output_value() == "hello"
-    assert len(result.node_result_list) == 1
-    assert nested_result.output_values == {"result": "hello"}
+    assert result.output_for_node("hello") == "hello"
 
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape(
-            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level solid"
-        ),
+        CheckError,
+        match=re.escape("hello_graph has no op named goodbye"),
     ):
-        _ = result.result_for_node("goodbye")
+        _ = result.output_for_node("goodbye")
 
 
 def test_graph_with_no_output_mappings():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
-    node_c = create_solid_with_deps("C", node_a)
-    node_d = create_solid_with_deps("D", node_b, node_c)
+    a_source = create_stub_op("A_source", [input_set("A_input")])
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
+    node_c = create_op_with_deps("C", node_a)
+    node_d = create_op_with_deps("D", node_b, node_c)
 
     @graph
     def diamond_graph():
         a = node_a(a_source())
         node_d(B=node_b(a), C=node_c(a))
 
-    res = execute_solid(diamond_graph)
+    res = diamond_graph.execute_in_process()
 
     assert res.success
-
-    assert res.output_values == {}
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Output 'result' not defined in graph 'diamond_graph': no output "
-            "mappings were defined. If you were expecting this output to be present, you may be "
-            "missing an output_mapping from an inner solid to its enclosing graph."
+            "Attempted to retrieve top-level outputs for 'diamond_graph', which has no outputs."
         ),
     ):
         _ = res.output_value()
 
-    assert len(res.node_result_list) == 5
+    assert res.output_for_node("A_source")
+    assert res.output_for_node("A")
+    assert res.output_for_node("B")
+    assert res.output_for_node("C")
+    assert res.output_for_node("D")
 
 
 def test_execute_nested_graphs():
-    nested_graph_pipeline = nesting_graph_pipeline(2, 2)
-    nested_composite_solid = nested_graph_pipeline.nodes[0].definition
+    nested_graph_job = nesting_graph(2, 2).to_job()
+    nested_graph = nested_graph_job.nodes[0].definition
 
-    res = execute_solid(nested_composite_solid)
+    res = nested_graph.execute_in_process()
 
     assert res.success
-    assert res.node.name == "layer_0"
-
-    assert res.output_values == {}
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            "Output 'result' not defined in graph 'layer_0': no output mappings were "
-            "defined. If you were expecting this output to be present, you may be missing an "
-            "output_mapping from an inner solid to its enclosing graph."
-        ),
+        match=re.escape("Attempted to retrieve top-level outputs for 'layer_0'"),
     ):
         _ = res.output_value()
 
-    assert len(res.node_result_list) == 2
+    assert res.output_for_node("layer_0_node_0.layer_1_node_0.layer_2_node_0") == 1
+    assert res.output_for_node("layer_0_node_0.layer_1_node_0.layer_2_node_1") == 1
+    assert res.output_for_node("layer_0_node_0.layer_1_node_1.layer_2_node_0") == 1
+    assert res.output_for_node("layer_0_node_0.layer_1_node_1.layer_2_node_1") == 1
+    assert res.output_for_node("layer_0_node_1.layer_1_node_0.layer_2_node_0") == 1
+    assert res.output_for_node("layer_0_node_1.layer_1_node_0.layer_2_node_1") == 1
+    assert res.output_for_node("layer_0_node_1.layer_1_node_1.layer_2_node_0") == 1
+    assert res.output_for_node("layer_0_node_1.layer_1_node_1.layer_2_node_1") == 1
 
 
 def test_single_solid_with_bad_inputs():
@@ -239,7 +228,7 @@ def test_single_solid_with_bad_inputs():
     def add_solid(num_one, num_two):
         return num_one + num_two
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         add_solid,
         input_values={"num_one": 2, "num_two": "three"},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
@@ -247,8 +236,9 @@ def test_single_solid_with_bad_inputs():
     )
 
     assert not result.success
-    assert result.failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    failure_data = result.failure_data_for_node("add_solid")
+    assert failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
     assert (
         'Type check failed for step input "num_two" - expected type "Int"'
-        in result.failure_data.error.message
+        in failure_data.error.message
     )

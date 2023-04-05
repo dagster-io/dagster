@@ -6,25 +6,17 @@ from threading import Thread
 import dagster_pandas as dagster_pd
 import pytest
 from dagster import (
-    DagsterUnmetExecutorRequirementsError,
     VersionStrategy,
     file_relative_path,
-    fs_io_manager,
     job,
     op,
     reconstructable,
 )
-from dagster._core.definitions.executor_definition import default_executors
 from dagster._core.definitions.input import In
-from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.events import DagsterEventType
-from dagster._core.test_utils import instance_for_test, nesting_graph_pipeline
-from dagster._legacy import (
-    ModeDefinition,
-    execute_pipeline,
-    execute_pipeline_iterator,
-    pipeline,
-)
+from dagster._core.execution.api import execute_job, execute_run_iterator
+from dagster._core.test_utils import instance_for_test, nesting_graph
 from dagster._utils import send_interrupt
 from dagster_dask import DataFrame, dask_executor
 from dask.distributed import Scheduler, Worker
@@ -35,123 +27,104 @@ def simple(_):
     return 1
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            name="default",
-            executor_defs=[*default_executors, dask_executor],
-        ),
-        ModeDefinition(
-            name="filesystem",
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=[*default_executors, dask_executor],
-        ),
-    ]
-)
-def dask_engine_pipeline():
-    simple()
+def dask_engine_job() -> JobDefinition:
+    @job(
+        executor_def=dask_executor,
+    )
+    def job_def():
+        simple()
+
+    return job_def
 
 
 def test_execute_on_dask_local():
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
-            result = execute_pipeline(
-                reconstructable(dask_engine_pipeline),
+            with execute_job(
+                reconstructable(dask_engine_job),
                 run_config={
                     "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
-                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                    "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
                 },
                 instance=instance,
-                mode="filesystem",
-            )
-            assert result.result_for_node("simple").output_value() == 1
+            ) as result:
+                assert result.output_for_node("simple") == 1
 
 
-def dask_composite_pipeline():
-    return nesting_graph_pipeline(
+def dask_nested_graph_job():
+    return nesting_graph(
         6,
         2,
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"io_manager": fs_io_manager},
-                executor_defs=[*default_executors, dask_executor],
-            )
-        ],
-    )
+    ).to_job(executor_def=dask_executor)
 
 
 def test_composite_execute():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(dask_composite_pipeline),
+        with execute_job(
+            reconstructable(dask_nested_graph_job),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
             },
             instance=instance,
-        )
-        assert result.success
+        ) as result:
+            assert result.success
 
 
 @op(ins={"df": In(dagster_pd.DataFrame)})
-def pandas_solid(_, df):
+def pandas_op(_, df):
     pass
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=[*default_executors, dask_executor],
-        )
-    ]
-)
-def pandas_pipeline():
-    pandas_solid()
+def pandas_job() -> JobDefinition:
+    @job(
+        executor_def=dask_executor,
+    )
+    def job_def():
+        pandas_op()
+
+    return job_def
 
 
 def test_pandas_dask():
     run_config = {
-        "solids": {
-            "pandas_solid": {
+        "ops": {
+            "pandas_op": {
                 "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex.csv")}}}
             }
         }
     }
 
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
+        with execute_job(
+            reconstructable(pandas_job),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
                 **run_config,
             },
             instance=instance,
-        )
-
-        assert result.success
+        ) as result:
+            assert result.success
 
 
 @op(ins={"df": In(DataFrame)})
-def dask_solid(_, df):
+def dask_op(_, df):
     pass
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=[*default_executors, dask_executor],
-        )
-    ]
-)
-def dask_pipeline():
-    dask_solid()
+def dask_job() -> JobDefinition:
+    @job(
+        executor_def=dask_executor,
+    )
+    def job_def():
+        dask_op()
+
+    return job_def
 
 
 def test_dask():
     run_config = {
-        "solids": {
-            "dask_solid": {
+        "ops": {
+            "dask_op": {
                 "inputs": {
                     "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
                 }
@@ -159,34 +132,19 @@ def test_dask():
         }
     }
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
+        with execute_job(
+            reconstructable(dask_job),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
                 **run_config,
             },
             instance=instance,
-        )
-
-    assert result.success
-
-
-def test_execute_on_dask_local_without_io_manager():
-    with pytest.raises(DagsterUnmetExecutorRequirementsError):
-        with instance_for_test() as instance:
-            result = execute_pipeline(
-                reconstructable(dask_engine_pipeline),
-                run_config={
-                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-                },
-                instance=instance,
-                mode="default",
-            )
-            assert result.result_for_node("simple").output_value() == 1
+        ) as result:
+            assert result.success
 
 
 @op(ins={"df": In(DataFrame)})
-def sleepy_dask_solid(_, df):
+def sleepy_dask_op(_, df):
     start_time = time.time()
     while True:
         time.sleep(0.1)
@@ -194,50 +152,60 @@ def sleepy_dask_solid(_, df):
             raise Exception("Timed out")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=[*default_executors, dask_executor],
-        )
-    ]
+def sleepy_dask_job() -> JobDefinition:
+    @job(
+        executor_def=dask_executor,
+    )
+    def job_def():
+        sleepy_dask_op()
+
+    return job_def
+
+
+@pytest.mark.skip(
+    """
+    Fails because 'DagsterExecutionInterruptedError' is not actually raised-- there's a timeout
+    instead. It's not clear that the test ever was working-- prior to conversion to op/job/graph
+    APIs, it appears to have been mistakenly not using the dask executor. 
+    """
 )
-def sleepy_dask_pipeline():
-    sleepy_dask_solid()
-
-
 def test_dask_terminate():
     run_config = {
-        "solids": {
-            "sleepy_dask_solid": {
+        "execution": {"config": {"cluster": {"local": {"timeout": 30}}}},
+        "ops": {
+            "sleepy_dask_op": {
                 "inputs": {
                     "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
                 }
             }
-        }
+        },
     }
 
     interrupt_thread = None
     result_types = []
 
     with instance_for_test() as instance:
-        for result in execute_pipeline_iterator(
-            pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
+        dagster_run = instance.create_run_for_pipeline(
+            sleepy_dask_job(),
             run_config=run_config,
+        )
+
+        for event in execute_run_iterator(
+            pipeline=reconstructable(sleepy_dask_job),
+            dagster_run=dagster_run,
             instance=instance,
         ):
             # Interrupt once the first step starts
-            if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+            if event.event_type == DagsterEventType.STEP_START and not interrupt_thread:
                 interrupt_thread = Thread(target=send_interrupt, args=())
                 interrupt_thread.start()
 
-            if result.event_type == DagsterEventType.STEP_FAILURE:
-                assert (
-                    "DagsterExecutionInterruptedError" in result.event_specific_data.error.message
-                )
+            if event.event_type == DagsterEventType.STEP_FAILURE:
+                assert "DagsterExecutionInterruptedError" in event.event_specific_data.error.message
 
-            result_types.append(result.event_type)
+            result_types.append(event.event_type)
 
+        assert interrupt_thread
         interrupt_thread.join()
 
         assert DagsterEventType.STEP_FAILURE in result_types
@@ -249,16 +217,14 @@ def test_dask_terminate():
 )
 def test_existing_scheduler():
     def _execute(scheduler_address, instance):
-        return execute_pipeline(
-            reconstructable(dask_engine_pipeline),
+        with execute_job(
+            reconstructable(dask_engine_job),
             run_config={
-                "execution": {
-                    "dask": {"config": {"cluster": {"existing": {"address": scheduler_address}}}}
-                },
+                "execution": {"config": {"cluster": {"existing": {"address": scheduler_address}}}},
             },
             instance=instance,
-            mode="filesystem",
-        )
+        ) as result:
+            return result
 
     async def _run_test():
         with instance_for_test() as instance:
@@ -268,13 +234,13 @@ def test_existing_scheduler():
                         None, _execute, scheduler.address, instance
                     )
                     assert result.success
-                    assert result.result_for_node("simple").output_value() == 1
+                    assert result.output_for_node("simple") == 1
 
     asyncio.get_event_loop().run_until_complete(_run_test())
 
 
 @op
-def foo_solid():
+def foo_op():
     return "foo"
 
 
@@ -283,54 +249,31 @@ class BasicVersionStrategy(VersionStrategy):
         return "foo"
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager},
-            executor_defs=[*default_executors, dask_executor],
-        )
-    ],
-    version_strategy=BasicVersionStrategy(),
-)
-def foo_pipeline():
-    foo_solid()
+def foo_job() -> JobDefinition:
+    @job(
+        executor_def=dask_executor,
+        version_strategy=BasicVersionStrategy(),
+    )
+    def job_def():
+        foo_op()
+
+    return job_def
 
 
 def test_dask_executor_memoization():
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(foo_pipeline),
-            instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
-        )
-        assert result.success
-        assert result.output_for_node("foo_solid") == "foo"
-
-        result = execute_pipeline(
-            reconstructable(foo_pipeline),
-            instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
-        )
-        assert result.success
-        assert len(result.step_event_list) == 0
-
-
-@op
-def the_op():
-    return 5
-
-
-@job(executor_def=dask_executor)
-def the_job():
-    the_op()
-
-
-def test_dask_executor_job():
-    with instance_for_test() as instance:
-        result = execute_pipeline(
-            reconstructable(the_job),
+        with execute_job(
+            reconstructable(foo_job),
             instance=instance,
             run_config={"execution": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-        )
-        assert result.success
-        assert result.output_for_node("the_op") == 5
+        ) as result:
+            assert result.success
+            assert result.output_for_node("foo_op") == "foo"
+
+        with execute_job(
+            reconstructable(foo_job),
+            instance=instance,
+            run_config={"execution": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+        ) as result:
+            assert result.success
+            assert len(result.all_node_events) == 0

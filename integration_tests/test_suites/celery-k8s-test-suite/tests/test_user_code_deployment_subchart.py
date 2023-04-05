@@ -16,7 +16,7 @@ def test_execute_on_celery_k8s_subchart_disabled(
     helm_namespace_for_user_deployments_subchart_disabled,
 ):
     namespace = helm_namespace_for_user_deployments_subchart_disabled
-    job_name = "demo_job_celery"
+    job_name = "demo_job_celery_k8s"
 
     core_api = kubernetes.client.CoreV1Api()
     batch_api = kubernetes.client.BatchV1Api()

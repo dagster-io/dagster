@@ -16,7 +16,7 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_pipeline,
+    get_test_project_recon_job,
     get_test_project_workspace_and_external_pipeline,
 )
 
@@ -93,13 +93,12 @@ def test_docker_monitoring():
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
-            "solids": {
+            "ops": {
                 "multiply_the_word_slow": {
                     "inputs": {"word": "bar"},
                     "config": {"factor": 2, "sleep_time": 20},
                 }
             },
-            "execution": {"docker": {"config": {}}},
         },
     )
 
@@ -113,9 +112,9 @@ def test_docker_monitoring():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker_slow", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_slow_job_docker", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker_slow", container_image=docker_image
+            instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,
@@ -177,13 +176,12 @@ def test_docker_monitoring_run_out_of_attempts():
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
-            "solids": {
+            "ops": {
                 "multiply_the_word_slow": {
                     "inputs": {"word": "bar"},
                     "config": {"factor": 2, "sleep_time": 20},
                 }
             },
-            "execution": {"docker": {"config": {}}},
         },
     )
 
@@ -201,9 +199,9 @@ def test_docker_monitoring_run_out_of_attempts():
             },
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_docker_slow", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_slow_job_docker", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_docker_slow", container_image=docker_image
+            instance, "demo_slow_job_docker", container_image=docker_image
         ) as (
             workspace,
             orig_pipeline,

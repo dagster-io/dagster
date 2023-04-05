@@ -2,7 +2,7 @@ import os
 
 import pytest
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import twilio_resource
 from twilio.base.exceptions import TwilioRestException
 
@@ -28,13 +28,13 @@ def test_twilio_resource():
             )
         assert "The 'To' number +15005550001 is not a valid phone number" in str(exc_info.value)
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         twilio_solid,
         run_config={
             "resources": {
                 "twilio": {"config": {"account_sid": account_sid, "auth_token": auth_token}}
             }
         },
-        mode_def=ModeDefinition(resource_defs={"twilio": twilio_resource}),
+        resources={"twilio": twilio_resource},
     )
     assert result.success
