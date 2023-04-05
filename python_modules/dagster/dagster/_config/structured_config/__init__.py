@@ -394,21 +394,51 @@ class ConfigurableResourceFactory(
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
+    ABC,
     metaclass=BaseResourceMeta,
 ):
-    """Base class for Dagster resources that utilize structured config.
+    """Base class for creating and managing the lifecycle of Dagster resources that utilize structured config.
+
+    Users should directly inherit from this class when they want the object passed to user-defined
+    code (such as an asset or op) to be different than the object that defines the configuration
+    schema and is passed to the :py:class:`Definitions` object. Cases where this is useful include is
+    when the object passed to user code is:
+
+    * An existing class from a third-party library that the user does not control.
+    * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
+    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    must implement ``create_resource``, which defines the resource value to pass to user code.
+    must implement ``create_resource``, which creates the resource to pass to user code.
 
-    Example:
+    Example definition:
+
     .. code-block:: python
 
-        class DatabseResource(ConfigurableResourceFactory[Database]):
+        class DatabaseResource(ConfigurableResourceFactory[Database]):
             connection_uri: str
 
             def create_resource(self, _init_context) -> Database:
+                # For example Database could be from a third-party library or require expensive setup.
+                # Or you could just prefer to separate the concerns of configuration and runtime representation
                 return Database(self.connection_uri)
+
+    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_database(database: Resource[Database]):
+            # Database used directly in user code
+            database.query("SELECT * FROM table")
+
+        defs = Definitions(
+            assets=[asset_that_uses_database],
+            resources={"database": DatabaseResource(connection_uri="some_uri")},
+        )
 
     """
 
@@ -446,6 +476,14 @@ class ConfigurableResourceFactory(
         self._schema = schema
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
+
+    @abstractmethod
+    def create_resource(self, context: InitResourceContext) -> TResValue:
+        """Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
+        """
+        raise NotImplementedError()
 
     @property
     def nested_resources(self) -> Mapping[str, ResourceDefinition]:
@@ -529,22 +567,15 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
-    def create_resource(self, context: InitResourceContext) -> TResValue:
-        """Returns the object that this resource hands to user code, accessible by ops or assets
-        through the context or resource parameters. This works like the function decorated
-        with @resource when using function-based resources.
-        """
-        raise NotImplementedError()
-
 
 @experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
     """Base class for Dagster resources that utilize structured config.
 
-    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    provides a default implementation of the resource_fn that returns the resource itself.
+    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`.
 
-    Example:
+    Example definition:
+
     .. code-block:: python
 
         class WriterResource(ConfigurableResource):
@@ -552,6 +583,21 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
 
             def output(self, text: str) -> None:
                 print(f"{self.prefix}{text}")
+
+        # which can be used in a pipeline like so:
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_writer(writer: WriterResource):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[asset_that_uses_writer],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
 
     """
 
@@ -708,12 +754,17 @@ class ConfigurableIOManagerFactory(
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
-
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function."""
+        raise NotImplementedError()
+
+    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
+        return self.create_io_manager(context)
+
+    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+        # I/O manager factories execute a different code path that does not
+        # call create_resource
         raise NotImplementedError()
 
     @classmethod
