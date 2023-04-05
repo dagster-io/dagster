@@ -730,9 +730,9 @@ class GrpcServerCodeLocation(CodeLocation):
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
-            pipeline_origin=external_pipeline.get_external_origin(),
+            job_origin=external_pipeline.get_external_origin(),
             run_config=run_config,
-            pipeline_snapshot_id=external_pipeline.identifying_job_snapshot_id,
+            job_snapshot_id=external_pipeline.identifying_job_snapshot_id,
             asset_selection=asset_selection,
             solid_selection=external_pipeline.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
