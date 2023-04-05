@@ -79,13 +79,13 @@ def _report_run_failed_if_not_finished(
 
 
 def core_execute_run(
-    recon_pipeline: ReconstructableJob,
+    recon_job: ReconstructableJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
-    check.inst_param(recon_pipeline, "recon_pipeline", ReconstructableJob)
+    check.inst_param(recon_job, "recon_job", ReconstructableJob)
     check.inst_param(dagster_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -114,10 +114,10 @@ def core_execute_run(
             execution_plan_snapshot = instance.get_execution_plan_snapshot(
                 check.not_none(dagster_run.execution_plan_snapshot_id)
             )
-            recon_pipeline = recon_pipeline.with_repository_load_data(
+            recon_job = recon_job.with_repository_load_data(
                 execution_plan_snapshot.repository_load_data,
             )
-        recon_pipeline.get_definition()
+        recon_job.get_definition()
     except Exception:
         yield instance.report_engine_event(
             "Could not load pipeline definition.",
@@ -135,7 +135,7 @@ def core_execute_run(
 
     try:
         yield from execute_run_iterator(
-            recon_pipeline, dagster_run, instance, resume_from_failure=resume_from_failure
+            recon_job, dagster_run, instance, resume_from_failure=resume_from_failure
         )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
