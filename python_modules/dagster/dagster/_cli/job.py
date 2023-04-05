@@ -453,7 +453,7 @@ def execute_launch_command(
 
         log_external_repo_stats(
             instance=instance,
-            external_pipeline=external_pipeline,
+            external_job=external_pipeline,
             external_repo=external_repo,
             source="pipeline_launch_command",
         )

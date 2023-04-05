@@ -542,19 +542,19 @@ def log_external_repo_stats(
     instance: DagsterInstance,
     source: str,
     external_repo: "ExternalRepository",
-    external_pipeline: Optional["ExternalJob"] = None,
+    external_job: Optional["ExternalJob"] = None,
 ):
     from dagster._core.host_representation.external import ExternalJob, ExternalRepository
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.opt_inst_param(external_pipeline, "external_pipeline", ExternalJob)
+    check.opt_inst_param(external_job, "external_job", ExternalJob)
 
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
+        pipeline_name_hash = hash_name(external_job.name) if external_job else ""
         repo_hash = hash_name(external_repo.name)
         location_name_hash = hash_name(external_repo.handle.location_name)
 

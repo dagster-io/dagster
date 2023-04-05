@@ -24,7 +24,7 @@ from .execute_in_process_result import ExecuteInProcessResult
 
 def core_execute_in_process(
     run_config: Mapping[str, object],
-    ephemeral_pipeline: JobDefinition,
+    ephemeral_job: JobDefinition,
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
@@ -32,7 +32,7 @@ def core_execute_in_process(
     run_id: Optional[str] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
-    job_def = ephemeral_pipeline
+    job_def = ephemeral_job
     pipeline = InMemoryJob(job_def)
 
     _check_top_level_inputs(job_def)
@@ -75,7 +75,7 @@ def core_execute_in_process(
         run = execute_instance.get_run_by_id(run_id)
 
     return ExecuteInProcessResult(
-        job_def=ephemeral_pipeline,
+        job_def=ephemeral_job,
         event_list=event_list,
         dagster_run=cast(DagsterRun, run),
         output_capture=output_capture,

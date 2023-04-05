@@ -633,7 +633,7 @@ class JobDefinition:
             )
 
         return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
+            ephemeral_job=ephemeral_job,
             run_config=run_config,
             instance=instance,
             output_capturing_enabled=True,
