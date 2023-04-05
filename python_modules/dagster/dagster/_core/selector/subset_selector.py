@@ -408,7 +408,7 @@ def parse_op_selection(
 
 
 def parse_solid_selection(
-    pipeline_def: "JobDefinition",
+    job_def: "JobDefinition",
     solid_selection: Sequence[str],
 ) -> FrozenSet[str]:
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
@@ -441,9 +441,9 @@ def parse_solid_selection(
 
     # special case: select all
     if len(solid_selection) == 1 and solid_selection[0] == "*":
-        return frozenset(pipeline_def.graph.node_names())
+        return frozenset(job_def.graph.node_names())
 
-    graph = generate_dep_graph(pipeline_def)
+    graph = generate_dep_graph(job_def)
     solids_set: Set[str] = set()
 
     # loop over clauses
