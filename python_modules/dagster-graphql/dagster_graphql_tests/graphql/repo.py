@@ -71,6 +71,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
@@ -534,7 +535,8 @@ def naughty_programmer_pipeline():
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
-            raise Exception("Even more outer exception") from e
+            # throw a Failure here so we can test metadata
+            raise Failure("Even more outer exception", metadata={"top_level": True}) from e
 
     throw_a_thing()
 
