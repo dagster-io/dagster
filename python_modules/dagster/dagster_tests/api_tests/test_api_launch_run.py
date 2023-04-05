@@ -111,8 +111,8 @@ def test_launch_run_grpc():
                     ("ENGINE_EVENT", msg)
                     for msg in [
                         "Started process for run",
-                        "Executing steps in process",
-                        "Finished steps in process",
+                        "Executing steps using multiprocess executor",
+                        "Multiprocess executor: parent process exiting",
                         "Process for run exited",
                     ]
                 ],
