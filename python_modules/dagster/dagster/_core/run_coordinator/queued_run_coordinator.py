@@ -224,7 +224,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        pipeline_run = context.pipeline_run
+        pipeline_run = context.dagster_run
 
         if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
             enqueued_event = DagsterEvent(
