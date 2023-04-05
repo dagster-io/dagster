@@ -138,8 +138,11 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     const maxIndex = allResultsJsx.length - 1;
 
     if (event.key === 'Tab') {
-      setFocusedItemIndex((prevIndex) => (prevIndex + (event.shiftKey ? -1 : 1)) % (maxIndex + 1));
-      event.preventDefault();
+      if (event.shiftKey) {
+        setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
+      } else {
+        setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
+      }
     } else if (event.key === 'ArrowDown') {
       setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
     } else if (event.key === 'ArrowUp') {
