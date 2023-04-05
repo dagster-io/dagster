@@ -777,7 +777,7 @@ def get_output_context(
 
 
 def step_output_version(
-    pipeline_def: "JobDefinition",
+    job_def: "JobDefinition",
     execution_plan: "ExecutionPlan",
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
@@ -785,7 +785,7 @@ def step_output_version(
     from dagster._core.execution.resolve_versions import resolve_step_output_versions
 
     step_output_versions = resolve_step_output_versions(
-        pipeline_def, execution_plan, resolved_run_config
+        job_def, execution_plan, resolved_run_config
     )
     return (
         step_output_versions[step_output_handle]
