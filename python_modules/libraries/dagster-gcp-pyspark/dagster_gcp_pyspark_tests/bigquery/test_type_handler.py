@@ -11,6 +11,7 @@ from dagster import (
     AssetKey,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
+    EnvVar,
     IOManagerDefinition,
     MetadataValue,
     MultiPartitionKey,
@@ -31,7 +32,11 @@ from dagster import (
 )
 from dagster._core.storage.db_io_manager import TableSlice
 from dagster_gcp import build_bigquery_io_manager
-from dagster_gcp_pyspark import BigQueryPySparkTypeHandler, bigquery_pyspark_io_manager
+from dagster_gcp_pyspark import (
+    BigQueryPySparkIOManager,
+    BigQueryPySparkTypeHandler,
+    bigquery_pyspark_io_manager,
+)
 from google.cloud import bigquery
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
@@ -51,6 +56,13 @@ SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
     "temporary_gcs_bucket": "gcs_io_manager_test",
 }
+
+SCHEMA = "BIGQUERY_IO_MANAGER_SCHEMA"
+
+pythonic_bigquery_io_manager = BigQueryPySparkIOManager(
+    project=EnvVar("GCP_PROJECT_ID"), temporary_gcs_bucket="gcs_io_manager_test"
+)
+old_bigquery_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
 
 
 @contextmanager
@@ -131,16 +143,16 @@ def test_build_bigquery_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_io_manager_with_bigquery_pyspark(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_io_manager_with_bigquery_pyspark(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
         @op(
-            out={table_name: Out(dagster_type=DataFrame, metadata={"schema": schema})},
+            out={table_name: Out(dagster_type=DataFrame, metadata={"schema": SCHEMA})},
         )
         def emit_pyspark_df(_):
             columns = ["foo", "quux"]
@@ -153,11 +165,7 @@ def test_io_manager_with_bigquery_pyspark(spark):
             assert set([f.name for f in df.schema.fields]) == {"foo", "quux"}
             assert df.count() == 2
 
-        @job(
-            resource_defs={
-                "io_manager": bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-            }
-        )
+        @job(resource_defs={"io_manager": io_manager})
         def io_manager_test_pipeline():
             read_pyspark_df(emit_pyspark_df())
 
@@ -166,10 +174,10 @@ def test_io_manager_with_bigquery_pyspark(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_time_window_partitioned_asset(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_time_window_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
@@ -177,7 +185,7 @@ def test_time_window_partitioned_asset(spark):
             partitions_def=partitions_def,
             metadata={"partition_expr": "CAST(time as DATETIME)"},
             config_schema={"value": str},
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             name=table_name,
         )
         def daily_partitioned(context) -> DataFrame:
@@ -203,19 +211,18 @@ def test_time_window_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=schema,
-            ins={"df": AssetIn([schema, table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df: DataFrame) -> None:
             # assert that we only get the columns created in daily_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"{schema}__{table_name}"
-        bq_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        bq_table_path = f"{SCHEMA}.{table_name}"
 
-        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -255,16 +262,16 @@ def test_time_window_partitioned_asset(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_static_partitioned_asset(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_static_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             metadata={"partition_expr": "color"},
             config_schema={"value": str},
             name=table_name,
@@ -286,19 +293,18 @@ def test_static_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=schema,
-            ins={"df": AssetIn([schema, table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df: DataFrame) -> None:
             # assert that we only get the columns created in static_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"{schema}__{table_name}"
-        bq_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        bq_table_path = f"{SCHEMA}.{table_name}"
 
-        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -338,10 +344,10 @@ def test_static_partitioned_asset(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_multi_partitioned_asset(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_multi_partitioned_asset(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         partitions_def = MultiPartitionsDefinition(
             {
@@ -352,7 +358,7 @@ def test_multi_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             metadata={"partition_expr": {"time": "CAST(time as DATETIME)", "color": "color"}},
             config_schema={"value": str},
             name=table_name,
@@ -380,19 +386,18 @@ def test_multi_partitioned_asset(spark):
 
         @asset(
             partitions_def=partitions_def,
-            key_prefix=schema,
-            ins={"df": AssetIn([schema, table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df: DataFrame) -> None:
             # assert that we only get the columns created in multi_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"{schema}__{table_name}"
-        bq_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        bq_table_path = f"{SCHEMA}.{table_name}"
 
-        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -444,16 +449,16 @@ def test_multi_partitioned_asset(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_dynamic_partitions(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_dynamic_partitions(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
         @asset(
             partitions_def=dynamic_fruits,
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             metadata={"partition_expr": "FRUIT"},
             config_schema={"value": str},
             name=table_name,
@@ -478,19 +483,18 @@ def test_dynamic_partitions(spark):
 
         @asset(
             partitions_def=dynamic_fruits,
-            key_prefix=schema,
-            ins={"df": AssetIn([schema, table_name])},
+            key_prefix=SCHEMA,
+            ins={"df": AssetIn([SCHEMA, table_name])},
             io_manager_key="fs_io",
         )
         def downstream_partitioned(df: DataFrame) -> None:
             # assert that we only get the columns created in dynamic_partitioned
             assert df.count() == 3
 
-        asset_full_name = f"{schema}__{table_name}"
-        bq_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        bq_table_path = f"{SCHEMA}.{table_name}"
 
-        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
+        resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
             instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])
@@ -538,19 +542,19 @@ def test_dynamic_partitions(spark):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
-def test_self_dependent_asset(spark):
-    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+def test_self_dependent_asset(spark, io_manager):
     with temporary_bigquery_table(
-        schema_name=schema,
+        schema_name=SCHEMA,
     ) as table_name:
         daily_partitions = DailyPartitionsDefinition(start_date="2023-01-01")
 
         @asset(
             partitions_def=daily_partitions,
-            key_prefix=schema,
+            key_prefix=SCHEMA,
             ins={
                 "self_dependent_asset": AssetIn(
-                    key=AssetKey([schema, table_name]),
+                    key=AssetKey([SCHEMA, table_name]),
                     partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
                 ),
             },
@@ -585,11 +589,10 @@ def test_self_dependent_asset(spark):
 
             return df
 
-        asset_full_name = f"{schema}__{table_name}"
-        bq_table_path = f"{schema}.{table_name}"
+        asset_full_name = f"{SCHEMA}__{table_name}"
+        bq_table_path = f"{SCHEMA}.{table_name}"
 
-        bq_io_manager = bigquery_pyspark_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager}
+        resource_defs = {"io_manager": io_manager}
 
         materialize(
             [self_dependent_asset],
