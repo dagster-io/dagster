@@ -26,10 +26,10 @@ def create_run(instance, **kwargs):
         )
         return create_run_for_test(
             instance,
-            external_pipeline_origin=handle.get_external_origin(),
-            pipeline_code_origin=handle.get_python_origin(),
-            pipeline_name=handle.job_name,
-            pipeline_snapshot=foo.get_job_snapshot(),
+            external_job_origin=handle.get_external_origin(),
+            job_code_origin=handle.get_python_origin(),
+            job_name=handle.job_name,
+            job_snapshot=foo.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan, foo.get_job_snapshot_id()
             ),

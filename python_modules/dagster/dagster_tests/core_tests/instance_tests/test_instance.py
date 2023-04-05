@@ -58,7 +58,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    run = create_run_for_test(instance, pipeline_name="foo_job", run_id="new_run")
+    run = create_run_for_test(instance, job_name="foo_job", run_id="new_run")
 
     assert instance.get_runs() == [run]
 
@@ -293,10 +293,10 @@ def test_submit_run():
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=external_job.name,
+                job_name=external_job.name,
                 run_id="foo-bar",
-                external_pipeline_origin=external_job.get_external_origin(),
-                pipeline_code_origin=external_job.get_python_origin(),
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, workspace)

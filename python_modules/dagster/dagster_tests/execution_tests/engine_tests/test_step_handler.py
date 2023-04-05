@@ -31,7 +31,7 @@ def _get_executor(instance, pipeline, executor_config=None):
 def test_step_handler_context():
     recon_pipeline = reconstructable(foo_pipline)
     with instance_for_test() as instance:
-        run = create_run_for_test(instance, pipeline_code_origin=recon_pipeline.get_python_origin())
+        run = create_run_for_test(instance, job_code_origin=recon_pipeline.get_python_origin())
 
         execution_plan = create_execution_plan(recon_pipeline)
         log_manager = create_context_free_log_manager(instance, run)

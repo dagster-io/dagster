@@ -935,9 +935,9 @@ def create_repo_run(instance):
         external_job = repo.get_full_external_job("my_job")
         run = create_run_for_test(
             instance,
-            pipeline_name="my_job",
-            external_pipeline_origin=external_job.get_external_origin(),
-            pipeline_code_origin=external_job.get_python_origin(),
+            job_name="my_job",
+            external_job_origin=external_job.get_external_origin(),
+            job_code_origin=external_job.get_python_origin(),
         )
         instance.launch_run(run.run_id, context)
     return run

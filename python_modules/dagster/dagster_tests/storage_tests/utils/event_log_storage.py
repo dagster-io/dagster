@@ -85,7 +85,7 @@ def create_and_delete_test_runs(instance: DagsterInstance, run_ids: Sequence[str
             create_run_for_test(
                 instance,
                 run_id=run_id,
-                external_pipeline_origin=ExternalJobOrigin(
+                external_job_origin=ExternalJobOrigin(
                     ExternalRepositoryOrigin(
                         InProcessCodeLocationOrigin(
                             LoadableTargetOrigin(

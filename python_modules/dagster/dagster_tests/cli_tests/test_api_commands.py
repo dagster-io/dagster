@@ -50,9 +50,9 @@ def test_execute_run():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             input_json = serialize_value(
@@ -109,9 +109,9 @@ def test_execute_run_with_secrets_loader():
         ) as instance:
             run = create_run_for_test(
                 instance,
-                pipeline_name="needs_env_var_job",
+                job_name="needs_env_var_job",
                 run_id="new_run",
-                pipeline_code_origin=recon_job.get_python_origin(),
+                job_code_origin=recon_job.get_python_origin(),
             )
 
             input_json = serialize_value(
@@ -140,9 +140,9 @@ def test_execute_run_with_secrets_loader():
     ) as instance:
         run = create_run_for_test(
             instance,
-            pipeline_name="needs_env_var_job",
+            job_name="needs_env_var_job",
             run_id="new_run",
-            pipeline_code_origin=recon_job.get_python_origin(),
+            job_code_origin=recon_job.get_python_origin(),
         )
 
         input_json = serialize_value(
@@ -178,9 +178,9 @@ def test_execute_run_fail_pipeline():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             input_json = serialize_value(
@@ -201,9 +201,9 @@ def test_execute_run_fail_pipeline():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run_raise_on_error",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             input_json_raise_on_failure = serialize_value(
@@ -227,7 +227,7 @@ def test_execute_run_fail_pipeline():
                 _mock_job_execution_iterator.side_effect = Exception("Framework error")
 
                 run = create_run_for_test(
-                    instance, pipeline_name="foo", run_id="new_run_framework_error"
+                    instance, job_name="foo", run_id="new_run_framework_error"
                 )
 
                 input_json_raise_on_failure = serialize_value(
@@ -311,9 +311,9 @@ def test_execute_step():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
@@ -372,9 +372,9 @@ def test_execute_step_with_secrets_loader():
         ) as instance:
             run = create_run_for_test(
                 instance,
-                pipeline_name="needs_env_var_job",
+                job_name="needs_env_var_job",
                 run_id="new_run",
-                pipeline_code_origin=recon_job.get_python_origin(),
+                job_code_origin=recon_job.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
@@ -406,9 +406,9 @@ def test_execute_step_with_env():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
@@ -441,9 +441,9 @@ def test_execute_step_non_compressed():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             args = ExecuteStepArgs(
@@ -472,9 +472,9 @@ def test_execute_step_1():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             result = runner_execute_step(
@@ -506,9 +506,9 @@ def test_execute_step_verify_step():
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             # Check that verify succeeds for step that has hasn't been fun (case 3)
@@ -566,9 +566,9 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
 
             run = create_run_for_test(
                 instance,
-                pipeline_name="foo",
+                job_name="foo",
                 run_id="new_run",
-                pipeline_code_origin=job_handle.get_python_origin(),
+                job_code_origin=job_handle.get_python_origin(),
             )
 
             result = runner.invoke(

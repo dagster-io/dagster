@@ -81,9 +81,9 @@ def other_location_job_handle(job_handle: JobHandle) -> JobHandle:
 def create_run(instance, job_handle, **kwargs):
     create_run_for_test(
         instance,
-        external_pipeline_origin=job_handle.get_external_origin(),
-        pipeline_code_origin=job_handle.get_python_origin(),
-        pipeline_name="foo",
+        external_job_origin=job_handle.get_external_origin(),
+        job_code_origin=job_handle.get_python_origin(),
+        job_name="foo",
         **kwargs,
     )
 
@@ -91,9 +91,9 @@ def create_run(instance, job_handle, **kwargs):
 def create_queued_run(instance, job_handle, **kwargs):
     run = create_run_for_test(
         instance,
-        external_pipeline_origin=job_handle.get_external_origin(),
-        pipeline_code_origin=job_handle.get_python_origin(),
-        pipeline_name="foo",
+        external_job_origin=job_handle.get_external_origin(),
+        job_code_origin=job_handle.get_python_origin(),
+        job_name="foo",
         status=DagsterRunStatus.NOT_STARTED,
         **kwargs,
     )

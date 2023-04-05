@@ -15,7 +15,7 @@ def test_launch_run_grpc():
             job_handle = JobHandle("forever", code_location.get_repository("bar_repo").handle)
             api_client = code_location.client
 
-            run = create_run_for_test(instance, pipeline_name="forever")
+            run = create_run_for_test(instance, job_name="forever")
             run_id = run.run_id
 
             assert code_location.get_current_runs() == []

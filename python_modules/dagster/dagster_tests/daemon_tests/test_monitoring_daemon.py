@@ -152,7 +152,7 @@ def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: 
 def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
-        pipeline_name="foo",
+        job_name="foo",
     )
     report_starting_event(instance, run, timestamp=time.time())
     monitor_starting_run(
@@ -164,7 +164,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     assert run
     assert run.status == DagsterRunStatus.STARTING
 
-    run = create_run_for_test(instance, pipeline_name="foo")
+    run = create_run_for_test(instance, job_name="foo")
     report_starting_event(instance, run, timestamp=time.time() - 1000)
 
     monitor_starting_run(
@@ -181,7 +181,7 @@ def test_monitor_started(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     run_id = create_run_for_test(
-        instance, pipeline_name="foo", status=DagsterRunStatus.STARTED
+        instance, job_name="foo", status=DagsterRunStatus.STARTED
     ).run_id
     run_record = instance.get_run_record_by_id(run_id)
     assert run_record is not None

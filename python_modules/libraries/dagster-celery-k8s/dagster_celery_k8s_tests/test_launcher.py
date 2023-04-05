@@ -351,11 +351,11 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 run_config=run_config,
                 tags=tags,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -427,10 +427,10 @@ def test_raise_on_error(kubeconfig_file):
             run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 run_config=run_config,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -478,10 +478,10 @@ def test_k8s_executor_config_override(kubeconfig_file):
             # Launch without custom job_image
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 run_config={"execution": {"celery-k8s": {}}},
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 
@@ -491,12 +491,12 @@ def test_k8s_executor_config_override(kubeconfig_file):
             # Launch with custom job_image
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 run_config={
                     "execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}
                 },
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_job_origin=external_pipeline.get_external_origin(),
+                job_code_origin=external_pipeline.get_python_origin(),
             )
             celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
 

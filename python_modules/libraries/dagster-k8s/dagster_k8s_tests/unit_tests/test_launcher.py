@@ -129,9 +129,9 @@ def test_launcher_with_container_context(kubeconfig_file):
             pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=python_origin,
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=python_origin,
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -243,9 +243,9 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=python_origin,
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=python_origin,
                 tags=run_tags,
             )
             k8s_run_launcher.register_instance(instance)
@@ -330,10 +330,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
+                job_name=pipeline_name,
                 tags=tags,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -411,9 +411,9 @@ def test_raise_on_error(kubeconfig_file):
             pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -472,9 +472,9 @@ def test_no_postgres(kubeconfig_file):
             pipeline_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
             )
             k8s_run_launcher.register_instance(instance)
             k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
@@ -539,16 +539,16 @@ def test_check_run_health(kubeconfig_file):
 
             started_run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
-                pipeline_name=pipeline_name,
-                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
-                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+                job_name=pipeline_name,
+                external_job_origin=fake_external_pipeline.get_external_origin(),
+                job_code_origin=fake_external_pipeline.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,
             )
             k8s_run_launcher.register_instance(instance)
