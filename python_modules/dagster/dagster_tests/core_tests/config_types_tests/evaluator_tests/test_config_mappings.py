@@ -160,7 +160,7 @@ def test_bad_override():
 
     message = str(exc_info.value)
 
-    assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
+    assert 'Op "do_stuff" with definition "bad_wrap" has a configuration error.' in message
     assert "Error 1: Invalid scalar at path root:scalar_config_solid:config" in message
 
 
