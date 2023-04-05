@@ -615,7 +615,7 @@ def execute_plan_iterator(
             execution_plan=execution_plan,
             iterator=inner_plan_execution_iterator,
             execution_context_manager=PlanExecutionContextManager(
-                pipeline=pipeline,
+                job=pipeline,
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,

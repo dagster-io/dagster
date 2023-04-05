@@ -399,7 +399,7 @@ def create_executor(context_creation_data: ContextCreationData) -> "Executor":
 @contextmanager
 def scoped_pipeline_context(
     execution_plan: ExecutionPlan,
-    pipeline: IJob,
+    job: IJob,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
     instance: DagsterInstance,
@@ -416,14 +416,14 @@ def scoped_pipeline_context(
     events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IJob)
+    check.inst_param(job, "job", IJob)
     check.mapping_param(run_config, "run_config", key_type=str)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
