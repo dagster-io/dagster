@@ -243,7 +243,7 @@ def get_active_backfill_target_asset_graph_subset(
 def find_parent_materialized_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     latest_storage_id: Optional[int],
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     can_reconcile_fn: Callable[[AssetKeyPartitionKey], bool] = lambda _: True,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
@@ -258,9 +258,12 @@ def find_parent_materialized_asset_partitions(
     result_asset_partitions: Set[AssetKeyPartitionKey] = set()
     result_latest_storage_id = latest_storage_id
 
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
-
-    target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
+    # set of all parents of all target assets using asset_graph.get_parents(key)
+    target_parent_asset_keys = {
+        parent
+        for target_asset_key in target_asset_keys
+        for parent in asset_graph.get_parents(target_asset_key)
+    }
 
     for asset_key in target_parent_asset_keys:
         if asset_graph.is_source(asset_key):
@@ -345,7 +348,7 @@ def find_parent_materialized_asset_partitions(
 def find_never_materialized_or_requested_root_asset_partitions(
     instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     evaluation_time: datetime.datetime,
 ) -> Tuple[
@@ -365,7 +368,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
     newly_materialized_root_asset_keys = set()
     newly_materialized_root_partitions_by_asset_key = defaultdict(set)
 
-    for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
+    for asset_key in target_asset_keys & asset_graph.root_asset_keys:
         if asset_graph.is_partitioned(asset_key):
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
                 asset_key, asset_graph, instance_queryer, evaluation_time
@@ -455,7 +458,7 @@ def candidates_unit_within_allowable_time_window(
 def determine_asset_partitions_to_reconcile(
     instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     asset_graph: AssetGraph,
     eventual_asset_partitions_to_reconcile_for_freshness: AbstractSet[AssetKeyPartitionKey],
     evaluation_time: datetime.datetime,
@@ -472,7 +475,7 @@ def determine_asset_partitions_to_reconcile(
     ) = find_never_materialized_or_requested_root_asset_partitions(
         instance_queryer=instance_queryer,
         cursor=cursor,
-        target_asset_selection=target_asset_selection,
+        target_asset_keys=target_asset_keys,
         asset_graph=asset_graph,
         evaluation_time=evaluation_time,
     )
@@ -490,12 +493,10 @@ def determine_asset_partitions_to_reconcile(
     stale_candidates, latest_storage_id = find_parent_materialized_asset_partitions(
         instance_queryer=instance_queryer,
         latest_storage_id=cursor.latest_storage_id,
-        target_asset_selection=target_asset_selection,
+        target_asset_keys=target_asset_keys,
         asset_graph=asset_graph,
         can_reconcile_fn=can_reconcile_fn,
     )
-
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
 
     backfill_target_asset_graph_subset = get_active_backfill_target_asset_graph_subset(
         asset_graph=asset_graph,
@@ -630,7 +631,7 @@ def get_execution_period_for_policies(
 def determine_asset_partitions_to_reconcile_for_freshness(
     data_time_resolver: "CachingDataTimeResolver",
     asset_graph: AssetGraph,
-    target_asset_selection: AssetSelection,
+    target_asset_keys: AbstractSet[AssetKey],
     evaluation_time: datetime.datetime,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
@@ -639,9 +640,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-    # get the set of asset keys we're allowed to execute
-    target_asset_keys = target_asset_selection.resolve(asset_graph)
-
     # now we have a full set of constraints, we can find solutions for them as we move down
     to_materialize: Set[AssetKeyPartitionKey] = set()
     eventually_materialize: Set[AssetKeyPartitionKey] = set()
@@ -741,6 +739,8 @@ def reconcile(
         relevant_asset_keys, after_cursor=cursor.latest_storage_id
     )
 
+    target_asset_keys = asset_selection.resolve(asset_graph)
+
     (
         asset_partitions_to_reconcile_for_freshness,
         eventual_asset_partitions_to_reconcile_for_freshness,
@@ -749,7 +749,7 @@ def reconcile(
             instance_queryer=instance_queryer, asset_graph=asset_graph
         ),
         asset_graph=asset_graph,
-        target_asset_selection=asset_selection,
+        target_asset_keys=target_asset_keys,
         evaluation_time=current_time,
     )
 
@@ -762,7 +762,7 @@ def reconcile(
         instance_queryer=instance_queryer,
         asset_graph=asset_graph,
         cursor=cursor,
-        target_asset_selection=asset_selection,
+        target_asset_keys=target_asset_keys,
         eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
         evaluation_time=current_time,
     )
