@@ -46,7 +46,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
   const selectValue = React.useCallback(
     (filter: FilterObject<any>, value: any) => {
-      debugger;
       filter.onSelect({
         value,
         close: () => {
@@ -144,7 +143,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     } else if (event.key === 'ArrowUp') {
       setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? -1 : prevIndex - 1));
     } else if (event.key === 'Enter') {
-      debugger;
       allResultsJsx[focusedItemIndex].props.onClick();
       if (!selectedFilter) {
         setFocusedItemIndex(-1);
