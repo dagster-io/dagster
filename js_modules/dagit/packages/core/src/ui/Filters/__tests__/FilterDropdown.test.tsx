@@ -108,3 +108,73 @@ describe('FilterDropdownButton', () => {
     });
   });
 });
+
+describe('FilterDropdown Accessibility', () => {
+  test('keyboard navigation and selection', async () => {
+    render(<FilterDropdownButton filters={mockFilters} />);
+
+    userEvent.click(screen.getByRole('button'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+
+    const input = screen.getByLabelText('Search filters');
+    expect(input).toHaveFocus();
+
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+    });
+
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+    });
+
+    fireEvent.keyDown(input, {key: 'ArrowUp', code: 'ArrowUp'});
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+    });
+
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+
+    await waitFor(() => {
+      expect(input).toHaveFocus();
+    });
+
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+
+    expect(screen.getByText('Inactive').closest('a')).toHaveFocus();
+    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+
+    await waitFor(() => {
+      expect(mockFilters[1].onSelect).toHaveBeenCalled();
+    });
+  });
+
+  test('escape key behavior', async () => {
+    render(<FilterDropdownButton filters={mockFilters} />);
+
+    userEvent.click(screen.getByRole('button'));
+    expect(screen.getByRole('menu')).toBeVisible();
+
+    const input = screen.getByLabelText('Search filters');
+
+    expect(screen.queryByText('Type 1')).toBeNull();
+
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+
+    expect(screen.getByText('Type 1')).toBeVisible();
+
+    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+
+    expect(screen.queryByText('Type 1')).toBeNull();
+
+    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+    await waitFor(() => {
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    });
+  });
+});
