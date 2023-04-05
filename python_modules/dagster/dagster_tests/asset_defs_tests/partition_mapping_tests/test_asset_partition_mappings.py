@@ -614,7 +614,7 @@ def test_dependency_resolution_partition_mapping():
 def test_exported_partition_mappings_whitelisted():
     import dagster
 
-    dagster_exports = (getattr(dagster, attr_name) for attr_name in dagster.__dir__(dagster))
+    dagster_exports = (getattr(dagster, attr_name) for attr_name in dagster.__dir__())
 
     exported_partition_mapping_classes = {
         export
