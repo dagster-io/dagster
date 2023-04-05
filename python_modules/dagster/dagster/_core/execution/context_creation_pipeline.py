@@ -176,7 +176,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 
 
 def execution_context_event_generator(
-    pipeline: IJob,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -198,7 +198,7 @@ def execution_context_event_generator(
     )
 
     execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    pipeline_def = pipeline.get_definition()
+    pipeline_def = job.get_definition()
 
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -207,7 +207,7 @@ def execution_context_event_generator(
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
 
     context_creation_data = create_context_creation_data(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
