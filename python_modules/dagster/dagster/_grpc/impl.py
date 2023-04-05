@@ -80,20 +80,20 @@ def _report_run_failed_if_not_finished(
 
 def core_execute_run(
     recon_pipeline: ReconstructableJob,
-    pipeline_run: DagsterRun,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     inject_env_vars: bool,
     resume_from_failure: bool = False,
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructableJob)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
     if inject_env_vars:
         try:
             location_name = (
-                pipeline_run.external_job_origin.location_name
-                if pipeline_run.external_job_origin
+                dagster_run.external_job_origin.location_name
+                if dagster_run.external_job_origin
                 else None
             )
 
@@ -101,18 +101,18 @@ def core_execute_run(
         except Exception:
             yield instance.report_engine_event(
                 "Error while loading environment variables.",
-                pipeline_run,
+                dagster_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
-            yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+            yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
             raise
 
     # try to load the pipeline definition early
     try:
         # add in cached metadata to load repository more efficiently
-        if pipeline_run.has_repository_load_data:
+        if dagster_run.has_repository_load_data:
             execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                check.not_none(pipeline_run.execution_plan_snapshot_id)
+                check.not_none(dagster_run.execution_plan_snapshot_id)
             )
             recon_pipeline = recon_pipeline.with_repository_load_data(
                 execution_plan_snapshot.repository_load_data,
@@ -121,27 +121,27 @@ def core_execute_run(
     except Exception:
         yield instance.report_engine_event(
             "Could not load pipeline definition.",
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         raise
 
     # Reload the run to verify that its status didn't change while the pipeline was loaded
-    pipeline_run = check.not_none(
-        instance.get_run_by_id(pipeline_run.run_id),
-        f"Pipeline run with id '{pipeline_run.run_id}' was deleted after the run worker started.",
+    dagster_run = check.not_none(
+        instance.get_run_by_id(dagster_run.run_id),
+        f"Pipeline run with id '{dagster_run.run_id}' was deleted after the run worker started.",
     )
 
     try:
         yield from execute_run_iterator(
-            recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
+            recon_pipeline, dagster_run, instance, resume_from_failure=resume_from_failure
         )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         yield instance.report_engine_event(
             message="Run execution terminated by interrupt",
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
         )
         raise
     except Exception:
@@ -150,10 +150,10 @@ def core_execute_run(
                 "An exception was thrown during execution that is likely a framework error, "
                 "rather than an error in user code."
             ),
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        yield from _report_run_failed_if_not_finished(instance, dagster_run.run_id)
         raise
 
 
