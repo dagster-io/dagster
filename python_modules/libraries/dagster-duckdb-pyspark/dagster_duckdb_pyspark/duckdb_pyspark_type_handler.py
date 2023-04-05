@@ -1,8 +1,14 @@
+from typing import Optional, Sequence, Type
+
 import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
+from dagster_duckdb.io_manager import (
+    DuckDbClient,
+    DuckDBIOManager,
+    build_duckdb_io_manager,
+)
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
 
@@ -10,28 +16,29 @@ from pyspark.sql.types import StructType
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
     """Stores PySpark DataFrames in DuckDB.
 
-    **Note:** This type handler can only store outputs. It cannot currently load inputs.
-
-    To use this type handler, pass it to ``build_duckdb_io_manager``
+    To use this type handler, return it from the ``type_handlers` method of an I/O manager that inherits from ``DuckDBIOManager``.
 
     Example:
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager
+            from dagster_duckdb import DuckDBIOManager
             from dagster_duckdb_pyspark import DuckDBPySparkTypeHandler
 
-            @asset
-            def my_table():
+            class MyDuckDBIOManager(DuckDBIOManager):
+                @staticmethod
+                def type_handlers() -> Sequence[DbTypeHandler]:
+                    return [DuckDBPySparkTypeHandler()]
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+            )
+            def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
-
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table],
+                resources={"io_manager": MyDuckDBIOManager(database="my_db.duckdb")}
+            )
     """
 
     def handle_output(
@@ -86,7 +93,7 @@ duckdb_pyspark_io_manager = build_duckdb_io_manager(
     [DuckDBPySparkTypeHandler()], default_load_type=pyspark.sql.DataFrame
 )
 duckdb_pyspark_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
+An I/O manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
 using the duckdb_pyspark_io_manager, any inputs and outputs without type annotations will be loaded
 as PySpark DataFrames.
 
@@ -113,7 +120,7 @@ Examples:
             )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
+    the I/O Manager. For assets, the schema will be determined from the asset key.
     For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the schema.
 
@@ -139,3 +146,64 @@ Examples:
             ...
 
 """
+
+
+class DuckDBPySparkIOManager(DuckDBIOManager):
+    """An I/O manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
+    using the DuckDBPySparkIOManager, any inputs and outputs without type annotations will be loaded
+    as PySpark DataFrames.
+
+    Returns:
+        IOManagerDefinition
+
+    Examples:
+        .. code-block:: python
+
+            from dagster_duckdb_pyspark import DuckDBPySparkIOManager
+
+            @asset(
+                key_prefix=["my_schema"]  # will be used as the schema in DuckDB
+            )
+            def my_table() -> pyspark.sql.DataFrame:  # the name of the asset will be the table name
+                ...
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={"io_manager": DuckDBPySparkIOManager(database="my_db.duckdb")}
+            )
+
+        If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
+        the I/O Manager. For assets, the schema will be determined from the asset key, as in the above example.
+        For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the schema.
+
+        .. code-block:: python
+
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_schema"})}
+            )
+            def make_my_table() -> pyspark.sql.DataFrame:
+                # the returned value will be stored at my_schema.my_table
+                ...
+
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
+
+        .. code-block:: python
+
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+    """
+
+    @staticmethod
+    def type_handlers() -> Sequence[DbTypeHandler]:
+        return [DuckDBPySparkTypeHandler()]
+
+    @staticmethod
+    def default_load_type() -> Optional[Type]:
+        return pyspark.sql.DataFrame
