@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.2.6 (core) / 0.18.6 (libraries)
+
+### Bugfixes
+
+- Fixed a GraphQL resolution error which occurred when retrieving metadata for step failures in the event log.
+
 # 1.2.5 (core) / 0.18.5 (libraries)
 
 ### New
