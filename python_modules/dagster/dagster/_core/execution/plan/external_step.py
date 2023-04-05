@@ -205,7 +205,7 @@ def step_run_ref_to_step_context(
 
     initialization_manager = PlanExecutionContextManager(
         retry_mode=step_run_ref.retry_mode.for_inner_plan(),
-        pipeline=pipeline,
+        job=pipeline,
         execution_plan=execution_plan,
         run_config=step_run_ref.run_config,
         dagster_run=step_run_ref.dagster_run,

@@ -345,7 +345,7 @@ def orchestration_context_event_generator(
 class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext]):
     def __init__(
         self,
-        pipeline: IJob,
+        job: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -359,7 +359,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
     ):
         super(PlanExecutionContextManager, self).__init__(
             execution_context_event_generator(
-                pipeline,
+                job,
                 execution_plan,
                 run_config,
                 dagster_run,

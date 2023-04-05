@@ -313,7 +313,7 @@ def initialize_step_context(scratch_dir: str, instance: DagsterInstance) -> ISte
     plan = create_execution_plan(recon_job, run.run_config)
 
     initialization_manager = PlanExecutionContextManager(
-        pipeline=recon_job,
+        job=recon_job,
         execution_plan=plan,
         run_config=run.run_config,
         dagster_run=run,

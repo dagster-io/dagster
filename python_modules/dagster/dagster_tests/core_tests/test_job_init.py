@@ -100,7 +100,7 @@ def test_clean_event_generator_exit():
     generator.close()
 
     generator = PlanExecutionContextManager(
-        pipeline=InMemoryJob(job_def),
+        job=InMemoryJob(job_def),
         execution_plan=execution_plan,
         run_config={},
         dagster_run=run,
