@@ -13,12 +13,16 @@ def test_invalid_config_type_basic() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match=(
-            "Error defining Dagster config class <class"
-            r" '.*DoSomethingConfig'>on field"
-            " 'unsupported_param'.\nUnable to resolve config type <class"
-            r" '.*MyUnsupportedType'>."
-        ),
+        match="""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_basic.<locals>.DoSomethingConfig'> on field 'unsupported_param'.
+Unable to resolve config type <class 'test_errors.test_invalid_config_type_basic.<locals>.MyUnsupportedType'>.
+
+
+This value can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type""",
     ):
 
         @op
@@ -38,12 +42,16 @@ def test_invalid_config_type_nested() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match=(
-            "Error defining Dagster config class <class"
-            r" '.*MyNestedConfig'>on field"
-            " 'unsupported_param'.\nUnable to resolve config type <class"
-            r" '.*MyUnsupportedType'>."
-        ),
+        match="""Error defining Dagster config class <class 'test_errors.test_invalid_config_type_nested.<locals>.MyNestedConfig'> on field 'unsupported_param'.
+Unable to resolve config type <class 'test_errors.test_invalid_config_type_nested.<locals>.MyUnsupportedType'>.
+
+
+This value can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type""",
     ):
 
         @op
@@ -60,12 +68,20 @@ def test_invalid_resource_basic() -> None:
 
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
-        match=(
-            "Error defining Dagster config class <class"
-            r" '.*MyBadResource'>on field"
-            " 'unsupported_param'.\nUnable to resolve config type <class"
-            r" '.*MyUnsupportedType'>."
-            r"(?s).*If this value represents a resource dependency, its annotation must either"
-        ),
+        match="""Error defining Dagster config class <class 'test_errors.test_invalid_resource_basic.<locals>.MyBadResource'> on field 'unsupported_param'.
+Unable to resolve config type <class 'test_errors.test_invalid_resource_basic.<locals>.MyUnsupportedType'>.
+
+
+This value can be a:
+    - Python primitive type
+        - int, float, bool, str, list
+    - A Python Dict or List type containing other valid types
+    - Custom data classes extending dagster.Config
+    - A Pydantic discriminated union type
+
+
+If this value represents a resource dependency, its annotation must either:
+    - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency\\[GitHub\\]""",
     ):
         MyBadResource(unsupported_param=MyUnsupportedType())

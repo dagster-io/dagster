@@ -78,10 +78,32 @@ This value can be a:
 """
 
 PYTHONIC_RESOURCE_ADDITIONAL_TYPES = """
-\nIf this value represents a resource dependency, its annotation must either:
+
+If this value represents a resource dependency, its annotation must either:
     - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
     - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[GitHub]
 """
+
+
+def _generate_pythonic_config_error_message(
+    config_class: Optional[Type],
+    field_name: Optional[str],
+    invalid_type: Any,
+    is_resource: bool = False,
+) -> str:
+    return (
+        """
+Error defining Dagster config class{config_class}{field_name}.
+Unable to resolve config type {invalid_type}.
+
+{PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
+    ).format(
+        config_class=f" {repr(config_class)}" if config_class else "",
+        field_name=f" on field '{field_name}'" if field_name else "",
+        invalid_type=repr(invalid_type),
+        PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE
+        + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else ""),
+    )
 
 
 class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
@@ -100,15 +122,11 @@ class DagsterInvalidPythonicConfigDefinitionError(DagsterError):
         self.field_name = field_name
         self.config_class = config_class
         super(DagsterInvalidPythonicConfigDefinitionError, self).__init__(
-            (
-                "Error defining Dagster config class{config_class}{field_name}.\nUnable"
-                " to resolve config type {invalid_type}. \n\n{PYTHONIC_CONFIG_ERROR_VERBIAGE}"
-            ).format(
-                config_class=f" {repr(config_class)}" if config_class else "",
-                field_name=f"on field '{field_name}'" if field_name else "",
-                invalid_type=repr(invalid_type),
-                PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE
-                + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else ""),
+            _generate_pythonic_config_error_message(
+                config_class=config_class,
+                field_name=field_name,
+                invalid_type=invalid_type,
+                is_resource=is_resource,
             ),
             **kwargs,
         )
