@@ -108,7 +108,7 @@ export type AssetAssetObservationsArgs = {
 export type AssetBackfillData = {
   __typename: 'AssetBackfillData';
   assetPartitionsStatusCounts: Array<AssetPartitionsStatusCounts>;
-  rootAssetTargetedPartitions: Maybe<Array<Maybe<Scalars['String']>>>;
+  rootAssetTargetedPartitions: Maybe<Array<Scalars['String']>>;
   rootAssetTargetedRanges: Maybe<Array<PartitionKeyRange>>;
 };
 
@@ -2254,6 +2254,7 @@ export type PartitionBackfill = {
   fromFailure: Scalars['Boolean'];
   hasCancelPermission: Scalars['Boolean'];
   hasResumePermission: Scalars['Boolean'];
+  isAssetBackfill: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Maybe<Scalars['Int']>;
@@ -8737,6 +8738,8 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('hasResumePermission')
         ? overrides.hasResumePermission!
         : true,
+    isAssetBackfill:
+      overrides && overrides.hasOwnProperty('isAssetBackfill') ? overrides.isAssetBackfill! : false,
     isValidSerialization:
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!

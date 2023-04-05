@@ -98,13 +98,6 @@ class AssetBackfillData(NamedTuple):
             .resolve(self.target_subset.asset_graph)
         )
 
-        if (
-            not root_asset_keys
-            or self.target_subset.asset_graph.get_partitions_def(next(iter(root_asset_keys)))
-            is None
-        ):
-            return None
-
         # An asset backfill must target the same partitions for the root assets
         # Return the partitions subset for the first root asset
         return self.target_subset.get_partitions_subset(next(iter(root_asset_keys)))

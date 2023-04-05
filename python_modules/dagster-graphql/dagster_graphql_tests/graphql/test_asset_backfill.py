@@ -70,6 +70,7 @@ ASSET_BACKFILL_DATA_QUERY = """
             }
             rootAssetTargetedPartitions
         }
+        isAssetBackfill
       }
     }
   }
@@ -472,6 +473,10 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
                 context, ASSET_BACKFILL_DATA_QUERY, variables={"backfillId": backfill_id}
             )
             assert asset_backfill_data_result.data
+            assert (
+                asset_backfill_data_result.data["partitionBackfillOrError"]["isAssetBackfill"]
+                is True
+            )
             targeted_ranges = asset_backfill_data_result.data["partitionBackfillOrError"][
                 "assetBackfillData"
             ]["rootAssetTargetedRanges"]

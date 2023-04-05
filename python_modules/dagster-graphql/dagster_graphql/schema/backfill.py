@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.execution.backfill import (
     BackfillPartitionsStatus,
     BulkActionStatus,
     PartitionBackfill,
-)
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsSubset,
 )
 from dagster._core.host_representation.external import ExternalPartitionSet
 from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
@@ -119,7 +119,7 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     rootAssetTargetedRanges = graphene.List(
         graphene.NonNull("dagster_graphql.schema.partition_sets.GraphenePartitionKeyRange")
     )
-    rootAssetTargetedPartitions = graphene.List(graphene.String)
+    rootAssetTargetedPartitions = graphene.List(graphene.NonNull(graphene.String))
 
 
 class GraphenePartitionBackfill(graphene.ObjectType):
@@ -154,6 +154,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
     )
+    isAssetBackfill = graphene.NonNull(graphene.Boolean)
     assetBackfillData = graphene.Field(GrapheneAssetBackfillData)
 
     hasCancelPermission = graphene.NonNull(graphene.Boolean)
@@ -289,6 +290,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             partition_run_data,
             check.not_none(self._backfill_job.get_partition_names(graphene_info.context)),
         )
+
+    def resolve_isAssetBackfill(self, _graphene_info: ResolveInfo) -> bool:
+        return self._backfill_job.is_asset_backfill
 
     def resolve_assetBackfillData(self, graphene_info: ResolveInfo) -> GrapheneAssetBackfillData:
         from dagster_graphql.schema.partition_sets import (
