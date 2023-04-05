@@ -27,7 +27,7 @@ from dagster._serdes import deserialize_value, serialize_value
 
 def test_queued_pipeline_origin_check():
     code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
-    fake_pipeline_origin = ExternalJobOrigin(
+    fake_job_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(
             InProcessCodeLocationOrigin(
                 LoadableTargetOrigin(
@@ -52,7 +52,7 @@ def test_queued_pipeline_origin_check():
     DagsterRun(
         job_name="foo",
         status=DagsterRunStatus.QUEUED,
-        external_job_origin=fake_pipeline_origin,
+        external_job_origin=fake_job_origin,
         job_code_origin=fake_code_origin,
     )
 

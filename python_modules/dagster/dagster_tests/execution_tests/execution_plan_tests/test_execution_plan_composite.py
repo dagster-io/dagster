@@ -57,12 +57,12 @@ def test_execution_plan_for_graph():
     }
     execution_plan = create_execution_plan(composite_job, run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_job(job_def=composite_job, execution_plan=execution_plan)
+    dagster_run = instance.create_run_for_job(job_def=composite_job, execution_plan=execution_plan)
     events = execute_plan(
         execution_plan,
         InMemoryJob(composite_job),
         run_config=run_config,
-        dagster_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 
@@ -93,7 +93,7 @@ def test_execution_plan_for_graph_with_config_mapping():
     }
     execution_plan = create_execution_plan(composite_job_with_config_mapping, run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_job(
+    dagster_run = instance.create_run_for_job(
         job_def=composite_job_with_config_mapping,
         execution_plan=execution_plan,
     )
@@ -102,7 +102,7 @@ def test_execution_plan_for_graph_with_config_mapping():
         execution_plan,
         InMemoryJob(composite_job_with_config_mapping),
         run_config=run_config,
-        dagster_run=pipeline_run,
+        dagster_run=dagster_run,
         instance=instance,
     )
 

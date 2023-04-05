@@ -102,10 +102,10 @@ def create_context_creation_data(
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
-    pipeline_def = job.get_definition()
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
+    job_def = job.get_definition()
+    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
-    executor_def = pipeline_def.executor_def
+    executor_def = job_def.executor_def
 
     return ContextCreationData(
         job=job,
@@ -114,7 +114,7 @@ def create_context_creation_data(
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, pipeline_def, resolved_run_config
+            execution_plan, job_def, resolved_run_config
         ),
         execution_plan=execution_plan,
     )
@@ -198,7 +198,7 @@ def execution_context_event_generator(
     )
 
     execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    pipeline_def = job.get_definition()
+    job_def = job.get_definition()
 
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -215,7 +215,7 @@ def execution_context_event_generator(
     )
 
     log_manager = create_log_manager(context_creation_data)
-    resource_defs = pipeline_def.get_required_resource_defs()
+    resource_defs = job_def.get_required_resource_defs()
 
     resources_manager = scoped_resources_builder_cm(
         resource_defs=resource_defs,
@@ -498,7 +498,7 @@ def create_context_free_log_manager(
 
     Args:
         dagster_run (PipelineRun)
-        pipeline_def (PipelineDefinition)
+        pipeline_def (JobDefinition)
     """
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)

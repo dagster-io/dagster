@@ -66,11 +66,11 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         self.repository_load_data = repository_load_data
 
     def execute(self) -> Iterator[DagsterEvent]:
-        pipeline = self.recon_pipeline
+        recon_job = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
             execution_plan = create_execution_plan(
-                job=pipeline,
+                job=recon_job,
                 run_config=self.run_config,
                 step_keys_to_execute=[self.step_key],
                 known_state=self.known_state,
@@ -91,7 +91,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
             yield from execute_plan_iterator(
                 execution_plan,
-                pipeline,
+                recon_job,
                 self.dagster_run,
                 run_config=self.run_config,
                 retry_mode=self.retry_mode.for_inner_plan(),
@@ -145,16 +145,16 @@ class MultiprocessExecutor(Executor):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
-        pipeline = plan_context.reconstructable_job
+        job = plan_context.reconstructable_job
 
         multiproc_ctx = multiprocessing.get_context(self._start_method)
         if self._start_method == "forkserver":
-            module = pipeline.get_module()
+            module = job.get_module()
             # if explicitly listed in config we will use that
             if self._explicit_forkserver_preload is not None:
                 preload = self._explicit_forkserver_preload
 
-            # or if the reconstructable pipeline has a module target, we will use that
+            # or if the reconstructable job has a module target, we will use that
             elif module is not None:
                 preload = [module]
 
@@ -222,7 +222,7 @@ class MultiprocessExecutor(Executor):
                             term_events[step.key] = multiproc_ctx.Event()
                             active_iters[step.key] = execute_step_out_of_process(
                                 multiproc_ctx,
-                                pipeline,
+                                job,
                                 step_context,
                                 step,
                                 errors,

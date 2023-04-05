@@ -28,11 +28,11 @@ class CustomRunCoordinator(QueuedRunCoordinator):
 
     # start_submit_marker
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        pipeline_run = context.dagster_run
+        dagster_run = context.dagster_run
         jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
         email = self.get_email(jwt_claims_header)
         if email:
-            self._instance.add_run_tags(pipeline_run.run_id, {"user": email})
+            self._instance.add_run_tags(dagster_run.run_id, {"user": email})
         else:
             warnings.warn(f"Couldn't decode JWT header {jwt_claims_header}")
         return super().submit_run(context)

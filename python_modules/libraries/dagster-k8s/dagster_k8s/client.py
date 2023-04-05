@@ -349,12 +349,12 @@ class DagsterKubernetesClient:
                 )
 
             if instance and run_id:
-                pipeline_run = instance.get_run_by_id(run_id)
-                if not pipeline_run:
+                dagster_run = instance.get_run_by_id(run_id)
+                if not dagster_run:
                     raise DagsterK8sJobStatusException()
 
-                pipeline_run_status = pipeline_run.status
-                if pipeline_run_status != DagsterRunStatus.STARTED:
+                dagster_run_status = dagster_run.status
+                if dagster_run_status != DagsterRunStatus.STARTED:
                     raise DagsterK8sJobStatusException()
 
             self.sleeper(wait_time_between_attempts)

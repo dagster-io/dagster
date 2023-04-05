@@ -1182,8 +1182,8 @@ def _get_resource_job_usage(pipelines: Sequence[JobDefinition]) -> ResourceJobUs
     resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
 
     for pipeline in pipelines:
-        pipeline_name = pipeline.name
-        if is_base_asset_job_name(pipeline_name):
+        job_name = pipeline.name
+        if is_base_asset_job_name(job_name):
             continue
 
         resource_usage: List[NodeHandleResourceUse] = []
@@ -1206,23 +1206,23 @@ def external_repository_data_from_def(
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
-    pipelines = repository_def.get_all_jobs()
+    jobs = repository_def.get_all_jobs()
     if defer_snapshots:
-        pipeline_datas = None
+        job_datas = None
         job_refs = sorted(
-            list(map(external_job_ref_from_def, pipelines)),
+            list(map(external_job_ref_from_def, jobs)),
             key=lambda pd: pd.name,
         )
     else:
-        pipeline_datas = sorted(
-            list(map(external_job_data_from_def, pipelines)),
+        job_datas = sorted(
+            list(map(external_job_data_from_def, jobs)),
             key=lambda pd: pd.name,
         )
         job_refs = None
 
     resource_datas = repository_def.get_top_level_resources()
     asset_graph = external_asset_graph_from_defs(
-        pipelines,
+        jobs,
         source_assets_by_key=repository_def.source_assets_by_key,
     )
 
@@ -1241,7 +1241,7 @@ def external_repository_data_from_def(
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
 
-    resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(pipelines)
+    resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(jobs)
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1270,7 +1270,7 @@ def external_repository_data_from_def(
             key=lambda sd: sd.name,
         ),
         external_asset_graph_data=asset_graph,
-        external_job_datas=pipeline_datas,
+        external_job_datas=job_datas,
         external_job_refs=job_refs,
         external_resource_data=sorted(
             [

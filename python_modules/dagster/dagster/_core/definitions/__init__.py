@@ -78,7 +78,6 @@ from .pipeline_base import IJob as IJob
 from .reconstruct import (
     ReconstructableJob as ReconstructableJob,
     build_reconstructable_job as build_reconstructable_job,
-    build_reconstructable_pipeline as build_reconstructable_pipeline,
     reconstructable as reconstructable,
 )
 from .repository_definition import (

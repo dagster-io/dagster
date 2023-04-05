@@ -134,7 +134,7 @@ def generate_dep_graph(job_def: "JobDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
-        pipeline (PipelineDefinition): The pipeline to execute.
+        pipeline (JobDefinition): The pipeline to execute.
 
     Returns:
         graph (Dict[str, Dict[str, Set[str]]]): the input and output dependency graph. e.g.
@@ -429,7 +429,7 @@ def parse_solid_selection(
         ones.
 
     Args:
-        pipeline_def (PipelineDefinition): the pipeline to execute.
+        pipeline_def (JobDefinition): the pipeline to execute.
         solid_selection (List[str]): a list of the solid selection queries (including single solid
             names) to execute.
 

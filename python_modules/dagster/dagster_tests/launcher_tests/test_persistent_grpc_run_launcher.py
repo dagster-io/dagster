@@ -281,24 +281,24 @@ def test_server_down():
                     .get_full_external_job("sleepy_job")
                 )
 
-                pipeline_run = instance.create_run_for_job(
+                dagster_run = instance.create_run_for_job(
                     job_def=sleepy_job,
                     run_config=None,
                     external_job_origin=external_job.get_external_origin(),
                     job_code_origin=external_job.get_python_origin(),
                 )
 
-                instance.launch_run(pipeline_run.run_id, workspace)
+                instance.launch_run(dagster_run.run_id, workspace)
 
-                poll_for_step_start(instance, pipeline_run.run_id)
+                poll_for_step_start(instance, dagster_run.run_id)
 
                 launcher = instance.run_launcher
 
-                original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: _seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
@@ -307,10 +307,10 @@ def test_server_down():
                 )
 
                 instance.add_run_tags(
-                    pipeline_run.run_id,
+                    dagster_run.run_id,
                     {
                         GRPC_INFO_TAG: original_run_tags,
                     },
                 )
 
-                assert launcher.terminate(pipeline_run.run_id)
+                assert launcher.terminate(dagster_run.run_id)

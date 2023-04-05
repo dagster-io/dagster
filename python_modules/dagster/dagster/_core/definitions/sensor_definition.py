@@ -657,7 +657,7 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
-        pipeline_run_reactions: List[DagsterRunReaction] = []
+        dagster_run_reactions: List[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
         ] = []
@@ -693,7 +693,7 @@ class SensorDefinition:
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
             elif isinstance(item, DagsterRunReaction):
-                pipeline_run_reactions = (
+                dagster_run_reactions = (
                     [cast(DagsterRunReaction, item)] if isinstance(item, DagsterRunReaction) else []
                 )
             else:
@@ -708,7 +708,7 @@ class SensorDefinition:
             check.is_list(result, (SkipReason, RunRequest, DagsterRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             run_requests = [item for item in result if isinstance(item, RunRequest)]
-            pipeline_run_reactions = [
+            dagster_run_reactions = [
                 item for item in result if isinstance(item, DagsterRunReaction)
             ]
 
@@ -718,7 +718,7 @@ class SensorDefinition:
                         "Expected a single SkipReason or one or more RunRequests: received both "
                         "RunRequest and SkipReason"
                     )
-                elif len(pipeline_run_reactions) > 0:
+                elif len(dagster_run_reactions) > 0:
                     check.failed(
                         "Expected a single SkipReason or one or more PipelineRunReaction: "
                         "received both PipelineRunReaction and SkipReason"
@@ -735,7 +735,7 @@ class SensorDefinition:
             resolved_run_requests,
             skip_message,
             updated_cursor,
-            pipeline_run_reactions,
+            dagster_run_reactions,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
         )

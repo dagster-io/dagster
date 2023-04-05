@@ -33,12 +33,12 @@ def core_execute_in_process(
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:
     job_def = ephemeral_job
-    pipeline = InMemoryJob(job_def)
+    job = InMemoryJob(job_def)
 
     _check_top_level_inputs(job_def)
 
     execution_plan = create_execution_plan(
-        pipeline,
+        job,
         run_config=run_config,
         instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
     )
@@ -61,7 +61,7 @@ def core_execute_in_process(
             iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                job=pipeline,
+                job=job,
                 execution_plan=execution_plan,
                 dagster_run=run,
                 instance=execute_instance,

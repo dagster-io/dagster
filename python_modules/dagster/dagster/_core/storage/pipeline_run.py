@@ -178,15 +178,15 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
             selector_name = selector.name
             selector_subset = selector.solid_subset
 
-            pipeline_name = unpacked_dict.get("pipeline_name")
+            job_name = unpacked_dict.get("pipeline_name")
             check.invariant(
-                pipeline_name is None or selector_name == pipeline_name,
+                job_name is None or selector_name == job_name,
                 (
-                    f"Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
+                    f"Conflicting pipeline name {job_name} in arguments to PipelineRun: "
                     f"selector was passed with pipeline {selector_name}"
                 ),
             )
-            if pipeline_name is None:
+            if job_name is None:
                 unpacked_dict["pipeline_name"] = selector_name
 
             solids_to_execute = unpacked_dict.get("solids_to_execute")

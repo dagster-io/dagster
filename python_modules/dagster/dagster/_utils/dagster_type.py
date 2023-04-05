@@ -41,13 +41,13 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
 
     dagster_type = resolve_dagster_type(dagster_type)
 
-    pipeline = InMemoryJob(GraphDefinition(node_defs=[], name="empty").to_job())
-    pipeline_def = pipeline.get_definition()
+    job = InMemoryJob(GraphDefinition(node_defs=[], name="empty").to_job())
+    job_def = job.get_definition()
 
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline)
-    pipeline_run = instance.create_run_for_job(pipeline_def)
-    with scoped_job_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
+    execution_plan = create_execution_plan(job)
+    dagster_run = instance.create_run_for_job(job_def)
+    with scoped_job_context(execution_plan, job, {}, dagster_run, instance) as context:
         type_check_context = context.for_type(dagster_type)
         try:
             type_check = dagster_type.type_check(type_check_context, value)

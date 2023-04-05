@@ -102,7 +102,7 @@ class DagsterGraphQLClient:
                 f" \n{variables}\n"
             ) from exc
 
-    def _get_repo_locations_and_names_with_pipeline(self, pipeline_name: str) -> List[JobInfo]:
+    def _get_repo_locations_and_names_with_pipeline(self, job_name: str) -> List[JobInfo]:
         res_data = self._execute(CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY)
         query_res = res_data["repositoriesOrError"]
         repo_connection_status = query_res["__typename"]
@@ -110,7 +110,7 @@ class DagsterGraphQLClient:
             valid_nodes: Iterable[JobInfo] = chain(
                 *map(JobInfo.from_node, query_res["nodes"])
             )
-            return [info for info in valid_nodes if info.pipeline_name == pipeline_name]
+            return [info for info in valid_nodes if info.pipeline_name == job_name]
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 

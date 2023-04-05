@@ -25,7 +25,7 @@ class StepHandlerContext:
         self._plan_context = plan_context
         self._steps_by_key = {step.key: step for step in steps}
         self._execute_step_args = execute_step_args
-        self._pipeline_run = dagster_run
+        self._dagster_run = dagster_run
 
     @property
     def execute_step_args(self) -> ExecuteStepArgs:
@@ -34,14 +34,14 @@ class StepHandlerContext:
     @property
     def dagster_run(self) -> DagsterRun:
         # lazy load
-        if not self._pipeline_run:
+        if not self._dagster_run:
             run_id = self.execute_step_args.run_id
             run = self._instance.get_run_by_id(run_id)
             if run is None:
                 check.failed(f"Failed to load run {run_id}")
-            self._pipeline_run = run
+            self._dagster_run = run
 
-        return self._pipeline_run
+        return self._dagster_run
 
     @property
     def step_tags(self) -> Mapping[str, Mapping[str, str]]:

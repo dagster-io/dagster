@@ -1109,7 +1109,7 @@ def test_overrides_too_long(
 ):
     large_container_context = {i: "boom" for i in range(10000)}
 
-    mock_pipeline_code_origin = JobPythonOrigin(
+    mock_job_code_origin = JobPythonOrigin(
         job_name="test",
         repository_origin=RepositoryPythonOrigin(
             executable_path="/",
@@ -1125,7 +1125,7 @@ def test_overrides_too_long(
     run = instance.create_run_for_job(
         pipeline,
         external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=mock_pipeline_code_origin,
+        job_code_origin=mock_job_code_origin,
     )
 
     instance.launch_run(run.run_id, workspace)

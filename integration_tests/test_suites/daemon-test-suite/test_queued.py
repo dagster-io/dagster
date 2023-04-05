@@ -12,7 +12,7 @@ from utils import start_daemon
 def create_run(
     instance: DagsterInstance, external_pipeline: ExternalJob, **kwargs: Any
 ) -> DagsterRun:
-    pipeline_args = merge_dicts(
+    job_args = merge_dicts(
         {
             "job_name": "foo_job",
             "external_job_origin": external_pipeline.get_external_origin(),
@@ -20,7 +20,7 @@ def create_run(
         },
         kwargs,
     )
-    return create_run_for_test(instance, **pipeline_args)
+    return create_run_for_test(instance, **job_args)
 
 
 def assert_events_in_order(logs, expected_events):
@@ -33,13 +33,13 @@ def assert_events_in_order(logs, expected_events):
 def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_example_repo):
     external_schedule = foo_example_repo.get_external_schedule("always_run_schedule")
     external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
-    external_pipeline = foo_example_repo.get_full_external_job("foo_job")
+    external_job = foo_example_repo.get_full_external_job("foo_job")
 
     instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
-        run = create_run(instance, external_pipeline)
+        run = create_run(instance, external_job)
         instance.submit_run(run.run_id, foo_example_workspace)
 
         runs = [
@@ -67,9 +67,9 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
     with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
-        external_pipeline = foo_example_repo.get_full_external_job("foo_job")
+        external_job = foo_example_repo.get_full_external_job("foo_job")
 
-        run = create_run(instance, external_pipeline)
+        run = create_run(instance, external_job)
 
         instance.submit_run(run.run_id, foo_example_workspace)
 

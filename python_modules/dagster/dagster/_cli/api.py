@@ -84,35 +84,35 @@ def execute_run_command(input_json):
 
 
 def _execute_run_command_body(
-    pipeline_run_id: str,
+    run_id: str,
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
 ) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
-            instance, pipeline_run_id
+            instance, run_id
         )
     else:
         cancellation_thread, cancellation_thread_shutdown_event = None, None
 
-    pipeline_run: DagsterRun = check.not_none(
-        instance.get_run_by_id(pipeline_run_id),
-        f"Pipeline run with id '{pipeline_run_id}' not found for run execution.",
+    dagster_run = check.not_none(
+        instance.get_run_by_id(run_id),
+        f"Run with id '{run_id}' not found for run execution.",
     )
 
     check.inst(
-        pipeline_run.job_code_origin,
+        dagster_run.job_code_origin,
         JobPythonOrigin,
-        f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
+        f"Run with id '{run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
+    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
         f"Started process for run (pid: {pid}).",
-        pipeline_run,
+        dagster_run,
         EngineEventData.in_process(pid),
     )
 
@@ -120,8 +120,8 @@ def _execute_run_command_body(
 
     try:
         for event in core_execute_run(
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
             inject_env_vars=True,
         ):
@@ -141,12 +141,12 @@ def _execute_run_command_body(
                 if cancellation_thread.is_alive():
                     instance.report_engine_event(
                         "Cancellation thread did not shutdown gracefully",
-                        pipeline_run,
+                        dagster_run,
                     )
 
         instance.report_engine_event(
             f"Process for run exited (pid: {pid}).",
-            pipeline_run,
+            dagster_run,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
@@ -189,33 +189,33 @@ def resume_run_command(input_json):
 
 
 def _resume_run_command_body(
-    pipeline_run_id: Optional[str],
+    run_id: Optional[str],
     instance: DagsterInstance,
     write_stream_fn: Callable[[DagsterEvent], Any],
     set_exit_code_on_failure: bool,
 ):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
-            instance, pipeline_run_id
+            instance, run_id
         )
     else:
         cancellation_thread, cancellation_thread_shutdown_event = None, None
-    pipeline_run = check.not_none(
-        instance.get_run_by_id(pipeline_run_id),  # type: ignore
-        f"Pipeline run with id '{pipeline_run_id}' not found for run execution.",
+    dagster_run = check.not_none(
+        instance.get_run_by_id(run_id),  # type: ignore
+        f"Pipeline run with id '{run_id}' not found for run execution.",
     )
     check.inst(
-        pipeline_run.job_code_origin,
+        dagster_run.job_code_origin,
         JobPythonOrigin,
-        f"Pipeline run with id '{pipeline_run_id}' does not include an origin.",
+        f"Pipeline run with id '{run_id}' does not include an origin.",
     )
 
-    recon_pipeline = recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
+    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
-        f"Started process for resuming pipeline (pid: {pid}).",
-        pipeline_run,
+        f"Started process for resuming job (pid: {pid}).",
+        dagster_run,
         EngineEventData.in_process(pid),
     )
 
@@ -223,8 +223,8 @@ def _resume_run_command_body(
 
     try:
         for event in core_execute_run(
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
             resume_from_failure=True,
             inject_env_vars=True,
@@ -246,11 +246,11 @@ def _resume_run_command_body(
                 if cancellation_thread.is_alive():
                     instance.report_engine_event(
                         "Cancellation thread did not shutdown gracefully",
-                        pipeline_run,
+                        dagster_run,
                     )
         instance.report_engine_event(
-            f"Process for pipeline exited (pid: {pid}).",
-            pipeline_run,
+            f"Process for job exited (pid: {pid}).",
+            dagster_run,
         )
 
     return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
@@ -279,7 +279,7 @@ def verify_step(instance, dagster_run, retry_state, step_keys_to_execute):
         # so that we don't cause the "Encountered failed job pods" error.
         #
         # Instead, the step will be marked as being in an unknown state by the executor and the
-        # pipeline will fail accordingly.
+        # job will fail accordingly.
         if current_attempt == 1 and step_stat_for_key:
             # If this is the first attempt, there shouldn't be any step stats for this
             # event yet.
@@ -345,14 +345,14 @@ def execute_step_command(input_json, compressed_input_json):
             if args.instance_ref
             else DagsterInstance.get()
         ) as instance:
-            pipeline_run = instance.get_run_by_id(args.run_id)
+            dagster_run = instance.get_run_by_id(args.run_id)
 
             buff = []
 
             for event in _execute_step_command_body(
                 args,
                 instance,
-                pipeline_run,
+                dagster_run,
             ):
                 buff.append(serialize_value(event))
 
@@ -361,7 +361,7 @@ def execute_step_command(input_json, compressed_input_json):
 
 
 def _execute_step_command_body(
-    args: ExecuteStepArgs, instance: DagsterInstance, pipeline_run: DagsterRun
+    args: ExecuteStepArgs, instance: DagsterInstance, dagster_run: DagsterRun
 ):
     single_step_key = (
         args.step_keys_to_execute[0]
@@ -370,29 +370,29 @@ def _execute_step_command_body(
     )
     try:
         check.inst(
-            pipeline_run,
+            dagster_run,
             DagsterRun,
-            f"Pipeline run with id '{args.run_id}' not found for step execution",
+            f"Run with id '{args.run_id}' not found for step execution",
         )
         check.inst(
-            pipeline_run.job_code_origin,
+            dagster_run.job_code_origin,
             JobPythonOrigin,
-            f"Pipeline run with id '{args.run_id}' does not include an origin.",
+            f"Run with id '{args.run_id}' does not include an origin.",
         )
 
         location_name = (
-            pipeline_run.external_job_origin.location_name
-            if pipeline_run.external_job_origin
+            dagster_run.external_job_origin.location_name
+            if dagster_run.external_job_origin
             else None
         )
 
         instance.inject_env_vars(location_name)
 
-        log_manager = create_context_free_log_manager(instance, pipeline_run)
+        log_manager = create_context_free_log_manager(instance, dagster_run)
 
         yield DagsterEvent.step_worker_started(
             log_manager,
-            pipeline_run.job_name,
+            dagster_run.job_name,
             message="Step worker started"
             + (f' for "{single_step_key}".' if single_step_key else "."),
             metadata={"pid": MetadataValue.text(str(os.getpid()))},
@@ -402,31 +402,31 @@ def _execute_step_command_body(
         if args.should_verify_step:
             success = verify_step(
                 instance,
-                pipeline_run,
+                dagster_run,
                 check.not_none(args.known_state).get_retry_state(),
                 args.step_keys_to_execute,
             )
             if not success:
                 return
 
-        if pipeline_run.has_repository_load_data:
+        if dagster_run.has_repository_load_data:
             repository_load_data = instance.get_execution_plan_snapshot(
-                check.not_none(pipeline_run.execution_plan_snapshot_id)
+                check.not_none(dagster_run.execution_plan_snapshot_id)
             ).repository_load_data
         else:
             repository_load_data = None
 
-        recon_pipeline = (
-            recon_job_from_origin(cast(JobPythonOrigin, pipeline_run.job_code_origin))
+        recon_job = (
+            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .subset_for_execution_from_existing_job(
-                pipeline_run.solids_to_execute, pipeline_run.asset_selection
+                dagster_run.solids_to_execute, dagster_run.asset_selection
             )
         )
 
         execution_plan = create_execution_plan(
-            recon_pipeline,
-            run_config=pipeline_run.run_config,
+            recon_job,
+            run_config=dagster_run.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
             known_state=args.known_state,
             repository_load_data=repository_load_data,
@@ -434,16 +434,16 @@ def _execute_step_command_body(
 
         yield from execute_plan_iterator(
             execution_plan,
-            recon_pipeline,
-            pipeline_run,
+            recon_job,
+            dagster_run,
             instance,
-            run_config=pipeline_run.run_config,
+            run_config=dagster_run.run_config,
             retry_mode=args.retry_mode,
         )
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield instance.report_engine_event(
             message="Step execution terminated by interrupt",
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             step_key=single_step_key,
         )
         raise
@@ -453,7 +453,7 @@ def _execute_step_command_body(
                 "An exception was thrown during step execution that is likely a framework error,"
                 " rather than an error in user code."
             ),
-            pipeline_run,
+            dagster_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             step_key=single_step_key,
         )

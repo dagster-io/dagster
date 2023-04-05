@@ -340,8 +340,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
-        pipeline_origin = check.not_none(context.job_code_origin)
-        image = pipeline_origin.repository_origin.container_image
+        job_origin = check.not_none(context.job_code_origin)
+        image = job_origin.repository_origin.container_image
 
         # ECS limits overrides to 8192 characters including json formatting
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
@@ -349,15 +349,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         # going over this limit (for example, if many secrets have been set). This strips
         # the container context off of our pipeline origin because we don't actually need
         # it to launch the run; we only needed it to create the task definition.
-        repository_origin = pipeline_origin.repository_origin
+        repository_origin = job_origin.repository_origin
 
         stripped_repository_origin = repository_origin._replace(container_context={})
-        stripped_pipeline_origin = pipeline_origin._replace(
-            repository_origin=stripped_repository_origin
-        )
+        stripped_job_origin = job_origin._replace(repository_origin=stripped_repository_origin)
 
         args = ExecuteRunArgs(
-            job_origin=stripped_pipeline_origin,
+            job_origin=stripped_job_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )

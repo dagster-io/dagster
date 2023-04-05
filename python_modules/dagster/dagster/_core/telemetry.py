@@ -554,7 +554,7 @@ def log_external_repo_stats(
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        pipeline_name_hash = hash_name(external_job.name) if external_job else ""
+        job_name_hash = hash_name(external_job.name) if external_job else ""
         repo_hash = hash_name(external_repo.name)
         location_name_hash = hash_name(external_repo.handle.location_name)
 
@@ -567,7 +567,7 @@ def log_external_repo_stats(
                 metadata={
                     **get_stats_from_external_repo(external_repo),
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
+                    "pipeline_name_hash": job_name_hash,
                     "repo_hash": repo_hash,
                     "location_name_hash": location_name_hash,
                 },
@@ -601,29 +601,29 @@ def log_repo_stats(
         instance_id = get_or_set_instance_id()
 
         if isinstance(job, ReconstructableJob):
-            pipeline_name_hash = hash_name(job.get_definition().name)
+            job_name_hash = hash_name(job.get_definition().name)
             repository = job.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.job_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         elif isinstance(repo, ReconstructableRepository):
-            pipeline_name_hash = ""
+            job_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
-            num_pipelines_in_repo = len(repository.job_names)
+            num_jobs_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
             num_sensors_in_repo = len(repository.sensor_defs)
             all_assets = list(repository.assets_defs_by_key.values())
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         else:
-            pipeline_name_hash = hash_name(job.get_definition().name)  # type: ignore
+            job_name_hash = hash_name(job.get_definition().name)  # type: ignore
             repo_hash = hash_name(get_ephemeral_repository_name(job.get_definition().name))  # type: ignore
-            num_pipelines_in_repo = 1
+            num_jobs_in_repo = 1
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
             num_assets_in_repo = 0
@@ -637,8 +637,8 @@ def log_repo_stats(
                 instance_id=instance_id,
                 metadata={
                     "source": source,
-                    "pipeline_name_hash": pipeline_name_hash,
-                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
+                    "pipeline_name_hash": job_name_hash,
+                    "num_pipelines_in_repo": str(num_jobs_in_repo),
                     "num_schedules_in_repo": str(num_schedules_in_repo),
                     "num_sensors_in_repo": str(num_sensors_in_repo),
                     "num_assets_in_repo": str(num_assets_in_repo),

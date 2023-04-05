@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 class IJob(ABC):
-    """IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
+    """IJob is a wrapper interface for JobDefinitions to be used as parameters to Dagster's
     core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
     definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
-    can be reconstructed and executed in a different process (ReconstructablePipeline).
+    can be reconstructed and executed in a different process (ReconstructableJob).
     """
 
     @abstractmethod

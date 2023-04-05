@@ -322,7 +322,7 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
+            repository_definitions (List[Union[JobDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
                 Use this constructor when you have no need to lazy load jobs or other
                 definitions.
             top_level_resources (Optional[Mapping[str, ResourceDefinition]]): A dict of top-level
@@ -373,7 +373,7 @@ class CachingRepositoryData(RepositoryData):
         Note that this will construct any job that has not yet been constructed.
 
         Returns:
-            List[PipelineDefinition]: All jobs in the repository.
+            List[JobDefinition]: All jobs in the repository.
         """
         if self._all_jobs is not None:
             return self._all_jobs

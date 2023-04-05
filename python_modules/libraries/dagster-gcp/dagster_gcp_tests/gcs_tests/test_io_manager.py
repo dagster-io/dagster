@@ -95,14 +95,14 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = DagsterRun(job_name=inty_job.name, run_id=run_id, run_config=run_config)
+    dagster_run = DagsterRun(job_name=inty_job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, inty_job, resolved_run_config),
             job=InMemoryJob(inty_job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )
@@ -127,7 +127,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
             execution_plan.build_subset_plan(["add_one"], inty_job, resolved_run_config),
             job=InMemoryJob(inty_job),
             run_config=run_config,
-            dagster_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
         )
     )

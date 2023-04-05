@@ -34,7 +34,7 @@ from .context_creation_pipeline import PlanOrchestrationContextManager
 
 
 def _get_host_mode_executor(
-    recon_pipeline: ReconstructableJob,
+    recon_job: ReconstructableJob,
     run_config: Mapping[str, object],
     executor_defs: Sequence[ExecutorDefinition],
     instance: DagsterInstance,
@@ -60,7 +60,7 @@ def _get_host_mode_executor(
     executor_def = executor_defs_by_name[executor_name]
 
     init_context = InitExecutorContext(
-        job=recon_pipeline,
+        job=recon_job,
         executor_def=executor_def,
         executor_config=executor_config["config"],  # type: ignore  # (config typing)
         instance=instance,

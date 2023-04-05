@@ -19,7 +19,7 @@ class InitLoggerContext:
     Attributes:
         logger_config (Any): The configuration data provided by the run config. The
             schema for this data is defined by ``config_schema`` on the :py:class:`LoggerDefinition`
-        pipeline_def (Optional[PipelineDefinition]): The pipeline/job definition currently being executed.
+        pipeline_def (Optional[JobDefinition]): The pipeline/job definition currently being executed.
         logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.
         run_id (str): The ID for this run of the pipeline.
 

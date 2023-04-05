@@ -1062,7 +1062,7 @@ class DagsterInstance(DynamicPartitionsStore):
             ),
         )
 
-        pipeline_snapshot_id = (
+        job_snapshot_id = (
             self._ensure_persisted_pipeline_snapshot(pipeline_snapshot, parent_pipeline_snapshot)
             if pipeline_snapshot
             else None
@@ -1070,9 +1070,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         execution_plan_snapshot_id = (
             self._ensure_persisted_execution_plan_snapshot(
-                execution_plan_snapshot, pipeline_snapshot_id, step_keys_to_execute
+                execution_plan_snapshot, job_snapshot_id, step_keys_to_execute
             )
-            if execution_plan_snapshot and pipeline_snapshot_id
+            if execution_plan_snapshot and job_snapshot_id
             else None
         )
 
@@ -1088,7 +1088,7 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            job_snapshot_id=pipeline_snapshot_id,
+            job_snapshot_id=job_snapshot_id,
             execution_plan_snapshot_id=execution_plan_snapshot_id,
             external_job_origin=external_pipeline_origin,
             job_code_origin=pipeline_code_origin,
@@ -1116,20 +1116,20 @@ class DagsterInstance(DynamicPartitionsStore):
                     "Parent pipeline snapshot id out of sync with passed parent pipeline snapshot",
                 )
 
-                returned_pipeline_snapshot_id = self._run_storage.add_job_snapshot(
+                returned_job_snapshot_id = self._run_storage.add_job_snapshot(
                     parent_pipeline_snapshot  # type: ignore  # (possible none)
                 )
                 check.invariant(
                     pipeline_snapshot.lineage_snapshot.parent_snapshot_id
-                    == returned_pipeline_snapshot_id
+                    == returned_job_snapshot_id
                 )
 
-        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
-        if not self._run_storage.has_job_snapshot(pipeline_snapshot_id):
-            returned_pipeline_snapshot_id = self._run_storage.add_job_snapshot(pipeline_snapshot)
-            check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
+        job_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
+        if not self._run_storage.has_job_snapshot(job_snapshot_id):
+            returned_job_snapshot_id = self._run_storage.add_job_snapshot(pipeline_snapshot)
+            check.invariant(job_snapshot_id == returned_job_snapshot_id)
 
-        return pipeline_snapshot_id
+        return job_snapshot_id
 
     def _ensure_persisted_execution_plan_snapshot(
         self,
@@ -1178,7 +1178,7 @@ class DagsterInstance(DynamicPartitionsStore):
             DagsterEventType,
         )
 
-        pipeline_name = dagster_run.job_name
+        job_name = dagster_run.job_name
 
         for step in execution_plan_snapshot.steps:
             if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -1215,10 +1215,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-                            job_name=pipeline_name,
+                            job_name=job_name,
                             message=(
-                                f"{pipeline_name} intends to materialize asset"
-                                f" {asset_key.to_string()}"
+                                f"{job_name} intends to materialize asset {asset_key.to_string()}"
                             ),
                             event_specific_data=AssetMaterializationPlannedData(
                                 asset_key, partition=partition
@@ -1342,7 +1341,7 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
         check.opt_inst_param(job_code_origin, "pipeline_code_origin", JobPythonOrigin)
 
-        pipeline_run = self._construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             pipeline_name=job_name,
             run_id=run_id,  # type: ignore  # (possible none)
             run_config=run_config,
@@ -1361,12 +1360,12 @@ class DagsterInstance(DynamicPartitionsStore):
             pipeline_code_origin=job_code_origin,
         )
 
-        pipeline_run = self._run_storage.add_run(pipeline_run)
+        dagster_run = self._run_storage.add_run(dagster_run)
 
         if execution_plan_snapshot:
-            self._log_asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
+            self._log_asset_materialization_planned_events(dagster_run, execution_plan_snapshot)
 
-        return pipeline_run
+        return dagster_run
 
     def create_reexecuted_run(
         self,
@@ -1484,7 +1483,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # error; at this point, the failed tasks try again to fetch the existing run.
         # https://github.com/dagster-io/dagster/issues/2412
 
-        pipeline_run = self._construct_run_with_snapshots(
+        dagster_run = self._construct_run_with_snapshots(
             pipeline_name=job_name,
             run_id=run_id,
             run_config=run_config,
@@ -1502,25 +1501,25 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         def get_run() -> DagsterRun:
-            candidate_run = self.get_run_by_id(pipeline_run.run_id)
+            candidate_run = self.get_run_by_id(dagster_run.run_id)
 
-            field_diff = _check_run_equality(pipeline_run, candidate_run)  # type: ignore  # (possible none)
+            field_diff = _check_run_equality(dagster_run, candidate_run)  # type: ignore  # (possible none)
 
             if field_diff:
                 raise DagsterRunConflict(
                     "Found conflicting existing run with same id {run_id}. Runs differ in:"
                     "\n{field_diff}".format(
-                        run_id=pipeline_run.run_id,
+                        run_id=dagster_run.run_id,
                         field_diff=_format_field_diff(field_diff),
                     ),
                 )
             return candidate_run  # type: ignore  # (possible none)
 
-        if self.has_run(pipeline_run.run_id):
+        if self.has_run(dagster_run.run_id):
             return get_run()
 
         try:
-            return self._run_storage.add_run(pipeline_run)
+            return self._run_storage.add_run(dagster_run)
         except DagsterRunAlreadyExists:
             return get_run()
 

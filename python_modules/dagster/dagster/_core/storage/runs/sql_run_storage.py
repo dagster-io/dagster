@@ -174,7 +174,7 @@ class SqlRunStorage(RunStorage):
             # TODO log?
             return
 
-        new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+        new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
@@ -199,8 +199,8 @@ class SqlRunStorage(RunStorage):
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    run_body=serialize_value(run.with_status(new_pipeline_status)),
-                    status=new_pipeline_status.value,
+                    run_body=serialize_value(run.with_status(new_job_status)),
+                    status=new_job_status.value,
                     update_timestamp=now,
                     **kwargs,
                 )
@@ -600,14 +600,14 @@ class SqlRunStorage(RunStorage):
 
     def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
-        pipeline_run = self._get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._get_run_by_id(run_id)
+        if not dagster_run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
 
         # find root_run
-        root_run_id = pipeline_run.root_run_id if pipeline_run.root_run_id else pipeline_run.run_id
+        root_run_id = dagster_run.root_run_id if dagster_run.root_run_id else dagster_run.run_id
         root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
@@ -775,13 +775,13 @@ class SqlRunStorage(RunStorage):
         root_run_id_to_group: Dict[str, List[DagsterRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
         for row in res:
-            pipeline_run = self._row_to_run(row)
-            root_run_id = pipeline_run.get_root_run_id()
+            dagster_run = self._row_to_run(row)
+            root_run_id = dagster_run.get_root_run_id()
             if root_run_id is not None:
-                root_run_id_to_group[root_run_id].append(pipeline_run)
+                root_run_id_to_group[root_run_id].append(dagster_run)
             else:
-                root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
-                root_run_id_to_count[pipeline_run.run_id] = row["child_counts"] + 1
+                root_run_id_to_group[dagster_run.run_id].append(dagster_run)
+                root_run_id_to_count[dagster_run.run_id] = row["child_counts"] + 1
 
         return {
             root_run_id: {

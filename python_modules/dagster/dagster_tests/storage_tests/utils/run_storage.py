@@ -211,10 +211,10 @@ class TestRunStorage:
 
     def test_fetch_by_snapshot_id(self, storage):
         assert storage
-        pipeline_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot_a = pipeline_def_a.get_job_snapshot()
-        pipeline_snapshot_b = pipeline_def_b.get_job_snapshot()
+        job_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
+        pipeline_snapshot_a = job_def_a.get_job_snapshot()
+        pipeline_snapshot_b = job_def_b.get_job_snapshot()
         pipeline_snapshot_a_id = create_job_snapshot_id(pipeline_snapshot_a)
         pipeline_snapshot_b_id = create_job_snapshot_id(pipeline_snapshot_b)
 
@@ -879,17 +879,17 @@ class TestRunStorage:
 
     def test_write_conflicting_run_id(self, storage: RunStorage):
         double_run_id = "double_run_id"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        run = DagsterRun(run_id=double_run_id, job_name=pipeline_def.name)
+        run = DagsterRun(run_id=double_run_id, job_name=job_def.name)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
             storage.add_run(run)
 
     def test_add_get_snapshot(self, storage):
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot = pipeline_def.get_job_snapshot()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        pipeline_snapshot = job_def.get_job_snapshot()
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
@@ -906,15 +906,15 @@ class TestRunStorage:
 
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_job_snapshot()
+        pipeline_snapshot = job_def.get_job_snapshot()
 
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            job_name=pipeline_def.name,
+            job_name=job_def.name,
             job_snapshot_id=pipeline_snapshot_id,
         )
 
@@ -938,11 +938,11 @@ class TestRunStorage:
 
     def test_single_write_with_missing_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
         run_with_missing_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
-            job_name=pipeline_def.name,
+            job_name=job_def.name,
             job_snapshot_id="nope",
         )
 
@@ -953,11 +953,9 @@ class TestRunStorage:
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import snapshot_from_execution_plan
 
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        execution_plan = create_execution_plan(pipeline_def)
-        ep_snapshot = snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_job_snapshot_id()
-        )
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        execution_plan = create_execution_plan(job_def)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, job_def.get_job_snapshot_id())
 
         snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
         fetched_ep_snapshot = storage.get_execution_plan_snapshot(snapshot_id)
@@ -1368,9 +1366,9 @@ class TestRunStorage:
         run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
-        pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
+        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = pipeline_def.get_job_snapshot()
+        pipeline_snapshot = job_def.get_job_snapshot()
         pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
         new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
 
@@ -1378,7 +1376,7 @@ class TestRunStorage:
         assert not storage.has_snapshot(pipeline_snapshot_id)
         assert storage.has_snapshot(new_pipeline_snapshot_id)
 
-        execution_plan = create_execution_plan(pipeline_def)
+        execution_plan = create_execution_plan(job_def)
         ep_snapshot = snapshot_from_execution_plan(execution_plan, new_pipeline_snapshot_id)
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
         new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"

@@ -230,9 +230,9 @@ def create_docker_task(celery_app, **task_kwargs):
         check.dict_param(docker_config, "docker_config")
 
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
-        pipeline_run = instance.get_run_by_id(execute_step_args.run_id)
+        dagster_run = instance.get_run_by_id(execute_step_args.run_id)
         check.inst(
-            pipeline_run,
+            dagster_run,
             DagsterRun,
             f"Could not load run {execute_step_args.run_id}",
         )
@@ -241,7 +241,7 @@ def create_docker_task(celery_app, **task_kwargs):
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
-            else pipeline_run.job_code_origin.repository_origin.container_image
+            else dagster_run.job_code_origin.repository_origin.container_image
         )
 
         if not docker_image:
@@ -259,7 +259,7 @@ def create_docker_task(celery_app, **task_kwargs):
         # Post event for starting execution
         engine_event = instance.report_engine_event(
             f"Executing steps {step_keys_str} in Docker container {docker_image}",
-            pipeline_run,
+            dagster_run,
             EngineEventData(
                 {
                     "Step keys": step_keys_str,
@@ -315,7 +315,7 @@ def create_docker_task(celery_app, **task_kwargs):
 
             instance.report_engine_event(
                 f"Failed to run steps {step_keys_str} in Docker container {docker_image}",
-                pipeline_run,
+                dagster_run,
                 EngineEventData(metadata),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],

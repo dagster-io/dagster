@@ -498,7 +498,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPipelineSubsetSnapshot(
         self, request: Any, _context
     ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore
-        pipeline_subset_snapshot_args = deserialize_value(
+        job_subset_snapshot_args = deserialize_value(
             request.serialized_pipeline_subset_snapshot_args,
             JobSubsetSnapshotArgs,
         )
@@ -507,11 +507,11 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_pipeline_subset_result=serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
-                        pipeline_subset_snapshot_args.job_origin.external_repository_origin
+                        job_subset_snapshot_args.job_origin.external_repository_origin
                     ),
-                    pipeline_subset_snapshot_args.job_origin.job_name,
-                    pipeline_subset_snapshot_args.solid_selection,
-                    pipeline_subset_snapshot_args.asset_selection,
+                    job_subset_snapshot_args.job_origin.job_name,
+                    job_subset_snapshot_args.solid_selection,
+                    job_subset_snapshot_args.asset_selection,
                 )
             )
         )
@@ -706,18 +706,18 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         try:
-            execute_external_pipeline_args = deserialize_value(
+            execute_external_job_args = deserialize_value(
                 request.serialized_execute_run_args,
                 ExecuteExternalJobArgs,
             )
-            run_id = execute_external_pipeline_args.run_id
+            run_id = execute_external_job_args.run_id
 
             # reconstructable required for handing execution off to subprocess
             recon_repo = check.not_none(self._loaded_repositories).reconstructables_by_name[
-                execute_external_pipeline_args.job_origin.external_repository_origin.repository_name
+                execute_external_job_args.job_origin.external_repository_origin.repository_name
             ]
-            recon_pipeline = recon_repo.get_reconstructable_job(
-                execute_external_pipeline_args.job_origin.job_name
+            recon_job = recon_repo.get_reconstructable_job(
+                execute_external_job_args.job_origin.job_name
             )
 
         except:
@@ -739,7 +739,7 @@ class DagsterApiServer(DagsterApiServicer):
             target=start_run_in_subprocess,
             args=[
                 request.serialized_execute_run_args,
-                recon_pipeline,
+                recon_job,
                 event_queue,
                 termination_event,
             ],
@@ -751,7 +751,7 @@ class DagsterApiServer(DagsterApiServicer):
                 # Cast here to convert `SpawnProcess` from event into regular `Process`-- not sure
                 # why not recognized as subclass, multiprocessing typing is a little rough.
                 cast(multiprocessing.Process, execution_process),
-                check.not_none(execute_external_pipeline_args.instance_ref),
+                check.not_none(execute_external_job_args.instance_ref),
             )
             self._termination_events[run_id] = termination_event
 

@@ -113,7 +113,7 @@ class _PlanBuilder:
                 job.repository.repository_load_data == repository_load_data,
                 (
                     "When building an ExecutionPlan with explicit repository_load_data and a"
-                    " ReconstructablePipeline, the repository_load_data on the job must be"
+                    " ReconstructableJob, the repository_load_data on the job must be"
                     " identical to passed-in repository_load_data."
                 ),
             )
@@ -162,17 +162,17 @@ class _PlanBuilder:
             self.resolved_run_config,
         )
 
-        pipeline_def = self.job.get_definition()
+        job_def = self.job.get_definition()
         root_inputs: List[
             Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
         ] = []
         # Recursively build the execution plan starting at the root pipeline
-        for input_def in pipeline_def.graph.input_defs:
+        for input_def in job_def.graph.input_defs:
             input_name = input_def.name
 
             input_source = get_root_graph_input_source(
                 plan_builder=self,
-                job_def=pipeline_def,
+                job_def=job_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -191,8 +191,8 @@ class _PlanBuilder:
             )
 
         self._build_from_sorted_nodes(
-            pipeline_def.nodes_in_topological_order,
-            pipeline_def.dependency_structure,
+            job_def.nodes_in_topological_order,
+            job_def.dependency_structure,
             parent_step_inputs=root_inputs,
         )
 
@@ -220,7 +220,7 @@ class _PlanBuilder:
                 step_dict,
                 step_dict_by_key,
                 step_handles_to_execute,
-                pipeline_def,
+                job_def,
                 self.resolved_run_config,
                 executable_map,
             ),
@@ -230,12 +230,12 @@ class _PlanBuilder:
 
         if self.step_keys_to_execute is not None:
             plan = plan.build_subset_plan(
-                self.step_keys_to_execute, pipeline_def, self.resolved_run_config
+                self.step_keys_to_execute, job_def, self.resolved_run_config
             )
 
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
-        if pipeline_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
+        if job_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
@@ -243,7 +243,7 @@ class _PlanBuilder:
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
             plan = plan.build_memoized_plan(
-                pipeline_def, self.resolved_run_config, instance, self.step_keys_to_execute
+                job_def, self.resolved_run_config, instance, self.step_keys_to_execute
             )
 
         return plan
@@ -1201,15 +1201,15 @@ def _check_persistent_storage_requirement(
     pipeline: IJob,
     resolved_run_config: ResolvedRunConfig,
 ) -> None:
-    pipeline_def = pipeline.get_definition()
-    executor_def = pipeline_def.executor_def
+    job_def = pipeline.get_definition()
+    executor_def = job_def.executor_def
     requirements_lst = executor_def.get_requirements(
         resolved_run_config.execution.execution_engine_config
     )
     if ExecutorRequirement.PERSISTENT_OUTPUTS not in requirements_lst:
         return
 
-    if not can_isolate_steps(pipeline_def):
+    if not can_isolate_steps(job_def):
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes, but your"
             " job includes op outputs that will not be stored somewhere where other"

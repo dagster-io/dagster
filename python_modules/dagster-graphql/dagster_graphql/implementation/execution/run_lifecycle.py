@@ -76,7 +76,7 @@ def create_valid_pipeline_run(
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
-    pipeline_run = graphene_info.context.instance.create_run(
+    dagster_run = graphene_info.context.instance.create_run(
         job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
@@ -101,4 +101,4 @@ def create_valid_pipeline_run(
         job_code_origin=external_pipeline.get_python_origin(),
     )
 
-    return pipeline_run
+    return dagster_run

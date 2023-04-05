@@ -191,7 +191,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def job_def(self) -> JobDefinition:
-        """PipelineDefinition: The currently executing pipeline."""
+        """JobDefinition: The currently executing pipeline."""
         return self._step_execution_context.job_def
 
     @public

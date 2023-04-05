@@ -123,9 +123,9 @@ def get_test_project_recon_job(
     container_image: Optional[str] = None,
     container_context: Optional[Mapping[str, object]] = None,
     filename: Optional[str] = None,
-) -> "ReOriginatedReconstructablePipelineForTest":
+) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructablePipelineForTest(
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_pipelines/{filename}"),
             "define_demo_execution_repo",
@@ -135,12 +135,12 @@ def get_test_project_recon_job(
     )
 
 
-class ReOriginatedReconstructablePipelineForTest(ReconstructableJob):
+class ReOriginatedReconstructableJobForTest(ReconstructableJob):
     def __new__(
         cls,
         reconstructable_pipeline: ReconstructableJob,
     ):
-        return super(ReOriginatedReconstructablePipelineForTest, cls).__new__(
+        return super(ReOriginatedReconstructableJobForTest, cls).__new__(
             cls,
             reconstructable_pipeline.repository,
             reconstructable_pipeline.job_name,
@@ -151,7 +151,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructableJob):
     def get_python_origin(self):
         """Hack! Inject origin that the docker-celery images will use. The BK image uses a different
         directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
-        the test that creates the ReconstructablePipeline. As a result the normal origin won't
+        the test that creates the ReconstructableJob. As a result the normal origin won't
         work, we need to inject this one.
         """
         return JobPythonOrigin(

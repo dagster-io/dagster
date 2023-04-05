@@ -20,15 +20,15 @@ def test_event_callback_logging():
         "dagstermill.examples.repository",
         "hello_logging_job",
     )
-    pipeline_def = pipeline.get_definition()
+    job_def = pipeline.get_definition()
     with instance_for_test() as instance:
-        pipeline_run = instance.create_run_for_job(pipeline_def)
+        dagster_run = instance.create_run_for_job(job_def)
 
-        instance.watch_event_logs(pipeline_run.run_id, None, _event_callback)
+        instance.watch_event_logs(dagster_run.run_id, None, _event_callback)
 
         res = execute_run(
             pipeline,
-            pipeline_run,
+            dagster_run,
             instance,
         )
 

@@ -172,7 +172,7 @@ def test_execution_plan_reexecution_with_in_memory():
             known_state=known_state,
         )
 
-        pipeline_run = instance.create_run_for_job(
+        dagster_run = instance.create_run_for_job(
             job_def=job_def,
             execution_plan=execution_plan,
             run_config=run_config,
@@ -185,7 +185,7 @@ def test_execution_plan_reexecution_with_in_memory():
                 execution_plan.build_subset_plan(["add_two"], job_def, resolved_run_config),
                 InMemoryJob(job_def),
                 run_config=run_config,
-                dagster_run=pipeline_run,
+                dagster_run=dagster_run,
                 instance=instance,
             )
 

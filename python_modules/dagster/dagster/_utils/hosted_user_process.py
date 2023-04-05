@@ -51,14 +51,14 @@ def external_job_from_recon_job(
     recon_job, solid_selection, repository_handle, asset_selection=None
 ):
     if solid_selection or asset_selection:
-        sub_pipeline = recon_job.subset_for_execution(
+        sub_recon_job = recon_job.subset_for_execution(
             solid_selection=solid_selection, asset_selection=asset_selection
         )
-        pipeline_def = sub_pipeline.get_definition()
+        job_def = sub_recon_job.get_definition()
     else:
-        pipeline_def = recon_job.get_definition()
+        job_def = recon_job.get_definition()
 
     return ExternalJob(
-        external_job_data_from_def(pipeline_def),
+        external_job_data_from_def(job_def),
         repository_handle=repository_handle,
     )

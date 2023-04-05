@@ -220,7 +220,7 @@ def test_invalid_instance():
 
 
 def test_no_handle():
-    with pytest.raises(CheckError, match='Param "job" is not a ReconstructablePipeline.'):
+    with pytest.raises(CheckError, match='Param "job" is not a ReconstructableJob.'):
         execute_job(
             define_diamond_job(),
             instance=DagsterInstance.ephemeral(),

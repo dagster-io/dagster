@@ -32,12 +32,12 @@ def kernel():
 @contextmanager
 def exec_for_test(module_name, fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructableJob.for_module(module_name, fn_name)
+    recon_job = ReconstructableJob.for_module(module_name, fn_name)
 
     with instance_for_test() as instance:
         try:
             with execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,

@@ -257,10 +257,10 @@ def test_k8s_run_launcher_image_from_origin(
         },
     )
 
-    pipeline_name = "demo_job_k8s"
+    job_name = "demo_job_k8s"
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=pipeline_name
+        dagit_url_for_k8s_run_launcher, run_config=run_config, pipeline_name=job_name
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -280,7 +280,7 @@ def test_k8s_run_launcher_terminate(
     dagster_docker_image,
     dagit_url_for_k8s_run_launcher,
 ):
-    pipeline_name = "slow_job_k8s"
+    job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
@@ -298,7 +298,7 @@ def test_k8s_run_launcher_terminate(
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
+        pipeline_name=job_name,
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
@@ -315,11 +315,11 @@ def test_k8s_run_launcher_terminate(
     terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id=run_id)
 
     start_time = datetime.datetime.now()
-    pipeline_run = None
+    dagster_run = None
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for termination"
-        pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.CANCELED:
+        dagster_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.CANCELED:
             break
 
         time.sleep(5)
@@ -327,7 +327,7 @@ def test_k8s_run_launcher_terminate(
     # useful to have logs here, because the worker pods get deleted
     print(dagster_instance_for_k8s_run_launcher.all_logs(run_id))  # noqa: T201
 
-    assert pipeline_run.status == DagsterRunStatus.CANCELED
+    assert dagster_run.status == DagsterRunStatus.CANCELED
 
     assert not can_terminate_run_over_graphql(dagit_url_for_k8s_run_launcher, run_id)
 
@@ -359,12 +359,12 @@ def test_k8s_executor_resource_requirements(
         },
     )
 
-    pipeline_name = "resources_limit_job_k8s"
+    job_name = "resources_limit_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
+        pipeline_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -397,12 +397,12 @@ def test_execute_on_k8s_retry_pipeline(
         },
     )
 
-    pipeline_name = "retry_job_k8s"
+    job_name = "retry_job_k8s"
 
     run_id = launch_run_over_graphql(
         dagit_url_for_k8s_run_launcher,
         run_config=run_config,
-        pipeline_name=pipeline_name,
+        pipeline_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
@@ -461,14 +461,14 @@ def test_memoization_k8s_executor(
 
     # wrap in try-catch to ensure that memoized results are always cleaned from s3 bucket
     try:
-        pipeline_name = "memoization_job_k8s"
+        job_name = "memoization_job_k8s"
 
         run_ids = []
         for _ in range(2):
             run_id = launch_run_over_graphql(
                 dagit_url_for_k8s_run_launcher,
                 run_config=run_config,
-                pipeline_name=pipeline_name,
+                pipeline_name=job_name,
             )
 
             result = wait_for_job_and_get_raw_logs(

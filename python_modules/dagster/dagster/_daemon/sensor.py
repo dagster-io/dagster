@@ -697,13 +697,13 @@ def _evaluate_sensor(
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )
-        external_pipeline = code_location.get_external_job(pipeline_selector)
+        external_job = code_location.get_external_job(pipeline_selector)
         run = _get_or_create_sensor_run(
             context,
             instance,
             code_location,
             external_sensor,
-            external_pipeline,
+            external_job,
             run_request,
             target_data,
             existing_runs_by_key,
@@ -867,9 +867,9 @@ def _create_sensor_run(
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
-    pipeline_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
+    job_tags = validate_tags(external_pipeline.tags or {}, allow_reserved_tags=False)
     tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags),
+        merge_dicts(job_tags, run_request.tags),
         DagsterRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:

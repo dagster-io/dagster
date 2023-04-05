@@ -395,10 +395,10 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         super().__init__()
 
     def submit_run(self, context: SubmitRunContext):
-        pipeline_run = context.dagster_run
-        check.inst(pipeline_run.external_job_origin, ExternalJobOrigin)
-        self._queue.append(pipeline_run)
-        return pipeline_run
+        dagster_run = context.dagster_run
+        check.inst(dagster_run.external_job_origin, ExternalJobOrigin)
+        self._queue.append(dagster_run)
+        return dagster_run
 
     def queue(self):
         return self._queue

@@ -36,7 +36,7 @@ class ExecutorRequirement(PyEnum):
     check whether the executor will be able to work for a particular job/pipeline execution.
     """
 
-    # The passed in IPipeline must be reconstructable across process boundaries
+    # The passed in IJob must be reconstructable across process boundaries
     RECONSTRUCTABLE_PIPELINE = (  # This needs to still exist for folks who may have written their own executor
         "RECONSTRUCTABLE_PIPELINE"
     )

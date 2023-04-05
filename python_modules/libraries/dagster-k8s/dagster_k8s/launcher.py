@@ -203,9 +203,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         pod_name = job_name
 
-        pipeline_origin = run.job_code_origin
+        job_origin = run.job_code_origin
         user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
-        repository_origin = pipeline_origin.repository_origin
+        repository_origin = job_origin.repository_origin
 
         job_config = container_context.get_k8s_job_config(
             job_image=repository_origin.container_image, run_launcher=self
@@ -224,13 +224,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
-                "dagster/job": pipeline_origin.job_name,
+                "dagster/job": job_origin.job_name,
                 "dagster/run-id": run.run_id,
             },
             env_vars=[
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": pipeline_origin.job_name,
+                    "value": job_origin.job_name,
                 },
                 *container_context.env,
             ],
@@ -261,10 +261,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.dagster_run
         job_name = get_job_name_from_run_id(run.run_id)
-        pipeline_origin = check.not_none(run.job_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ExecuteRunArgs(
-            job_origin=pipeline_origin,
+            job_origin=job_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
@@ -281,10 +281,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
-        pipeline_origin = check.not_none(run.job_code_origin)
+        job_origin = check.not_none(run.job_code_origin)
 
         args = ResumeRunArgs(
-            job_origin=pipeline_origin,
+            job_origin=job_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
             set_exit_code_on_failure=self._fail_pod_on_run_failure,
@@ -296,10 +296,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
-        pipeline_run = self._instance.get_run_by_id(run_id)
-        if not pipeline_run:
+        dagster_run = self._instance.get_run_by_id(run_id)
+        if not dagster_run:
             return False
-        if pipeline_run.status != DagsterRunStatus.STARTED:
+        if dagster_run.status != DagsterRunStatus.STARTED:
             return False
         return True
 

@@ -30,7 +30,9 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         node_handle: NodeHandle,
         op_config: Any = None,
     ):
-        self._job_context = check.inst_param(job_context, "job_context", PlanExecutionContext)
+        self._job_context = check.inst_param(
+            job_context, "job_context", PlanExecutionContext
+        )
         self._job_def = check.inst_param(job_def, "job_def", JobDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
@@ -131,7 +133,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
         """
-        return cast(OpDefinition, self._pipeline_def.node_def_named(self.op_name))
+        return cast(OpDefinition, self._job_def.node_def_named(self.op_name))
 
     @property
     def node(self) -> Node:

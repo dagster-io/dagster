@@ -136,7 +136,7 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
 ):
-    pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
+    job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
@@ -146,14 +146,14 @@ def _core_resource_initialization_event_generator(
                 " provided"
             ),
         )
-        pipeline_name = cast(DagsterRun, dagster_run).job_name
+        job_name = cast(DagsterRun, dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
     resource_instances: Dict[str, "InitializedResource"] = {}
     resource_init_times = {}
     try:
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
@@ -196,7 +196,7 @@ def _core_resource_initialization_event_generator(
 
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_instances,
@@ -214,7 +214,7 @@ def _core_resource_initialization_event_generator(
         # resource_keys_to_init cannot be empty
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
-                pipeline_name,
+                job_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,

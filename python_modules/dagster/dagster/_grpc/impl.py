@@ -73,9 +73,9 @@ def _report_run_failed_if_not_finished(
     instance: DagsterInstance, pipeline_run_id: str
 ) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-    if pipeline_run and (not pipeline_run.is_finished):
-        yield instance.report_run_failed(pipeline_run)
+    dagster_run = instance.get_run_by_id(pipeline_run_id)
+    if dagster_run and (not dagster_run.is_finished):
+        yield instance.report_run_failed(dagster_run)
 
 
 def core_execute_run(
@@ -187,9 +187,9 @@ def _run_in_subprocess(
             else nullcontext()
         ) as instance:
             instance = check.not_none(instance)  # noqa: PLW2901
-            pipeline_run = instance.get_run_by_id(execute_run_args.run_id)
+            dagster_run = instance.get_run_by_id(execute_run_args.run_id)
 
-            if not pipeline_run:
+            if not dagster_run:
                 raise DagsterRunNotFoundError(
                     "gRPC server could not load run {run_id} in order to execute it. Make sure that"
                     " the gRPC server has access to your run storage.".format(
@@ -217,7 +217,7 @@ def _run_in_subprocess(
     run_event_handler(
         instance.report_engine_event(
             f"Started process for run (pid: {pid}).",
-            pipeline_run,
+            dagster_run,
             EngineEventData.in_process(pid),
         )
     )
@@ -226,9 +226,7 @@ def _run_in_subprocess(
     # https://amir.rachum.com/blog/2017/03/03/generator-cleanup/
     closed = False
     try:
-        for event in core_execute_run(
-            recon_pipeline, pipeline_run, instance, inject_env_vars=False
-        ):
+        for event in core_execute_run(recon_pipeline, dagster_run, instance, inject_env_vars=False):
             run_event_handler(event)
     except GeneratorExit:
         closed = True
@@ -241,7 +239,7 @@ def _run_in_subprocess(
             run_event_handler(
                 instance.report_engine_event(
                     f"Process for run exited (pid: {pid}).",
-                    pipeline_run,
+                    dagster_run,
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())

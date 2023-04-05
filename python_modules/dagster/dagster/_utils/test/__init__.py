@@ -57,19 +57,19 @@ def create_test_pipeline_execution_context(
     loggers = check.opt_mapping_param(
         logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
-    pipeline_def = GraphDefinition(
+    job_def = GraphDefinition(
         name="test_legacy_context",
         node_defs=[],
     ).to_job(executor_def=in_process_executor, logger_defs=logger_defs)
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
+    dagster_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(job=pipeline_def, run_config=run_config)
+    execution_plan = create_execution_plan(job=job_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryJob(pipeline_def),
+        InMemoryJob(job_def),
         execution_plan,
         run_config,
-        pipeline_run,
+        dagster_run,
         instance,
     )
     log_manager = create_log_manager(creation_data)

@@ -248,9 +248,7 @@ def assert_runs_and_exists(
     )
     assert_run_success(client, run_id)
 
-    locations = client._get_repo_locations_and_names_with_pipeline(  # noqa: SLF001
-        pipeline_name=name
-    )
+    locations = client._get_repo_locations_and_names_with_pipeline(job_name=name)  # noqa: SLF001
     assert len(locations) == 1
     assert locations[0].job_name == name
 

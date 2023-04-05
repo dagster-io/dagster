@@ -152,17 +152,17 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
         instance,
         version=dagster_version,
         kwargs=cli_args,
-    ) as external_pipeline:
-        pipeline_snapshot = external_pipeline.job_snapshot
+    ) as external_job:
+        job_snapshot = external_job.job_snapshot
 
         if verbose:
             print_job(
-                pipeline_snapshot,
+                job_snapshot,
                 print_fn=print_fn,
             )
         else:
             print_ops(
-                pipeline_snapshot,
+                job_snapshot,
                 print_fn=print_fn,
             )
 
@@ -187,7 +187,7 @@ def print_job(
     job_snapshot: JobSnapshot,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(job_snapshot, "pipeline", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
     check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
@@ -325,13 +325,13 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
 
     tags = get_tags_from_args(kwargs)
 
-    pipeline_origin = get_job_python_origin_from_kwargs(kwargs)
-    pipeline = recon_job_from_origin(pipeline_origin)
+    job_origin = get_job_python_origin_from_kwargs(kwargs)
+    recon_job = recon_job_from_origin(job_origin)
     solid_selection = get_solid_selection_from_args(kwargs)
-    result = do_execute_command(pipeline, instance, config, tags, solid_selection)
+    result = do_execute_command(recon_job, instance, config, tags, solid_selection)
 
     if not result.success:
-        raise click.ClickException(f"Pipeline run {result.run_id} resulted in failure.")
+        raise click.ClickException(f"Run {result.run_id} resulted in failure.")
 
     return result
 
@@ -446,14 +446,14 @@ def execute_launch_command(
         external_repo = get_external_repository_from_code_location(
             code_location, cast(Optional[str], kwargs.get("repository"))
         )
-        external_pipeline = get_external_job_from_external_repo(
+        external_job = get_external_job_from_external_repo(
             external_repo,
             cast(Optional[str], kwargs.get("job_name")),
         )
 
         log_external_repo_stats(
             instance=instance,
-            external_job=external_pipeline,
+            external_job=external_job,
             external_repo=external_repo,
             source="pipeline_launch_command",
         )
@@ -465,25 +465,25 @@ def execute_launch_command(
 
         solid_selection = get_solid_selection_from_args(kwargs)
 
-        pipeline_run = _create_external_pipeline_run(
+        dagster_run = _create_external_run(
             instance=instance,
             code_location=code_location,
             external_repo=external_repo,
-            external_pipeline=external_pipeline,
+            external_job=external_job,
             run_config=config,
             tags=run_tags,
             solid_selection=solid_selection,
             run_id=cast(Optional[str], kwargs.get("run_id")),
         )
 
-        return instance.submit_run(pipeline_run.run_id, workspace)
+        return instance.submit_run(dagster_run.run_id, workspace)
 
 
-def _create_external_pipeline_run(
+def _create_external_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
     external_repo: ExternalRepository,
-    external_pipeline: ExternalJob,
+    external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
@@ -492,32 +492,32 @@ def _create_external_pipeline_run(
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(code_location, "code_location", CodeLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
-    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+    check.inst_param(external_job, "external_job", ExternalJob)
     check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
     check.opt_str_param(run_id, "run_id")
 
-    run_config, tags, solid_selection = _check_execute_external_pipeline_args(
-        external_pipeline,
+    run_config, tags, solid_selection = _check_execute_external_job_args(
+        external_job,
         run_config,
         tags,
         solid_selection,
     )
 
-    pipeline_name = external_pipeline.name
+    job_name = external_job.name
     pipeline_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=external_repo.name,
-        job_name=pipeline_name,
+        job_name=job_name,
         solid_selection=solid_selection,
     )
 
-    external_pipeline = code_location.get_external_job(pipeline_selector)
+    external_job = code_location.get_external_job(pipeline_selector)
 
     external_execution_plan = code_location.get_external_execution_plan(
-        external_pipeline,
+        external_job,
         run_config,
         step_keys_to_execute=None,
         known_state=None,
@@ -526,37 +526,37 @@ def _create_external_pipeline_run(
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     return instance.create_run(
-        job_name=pipeline_name,
+        job_name=job_name,
         run_id=run_id,
         run_config=run_config,
-        solids_to_execute=external_pipeline.solids_to_execute,
+        solids_to_execute=external_job.solids_to_execute,
         step_keys_to_execute=execution_plan_snapshot.step_keys_to_execute,
         solid_selection=solid_selection,
         status=None,
         root_run_id=None,
         parent_run_id=None,
         tags=tags,
-        job_snapshot=external_pipeline.job_snapshot,
+        job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
-        parent_job_snapshot=external_pipeline.parent_job_snapshot,
-        external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
     )
 
 
-def _check_execute_external_pipeline_args(
-    external_pipeline: ExternalJob,
+def _check_execute_external_job_args(
+    external_job: ExternalJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
 ) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+    check.inst_param(external_job, "external_job", ExternalJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
     tags = check.opt_mapping_param(tags, "tags", key_type=str)
     check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
-    tags = merge_dicts(external_pipeline.tags, tags)
+    tags = merge_dicts(external_job.tags, tags)
 
     return (
         run_config,
@@ -578,10 +578,10 @@ def job_scaffold_command(**kwargs):
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    pipeline_origin = get_job_python_origin_from_kwargs(cli_args)
-    pipeline = recon_job_from_origin(pipeline_origin)
+    job_origin = get_job_python_origin_from_kwargs(cli_args)
+    job = recon_job_from_origin(job_origin)
     skip_non_required = cli_args["print_only_required"]
-    do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
+    do_scaffold_command(job.get_definition(), print_fn, skip_non_required)
 
 
 def do_scaffold_command(
@@ -751,7 +751,7 @@ def _execute_backfill_command_at_location(
         assert isinstance(partition_execution_data, ExternalPartitionSetExecutionParamData)
 
         for partition_data in partition_execution_data.partition_data:
-            pipeline_run = create_backfill_run(
+            dagster_run = create_backfill_run(
                 instance,
                 code_location,
                 external_job,
@@ -759,8 +759,8 @@ def _execute_backfill_command_at_location(
                 backfill_job,
                 partition_data,
             )
-            if pipeline_run:
-                instance.submit_run(pipeline_run.run_id, workspace)
+            if dagster_run:
+                instance.submit_run(dagster_run.run_id, workspace)
 
         instance.add_backfill(backfill_job.with_status(BulkActionStatus.COMPLETED))
 

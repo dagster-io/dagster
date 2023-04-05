@@ -775,11 +775,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 else []
             )
         elif pipeline is not None:
-            pipeline_name = pipeline.pipelineName
+            job_name = pipeline.pipelineName
             repo_sel = RepositorySelector.from_graphql_input(pipeline)
             repo_loc = graphene_info.context.get_code_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
+            external_asset_nodes = repo.get_external_asset_nodes(job_name)
             results = (
                 [
                     GrapheneAssetNode(

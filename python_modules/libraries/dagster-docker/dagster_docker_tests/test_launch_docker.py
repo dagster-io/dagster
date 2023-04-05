@@ -223,9 +223,9 @@ def test_terminate_launched_docker_run(aws_env):
 
             assert instance.run_launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-            terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
+            terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_run = instance.get_run_by_id(run_id)
+            assert terminated_run.status == DagsterRunStatus.CANCELED
 
             run_logs = instance.all_logs(run_id)
 

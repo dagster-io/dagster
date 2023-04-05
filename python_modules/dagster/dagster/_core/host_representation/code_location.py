@@ -126,7 +126,7 @@ class CodeLocation(AbstractContextManager):
     def get_external_job(self, selector: JobSubsetSelector) -> ExternalJob:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
-        a solid selection is specified, which requires access to the underlying PipelineDefinition
+        a solid selection is specified, which requires access to the underlying JobDefinition
         to generate the subsetted pipeline snapshot.
         """
         if not selector.solid_selection and not selector.asset_selection:
@@ -151,7 +151,7 @@ class CodeLocation(AbstractContextManager):
         self, selector: JobSubsetSelector
     ) -> ExternalJobSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
-        access to the underlying PipelineDefinition. Callsites should likely use
+        access to the underlying JobDefinition. Callsites should likely use
         `get_external_pipeline` instead.
         """
 

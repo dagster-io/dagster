@@ -70,13 +70,13 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_pipelines = _loadable_targets_of_type(module, JobDefinition)
+    loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
-    if len(loadable_pipelines) == 1:
-        return loadable_pipelines
+    if len(loadable_jobs) == 1:
+        return loadable_jobs
 
-    elif len(loadable_pipelines) > 1:
+    elif len(loadable_jobs) > 1:
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
@@ -86,7 +86,7 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
                 " {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
-                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
+                pipeline_symbols=repr([p.attribute for p in loadable_jobs]),
                 target_type=target_type,
             )
         )

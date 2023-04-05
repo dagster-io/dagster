@@ -182,7 +182,7 @@ def execute_run(
     Synchronous version of execute_run_iterator.
 
     Args:
-        job (IJob): The job to execute.
+        job (IJob): The pipeline to execute.
         dagster_run (DagsterRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -656,7 +656,7 @@ def execute_plan(
     )
 
 
-def _check_pipeline(job_arg: Union[JobDefinition, IJob]) -> IJob:
+def _check_job(job_arg: Union[JobDefinition, IJob]) -> IJob:
     # backcompat
     if isinstance(job_arg, JobDefinition):
         job_arg = InMemoryJob(job_arg)
@@ -711,14 +711,14 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    pipeline = _check_pipeline(job)
+    job = _check_job(job)
 
     # If you have repository_load_data, make sure to use it when building plan
     if isinstance(job, ReconstructableJob) and repository_load_data is not None:
         job = job.with_repository_load_data(repository_load_data)
 
-    pipeline_def = job.get_definition()
-    check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+    job_def = job.get_definition()
+    check.inst_param(job_def, "job_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -733,7 +733,7 @@ def create_execution_plan(
         repository_load_data, "repository_load_data", RepositoryLoadData
     )
 
-    resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
+    resolved_run_config = ResolvedRunConfig.build(job_def, run_config)
 
     return ExecutionPlan.build(
         job,
@@ -909,7 +909,7 @@ def _check_execute_job_args(
     Optional[AbstractSet[str]],
     Optional[Sequence[str]],
 ]:
-    job_arg = _check_pipeline(job_arg)
+    job_arg = _check_job(job_arg)
     job_def = job_arg.get_definition()
     check.inst_param(job_def, "job_def", JobDefinition)
 
@@ -920,7 +920,7 @@ def _check_execute_job_args(
 
     tags = merge_dicts(job_def.tags, tags)
 
-    # generate pipeline subset from the given solid_selection
+    # generate job subset from the given solid_selection
     if op_selection:
         job_arg = job_arg.subset_for_execution(op_selection)
 
@@ -935,24 +935,24 @@ def _check_execute_job_args(
 
 def _resolve_reexecute_step_selection(
     instance: DagsterInstance,
-    pipeline: IJob,
+    job: IJob,
     run_config: Optional[Mapping],
     parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
     if parent_dagster_run.solid_selection:
-        pipeline = pipeline.subset_for_execution(parent_dagster_run.solid_selection, None)
+        job = job.subset_for_execution(parent_dagster_run.solid_selection, None)
 
     state = KnownExecutionState.build_for_reexecution(instance, parent_dagster_run)
 
     parent_plan = create_execution_plan(
-        pipeline,
+        job,
         parent_dagster_run.run_config,
         known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     execution_plan = create_execution_plan(
-        pipeline,
+        job,
         run_config,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
@@ -964,11 +964,11 @@ def _resolve_reexecute_step_selection(
 def _job_with_repository_load_data(
     job_arg: Union[JobDefinition, IJob],
 ) -> Tuple[Union[JobDefinition, IJob], Optional[RepositoryLoadData]]:
-    """For ReconstructablePipeline, generate and return any required RepositoryLoadData, alongside
-    a ReconstructablePipeline with this repository load data baked in.
+    """For ReconstructableJob, generate and return any required RepositoryLoadData, alongside
+    a ReconstructableJob with this repository load data baked in.
     """
     if isinstance(job_arg, ReconstructableJob):
-        # Unless this ReconstructablePipeline alread has repository_load_data attached, this will
+        # Unless this ReconstructableJob alread has repository_load_data attached, this will
         # force the repository_load_data to be computed from scratch.
         repository_load_data = job_arg.repository.get_definition().repository_load_data
         return job_arg.with_repository_load_data(repository_load_data), repository_load_data

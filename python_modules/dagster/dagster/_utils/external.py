@@ -16,7 +16,7 @@ def external_job_from_location(
     check.inst_param(external_job_origin, "external_pipeline_origin", ExternalJobOrigin)
 
     repo_name = external_job_origin.external_repository_origin.repository_name
-    pipeline_name = external_job_origin.job_name
+    job_name = external_job_origin.job_name
 
     check.invariant(
         code_location.has_repository(repo_name),
@@ -27,7 +27,7 @@ def external_job_from_location(
     pipeline_selector = JobSubsetSelector(
         location_name=code_location.name,
         repository_name=external_repo.name,
-        job_name=pipeline_name,
+        job_name=job_name,
         solid_selection=solid_selection,
     )
 

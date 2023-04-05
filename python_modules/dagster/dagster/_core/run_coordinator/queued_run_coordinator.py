@@ -224,24 +224,24 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
         )
 
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
-        pipeline_run = context.dagster_run
+        dagster_run = context.dagster_run
 
-        if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
+        if dagster_run.status == DagsterRunStatus.NOT_STARTED:
             enqueued_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                job_name=pipeline_run.job_name,
+                job_name=dagster_run.job_name,
             )
-            self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
+            self._instance.report_dagster_event(enqueued_event, run_id=dagster_run.run_id)
         else:
             # the run was already submitted, this is a no-op
             self._logger.warning(
-                f"submit_run called for run {pipeline_run.run_id} with status "
-                f"{pipeline_run.status.value}, skipping enqueue."
+                f"submit_run called for run {dagster_run.run_id} with status "
+                f"{dagster_run.status.value}, skipping enqueue."
             )
 
-        run = self._instance.get_run_by_id(pipeline_run.run_id)
+        run = self._instance.get_run_by_id(dagster_run.run_id)
         if run is None:
-            check.failed(f"Failed to reload run {pipeline_run.run_id}")
+            check.failed(f"Failed to reload run {dagster_run.run_id}")
         return run
 
     def cancel_run(self, run_id: str) -> bool:

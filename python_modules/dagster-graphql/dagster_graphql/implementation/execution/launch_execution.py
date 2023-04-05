@@ -49,10 +49,10 @@ def do_launch(
         check.str_param(execution_metadata.root_run_id, "root_run_id")
         check.str_param(execution_metadata.parent_run_id, "parent_run_id")
     external_pipeline = get_external_job_or_raise(graphene_info, execution_params.selector)
-    pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
+    dagster_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
 
     return graphene_info.context.instance.submit_run(
-        pipeline_run.run_id,
+        dagster_run.run_id,
         workspace=graphene_info.context,
     )
 

@@ -287,7 +287,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
 
     while True:
         assert datetime.datetime.now() < start_time + timeout, "Timed out waiting for can_terminate"
-        pipeline_run = dagster_instance.get_run_by_id(run_id)
+        dagster_run = dagster_instance.get_run_by_id(run_id)
         if can_terminate_run_over_graphql(dagit_url, run_id):
             break
         time.sleep(5)
@@ -316,15 +316,15 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     terminate_run_over_graphql(dagit_url, run_id=run_id)
 
     # Check that pipeline run is marked as canceled
-    pipeline_run_status_canceled = False
+    dagster_run_status_canceled = False
     start_time = datetime.datetime.now()
     while datetime.datetime.now() < start_time + timeout:
-        pipeline_run = dagster_instance.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.CANCELED:
-            pipeline_run_status_canceled = True
+        dagster_run = dagster_instance.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.CANCELED:
+            dagster_run_status_canceled = True
             break
         time.sleep(5)
-    assert pipeline_run_status_canceled
+    assert dagster_run_status_canceled
 
     # Check that terminate cannot be called again
     assert not can_terminate_run_over_graphql(dagit_url, run_id=run_id)
@@ -443,17 +443,17 @@ def test_execute_on_celery_k8s_with_hard_failure(
     )
 
     # Check that pipeline run is marked as failed
-    pipeline_run_status_failure = False
+    dagster_run_status_failure = False
     start_time = datetime.datetime.now()
     timeout = datetime.timedelta(0, 120)
 
     while datetime.datetime.now() < start_time + timeout:
-        pipeline_run = dagster_instance.get_run_by_id(run_id)
-        if pipeline_run.status == DagsterRunStatus.FAILURE:
-            pipeline_run_status_failure = True
+        dagster_run = dagster_instance.get_run_by_id(run_id)
+        if dagster_run.status == DagsterRunStatus.FAILURE:
+            dagster_run_status_failure = True
             break
         time.sleep(5)
-    assert pipeline_run_status_failure
+    assert dagster_run_status_failure
 
     # Check for step failure for hard_fail_or_0.compute
     start_time = datetime.datetime.now()

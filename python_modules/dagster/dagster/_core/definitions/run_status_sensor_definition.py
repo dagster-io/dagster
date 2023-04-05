@@ -115,8 +115,8 @@ class RunStatusSensorContext:
 
     Attributes:
         sensor_name (str): the name of the sensor.
-        dagster_run (DagsterRun): the run of the job or pipeline.
-        dagster_event (DagsterEvent): the event associated with the job or pipeline run status.
+        dagster_run (DagsterRun): the run of the job.
+        dagster_event (DagsterEvent): the event associated with the job run status.
         instance (DagsterInstance): the current instance.
         log (logging.Logger): the logger for the given sensor evaluation
     """
@@ -476,14 +476,14 @@ def run_failure_sensor(
 
 
 class RunStatusSensorDefinition(SensorDefinition):
-    """Define a sensor that reacts to a given status of pipeline execution, where the decorated
+    """Define a sensor that reacts to a given status of job execution, where the decorated
     function will be evaluated when a run is at the given status.
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
         run_status (DagsterRunStatus): The status of a run which will be
             monitored by the sensor.
-        run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
+        run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, DagsterRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
@@ -658,7 +658,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     )
                     continue
 
-                pipeline_run = run_records[0].dagster_run
+                dagster_run = run_records[0].dagster_run
                 update_timestamp = run_records[0].update_timestamp
 
                 job_match = False
@@ -671,15 +671,15 @@ class RunStatusSensorDefinition(SensorDefinition):
                 if (
                     not job_match
                     and
-                    # the pipeline has a repository (not manually executed)
-                    pipeline_run.external_job_origin
+                    # the job has a repository (not manually executed)
+                    dagster_run.external_job_origin
                     and
-                    # the pipeline belongs to the current repository
-                    pipeline_run.external_job_origin.external_repository_origin.repository_name
+                    # the job belongs to the current repository
+                    dagster_run.external_job_origin.external_repository_origin.repository_name
                     == context.repository_name
                 ):
                     if monitored_jobs:
-                        if pipeline_run.job_name in map(lambda x: x.name, current_repo_jobs):
+                        if dagster_run.job_name in map(lambda x: x.name, current_repo_jobs):
                             job_match = True
                     else:
                         job_match = True
@@ -688,12 +688,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     # check if the run is one of the jobs specified by JobSelector or RepositorySelector (ie in another repo)
                     # make a JobSelector for the run in question
                     external_repository_origin = check.not_none(
-                        pipeline_run.external_job_origin
+                        dagster_run.external_job_origin
                     ).external_repository_origin
                     run_job_selector = JobSelector(
                         location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
-                        job_name=pipeline_run.job_name,
+                        job_name=dagster_run.job_name,
                     )
                     if run_job_selector in other_repo_jobs:
                         job_match = True
@@ -780,12 +780,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     ).to_json()
                 )
 
-                # Yield PipelineRunReaction to indicate the execution success/failure.
+                # Yield DagsterRunReaction to indicate the execution success/failure.
                 # The sensor machinery would
                 # * report back to the original run if success
                 # * update cursor and job state
                 yield DagsterRunReaction(
-                    pipeline_run=pipeline_run,
+                    dagster_run=dagster_run,
                     run_status=run_status,
                     error=serializable_error,
                 )
@@ -857,8 +857,8 @@ def run_status_sensor(
     request_job: Optional[ExecutableDefinition] = None,
     request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
-    """Creates a sensor that reacts to a given status of pipeline execution, where the decorated
-    function will be run when a pipeline is at the given status.
+    """Creates a sensor that reacts to a given status of job execution, where the decorated
+    function will be run when a job is at the given status.
 
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
@@ -869,14 +869,14 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) Jobs in the current repository that will be
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.

@@ -129,7 +129,7 @@ def test_custom_executor_fn():
             run_config,
         )
 
-        pipeline_run = instance.create_run_for_job(
+        dagster_run = instance.create_run_for_job(
             job_def=job_with_resources,
             execution_plan=execution_plan,
             run_config=run_config,
@@ -139,15 +139,15 @@ def test_custom_executor_fn():
 
         execute_run_host_mode(
             ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.job_name),
-            pipeline_run,
+            dagster_run,
             instance,
             executor_defs=[test_executor],
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == DagsterRunStatus.SUCCESS
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS
 
-        logs = instance.all_logs(pipeline_run.run_id)
+        logs = instance.all_logs(dagster_run.run_id)
         assert any(
             e.is_dagster_event and "Executing steps using multiprocess executor" in e.message
             for e in logs

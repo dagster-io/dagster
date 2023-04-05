@@ -187,7 +187,7 @@ def _stats_records(run_id):
 
 
 def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=None):
-    pipeline_name = "pipeline_name"
+    job_name = "pipeline_name"
     node_handle = NodeHandle(op_name, None)
     step_handle = StepHandle(node_handle)
     return EventLogEntry(
@@ -197,10 +197,10 @@ def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=No
         run_id=run_id,
         timestamp=timestamp,
         step_key=step_handle.to_key(),
-        job_name=pipeline_name,
+        job_name=job_name,
         dagster_event=DagsterEvent(
             event_type.value,
-            pipeline_name,
+            job_name,
             node_handle=node_handle,
             step_handle=step_handle,
             event_specific_data=event_specific_data,
@@ -252,8 +252,8 @@ def _synthesize_events(
             **(run_config if run_config else {}),
         }
 
-        pipeline_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
-        result = execute_run(InMemoryJob(a_job), pipeline_run, instance)
+        dagster_run = instance.create_run_for_job(a_job, run_id=run_id, run_config=run_config)
+        result = execute_run(InMemoryJob(a_job), dagster_run, instance)
 
         if check_success:
             assert result.success

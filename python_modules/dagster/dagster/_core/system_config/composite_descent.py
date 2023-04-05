@@ -80,7 +80,7 @@ def composite_descent(
     config for child solids of composites.
 
     Args:
-        job_def (PipelineDefinition): PipelineDefinition
+        job_def (JobDefinition): JobDefinition
         ops_config (dict): Configuration for the ops in the pipeline. The "ops" entry
             of the run_config. Assumed to have already been validated.
 

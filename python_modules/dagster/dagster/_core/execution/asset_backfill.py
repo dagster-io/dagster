@@ -421,27 +421,27 @@ def submit_run_request(
     if selector_id not in pipeline_and_execution_plan_cache:
         code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
 
-        external_pipeline = code_location.get_external_job(pipeline_selector)
+        external_job = code_location.get_external_job(pipeline_selector)
 
         external_execution_plan = code_location.get_external_execution_plan(
-            external_pipeline,
+            external_job,
             {},
             step_keys_to_execute=None,
             known_state=None,
             instance=instance,
         )
         pipeline_and_execution_plan_cache[selector_id] = (
-            external_pipeline,
+            external_job,
             external_execution_plan,
         )
 
-    external_pipeline, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
+    external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
 
     run = instance.create_run(
-        job_snapshot=external_pipeline.job_snapshot,
+        job_snapshot=external_job.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_job_snapshot=external_pipeline.parent_job_snapshot,
-        job_name=external_pipeline.name,
+        parent_job_snapshot=external_job.parent_job_snapshot,
+        job_name=external_job.name,
         run_id=None,
         solids_to_execute=None,
         solid_selection=None,
@@ -451,8 +451,8 @@ def submit_run_request(
         root_run_id=None,
         parent_run_id=None,
         status=DagsterRunStatus.NOT_STARTED,
-        external_job_origin=external_pipeline.get_external_origin(),
-        job_code_origin=external_pipeline.get_python_origin(),
+        external_job_origin=external_job.get_external_origin(),
+        job_code_origin=external_job.get_python_origin(),
         asset_selection=frozenset(run_request.asset_selection),
     )
 

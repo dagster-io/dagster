@@ -20,7 +20,7 @@ class InitExecutorContext(
     """Executor-specific initialization context.
 
     Attributes:
-        job (IPipeline): The job to be executed.
+        job (IJob): The job to be executed.
         executor_def (ExecutorDefinition): The definition of the executor currently being
             constructed.
         executor_config (dict): The parsed config passed to the executor.

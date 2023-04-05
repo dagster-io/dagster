@@ -153,14 +153,14 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
         assert result.data
         snapshot.assert_match(result.data)
 
-        invalid_pipeline_result = execute_dagster_graphql(
+        invalid_job_result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
             variables={"repositorySelector": selector, "pipelineName": "invalid_job"},
         )
 
-        assert invalid_pipeline_result.data
-        snapshot.assert_match(invalid_pipeline_result.data)
+        assert invalid_job_result.data
+        snapshot.assert_match(invalid_job_result.data)
 
     def test_get_partition_set(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)

@@ -181,7 +181,7 @@ class DaskExecutor(Executor):
 
         step_levels = execution_plan.get_steps_to_execute_by_level()
 
-        pipeline_name = plan_context.job_name
+        job_name = plan_context.job_name
 
         instance = plan_context.instance
 
@@ -192,43 +192,43 @@ class DaskExecutor(Executor):
         elif cluster_type == "local":
             from dask.distributed import LocalCluster
 
-            cluster = LocalCluster(**self.build_dict(pipeline_name))
+            cluster = LocalCluster(**self.build_dict(job_name))
         elif cluster_type == "yarn":
             from dask_yarn import YarnCluster
 
-            cluster = YarnCluster(**self.build_dict(pipeline_name))
+            cluster = YarnCluster(**self.build_dict(job_name))
         elif cluster_type == "ssh":
             from dask.distributed import SSHCluster
 
-            cluster = SSHCluster(**self.build_dict(pipeline_name))
+            cluster = SSHCluster(**self.build_dict(job_name))
         elif cluster_type == "pbs":
             from dask_jobqueue import PBSCluster
 
-            cluster = PBSCluster(**self.build_dict(pipeline_name))
+            cluster = PBSCluster(**self.build_dict(job_name))
         elif cluster_type == "moab":
             from dask_jobqueue import MoabCluster
 
-            cluster = MoabCluster(**self.build_dict(pipeline_name))
+            cluster = MoabCluster(**self.build_dict(job_name))
         elif cluster_type == "sge":
             from dask_jobqueue import SGECluster
 
-            cluster = SGECluster(**self.build_dict(pipeline_name))
+            cluster = SGECluster(**self.build_dict(job_name))
         elif cluster_type == "lsf":
             from dask_jobqueue import LSFCluster
 
-            cluster = LSFCluster(**self.build_dict(pipeline_name))
+            cluster = LSFCluster(**self.build_dict(job_name))
         elif cluster_type == "slurm":
             from dask_jobqueue import SLURMCluster
 
-            cluster = SLURMCluster(**self.build_dict(pipeline_name))
+            cluster = SLURMCluster(**self.build_dict(job_name))
         elif cluster_type == "oar":
             from dask_jobqueue import OARCluster
 
-            cluster = OARCluster(**self.build_dict(pipeline_name))
+            cluster = OARCluster(**self.build_dict(job_name))
         elif cluster_type == "kube":
             from dask_kubernetes import KubeCluster
 
-            cluster = KubeCluster(**self.build_dict(pipeline_name))
+            cluster = KubeCluster(**self.build_dict(job_name))
         else:
             raise ValueError(
                 "Must be providing one of the following ('existing', 'local', 'yarn', 'ssh',"
@@ -250,7 +250,7 @@ class DaskExecutor(Executor):
 
                     run_config = plan_context.run_config
 
-                    dask_task_name = "%s.%s" % (pipeline_name, step.key)
+                    dask_task_name = "%s.%s" % (job_name, step.key)
 
                     recon_job = plan_context.reconstructable_job
 

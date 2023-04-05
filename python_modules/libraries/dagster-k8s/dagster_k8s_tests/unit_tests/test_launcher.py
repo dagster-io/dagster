@@ -126,10 +126,10 @@ def test_launcher_with_container_context(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=python_origin,
             )
@@ -240,10 +240,10 @@ def test_launcher_with_k8s_config(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=python_origin,
                 tags=run_tags,
@@ -327,10 +327,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 tags=tags,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=fake_external_pipeline.get_python_origin(),
@@ -408,10 +408,10 @@ def test_raise_on_error(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=fake_external_pipeline.get_python_origin(),
             )
@@ -469,10 +469,10 @@ def test_no_postgres(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
             run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=fake_external_pipeline.get_python_origin(),
             )
@@ -535,18 +535,18 @@ def test_check_run_health(kubeconfig_file):
             )
 
             # Launch the run in a fake Dagster instance.
-            pipeline_name = "demo_job"
+            job_name = "demo_job"
 
             started_run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=fake_external_pipeline.get_python_origin(),
                 status=DagsterRunStatus.STARTED,
             )
             finished_run = create_run_for_test(
                 instance,
-                job_name=pipeline_name,
+                job_name=job_name,
                 external_job_origin=fake_external_pipeline.get_external_origin(),
                 job_code_origin=fake_external_pipeline.get_python_origin(),
                 status=DagsterRunStatus.FAILURE,

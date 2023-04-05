@@ -225,7 +225,7 @@ class PlanOrchestrationContext(IPlanContext):
     def reconstructable_job(self) -> ReconstructableJob:
         if not isinstance(self.job, ReconstructableJob):
             raise DagsterInvariantViolationError(
-                "reconstructable_pipeline property must be a ReconstructablePipeline"
+                "reconstructable_pipeline property must be a ReconstructableJob"
             )
         return self.job
 
@@ -345,12 +345,12 @@ class PlanExecutionContext(IPlanContext):
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         from dagster._core.definitions.job_definition import JobDefinition
 
-        pipeline_def = self._execution_data.job_def
-        if not isinstance(pipeline_def, JobDefinition):
+        job_def = self._execution_data.job_def
+        if not isinstance(job_def, JobDefinition):
             check.failed(
                 "Can only call 'partitions_def', when using jobs, not legacy pipelines",
             )
-        partitions_def = pipeline_def.partitions_def
+        partitions_def = job_def.partitions_def
         return partitions_def
 
     @property
