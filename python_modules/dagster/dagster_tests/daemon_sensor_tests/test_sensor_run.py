@@ -555,7 +555,7 @@ quux_asset_job = define_asset_job("quux_asset_job", [quux_asset], partitions_def
 def add_dynamic_partitions_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.request_for_adding_partitions(["baz"]),
+            quux.build_add_request(["baz"]),
         ],
     )
 
@@ -564,8 +564,8 @@ def add_dynamic_partitions_sensor(context):
 def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.request_for_adding_partitions(["1"]),
-            quux.request_for_deleting_partitions(["2"]),
+            quux.build_add_request(["1"]),
+            quux.build_delete_request(["2"]),
         ],
         run_requests=[RunRequest(partition_key="1")],
     )
@@ -575,7 +575,7 @@ def add_delete_dynamic_partitions_and_yield_run_requests_sensor(context):
 def error_on_deleted_dynamic_partitions_run_requests_sensor(context):
     return SensorResult(
         dynamic_partitions_requests=[
-            quux.request_for_deleting_partitions(["2"]),
+            quux.build_delete_request(["2"]),
         ],
         run_requests=[RunRequest(partition_key="2")],
     )

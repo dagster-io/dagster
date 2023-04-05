@@ -714,19 +714,12 @@ class DynamicPartitionsDefinition(
             partitions_def_name=self._validated_name(), partition_key=partition_key
         )
 
-    def get_pending_partition(self, partition_key: str) -> Partition:
-        return Partition(partition_key, partition_key)
-
-    def request_for_adding_partitions(
-        self, partition_keys: Sequence[str]
-    ) -> AddDynamicPartitionsRequest:
+    def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         validated_name = self._validated_name()
         return AddDynamicPartitionsRequest(validated_name, partition_keys)
 
-    def request_for_deleting_partitions(
-        self, partition_keys: Sequence[str]
-    ) -> DeleteDynamicPartitionsRequest:
+    def build_delete_request(self, partition_keys: Sequence[str]) -> DeleteDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         validated_name = self._validated_name()
         return DeleteDynamicPartitionsRequest(validated_name, partition_keys)

@@ -171,6 +171,7 @@ class RunRequest(
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.definitions.partition import (
             DynamicPartitionsDefinition,
+            Partition,
             PartitionedConfig,
             PartitionsDefinition,
         )
@@ -233,7 +234,7 @@ class RunRequest(
                     " applied, it does not exist in the set of valid partition keys."
                 )
 
-            partition = partitions_def.get_pending_partition(self.partition_key)
+            partition = Partition(self.partition_key, self.partition_key)
 
         else:
             # Relies on the partitions def to throw an error if the partition does not exist
