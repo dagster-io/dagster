@@ -285,7 +285,7 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+            arg_resource_keys = {arg.name for arg in get_resource_args(fn, err_aggressively=True)}
 
             bare_required_resource_keys = set(self.required_resource_keys)
             resource_defs_keys = set(self.resource_defs.keys())

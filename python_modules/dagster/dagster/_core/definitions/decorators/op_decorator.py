@@ -289,7 +289,7 @@ class DecoratedOpFunction(NamedTuple):
         check.failed("Requested config arg on function that does not have one")
 
     def get_resource_args(self) -> Sequence[Parameter]:
-        return get_resource_args(self.decorated_fn)
+        return get_resource_args(self.decorated_fn, err_aggressively=True)
 
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()

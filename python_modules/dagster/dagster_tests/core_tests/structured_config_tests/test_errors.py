@@ -1,9 +1,12 @@
 from typing import Tuple
 
 import pytest
-from dagster import Config, asset, op
-from dagster._config.structured_config import ConfigurableResource
-from dagster._core.errors import DagsterInvalidPythonicConfigDefinitionError
+from dagster import Config, asset, op, schedule, sensor
+from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceFactory
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 
 
 def test_invalid_config_type_basic() -> None:
@@ -165,4 +168,114 @@ This config type can be a:
 
         @asset
         def my_asset(config: Tuple[str, str]):
+            pass
+
+
+def test_annotate_with_resource_factory() -> None:
+    class MyStringFactory(ConfigurableResourceFactory[str]):
+        def create_resource(self, context: None) -> str:
+            return "hello"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
+            " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
+            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[str\\]'"
+        ),
+    ):
+
+        @op
+        def my_op(my_string: MyStringFactory):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>', but"
+            " '<class 'test_errors.test_annotate_with_resource_factory.<locals>.MyStringFactory'>'"
+            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[str\\]'"
+        ),
+    ):
+
+        @asset
+        def my_asset(my_string: MyStringFactory):
+            pass
+
+    class MyUnspecifiedFactory(ConfigurableResourceFactory):
+        def create_resource(self, context: None) -> str:
+            return "hello"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
+            " but '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
+            " outputs an unknown value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[Any\\]'"
+        ),
+    ):
+
+        @op
+        def my_op2(my_string: MyUnspecifiedFactory):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>',"
+            " but '<class"
+            " 'test_errors.test_annotate_with_resource_factory.<locals>.MyUnspecifiedFactory'>'"
+            " outputs an unknown value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[Any\\]'"
+        ),
+    ):
+
+        @asset
+        def my_asset2(my_string: MyUnspecifiedFactory):
+            pass
+
+
+def test_annotate_with_resource_factory_schedule_sensor() -> None:
+    class MyStringFactory(ConfigurableResourceFactory[str]):
+        def create_resource(self, context: None) -> str:
+            return "hello"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
+            " but '<class"
+            " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
+            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[str\\]'"
+        ),
+    ):
+
+        @sensor(job_name="foo")
+        def my_sensor(my_string: MyStringFactory):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource param 'my_string' is annotated as '<class"
+            " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>',"
+            " but '<class"
+            " 'test_errors.test_annotate_with_resource_factory_schedule_sensor.<locals>.MyStringFactory'>'"
+            " outputs a '<class 'str'>' value to user code such as @ops and @assets. This"
+            " annotation should instead be 'Resource\\[str\\]'"
+        ),
+    ):
+
+        @schedule(job_name="foo", cron_schedule="* * * * *")
+        def my_schedule(my_string: MyStringFactory):
             pass

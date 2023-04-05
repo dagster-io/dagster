@@ -558,7 +558,9 @@ class SensorDefinition:
         self._asset_selection = check.opt_inst_param(
             asset_selection, "asset_selection", AssetSelection
         )
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
+        resource_arg_names: Set[str] = {
+            arg.name for arg in get_resource_args(self._raw_fn, err_aggressively=True)
+        }
 
         check.param_invariant(
             len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,

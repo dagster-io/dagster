@@ -115,7 +115,9 @@ def schedule(
             validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
         context_param_name = get_context_param_name(fn)
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+        resource_arg_names: Set[str] = {
+            arg.name for arg in get_resource_args(fn, err_aggressively=True)
+        }
 
         def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
