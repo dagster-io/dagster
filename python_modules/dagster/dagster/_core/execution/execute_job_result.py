@@ -110,7 +110,7 @@ class ExecuteJobResult(ExecutionResult):
                 output = compute_step_event.step_output_data
                 step = self._context.execution_plan.get_step_by_key(compute_step_event.step_key)
                 dagster_type = (
-                    self.job_def.get_solid(handle).output_def_named(output_name).dagster_type
+                    self.job_def.get_node(handle).output_def_named(output_name).dagster_type
                 )
                 value = self._get_value(self._context.for_step(step), output, dagster_type)
                 check.invariant(
@@ -131,7 +131,7 @@ class ExecuteJobResult(ExecutionResult):
         if found:
             return result
 
-        node = self.job_def.get_solid(handle)
+        node = self.job_def.get_node(handle)
         raise DagsterInvariantViolationError(
             f"Did not find result {output_name} in {node.describe_node()}"
         )

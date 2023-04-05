@@ -37,7 +37,6 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -57,6 +56,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
@@ -106,7 +106,6 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
@@ -168,7 +167,6 @@ class JobDefinition(PipelineDefinition):
         )
         asset_layer = check.opt_inst_param(asset_layer, "asset_layer", AssetLayer)
         input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
-        _metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
         _preset_defs = check.opt_sequence_param(
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
@@ -252,9 +250,8 @@ class JobDefinition(PipelineDefinition):
             preset_defs=presets or _preset_defs,
             tags=tags,
             metadata=metadata,
-            metadata_entries=_metadata_entries,
             hook_defs=hook_defs,
-            solid_retry_policy=op_retry_policy,
+            op_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
@@ -384,7 +381,7 @@ class JobDefinition(PipelineDefinition):
             hook_defs=self.hook_defs,
             config=self.config_mapping or self.partitioned_config,
             tags=self.tags,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             input_values=input_values,
@@ -543,7 +540,7 @@ class JobDefinition(PipelineDefinition):
                 config=config_arg,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
-                op_retry_policy=self._solid_retry_policy,
+                op_retry_policy=self._op_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
                 _executor_def_specified=self._executor_def_specified,
@@ -608,6 +605,12 @@ class JobDefinition(PipelineDefinition):
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        deprecation_warning(
+            "JobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
         if not (self.partitions_def and self.partitioned_config):
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -624,13 +627,16 @@ class JobDefinition(PipelineDefinition):
             run_config
             if run_config is not None
             else self.partitioned_config.get_run_config_for_partition_key(
-                partition.name, instance=instance, current_time=current_time
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
             )
         )
         run_request_tags = {
             **(tags or {}),
             **self.partitioned_config.get_tags_for_partition_key(
-                partition_key, instance=instance, current_time=current_time, job_name=self.name
+                partition_key,
+                dynamic_partitions_store=instance,
+                current_time=current_time,
+                job_name=self.name,
             ),
         }
 
@@ -640,6 +646,7 @@ class JobDefinition(PipelineDefinition):
             tags=run_request_tags,
             job_name=self.name,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     @public
@@ -657,7 +664,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
@@ -702,7 +709,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self._asset_layer,
-            _metadata_entries=self._metadata_entries,
+            metadata=self._metadata,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
@@ -742,9 +749,9 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
@@ -764,9 +771,9 @@ class JobDefinition(PipelineDefinition):
             name=self.name,
             description=self.description,
             tags=self.tags,
-            _metadata_entries=self.metadata,
+            metadata=self._metadata,
             hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,

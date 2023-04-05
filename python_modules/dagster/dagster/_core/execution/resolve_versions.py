@@ -89,7 +89,7 @@ def resolve_step_versions(
         if not is_executable_step(step):  # type: ignore
             continue
 
-        solid_def = pipeline_def.get_solid(step.node_handle).definition
+        solid_def = pipeline_def.get_node(step.node_handle).definition
 
         input_version_dict = {
             input_name: step_input.source.compute_version(

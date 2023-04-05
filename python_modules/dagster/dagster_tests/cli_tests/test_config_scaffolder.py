@@ -2,7 +2,6 @@ from dagster import (
     Int,
     OpDefinition,
     ResourceDefinition,
-    String,
     _check as check,
 )
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
@@ -25,7 +24,7 @@ def test_scalars():
 def test_basic_ops_config(snapshot):
     pipeline_def = PipelineDefinition(
         name="BasicSolidsConfigPipeline",
-        solid_defs=[
+        node_defs=[
             OpDefinition(
                 name="required_field_solid",
                 config_schema={"required_int": Int},
@@ -66,15 +65,15 @@ def dummy_resource(config_field):
 def test_two_modes(snapshot):
     pipeline_def = PipelineDefinition(
         name="TwoModePipelines",
-        solid_defs=[],
+        node_defs=[],
         mode_defs=[
             ModeDefinition(
                 "mode_one",
-                resource_defs={"value": dummy_resource({"mode_one_field": String})},
+                resource_defs={"value": dummy_resource({"mode_one_field": str})},
             ),
             ModeDefinition(
                 "mode_two",
-                resource_defs={"value": dummy_resource({"mode_two_field": Int})},
+                resource_defs={"value": dummy_resource({"mode_two_field": int})},
             ),
         ],
     )

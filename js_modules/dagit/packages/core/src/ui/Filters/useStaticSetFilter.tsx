@@ -13,6 +13,7 @@ type Args<TValue> = {
   name: string;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
+  getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
   allValues: SetFilterValue<TValue>[];
   initialState?: Set<TValue> | TValue[];
@@ -24,6 +25,7 @@ export type StaticSetFilter<TValue> = FilterObject<Set<TValue>>;
 export function useStaticSetFilter<TValue>({
   name,
   icon,
+  getKey,
   allValues,
   renderLabel,
   initialState,
@@ -50,7 +52,7 @@ export function useStaticSetFilter<TValue>({
       isActive: state.size > 0,
       getResults: (query) => {
         if (query === '') {
-          return allValues.map(({value}) => ({
+          return allValues.map(({value}, index) => ({
             label: (
               <SetFilterLabel
                 value={value}
@@ -58,7 +60,7 @@ export function useStaticSetFilter<TValue>({
                 filter={filterObjRef.current}
               />
             ),
-            key: getStringValue(value),
+            key: getKey?.(value) || index.toString(),
             value,
           }));
         }
@@ -66,7 +68,7 @@ export function useStaticSetFilter<TValue>({
           .filter(({match}) =>
             match.some((value) => value.toLowerCase().includes(query.toLowerCase())),
           )
-          .map(({value}) => ({
+          .map(({value}, index) => ({
             label: (
               <SetFilterLabel
                 value={value}
@@ -74,7 +76,7 @@ export function useStaticSetFilter<TValue>({
                 filter={filterObjRef.current}
               />
             ),
-            key: getStringValue(value),
+            key: getKey?.(value) || index.toString(),
             value,
           }));
       },
@@ -215,13 +217,7 @@ function SetFilterLabel(props: SetFilterLabelProps) {
       margin={{left: 4}}
       style={{maxWidth: '500px'}}
     >
-      <Checkbox
-        checked={isActive}
-        onChange={(_) => {
-          labelRef.current?.click();
-        }}
-        size="small"
-      />
+      <Checkbox checked={isActive} size="small" readOnly />
       <Box
         flex={{direction: 'row', alignItems: 'center', grow: 1, shrink: 1}}
         style={{overflow: 'hidden'}}

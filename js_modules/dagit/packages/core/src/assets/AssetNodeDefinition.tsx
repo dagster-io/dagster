@@ -3,6 +3,7 @@ import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} fr
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useFeatureFlags} from '../app/Flags';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
@@ -14,6 +15,7 @@ import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraph
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
@@ -39,6 +41,7 @@ export const AssetNodeDefinition: React.FC<{
   dependsOnSelf: boolean;
 }> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
+  const {flagSidebarResources} = useFeatureFlags();
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
   const assetConfigSchema = assetNode.configField?.configType;
@@ -140,24 +143,60 @@ export const AssetNodeDefinition: React.FC<{
           {/** Ensures the line between the left and right columns goes to the bottom of the page */}
           <div style={{flex: 1}} />
         </Box>
-        {assetConfigSchema ? (
+        {assetConfigSchema || assetNode.requiredResources.length > 0 ? (
           <Box
             border={{side: 'vertical', width: 1, color: Colors.KeylineGray}}
             style={{flex: 0.5, minWidth: 0}}
             flex={{direction: 'column'}}
           >
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
-            >
-              <Subheading>Config</Subheading>
-            </Box>
-            <Box padding={{vertical: 16, horizontal: 24}}>
-              <ConfigTypeSchema
-                type={assetConfigSchema}
-                typesInScope={assetConfigSchema.recursiveConfigTypes}
-              />
-            </Box>
+            {assetNode.requiredResources.length > 0 && (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  <Subheading>Required Resources</Subheading>
+                </Box>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  {assetNode.requiredResources.map((resource) => (
+                    <ResourceContainer key={resource.resourceKey}>
+                      <Icon name="resource" color={Colors.Gray700} />
+                      {flagSidebarResources && repoAddress ? (
+                        <Link
+                          to={workspacePathFromAddress(
+                            repoAddress,
+                            `/resources/${resource.resourceKey}`,
+                          )}
+                        >
+                          <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                        </Link>
+                      ) : (
+                        <ResourceHeader>{resource.resourceKey}</ResourceHeader>
+                      )}
+                    </ResourceContainer>
+                  ))}
+                </Box>
+              </>
+            )}
+            {assetConfigSchema && (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+                >
+                  <Subheading>Config</Subheading>
+                </Box>
+                <Box padding={{vertical: 16, horizontal: 24}}>
+                  <ConfigTypeSchema
+                    type={assetConfigSchema}
+                    typesInScope={assetConfigSchema.recursiveConfigTypes}
+                  />
+                </Box>
+              </>
+            )}
           </Box>
         ) : null}
 
@@ -286,6 +325,10 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
+    requiredResources {
+      resourceKey
+    }
+
     ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment

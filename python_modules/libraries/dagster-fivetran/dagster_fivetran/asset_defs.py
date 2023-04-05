@@ -20,8 +20,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.load_assets_from_modules import with_group
-from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput
+from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
@@ -93,10 +92,7 @@ def _build_fivetran_assets(
                 yield Output(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
-                    metadata={
-                        cast(MetadataEntry, entry).label: cast(MetadataEntry, entry).value
-                        for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 materialized_asset_keys.add(materialization.asset_key)
 
@@ -285,23 +281,21 @@ def _build_fivetran_assets_from_metadata(
     connector_id = cast(str, metadata["connector_id"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
 
-    return with_group(
-        _build_fivetran_assets(
-            connector_id=connector_id,
-            destination_tables=list(
-                assets_defn_meta.keys_by_output_name.keys()
-                if assets_defn_meta.keys_by_output_name
-                else []
-            ),
-            asset_key_prefix=list(assets_defn_meta.key_prefix or []),
-            metadata_by_table_name=cast(
-                Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
-            ),
-            io_manager_key=io_manager_key,
-            table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
-            resource_defs=resource_defs,
+    return _build_fivetran_assets(
+        connector_id=connector_id,
+        destination_tables=list(
+            assets_defn_meta.keys_by_output_name.keys()
+            if assets_defn_meta.keys_by_output_name
+            else []
         ),
-        assets_defn_meta.group_name,
+        asset_key_prefix=list(assets_defn_meta.key_prefix or []),
+        metadata_by_table_name=cast(
+            Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
+        ),
+        io_manager_key=io_manager_key,
+        table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
+        resource_defs=resource_defs,
+        group_name=assets_defn_meta.group_name,
     )[0]
 
 

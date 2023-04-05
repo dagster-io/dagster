@@ -44,6 +44,13 @@ def cron_string_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
 
+    if not croniter.match(cron_string, next_date):
+        # Workaround for upstream croniter bug where get_prev sometimes overshoots to a time
+        # that doesn't actually match the cron string (e.g. 3AM on Spring DST day
+        # goes back to 1AM on the previous day) - when this happens, advance to the correct
+        # time that actually matches the cronstring
+        next_date = date_iter.get_next(datetime.datetime)
+
     check.invariant(start_offset <= 0)
     for _ in range(-start_offset):
         next_date = date_iter.get_prev(datetime.datetime)
@@ -55,6 +62,7 @@ def cron_string_iterator(
 
     delta_fn = None
     should_hour_change = False
+    expected_hour = None
 
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
@@ -71,6 +79,9 @@ def cron_string_iterator(
         elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
             delta_fn = lambda d, num: d.add(hours=num)
             should_hour_change = True
+
+    if is_numeric[1]:
+        expected_hour = int(cron_parts[1][0])
 
     if delta_fn is not None:
         # Use pendulums for intervals when possible
@@ -94,8 +105,20 @@ def cron_string_iterator(
 
                 next_date_cand = delta_fn(next_date, 2)
                 check.invariant(next_date_cand.hour == curr_hour)
+            elif expected_hour is not None and new_hour != expected_hour:
+                # hour should only be different than expected if the timezone has just changed -
+                # if it hasn't, it means we are moving from e.g. 3AM on spring DST day back to
+                # 2AM on the next day and need to reset back to the expected hour
+                if next_date_cand.utcoffset() == next_date.utcoffset():
+                    next_date_cand = next_date_cand.set(hour=expected_hour)
 
             next_date = next_date_cand
+
+            if start_offset == 0 and next_date.timestamp() < start_timestamp:
+                # Guard against edge cases where croniter get_prev() returns unexpected
+                # results that cause us to get stuck
+                continue
+
             yield next_date
     else:
         # Otherwise fall back to croniter
@@ -103,6 +126,11 @@ def cron_string_iterator(
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_next(datetime.datetime)), timezone_str
             )
+
+            if start_offset == 0 and next_date.timestamp() < start_timestamp:
+                # Guard against edge cases where croniter get_prev() returns unexpected
+                # results that cause us to get stuck
+                continue
 
             yield next_date
 
@@ -169,6 +197,12 @@ def reverse_cron_string_iterator(
                 check.invariant(next_date_cand.hour == curr_hour)
 
             next_date = next_date_cand
+
+            if next_date.timestamp() > end_timestamp:
+                # Guard against edge cases where croniter get_next() returns unexpected
+                # results that cause us to get stuck
+                continue
+
             yield next_date
     else:
         # Otherwise fall back to croniter
@@ -176,6 +210,11 @@ def reverse_cron_string_iterator(
             next_date = to_timezone(
                 pendulum.instance(date_iter.get_prev(datetime.datetime)), timezone_str
             )
+
+            if next_date.timestamp() > end_timestamp:
+                # Guard against edge cases where croniter get_next() returns unexpected
+                # results that cause us to get stuck
+                continue
 
             yield next_date
 
@@ -193,7 +232,9 @@ def schedule_execution_time_iterator(
     after the current execution datetime for each cron string in the sequence, and then choosing
     the earliest among them.
     """
-    check.invariant(is_valid_cron_schedule(cron_schedule))
+    check.invariant(
+        is_valid_cron_schedule(cron_schedule), desc=f"{cron_schedule} must be a valid cron schedule"
+    )
 
     if isinstance(cron_schedule, str):
         yield from cron_string_iterator(

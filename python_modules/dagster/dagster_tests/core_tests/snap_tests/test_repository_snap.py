@@ -1,8 +1,9 @@
 from typing import Dict, List
 
-from dagster import Definitions, asset, job, op, repository, resource
+from dagster import Definitions, asset, graph, job, op, repository, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import Config, ConfigurableResource
+from dagster._core.definitions.definitions_class import BindResourcesToJobs
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
@@ -15,7 +16,11 @@ from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.external_data import NestedResource, NestedResourceType
+from dagster._core.host_representation.external_data import (
+    NestedResource,
+    NestedResourceType,
+    ResourceJobUsageEntry,
+)
 from dagster._core.snap import PipelineSnapshot
 
 
@@ -434,3 +439,131 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
         AssetKey("my_asset"),
         AssetKey("my_other_asset"),
     ]
+
+
+def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
+    return {
+        entry.job_name: sorted([handle.to_string() for handle in entry.node_handles])
+        for entry in entries
+    }
+
+
+def test_repository_snap_definitions_resources_job_op_usage() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(foo: MyResource):
+        pass
+
+    @op
+    def my_other_op(foo: MyResource, bar: MyResource):
+        pass
+
+    @op
+    def my_third_op():
+        pass
+
+    @op
+    def my_op_in_other_job(foo: MyResource):
+        pass
+
+    @job
+    def my_first_job() -> None:
+        my_op()
+        my_other_op()
+        my_third_op()
+
+    @job
+    def my_second_job() -> None:
+        my_op_in_other_job()
+        my_op_in_other_job()
+
+    defs = Definitions(
+        jobs=BindResourcesToJobs([my_first_job, my_second_job]),
+        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert _to_dict(foo[0].job_ops_using) == {
+        "my_first_job": ["my_op", "my_other_op"],
+        # There's two of these because the same op is used twice in the same job
+        "my_second_job": ["my_op_in_other_job", "my_op_in_other_job_2"],
+    }
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert _to_dict(bar[0].job_ops_using) == {
+        "my_first_job": ["my_other_op"],
+    }
+
+
+def test_repository_snap_definitions_resources_job_op_usage_graph() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @op
+    def my_op(foo: MyResource):
+        pass
+
+    @op
+    def my_other_op(foo: MyResource, bar: MyResource):
+        pass
+
+    @graph
+    def my_graph():
+        my_op()
+        my_other_op()
+
+    @op
+    def my_third_op(foo: MyResource):
+        pass
+
+    @graph
+    def my_other_graph():
+        my_third_op()
+
+    @job
+    def my_job() -> None:
+        my_graph()
+        my_other_graph()
+        my_op()
+        my_op()
+
+    defs = Definitions(
+        jobs=BindResourcesToJobs([my_job]),
+        resources={"foo": MyResource(a_str="foo"), "bar": MyResource(a_str="bar")},
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.external_resource_data
+
+    assert len(external_repo_data.external_resource_data) == 2
+
+    foo = [data for data in external_repo_data.external_resource_data if data.name == "foo"]
+    assert len(foo) == 1
+
+    assert _to_dict(foo[0].job_ops_using) == {
+        "my_job": [
+            "my_graph.my_op",
+            "my_graph.my_other_op",
+            "my_op",
+            "my_op_2",
+            "my_other_graph.my_third_op",
+        ]
+    }
+
+    bar = [data for data in external_repo_data.external_resource_data if data.name == "bar"]
+    assert len(bar) == 1
+
+    assert _to_dict(bar[0].job_ops_using) == {"my_job": ["my_graph.my_other_op"]}

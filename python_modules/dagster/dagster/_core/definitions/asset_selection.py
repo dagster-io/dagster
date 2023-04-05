@@ -251,7 +251,13 @@ class AssetSelection(ABC):
             isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
         ):
             return AssetSelection.keys(
-                *(el.key for el in cast(Sequence[Union[AssetsDefinition, SourceAsset]], selection))
+                *(
+                    key
+                    for el in selection
+                    for key in (
+                        el.keys if isinstance(el, AssetsDefinition) else [cast(SourceAsset, el).key]
+                    )
+                )
             )
         elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
             return cls.keys(*cast(Sequence[AssetKey], selection))

@@ -65,7 +65,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
-        return list(iterate_metadata_entries(self._input_def_snap.metadata_entries))
+        return list(iterate_metadata_entries(self._input_def_snap.metadata))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):
@@ -113,7 +113,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
-        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
+        return list(iterate_metadata_entries(self._output_def_snap.metadata))
 
 
 class GrapheneInput(graphene.ObjectType):

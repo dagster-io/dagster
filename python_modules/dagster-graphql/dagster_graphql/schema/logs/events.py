@@ -200,7 +200,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneExpectationResult(graphene.ObjectType):
@@ -213,7 +213,7 @@ class GrapheneExpectationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneTypeCheck(graphene.ObjectType):
@@ -226,7 +226,7 @@ class GrapheneTypeCheck(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)
+        return _to_metadata_entries(self.metadata)
 
 
 class GrapheneFailureMetadata(graphene.ObjectType):
@@ -345,7 +345,7 @@ class AssetEventMixin:
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self._metadata.metadata_entries)
+        return _to_metadata_entries(self._metadata.metadata)
 
     def resolve_partition(self, _graphene_info: ResolveInfo):
         return self._metadata.partition

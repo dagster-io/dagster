@@ -37,7 +37,10 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    TableSchemaMetadataValue,
+)
 from dagster._core.definitions.metadata.table import TableSchema
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
@@ -162,13 +165,12 @@ def _build_airbyte_assets_from_metadata(
         internal_asset_deps={
             k: set(v) for k, v in (assets_defn_meta.internal_asset_deps or {}).items()
         },
-        required_resource_keys={"airbyte"},
         compute_kind="airbyte",
         group_name=group_name,
         resource_defs=resource_defs,
     )
-    def _assets(context):
-        ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
+    def _assets(context, airbyte: AirbyteResource):
+        ab_output = airbyte.sync_and_poll(connection_id=connection_id)
         for materialization in generate_materializations(
             ab_output, assets_defn_meta.key_prefix or []
         ):
@@ -177,9 +179,7 @@ def _build_airbyte_assets_from_metadata(
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.value for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
                 # e.g. nested objects, lists etc
@@ -257,20 +257,17 @@ def build_airbyte_assets(
         non_argument_deps=upstream_assets or set(),
         outs=outputs,
         internal_asset_deps=internal_deps,
-        required_resource_keys={"airbyte"},
         compute_kind="airbyte",
     )
-    def _assets(context):
-        ab_output = context.resources.airbyte.sync_and_poll(connection_id=connection_id)
+    def _assets(context, airbyte: AirbyteResource):
+        ab_output = airbyte.sync_and_poll(connection_id=connection_id)
         for materialization in generate_materializations(ab_output, asset_key_prefix):
             table_name = materialization.asset_key.path[-1]
             if table_name in destination_tables:
                 yield Output(
                     value=None,
                     output_name=table_name,
-                    metadata={
-                        entry.label: entry.value for entry in materialization.metadata_entries
-                    },
+                    metadata=materialization.metadata,
                 )
                 # Also materialize any normalization tables affiliated with this destination
                 # e.g. nested objects, lists etc

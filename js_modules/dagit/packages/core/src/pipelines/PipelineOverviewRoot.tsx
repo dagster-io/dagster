@@ -30,7 +30,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const location = useLocation();
   const params = useParams();
 
-  const explorerPath = explorerPathFromString(params['0']);
+  const explorerPath = explorerPathFromString((params as any)['0']);
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);

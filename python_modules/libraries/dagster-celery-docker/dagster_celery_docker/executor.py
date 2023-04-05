@@ -5,7 +5,6 @@ from dagster import (
     DagsterInstance,
     Executor,
     Field,
-    MetadataEntry,
     Permissive,
     StringSource,
     _check as check,
@@ -262,11 +261,11 @@ def create_docker_task(celery_app, **task_kwargs):
             f"Executing steps {step_keys_str} in Docker container {docker_image}",
             pipeline_run,
             EngineEventData(
-                [
-                    MetadataEntry("Step keys", value=step_keys_str),
-                    MetadataEntry("Image", value=docker_image),
-                    MetadataEntry("Celery worker", value=self.request.hostname),
-                ],
+                {
+                    "Step keys": step_keys_str,
+                    "Image": docker_image,
+                    "Celery worker": self.request.hostname,
+                },
                 marker_end=DELEGATE_MARKER,
             ),
             CeleryDockerExecutor,
@@ -310,14 +309,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
-            entries = [MetadataEntry("Job image", value=docker_image)]
+            metadata = {"Job image": docker_image}
             if err.stderr is not None:
-                entries.append(MetadataEntry("Docker stderr", value=err.stderr))
+                metadata["Docker stderr"] = err.stderr
 
             instance.report_engine_event(
                 f"Failed to run steps {step_keys_str} in Docker container {docker_image}",
                 pipeline_run,
-                EngineEventData(entries),
+                EngineEventData(metadata),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],
             )

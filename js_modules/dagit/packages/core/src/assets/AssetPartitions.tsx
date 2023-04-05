@@ -8,12 +8,12 @@ import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
-import {PartitionState} from '../partitions/PartitionStatus';
 import {testId} from '../testing/testId';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
+import {AssetPartitionStatus} from './AssetPartitionStatus';
+import {AssetPartitionStatusCheckboxes} from './AssetPartitionStatusCheckboxes';
 import {AssetViewParams} from './AssetView';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
@@ -22,7 +22,8 @@ import {
   usePartitionHealthData,
   rangesClippedToSelection,
   keyCountByStateInSelection,
-  partitionStateAtIndex,
+  partitionStatusAtIndex,
+  selectionRangeWithSingleKey,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
 
@@ -42,10 +43,10 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [
-  PartitionState.MISSING,
-  PartitionState.SUCCESS,
-  PartitionState.FAILURE,
+const DISPLAYED_STATUSES = [
+  AssetPartitionStatus.MISSING,
+  AssetPartitionStatus.MATERIALIZED,
+  AssetPartitionStatus.FAILED,
 ].sort();
 
 export const AssetPartitions: React.FC<Props> = ({
@@ -65,33 +66,43 @@ export const AssetPartitions: React.FC<Props> = ({
 
   const [selectionSorts, setSelectionSorts] = React.useState<Array<-1 | 1>>([]); // +1 for default sort, -1 for reverse sort
 
-  const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
-    defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
-    encode: (val) => ({states: [...val].sort().join(',')}),
+  const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
+    defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
+    encode: (val) => ({status: [...val].sort().join(',')}),
     decode: (qs) =>
-      (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),
+      (qs.status || '')
+        .split(',')
+        .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
   });
 
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
 
+  const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
+    params,
+    setParams,
+    dimensionCount: selections.length,
+    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
+  });
+
   // Get asset health on all dimensions, with the non-time dimensions scoped
   // to the time dimension selection (so the status of partition "VA" reflects
   // the selection you've made on the time axis.)
-  const materializedRangesByDimension = React.useMemo(
-    () =>
-      selections.map((_s, idx) =>
-        assetHealth
-          ? assetHealth.rangesForSingleDimension(
-              idx,
-              timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-                ? selections[timeDimensionIdx].selectedRanges
-                : undefined,
-            )
-          : [],
+  const rangesForEachDimension = React.useMemo(() => {
+    if (!assetHealth) {
+      return selections.map(() => []);
+    }
+    return selections.map((_s, idx) =>
+      assetHealth.rangesForSingleDimension(
+        idx,
+        idx === 1 && focusedDimensionKeys[0]
+          ? [selectionRangeWithSingleKey(focusedDimensionKeys[0], selections[0].dimension)]
+          : timeDimensionIdx !== -1 && idx !== timeDimensionIdx
+          ? selections[timeDimensionIdx].selectedRanges
+          : undefined,
       ),
-    [assetHealth, selections, timeDimensionIdx],
-  );
+    );
+  }, [assetHealth, selections, timeDimensionIdx, focusedDimensionKeys]);
 
   // This function returns the list of dimension keys INSIDE the `selections.selectedRanges`
   // specified at the top of the page that MATCH the state filters (success / completed).
@@ -115,38 +126,39 @@ export const AssetPartitions: React.FC<Props> = ({
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
-    if (isEqual(DISPLAYED_STATES, stateFilters)) {
+    if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
       const result = getSelectionKeys();
       return sort === 1 ? result : result.reverse();
     }
 
-    const rangesInSelection = rangesClippedToSelection(
-      materializedRangesByDimension[idx],
-      selectedRanges,
-    );
-
-    const getKeysWithStates = (states: PartitionState[]) => {
+    const rangesInSelection = rangesClippedToSelection(rangesForEachDimension[idx], selectedRanges);
+    const getKeysWithStates = (states: AssetPartitionStatus[]) => {
       return rangesInSelection.flatMap((r) =>
-        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
+        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
-    const states: PartitionState[] = [];
-    if (stateFilters.includes(PartitionState.SUCCESS)) {
-      states.push(PartitionState.SUCCESS, PartitionState.SUCCESS_MISSING);
+    const states: AssetPartitionStatus[] = [];
+    if (statusFilters.includes(AssetPartitionStatus.MATERIALIZED)) {
+      states.push(AssetPartitionStatus.MATERIALIZED);
     }
-    if (stateFilters.includes(PartitionState.FAILURE)) {
-      states.push(PartitionState.FAILURE);
+    if (statusFilters.includes(AssetPartitionStatus.FAILED)) {
+      states.push(AssetPartitionStatus.FAILED);
     }
     const matching = uniq(getKeysWithStates(states));
 
     let result;
     // We have to add in "missing" separately because it's the absence of a range
-    if (stateFilters.includes(PartitionState.MISSING)) {
+    if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
       result = allKeys.filter(
         (a, idx) =>
           matching.includes(a) ||
-          !rangesInSelection.some((r) => r.start.idx <= idx && r.end.idx >= idx),
+          !rangesInSelection.some(
+            (r) =>
+              r.start.idx <= idx &&
+              r.end.idx >= idx &&
+              !r.value.includes(AssetPartitionStatus.MISSING),
+          ),
       );
     } else {
       result = matching;
@@ -156,14 +168,7 @@ export const AssetPartitions: React.FC<Props> = ({
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
-  const countsFiltered = stateFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
-
-  const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
-    params,
-    setParams,
-    dimensionCount: selections.length,
-    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
-  });
+  const countsFiltered = statusFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
 
   return (
     <>
@@ -174,7 +179,7 @@ export const AssetPartitions: React.FC<Props> = ({
         >
           <DimensionRangeWizard
             partitionKeys={selections[timeDimensionIdx].dimension.partitionKeys}
-            health={{ranges: materializedRangesByDimension[timeDimensionIdx]}}
+            health={{ranges: rangesForEachDimension[timeDimensionIdx]}}
             selected={selections[timeDimensionIdx].selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
@@ -194,11 +199,15 @@ export const AssetPartitions: React.FC<Props> = ({
         <div data-testid={testId('partitions-selected')}>
           {countsFiltered.toLocaleString()} Partitions Selected
         </div>
-        <PartitionStateCheckboxes
+        <AssetPartitionStatusCheckboxes
           counts={countsByStateInSelection}
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE]}
-          value={stateFilters}
-          onChange={setStateFilters}
+          allowed={[
+            AssetPartitionStatus.MISSING,
+            AssetPartitionStatus.MATERIALIZED,
+            AssetPartitionStatus.FAILED,
+          ]}
+          value={statusFilters}
+          onChange={setStatusFilters}
         />
       </Box>
       <Box style={{flex: 1, minHeight: 0, outline: 'none'}} flex={{direction: 'row'}} tabIndex={-1}>
@@ -251,12 +260,15 @@ export const AssetPartitions: React.FC<Props> = ({
             ) : (
               <AssetPartitionList
                 partitions={dimensionKeysInSelection(idx)}
-                stateForPartition={(dimensionKey) => {
+                statusForPartition={(dimensionKey) => {
                   if (idx === 1 && focusedDimensionKeys[0]) {
-                    return assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey]);
+                    return [assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])];
                   }
                   const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
-                  return partitionStateAtIndex(materializedRangesByDimension[idx], dimensionKeyIdx);
+                  return partitionStatusAtIndex(
+                    rangesForEachDimension[idx],
+                    dimensionKeyIdx,
+                  ).filter((s) => statusFilters.includes(s));
                 }}
                 focusedDimensionKey={focusedDimensionKeys[idx]}
                 setFocusedDimensionKey={(dimensionKey) => {

@@ -197,11 +197,18 @@ def ipc_read_event_stream(
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
+def _preexec_fn():
+    # See: https://bugs.python.org/issue14892 - prevent lines like "import readline" from hanging
+    # in the subprocess
+    signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+
+    # the new subprocess will be in its own process group so that CTRL-Cing the parent process
+    # doesn't immediately interrupt the child process as well.
+    os.setpgrp()
+
+
 def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
-    """Sets the correct flags to support graceful termination - the new subprocess will be in
-    its own process group so that CTRL-Cing the parent process doesn't immediately interrupt
-    the child process as well.
-    """
+    """Sets the correct flags to support graceful termination."""
     check.list_param(parts, "parts", str)
 
     creationflags = 0
@@ -210,12 +217,11 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
         # Works on all UNIX systems (but not WASI, see: https://docs.python.org/3/library/os.html#os.setpgrp)
-        preexec_fn = os.setpgrp
+        preexec_fn = _preexec_fn
     return subprocess.Popen(
         parts,
         creationflags=creationflags,
         preexec_fn=preexec_fn,
-        stdin=subprocess.DEVNULL,  # Prevent terminal signals from hanging the subprocess
         **kwargs,
     )
 

@@ -142,7 +142,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
+            cls, start_dt, timezone, fmt, end_offset, cron_schedule
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -516,13 +516,13 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def schedule_type(self) -> Optional[ScheduleType]:
-        if re.match(r"\d+ \* \* \* \*", self.cron_schedule):
+        if re.fullmatch(r"\d+ \* \* \* \*", self.cron_schedule):
             return ScheduleType.HOURLY
-        elif re.match(r"\d+ \d+ \* \* \*", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \* \* \*", self.cron_schedule):
             return ScheduleType.DAILY
-        elif re.match(r"\d+ \d+ \* \* \d+", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \* \* \d+", self.cron_schedule):
             return ScheduleType.WEEKLY
-        elif re.match(r"\d+ \d+ \d+ \* \*", self.cron_schedule):
+        elif re.fullmatch(r"\d+ \d+ \d+ \* \*", self.cron_schedule):
             return ScheduleType.MONTHLY
         else:
             return None
@@ -530,7 +530,7 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def minute_offset(self) -> int:
-        match = re.match(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
+        match = re.fullmatch(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no minute offset")
         return int(match.groups()[0])
@@ -538,7 +538,7 @@ class TimeWindowPartitionsDefinition(
     @public
     @property
     def hour_offset(self) -> int:
-        match = re.match(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
+        match = re.fullmatch(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
         if match is None:
             check.failed(f"{self.cron_schedule} has no hour offset")
         return int(match.groups()[1])
@@ -548,12 +548,12 @@ class TimeWindowPartitionsDefinition(
     def day_offset(self) -> int:
         schedule_type = self.schedule_type
         if schedule_type == ScheduleType.WEEKLY:
-            match = re.match(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
+            match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*) (\d+)", self.cron_schedule)
             if match is None:
                 check.failed(f"{self.cron_schedule} has no day offset")
             return int(match.groups()[4])
         elif schedule_type == ScheduleType.MONTHLY:
-            match = re.match(r"(\d+|\*) (\d+|\*) (\d+) (\d+|\*) (\d+|\*)", self.cron_schedule)
+            match = re.fullmatch(r"(\d+|\*) (\d+|\*) (\d+) (\d+|\*) (\d+|\*)", self.cron_schedule)
             if match is None:
                 check.failed(f"{self.cron_schedule} has no day offset")
             return int(match.groups()[2])
@@ -706,6 +706,29 @@ class TimeWindowPartitionsDefinition(
         self, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
+
+    def has_partition_key(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> bool:
+        try:
+            time_window = self.time_window_for_partition_key(partition_key)
+        except ValueError:
+            return False
+
+        first_partition_window = self.get_first_partition_window(current_time=current_time)
+        last_partition_window = self.get_last_partition_window(current_time=current_time)
+        if (
+            first_partition_window is None
+            or last_partition_window is None
+            or time_window.start < first_partition_window.start
+            or time_window.start > last_partition_window.start
+        ):
+            return False
+
+        return time_window.start.strftime(self.fmt) == partition_key
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1680,3 +1703,23 @@ def fetch_flattened_time_window_ranges(
         )
 
     return flattened_time_window_statuses
+
+
+def has_one_dimension_time_window_partitioning(
+    partitions_def: PartitionsDefinition,
+) -> bool:
+    from .multi_dimensional_partitions import MultiPartitionsDefinition
+
+    if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        return True
+
+    if isinstance(partitions_def, MultiPartitionsDefinition):
+        time_window_dims = [
+            dim
+            for dim in partitions_def.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        if len(time_window_dims) == 1:
+            return True
+
+    return False

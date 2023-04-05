@@ -7,8 +7,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import Field
 from dagster._core.definitions.decorators import op
-from dagster._legacy import ModeDefinition, execute_solid
 from dagster._seven import get_system_temp_directory
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_ssh.resources import (
     SSHResource,
     key_from_str,
@@ -228,9 +228,9 @@ def test_ssh_sftp(sftpserver):
         return context.resources.ssh_resource.sftp_get(remote_filepath, local_filepath)
 
     with sftpserver.serve_content({"a_dir": {"readme.txt": "hello, world"}}):
-        result = execute_solid(
+        result = wrap_op_in_graph_and_execute(
             sftp_solid_get,
-            ModeDefinition(resource_defs={"ssh_resource": sshresource}),
+            resources={"ssh_resource": sshresource},
             run_config={
                 "solids": {
                     "sftp_solid_get": {

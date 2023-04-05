@@ -554,10 +554,8 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata_entries) == 1
-    metadata_entry = events[1].event_specific_data.metadata_entries[0]
-    assert metadata_entry.label == "foo"
-    assert metadata_entry.value.text == "bar"
+    assert len(events[1].event_specific_data.metadata) == 1
+    assert events[1].event_specific_data.metadata["foo"].text == "bar"
 
 
 def test_metadata_logging_multiple_entries():
@@ -601,8 +599,8 @@ def test_log_metadata_multi_output():
     first_output_event = events[1]
     second_output_event = events[3]
 
-    assert first_output_event.event_specific_data.metadata_entries[0].label == "foo"
-    assert second_output_event.event_specific_data.metadata_entries[0].label == "bar"
+    assert "foo" in first_output_event.event_specific_data.metadata
+    assert "bar" in second_output_event.event_specific_data.metadata
 
 
 def test_log_metadata_after_output():
@@ -638,16 +636,16 @@ def test_log_metadata_multiple_dynamic_outputs():
     events = result.all_node_events
     output_event_one = events[1]
     assert output_event_one.event_specific_data.mapping_key == "one"
-    assert output_event_one.event_specific_data.metadata_entries[0].label == "one"
+    assert "one" in output_event_one.event_specific_data.metadata
     output_event_two = events[3]
     assert output_event_two.event_specific_data.mapping_key == "two"
-    assert output_event_two.event_specific_data.metadata_entries[0].label == "two"
+    assert "two" in output_event_two.event_specific_data.metadata
     output_event_three = events[5]
     assert output_event_three.event_specific_data.mapping_key == "three"
-    assert output_event_three.event_specific_data.metadata_entries[0].label == "three"
+    assert "three" in output_event_three.event_specific_data.metadata
     output_event_four = events[7]
     assert output_event_four.event_specific_data.mapping_key == "four"
-    assert output_event_four.event_specific_data.metadata_entries[0].label == "four"
+    assert "four" in output_event_four.event_specific_data.metadata
 
 
 def test_log_metadata_after_dynamic_output():

@@ -5,6 +5,7 @@ from unittest import mock
 
 from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.host_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -63,6 +64,32 @@ def downstream_of_partitioned_source():
 
 partitioned_defs = Definitions(assets=[partitioned_source, downstream_of_partitioned_source])
 
+static_partition = partitions_def = StaticPartitionsDefinition(["foo", "bar"])
+
+
+@asset(
+    partitions_def=static_partition,
+)
+def static_partitioned_asset():
+    pass
+
+
+@asset(
+    partitions_def=static_partition,
+)
+def other_static_partitioned_asset():
+    pass
+
+
+different_partitions_defs = Definitions(
+    assets=[
+        static_partitioned_asset,
+        other_static_partitioned_asset,
+        downstream_of_partitioned_source,
+        partitioned_source,
+    ]
+)
+
 
 def make_location_entry(defs_attr: str):
     origin = InProcessCodeLocationOrigin(
@@ -104,12 +131,12 @@ def make_context(defs_attrs):
 def test_get_repository_handle():
     asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
 
-    assert asset_graph.get_job_names(asset1.key) == ["__ASSET_JOB"]
+    assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle1 = asset_graph.get_repository_handle(asset1.key)
     assert repo_handle1.repository_name == "__repository__"
     assert repo_handle1.repository_python_origin.code_pointer.fn_name == "defs1"
 
-    assert asset_graph.get_job_names(asset1.key) == ["__ASSET_JOB"]
+    assert asset_graph.get_materialization_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle2 = asset_graph.get_repository_handle(asset2.key)
     assert repo_handle2.repository_name == "__repository__"
     assert repo_handle2.repository_python_origin.code_pointer.fn_name == "defs2"
@@ -126,12 +153,14 @@ def test_cross_repo_dep_with_source_asset():
         ).repository_python_origin.code_pointer.fn_name
         == "defs1"
     )
+    assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
     assert (
         asset_graph.get_repository_handle(
             AssetKey("downstream")
         ).repository_python_origin.code_pointer.fn_name
         == "downstream_defs"
     )
+    assert asset_graph.get_materialization_job_names(AssetKey("downstream")) == ["__ASSET_JOB"]
 
 
 def test_cross_repo_dep_no_source_asset():
@@ -147,12 +176,16 @@ def test_cross_repo_dep_no_source_asset():
         ).repository_python_origin.code_pointer.fn_name
         == "defs1"
     )
+    assert asset_graph.get_materialization_job_names(AssetKey("asset1")) == ["__ASSET_JOB"]
     assert (
         asset_graph.get_repository_handle(
             AssetKey("downstream_non_arg_dep")
         ).repository_python_origin.code_pointer.fn_name
         == "downstream_defs_no_source"
     )
+    assert asset_graph.get_materialization_job_names(AssetKey("downstream_non_arg_dep")) == [
+        "__ASSET_JOB"
+    ]
 
 
 def test_partitioned_source_asset():
@@ -160,3 +193,48 @@ def test_partitioned_source_asset():
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
     assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+
+
+def test_get_implicit_job_name_for_assets():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
+    assert asset_graph.get_implicit_job_name_for_assets([asset1.key]) == "__ASSET_JOB"
+    assert asset_graph.get_implicit_job_name_for_assets([asset2.key]) == "__ASSET_JOB"
+    assert asset_graph.get_implicit_job_name_for_assets([asset1.key, asset2.key]) == "__ASSET_JOB"
+
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([downstream_of_partitioned_source.key])
+        == "__ASSET_JOB_0"
+    )
+
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["different_partitions_defs"]))
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([static_partitioned_asset.key])
+        == "__ASSET_JOB_0"
+    )
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([other_static_partitioned_asset.key])
+        == "__ASSET_JOB_0"
+    )
+    assert (
+        asset_graph.get_implicit_job_name_for_assets(
+            [static_partitioned_asset.key, other_static_partitioned_asset.key]
+        )
+        == "__ASSET_JOB_0"
+    )
+
+    assert (
+        asset_graph.get_implicit_job_name_for_assets([downstream_of_partitioned_source.key])
+        == "__ASSET_JOB_1"
+    )
+
+    assert (
+        asset_graph.get_implicit_job_name_for_assets(
+            [
+                static_partitioned_asset.key,
+                other_static_partitioned_asset.key,
+                downstream_of_partitioned_source.key,
+            ]
+        )
+        is None
+    )

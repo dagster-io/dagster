@@ -61,7 +61,7 @@ def test_get_run_by_id():
 
 def do_test_single_write_read(instance):
     run_id = "some_run_id"
-    pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
+    pipeline_def = PipelineDefinition(name="some_pipeline", node_defs=[])
     instance.create_run_for_pipeline(pipeline_def=pipeline_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
@@ -144,6 +144,76 @@ def test_custom_secrets_manager():
     ) as instance:
         assert isinstance(instance._secrets_loader, TestSecretsLoader)  # noqa: SLF001
         assert instance._secrets_loader.env_vars == {"FOO": "BAR"}  # noqa: SLF001
+
+
+def test_run_queue_key():
+    tag_rules = [
+        {
+            "key": "database",
+            "value": "redshift",
+            "limit": 2,
+        }
+    ]
+
+    config = {"max_concurrent_runs": 50, "tag_concurrency_limits": tag_rules}
+
+    with instance_for_test(overrides={"run_queue": config}) as instance:
+        assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
+        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        assert run_queue_config.max_concurrent_runs == 50
+        assert run_queue_config.tag_concurrency_limits == tag_rules
+
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster.core.run_coordinator",
+                "class": "QueuedRunCoordinator",
+                "config": config,
+            }
+        }
+    ) as instance:
+        assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
+        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        assert run_queue_config.max_concurrent_runs == 50
+        assert run_queue_config.tag_concurrency_limits == tag_rules
+
+    # Can't combine them though
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match=(
+            "Found config for `run_queue` which is incompatible with `run_coordinator` config"
+            " entry."
+        ),
+    ):
+        with instance_for_test(
+            overrides={
+                "run_queue": config,
+                "run_coordinator": {
+                    "module": "dagster.core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": config,
+                },
+            }
+        ):
+            pass
+
+
+def test_run_coordinator_key():
+    tag_rules = [
+        {
+            "key": "database",
+            "value": "redshift",
+            "limit": 2,
+        }
+    ]
+
+    with instance_for_test(
+        overrides={"run_queue": {"max_concurrent_runs": 50, "tag_concurrency_limits": tag_rules}}
+    ) as instance:
+        assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
+        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        assert run_queue_config.max_concurrent_runs == 50
+        assert run_queue_config.tag_concurrency_limits == tag_rules
 
 
 def test_in_memory_persist_one_run():

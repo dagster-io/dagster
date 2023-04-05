@@ -78,7 +78,7 @@ class AssetGraph:
         """Non-source asset keys that have no non-source parents."""
         from .asset_selection import AssetSelection
 
-        return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
+        return AssetSelection.keys(*self.non_source_asset_keys).roots().resolve(self)
 
     @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
@@ -136,6 +136,10 @@ class AssetGraph:
     @property
     def all_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._asset_dep_graph["upstream"].keys()
+
+    @property
+    def non_source_asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._asset_dep_graph["upstream"].keys() - self._source_asset_keys
 
     def get_partitions_def(self, asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         return self._partitions_defs_by_key.get(asset_key)

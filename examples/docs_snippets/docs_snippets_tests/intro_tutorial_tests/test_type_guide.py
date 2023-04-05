@@ -20,8 +20,9 @@ from dagster import (
     op,
     usable_as_dagster_type,
 )
-from dagster._legacy import execute_pipeline, execute_solid, pipeline
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import safe_tempfile_path
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_basic_even_type():
@@ -41,12 +42,12 @@ def test_basic_even_type():
 
     # end_test_basic_even_type_with_annotations
 
-    assert execute_solid(double_even, input_values={"num": 2}).success
+    assert wrap_op_in_graph_and_execute(double_even, input_values={"num": 2}).success
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(double_even, input_values={"num": 3})
+        wrap_op_in_graph_and_execute(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
+    assert not wrap_op_in_graph_and_execute(
         double_even, input_values={"num": 3}, raise_on_error=False
     ).success
 
@@ -67,12 +68,12 @@ def test_basic_even_type_no_annotations():
 
     # end_test_basic_even_type_no_annotations
 
-    assert execute_solid(double_even, input_values={"num": 2}).success
+    assert wrap_op_in_graph_and_execute(double_even, input_values={"num": 2}).success
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(double_even, input_values={"num": 3})
+        wrap_op_in_graph_and_execute(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
+    assert not wrap_op_in_graph_and_execute(
         double_even, input_values={"num": 3}, raise_on_error=False
     ).success
 
@@ -96,9 +97,13 @@ def test_python_object_dagster_type():
 
     # end_use_object_type
 
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    assert wrap_op_in_graph_and_execute(
+        double_even, input_values={"even_num": EvenType(2)}
+    ).success
     with pytest.raises(AssertionError):
-        execute_solid(double_even, input_values={"even_num": EvenType(3)})
+        wrap_op_in_graph_and_execute(
+            double_even, input_values={"even_num": EvenType(3)}
+        )
 
 
 def test_even_type_loader():
@@ -127,17 +132,22 @@ def test_even_type_loader():
                 even_num: 2
     """
     # end_via_config
-    assert execute_solid(double_even, run_config=yaml.safe_load(yaml_doc)).success
+    assert wrap_op_in_graph_and_execute(
+        double_even, run_config=yaml.safe_load(yaml_doc), do_input_mapping=False
+    ).success
 
-    assert execute_solid(
-        double_even, run_config={"ops": {"double_even": {"inputs": {"even_num": 2}}}}
+    assert wrap_op_in_graph_and_execute(
+        double_even,
+        run_config={"ops": {"double_even": {"inputs": {"even_num": 2}}}},
+        do_input_mapping=False,
     ).success
 
     # Same same as above w/r/t chatting to prha
     with pytest.raises(AssertionError):
-        execute_solid(
+        wrap_op_in_graph_and_execute(
             double_even,
             run_config={"solids": {"double_even": {"inputs": {"even_num": 3}}}},
+            do_input_mapping=False,
         )
 
 
@@ -158,7 +168,9 @@ def test_mypy_compliance():
         return EvenType(even_num.num * 2)
 
     # end_mypy
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    assert wrap_op_in_graph_and_execute(
+        double_even, input_values={"even_num": EvenType(2)}
+    ).success
 
 
 def test_nothing_type():
@@ -263,7 +275,9 @@ def test_usable_as_dagster_type():
     def double_even(even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    assert wrap_op_in_graph_and_execute(
+        double_even, input_values={"even_num": EvenType(2)}
+    ).success
 
 
 def test_make_usable_as_dagster_type():
@@ -285,4 +299,6 @@ def test_make_usable_as_dagster_type():
         return EvenType(even_num.num * 2)
 
     # end_make_usable
-    assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
+    assert wrap_op_in_graph_and_execute(
+        double_even, input_values={"even_num": EvenType(2)}
+    ).success

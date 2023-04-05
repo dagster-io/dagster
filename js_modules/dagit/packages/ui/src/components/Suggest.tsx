@@ -12,14 +12,14 @@ import {IconWrapper} from './Icon';
 import {TextInputContainerStyles, TextInputStyles} from './TextInput';
 
 export const GlobalSuggestStyle = createGlobalStyle`
-  .dagit-suggest-input.bp3-input-group {
+  .dagit-suggest-input.bp4-input-group {
     ${TextInputContainerStyles}
 
     &:disabled ${IconWrapper}:first-child {
       background-color: ${Colors.Gray400};
     }
 
-    .bp3-input {
+    .bp4-input {
       ${TextInputStyles}
 
       height: auto;
@@ -29,15 +29,15 @@ export const GlobalSuggestStyle = createGlobalStyle`
       }
     }
 
-    .bp3-input-action {
+    .bp4-input-action {
       height: auto;
       top: 1px;
       right: 2px;
     }
   }
 
-  .bp3-select-popover.dagit-popover {
-    .bp3-popover-content li {
+  .bp4-select-popover.dagit-popover {
+    .bp4-popover-content li {
       list-style: none;
       margin: 0;
       padding: 0;

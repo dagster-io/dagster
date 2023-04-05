@@ -325,7 +325,7 @@ export const KNOWN_TAGS = {
     reversed: true,
   },
   meltano: {
-    color: '#2D1C6D',
+    color: '#311772',
     icon: meltano,
     content: 'Meltano',
   },
@@ -410,7 +410,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label)];
+        const known = (KNOWN_TAGS as any)[coerceToStandardLabel(tag.label)];
         const text = known?.content || tag.label;
         const color = known?.color || generateColorForLabel(tag.label);
         const textcolor = known?.reversed ? Colors.Gray900 : Colors.White;

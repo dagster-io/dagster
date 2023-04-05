@@ -29,7 +29,7 @@ describe('TokenizingField', () => {
   ];
 
   const getItems = () => {
-    const items = screen.getAllByRole('listitem');
+    const items = screen.getAllByRole('menuitem');
     return items.map((item) => item.textContent);
   };
 

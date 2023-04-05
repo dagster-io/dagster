@@ -11,14 +11,12 @@ from marks import mark_daemon
 def get_celery_engine_config(dagster_docker_image, job_namespace):
     return {
         "execution": {
-            "celery-k8s": {
-                "config": {
-                    "job_image": dagster_docker_image,
-                    "job_namespace": job_namespace,
-                    "image_pull_policy": image_pull_policy(),
-                }
+            "config": {
+                "job_image": dagster_docker_image,
+                "job_namespace": job_namespace,
+                "image_pull_policy": image_pull_policy(),
             }
-        },
+        }
     }
 
 
@@ -50,7 +48,7 @@ def test_execute_queued_run_on_celery_k8s(
     )
 
     run_id = launch_run_over_graphql(
-        dagit_url_for_daemon, run_config=run_config, pipeline_name="demo_pipeline_celery"
+        dagit_url_for_daemon, run_config=run_config, pipeline_name="demo_job_celery_k8s"
     )
 
     wait_for_job_and_get_raw_logs(

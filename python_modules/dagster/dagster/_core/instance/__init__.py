@@ -270,6 +270,11 @@ class DynamicPartitionsStore(Protocol):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
 
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return self.has_dynamic_partition(
+            partitions_def_name=partitions_def_name, partition_key=partition_key
+        )
+
 
 class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
@@ -978,17 +983,17 @@ class DagsterInstance(DynamicPartitionsStore):
             if isinstance(pipeline_def, PipelineSubsetDefinition):
                 # for the case when pipeline_def is created by IPipeline or ExternalPipeline
                 check.invariant(
-                    solids_to_execute == pipeline_def.solids_to_execute,
+                    solids_to_execute == pipeline_def.nodes_to_execute,
                     "Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} "
                     "that conflicts with solids_to_execute arg {solids_to_execute}".format(
-                        pipeline_solids_to_execute=str_format_list(pipeline_def.solids_to_execute),
+                        pipeline_solids_to_execute=str_format_list(pipeline_def.nodes_to_execute),
                         solids_to_execute=str_format_list(solids_to_execute),
                     ),
                 )
             else:
                 # for cases when `create_run_for_pipeline` is directly called
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
-                    solids_to_execute=solids_to_execute
+                    nodes_to_execute=solids_to_execute
                 )
         if asset_selection and isinstance(pipeline_def, JobDefinition):
             # for cases when `create_run_for_pipeline` is directly called
@@ -1702,7 +1707,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_asset_keys(
         self,
-        prefix: Optional[str] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Sequence[AssetKey]:
@@ -1923,7 +1928,7 @@ class DagsterInstance(DynamicPartitionsStore):
             engine_event_data,
             "engine_event_data",
             EngineEventData,
-            EngineEventData([]),
+            EngineEventData({}),
         )
 
         if cls:

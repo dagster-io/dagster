@@ -15,7 +15,12 @@ import {
   PartitionMatrixSolidHandleFragment,
 } from './types/useMatrixData.types';
 
-type StatusSquareColor = 'SUCCESS' | 'FAILURE' | 'MISSING' | 'FAILURE-MISSING' | 'SUCCESS-MISSING';
+export type StatusSquareColor =
+  | 'SUCCESS'
+  | 'FAILURE'
+  | 'MISSING'
+  | 'FAILURE-MISSING'
+  | 'SUCCESS-MISSING';
 
 export interface PartitionRuns {
   name: string;
@@ -67,11 +72,11 @@ function buildMatrixData(
     // Note this is sorting partition runs in place, I don't think it matters and
     // seems better than cloning all the arrays.
     p.runs.sort(byStartTimeAsc);
-    partitionsByName[p.name] = p;
+    (partitionsByName as any)[p.name] = p;
   });
 
   const partitionColumns = partitionNames.map((name, idx) => {
-    const partition: PartitionRuns = partitionsByName[name] || {
+    const partition: PartitionRuns = (partitionsByName as any)[name] || {
       name,
       runsLoaded: false,
       runs: [],

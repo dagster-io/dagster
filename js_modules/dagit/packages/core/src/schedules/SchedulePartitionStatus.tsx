@@ -129,7 +129,10 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   const partitionsByType = {};
   partitions.forEach((partition) => {
     const displayStatus = calculateDisplayStatus(partition);
-    partitionsByType[displayStatus] = [...(partitionsByType[displayStatus] || []), partition];
+    (partitionsByType as any)[displayStatus] = [
+      ...((partitionsByType as any)[displayStatus] || []),
+      partition,
+    ];
   });
 
   return (
@@ -148,10 +151,10 @@ const RetrievedSchedulePartitionStatus: React.FC<{
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
                     style={{color: Colors.Gray900}}
                   >
-                    {partitionsByType[status].length}
+                    {(partitionsByType as any)[status].length}
                   </Link>
                 ) : (
-                  partitionsByType[status].length
+                  (partitionsByType as any)[status].length
                 )}
               </td>
             </tr>

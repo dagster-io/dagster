@@ -2,12 +2,13 @@ version: 2
 
 sources:
   - name: raw_data
+    schema: test_python_schema_raw_data
     tables:
       - name: events
         tags: ["events"]
       - name: users
 
   - name: dagster
-    schema: test-python-schema
+    schema: dagster
     tables:
       - name: bot_labeled_users

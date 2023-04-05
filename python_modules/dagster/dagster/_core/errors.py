@@ -487,13 +487,14 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success`` member is ``False``.
     """
 
-    def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import DagsterType, MetadataEntry
+    def __init__(self, description=None, metadata=None, dagster_type=None):
+        from dagster import DagsterType
+        from dagster._core.definitions.metadata import normalize_metadata
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        self.metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 

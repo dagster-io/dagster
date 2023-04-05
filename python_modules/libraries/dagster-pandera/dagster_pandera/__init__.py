@@ -7,7 +7,6 @@ import pandas as pd
 import pandera as pa
 from dagster import (
     DagsterType,
-    MetadataEntry,
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
@@ -106,9 +105,9 @@ def pandera_schema_to_dagster_type(
         type_check_fn=type_check_fn,
         name=name,
         description=norm_schema.description,
-        metadata_entries=[
-            MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
-        ],
+        metadata={
+            "schema": MetadataValue.table_schema(tschema),
+        },
         typing_type=pd.DataFrame,
     )
 

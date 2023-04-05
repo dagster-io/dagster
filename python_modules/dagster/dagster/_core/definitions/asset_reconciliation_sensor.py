@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -265,56 +266,78 @@ def find_parent_materialized_asset_partitions(
         if asset_graph.is_source(asset_key):
             continue
 
+        partitions_def = asset_graph.get_partitions_def(asset_key)
         latest_record = instance_queryer.get_latest_materialization_record(
             asset_key, after_cursor=latest_storage_id
         )
         if latest_record is None:
             continue
 
-        for child in asset_graph.get_children_partitions(
-            instance_queryer,
-            asset_key,
-            latest_record.partition_key,
-        ):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
-            ):
-                result_asset_partitions.add(child)
+        if partitions_def is None:
+            for child in asset_graph.get_children_partitions(instance_queryer, asset_key):
+                if (
+                    child.asset_key in target_asset_keys
+                    and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
+                ):
+                    result_asset_partitions.add(child)
+        else:
+            # for partitioned assets, we want the set of all asset partitions that have been
+            # materialized since the latest_storage_id, not just the most recent
+            materialized_partitions = [
+                partition_key
+                for partition_key in instance_queryer.get_materialized_partitions(
+                    asset_key, after_cursor=latest_storage_id
+                )
+                if partitions_def.has_partition_key(
+                    partition_key, dynamic_partitions_store=instance_queryer
+                )
+            ]
+
+            partitions_subset = partitions_def.empty_subset().with_partition_keys(
+                materialized_partitions
+            )
+            for child in asset_graph.get_children(asset_key):
+                child_partitions_def = asset_graph.get_partitions_def(child)
+                if child not in target_asset_keys:
+                    continue
+                elif not child_partitions_def:
+                    result_asset_partitions.add(AssetKeyPartitionKey(child, None))
+                else:
+                    # we are mapping from the partitions of the parent asset to the partitions of
+                    # the child asset
+                    partition_mapping = asset_graph.get_partition_mapping(child, asset_key)
+                    child_partitions_subset = (
+                        partition_mapping.get_downstream_partitions_for_partitions(
+                            partitions_subset,
+                            downstream_partitions_def=child_partitions_def,
+                            dynamic_partitions_store=instance_queryer,
+                        )
+                    )
+                    for child_partition in child_partitions_subset.get_partition_keys():
+                        # we need to see if the child was materialized in the same run, but this is
+                        # expensive, so we try to avoid doing so in as many situations as possible
+                        child_asset_partition = AssetKeyPartitionKey(child, child_partition)
+                        if not can_reconcile_fn(child_asset_partition):
+                            continue
+                        # cannot materialize in the same run if different partitions defs
+                        elif child_partitions_def != partitions_def or not isinstance(
+                            partition_mapping, IdentityPartitionMapping
+                        ):
+                            result_asset_partitions.add(child_asset_partition)
+                        else:
+                            latest_partition_record = check.not_none(
+                                instance_queryer.get_latest_materialization_record(
+                                    AssetKeyPartitionKey(asset_key, child_partition),
+                                    after_cursor=latest_storage_id,
+                                )
+                            )
+                            if not instance_queryer.is_asset_planned_for_run(
+                                latest_partition_record.run_id, child
+                            ):
+                                result_asset_partitions.add(child_asset_partition)
 
         if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
             result_latest_storage_id = latest_record.storage_id
-
-        # for partitioned assets, we'll want a count of all asset partitions that have been
-        # materialized since the latest_storage_id, not just the most recent
-        if asset_graph.is_partitioned(asset_key):
-            for partition_key in instance_queryer.get_materialized_partitions(
-                asset_key, after_cursor=latest_storage_id
-            ):
-                for child in asset_graph.get_children_partitions(
-                    instance_queryer,
-                    asset_key,
-                    partition_key,
-                ):
-                    # we need to see if the child was materialized in the same run, but this is
-                    # expensive, so we try to avoid doing so in as many situations as possible
-                    if child.asset_key not in target_asset_keys:
-                        continue
-                    elif not can_reconcile_fn(child):
-                        continue
-                    elif partition_key != child.partition_key:
-                        result_asset_partitions.add(child)
-                    else:
-                        latest_partition_record = check.not_none(
-                            instance_queryer.get_latest_materialization_record(
-                                AssetKeyPartitionKey(asset_key, partition_key),
-                                after_cursor=latest_storage_id,
-                            )
-                        )
-                        if not instance_queryer.is_asset_planned_for_run(
-                            latest_partition_record.run_id, child
-                        ):
-                            result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
 
@@ -631,7 +654,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 continue
 
             # figure out the current contents of this asset with respect to its constraints
-            current_data_time = data_time_resolver.get_current_data_time(key)
+            current_data_time = data_time_resolver.get_current_data_time(key, evaluation_time)
 
             # figure out the expected data time of this asset if it were to be executed on this tick
             expected_data_time = min(
@@ -651,7 +674,9 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 )
 
                 # calculate the data times you would have expected if the most recent run succeeded
-                failed_data_time = data_time_resolver.get_ignored_failure_data_time(key)
+                failed_data_time = data_time_resolver.get_ignored_failure_data_time(
+                    key, evaluation_time
+                )
 
                 effective_data_time = max(
                     filter(None, (current_data_time, in_progress_data_time, failed_data_time)),
@@ -783,9 +808,14 @@ def build_run_requests(
                 check.failed("Partition key provided for unpartitioned asset")
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
+        # Do not call run_request.with_resolved_tags_and_config as the partition key is
+        # valid and there is no config.
+        # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
+        # checks for valid partition keys.
         run_requests.append(
             RunRequest(
                 asset_selection=list(asset_keys),
+                partition_key=partition_key,
                 tags=tags,
             )
         )

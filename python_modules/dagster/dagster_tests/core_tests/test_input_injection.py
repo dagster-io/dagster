@@ -14,9 +14,7 @@ def test_string_from_inputs():
         assert string_input == "foo"
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
-        name="test_string_from_inputs_pipeline", solid_defs=[str_as_input]
-    )
+    pipeline = PipelineDefinition(name="test_string_from_inputs_pipeline", node_defs=[str_as_input])
 
     result = execute_pipeline(
         pipeline,
@@ -36,7 +34,7 @@ def test_string_from_aliased_inputs():
         called["yup"] = True
 
     pipeline = PipelineDefinition(
-        solid_defs=[str_as_input],
+        node_defs=[str_as_input],
         name="test",
         dependencies={NodeInvocation("str_as_input", alias="aliased"): {}},
     )
@@ -57,7 +55,7 @@ def test_string_missing_inputs():
     def str_as_input(_context, string_input):
         called["yup"] = True
 
-    pipeline = PipelineDefinition(name="missing_inputs", solid_defs=[str_as_input])
+    pipeline = PipelineDefinition(name="missing_inputs", node_defs=[str_as_input])
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(pipeline)
 
@@ -85,7 +83,7 @@ def test_string_missing_input_collision():
 
     pipeline = PipelineDefinition(
         name="overlapping",
-        solid_defs=[str_as_input, str_as_output],
+        node_defs=[str_as_input, str_as_output],
         dependencies={"str_as_input": {"string_input": DependencyDefinition("str_as_output")}},
     )
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -109,9 +107,7 @@ def test_composite_input_type():
         assert list_string_input == ["foo"]
         called["yup"] = True
 
-    pipeline = PipelineDefinition(
-        name="test_string_from_inputs_pipeline", solid_defs=[str_as_input]
-    )
+    pipeline = PipelineDefinition(name="test_string_from_inputs_pipeline", node_defs=[str_as_input])
 
     result = execute_pipeline(
         pipeline,

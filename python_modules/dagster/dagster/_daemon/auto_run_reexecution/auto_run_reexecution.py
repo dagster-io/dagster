@@ -1,7 +1,7 @@
 import sys
 from typing import Iterator, Optional, Sequence, Tuple, cast
 
-from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import EngineEventData
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
@@ -135,15 +135,13 @@ def retry_run(
     instance.report_engine_event(
         "Retrying the run",
         failed_run,
-        engine_event_data=EngineEventData(
-            [MetadataEntry("new run", value=MetadataValue.dagster_run(new_run.run_id))]
-        ),
+        engine_event_data=EngineEventData({"new run": MetadataValue.dagster_run(new_run.run_id)}),
     )
     instance.report_engine_event(
         "Launched as an automatic retry",
         new_run,
         engine_event_data=EngineEventData(
-            [MetadataEntry("failed run", value=MetadataValue.dagster_run(failed_run.run_id))]
+            {"failed run": MetadataValue.dagster_run(failed_run.run_id)}
         ),
     )
 

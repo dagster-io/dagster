@@ -250,6 +250,22 @@ const MetadataEntryMocks = [
     label: 'my_short_json',
     jsonString: '{"short_value": 12}', // Very short JSON is inlined
   } as JsonMetadataEntry,
+
+  {
+    __typename: 'TableSchemaMetadataEntry',
+    description: 'This is the description',
+    label: 'my_table_schema',
+    schema: {
+      ...MetadataTableSchema,
+      columns: [
+        ...MetadataTableSchema.columns,
+        ...MetadataTableSchema.columns,
+        ...MetadataTableSchema.columns,
+        ...MetadataTableSchema.columns,
+        ...MetadataTableSchema.columns,
+      ],
+    },
+  } as TableSchemaMetadataEntry,
 ];
 
 export const EmptyState = () => {

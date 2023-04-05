@@ -1,5 +1,6 @@
 import os
 import tempfile
+from typing import Iterator
 
 import docker
 import pytest
@@ -18,7 +19,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @pytest.fixture(scope="session", autouse=True)
-def dagster_home():
+def dagster_home() -> Iterator[None]:
     old_env = os.getenv("DAGSTER_HOME")
     os.environ["DAGSTER_HOME"] = "/opt/dagster/dagster_home"
     yield
@@ -36,13 +37,13 @@ cluster_provider = define_cluster_provider_fixture(
 
 
 @pytest.yield_fixture
-def schedule_tempdir():
+def schedule_tempdir() -> Iterator[str]:
     with tempfile.TemporaryDirectory() as tempdir:
         yield tempdir
 
 
 @pytest.fixture(scope="session")
-def dagster_docker_image():
+def dagster_docker_image() -> str:
     docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
@@ -60,7 +61,7 @@ def dagster_docker_image():
 
 
 # See: https://stackoverflow.com/a/31526934/324449
-def pytest_addoption(parser):
+def pytest_addoption(parser) -> None:
     # We catch the ValueError to support cases where we are loading multiple test suites, e.g., in
     # the VSCode test explorer. When pytest tries to add an option twice, we get, e.g.
     #

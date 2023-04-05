@@ -105,6 +105,7 @@ from dagster._config.structured_config import (
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
     ConfigurableResource as ConfigurableResource,
+    ConfigurableResourceFactory as ConfigurableResourceFactory,
     PermissiveConfig as PermissiveConfig,
     ResourceDependency as ResourceDependency,
 )
@@ -265,6 +266,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.partition_key_range import PartitionKeyRange as PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
+    DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,

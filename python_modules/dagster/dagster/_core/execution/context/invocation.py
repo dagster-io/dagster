@@ -25,6 +25,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.mode import ModeDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
@@ -38,6 +39,7 @@ from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
+    has_one_dimension_time_window_partitioning,
 )
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
@@ -202,7 +204,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         return self._log
 
     @property
-    def solid_handle(self) -> NodeHandle:
+    def node_handle(self) -> NodeHandle:
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
@@ -480,7 +482,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         return self._log
 
     @property
-    def solid_handle(self) -> NodeHandle:
+    def node_handle(self) -> NodeHandle:
         raise DagsterInvalidPropertyError(_property_msg("solid_handle", "property"))
 
     @property
@@ -562,17 +564,20 @@ class BoundOpExecutionContext(OpExecutionContext):
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.partition_key
 
-    def asset_partitions_time_window_for_output(
-        self, output_name: str = "result"
-    ) -> Optional[TimeWindow]:
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         partitions_def = self.assets_def.partitions_def
         if partitions_def is None:
             check.failed("Tried to access partition_key for a non-partitioned asset")
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("Tried to access output time window for a non-time-partitioned asset")
+        if not has_one_dimension_time_window_partitioning(partitions_def=partitions_def):
+            raise DagsterInvariantViolationError(
+                "Expected a TimeWindowPartitionsDefinition or MultiPartitionsDefinition with a"
+                f" single time dimension, but instead found {type(partitions_def)}"
+            )
 
-        return partitions_def.time_window_for_partition_key(self.partition_key)
+        return cast(
+            Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+        ).time_window_for_partition_key(self.partition_key)
 
     def add_output_metadata(
         self,

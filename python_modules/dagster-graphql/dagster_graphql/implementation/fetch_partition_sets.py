@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
 )
-from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -29,9 +29,15 @@ from .utils import capture_error
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.partition_sets import (
+        GraphenePartition,
+        GraphenePartitionRun,
+        GraphenePartitionRunConfig,
         GraphenePartitions,
         GraphenePartitionSet,
         GraphenePartitionSets,
+        GraphenePartitionStatus,
+        GraphenePartitionStatusCounts,
+        GraphenePartitionTags,
     )
 
 
@@ -91,7 +97,12 @@ def get_partition_set(
 
 
 @capture_error
-def get_partition_by_name(graphene_info, repository_handle, partition_set, partition_name):
+def get_partition_by_name(
+    graphene_info: ResolveInfo,
+    repository_handle: RepositoryHandle,
+    partition_set: ExternalPartitionSet,
+    partition_name: str,
+) -> "GraphenePartition":
     from ..schema.partition_sets import GraphenePartition
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -105,7 +116,12 @@ def get_partition_by_name(graphene_info, repository_handle, partition_set, parti
 
 
 @capture_error
-def get_partition_config(graphene_info, repository_handle, partition_set_name, partition_name):
+def get_partition_config(
+    graphene_info: ResolveInfo,
+    repository_handle: RepositoryHandle,
+    partition_set_name: str,
+    partition_name: str,
+) -> "GraphenePartitionRunConfig":
     from ..schema.partition_sets import GraphenePartitionRunConfig
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -119,11 +135,19 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         graphene_info.context.instance,
     )
 
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
 
 
 @capture_error
-def get_partition_tags(graphene_info, repository_handle, partition_set_name, partition_name):
+def get_partition_tags(
+    graphene_info: ResolveInfo,
+    repository_handle: RepositoryHandle,
+    partition_set_name: str,
+    partition_name: str,
+) -> "GraphenePartitionTags":
     from ..schema.partition_sets import GraphenePartitionTags
     from ..schema.tags import GraphenePipelineTag
 
@@ -134,6 +158,9 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
     result = graphene_info.context.get_external_partition_tags(
         repository_handle, partition_set_name, partition_name, graphene_info.context.instance
     )
+
+    if isinstance(result, ExternalPartitionExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
 
     return GraphenePartitionTags(
         results=[
@@ -176,13 +203,15 @@ def get_partitions(
     )
 
 
-def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
+def _apply_cursor_limit_reverse(
+    items: Sequence[str], cursor: Optional[str], limit: Optional[int], reverse: Optional[bool]
+) -> Sequence[str]:
     start = 0
     end = len(items)
     index = 0
 
     if cursor:
-        index = next((idx for (idx, item) in enumerate(items) if item == cursor), None)
+        index = next((idx for (idx, item) in enumerate(items) if item == cursor))
 
         if reverse:
             end = index
@@ -201,7 +230,7 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 @capture_error
 def get_partition_set_partition_statuses(
     graphene_info: ResolveInfo, external_partition_set: ExternalPartitionSet
-):
+) -> Sequence["GraphenePartitionStatus"]:
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     repository_handle = external_partition_set.repository_handle
@@ -228,8 +257,11 @@ def get_partition_set_partition_statuses(
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name: Optional[str], run_partition_data, partition_names, backfill_id=None
-):
+    partition_set_name: Optional[str],
+    run_partition_data: Sequence[RunPartitionData],
+    partition_names: Sequence[str],
+    backfill_id: Optional[str] = None,
+) -> Sequence["GraphenePartitionStatus"]:
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
     partition_data_by_name = {
@@ -265,7 +297,9 @@ def partition_statuses_from_run_partition_data(
     return GraphenePartitionStatuses(results=results)
 
 
-def partition_status_counts_from_run_partition_data(run_partition_data, partition_names):
+def partition_status_counts_from_run_partition_data(
+    run_partition_data: Sequence[RunPartitionData], partition_names: Sequence[str]
+) -> Sequence["GraphenePartitionStatusCounts"]:
     from ..schema.partition_sets import GraphenePartitionStatusCounts
 
     partition_data_by_name = {
@@ -283,7 +317,9 @@ def partition_status_counts_from_run_partition_data(run_partition_data, partitio
     return [GraphenePartitionStatusCounts(runStatus=k, count=v) for k, v in count_by_status.items()]
 
 
-def get_partition_set_partition_runs(graphene_info: ResolveInfo, partition_set):
+def get_partition_set_partition_runs(
+    graphene_info: ResolveInfo, partition_set: ExternalPartitionSet
+) -> Sequence["GraphenePartitionRun"]:
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
 

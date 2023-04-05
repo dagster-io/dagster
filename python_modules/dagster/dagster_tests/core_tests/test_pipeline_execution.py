@@ -1,5 +1,6 @@
 import uuid
 import warnings
+from typing import Mapping
 
 import pytest
 from dagster import (
@@ -31,9 +32,9 @@ from dagster._core.test_utils import (
     step_output_event_filter,
 )
 from dagster._core.utility_solids import (
-    create_root_solid,
-    create_solid_with_deps,
-    define_stub_solid,
+    create_op_with_deps,
+    create_root_op,
+    create_stub_op,
     input_set,
 )
 from dagster._core.workspace.load import location_origin_from_python_file
@@ -88,7 +89,7 @@ def _do_construct(ops, dependencies):
 
 
 def test_empty_adjacency_lists():
-    solids = [create_root_solid("a_node")]
+    solids = [create_root_op("a_node")]
     forward_edges, backwards_edges = _do_construct(solids, {})
     assert forward_edges == {"a_node": set()}
     assert backwards_edges == {"a_node": set()}
@@ -96,8 +97,8 @@ def test_empty_adjacency_lists():
 
 def test_single_dep_adjacency_lists():
     # A <-- B
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b], {"B": {"A": DependencyDefinition("A")}}
@@ -138,11 +139,11 @@ def diamond_deps():
 def test_disconnected_graphs_adjaceny_lists():
     # A <-- B
     # C <-- D
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
-    node_c = create_root_solid("C")
-    node_d = create_solid_with_deps("D", node_c)
+    node_c = create_root_op("C")
+    node_d = create_op_with_deps("D", node_c)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b, node_c, node_d],
@@ -153,24 +154,24 @@ def test_disconnected_graphs_adjaceny_lists():
 
 
 def create_diamond_solids():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
-    node_c = create_solid_with_deps("C", node_a)
-    node_d = create_solid_with_deps("D", node_b, node_c)
+    a_source = create_stub_op("A_source", [input_set("A_input")])
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
+    node_c = create_op_with_deps("C", node_a)
+    node_d = create_op_with_deps("D", node_b, node_c)
     return [node_d, node_c, node_b, node_a, a_source]
 
 
 def create_diamond_pipeline():
     return PipelineDefinition(
         name="diamond_pipeline",
-        solid_defs=create_diamond_solids(),
+        node_defs=create_diamond_solids(),
         dependencies=diamond_deps(),
     )
 
 
 def test_diamond_toposort():
-    assert [s.name for s in create_diamond_pipeline().solids_in_topological_order] == [
+    assert [s.name for s in create_diamond_pipeline().nodes_in_topological_order] == [
         "A_source",
         "A",
         "B",
@@ -197,7 +198,7 @@ def test_external_diamond_toposort():
             ]
 
 
-def compute_called(name):
+def compute_called(name: str) -> Mapping[str, object]:
     return {name: "compute_called"}
 
 
@@ -221,7 +222,7 @@ def assert_all_results_equivalent(expected_results, result_results):
 
 def test_pipeline_execution_graph_diamond():
     pipe = PipelineDefinition(
-        solid_defs=create_diamond_solids(), name="test", dependencies=diamond_deps()
+        node_defs=create_diamond_solids(), name="test", dependencies=diamond_deps()
     )
     return _do_test(pipe)
 
@@ -239,11 +240,11 @@ def test_execute_solid_in_diamond():
 
 
 def test_execute_aliased_solid_in_diamond():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    a_source = create_stub_op("A_source", [input_set("A_input")])
 
     @pipeline
     def aliased_pipeline():
-        create_root_solid("A").alias("aliased")(a_source())
+        create_root_op("A").alias("aliased")(a_source())
 
     solid_result = execute_solid_within_pipeline(
         aliased_pipeline, "aliased", inputs={"A_input": [{"a key": "a value"}]}
@@ -265,7 +266,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 
 def test_singleton_pipeline():
-    stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
+    stub_op = create_stub_op("stub", [{"a key": "a value"}])
 
     # will fail if any warning is emitted
     with warnings.catch_warnings():
@@ -273,14 +274,14 @@ def test_singleton_pipeline():
 
         @pipeline
         def single_solid_pipeline():
-            stub_solid()
+            stub_op()
 
         assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = create_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = create_stub_op("stub_b", [{"a key": "a value"}])
 
     @pipeline
     def pipe():
@@ -291,11 +292,11 @@ def test_two_root_solid_pipeline_with_empty_dependency_definition():
 
 
 def test_two_root_solid_pipeline_with_partial_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = create_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = create_stub_op("stub_b", [{"a key": "a value"}])
 
     single_dep_pipe = PipelineDefinition(
-        solid_defs=[stub_solid_a, stub_solid_b],
+        node_defs=[stub_solid_a, stub_solid_b],
         name="test",
         dependencies={"stub_a": {}},
     )
@@ -339,7 +340,7 @@ def _do_test(pipe):
 
 
 def test_empty_pipeline_execution():
-    result = execute_pipeline(PipelineDefinition(solid_defs=[], name="test"))
+    result = execute_pipeline(PipelineDefinition(node_defs=[], name="test"))
 
     assert result.success
 
@@ -351,7 +352,7 @@ def test_pipeline_name_threaded_through_context():
     def assert_name_solid(context):
         assert context.pipeline_name == name
 
-    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]))
+    result = execute_pipeline(PipelineDefinition(name="foobar", node_defs=[assert_name_solid]))
 
     assert result.success
 
@@ -366,7 +367,7 @@ def test_pipeline_subset():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
@@ -396,7 +397,7 @@ def test_pipeline_explicit_subset():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
@@ -468,7 +469,7 @@ def test_pipeline_subset_with_multi_dependency():
         return 3
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, return_two, noop],
+        node_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
             "noop": {
@@ -515,7 +516,7 @@ def test_pipeline_explicit_subset_with_multi_dependency():
         return 3
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, return_two, noop],
+        node_defs=[return_one, return_two, noop],
         name="test",
         dependencies={
             "noop": {
@@ -561,7 +562,7 @@ def define_three_part_pipeline():
     def add_three(num):
         return num + 3
 
-    return PipelineDefinition(name="three_part_pipeline", solid_defs=[add_one, add_two, add_three])
+    return PipelineDefinition(name="three_part_pipeline", node_defs=[add_one, add_two, add_three])
 
 
 def define_created_disjoint_three_part_pipeline():
@@ -572,7 +573,7 @@ def test_pipeline_disjoint_subset():
     disjoint_pipeline = define_three_part_pipeline().get_pipeline_subset_def(
         {"add_one", "add_three"}
     )
-    assert len(disjoint_pipeline.solids) == 2
+    assert len(disjoint_pipeline.nodes) == 2
 
 
 def test_pipeline_execution_explicit_disjoint_subset():
@@ -753,7 +754,7 @@ def test_reexecution_fs_storage():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         mode_defs=[default_mode_def_for_test],
@@ -808,7 +809,7 @@ def retry_pipeline():
         return num + 1
 
     return PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         mode_defs=[default_mode_def_for_test],
@@ -870,7 +871,7 @@ def test_reexecution_fs_storage_with_solid_selection():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         mode_defs=[default_mode_def_for_test],
@@ -954,7 +955,7 @@ def test_single_step_reexecution():
         return num + 1
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[return_one, add_one],
+        node_defs=[return_one, add_one],
         name="test",
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         mode_defs=[default_mode_def_for_test],
@@ -1050,7 +1051,7 @@ def test_selector_with_partial_dependency_dict():
         executed["two"] = True
 
     pipe_two = PipelineDefinition(
-        name="pipe_two", solid_defs=[def_one, def_two], dependencies={"def_one": {}}
+        name="pipe_two", node_defs=[def_one, def_two], dependencies={"def_one": {}}
     )
 
     execute_pipeline(pipe_two)
@@ -1074,7 +1075,7 @@ def test_selector_with_subset_for_execution():
         def_one()
         def_two()
 
-    assert pipe.get_pipeline_subset_def({"def_two"}).solids_to_execute == {"def_two"}
+    assert pipe.get_pipeline_subset_def({"def_two"}).nodes_to_execute == {"def_two"}
 
 
 def test_default_run_id():
@@ -1086,7 +1087,7 @@ def test_default_run_id():
         assert uuid.UUID(context.run_id)
         called["run_id"] = context.run_id
 
-    pipeline_def = PipelineDefinition(solid_defs=[check_run_id], name="test")
+    pipeline_def = PipelineDefinition(node_defs=[check_run_id], name="test")
 
     result = execute_pipeline(pipeline_def)
     assert result.run_id == called["run_id"]
@@ -1102,7 +1103,7 @@ def test_pipeline_tags():
         called["yup"] = True
 
     pipeline_def_with_tags = PipelineDefinition(
-        name="injected_run_id", solid_defs=[check_tags], tags={"foo": "bar"}
+        name="injected_run_id", node_defs=[check_tags], tags={"foo": "bar"}
     )
     result = execute_pipeline(pipeline_def_with_tags)
     assert result.success
@@ -1110,7 +1111,7 @@ def test_pipeline_tags():
 
     called = {}
     pipeline_def_with_override_tags = PipelineDefinition(
-        name="injected_run_id", solid_defs=[check_tags], tags={"foo": "notbar"}
+        name="injected_run_id", node_defs=[check_tags], tags={"foo": "notbar"}
     )
     result = execute_pipeline(pipeline_def_with_override_tags, tags={"foo": "bar"})
     assert result.success

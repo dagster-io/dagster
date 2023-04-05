@@ -30,10 +30,11 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._utils import normalize_to_repository
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
-from .run_request import RunRequest, SkipReason
+from .run_request import RunRequest, SensorResult, SkipReason
 from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
@@ -44,6 +45,7 @@ from .target import ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
@@ -182,7 +184,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets monitored
             by the sensor. If an AssetSelection object is provided, it will only apply to assets
             within the Definitions that this sensor is part of.
-        repository_def (RepositoryDefinition): The repository that the sensor belongs to.
+        repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
+            If needed by the sensor top-level resource definitions will be pulled from this repository.
+            You can provide either this or `definitions`.
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
@@ -194,6 +198,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Example:
         .. code-block:: python
@@ -212,13 +219,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
-        repository_def: "RepositoryDefinition",
+        repository_def: Optional["RepositoryDefinition"],
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
         instance: Optional[DagsterInstance] = None,
+        definitions: Optional["Definitions"] = None,
     ):
+        from dagster._core.definitions.definitions_class import Definitions
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
         from dagster._core.storage.event_log.base import EventLogRecord
 
-        self._repository_def = repository_def
+        self._repository_def = normalize_to_repository(
+            check.opt_inst_param(definitions, "definitions", Definitions),
+            check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+        )
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
             repo_assets = self._repository_def.assets_defs_by_key.values()
@@ -244,7 +257,6 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         # At the end of each tick, must call update_cursor_after_evaluation to update the serialized
         # cursor.
         self._unpacked_cursor = MultiAssetSensorContextCursor(cursor, self)
-        self._cursor_has_been_updated = False
         self._cursor_advance_state_mutation = MultiAssetSensorCursorAdvances()
 
         self._initial_unconsumed_events_by_id: Dict[int, EventLogRecord] = {}
@@ -730,7 +742,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will not be updated.
         """
         self._cursor_advance_state_mutation.add_advanced_records(materialization_records_by_key)
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     def advance_all_cursors(self):
@@ -743,7 +755,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
 
         self._cursor_advance_state_mutation.add_advanced_records(materializations_by_key)
         self._cursor_advance_state_mutation.advance_all_cursors_called = True
-        self._cursor_has_been_updated = True
+        self._cursor_updated = True
 
     @public
     @property
@@ -916,12 +928,14 @@ def get_cursor_from_latest_materializations(
 
 @experimental
 def build_multi_asset_sensor_context(
-    repository_def: "RepositoryDefinition",
+    *,
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+    repository_def: Optional["RepositoryDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
     cursor_from_latest_materializations: bool = False,
+    definitions: Optional["Definitions"] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -930,16 +944,19 @@ def build_multi_asset_sensor_context(
     error.
 
     Args:
-        repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
         monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets monitored
             by the sensor. If an AssetSelection object is provided, it will only apply to assets
             within the Definitions that this sensor is part of.
+        repository_def (RepositoryDefinition): `RepositoryDefinition` object that
+            the sensor is defined in. Must provide `definitions` if this is not provided.
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         cursor_from_latest_materializations (bool): If True, the cursor will be set to the latest
             materialization for each monitored asset. By default, set to False.
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            Must provide `repository_def` if this is not provided.
 
     Examples:
         .. code-block:: python
@@ -953,11 +970,15 @@ def build_multi_asset_sensor_context(
 
     """
     from dagster._core.definitions import RepositoryDefinition
+    from dagster._core.definitions.definitions_class import Definitions
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+    repository_def = normalize_to_repository(
+        check.opt_inst_param(definitions, "definitions", Definitions),
+        check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+    )
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
 
@@ -1000,7 +1021,12 @@ def build_multi_asset_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason, None
+    Iterator[Union[RunRequest, SkipReason, SensorResult]],
+    Sequence[RunRequest],
+    RunRequest,
+    SkipReason,
+    None,
+    SensorResult,
 ]
 AssetMaterializationFunction = Callable[
     ["SensorEvaluationContext", "EventLogEntry"],
@@ -1059,6 +1085,13 @@ class MultiAssetSensorDefinition(SensorDefinition):
     ):
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
+                def _check_cursor_not_set(sensor_result: SensorResult):
+                    if sensor_result.cursor:
+                        raise DagsterInvariantViolationError(
+                            "Cannot set cursor in a multi_asset_sensor. Cursor is set automatically"
+                            " based on the latest materialization for each monitored asset."
+                        )
+
                 multi_asset_sensor_context = MultiAssetSensorEvaluationContext(
                     instance_ref=context.instance_ref,
                     last_completion_time=context.last_completion_time,
@@ -1082,6 +1115,11 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     for item in result:
                         if isinstance(item, RunRequest):
                             runs_yielded = True
+                        if isinstance(item, SensorResult):
+                            raise DagsterInvariantViolationError(
+                                "Cannot yield a SensorResult from a multi_asset_sensor. Instead"
+                                " return the SensorResult."
+                            )
                         yield item
                 elif isinstance(result, RunRequest):
                     runs_yielded = True
@@ -1089,11 +1127,13 @@ class MultiAssetSensorDefinition(SensorDefinition):
                 elif isinstance(result, SkipReason):
                     # if result is a SkipReason, we don't update the cursor, so don't set runs_yielded = True
                     yield result
+                elif isinstance(result, SensorResult):
+                    _check_cursor_not_set(result)
+                    if result.run_requests:
+                        runs_yielded = True
+                    yield result
 
-                if (
-                    runs_yielded
-                    and not multi_asset_sensor_context._cursor_has_been_updated  # noqa: SLF001
-                ):
+                if runs_yielded and not multi_asset_sensor_context.cursor_updated:
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, but the cursor"
                         " was not updated. This means the same materialization events will be"
@@ -1112,7 +1152,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
-                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn")
             ),
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,

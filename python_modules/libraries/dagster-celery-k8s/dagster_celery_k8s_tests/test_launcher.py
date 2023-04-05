@@ -347,7 +347,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             )
 
             celery_k8s_run_launcher.register_instance(instance)
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
             run = create_run_for_test(
                 instance,
@@ -423,7 +423,7 @@ def test_raise_on_error(kubeconfig_file):
             )
 
             celery_k8s_run_launcher.register_instance(instance)
-            pipeline_name = "demo_pipeline"
+            pipeline_name = "demo_job"
             run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
             run = create_run_for_test(
                 instance,
@@ -466,7 +466,7 @@ def test_k8s_executor_config_override(kubeconfig_file):
         k8s_client_batch_api=mock_k8s_client_batch_api,
     )
 
-    pipeline_name = "demo_pipeline"
+    pipeline_name = "demo_job"
 
     with instance_for_test() as instance:
         with get_test_project_workspace_and_external_pipeline(

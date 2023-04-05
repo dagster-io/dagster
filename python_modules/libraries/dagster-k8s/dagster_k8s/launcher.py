@@ -1,9 +1,9 @@
+import logging
 import sys
 from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
 from dagster import (
-    MetadataEntry,
     _check as check,
 )
 from dagster._cli.api import ExecuteRunArgs
@@ -240,11 +240,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             "Creating Kubernetes run worker job",
             run,
             EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
+                {
+                    "Kubernetes Job name": job_name,
+                    "Kubernetes Namespace": container_context.namespace,
+                    "Run ID": run.run_id,
+                }
             ),
             cls=self.__class__,
         )
@@ -363,6 +363,50 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def supports_run_worker_crash_recovery(self):
         return True
+
+    def get_run_worker_debug_info(self, run: DagsterRun) -> Optional[str]:
+        container_context = self.get_container_context_for_run(run)
+        if self.supports_run_worker_crash_recovery:
+            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+        else:
+            resume_attempt_number = None
+
+        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
+        namespace = container_context.namespace
+        user_defined_k8s_config = container_context.get_run_user_defined_k8s_config()
+        container_name = user_defined_k8s_config.container_config.get("name", "dagster")
+        pod_names = self._api_client.get_pod_names_in_job(job_name, namespace=namespace)
+        full_msg = ""
+        try:
+            pod_debug_info = [
+                self._api_client.get_pod_debug_info(
+                    pod_name, namespace, container_name=container_name
+                )
+                for pod_name in pod_names
+            ]
+            full_msg = "\n".join(pod_debug_info)
+        except Exception:
+            logging.exception(
+                "Error trying to get debug information for failed k8s job {job_name}".format(
+                    job_name=job_name
+                )
+            )
+        if pod_names:
+            full_msg = (
+                full_msg
+                + "\nFor more information about the failure, try running `kubectl describe pod"
+                f" {pod_names[0]}`, `kubectl logs {pod_names[0]}`, or `kubectl describe job"
+                f" {job_name}` in your cluster."
+            )
+
+        else:
+            full_msg = (
+                full_msg
+                + "\nFor more information about the failure, try running `kubectl describe job"
+                f" {job_name}` in your cluster."
+            )
+
+        return full_msg
 
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)

@@ -1756,31 +1756,21 @@ class SqlEventLogStorage(EventLogStorage):
             .alias("materialization_events")
         )
 
-        query = (
-            db.select(
-                [
-                    materialization_planned_events.c.partition,
-                    materialization_planned_events.c.run_id,
-                    materialization_planned_events.c.id,
-                ]
-            )
-            .select_from(
-                materialization_planned_events.join(
-                    materialization_events,
-                    db.and_(
-                        materialization_planned_events.c.partition
-                        == materialization_events.c.partition,
-                        materialization_planned_events.c.run_id == materialization_events.c.run_id,
-                    ),
-                    isouter=True,
-                )
-            )
-            .where(materialization_events.c.run_id == None)  # noqa: E711
-        )
-
         with self.index_connection() as conn:
-            rows = conn.execute(query).fetchall()
-            return {row["partition"]: (row["run_id"], row["id"]) for row in rows}
+            materialization_planned_rows = conn.execute(materialization_planned_events).fetchall()
+            materialization_rows = conn.execute(materialization_events).fetchall()
+
+        materialization_planned_rows_by_partition = {
+            row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
+        }
+        for row in materialization_rows:
+            if (
+                row["partition"] in materialization_planned_rows_by_partition
+                and materialization_planned_rows_by_partition[row["partition"]][0] == row["run_id"]
+            ):
+                materialization_planned_rows_by_partition.pop(row["partition"])
+
+        return materialization_planned_rows_by_partition
 
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for

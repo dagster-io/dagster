@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, FrozenSet, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -23,7 +23,7 @@ def sync_get_external_execution_plan_grpc(
     run_config: Mapping[str, Any],
     mode: str,
     pipeline_snapshot_id: str,
-    asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
     solid_selection: Optional[Sequence[str]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,

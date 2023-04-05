@@ -1,6 +1,7 @@
 import os
 import tempfile
 import time
+from typing import Mapping
 
 import mock
 import pytest
@@ -15,7 +16,6 @@ from dagster import (
     Field,
     In,
     IOManagerDefinition,
-    MetadataEntry,
     Nothing,
     Out,
     ReexecutionOptions,
@@ -32,6 +32,8 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -131,7 +133,9 @@ def test_io_manager_with_required_resource_keys():
     assert result.success
 
 
-def define_job(manager, metadata_dict):
+def define_job(
+    manager: IOManagerDefinition, metadata_dict: Mapping[str, ArbitraryMetadataMapping]
+) -> JobDefinition:
     @op(out=Out(metadata=metadata_dict.get("op_a")))
     def op_a(_context):
         return [1, 2, 3]
@@ -393,9 +397,7 @@ def test_step_subset_with_custom_paths():
         )
         assert len(step_materialization_events) == 1
         assert os.path.join(tmpdir_path, test_metadata_dict["op_b"]["path"]) == (
-            step_materialization_events[0]
-            .event_specific_data.materialization.metadata_entries[0]
-            .value.path
+            step_materialization_events[0].event_specific_data.materialization.metadata["path"].path
         )
 
         # test reexecution via backfills (not via re-execution apis)
@@ -847,7 +849,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield MetadataEntry("baz", value="baz")
+                yield {"baz": "baz"}
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -865,24 +867,20 @@ def test_context_logging_metadata():
     assert result.success
 
     output_event = result.all_node_events[4]
-    entry_labels = [entry.label for entry in output_event.event_specific_data.metadata_entries]
+    metadata = output_event.event_specific_data.metadata
     # Ensure that ordering is preserved among yields and calls to log
-    assert entry_labels == ["foo", "baz", "bar"]
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     materialization_event = result.all_node_events[2]
-    metadata_entries = materialization_event.event_specific_data.materialization.metadata_entries
+    metadata = materialization_event.event_specific_data.materialization.metadata
 
-    assert len(metadata_entries) == 3
-    entry_labels = [entry.label for entry in metadata_entries]
-    assert entry_labels == ["foo", "baz", "bar"]
+    assert len(metadata) == 3
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     implicit_materialization_event = result.all_node_events[3]
-    metadata_entries = (
-        implicit_materialization_event.event_specific_data.materialization.metadata_entries
-    )
-    assert len(metadata_entries) == 3
-    entry_labels = [entry.label for entry in metadata_entries]
-    assert entry_labels == ["foo", "baz", "bar"]
+    metadata = implicit_materialization_event.event_specific_data.materialization.metadata
+    assert len(metadata) == 3
+    assert set(metadata.keys()) == {"foo", "baz", "bar"}
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -916,15 +914,15 @@ def test_context_logging_metadata_add_output_metadata_called_twice():
 
     assert result.success
     materialization = result.asset_materializations_for_node("asset1")[0]
-    assert [entry.label for entry in materialization.metadata_entries] == ["foo", "bar"]
+    assert set(materialization.metadata.keys()) == {"foo", "bar"}
 
     handled_output_event = [
         event for event in result.all_node_events if event.event_type_value == "HANDLED_OUTPUT"
     ][0]
-    assert [entry.label for entry in handled_output_event.event_specific_data.metadata_entries] == [
+    assert set(handled_output_event.event_specific_data.metadata.keys()) == {
         "foo",
         "bar",
-    ]
+    }
 
 
 def test_metadata_dynamic_outputs():
@@ -936,7 +934,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            yield MetadataEntry("handle_output", value="I come from handle_output")
+            yield {"handle_output": "I come from handle_output"}
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_identifier())
