@@ -10,7 +10,7 @@ import {
   buildPartitionBackfill,
 } from '../../../graphql/types';
 import {BackfillPage} from '../BackfillPage';
-import {buildBackfillDetailsQuery} from '../fixtures/buildBackfillDetails';
+import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 
 // eslint-disable-next-line import/no-default-export
 export default {

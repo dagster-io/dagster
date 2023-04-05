@@ -1,5 +1,18 @@
 import {gql, useQuery} from '@apollo/client';
-import {Page, PageHeader, Colors, Box, Tag, Table, Spinner} from '@dagster-io/ui';
+import {
+  Page,
+  PageHeader,
+  Colors,
+  Box,
+  Tag,
+  Table,
+  Spinner,
+  Dialog,
+  Button,
+  DialogFooter,
+  ButtonLink,
+  DialogBody,
+} from '@dagster-io/ui';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -10,13 +23,16 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {useTrackPageView} from '../../app/analytics';
-import {BulkActionStatus, RunStatus} from '../../graphql/types';
+import {BulkActionStatus, PartitionBackfill, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {testId} from '../../testing/testId';
+import {numberFormatter} from '../../ui/formatters';
 
 import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
+  PartitionBackfillFragment,
 } from './types/BackfillPage.types';
 
 dayjs.extend(duration);
@@ -34,14 +50,12 @@ export const BackfillPage = () => {
     variables: {backfillId},
   });
 
-  console.log({backfillId, data, loading});
-
   const backfill = data?.partitionBackfillOrError;
 
   function content() {
     if (!backfill || loading) {
       return (
-        <Box padding={64}>
+        <Box padding={64} data-testid={testId('page-loading-indicator')}>
           <Spinner purpose="page" />
         </Box>
       );
@@ -115,7 +129,18 @@ export const BackfillPage = () => {
               />
             }
           />
-          {/* <Detail label="Partition Selection" detail="test" /> */}
+          <Detail
+            label="Partition Selection"
+            detail={
+              <PartitionSelection
+                numPartitions={backfill.numPartitions || 0}
+                rootAssetTargetedPartitions={
+                  backfill.assetBackfillData?.rootAssetTargetedPartitions
+                }
+                rootAssetTargetedRanges={backfill.assetBackfillData?.rootAssetTargetedRanges}
+              />
+            }
+          />
           <Detail label="Status" detail={<StatusLabel status={backfill.status} />} />
         </Box>
         <Table $monospaceFont={false}>
@@ -129,7 +154,7 @@ export const BackfillPage = () => {
             </tr>
           </thead>
           <tbody>
-            {backfill.assetPartitionsStatusCounts.map((asset) => (
+            {backfill.assetBackfillData?.assetPartitionsStatusCounts.map((asset) => (
               <tr key={asset.assetKey.path.join('/')}>
                 <td>
                   <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
@@ -296,15 +321,111 @@ export const BACKFILL_DETAILS_QUERY = gql`
     status
     timestamp
     endTimestamp
-    assetPartitionsStatusCounts {
-      assetKey {
-        path
+    numPartitions
+    assetBackfillData {
+      rootAssetTargetedRanges {
+        start
+        end
       }
-      numPartitionsTargeted
-      numPartitionsRequested
-      numPartitionsCompleted
-      numPartitionsFailed
+      rootAssetTargetedPartitions
+      assetPartitionsStatusCounts {
+        assetKey {
+          path
+        }
+        numPartitionsTargeted
+        numPartitionsRequested
+        numPartitionsCompleted
+        numPartitionsFailed
+      }
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
 `;
+
+type AssetBackfillData = Extract<
+  PartitionBackfillFragment['assetBackfillData'],
+  {__typename: 'AssetBackfillData'}
+>;
+
+export const PartitionSelection = ({
+  numPartitions,
+  rootAssetTargetedRanges,
+  rootAssetTargetedPartitions,
+}: {
+  numPartitions: number;
+  rootAssetTargetedRanges?: AssetBackfillData['rootAssetTargetedRanges'];
+  rootAssetTargetedPartitions?: AssetBackfillData['rootAssetTargetedPartitions'];
+}) => {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  let dialogContent: JSX.Element | undefined;
+  let content: JSX.Element | undefined;
+  if (rootAssetTargetedPartitions) {
+    if (rootAssetTargetedPartitions.length > 3) {
+      dialogContent = (
+        <div>
+          {rootAssetTargetedPartitions.map((p) => (
+            <div key={p}>{p}</div>
+          ))}
+        </div>
+      );
+      content = (
+        <ButtonLink
+          onClick={() => {
+            setIsDialogOpen(true);
+          }}
+        >
+          {numberFormatter.format(numPartitions)} partitions
+        </ButtonLink>
+      );
+    } else {
+      content = (
+        <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
+          {rootAssetTargetedPartitions.map((p) => (
+            <div key={p}>{p}</div>
+          ))}
+        </Box>
+      );
+    }
+  } else {
+    if (rootAssetTargetedRanges?.length === 1) {
+      const {start, end} = rootAssetTargetedRanges[0];
+      content = (
+        <div>
+          {start} - {end}
+        </div>
+      );
+    } else {
+      content = (
+        <ButtonLink
+          onClick={() => {
+            setIsDialogOpen(true);
+          }}
+        >
+          {numberFormatter.format(numPartitions)} partitions
+        </ButtonLink>
+      );
+      dialogContent = (
+        <Box flex={{direction: 'column', gap: 8}}>
+          {rootAssetTargetedRanges?.map((r) => (
+            <div key={`${r.start}:${r.end}`}>
+              {r.start} - {r.end}
+            </div>
+          ))}
+        </Box>
+      );
+    }
+  }
+
+  return (
+    <>
+      <div>{content}</div>
+      <Dialog isOpen={!!dialogContent && isDialogOpen} title="Partition selection">
+        <DialogBody>{dialogContent}</DialogBody>
+        <DialogFooter topBorder>
+          <Button onClick={() => setIsDialogOpen(false)}>Close</Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+};
