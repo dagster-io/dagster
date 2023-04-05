@@ -710,7 +710,7 @@ class OutputContext:
 
 def get_output_context(
     execution_plan: "ExecutionPlan",
-    pipeline_def: "JobDefinition",
+    job_def: "JobDefinition",
     resolved_run_config: "ResolvedRunConfig",
     step_output_handle: "StepOutputHandle",
     run_id: Optional[str],
@@ -735,13 +735,13 @@ def get_output_context(
         output_config = None
 
     step_output = execution_plan.get_step_output(step_output_handle)
-    output_def = pipeline_def.get_node(step_output.node_handle).output_def_named(step_output.name)
+    output_def = job_def.get_node(step_output.node_handle).output_def_named(step_output.name)
 
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
 
     node_handle = execution_plan.get_step_by_key(step.key).node_handle
-    asset_info = pipeline_def.asset_layer.asset_info_for_output(
+    asset_info = job_def.asset_layer.asset_info_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
 
@@ -759,12 +759,12 @@ def get_output_context(
     return OutputContext(
         step_key=step_output_handle.step_key,
         name=step_output_handle.output_name,
-        job_name=pipeline_def.name,
+        job_name=job_def.name,
         run_id=run_id,
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        op_def=pipeline_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
+        op_def=job_def.get_node(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=version,

@@ -908,7 +908,7 @@ class ExecutionPlan(
                     )
                 context = get_output_context(
                     execution_plan=self,
-                    pipeline_def=job_def,
+                    job_def=job_def,
                     resolved_run_config=resolved_run_config,
                     step_output_handle=step_output_handle,
                     run_id=None,

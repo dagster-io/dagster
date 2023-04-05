@@ -650,7 +650,7 @@ def test_get_output_context_with_resources():
     ):
         get_output_context(
             execution_plan=create_execution_plan(basic_job),
-            pipeline_def=basic_job,
+            job_def=basic_job,
             resolved_run_config=ResolvedRunConfig.build(basic_job),
             step_output_handle=StepOutputHandle("basic_op", "result"),
             run_id=None,
