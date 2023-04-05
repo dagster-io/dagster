@@ -9,7 +9,7 @@ from dagster._cli.job import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
-from ...execution_tests.memoized_dev_loop_pipeline import asset_job
+from ...execution_tests.memoized_dev_loop_job import op_job
 
 
 class Capturing(list):
@@ -38,14 +38,14 @@ def test_execute_display_command():
 
             # write run config to temp file
             # file is temp because io manager directory is temporary
-            with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w", encoding="utf8") as f:
+            with open(os.path.join(temp_dir, "job_config.yaml"), "w", encoding="utf8") as f:
                 f.write(yaml.dump(run_config))
 
             kwargs = {
-                "config": (os.path.join(temp_dir, "pipeline_config.yaml"),),
-                "job_name": "asset_job",
+                "config": (os.path.join(temp_dir, "job_config.yaml"),),
+                "job_name": "op_job",
                 "python_file": file_relative_path(
-                    __file__, "../../execution_tests/memoized_dev_loop_pipeline.py"
+                    __file__, "../../execution_tests/memoized_dev_loop_job.py"
                 ),
                 "tags": '{"dagster/is_memoized_run": "true"}',
             }
@@ -57,9 +57,7 @@ def test_execute_display_command():
 
             # execute the pipeline once so that addresses have been populated.
 
-            result = execute_job(
-                reconstructable(asset_job), instance=instance, run_config=run_config
-            )
+            result = execute_job(reconstructable(op_job), instance=instance, run_config=run_config)
             assert result.success
 
             with Capturing() as output:

@@ -7,7 +7,7 @@ from dagster import (
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import ModeDefinition, PipelineDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 def fail_me():
@@ -22,24 +22,24 @@ def test_scalars():
 
 
 def test_basic_ops_config(snapshot):
-    pipeline_def = PipelineDefinition(
-        name="BasicSolidsConfigPipeline",
+    job_def = GraphDefinition(
+        name="BasicOpsConfigGraph",
         node_defs=[
             OpDefinition(
-                name="required_field_solid",
+                name="required_field_op",
                 config_schema={"required_int": Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],
-    )
+    ).to_job()
 
-    env_config_type = create_run_config_schema(pipeline_def).config_type
+    env_config_type = create_run_config_schema(job_def).config_type
 
-    assert env_config_type.fields["solids"].is_required
-    solids_config_type = env_config_type.fields["solids"].config_type
-    assert solids_config_type.fields["required_field_solid"].is_required
-    required_solid_config_type = solids_config_type.fields["required_field_solid"].config_type
-    assert required_solid_config_type.fields["config"].is_required
+    assert env_config_type.fields["ops"].is_required
+    ops_config_type = env_config_type.fields["ops"].config_type
+    assert ops_config_type.fields["required_field_op"].is_required
+    required_op_config_type = ops_config_type.fields["required_field_op"].config_type
+    assert required_op_config_type.fields["config"].is_required
 
     assert set(env_config_type.fields["loggers"].config_type.fields.keys()) == set(["console"])
 
@@ -55,37 +55,8 @@ def test_basic_ops_config(snapshot):
 
     assert set(console_logger_config_config_type.fields.keys()) == set(["log_level", "name"])
 
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, skip_non_required=False))
+    snapshot.assert_match(scaffold_pipeline_config(job_def, skip_non_required=False))
 
 
 def dummy_resource(config_field):
     return ResourceDefinition(lambda _: None, config_field)
-
-
-def test_two_modes(snapshot):
-    pipeline_def = PipelineDefinition(
-        name="TwoModePipelines",
-        node_defs=[],
-        mode_defs=[
-            ModeDefinition(
-                "mode_one",
-                resource_defs={"value": dummy_resource({"mode_one_field": str})},
-            ),
-            ModeDefinition(
-                "mode_two",
-                resource_defs={"value": dummy_resource({"mode_two_field": int})},
-            ),
-        ],
-    )
-
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode="mode_one"))
-
-    snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode="mode_one", skip_non_required=False)
-    )
-
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode="mode_two"))
-
-    snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode="mode_two", skip_non_required=False)
-    )

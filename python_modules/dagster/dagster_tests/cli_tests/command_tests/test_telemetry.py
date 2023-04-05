@@ -238,8 +238,8 @@ def test_log_workspace_stats(caplog):
 # sequences are close matches`
 # Other than above, 0.4 was picked arbitrarily.
 def test_hash_name():
-    pipelines = ["pipeline_1", "pipeline_2", "pipeline_3"]
-    hashes = [hash_name(p) for p in pipelines]
+    jobs = ["job_1", "job_2", "job_3"]
+    hashes = [hash_name(p) for p in jobs]
     for h in hashes:
         assert len(h) == 64
 

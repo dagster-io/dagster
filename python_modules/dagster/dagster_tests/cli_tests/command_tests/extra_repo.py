@@ -1,16 +1,9 @@
-from dagster import job, repository
-from dagster._core.definitions import op
-from dagster._legacy import pipeline
+from dagster import job, op, repository
 
 
 @op
 def do_something():
     return 1
-
-
-@pipeline(name="extra")
-def extra_pipeline():
-    do_something()
 
 
 @job
@@ -20,4 +13,4 @@ def extra_job():
 
 @repository
 def extra():
-    return {"pipelines": {"extra": extra_pipeline}, "jobs": {"extra_job": extra_job}}
+    return {"jobs": {"extra_job": extra_job}}

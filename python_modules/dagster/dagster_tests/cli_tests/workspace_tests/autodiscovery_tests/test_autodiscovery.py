@@ -43,32 +43,32 @@ def test_double_repository():
     assert found_names == {"repo_one", "repo_two"}
 
 
-def test_single_pipeline():
-    single_pipeline_path = file_relative_path(__file__, "single_pipeline.py")
-    loadable_targets = loadable_targets_from_python_file(single_pipeline_path)
+def test_single_job():
+    single_job_path = file_relative_path(__file__, "single_job.py")
+    loadable_targets = loadable_targets_from_python_file(single_job_path)
 
     assert len(loadable_targets) == 1
     symbol = loadable_targets[0].attribute
-    assert symbol == "a_pipeline"
+    assert symbol == "a_job"
 
     repo_def = repository_def_from_pointer(
-        CodePointer.from_python_file(single_pipeline_path, symbol, None)
+        CodePointer.from_python_file(single_job_path, symbol, None)
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    assert repo_def.get_pipeline("a_pipeline")
+    assert repo_def.get_job("a_job")
 
 
-def test_double_pipeline():
-    double_pipeline_path = file_relative_path(__file__, "double_pipeline.py")
+def test_double_job():
+    double_job_path = file_relative_path(__file__, "double_job.py")
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+        loadable_targets_from_python_file(double_job_path)
 
     assert (
         str(exc_info.value)
-        == 'No repository and more than one pipeline found in "double_pipeline". '
-        "If you load a file or module directly it must have only one pipeline "
-        "in scope. Found pipelines defined in variables or decorated "
+        == 'No repository and more than one job found in "double_job". '
+        "If you load a file or module directly it must have only one job "
+        "in scope. Found jobs defined in variables or decorated "
         "functions: ['pipe_one', 'pipe_two']."
     )
 
@@ -86,7 +86,7 @@ def test_single_graph():
     )
 
     assert isinstance(repo_def, RepositoryDefinition)
-    assert repo_def.get_pipeline("graph_one")
+    assert repo_def.get_job("graph_one")
 
 
 def test_double_graph():
