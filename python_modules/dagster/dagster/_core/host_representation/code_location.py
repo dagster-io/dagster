@@ -131,7 +131,7 @@ class CodeLocation(AbstractContextManager):
         """
         if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
-                selector.pipeline_name
+                selector.job_name
             )
 
         repo_handle = self.get_repository(selector.repository_name).handle
@@ -362,7 +362,7 @@ class InProcessCodeLocation(CodeLocation):
 
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
-            selector.pipeline_name,
+            selector.job_name,
             selector.solid_selection,
             selector.asset_selection,
         )
@@ -753,7 +753,7 @@ class GrpcServerCodeLocation(CodeLocation):
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        job_handle = JobHandle(selector.pipeline_name, external_repository.handle)
+        job_handle = JobHandle(selector.job_name, external_repository.handle)
         return sync_get_external_job_subset_grpc(
             self.client,
             job_handle.get_external_origin(),

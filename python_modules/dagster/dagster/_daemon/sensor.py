@@ -693,7 +693,7 @@ def _evaluate_sensor(
         pipeline_selector = PipelineSelector(
             location_name=code_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
-            pipeline_name=target_data.job_name,
+            job_name=target_data.job_name,
             solid_selection=target_data.solid_selection,
             asset_selection=run_request.asset_selection,
         )

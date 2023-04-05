@@ -80,7 +80,7 @@ def create_valid_pipeline_run(
         job_snapshot=external_pipeline.job_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_job_snapshot=external_pipeline.parent_job_snapshot,
-        job_name=execution_params.selector.pipeline_name,
+        job_name=execution_params.selector.job_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),

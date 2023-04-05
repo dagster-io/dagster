@@ -630,7 +630,7 @@ def _schedule_runs_at_time(
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.code_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
-            pipeline_name=external_schedule.job_name,
+            job_name=external_schedule.job_name,
             solid_selection=external_schedule.solid_selection,
             asset_selection=run_request.asset_selection,
         )

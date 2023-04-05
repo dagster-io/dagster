@@ -12,7 +12,7 @@ class PipelineSelector(
         [
             ("location_name", str),
             ("repository_name", str),
-            ("pipeline_name", str),
+            ("job_name", str),
             ("solid_selection", Optional[Sequence[str]]),
             ("asset_selection", Optional[Sequence[AssetKey]]),
         ],
@@ -24,7 +24,7 @@ class PipelineSelector(
         cls,
         location_name: str,
         repository_name: str,
-        pipeline_name: str,
+        job_name: str,
         solid_selection: Optional[Sequence[str]],
         asset_selection: Optional[Sequence[AssetKey]] = None,
     ):
@@ -32,7 +32,7 @@ class PipelineSelector(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            job_name=check.str_param(job_name, "job_name"),
             solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),
@@ -45,7 +45,7 @@ class PipelineSelector(
         return {
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
-            "pipelineName": self.pipeline_name,
+            "pipelineName": self.job_name,
             "solidSelection": self.solid_selection,
         }
 
@@ -57,7 +57,7 @@ class PipelineSelector(
             ),
         )
         return PipelineSelector(
-            self.location_name, self.repository_name, self.pipeline_name, solid_selection
+            self.location_name, self.repository_name, self.job_name, solid_selection
         )
 
 

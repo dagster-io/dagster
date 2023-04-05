@@ -213,13 +213,13 @@ class BaseWorkspaceRequestContext(IWorkspace):
         loc = self.get_code_location(selector.location_name)
         return loc.has_repository(selector.repository_name) and loc.get_repository(
             selector.repository_name
-        ).has_external_job(selector.pipeline_name)
+        ).has_external_job(selector.job_name)
 
     def get_full_external_job(self, selector: PipelineSelector) -> ExternalJob:
         return (
             self.get_code_location(selector.location_name)
             .get_repository(selector.repository_name)
-            .get_full_external_job(selector.pipeline_name)
+            .get_full_external_job(selector.job_name)
         )
 
     def get_external_execution_plan(

@@ -411,7 +411,7 @@ def submit_run_request(
     pipeline_selector = PipelineSelector(
         location_name=location_name,
         repository_name=repo_handle.repository_name,
-        pipeline_name=job_name,
+        job_name=job_name,
         asset_selection=run_request.asset_selection,
         solid_selection=None,
     )

@@ -90,7 +90,7 @@ def launch_reexecution_from_parent_run(
     selector = PipelineSelector(
         location_name=origin.external_repository_origin.code_location_origin.location_name,
         repository_name=origin.external_repository_origin.repository_name,
-        pipeline_name=parent_run.job_name,
+        job_name=parent_run.job_name,
         solid_selection=None,
     )
 
