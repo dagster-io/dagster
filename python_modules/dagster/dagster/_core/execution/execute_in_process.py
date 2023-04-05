@@ -61,7 +61,7 @@ def core_execute_in_process(
             iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                pipeline=pipeline,
+                job=pipeline,
                 execution_plan=execution_plan,
                 dagster_run=run,
                 instance=execute_instance,

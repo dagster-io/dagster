@@ -210,7 +210,7 @@ def execute_run_host_mode(
         iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=host_mode_execution_context_event_generator,
-            pipeline=pipeline,
+            job=pipeline,
             execution_plan=execution_plan,
             run_config=pipeline_run.run_config,
             dagster_run=pipeline_run,

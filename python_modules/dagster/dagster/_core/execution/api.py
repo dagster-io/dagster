@@ -157,7 +157,7 @@ def execute_run_iterator(
             iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                pipeline=pipeline,
+                job=pipeline,
                 execution_plan=execution_plan,
                 dagster_run=dagster_run,
                 instance=instance,
@@ -238,7 +238,7 @@ def execute_run(
         iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=orchestration_context_event_generator,
-            pipeline=pipeline,
+            job=pipeline,
             execution_plan=execution_plan,
             dagster_run=dagster_run,
             instance=instance,

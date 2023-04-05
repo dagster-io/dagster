@@ -250,7 +250,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             ...,
             Iterator[Union[DagsterEvent, PlanOrchestrationContext]],
         ],
-        pipeline: IJob,
+        job: IJob,
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         dagster_run: DagsterRun,
@@ -261,7 +261,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         resume_from_failure=False,
     ):
         event_generator = context_event_generator(
-            pipeline,
+            job,
             execution_plan,
             run_config,
             dagster_run,
