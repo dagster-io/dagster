@@ -15,6 +15,9 @@ Related Guides:
 
 .. currentmodule:: dagster_snowflake_pandas
 
+.. autoconfigurable:: SnowflakePandasIOManager
+  :annotation: IOManagerDefinition
+
 .. autoconfigurable:: snowflake_pandas_io_manager
   :annotation: IOManagerDefinition
 
