@@ -109,9 +109,9 @@ Concurrency is the ability of a system to execute multiple processes in parallel
 Dagster supports placing limits on the number of processes that can be in progress at a single time, at the run and op-level. Depending on your needs, one or both types may be suitable:
 
 - **Run concurrency** controls the total number of runs in a deployment that can execute at the same time. Run concurrency applies to both op and asset-based jobs and all [code locations][code-location-concept] in a single deployment. Any runs beyond the limit will be queued and won’t use any compute.
-- **Op concurrency** controls the number of ops that can execute in parallel **in a single run**. **Note**: Op-level concurrency is a bit misleading - this type of concurrency applies to both op **and** asset-based jobs.
+- **Op concurrency** controls the number of ops that can execute in parallel **in a single run**. **Note**: This type of concurrency applies to both op and asset-based jobs, as each asset includes an op that's responsible for computing the contents of the asset.
 
-By controlling the number of parallel processes Dagster executes, you can ensure that resources are not overwhelmed and that each process has the resources it needs to run efficiently. This can lead to faster and more reliable pipeline execution, as well as easier monitoring and debugging of issues.
+By limiting the number of parallel processes Dagster executes, you can ensure that resources are not overwhelmed and that each process has the resources it needs to run efficiently. This can lead to faster and more reliable pipeline execution, as well as easier monitoring and debugging of issues.
 
 ---
 
@@ -124,14 +124,14 @@ Run concurrency can be configured by:
 
 These methods of limiting concurrency can be used individually or together. For each queued run, Dagster will check that launching the run will satisfy all conditions. For example, if launching a run would exceed the maximum number of concurrent runs, Dagster will queue the run until another run finishes.
 
-**Note**: Setting maximum concurrent runs for the same job isn't currently supported. If you want to prevent a new run from launching if a current run is in progress, we recommend writing some custom logic in a job schedule. Check out [this GitHub discussion for an example](https://github.com/dagster-io/dagster/discussions/8414).
+**Note**: Run-level concurrency rules can't currently be used to prevent a run from being submitted to the queue; they only control limits for the number of runs in the queue that will be launched at once. If you want to prevent runs from ever being launched if another job is already running, check out [this Github discussion](https://github.com/dagster-io/dagster/discussions/8414) for an example.
 
 <TabGroup>
 <TabItem name="Limiting overall runs">
 
 ### Limiting overall runs
 
-How you limit the overall number of runs in a deployment depends on whether you're using Dagster Cloud or Dagster Open Source:
+How you limit the overall number of concurrent runs in a deployment depends on whether you're using Dagster Cloud or Dagster Open Source:
 
 - **Dagster Cloud**: Use the [Dagster Cloud UI or the dagster-cloud CLI][cloud-deployment-settings]
 - **Dagster Open Source**: Use your instance's `dagster.yaml`
@@ -146,7 +146,7 @@ run_queue:
 When defining a value for `max_concurrent_runs`, keep the following in mind:
 
 - This setting defaults to `10`
-- Disable the setting with a `-1` value. **Note:** All other negative numbers are invalid.
+- Disable the setting with a `-1` value, which means no limit will be enforced. **Note:** All other negative numbers are invalid, and disabling this setting isn't supported for Dagster Cloud.
 - A value of `0` prevents any runs from launching
 
 </TabItem>
@@ -208,19 +208,21 @@ With this configuration, each unique value of the `use-case` tag will be limited
 
 Utilizing op/asset-level concurrency provides fine-grained control for the maximum number of ops/assets that can be executed at once within a single run, ensuring that shared resources aren't overwhelmed.
 
-Op and asset concurrency can be configured by:
+Op and asset-level concurrency is enabled by configuring a [job executor](/deployment/executors). Using the executor, you can:
 
-- Limiting the number of ops/assets that can execute in a single run at once
-- Specifying limits using tags
+- Limit the number of ops/assets that can execute in a single run at once
+- Specify limits using tags
 
 ### Limiting overall concurrency in a job
 
 To limit concurrency for ops and assets in jobs, use `max_concurrent` in the job’s config, either in Python or using the Launchpad in the Dagster UI.
 
+**Note**: The examples in this section use the <PyObject module="dagster" object="multiprocess_executor" />, which uses the `multiprocess` key. This key will change depending on the type of executor you're using. Refer to the [Job executor documentation](/deployment/executors#example-executors) for more info.
+
 <TabGroup>
 <TabItem name="In Python">
 
-Whiel `max_concurrent` is used to limit concurrency in both asset and op-based jobs, how jobs are defined differs between assets and ops. Click the tabs below for examples.
+While `max_concurrent` is used to limit concurrency in both asset and op-based jobs, how jobs are defined differs between assets and ops. Click the tabs below for examples.
 
 <TabGroup>
 <TabItem name="Asset-based jobs">
@@ -297,10 +299,12 @@ Limits can be specified for all ops/assets with a specific tag key or key-value 
 
 To specify limits on the number of ops/assets with a specific tag, use `tag_concurrency_limits` in the job’s config, either in Python or using the Launchpad in the Dagster UI.
 
+**Note**: The examples in this section use the <PyObject module="dagster" object="multiprocess_executor" />, which uses the `multiprocess` key. This key will change depending on the type of executor you're using. Refer to the [Job executor documentation](/deployment/executors#example-executors) for more info.
+
 <TabGroup>
 <TabItem name="In Python">
 
-Whiel `tag_concurrency_limits` is used to limit concurrency in both asset and op-based jobs, how jobs are defined differs between assets and ops. Click the tabs below for examples.
+While `tag_concurrency_limits` is used to limit concurrency in both asset and op-based jobs, how jobs are defined differs between assets and ops. Click the tabs below for examples.
 
 <TabGroup>
 <TabItem name="Asset-based jobs">
@@ -390,10 +394,9 @@ When limiting concurrency, you might run into some issues until you get the conf
 
 ### Runs going to STARTED status and skipping QUEUED
 
-The `run_queue` key may not be set in your instance's settings. How you verify this depends on whether you're using Dagster Cloud or Dagster Open Source:
+<Note>This only applies to Dagster Open Source.</Note>
 
-- **Dagster Cloud**: Click **your user icon > Cloud Settings > Deployments**, then **Settings** next to the deployment. **Note**: [Organization Admin permissions](/dagster-cloud/account/managing-users) are required to modify these settings.
-- **Dagster Open Source**: In the Dagster UI, navigate to **Deployment > Configuration**.
+The `run_queue` key may not be set in your instance's settings. In the Dagster UI, navigate to **Deployment > Configuration** and verify that the `run_queue` key is set.
 
 ### Runs remaining in QUEUED status
 
@@ -418,7 +421,9 @@ If runs aren’t being dequeued in Dagster Open Source, the root cause is likely
 
      If the daemon isn’t running, proceed to step 2.
 
-  2. **Verify the Dagster daemon can access the same storage as the Dagit process**. Both the Dagit (Dagster UI) process and Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. Refer to the [Dagster Instance docs](/deployment/dagster-instance) for more information.
+  2. **Verify the Dagster daemon can access the same storage as the Dagit process**. Both the Dagit (Dagster UI) process and Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used [`dagster dev`](/guides/running-dagster-locally) to start the Dagster UI, both processes should be using the same storage.
+
+     Refer to the [Dagster Instance docs](/deployment/dagster-instance) for more information.
 
 - **Troubleshoot the run queue configuration**: If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate, you can:
 
