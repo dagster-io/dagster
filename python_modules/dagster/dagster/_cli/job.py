@@ -168,35 +168,35 @@ def execute_print_command(instance, verbose, cli_args, print_fn):
 
 
 def print_ops(
-    pipeline_snapshot: JobSnapshot,
+    job_snapshot: JobSnapshot,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(pipeline_snapshot, "pipeline", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
     check.callable_param(print_fn, "print_fn")
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
-    printer.line(f"Job: {pipeline_snapshot.name}")
+    printer.line(f"Job: {job_snapshot.name}")
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
             printer.line(f"Op: {solid.node_name}")
 
 
 def print_job(
-    pipeline_snapshot: JobSnapshot,
+    job_snapshot: JobSnapshot,
     print_fn: Callable[..., Any],
 ):
-    check.inst_param(pipeline_snapshot, "pipeline", JobSnapshot)
+    check.inst_param(job_snapshot, "pipeline", JobSnapshot)
     check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
-    printer.line(f"Job: {pipeline_snapshot.name}")
-    print_description(printer, pipeline_snapshot.description)
+    printer.line(f"Job: {job_snapshot.name}")
+    print_description(printer, job_snapshot.description)
 
     printer.line("Ops")
-    for solid in pipeline_snapshot.dep_structure_snapshot.node_invocation_snaps:
+    for solid in job_snapshot.dep_structure_snapshot.node_invocation_snaps:
         with printer.with_indent():
-            print_op(printer, pipeline_snapshot, solid)
+            print_op(printer, job_snapshot, solid)
 
 
 def print_description(printer, desc):
@@ -219,10 +219,10 @@ def format_description(desc: str, indent: str):
 
 def print_op(
     printer: IndentingPrinter,
-    pipeline_snapshot: JobSnapshot,
+    job_snapshot: JobSnapshot,
     solid_invocation_snap: NodeInvocationSnap,
 ) -> None:
-    check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot)
+    check.inst_param(job_snapshot, "job_snapshot", JobSnapshot)
     check.inst_param(solid_invocation_snap, "solid_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {solid_invocation_snap.node_name}")
     with printer.with_indent():
@@ -232,7 +232,7 @@ def print_op(
                 printer.line(f"Input: {input_dep_snap.input_name}")
 
         printer.line("Outputs:")
-        for output_def_snap in pipeline_snapshot.get_node_def_snap(
+        for output_def_snap in job_snapshot.get_node_def_snap(
             solid_invocation_snap.node_def_name
         ).output_def_snaps:
             printer.line(output_def_snap.name)
