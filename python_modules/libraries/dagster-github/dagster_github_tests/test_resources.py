@@ -1,13 +1,14 @@
 import time
 
+import requests
 import responses
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from dagster import op
+from dagster import Resource, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_github import github_resource
-from dagster_github.resources import GithubResource
+from dagster_github.resources import GithubClient
 
 FAKE_PRIVATE_RSA_KEY = (
     rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
@@ -22,9 +23,9 @@ FAKE_PRIVATE_RSA_KEY = (
 
 @responses.activate
 def test_github_resource_get_installations():
-    @op(required_resource_keys={"github"})
-    def github_solid(context):
-        assert context.resources.github
+    @op
+    def github_solid(github: Resource[GithubClient]):
+        assert github
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
@@ -32,7 +33,7 @@ def test_github_resource_get_installations():
                 status=200,
                 json={},
             )
-            context.resources.github.get_installations()
+            github.get_installations()
 
     result = wrap_op_in_graph_and_execute(
         github_solid,
@@ -54,9 +55,9 @@ def test_github_resource_get_installations():
 
 @responses.activate
 def test_github_resource_get_installations_with_hostname():
-    @op(required_resource_keys={"github"})
-    def github_solid(context):
-        assert context.resources.github
+    @op
+    def github_solid(github: Resource[GithubClient]):
+        assert github
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.GET,
@@ -64,7 +65,7 @@ def test_github_resource_get_installations_with_hostname():
                 status=200,
                 json={},
             )
-            context.resources.github.get_installations()
+            github.get_installations()
 
     result = wrap_op_in_graph_and_execute(
         github_solid,
@@ -87,9 +88,9 @@ def test_github_resource_get_installations_with_hostname():
 
 @responses.activate
 def test_github_resource_create_issue():
-    @op(required_resource_keys={"github"})
-    def github_solid(context):
-        assert context.resources.github
+    @op
+    def github_solid(github: Resource[GithubClient]):
+        assert github
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.POST,
@@ -114,7 +115,7 @@ def test_github_resource_create_issue():
                 status=200,
                 json={},
             )
-            context.resources.github.create_issue(
+            github.create_issue(
                 repo_name="dagster",
                 repo_owner="dagster-io",
                 title="test",
@@ -141,9 +142,9 @@ def test_github_resource_create_issue():
 
 @responses.activate
 def test_github_resource_execute():
-    @op(required_resource_keys={"github"})
-    def github_solid(context):
-        assert context.resources.github
+    @op
+    def github_solid(github: Resource[GithubClient]):
+        assert github
         with responses.RequestsMock() as rsps:
             rsps.add(
                 rsps.POST,
@@ -162,7 +163,7 @@ def test_github_resource_execute():
                     "data": {"repository": {"id": 123}},
                 },
             )
-            context.resources.github.execute(
+            github.execute(
                 query="""
                 query get_repo_id($repo_name: String!, $repo_owner: String!) {
                     repository(name: $repo_name, owner: $repo_owner) {
@@ -193,21 +194,28 @@ def test_github_resource_execute():
 
 @responses.activate
 def test_github_resource_token_expiration():
-    class GithubResourceTesting(GithubResource):
-        def __init__(self, *args, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
-            self._installation_tokens = {
+    class GithubClientTesting(GithubClient):
+        def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
+            GithubClient.__init__(
+                self,
+                client=client,
+                app_id=app_id,
+                app_private_rsa_key=app_private_rsa_key,
+                default_installation_id=default_installation_id,
+            )
+            self.installation_tokens = {
                 "123": {"value": "test", "expires": int(time.time()) - 1000}
             }
-            self._app_token = {
+            self.app_token = {
                 "value": "test",
                 "expires": int(time.time()) - 1000,
             }
 
-    resource = GithubResourceTesting(
-        github_app_id=456,
-        github_app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
-        github_installation_id=123,
+    resource = GithubClientTesting(
+        client=requests.Session(),
+        app_id="abc",
+        app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
+        default_installation_id="123",
     )
     with responses.RequestsMock() as rsps:
         rsps.add(
