@@ -951,7 +951,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def create_run_for_job(
         self,
-        pipeline_def: "JobDefinition",
+        job_def: "JobDefinition",
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
@@ -971,7 +971,7 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.execution.plan.plan import ExecutionPlan
         from dagster._core.snap import snapshot_from_execution_plan
 
-        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        check.inst_param(job_def, "pipeline_def", JobDefinition)
         check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         # note that solids_to_execute is required to execute the solid subset, which is the
@@ -986,7 +986,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # solids_to_execute never provided
         if asset_selection or solid_selection:
             # for cases when `create_run_for_pipeline` is directly called
-            pipeline_def = pipeline_def.get_job_def_for_subset_selection(
+            job_def = job_def.get_job_def_for_subset_selection(
                 asset_selection=asset_selection,
                 op_selection=solid_selection,
             )
@@ -997,7 +997,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         else:
             execution_plan = create_execution_plan(
-                pipeline=InMemoryJob(pipeline_def),
+                pipeline=InMemoryJob(job_def),
                 run_config=run_config,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,
@@ -1005,7 +1005,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         return self.create_run(
-            job_name=pipeline_def.name,
+            job_name=job_def.name,
             run_id=run_id,
             run_config=run_config,
             solid_selection=solid_selection,
@@ -1016,14 +1016,14 @@ class DagsterInstance(DynamicPartitionsStore):
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            job_snapshot=pipeline_def.get_job_snapshot(),
+            job_snapshot=job_def.get_job_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                pipeline_def.get_job_snapshot_id(),
+                job_def.get_job_snapshot_id(),
             ),
-            parent_job_snapshot=pipeline_def.get_parent_job_snapshot(),
+            parent_job_snapshot=job_def.get_parent_job_snapshot(),
             external_job_origin=external_pipeline_origin,
-            job_code_origin=pipeline_code_origin,
+            job_code_origin=job_code_origin,
         )
 
     def _construct_run_with_snapshots(

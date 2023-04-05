@@ -47,7 +47,7 @@ def core_execute_in_process(
 
     with ephemeral_instance_if_missing(instance) as execute_instance:
         run = execute_instance.create_run_for_job(
-            pipeline_def=job_def,
+            job_def=job_def,
             run_config=run_config,
             tags={**job_def.tags, **(run_tags or {})},
             run_id=run_id,

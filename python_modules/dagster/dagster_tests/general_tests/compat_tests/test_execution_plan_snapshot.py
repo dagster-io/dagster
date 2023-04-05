@@ -233,7 +233,7 @@ if __name__ == "__main__":
         empty_runs = gen_instance.get_runs()
         assert len(empty_runs) == 0
         gen_instance.create_run_for_job(
-            pipeline_def=get_dynamic_job(),
+            job_def=get_dynamic_job(),
             run_config={"ops": {"emit": {"inputs": {"range_input": 5}}}},
         )
 

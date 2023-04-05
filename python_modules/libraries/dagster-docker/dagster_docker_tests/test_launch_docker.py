@@ -61,7 +61,7 @@ def test_launch_docker_no_network(aws_env):
                 container_image=docker_image,
             )
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
@@ -144,7 +144,7 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
                     container_image=docker_image,
                 )
                 run = instance.create_run_for_job(
-                    pipeline_def=recon_pipeline.get_definition(),
+                    job_def=recon_pipeline.get_definition(),
                     run_config=run_config,
                     external_job_origin=external_pipeline.get_external_origin(),
                     job_code_origin=external_pipeline.get_python_origin(),
@@ -209,7 +209,7 @@ def test_terminate_launched_docker_run(aws_env):
             )
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
@@ -275,7 +275,7 @@ def test_launch_docker_invalid_image(aws_env):
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
@@ -403,7 +403,7 @@ def _test_launch(
             external_pipeline = ReOriginatedExternalPipelineForTest(orig_pipeline)
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=recon_pipeline.get_python_origin(),

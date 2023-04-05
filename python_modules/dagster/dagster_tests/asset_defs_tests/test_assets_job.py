@@ -1392,7 +1392,7 @@ def test_asset_selection_reconstructable():
         warnings.simplefilter("ignore", category=DeprecationWarning)
         with instance_for_test() as instance:
             run = instance.create_run_for_job(
-                pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
+                job_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
             reconstructable_foo_job = build_reconstructable_job(
                 "dagster_tests.asset_defs_tests.test_assets_job",

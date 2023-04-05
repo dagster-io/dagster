@@ -52,7 +52,7 @@ def test_run_always_finishes():
                 )
 
                 dagster_run = instance.create_run_for_job(
-                    pipeline_def=slow_job,
+                    job_def=slow_job,
                     run_config=None,
                     external_job_origin=external_job.get_external_origin(),
                     job_code_origin=external_job.get_python_origin(),
@@ -210,7 +210,7 @@ def test_terminate_after_shutdown():
             )
 
             dagster_run = instance.create_run_for_job(
-                pipeline_def=sleepy_job,
+                job_def=sleepy_job,
                 run_config=None,
                 external_job_origin=external_job.get_external_origin(),
                 job_code_origin=external_job.get_python_origin(),
@@ -233,7 +233,7 @@ def test_terminate_after_shutdown():
             )
 
             doomed_to_fail_dagster_run = instance.create_run_for_job(
-                pipeline_def=math_diamond,
+                job_def=math_diamond,
                 run_config=None,
                 external_job_origin=external_job.get_external_origin(),
                 job_code_origin=external_job.get_python_origin(),
@@ -282,7 +282,7 @@ def test_server_down():
                 )
 
                 pipeline_run = instance.create_run_for_job(
-                    pipeline_def=sleepy_job,
+                    job_def=sleepy_job,
                     run_config=None,
                     external_job_origin=external_job.get_external_origin(),
                     job_code_origin=external_job.get_python_origin(),

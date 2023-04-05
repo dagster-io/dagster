@@ -157,7 +157,7 @@ def test_successful_run(
     )
 
     dagster_run = instance.create_run_for_job(
-        pipeline_def=noop_job,
+        job_def=noop_job,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
@@ -328,7 +328,7 @@ def test_crashy_run(
     )
 
     run = instance.create_run_for_job(
-        pipeline_def=crashy_job,
+        job_def=crashy_job,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
@@ -377,7 +377,7 @@ def test_exity_run(
     )
 
     run = instance.create_run_for_job(
-        pipeline_def=exity_job,
+        job_def=exity_job,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
@@ -423,7 +423,7 @@ def test_terminated_run(
         .get_full_external_job("sleepy_job")
     )
     run = instance.create_run_for_job(
-        pipeline_def=sleepy_job,
+        job_def=sleepy_job,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
@@ -505,7 +505,7 @@ def test_cleanup_after_force_terminate(
         .get_full_external_job("sleepy_job")
     )
     run = instance.create_run_for_job(
-        pipeline_def=sleepy_job,
+        job_def=sleepy_job,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),
@@ -606,7 +606,7 @@ def test_single_op_selection_execution(
         .get_full_external_job("math_diamond")
     )
     run = instance.create_run_for_job(
-        pipeline_def=math_diamond,
+        job_def=math_diamond,
         run_config=run_config,
         solid_selection=["return_one"],
         external_job_origin=external_job.get_external_origin(),
@@ -645,7 +645,7 @@ def test_multi_op_selection_execution(
     )
 
     run = instance.create_run_for_job(
-        pipeline_def=math_diamond,
+        job_def=math_diamond,
         run_config=run_config,
         solid_selection=["return_one", "multiply_by_2"],
         external_job_origin=external_job.get_external_origin(),
@@ -686,7 +686,7 @@ def test_engine_events(
         .get_full_external_job("math_diamond")
     )
     run = instance.create_run_for_job(
-        pipeline_def=math_diamond,
+        job_def=math_diamond,
         run_config=run_config,
         external_job_origin=external_job.get_external_origin(),
         job_code_origin=external_job.get_python_origin(),

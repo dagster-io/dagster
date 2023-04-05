@@ -500,12 +500,12 @@ def _logged_execute_job(
     log_repo_stats(instance=instance, pipeline=job_arg, source="execute_pipeline")
 
     dagster_run = instance.create_run_for_job(
-        pipeline_def=job_arg.get_definition(),
+        job_def=job_arg.get_definition(),
         run_config=run_config,
         solid_selection=op_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
-        pipeline_code_origin=(
+        job_code_origin=(
             job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
         ),
         repository_load_data=repository_load_data,
@@ -568,7 +568,7 @@ def _reexecute_job(
             )
 
         dagster_run = execute_instance.create_run_for_job(
-            pipeline_def=job_arg.get_definition(),
+            job_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
             tags=tags,
@@ -577,7 +577,7 @@ def _reexecute_job(
             solids_to_execute=parent_dagster_run.solids_to_execute,
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
-            pipeline_code_origin=(
+            job_code_origin=(
                 job_arg.get_python_origin() if isinstance(job_arg, ReconstructableJob) else None
             ),
             repository_load_data=repository_load_data,

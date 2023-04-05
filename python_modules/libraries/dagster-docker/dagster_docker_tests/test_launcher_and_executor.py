@@ -92,7 +92,7 @@ def test_image_on_pipeline(monkeypatch, aws_env, from_pending_repository, asset_
             )
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
@@ -168,7 +168,7 @@ def test_container_context_on_pipeline(aws_env):
             )
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=recon_pipeline.get_python_origin(),
@@ -236,7 +236,7 @@ def test_recovery(aws_env):
             )
 
             run = instance.create_run_for_job(
-                pipeline_def=recon_pipeline.get_definition(),
+                job_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_job_origin=external_pipeline.get_external_origin(),
                 job_code_origin=external_pipeline.get_python_origin(),
