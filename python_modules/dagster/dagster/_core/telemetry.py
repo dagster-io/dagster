@@ -578,7 +578,7 @@ def log_external_repo_stats(
 def log_repo_stats(
     instance: DagsterInstance,
     source: str,
-    pipeline: Optional[IJob] = None,
+    job: Optional[IJob] = None,
     repo: Optional[ReconstructableRepository] = None,
 ) -> None:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -586,7 +586,7 @@ def log_repo_stats(
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.opt_inst_param(pipeline, "pipeline", IJob)
+    check.opt_inst_param(job, "job", IJob)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     def _get_num_dynamic_partitioned_assets(asset_defs: Sequence[AssetsDefinition]) -> int:
@@ -600,9 +600,9 @@ def log_repo_stats(
     if _get_instance_telemetry_enabled(instance):
         instance_id = get_or_set_instance_id()
 
-        if isinstance(pipeline, ReconstructableJob):
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)
-            repository = pipeline.get_reconstructable_repository().get_definition()
+        if isinstance(job, ReconstructableJob):
+            pipeline_name_hash = hash_name(job.get_definition().name)
+            repository = job.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.job_names)
             num_schedules_in_repo = len(repository.schedule_defs)
@@ -621,8 +621,8 @@ def log_repo_stats(
             num_assets_in_repo = len(all_assets)
             num_dynamic_partitioned_assets_in_repo = _get_num_dynamic_partitioned_assets(all_assets)
         else:
-            pipeline_name_hash = hash_name(pipeline.get_definition().name)  # type: ignore
-            repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))  # type: ignore
+            pipeline_name_hash = hash_name(job.get_definition().name)  # type: ignore
+            repo_hash = hash_name(get_ephemeral_repository_name(job.get_definition().name))  # type: ignore
             num_pipelines_in_repo = 1
             num_schedules_in_repo = 0
             num_sensors_in_repo = 0
