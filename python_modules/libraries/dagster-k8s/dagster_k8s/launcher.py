@@ -293,7 +293,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._launch_k8s_job_with_args(job_name, args, run)
 
     # https://github.com/dagster-io/dagster/issues/2741
-    def can_terminate(self, run_id):
+    def _can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
         pipeline_run = self._instance.get_run_by_id(run_id)
@@ -312,7 +312,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         container_context = self.get_container_context_for_run(run)
 
-        can_terminate = self.can_terminate(run_id)
+        can_terminate = self._can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
                 message=f"Unable to terminate run; can_terminate returned {can_terminate}",

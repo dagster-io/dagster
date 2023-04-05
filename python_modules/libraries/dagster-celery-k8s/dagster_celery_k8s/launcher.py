@@ -269,7 +269,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     # https://github.com/dagster-io/dagster/issues/2741
-    def can_terminate(self, run_id):
+    def _can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
         pipeline_run = self._instance.get_run_by_id(run_id)
@@ -288,7 +288,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
-        can_terminate = self.can_terminate(run_id)
+        can_terminate = self._can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
                 message="Unable to terminate dagster job: can_terminate returned {}.".format(
