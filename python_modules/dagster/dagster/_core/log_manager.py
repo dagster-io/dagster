@@ -148,9 +148,13 @@ class DagsterLoggingMetadata(
             return self.pipeline_name or "system"
         return f"resource:{self.resource_name}"
 
-    def to_tags(self) -> Mapping[str, str]:
+    def all_tags(self) -> Mapping[str, str]:
         # converts all values into strings
         return {k: str(v) for k, v in self._asdict().items()}
+
+    def event_tags(self) -> Mapping[str, str]:
+        # Exclude pipeline_tags since it can be quite large and can be found on the run
+        return {k: str(v) for k, v in self._asdict().items() if k != "pipeline_tags"}
 
 
 def construct_log_string(
