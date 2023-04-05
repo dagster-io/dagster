@@ -37,7 +37,7 @@ class StepRunRef(
         run_id: str,
         retry_mode: RetryMode,
         step_key: str,
-        recon_pipeline: ReconstructableJob,
+        recon_job: ReconstructableJob,
         known_state: Optional["KnownExecutionState"],
     ):
         from dagster._core.execution.plan.state import KnownExecutionState
@@ -49,7 +49,7 @@ class StepRunRef(
             check.str_param(run_id, "run_id"),
             check.inst_param(retry_mode, "retry_mode", RetryMode),
             check.str_param(step_key, "step_key"),
-            check.inst_param(recon_pipeline, "recon_pipeline", ReconstructableJob),
+            check.inst_param(recon_job, "recon_job", ReconstructableJob),
             check.opt_inst_param(known_state, "known_state", KnownExecutionState),
         )
 

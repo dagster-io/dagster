@@ -224,15 +224,15 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalJob,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
     ) -> ExternalExecutionPlan:
         return self.get_code_location(
-            external_pipeline.handle.location_name
+            external_job.handle.location_name
         ).get_external_execution_plan(
-            external_pipeline=external_pipeline,
+            external_job=external_job,
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,

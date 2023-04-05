@@ -186,7 +186,7 @@ def test_successful_run_from_pending(
         "my_cool_asset_job"
     )
     external_execution_plan = code_location.get_external_execution_plan(
-        external_pipeline=external_job,
+        external_job=external_job,
         run_config={},
         step_keys_to_execute=None,
         known_state=None,

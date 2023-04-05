@@ -153,7 +153,7 @@ def step_context_to_step_run_ref(
         run_id=step_context.dagster_run.run_id,
         step_key=step_context.step.key,
         retry_mode=retry_mode,
-        recon_pipeline=recon_pipeline,  # type: ignore
+        recon_job=recon_pipeline,  # type: ignore
         known_state=step_context.get_known_state(),
     )
 
@@ -184,11 +184,11 @@ def step_run_ref_to_step_context(
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    pipeline = step_run_ref.recon_pipeline
+    pipeline = step_run_ref.recon_job
 
     solids_to_execute = step_run_ref.dagster_run.solids_to_execute
     if solids_to_execute or step_run_ref.dagster_run.asset_selection:
-        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_job(
+        pipeline = step_run_ref.recon_job.subset_for_execution_from_existing_job(
             frozenset(solids_to_execute) if solids_to_execute else None,
             asset_selection=step_run_ref.dagster_run.asset_selection,
         )

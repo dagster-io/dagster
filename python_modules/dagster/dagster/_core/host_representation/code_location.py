@@ -115,7 +115,7 @@ class CodeLocation(AbstractContextManager):
     @abstractmethod
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalJob,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
@@ -373,13 +373,13 @@ class InProcessCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalJob,
+        external_job: ExternalJob,
         run_config: Mapping[str, object],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+        check.inst_param(external_job, "external_job", ExternalJob)
         check.mapping_param(run_config, "run_config")
         step_keys_to_execute = check.opt_nullable_sequence_param(
             step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -389,10 +389,10 @@ class InProcessCodeLocation(CodeLocation):
 
         execution_plan = create_execution_plan(
             pipeline=self.get_reconstructable_job(
-                external_pipeline.repository_handle.repository_name, external_pipeline.name
+                external_job.repository_handle.repository_name, external_job.name
             ).subset_for_execution_from_existing_job(
-                external_pipeline.solids_to_execute,
-                external_pipeline.asset_selection,
+                external_job.solids_to_execute,
+                external_job.asset_selection,
             ),
             run_config=run_config,
             step_keys_to_execute=step_keys_to_execute,
@@ -402,7 +402,7 @@ class InProcessCodeLocation(CodeLocation):
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan,
-                external_pipeline.identifying_job_snapshot_id,
+                external_job.identifying_job_snapshot_id,
             )
         )
 
@@ -714,31 +714,31 @@ class GrpcServerCodeLocation(CodeLocation):
 
     def get_external_execution_plan(
         self,
-        external_pipeline: ExternalJob,
+        external_job: ExternalJob,
         run_config: Mapping[str, Any],
         step_keys_to_execute: Optional[Sequence[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
-        check.inst_param(external_pipeline, "external_pipeline", ExternalJob)
+        check.inst_param(external_job, "external_job", ExternalJob)
         run_config = check.mapping_param(run_config, "run_config")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         asset_selection = (
-            frozenset(check.opt_set_param(external_pipeline.asset_selection, "asset_selection"))
-            if external_pipeline.asset_selection is not None
+            frozenset(check.opt_set_param(external_job.asset_selection, "asset_selection"))
+            if external_job.asset_selection is not None
             else None
         )
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self.client,
-            job_origin=external_pipeline.get_external_origin(),
+            job_origin=external_job.get_external_origin(),
             run_config=run_config,
-            job_snapshot_id=external_pipeline.identifying_job_snapshot_id,
+            job_snapshot_id=external_job.identifying_job_snapshot_id,
             asset_selection=asset_selection,
-            solid_selection=external_pipeline.solid_selection,
+            solid_selection=external_job.solid_selection,
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
