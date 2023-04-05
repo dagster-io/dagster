@@ -279,7 +279,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
 
 
 def orchestration_context_event_generator(
-    pipeline: IJob,
+    job: IJob,
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     dagster_run: DagsterRun,
@@ -291,7 +291,7 @@ def orchestration_context_event_generator(
 ) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
-        pipeline,
+        job,
         execution_plan,
         run_config,
         dagster_run,
