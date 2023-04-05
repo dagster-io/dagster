@@ -40,13 +40,11 @@ class InMemoryRunStorage(SqlRunStorage):
 
         if preload:
             for payload in preload:
-                self.add_job_snapshot(
-                    payload.pipeline_snapshot, payload.pipeline_run.job_snapshot_id
-                )
+                self.add_job_snapshot(payload.job_snapshot, payload.dagster_run.job_snapshot_id)
                 self.add_execution_plan_snapshot(
-                    payload.execution_plan_snapshot, payload.pipeline_run.execution_plan_snapshot_id
+                    payload.execution_plan_snapshot, payload.dagster_run.execution_plan_snapshot_id
                 )
-                self.add_run(payload.pipeline_run)
+                self.add_run(payload.dagster_run)
 
     @contextmanager
     def connect(self) -> Iterator[Connection]:

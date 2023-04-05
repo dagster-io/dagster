@@ -7,15 +7,20 @@ from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import serialize_value, whitelist_for_serdes
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={
+        "dagster_run": "pipeline_run",
+        "job_snapshot": "pipeline_snapshot",
+    }
+)
 class DebugRunPayload(
     NamedTuple(
         "_DebugRunPayload",
         [
             ("version", str),
-            ("pipeline_run", DagsterRun),
+            ("dagster_run", DagsterRun),
             ("event_list", Sequence[EventLogEntry]),
-            ("pipeline_snapshot", JobSnapshot),
+            ("job_snapshot", JobSnapshot),
             ("execution_plan_snapshot", ExecutionPlanSnapshot),
         ],
     )
@@ -23,17 +28,17 @@ class DebugRunPayload(
     def __new__(
         cls,
         version: str,
-        pipeline_run: DagsterRun,
+        dagster_run: DagsterRun,
         event_list: Sequence[EventLogEntry],
-        pipeline_snapshot: JobSnapshot,
+        job_snapshot: JobSnapshot,
         execution_plan_snapshot: ExecutionPlanSnapshot,
     ):
         return super(DebugRunPayload, cls).__new__(
             cls,
             version=check.str_param(version, "version"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
+            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             event_list=check.sequence_param(event_list, "event_list", EventLogEntry),
-            pipeline_snapshot=check.inst_param(pipeline_snapshot, "pipeline_snapshot", JobSnapshot),
+            job_snapshot=check.inst_param(job_snapshot, "job_snapshot", JobSnapshot),
             execution_plan_snapshot=check.inst_param(
                 execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
             ),
@@ -45,9 +50,9 @@ class DebugRunPayload(
 
         return cls(
             version=dagster_version,
-            pipeline_run=run,
+            dagster_run=run,
             event_list=instance.all_logs(run.run_id),
-            pipeline_snapshot=instance.get_job_snapshot(run.job_snapshot_id),
+            job_snapshot=instance.get_job_snapshot(run.job_snapshot_id),
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
             ),
