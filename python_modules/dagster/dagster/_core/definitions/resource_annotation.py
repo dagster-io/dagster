@@ -8,6 +8,11 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def validate_resource_annotated_function(fn) -> None:
+    """Validates any parameters on the decorated function that are annotated with
+    :py:class:`dagster.ResourceDefinition`, raising a :py:class:`dagster.DagsterInvalidDefinitionError`
+    if any are not also instances of :py:class:`dagster.ConfigurableResource` (these resources should
+    instead be wrapped in the :py:func:`dagster.Resource` Annotation).
+    """
     from dagster import DagsterInvalidDefinitionError
     from dagster._config.structured_config import (
         ConfigurableResource,
