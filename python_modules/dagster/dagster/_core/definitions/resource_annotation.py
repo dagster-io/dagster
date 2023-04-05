@@ -25,6 +25,7 @@ def get_resource_args(fn, err_aggressively: bool = False) -> Sequence[Parameter]
         ]
         if len(malformed_params) > 0:
             malformed_param = malformed_params[0]
+            output_type = None
             if safe_is_subclass(malformed_param.annotation, ConfigurableResourceFactory):
                 orig_bases = getattr(malformed_param.annotation, "__orig_bases__", None)
                 output_type = (
@@ -32,18 +33,16 @@ def get_resource_args(fn, err_aggressively: bool = False) -> Sequence[Parameter]
                 )
                 if output_type == TResValue:
                     output_type = None
-                raise DagsterInvalidDefinitionError(
-                    """Resource param '{param_name}' is annotated as '{annotation_type}', but '{annotation_type}' outputs {value_message} value to user code such as @ops and @assets. This annotation should instead be 'Resource[{output_type}]'""".format(
-                        param_name=malformed_param.name,
-                        annotation_type=malformed_param.annotation,
-                        value_message=f"a '{output_type}'" if output_type else "an unknown",
-                        output_type=output_type.__name__ if output_type else "Any",
-                    )
+            raise DagsterInvalidDefinitionError(
+                """Resource param '{param_name}' is annotated as '{annotation_type}', but '{annotation_type}' outputs {value_message} value to user code such as @ops and @assets. This annotation should instead be {annotation_suggestion}""".format(
+                    param_name=malformed_param.name,
+                    annotation_type=malformed_param.annotation,
+                    value_message=f"a '{output_type}'" if output_type else "an unknown",
+                    annotation_suggestion=f"'Resource[{output_type.__name__}]'"
+                    if output_type
+                    else "'Resource[Any]' or 'Resource[<output type>]'",
                 )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    """Resource param '{param_name}' is annotated as '{annotation_type}', but '{param_name}' produces a `Foo` value. This annotation should instead be `Resource[Foo]`"""
-                )
+            )
 
     return [param for param in get_function_params(fn) if _is_resource_annotated(param)]
 
