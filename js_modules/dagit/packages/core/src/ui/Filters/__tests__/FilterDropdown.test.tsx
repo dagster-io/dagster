@@ -136,6 +136,8 @@ describe('FilterDropdown Accessibility', () => {
 
     fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
     fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
     fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
 
     await waitFor(() => {
