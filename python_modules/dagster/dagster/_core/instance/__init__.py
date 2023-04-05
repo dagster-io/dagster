@@ -1147,13 +1147,13 @@ class DagsterInstance(DynamicPartitionsStore):
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         check.invariant(
-            execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
+            execution_plan_snapshot.job_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
                 '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
                 '"{pipeline_snapshot_id}"'
             ).format(
-                ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
+                ep_pipeline_snapshot_id=execution_plan_snapshot.job_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
             ),
         )
@@ -1964,12 +1964,12 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def report_run_canceled(
         self,
-        pipeline_run: DagsterRun,
+        dagster_run: DagsterRun,
         message: Optional[str] = None,
     ) -> DagsterEvent:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
-        check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+        check.inst_param(dagster_run, "pipeline_run", DagsterRun)
 
         message = check.opt_str_param(
             message,
@@ -1979,12 +1979,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
-            job_name=pipeline_run.job_name,
+            job_name=dagster_run.job_name,
             message=message,
         )
-        self.report_dagster_event(
-            dagster_event, run_id=pipeline_run.run_id, log_level=logging.ERROR
-        )
+        self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
 
     def report_run_failed(

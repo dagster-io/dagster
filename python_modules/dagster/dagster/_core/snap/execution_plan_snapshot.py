@@ -33,14 +33,17 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot: "ExecutionPlanSna
     return create_snapshot_id(execution_plan_snapshot)
 
 
-@whitelist_for_serdes(skip_when_empty_fields={"repository_load_data"})
+@whitelist_for_serdes(
+    storage_field_names={"job_snapshot_id": "pipeline_snapshot_id"},
+    skip_when_empty_fields={"repository_load_data"},
+)
 class ExecutionPlanSnapshot(
     NamedTuple(
         "_ExecutionPlanSnapshot",
         [
             ("steps", Sequence["ExecutionStepSnap"]),
             ("artifacts_persisted", bool),
-            ("pipeline_snapshot_id", str),
+            ("job_snapshot_id", str),
             ("step_keys_to_execute", Sequence[str]),
             ("initial_known_state", Optional[KnownExecutionState]),
             ("snapshot_version", Optional[int]),
@@ -58,11 +61,12 @@ class ExecutionPlanSnapshot(
     # added step_output_versions
     # removed step_output_versions
     # added repository_load_data
+
     def __new__(
         cls,
         steps: Sequence["ExecutionStepSnap"],
         artifacts_persisted: bool,
-        pipeline_snapshot_id: str,
+        job_snapshot_id: str,
         step_keys_to_execute: Optional[Sequence[str]] = None,
         initial_known_state: Optional[KnownExecutionState] = None,
         snapshot_version: Optional[int] = None,
@@ -73,7 +77,7 @@ class ExecutionPlanSnapshot(
             cls,
             steps=check.sequence_param(steps, "steps", of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
-            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
+            job_snapshot_id=check.str_param(job_snapshot_id, "job_snapshot_id"),
             step_keys_to_execute=check.opt_sequence_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
@@ -302,7 +306,7 @@ def snapshot_from_execution_plan(
             list(map(_snapshot_from_execution_step, execution_plan.steps)), key=lambda es: es.key
         ),
         artifacts_persisted=execution_plan.artifacts_persisted,
-        pipeline_snapshot_id=pipeline_snapshot_id,
+        job_snapshot_id=pipeline_snapshot_id,
         step_keys_to_execute=execution_plan.step_keys_to_execute,
         initial_known_state=execution_plan.known_state,
         snapshot_version=CURRENT_SNAPSHOT_VERSION,
