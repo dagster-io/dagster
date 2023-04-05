@@ -31,7 +31,6 @@ import {pluginForMetadata} from '../plugins';
 import {Version} from '../versions/Version';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LiveDataForNode, displayNameForAssetKey, GraphNode, nodeDependsOnSelf} from './Utils';
