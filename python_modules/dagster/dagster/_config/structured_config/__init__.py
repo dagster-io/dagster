@@ -567,6 +567,26 @@ class ConfigurableResourceFactory(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
+    @classmethod
+    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+        """Creates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema={"my_str": str})
+            def my_resource(context: InitResourceContext) -> MyResource:
+                return MyResource.from_resource_context(context)
+
+        """
+        return cls(**context.resource_config).create_resource(context)
+
 
 @experimental
 class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
