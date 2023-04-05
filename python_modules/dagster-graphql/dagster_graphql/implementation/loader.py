@@ -85,7 +85,7 @@ class RepositoryScopedBatchLoader:
                         list(
                             self._instance.get_run_records(
                                 filters=RunsFilter(
-                                    pipeline_name=job_name,
+                                    job_name=job_name,
                                     tags={
                                         REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
                                     },

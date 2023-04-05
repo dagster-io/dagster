@@ -722,13 +722,13 @@ class GrapheneIPipelineSnapshotMixin:
         pipeline = self.get_represented_pipeline()
         if isinstance(pipeline, ExternalJob):
             runs_filter = RunsFilter(
-                pipeline_name=pipeline.name,
+                job_name=pipeline.name,
                 tags={
                     REPOSITORY_LABEL_TAG: pipeline.get_external_origin().external_repository_origin.get_label()
                 },
             )
         else:
-            runs_filter = RunsFilter(pipeline_name=pipeline.name)
+            runs_filter = RunsFilter(job_name=pipeline.name)
         return get_runs(graphene_info, runs_filter, cursor, limit)
 
     def resolve_schedules(self, graphene_info: ResolveInfo):

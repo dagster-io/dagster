@@ -474,7 +474,6 @@ class RunsFilter(
         snapshot_id (Optional[str]): The ID of the job snapshot to query for. Intended for internal use.
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
-        pipeline_name (Optional[str]): (deprecated)
 
     """
 
@@ -489,10 +488,7 @@ class RunsFilter(
         updated_before: Optional[datetime] = None,
         created_after: Optional[datetime] = None,
         created_before: Optional[datetime] = None,
-        pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
-        job_name = job_name or pipeline_name
-
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
         return super(RunsFilter, cls).__new__(

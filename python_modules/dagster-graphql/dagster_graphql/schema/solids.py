@@ -617,7 +617,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
             )
 
         instance = _graphene_info.context.instance
-        runs_filter = RunsFilter(pipeline_name=self._solid.get_pipeline_name())
+        runs_filter = RunsFilter(job_name=self._solid.get_pipeline_name())
         runs = instance.get_runs(runs_filter, limit=limit)
         nodes = []
         for run in runs:

@@ -175,7 +175,7 @@ class TestRunStorage:
         storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name="some_pipeline"))
         storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="some_other_pipeline"))
         assert len(storage.get_runs()) == 2
-        some_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
+        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
@@ -424,8 +424,8 @@ class TestRunStorage:
         assert count == 1
         assert some_runs[0].run_id == one
 
-        some_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
-        count = storage.get_runs_count(RunsFilter(pipeline_name="some_pipeline"))
+        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
+        count = storage.get_runs_count(RunsFilter(job_name="some_pipeline"))
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
@@ -451,12 +451,8 @@ class TestRunStorage:
         assert count == 1
         assert some_runs[0].run_id == one
 
-        some_runs = storage.get_runs(
-            RunsFilter(pipeline_name="some_pipeline", tags={"tag": "hello"})
-        )
-        count = storage.get_runs_count(
-            RunsFilter(pipeline_name="some_pipeline", tags={"tag": "hello"})
-        )
+        some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline", tags={"tag": "hello"}))
+        count = storage.get_runs_count(RunsFilter(job_name="some_pipeline", tags={"tag": "hello"}))
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == two
@@ -477,14 +473,14 @@ class TestRunStorage:
 
         some_runs = storage.get_runs(
             RunsFilter(
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello"},
                 statuses=[DagsterRunStatus.SUCCESS],
             )
         )
         count = storage.get_runs_count(
             RunsFilter(
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello"},
                 statuses=[DagsterRunStatus.SUCCESS],
             )
@@ -497,7 +493,7 @@ class TestRunStorage:
         some_runs = storage.get_runs(
             RunsFilter(
                 run_ids=[one],
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello"},
                 statuses=[DagsterRunStatus.SUCCESS],
             )
@@ -505,7 +501,7 @@ class TestRunStorage:
         count = storage.get_runs_count(
             RunsFilter(
                 run_ids=[one],
-                pipeline_name="some_pipeline",
+                job_name="some_pipeline",
                 tags={"tag": "hello"},
                 statuses=[DagsterRunStatus.SUCCESS],
             )
@@ -614,11 +610,9 @@ class TestRunStorage:
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
-        all_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
+        all_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(all_runs) == 3
-        sliced_runs = storage.get_runs(
-            RunsFilter(pipeline_name="some_pipeline"), cursor=three, limit=1
-        )
+        sliced_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"), cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
@@ -1517,7 +1511,7 @@ class TestRunStorage:
         runs_by_tag = {
             run.tags.get("a"): run
             for run in storage.get_runs(
-                filters=RunsFilter(pipeline_name="a"),
+                filters=RunsFilter(job_name="a"),
                 bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
             )
         }

@@ -212,7 +212,7 @@ class GraphenePartition(graphene.ObjectType):
             selector = filter.to_selector()
             runs_filter = RunsFilter(
                 run_ids=selector.run_ids,
-                pipeline_name=selector.job_name,
+                job_name=selector.job_name,
                 statuses=selector.statuses,
                 tags=merge_dicts(selector.tags, partition_tags),
             )

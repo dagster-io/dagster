@@ -69,11 +69,11 @@ def test_run_priority_pipeline(rabbitmq):
                 while not low_done.is_set() or not hi_done.is_set():
                     time.sleep(1)
 
-                low_runs = instance.get_runs(filters=RunsFilter(pipeline_name="low_job"))
+                low_runs = instance.get_runs(filters=RunsFilter(job_name="low_job"))
                 assert len(low_runs) == 1
                 low_run = low_runs[0]
                 lowstats = instance.get_run_stats(low_run.run_id)
-                hi_runs = instance.get_runs(filters=RunsFilter(pipeline_name="hi_job"))
+                hi_runs = instance.get_runs(filters=RunsFilter(job_name="hi_job"))
                 assert len(hi_runs) == 1
                 hi_run = hi_runs[0]
                 histats = instance.get_run_stats(hi_run.run_id)

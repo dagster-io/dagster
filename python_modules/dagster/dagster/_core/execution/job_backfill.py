@@ -344,7 +344,7 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
 
     runs = instance.get_runs(
         RunsFilter(
-            pipeline_name=external_partition_set.job_name,
+            job_name=external_partition_set.job_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,
                 PARTITION_NAME_TAG: partition_name,
