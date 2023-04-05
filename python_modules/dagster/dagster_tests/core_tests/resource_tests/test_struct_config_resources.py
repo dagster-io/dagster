@@ -2237,16 +2237,49 @@ def test_direct_asset_invocation_with_inputs() -> None:
     assert my_wacky_addition_asset_no_context(y=1, x=2, my_resource=MyResource(z=3)) == 6
 
 
-
-def test_from_resource_context() -> None:
+def test_from_resource_context_and_to_config_field() -> None:
     class StringResource(ConfigurableResourceFactory[str]):
         a_string: str
 
         def create_resource(self, context) -> str:
             return self.a_string + "bar"
-    
-    @resource(config_schema={"a_string": str})
+
+    @resource(config_schema=StringResource.to_config_field())
     def string_resource_function_style(context: InitResourceContext) -> str:
         return StringResource.from_resource_context(context)
-    
-    assert string_resource_function_style(build_init_resource_context({"a_string": "foo"})) == "foobar"
+
+    assert (
+        string_resource_function_style(build_init_resource_context({"a_string": "foo"})) == "foobar"
+    )
+
+
+def test_from_resource_context_and_to_config_field_complex() -> None:
+    class MyComplexConfigResource(ConfigurableResource):
+        a_string: str
+        a_list_of_ints: List[int]
+        a_map_of_lists_of_maps_of_floats: Mapping[str, List[Mapping[str, float]]]
+
+    @resource(config_schema=MyComplexConfigResource.to_config_field())
+    def complex_config_resource_function_style(
+        context: InitResourceContext,
+    ) -> MyComplexConfigResource:
+        return MyComplexConfigResource.from_resource_context(context)
+
+    complex_config_resource = complex_config_resource_function_style(
+        build_init_resource_context(
+            {
+                "a_string": "foo",
+                "a_list_of_ints": [1, 2, 3],
+                "a_map_of_lists_of_maps_of_floats": {
+                    "a": [{"b": 1.0}, {"c": 2.0}],
+                    "d": [{"e": 3.0}, {"f": 4.0}],
+                },
+            }
+        )
+    )
+    assert complex_config_resource.a_string == "foo"
+    assert complex_config_resource.a_list_of_ints == [1, 2, 3]
+    assert complex_config_resource.a_map_of_lists_of_maps_of_floats == {
+        "a": [{"b": 1.0}, {"c": 2.0}],
+        "d": [{"e": 3.0}, {"f": 4.0}],
+    }
