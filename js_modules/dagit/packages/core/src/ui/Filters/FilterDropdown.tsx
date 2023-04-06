@@ -134,7 +134,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     inputRef.current?.focus();
   }, []);
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  const handleKeyUp = (event: React.KeyboardEvent) => {
     const maxIndex = allResultsJsx.length - 1;
 
     if (event.key === 'Tab') {
@@ -152,6 +152,9 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
       event.preventDefault();
     } else if (event.key === 'Enter') {
+      if (focusedItemIndex !== -1) {
+        allResultsJsx[focusedItemIndex].props.onClick();
+      }
       if (!selectedFilter) {
         setFocusedItemIndex(-1);
       }
@@ -174,7 +177,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
           placeholder="Search filters..."
           ref={inputRef}
           aria-label="Search filters"
@@ -190,7 +193,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         <DropdownMenuContainer
           ref={dropdownRef}
           style={{maxHeight: '500px', overflowY: 'auto'}}
-          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
         >
           {allResultsJsx.length ? (
             allResultsJsx

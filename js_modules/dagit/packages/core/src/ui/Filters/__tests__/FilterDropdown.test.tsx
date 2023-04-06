@@ -119,36 +119,56 @@ describe('FilterDropdown Accessibility', () => {
     const input = screen.getByLabelText('Search filters');
     expect(input).toHaveFocus();
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
     await waitFor(() => {
       expect(screen.getByText('Type').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
     await waitFor(() => {
       expect(screen.getByText('Status').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, {key: 'ArrowUp', code: 'ArrowUp'});
+    fireEvent.keyUp(input, {key: 'ArrowUp', code: 'ArrowUp'});
     await waitFor(() => {
       expect(screen.getByText('Type').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    // Status
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+    });
+    // Search bar
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    expect(input).toHaveFocus();
+    // Tyoe
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    await waitFor(() => {
+      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+    });
+
+    // Status
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    await waitFor(() => {
+      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+    });
+
+    // Status sub filtering
+    fireEvent.keyUp(input, {key: 'Enter', code: 'Enter'});
 
     await waitFor(() => {
       expect(input).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    // Active
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+
+    // Inactive
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
 
     expect(screen.getByText('Inactive').closest('a')).toHaveFocus();
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    fireEvent.keyUp(input, {key: 'Enter', code: 'Enter'});
 
     await waitFor(() => {
       expect(mockFilters[1].onSelect).toHaveBeenCalled();
@@ -165,16 +185,16 @@ describe('FilterDropdown Accessibility', () => {
 
     expect(screen.queryByText('Type 1')).toBeNull();
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyUp(input, {key: 'Enter', code: 'Enter'});
 
     expect(screen.getByText('Type 1')).toBeVisible();
 
-    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+    fireEvent.keyUp(input, {key: 'Escape', code: 'Escape'});
 
     expect(screen.queryByText('Type 1')).toBeNull();
 
-    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+    fireEvent.keyUp(input, {key: 'Escape', code: 'Escape'});
     await waitFor(() => {
       expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
