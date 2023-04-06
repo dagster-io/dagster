@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, 
 
 from dagster import (
     Array,
+    BoolSource,
     Field,
     Noneable,
     Permissive,
@@ -54,6 +55,72 @@ SHARED_ECS_SCHEMA = {
     ),
 }
 
+SHARED_TASK_DEFINITION_FIELDS = {
+    "execution_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the task execution role for the ECS container and Fargate agent to make AWS API"
+            " calls on your behalf. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html. "
+        ),
+    ),
+    "task_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the IAM role for launched tasks. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html. "
+        ),
+    ),
+    "runtime_platform": Field(
+        Shape(
+            {
+                "cpuArchitecture": Field(StringSource, is_required=False),
+                "operatingSystemFamily": Field(StringSource, is_required=False),
+            }
+        ),
+        is_required=False,
+        description=(
+            "The operating system that the task definition is running on. See"
+            " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
+            " for the available options."
+        ),
+    ),
+    "volumes": Field(
+        Array(
+            Permissive(
+                {
+                    "name": Field(StringSource, is_required=False),
+                }
+            )
+        ),
+        is_required=False,
+        description=(
+            "List of data volume definitions for the task. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html"
+            " for the full list of available options."
+        ),
+    ),
+    "mount_points": Field(
+        Array(
+            Shape(
+                {
+                    "sourceVolume": Field(StringSource, is_required=False),
+                    "containerPath": Field(StringSource, is_required=False),
+                    "readOnly": Field(BoolSource, is_required=False),
+                }
+            )
+        ),
+        is_required=False,
+        description=(
+            "Mount points for data volumes in the main container of the task."
+            " See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/efs-volumes.html"
+            " for more information."
+        ),
+    ),
+}
+
 ECS_CONTAINER_CONTEXT_SCHEMA = {
     "secrets": Field(
         Noneable(Array(Shape({"name": StringSource, "valueFrom": StringSource}))),
@@ -103,37 +170,7 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             }
         )
     ),
-    "task_role_arn": Field(
-        StringSource,
-        is_required=False,
-        description=(
-            "ARN of the IAM role for launched tasks. See"
-            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html. "
-        ),
-    ),
-    "execution_role_arn": Field(
-        StringSource,
-        is_required=False,
-        description=(
-            "ARN of the task execution role for the ECS container and Fargate agent to make AWS API"
-            " calls on your behalf. See"
-            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html. "
-        ),
-    ),
-    "runtime_platform": Field(
-        Shape(
-            {
-                "cpuArchitecture": Field(StringSource, is_required=False),
-                "operatingSystemFamily": Field(StringSource, is_required=False),
-            }
-        ),
-        is_required=False,
-        description=(
-            "The operating system that the task definition is running on. See"
-            " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
-            " for the available options."
-        ),
-    ),
+    **SHARED_TASK_DEFINITION_FIELDS,
     **SHARED_ECS_SCHEMA,
 }
 
@@ -152,6 +189,8 @@ class EcsContainerContext(
             ("task_role_arn", Optional[str]),
             ("execution_role_arn", Optional[str]),
             ("runtime_platform", Mapping[str, Any]),
+            ("mount_points", Sequence[Mapping[str, Any]]),
+            ("volumes", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
@@ -169,6 +208,8 @@ class EcsContainerContext(
         task_role_arn: Optional[str] = None,
         execution_role_arn: Optional[str] = None,
         runtime_platform: Optional[Mapping[str, Any]] = None,
+        mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
+        volumes: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -184,6 +225,8 @@ class EcsContainerContext(
             runtime_platform=check.opt_mapping_param(
                 runtime_platform, "runtime_platform", key_type=str
             ),
+            mount_points=check.opt_sequence_param(mount_points, "mount_points"),
+            volumes=check.opt_sequence_param(volumes, "volumes"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -198,6 +241,8 @@ class EcsContainerContext(
             task_role_arn=other.task_role_arn or self.task_role_arn,
             execution_role_arn=other.execution_role_arn or self.execution_role_arn,
             runtime_platform=other.runtime_platform or self.runtime_platform,
+            mount_points=[*other.mount_points, *self.mount_points],
+            volumes=[*other.volumes, *self.volumes],
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -224,6 +269,8 @@ class EcsContainerContext(
                     task_role_arn=run_launcher.task_role_arn,
                     execution_role_arn=run_launcher.execution_role_arn,
                     runtime_platform=run_launcher.runtime_platform,
+                    mount_points=run_launcher.mount_points,
+                    volumes=run_launcher.volumes,
                 )
             )
 
@@ -279,5 +326,7 @@ class EcsContainerContext(
                 task_role_arn=processed_context_value.get("task_role_arn"),
                 execution_role_arn=processed_context_value.get("execution_role_arn"),
                 runtime_platform=processed_context_value.get("runtime_platform"),
+                mount_points=processed_context_value.get("mount_points"),
+                volumes=processed_context_value.get("volumes"),
             )
         )

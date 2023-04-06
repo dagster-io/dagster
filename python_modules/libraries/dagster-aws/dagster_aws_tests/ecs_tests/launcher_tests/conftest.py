@@ -410,6 +410,22 @@ def container_context_config(configured_secret):
             "runtime_platform": {
                 "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL",
             },
+            "mount_points": [
+                {
+                    "sourceVolume": "myEfsVolume",
+                    "containerPath": "/mount/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-1234",
+                        "rootDirectory": "/path/to/my/data",
+                    },
+                }
+            ],
         },
     }
 
@@ -437,6 +453,22 @@ def other_container_context_config(other_configured_secret):
             },
             "task_role_arn": "other-task-role",
             "execution_role_arn": "other-fake-execution-role",
+            "mount_points": [
+                {
+                    "sourceVolume": "myOtherEfsVolume",
+                    "containerPath": "/mount/other/efs",
+                    "readOnly": True,
+                }
+            ],
+            "volumes": [
+                {
+                    "name": "myOtherEfsVolume",
+                    "efsVolumeConfiguration": {
+                        "fileSystemId": "fs-5678",
+                        "rootDirectory": "/path/to/my/other/data",
+                    },
+                }
+            ],
         },
     }
 
