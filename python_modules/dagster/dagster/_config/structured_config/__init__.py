@@ -585,7 +585,7 @@ class ConfigurableResourceFactory(
             class MyResource(ConfigurableResource):
                 my_str: str
 
-            @resource(config_schema={"my_str": str})
+            @resource(config_schema=MyResource.to_config_schema())
             def my_resource(context: InitResourceContext) -> MyResource:
                 return MyResource.from_resource_context(context)
 
