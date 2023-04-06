@@ -16,8 +16,9 @@ from dagster import (
     resource,
 )
 from dagster._config.structured_config import ConfigurableResource, infer_schema_from_config_class
+from dagster._utils.cached_method import cached_method
 from dateutil import parser
-from pydantic import Field as PyField
+from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
@@ -35,24 +36,24 @@ DEFAULT_POLL_INTERVAL = 10
 class FivetranResource(ConfigurableResource):
     """This class exposes methods on top of the Fivetran REST API."""
 
-    api_key: str = PyField(..., description="The Fivetran API key to use for this resource.")
-    api_secret: str = PyField(..., description="The Fivetran API secret to use for this resource.")
-    disable_schedule_on_trigger: bool = PyField(
-        True,
+    api_key: str = Field(description="The Fivetran API key to use for this resource.")
+    api_secret: str = Field(description="The Fivetran API secret to use for this resource.")
+    disable_schedule_on_trigger: bool = Field(
+        default=True,
         description=(
             "Specifies if you would like any connector that is sync'd using this "
             "resource to be automatically taken off its Fivetran schedule."
         ),
     )
-    request_max_retries: int = PyField(
-        3,
+    request_max_retries: int = Field(
+        default=3,
         description=(
             "The maximum number of times requests to the Fivetran API should be retried "
             "before failing."
         ),
     )
-    request_retry_delay: float = PyField(
-        0.25,
+    request_retry_delay: float = Field(
+        default=0.25,
         description="Time (in seconds) to wait between each request retry.",
     )
 
@@ -61,6 +62,7 @@ class FivetranResource(ConfigurableResource):
         return HTTPBasicAuth(self.api_key, self.api_secret)
 
     @property
+    @cached_method
     def _log(self) -> logging.Logger:
         return get_dagster_logger()
 

@@ -9,7 +9,7 @@ from dagster import (
     Output,
     op,
 )
-from pydantic import Field as PyField
+from pydantic import Field
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.types import FivetranOutput
@@ -17,33 +17,32 @@ from dagster_fivetran.utils import generate_materializations
 
 
 class SyncConfig(Config):
-    connector_id: str = PyField(
-        ...,
+    connector_id: str = Field(
         description=(
             "The Fivetran Connector ID that this op will sync. You can retrieve this "
             'value from the "Setup" tab of a given connector in the Fivetran UI.'
         ),
     )
-    poll_interval: float = PyField(
-        DEFAULT_POLL_INTERVAL,
+    poll_interval: float = Field(
+        default=DEFAULT_POLL_INTERVAL,
         description="The time (in seconds) that will be waited between successive polls.",
     )
-    poll_timeout: Optional[float] = PyField(
-        None,
+    poll_timeout: Optional[float] = Field(
+        default=None,
         description=(
             "The maximum time that will waited before this operation is timed out. By "
             "default, this will never time out."
         ),
     )
-    yield_materializations: bool = PyField(
-        True,
+    yield_materializations: bool = Field(
+        default=True,
         description=(
             "If True, materializations corresponding to the results of the Fivetran sync will "
             "be yielded when the op executes."
         ),
     )
-    asset_key_prefix: List[str] = PyField(
-        ["fivetran"],
+    asset_key_prefix: List[str] = Field(
+        default=["fivetran"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "
             "prefix the generated asset keys."
@@ -110,7 +109,7 @@ def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
 
 
 class FivetranResyncConfig(SyncConfig):
-    resync_parameters: Optional[Dict[str, Any]] = PyField(
+    resync_parameters: Optional[Dict[str, Any]] = Field(
         None,
         description=(
             "Optional resync parameters to send in the payload to the Fivetran API. You can"
