@@ -2,6 +2,7 @@ from typing import NamedTuple, Sequence
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnapshot
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import serialize_value, whitelist_for_serdes
@@ -45,7 +46,7 @@ class DebugRunPayload(
         )
 
     @classmethod
-    def build(cls, instance, run):
+    def build(cls, instance: DagsterInstance, run: DagsterRun) -> "DebugRunPayload":
         from dagster import __version__ as dagster_version
 
         return cls(
