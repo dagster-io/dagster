@@ -165,13 +165,13 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     inputRef.current?.focus();
   }, []);
 
-  const handleKeyUp = useRecoilCallback(
+  const handleKeyDown = useRecoilCallback(
     ({snapshot}) => async (event: React.KeyboardEvent) => {
       const maxIndex = allResultsJsx.length - 1;
-      if (event.key === 'ArrowDown') {
+      if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
         setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
         event.preventDefault();
-      } else if (event.key === 'ArrowUp') {
+      } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
         setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
         event.preventDefault();
       } else if (event.key === 'Enter') {
@@ -201,7 +201,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          onKeyUp={handleKeyUp}
+          onKeyDown={handleKeyDown}
           placeholder="Search filters..."
           ref={inputRef}
           aria-label="Search filters"
@@ -217,7 +217,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         <DropdownMenuContainer
           ref={dropdownRef}
           style={{maxHeight: '500px', overflowY: 'auto'}}
-          onKeyUp={handleKeyUp}
+          onKeyDown={handleKeyDown}
         >
           {allResultsJsx.length ? (
             allResultsJsx
@@ -364,10 +364,17 @@ const MenuItem = React.memo(({menuKey, index, ...rest}: MenuItemProps) => {
   }, [isFocused]);
   return (
     <div ref={divRef}>
-      <_MenuItem {...rest} active={isFocused} />
+      <StyledMenuItem {...rest} active={isFocused} />
     </div>
   );
 });
+
+const StyledMenuItem = styled(_MenuItem)`
+  &:focus {
+    color: white;
+    box-shadow: initial;
+  }
+`;
 
 const SlashShortcut = styled.div`
   border-radius: 4px;
