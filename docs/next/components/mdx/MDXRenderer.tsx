@@ -125,7 +125,7 @@ const BreadcrumbNav = ({asPath}) => {
   );
 };
 
-const RightSidebar = ({editMode, navigationItems, githubLink, toggleFeedback}) => {
+export const RightSidebar = ({editMode, navigationItems = null, githubLink, toggleFeedback}) => {
   return (
     !editMode && (
       <aside className="hidden relative xl:block flex-none w-80 shrink-0 border-l border-gray-200">
@@ -288,11 +288,11 @@ export function UnversionedMDXRenderer({
   );
 }
 
-function VersionedMDXRenderer({data, toggleFeedback}: {data: MDXData; toggleFeedback: any}) {
-  const {query} = useRouter();
-  const {editMode} = query;
+function VersionedMDXRenderer({data}: {data: MDXData}) {
+  // const {query} = useRouter();
+  // const {editMode} = query;
 
-  const {mdxSource, frontMatter, searchIndex, tableOfContents, githubLink, asPath} = data;
+  const {mdxSource, frontMatter, searchIndex} = data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -301,7 +301,7 @@ function VersionedMDXRenderer({data, toggleFeedback}: {data: MDXData; toggleFeed
       props: {value: searchIndex},
     },
   });
-  const navigationItems = tableOfContents.items.filter((item) => item?.items);
+  // const navigationItems = tableOfContents.items.filter((item) => item?.items);
 
   return (
     <>
@@ -315,7 +315,7 @@ function VersionedMDXRenderer({data, toggleFeedback}: {data: MDXData; toggleFeed
         noindex={frontMatter.noindex}
       />
 
-      <VersionedContentLayout asPath={asPath}>
+      {/* <VersionedContentLayout asPath={asPath}>
         <div className="DocSearch-content prose dark:prose-dark max-w-none">{content}</div>
       </VersionedContentLayout>
 
@@ -324,7 +324,8 @@ function VersionedMDXRenderer({data, toggleFeedback}: {data: MDXData; toggleFeed
         navigationItems={navigationItems}
         githubLink={githubLink}
         toggleFeedback={toggleFeedback}
-      />
+      /> */}
+      {content}
     </>
   );
 }

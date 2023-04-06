@@ -13,7 +13,7 @@ import {GetStaticProps} from 'next';
 import renderToString from 'next-mdx-remote/render-to-string';
 import {MdxRemote} from 'next-mdx-remote/types';
 import {useRouter} from 'next/router';
-import React, {useState} from 'react';
+import React from 'react';
 import remark from 'remark';
 import mdx from 'remark-mdx';
 
@@ -72,15 +72,15 @@ function HTMLRenderer({data}: {data: HTMLData}) {
 }
 
 export default function MdxPage(props: Props) {
-  const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
+  // const [isFeedbackOpen, setOpenFeedback] = useState<boolean>(false);
 
-  const closeFeedback = () => {
-    setOpenFeedback(false);
-  };
+  // const closeFeedback = () => {
+  //   setOpenFeedback(false);
+  // };
 
-  const toggleFeedback = () => {
-    setOpenFeedback(!isFeedbackOpen);
-  };
+  // const toggleFeedback = () => {
+  //   setOpenFeedback(!isFeedbackOpen);
+  // };
 
   const router = useRouter();
 
@@ -92,9 +92,9 @@ export default function MdxPage(props: Props) {
 
   return (
     <>
-      <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
+      {/* <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} /> */}
       {props.type === PageType.MDX ? (
-        <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
+        <MDXRenderer data={props.data} />
       ) : (
         <HTMLRenderer data={props.data} />
       )}

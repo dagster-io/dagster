@@ -9,7 +9,10 @@ import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
 import * as React from 'react';
 
-import Layout from '../layouts/MainLayout';
+import FeedbackModal from '../components/FeedbackModal';
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import {VersionedContentLayout, RightSidebar} from '../components/mdx/MDXRenderer';
 import * as gtag from '../util/gtag';
 
 const BASE_URL = 'https://docs.dagster.io';
@@ -37,6 +40,114 @@ const DEFAULT_SEO = {
   },
 };
 
+// function collectHeadings(node, sections = []) {
+//   if (node) {
+//     if (node.name === 'Heading') {
+//       console.log(node);
+//       const title = node.children[0];
+
+//       if (typeof title === 'string') {
+//         sections.push({
+//           ...node.attributes,
+//           title,
+//         });
+//       }
+//     }
+
+//     if (node.children) {
+//       for (const child of node.children) {
+//         collectHeadings(child, sections);
+//       }
+//     }
+//   }
+
+//   return sections;
+// }
+interface Props {
+  children: React.ReactNode;
+  asPath: string;
+  pageProps: any;
+}
+const Layout: React.FC<Props> = ({asPath, children, pageProps}) => {
+  const [isMobileDocsMenuOpen, setMobileDocsMenuOpen] = React.useState<boolean>(false);
+  const openMobileDocsMenu = () => {
+    setMobileDocsMenuOpen(true);
+  };
+  const closeMobileDocsMenu = () => {
+    setMobileDocsMenuOpen(false);
+  };
+
+  const [isFeedbackOpen, setOpenFeedback] = React.useState<boolean>(false);
+
+  const closeFeedback = () => {
+    setOpenFeedback(false);
+  };
+
+  const toggleFeedback = () => {
+    setOpenFeedback(!isFeedbackOpen);
+  };
+
+  const {query} = useRouter();
+  const {editMode} = query;
+  const githubLink = new URL(
+    path.join('dagster-io/dagster/tree/master/docs/content', '/', asPath + '.mdx'),
+    'https://github.com',
+  ).href;
+
+  const {markdoc} = pageProps;
+  let navigationItems = [];
+  if (markdoc) {
+    // const tableOfContents = pageProps.markdoc?.content
+    //   ? collectHeadings(pageProps.markdoc.content, {})
+    //   : {};
+    navigationItems = [];
+  } else {
+    const tableOfContents = pageProps?.data?.tableOfContents;
+    if (tableOfContents?.items) {
+      navigationItems = tableOfContents.items.filter((item) => item?.items);
+    }
+  }
+
+  return (
+    <>
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundImage: 'url("/_next/image?url=/assets/head-texture.jpg&w=3840&q=100")',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'top middle',
+          backgroundSize: 'fit',
+          backgroundColor: '#FAF9F7',
+        }}
+      >
+        <Header openMobileDocsMenu={openMobileDocsMenu} />
+        <div className="w-screen mx-auto px-4 sm:px-6 lg:px-8" style={{paddingTop: '48px'}}>
+          <div className="mt-8 flex justify-center">
+            <Sidebar
+              isMobileDocsMenuOpen={isMobileDocsMenuOpen}
+              closeMobileDocsMenu={closeMobileDocsMenu}
+            />
+            {/* <div className="lg:pl-80 flex w-full prose">{children}</div> */}
+            <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
+            <div className="lg:pl-80 flex w-full">
+              <VersionedContentLayout asPath={asPath}>
+                <div className="DocSearch-content prose dark:prose-dark max-w-none">{children}</div>
+              </VersionedContentLayout>
+
+              <RightSidebar
+                editMode={editMode}
+                navigationItems={navigationItems}
+                githubLink={githubLink}
+                toggleFeedback={toggleFeedback}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 const MyApp = ({Component, pageProps}: AppProps) => {
   const router = useRouter();
   const asPathFromPageProps = pageProps?.data?.asPath;
@@ -59,7 +170,7 @@ const MyApp = ({Component, pageProps}: AppProps) => {
     <>
       <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
       <PersistentTabProvider>
-        <Layout>
+        <Layout asPath={asPath} pageProps={pageProps}>
           <Component {...pageProps} />
         </Layout>
       </PersistentTabProvider>
