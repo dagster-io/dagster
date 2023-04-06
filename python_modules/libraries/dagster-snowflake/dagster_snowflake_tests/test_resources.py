@@ -49,6 +49,7 @@ def test_snowflake_resource(snowflake_connect, resource):
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
+        paramstyle="pyformat",
     )
 
 
@@ -105,6 +106,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect, resource):
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
+            paramstyle="pyformat",
         )
 
 
@@ -133,7 +135,7 @@ def test_snowflake_resource_no_auth(snowflake_connect, resource):
         with context.resources.snowflake.get_connection() as _:
             pass
 
-    @job(resource_defs={"snowflake": snowflake_resource})
+    @job(resource_defs={"snowflake": resource})
     def snowflake_job():
         snowflake_op()
 
