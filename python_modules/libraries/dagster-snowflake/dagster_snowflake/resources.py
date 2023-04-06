@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast, overload
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -566,6 +566,17 @@ class SnowflakeResource(ConfigurableResourceFactory):
                 "Snowflake Resource: 'connector' configuration value must be None or sqlalchemy"
             )
         return v
+
+    @overload
+    def __init__(self, schema: str, *args, **kwargs):
+        ...
+
+    @overload
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def create_resource(self, context) -> SnowflakeConnection:
         return SnowflakeConnection(context.resource_config, context.log)
