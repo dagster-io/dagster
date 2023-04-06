@@ -24,7 +24,10 @@ const MOCK_PARTITIONS = Object.keys(MOCK_PARTITION_STATES).sort();
 describe('SpanRepresentation', () => {
   describe('assembleIntoSpans', () => {
     it('returns spans of each returned value', async () => {
-      const result = assembleIntoSpans(MOCK_PARTITIONS, (key) => MOCK_PARTITION_STATES[key] === 1);
+      const result = assembleIntoSpans(
+        MOCK_PARTITIONS,
+        (key) => MOCK_PARTITION_STATES[key as keyof typeof MOCK_PARTITION_STATES] === 1,
+      );
       const expected = [
         {startIdx: 0, endIdx: 5, status: false},
         {startIdx: 6, endIdx: 8, status: true},

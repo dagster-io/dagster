@@ -211,7 +211,7 @@ def test_assets_excluded_from_subset_not_in_job():
             job_names=["as_job"],  # the important line
             output_name="a",
             group_name=DEFAULT_GROUP_NAME,
-            metadata_entries=normalize_metadata(out_metadata, [], allow_invalid=True),
+            metadata=normalize_metadata(out_metadata, allow_invalid=True),
         )
         in external_asset_nodes
     )
@@ -459,7 +459,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -476,7 +476,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -490,7 +490,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -530,7 +530,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_in",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -699,7 +699,7 @@ def test_graph_output_metadata_and_description():
                 dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
                 depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
                 op_names=sorted(node.op_names),
-                metadata_entries=sorted(node.metadata_entries),
+                metadata=node.metadata,
             )
             for node in external_asset_nodes
         ],
@@ -718,9 +718,7 @@ def test_graph_output_metadata_and_description():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=sorted(
-                normalize_metadata({**asset_metadata, **out_metadata}, [], allow_invalid=True)
-            ),
+            metadata=(normalize_metadata({**asset_metadata, **out_metadata}, allow_invalid=True)),
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -734,7 +732,7 @@ def test_graph_output_metadata_and_description():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]
@@ -840,7 +838,7 @@ def test_nasty_nested_graph_asset():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -857,7 +855,7 @@ def test_nasty_nested_graph_asset():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -876,7 +874,7 @@ def test_nasty_nested_graph_asset():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=[],
+            metadata={},
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]

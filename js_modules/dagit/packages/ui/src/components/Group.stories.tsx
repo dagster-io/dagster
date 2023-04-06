@@ -108,10 +108,7 @@ export const EmptyChildren = () => {
 export const PointerEventsTest = () => {
   return (
     <div>
-      <ButtonLink
-        color={{link: Colors.Blue500, hover: Colors.Yellow500}}
-        onClick={() => console.log('Clicked!')}
-      >
+      <ButtonLink color={{link: Colors.Blue500, hover: Colors.Yellow500}}>
         <strong>Try to click me!</strong>
       </ButtonLink>
       <Group direction="column" spacing={32}>

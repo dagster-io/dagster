@@ -25,7 +25,7 @@ execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inhe
 
 // Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
 // a mocked schema.
-const possibleTypes = {};
+const possibleTypes: Record<string, string[]> = {};
 
 schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{name: string}]}) => {
   if (supertype.possibleTypes) {

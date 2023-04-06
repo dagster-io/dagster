@@ -13,7 +13,7 @@ def test_solid_instance_tags():
 
     pipeline = PipelineDefinition(
         name="metadata_pipeline",
-        solid_defs=[metadata_solid],
+        node_defs=[metadata_solid],
         dependencies={
             NodeInvocation(
                 "metadata_solid",

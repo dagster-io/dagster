@@ -263,7 +263,7 @@ class DbIOManager(IOManager):
             schema=schema,
             database=self._database,
             partition_dimensions=partition_dimensions,
-            columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
+            columns=(context.metadata or {}).get("columns"),
         )
 
     def _check_supported_type(self, obj_type):

@@ -65,7 +65,7 @@ class ExecutionResult(ABC):
         def _is_event_from_node(event: DagsterEvent) -> bool:
             if not event.is_step_event:
                 return False
-            node_handle = cast(NodeHandle, event.solid_handle)
+            node_handle = cast(NodeHandle, event.node_handle)
             return node_handle.is_or_descends_from(handle)
 
         return self.filter_events(_is_event_from_node)
@@ -121,6 +121,18 @@ class ExecutionResult(ABC):
 
         return self._filter_events_by_handle(NodeHandle.from_string(node_name))
 
+    def is_node_success(self, node_str: str) -> bool:
+        return any(evt.is_step_success for evt in self.events_for_node(node_str))
+
+    def is_node_failed(self, node_str: str) -> bool:
+        return any(evt.is_step_failure for evt in self.events_for_node(node_str))
+
+    def is_node_skipped(self, node_str: str) -> bool:
+        return any(evt.is_step_skipped for evt in self.events_for_node(node_str))
+
+    def is_node_untouched(self, node_str: str) -> bool:
+        return len(self.events_for_node(node_str)) == 0
+
     def get_job_failure_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
         execution.
@@ -161,11 +173,17 @@ class ExecutionResult(ABC):
             if event.event_type_value == DagsterEventType.ASSET_OBSERVATION.value
         ]
 
+    def get_asset_materialization_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_materialization]
+
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
 
     def get_step_skipped_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_skipped]
+
+    def get_step_failure_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_failure]
 
     def get_failed_step_keys(self) -> AbstractSet[str]:
         failure_events = self.filter_events(

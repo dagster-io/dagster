@@ -119,6 +119,31 @@ def test_launch_asset_backfill():
 
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             # launchPartitionBackfill
+
+            # can't launch with allPartitions
+
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                        "allPartitions": True,
+                    }
+                },
+            )
+
+            assert launch_backfill_result
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "PythonError"
+            )
+            assert (
+                "allPartitions is not supported for pure asset backfills"
+                in launch_backfill_result.data["launchPartitionBackfill"]["message"]
+            )
+
             launch_backfill_result = execute_dagster_graphql(
                 context,
                 LAUNCH_PARTITION_BACKFILL_MUTATION,

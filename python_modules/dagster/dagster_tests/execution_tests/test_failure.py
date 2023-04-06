@@ -1,5 +1,6 @@
-from dagster import Failure, MetadataEntry
+from dagster import Failure
 from dagster._core.definitions.decorators import op
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._legacy import execute_pipeline, pipeline
 
 
@@ -8,7 +9,7 @@ def test_failure():
     def throw():
         raise Failure(
             description="it Failure",
-            metadata_entries=[MetadataEntry("label", value="text")],
+            metadata={"label": "text"},
         )
 
     @pipeline
@@ -25,5 +26,4 @@ def test_failure():
     assert failure_data.user_failure_data.label == "intentional-failure"
     # from Failure
     assert failure_data.user_failure_data.description == "it Failure"
-    assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-    assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
+    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")

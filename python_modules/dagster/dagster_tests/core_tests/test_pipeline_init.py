@@ -57,7 +57,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
 
     return PipelineDefinition(
         name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
+        node_defs=[resource_solid],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 

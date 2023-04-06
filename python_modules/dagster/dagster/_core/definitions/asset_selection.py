@@ -1,18 +1,33 @@
 import operator
 from abc import ABC, abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Union
+from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._core.selector.subset_selector import fetch_connected, fetch_sinks, fetch_sources
+from dagster._core.selector.subset_selector import (
+    fetch_connected,
+    fetch_sinks,
+    fetch_sources,
+    parse_clause,
+)
 from dagster._utils.backcompat import deprecation_warning
 
 from .asset_graph import AssetGraph
 from .assets import AssetsDefinition
 from .events import AssetKey, CoercibleToAssetKey
 from .source_asset import SourceAsset
+
+CoercibleToAssetSelection: TypeAlias = Union[
+    str,
+    Sequence[str],
+    Sequence[AssetKey],
+    Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    "AssetSelection",
+]
 
 
 class AssetSelection(ABC):
@@ -202,6 +217,56 @@ class AssetSelection(ABC):
     @abstractmethod
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         raise NotImplementedError()
+
+    @staticmethod
+    def _selection_from_string(string: str) -> "AssetSelection":
+        from dagster._core.definitions import AssetSelection
+
+        if string == "*":
+            return AssetSelection.all()
+
+        parts = parse_clause(string)
+        if not parts:
+            check.failed(f"Invalid selection string: {string}")
+        u, item, d = parts
+
+        selection: AssetSelection = AssetSelection.keys(item)
+        if u:
+            selection = selection.upstream(u)
+        if d:
+            selection = selection.downstream(d)
+        return selection
+
+    @classmethod
+    def from_coercible(cls, selection: CoercibleToAssetSelection) -> "AssetSelection":
+        if isinstance(selection, str):
+            return cls._selection_from_string(selection)
+        elif isinstance(selection, AssetSelection):
+            return selection
+        elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
+            return reduce(
+                operator.or_, [cls._selection_from_string(cast(str, s)) for s in selection]
+            )
+        elif isinstance(selection, list) and all(
+            isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
+        ):
+            return AssetSelection.keys(
+                *(
+                    key
+                    for el in selection
+                    for key in (
+                        el.keys if isinstance(el, AssetsDefinition) else [cast(SourceAsset, el).key]
+                    )
+                )
+            )
+        elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
+            return cls.keys(*cast(Sequence[AssetKey], selection))
+        else:
+            check.failed(
+                "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
+                " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
+                f" {type(selection)}."
+            )
 
 
 class AllAssetSelection(AssetSelection):

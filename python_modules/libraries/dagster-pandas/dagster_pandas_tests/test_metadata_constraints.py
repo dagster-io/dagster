@@ -1,4 +1,5 @@
 from dagster_pandas.constraints import (
+    CONSTRAINT_METADATA_KEY,
     ColumnAggregateConstraintWithMetadata,
     ColumnConstraintWithMetadata,
     ColumnRangeConstraintWithMetadata,
@@ -49,7 +50,7 @@ def test_basic():
 
 
 def test_failed_multi():
-    mul_val = basic_multi_constraint.validate([]).metadata_entries[0].value.data
+    mul_val = basic_multi_constraint.validate([]).metadata[CONSTRAINT_METADATA_KEY].data
     assert mul_val["expected"] == {"basic_validation_function": "a DataFrame"}
     assert mul_val["actual"] == {"basic_validation_function": "a list"}
 
@@ -57,7 +58,7 @@ def test_failed_multi():
 def test_success_multi():
     mul_val = basic_multi_constraint.validate(DataFrame())
     assert mul_val.success is True
-    assert mul_val.metadata_entries == []
+    assert mul_val.metadata == {}
 
 
 def test_failed_strict():
@@ -81,7 +82,7 @@ def test_column_constraint():
         ColumnWithMetadataException,
         raise_or_typecheck=False,
     )
-    val = column_val.validate(df, *df.columns).metadata_entries[0].value.data
+    val = column_val.validate(df, *df.columns).metadata[CONSTRAINT_METADATA_KEY].data
     assert {"bar": ["row 0"], "baz": ["row 1"]} == val["offending"]
     assert {"bar": ["a"], "baz": ["a"]} == val["actual"]
 
@@ -97,7 +98,7 @@ def test_multi_val_constraint():
         ColumnWithMetadataException,
         raise_or_typecheck=False,
     )
-    val = column_val.validate(df, *df.columns).metadata_entries[0].value.data
+    val = column_val.validate(df, *df.columns).metadata[CONSTRAINT_METADATA_KEY].data
     assert {"foo": ["row 0", "row 1"], "bar": ["row 1"], "baz": ["row 0"]} == val["offending"]
     assert {"foo": [1, 2], "bar": [2], "baz": [1]} == val["actual"]
 
@@ -118,7 +119,7 @@ def test_multi_column_constraint():
         ColumnWithMetadataException,
         raise_or_typecheck=False,
     )
-    val = column_val.validate(df).metadata_entries[0].value.data
+    val = column_val.validate(df).metadata[CONSTRAINT_METADATA_KEY].data
     assert {
         "bar": {
             "col_val_two": "values less than 2.",
@@ -152,7 +153,7 @@ def test_aggregate_constraint():
         ConstraintWithMetadataException,
         raise_or_typecheck=False,
     )
-    val = aggregate_val.validate(df, *df.columns).metadata_entries[0].value.data
+    val = aggregate_val.validate(df, *df.columns).metadata[CONSTRAINT_METADATA_KEY].data
     assert ["foo"] == val["offending"]
     assert [1, 2] == val["actual"]["foo"]
 
@@ -178,7 +179,7 @@ def test_multi_agg_constraint():
         ConstraintWithMetadataException,
         raise_or_typecheck=False,
     )
-    val = aggregate_val.validate(df).metadata_entries[0].value.data
+    val = aggregate_val.validate(df).metadata[CONSTRAINT_METADATA_KEY].data
     assert val["expected"] == {
         "bar": {"column_val_2": "Checks column mean equal to 1.5."},
         "foo": {"column_val_1": "Checks column mean equal to 1."},
@@ -192,7 +193,7 @@ def test_multi_agg_constraint():
 def test_range_constraint():
     df = DataFrame({"foo": [1, 2], "bar": [3, 2], "baz": [1, 4]})
     range_val = ColumnRangeConstraintWithMetadata(1, 2.5, raise_or_typecheck=False)
-    val = range_val.validate(df).metadata_entries[0].value.data
+    val = range_val.validate(df).metadata[CONSTRAINT_METADATA_KEY].data
     assert {"bar": ["row 0"], "baz": ["row 1"]} == val["offending"]
     assert {"bar": [3], "baz": [4]} == val["actual"]
     range_val = ColumnRangeConstraintWithMetadata(raise_or_typecheck=False)

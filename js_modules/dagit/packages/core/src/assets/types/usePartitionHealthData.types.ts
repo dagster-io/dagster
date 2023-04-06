@@ -22,6 +22,7 @@ export type PartitionHealthQuery = {
           | {
               __typename: 'DefaultPartitions';
               materializedPartitions: Array<string>;
+              materializingPartitions: Array<string>;
               failedPartitions: Array<string>;
             }
           | {
@@ -37,6 +38,7 @@ export type PartitionHealthQuery = {
                   | {
                       __typename: 'DefaultPartitions';
                       materializedPartitions: Array<string>;
+                      materializingPartitions: Array<string>;
                       failedPartitions: Array<string>;
                     }
                   | {

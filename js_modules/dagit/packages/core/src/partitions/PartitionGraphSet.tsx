@@ -57,16 +57,28 @@ export const PartitionGraphSet: React.FC<{
       const toSort = partition.runs.slice();
       toSort.sort(_reverseSortRunCompare);
       const latestRun = toSort[0];
-      jobDurationData[partition.name] = getPipelineDurationForRun(latestRun);
-      stepDurationData[partition.name] = getStepDurationsForRun(latestRun);
-      jobMaterializationData[partition.name] = getPipelineMaterializationCountForRun(latestRun);
-      stepMaterializationData[partition.name] = getStepMaterializationCountForRun(latestRun);
-      jobExpectationSuccessData[partition.name] = getPipelineExpectationSuccessForRun(latestRun);
-      stepExpectationSuccessData[partition.name] = getStepExpectationSuccessForRun(latestRun);
-      jobExpectationFailureData[partition.name] = getPipelineExpectationFailureForRun(latestRun);
-      stepExpectationFailureData[partition.name] = getStepExpectationFailureForRun(latestRun);
-      jobExpectationRateData[partition.name] = getPipelineExpectationRateForRun(latestRun);
-      stepExpectationRateData[partition.name] = getStepExpectationRateForRun(latestRun);
+      (jobDurationData as any)[partition.name] = getPipelineDurationForRun(latestRun);
+      (stepDurationData as any)[partition.name] = getStepDurationsForRun(latestRun);
+      (jobMaterializationData as any)[partition.name] = getPipelineMaterializationCountForRun(
+        latestRun,
+      );
+      (stepMaterializationData as any)[partition.name] = getStepMaterializationCountForRun(
+        latestRun,
+      );
+      (jobExpectationSuccessData as any)[partition.name] = getPipelineExpectationSuccessForRun(
+        latestRun,
+      );
+      (stepExpectationSuccessData as any)[partition.name] = getStepExpectationSuccessForRun(
+        latestRun,
+      );
+      (jobExpectationFailureData as any)[partition.name] = getPipelineExpectationFailureForRun(
+        latestRun,
+      );
+      (stepExpectationFailureData as any)[partition.name] = getStepExpectationFailureForRun(
+        latestRun,
+      );
+      (jobExpectationRateData as any)[partition.name] = getPipelineExpectationRateForRun(latestRun);
+      (stepExpectationRateData as any)[partition.name] = getStepExpectationRateForRun(latestRun);
     }
   });
 

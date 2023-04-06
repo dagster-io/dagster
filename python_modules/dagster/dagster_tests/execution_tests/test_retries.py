@@ -110,7 +110,7 @@ def test_retries(environment):
         assert downstream_of_failed == "okay perfect"
 
         will_be_skipped = [
-            e for e in second_result.event_list if "will_be_skipped" in str(e.solid_handle)
+            e for e in second_result.event_list if "will_be_skipped" in str(e.node_handle)
         ]
         assert str(will_be_skipped[0].event_type_value) == "STEP_SKIPPED"
         assert str(will_be_skipped[1].event_type_value) == "STEP_SKIPPED"

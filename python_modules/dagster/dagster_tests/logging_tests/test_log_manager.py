@@ -18,12 +18,29 @@ from dagster._core.log_manager import (
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 
+def test_metadata_event_tags():
+    logging_metadata = DagsterLoggingMetadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
+        pipeline_name="my_pipeline",
+        pipeline_tags={"foo": "bar"},
+    )
+
+    all_tags = logging_metadata.all_tags()
+    event_tags = logging_metadata.event_tags()
+
+    assert all_tags["pipeline_name"] == "my_pipeline"
+    assert all_tags["pipeline_tags"] == "{'foo': 'bar'}"
+
+    assert event_tags["pipeline_name"] == "my_pipeline"
+    assert "pipeline_tags" not in event_tags
+
+
 def test_construct_log_string_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=NodeHandle("solid2", None),
+        node_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("solid2", "result")),
@@ -34,6 +51,7 @@ def test_construct_log_string_for_event():
     logging_metadata = DagsterLoggingMetadata(
         run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", pipeline_name="my_pipeline"
     )
+
     dagster_message_props = DagsterMessageProps(
         orig_message=step_output_event.message,
         dagster_event=step_output_event,
@@ -62,7 +80,7 @@ def make_log_string(error, error_source=None):
         event_type_value="STEP_FAILURE",
         pipeline_name="my_pipeline",
         step_key="solid2",
-        solid_handle=NodeHandle("solid2", None),
+        node_handle=NodeHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepFailureData(

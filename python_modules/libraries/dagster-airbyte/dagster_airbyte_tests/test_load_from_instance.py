@@ -9,14 +9,14 @@ from dagster import (
     IOManager,
     OutputContext,
     asset,
-    build_init_resource_context,
     io_manager,
     materialize,
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
-from dagster_airbyte import airbyte_resource
+from dagster_airbyte import AirbyteResource, airbyte_resource
 from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
 
 from .utils import (
@@ -28,6 +28,14 @@ from .utils import (
 )
 
 TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)
+
+
+@pytest.fixture(name="airbyte_instance", params=[True, False], scope="module")
+def airbyte_instance_fixture(request) -> AirbyteResource:
+    if request.param:
+        return AirbyteResource(host="some_host", port="8000")
+    else:
+        return airbyte_resource(build_init_resource_context({"host": "some_host", "port": "8000"}))
 
 
 @responses.activate
@@ -46,6 +54,7 @@ def test_load_from_instance(
     filter_connection,
     connection_to_asset_key_fn,
     connection_to_freshness_policy_fn,
+    airbyte_instance: AirbyteResource,
 ):
     load_calls = []
 
@@ -62,42 +71,27 @@ def test_load_from_instance(
 
         return TestIOManager()
 
-    ab_resource = airbyte_resource(
-        build_init_resource_context(
-            config={
-                "host": "some_host",
-                "port": "8000",
-            }
-        )
-    )
-    ab_instance = airbyte_resource.configured(
-        {
-            "host": "some_host",
-            "port": "8000",
-        }
-    )
-
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/workspaces/list",
+        url=airbyte_instance.api_base_url + "/workspaces/list",
         json=get_instance_workspaces_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/list",
+        url=airbyte_instance.api_base_url + "/connections/list",
         json=get_instance_connections_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/operations/list",
+        url=airbyte_instance.api_base_url + "/operations/list",
         json=get_instance_operations_json(),
         status=200,
     )
     if connection_to_group_fn:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
-            ab_instance,
+            airbyte_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_to_group_fn=connection_to_group_fn,
             connection_filter=(lambda _: False) if filter_connection else None,
@@ -107,7 +101,7 @@ def test_load_from_instance(
         )
     else:
         ab_cacheable_assets = load_assets_from_airbyte_instance(
-            ab_instance,
+            airbyte_instance,
             create_assets_for_normalization_tables=use_normalization_tables,
             connection_filter=(lambda _: False) if filter_connection else None,
             io_manager_key="test_io_manager",
@@ -115,7 +109,7 @@ def test_load_from_instance(
             connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
     ab_assets = ab_cacheable_assets.build_definitions(ab_cacheable_assets.compute_cacheable_data())
-    ab_assets = with_resources(ab_assets, {"test_io_manager": test_io_manager})
+    ab_assets = list(with_resources(ab_assets, {"test_io_manager": test_io_manager}))
 
     if connection_to_asset_key_fn:
 
@@ -217,19 +211,19 @@ def test_load_from_instance(
 
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/get",
+        url=airbyte_instance.api_base_url + "/connections/get",
         json=get_project_connection_json(),
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/sync",
+        url=airbyte_instance.api_base_url + "/connections/sync",
         json={"job": {"id": 1}},
         status=200,
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/jobs/get",
+        url=airbyte_instance.api_base_url + "/jobs/get",
         json=get_project_job_json(),
         status=200,
     )
@@ -237,7 +231,7 @@ def test_load_from_instance(
     res = materialize(all_assets)
 
     materializations = [
-        event.event_specific_data.materialization
+        event.event_specific_data.materialization  # type: ignore[attr-defined]
         for event in res.events_for_node("airbyte_sync_87b7f")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]

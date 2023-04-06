@@ -2,32 +2,35 @@ import re
 
 import pytest
 from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.handle import JobHandle
+from dagster._core.instance import DagsterInstance
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .utils import get_bar_repo_code_location
 
 
-def test_execution_plan_error_grpc(instance):
+def test_execution_plan_error_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
 
         with pytest.raises(
             DagsterUserCodeProcessError,
-            match=re.escape("Could not find mode made_up_mode in pipeline foo"),
+            match=re.escape('Assets provided in asset_selection argument ["fake"] do not exist'),
         ):
             sync_get_external_execution_plan_grpc(
                 api_client,
                 job_handle.get_external_origin(),
                 run_config={},
+                asset_selection={AssetKey("fake")},
                 mode="made_up_mode",
                 pipeline_snapshot_id="12345",
             )
 
 
-def test_execution_plan_snapshot_api_grpc(instance):
+def test_execution_plan_snapshot_api_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -48,7 +51,7 @@ def test_execution_plan_snapshot_api_grpc(instance):
         assert len(execution_plan_snapshot.steps) == 2
 
 
-def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
+def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -69,7 +72,7 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc(instance):
         assert len(execution_plan_snapshot.steps) == 2
 
 
-def test_execution_plan_with_subset_snapshot_api_grpc(instance):
+def test_execution_plan_with_subset_snapshot_api_grpc(instance: DagsterInstance):
     with get_bar_repo_code_location(instance) as code_location:
         job_handle = JobHandle("foo", code_location.get_repository("bar_repo").handle)
         api_client = code_location.client
@@ -77,7 +80,7 @@ def test_execution_plan_with_subset_snapshot_api_grpc(instance):
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
             job_handle.get_external_origin(),
-            run_config={"solids": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
+            run_config={"ops": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
             mode="default",
             pipeline_snapshot_id="12345",
             solid_selection=["do_input"],

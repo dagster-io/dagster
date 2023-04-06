@@ -77,7 +77,7 @@ export const RunTimeline = (props: Props) => {
     const repoKey = repoAddressAsURLString(repoAddress);
     const jobsForRepo = accum[repoKey] || [];
     return {...accum, [repoKey]: [...jobsForRepo, job]};
-  }, {});
+  }, {} as Record<string, TimelineJob[]>);
 
   const allKeys = Object.keys(buckets);
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(

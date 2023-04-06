@@ -23,6 +23,7 @@ from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
@@ -50,6 +51,7 @@ from .sensor_definition import (
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorResult,
     SensorType,
     SkipReason,
 )
@@ -482,7 +484,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
         def _wrapped_fn(
             context: SensorEvaluationContext,
-        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction]]:
+        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction, SensorResult]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -635,8 +637,17 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 ).to_json()
                             )
 
-                            if isinstance(
-                                sensor_return, (RunRequest, SkipReason, PipelineRunReaction)
+                            if isinstance(sensor_return, SensorResult):
+                                if sensor_return.cursor:
+                                    raise DagsterInvariantViolationError(
+                                        f"Error in run status sensor {name}: Sensor returned a"
+                                        " SensorResult with a cursor value. The cursor is managed"
+                                        " by the sensor and should not be modified by a user."
+                                    )
+                                yield sensor_return
+                            elif isinstance(
+                                sensor_return,
+                                (RunRequest, SkipReason, PipelineRunReaction),
                             ):
                                 yield sensor_return
                             else:

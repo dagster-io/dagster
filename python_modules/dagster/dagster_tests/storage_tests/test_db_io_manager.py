@@ -359,6 +359,7 @@ def test_non_asset_out():
     )
 
     assert len(handler.handle_input_calls) == 1
+
     assert handler.handle_input_calls[0][1] == table_slice
 
 

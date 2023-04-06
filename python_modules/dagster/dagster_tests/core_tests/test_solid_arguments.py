@@ -1,7 +1,7 @@
 import pytest
 from dagster import In, op
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_solid_input_arguments():
@@ -97,14 +97,22 @@ def test_execution_cases():
     def underscore_inputs(x, _):
         return x + _
 
-    assert execute_solid(underscore_inputs, input_values={"x": 5, "_": 6}).output_value() == 11
+    assert (
+        wrap_op_in_graph_and_execute(
+            underscore_inputs, input_values={"x": 5, "_": 6}
+        ).output_value()
+        == 11
+    )
 
     @op
     def context_underscore_inputs(context, x, _):
         return x + _
 
     assert (
-        execute_solid(context_underscore_inputs, input_values={"x": 5, "_": 6}).output_value() == 11
+        wrap_op_in_graph_and_execute(
+            context_underscore_inputs, input_values={"x": 5, "_": 6}
+        ).output_value()
+        == 11
     )
 
     @op
@@ -112,7 +120,7 @@ def test_execution_cases():
         return x + context_
 
     assert (
-        execute_solid(
+        wrap_op_in_graph_and_execute(
             underscore_context_poorly_named_input, input_values={"x": 5, "context_": 6}
         ).output_value()
         == 11

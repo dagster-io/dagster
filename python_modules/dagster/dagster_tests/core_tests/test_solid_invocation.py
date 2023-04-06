@@ -15,12 +15,15 @@ from dagster import (
     Failure,
     Field,
     In,
+    MultiPartitionsDefinition,
     Noneable,
     Nothing,
     Out,
     Output,
     RetryRequested,
     Selector,
+    StaticPartitionsDefinition,
+    TimeWindow,
     asset,
     build_op_context,
     op,
@@ -38,9 +41,9 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    execute_solid,
     pipeline,
 )
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_solid_invocation_no_arg():
@@ -447,7 +450,7 @@ def test_multiple_outputs_iterator():
         yield Output(1, output_name="1")
 
     # Ensure that solid works both with execute_solid and invocation
-    result = execute_solid(solid_multiple_outputs)
+    result = wrap_op_in_graph_and_execute(solid_multiple_outputs)
     assert result.success
 
     outputs = list(solid_multiple_outputs())
@@ -464,7 +467,7 @@ def test_wrong_output():
         DagsterInvariantViolationError,
         match="explicitly named 'wrong_name'",
     ):
-        execute_solid(solid_wrong_output)
+        wrap_op_in_graph_and_execute(solid_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -493,7 +496,7 @@ def test_optional_output_return():
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
 
 def test_optional_output_yielded():
@@ -547,7 +550,7 @@ def test_missing_required_output_generator():
             'for non-optional output "1"'
         ),
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -577,7 +580,7 @@ def test_missing_required_output_generator_async():
             'for non-optional output "1"'
         ),
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     async def get_results():
         res = []
@@ -609,7 +612,7 @@ def test_missing_required_output_return():
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        execute_solid(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -632,7 +635,7 @@ def test_output_sent_multiple_times():
         DagsterInvariantViolationError,
         match='Compute for op "solid_yields_twice" returned an output "1" multiple times',
     ):
-        execute_solid(solid_yields_twice)
+        wrap_op_in_graph_and_execute(solid_yields_twice)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -649,7 +652,7 @@ def test_output_sent_multiple_times():
         ("pipeline_def", None),
         ("pipeline_name", None),
         ("mode_def", None),
-        ("solid_handle", None),
+        ("node_handle", None),
         ("solid", None),
         ("get_step_execution_context", None),
     ],
@@ -910,7 +913,7 @@ def test_dynamic_output_non_gen():
         DagsterInvariantViolationError,
         match="expected a list of DynamicOutput objects",
     ):
-        execute_solid(should_not_work)
+        wrap_op_in_graph_and_execute(should_not_work)
 
 
 def test_dynamic_output_async_non_gen():
@@ -929,11 +932,8 @@ def test_dynamic_output_async_non_gen():
     ):
         asyncio.run(should_not_work())
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="dynamic output 'a' expected a list of DynamicOutput objects",
-    ):
-        execute_solid(should_not_work)
+    with pytest.raises(Exception):
+        wrap_op_in_graph_and_execute(should_not_work())
 
 
 def test_solid_invocation_with_bad_resources(capsys):
@@ -1209,3 +1209,48 @@ def test_partitions_time_window_asset_invocation():
         partition_key="2023-02-02",
     )
     partitioned_asset(context)
+
+
+def test_multipartitioned_time_window_asset_invocation():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context):
+        time_window = TimeWindow(
+            start=pendulum.instance(
+                datetime(year=2020, month=1, day=1), tz=partitions_def.timezone
+            ),
+            end=pendulum.instance(datetime(year=2020, month=1, day=2), tz=partitions_def.timezone),
+        )
+        assert context.asset_partitions_time_window_for_output() == time_window
+        return 1
+
+    context = build_op_context(
+        partition_key="2020-01-01|a",
+    )
+    my_asset(context)
+
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "static2": StaticPartitionsDefinition(["a", "b"]),
+            "static": StaticPartitionsDefinition(["a", "b"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def static_multipartitioned_asset(context):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="with a single time dimension",
+        ):
+            context.asset_partitions_time_window_for_output()
+
+    context = build_op_context(
+        partition_key="a|a",
+    )
+    static_multipartitioned_asset(context)

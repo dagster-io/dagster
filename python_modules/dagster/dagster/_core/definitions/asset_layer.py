@@ -18,7 +18,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+)
 from dagster._core.selector.subset_selector import AssetSelectionData
 
 from ..errors import DagsterInvalidSubsetError
@@ -643,14 +645,12 @@ class AssetLayer:
         else:
             return None
 
-    def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
+    def metadata_for_asset(
+        self, asset_key: AssetKey
+    ) -> Optional[Mapping[str, ArbitraryMetadataMapping]]:
         if asset_key in self._source_assets_by_key:
-            metadata = self._source_assets_by_key[asset_key].metadata
-            return (
-                {key: cast(RawMetadataValue, value.value) for key, value in metadata.items()}
-                if metadata
-                else None
-            )
+            raw_metadata = self._source_assets_by_key[asset_key].raw_metadata
+            return raw_metadata or None
         elif asset_key in self._assets_defs_by_key:
             return self._assets_defs_by_key[asset_key].metadata_by_key[asset_key]
         else:

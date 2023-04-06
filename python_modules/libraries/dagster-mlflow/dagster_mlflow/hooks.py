@@ -23,7 +23,7 @@ def _cleanup_on_success(context):
     and ends the mlflow run with a successful status when this is the case.
     """
     last_solid_name = (
-        context._step_execution_context.pipeline_def.solids_in_topological_order[  # noqa: SLF001
+        context._step_execution_context.pipeline_def.nodes_in_topological_order[  # noqa: SLF001
             -1
         ].name
     )

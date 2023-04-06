@@ -24,7 +24,12 @@ from dagster._config import (
     Noneable as ConfigNoneable,
 )
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
-from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
+from dagster._core.definitions.metadata import (
+    MetadataEntry,
+    MetadataValue,
+    RawMetadataValue,
+    normalize_metadata,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import is_subclass
@@ -150,11 +155,9 @@ class DagsterType(RequiresResources):
 
         self._typing_type = typing_type
 
-        metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
-        )
-        self._metadata_entries = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str), metadata_entries
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            check.opt_list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry),
         )
 
     @public
@@ -187,8 +190,8 @@ class DagsterType(RequiresResources):
         return _RUNTIME_MAP[builtin_enum]
 
     @property
-    def metadata_entries(self) -> t.Sequence[MetadataEntry]:
-        return self._metadata_entries
+    def metadata(self) -> t.Mapping[str, MetadataValue]:
+        return self._metadata
 
     @public
     @property

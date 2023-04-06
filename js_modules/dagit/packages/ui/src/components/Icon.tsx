@@ -34,6 +34,7 @@ import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
+import date from '../icon-svgs/date.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
 import download_for_offline from '../icon-svgs/download_for_offline.svg';
@@ -145,6 +146,7 @@ export const Icons = {
   asset_plot,
   asset_non_sda,
   asset_group,
+  date,
   expectation,
   materialization,
   observation,

@@ -9,6 +9,7 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetMaterialization,
     AssetOut,
     AssetsDefinition,
     AssetSelection,
@@ -27,8 +28,10 @@ from dagster import (
     asset,
     build_asset_reconciliation_sensor,
     build_sensor_context,
+    job,
     materialize_to_memory,
     multi_asset,
+    op,
     repository,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -48,7 +51,6 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
@@ -233,7 +235,7 @@ def run(
 def run_request(asset_keys: List[str], partition_key: Optional[str] = None) -> RunRequest:
     return RunRequest(
         asset_selection=[AssetKey(key) for key in asset_keys],
-        tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+        partition_key=partition_key,
     )
 
 
@@ -1422,3 +1424,28 @@ def test_sensor(scenario):
         )
         result2 = reconciliation_sensor(context2)
         assert len(list(result2)) == 0
+
+
+def test_bad_partition_key():
+    assets = [
+        asset_def("hourly1", partitions_def=hourly_partitions_def),
+        asset_def("hourly2", ["hourly1"], partitions_def=hourly_partitions_def),
+    ]
+
+    instance = DagsterInstance.ephemeral()
+
+    @op
+    def materialization_op(context):
+        context.log_event(AssetMaterialization("hourly1", partition="bad partition key"))
+
+    @job
+    def materialization_job():
+        materialization_op()
+
+    materialization_job.execute_in_process(instance=instance)
+
+    scenario = AssetReconciliationScenario(
+        assets=assets, unevaluated_runs=[], asset_selection=AssetSelection.keys("hourly2")
+    )
+    run_requests, _ = scenario.do_scenario(instance)
+    assert len(run_requests) == 0

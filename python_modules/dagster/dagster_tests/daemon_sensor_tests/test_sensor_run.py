@@ -38,7 +38,7 @@ from dagster import (
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
 from dagster._core.events import DagsterEventType
@@ -367,6 +367,17 @@ def multi_asset_sensor_hourly_to_hourly(context):
         context.advance_cursor({hourly_asset.key: materialization_by_partition[latest_partition]})
 
 
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+def sensor_result_multi_asset_sensor(context):
+    context.advance_all_cursors()
+    return SensorResult([RunRequest("foo")])
+
+
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+def cursor_sensor_result_multi_asset_sensor(context):
+    return SensorResult([RunRequest("foo")], cursor="foo")
+
+
 def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
@@ -572,6 +583,8 @@ def the_repo():
         weekly_asset_job,
         multi_asset_sensor_hourly_to_weekly,
         multi_asset_sensor_hourly_to_hourly,
+        sensor_result_multi_asset_sensor,
+        cursor_sensor_result_multi_asset_sensor,
         partitioned_asset_selection_sensor,
         asset_selection_sensor,
         targets_asset_selection_sensor,
@@ -2388,6 +2401,57 @@ def test_multi_asset_sensor_hourly_to_hourly(executor, instance, workspace_conte
         )
         assert len(ticks) == 2
         validate_tick(ticks[0], cursor_sensor, freeze_datetime, TickStatus.SKIPPED)
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_sensor_result_multi_asset_sensor(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        cursor_sensor = external_repo.get_external_sensor("sensor_result_multi_asset_sensor")
+        instance.start_sensor(cursor_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            cursor_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_cursor_update_sensor_result_multi_asset_sensor(
+    executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2022, month=8, day=3, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        cursor_sensor = external_repo.get_external_sensor("cursor_sensor_result_multi_asset_sensor")
+        instance.start_sensor(cursor_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            cursor_sensor.get_external_origin_id(), cursor_sensor.selector_id
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            cursor_sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+        )
+        assert "Cannot set cursor in a multi_asset_sensor" in ticks[0].error.message
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

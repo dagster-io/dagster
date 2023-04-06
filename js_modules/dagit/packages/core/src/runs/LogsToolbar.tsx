@@ -166,13 +166,13 @@ const ComputeLogToolbar = ({
 }) => {
   const logCaptureSteps =
     metadata.logCaptureSteps || extractLogCaptureStepsFromLegacySteps(Object.keys(metadata.steps));
-  const isValidStepSelection = computeLogFileKey && logCaptureSteps[computeLogFileKey];
+  const isValidStepSelection = computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey];
 
   const fileKeyText = (fileKey?: string) => {
-    if (!fileKey || !logCaptureSteps[fileKey]) {
+    if (!fileKey || !(logCaptureSteps as any)[fileKey]) {
       return null;
     }
-    const captureInfo = logCaptureSteps[fileKey];
+    const captureInfo = (logCaptureSteps as any)[fileKey];
     if (captureInfo.stepKeys.length === 1 && fileKey === captureInfo.stepKeys[0]) {
       return fileKey;
     }
@@ -223,12 +223,13 @@ const ComputeLogToolbar = ({
       </Group>
       {isValidStepSelection ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {computeLogFileKey && logCaptureSteps[computeLogFileKey] ? (
-            resolveState(metadata, logCaptureSteps[computeLogFileKey]) === IStepState.RUNNING ? (
+          {computeLogFileKey && (logCaptureSteps as any)[computeLogFileKey] ? (
+            resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey]) ===
+            IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
             ) : (
               <ExecutionStateDot
-                state={resolveState(metadata, logCaptureSteps[computeLogFileKey])}
+                state={resolveState(metadata, (logCaptureSteps as any)[computeLogFileKey])}
               />
             )
           ) : null}
@@ -236,8 +237,11 @@ const ComputeLogToolbar = ({
             <Tooltip
               placement="top-end"
               content={
-                computeLogFileKey && logCaptureSteps[computeLogFileKey]?.stepKeys.length === 1
-                  ? `Download ${logCaptureSteps[computeLogFileKey]?.stepKeys[0]} compute logs`
+                computeLogFileKey &&
+                (logCaptureSteps as any)[computeLogFileKey]?.stepKeys.length === 1
+                  ? `Download ${
+                      (logCaptureSteps as any)[computeLogFileKey]?.stepKeys[0]
+                    } compute logs`
                   : `Download compute logs`
               }
             >
@@ -361,7 +365,7 @@ const StructuredLogToolbar = ({
         level,
         {
           label: level.toLowerCase(),
-          count: counts[level],
+          count: counts[level as LogLevel],
           enabled: !!filter.levels[level],
         },
       ] as [LogLevel, FilterOption];

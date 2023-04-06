@@ -467,9 +467,9 @@ def test_job_has_solid_def():
     def a_job():
         outer()
 
-    assert a_job.has_solid_def("add_one")
-    assert a_job.has_solid_def("outer")
-    assert a_job.has_solid_def("inner")
+    assert a_job.has_node("add_one")
+    assert a_job.has_node("outer")
+    assert a_job.has_node("inner")
 
 
 def test_mapping_args_ordering():

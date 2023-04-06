@@ -13,6 +13,8 @@ from .assets import AssetsDefinition
 from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+
     from ..execution.execute_in_process_result import ExecuteInProcessResult
 
 
@@ -24,6 +26,7 @@ def materialize(
     partition_key: Optional[str] = None,
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
+    selection: Optional["CoercibleToAssetSelection"] = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which materializes provided assets.
 
@@ -31,7 +34,15 @@ def materialize(
 
     Args:
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
-            The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
+            The assets to materialize.
+
+            Unless you're using `non_argument_deps`, you must also include all assets that are
+            upstream of the assets that you want to materialize. This is because those upstream
+            asset definitions have information that is needed to load their contents while
+            materializing the downstream assets.
+
+            You can use the `selection` argument to distinguish between assets that you want to
+            materialize and assets that are just present for loading.
         resources (Optional[Mapping[str, object]]):
             The resources needed for execution. Can provide resource instances
             directly, or resource definitions. Note that if provided resources
@@ -41,9 +52,34 @@ def materialize(
             The string partition key that specifies the run config to execute. Can only be used
             to select run config for assets with partitioned config.
         tags (Optional[Mapping[str, str]]): Tags for the run.
+        selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            A sub-selection of assets to materialize.
+
+            If not provided, then all assets will be materialized.
+
+            If providing a string or sequence of strings,
+            https://docs.dagster.io/concepts/assets/asset-selection-syntax describes the accepted
+            syntax.
 
     Returns:
         ExecuteInProcessResult: The result of the execution.
+
+    Examples:
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                ...
+
+            @asset
+            def asset2(asset1):
+                ...
+
+            # executes a run that materializes asset1 and then asset2
+            materialize([asset1, asset2])
+
+            # executes a run that materializes just asset2, loading its input from asset1
+            materialize([asset1, asset2], selection=[asset2])
     """
     from dagster._core.definitions.definitions_class import Definitions
 
@@ -59,7 +95,11 @@ def materialize(
 
     JOB_NAME = "__ephemeral_asset_job__"
 
-    defs = Definitions(jobs=[define_asset_job(name=JOB_NAME)], assets=assets, resources=resources)
+    defs = Definitions(
+        jobs=[define_asset_job(name=JOB_NAME, selection=selection)],
+        assets=assets,
+        resources=resources,
+    )
     return check.not_none(
         defs.get_job_def(JOB_NAME),
         "This should always return a job",
@@ -80,6 +120,7 @@ def materialize_to_memory(
     partition_key: Optional[str] = None,
     raise_on_error: bool = True,
     tags: Optional[Mapping[str, str]] = None,
+    selection: Optional["CoercibleToAssetSelection"] = None,
 ) -> "ExecuteInProcessResult":
     """Executes a single-threaded, in-process run which materializes provided assets in memory.
 
@@ -99,9 +140,34 @@ def materialize_to_memory(
             The string partition key that specifies the run config to execute. Can only be used
             to select run config for assets with partitioned config.
         tags (Optional[Mapping[str, str]]): Tags for the run.
+        selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
+            A sub-selection of assets to materialize.
+
+            If not provided, then all assets will be materialized.
+
+            If providing a string or sequence of strings,
+            https://docs.dagster.io/concepts/assets/asset-selection-syntax describes the accepted
+            syntax.
 
     Returns:
         ExecuteInProcessResult: The result of the execution.
+
+    Examples:
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                ...
+
+            @asset
+            def asset2(asset1):
+                ...
+
+            # executes a run that materializes asset1 and then asset2
+            materialize([asset1, asset2])
+
+            # executes a run that materializes just asset1
+            materialize([asset1, asset2], selection=[asset1])
     """
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
 
@@ -132,6 +198,7 @@ def materialize_to_memory(
         partition_key=partition_key,
         raise_on_error=raise_on_error,
         tags=tags,
+        selection=selection,
     )
 
 

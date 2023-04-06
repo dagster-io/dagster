@@ -63,11 +63,11 @@ describe('RunActionsMenu', () => {
         userEvent.click(button);
       });
 
-      expect(screen.queryByRole('button', {name: /view configuration/i})).toBeVisible();
+      expect(screen.queryByRole('menuitem', {name: /view configuration/i})).toBeVisible();
       expect(screen.queryByRole('link', {name: /open in launchpad/i})).toBeVisible();
-      expect(screen.queryByRole('button', {name: /re-execute/i})).toBeVisible();
-      expect(screen.queryByRole('link', {name: /download debug file/i})).toBeVisible();
-      expect(screen.queryByRole('button', {name: /delete/i})).toBeVisible();
+      expect(screen.queryByRole('menuitem', {name: /re\-execute/i})).toBeVisible();
+      expect(screen.queryByRole('menuitem', {name: /download debug file/i})).toBeVisible();
+      expect(screen.queryByRole('menuitem', {name: /delete/i})).toBeVisible();
     });
 
     it('disables re-execution if no permission', async () => {
@@ -89,12 +89,12 @@ describe('RunActionsMenu', () => {
         userEvent.click(button);
       });
 
-      const reExecutionButton = screen.queryByRole('button', {
-        name: /re-execute/i,
+      const reExecutionButton = screen.queryByRole('menuitem', {
+        name: /re\-execute/i,
       }) as HTMLButtonElement;
 
       // Blueprint doesn't actually set `disabled` on the button element.
-      expect(reExecutionButton.classList.contains('bp3-disabled')).toBe(true);
+      expect(reExecutionButton.classList.contains('bp4-disabled')).toBe(true);
     });
   });
 });

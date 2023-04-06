@@ -40,16 +40,12 @@ class LocalCsvIOManager(MemoizableIOManager):
         )
 
     def get_schema(self, dagster_type):
-        schema_entry = next(
-            (
-                x
-                for x in dagster_type.metadata_entries
-                if isinstance(x.value, TableSchemaMetadataValue)
-            ),
+        schema_value = next(
+            (x for x in dagster_type.metadata.values() if isinstance(x, TableSchemaMetadataValue)),
             None,
         )
-        assert schema_entry
-        return schema_entry.value.schema
+        assert schema_value
+        return schema_value.schema
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""

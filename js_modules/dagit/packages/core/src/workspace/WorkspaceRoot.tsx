@@ -5,6 +5,7 @@ import {Route, Switch, useParams} from 'react-router-dom';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
+import {WorkspaceResourcesRoot} from '../resources/WorkspaceResourcesRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 
@@ -81,6 +82,9 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
+      <Route path="/locations/:repoPath/resources" exact>
+        <WorkspaceResourcesRoot repoAddress={addressForPath} />
+      </Route>
       <Route path="/locations/:repoPath/assets" exact>
         <WorkspaceAssetsRoot repoAddress={addressForPath} />
       </Route>

@@ -56,9 +56,9 @@ def test_build_reconstructable_pipeline():
         reconstructed_bar_pipeline_def = reconstructable_bar_pipeline.get_definition()
 
         assert reconstructed_bar_pipeline_def.name == "foo_bar"
-        assert len(reconstructed_bar_pipeline_def.solids) == 2
-        assert reconstructed_bar_pipeline_def.solid_named("top_scope_solid")
-        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_solid")
+        assert len(reconstructed_bar_pipeline_def.nodes) == 2
+        assert reconstructed_bar_pipeline_def.get_node_named("top_scope_solid")
+        assert reconstructed_bar_pipeline_def.get_node_named("nested_scope_solid")
 
     finally:
         sys.path = sys_path
@@ -91,9 +91,9 @@ def test_build_reconstructable_pipeline_serdes():
         reconstructed_bar_pipeline_def = reconstructed_bar_pipeline.get_definition()
 
         assert reconstructed_bar_pipeline_def.name == "foo_bar"
-        assert len(reconstructed_bar_pipeline_def.solids) == 2
-        assert reconstructed_bar_pipeline_def.solid_named("top_scope_solid")
-        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_solid")
+        assert len(reconstructed_bar_pipeline_def.nodes) == 2
+        assert reconstructed_bar_pipeline_def.get_node_named("top_scope_solid")
+        assert reconstructed_bar_pipeline_def.get_node_named("nested_scope_solid")
 
     finally:
         sys.path = sys_path

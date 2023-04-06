@@ -1,30 +1,37 @@
-from typing import TYPE_CHECKING, Any, List, Mapping, Union, cast
+from typing import TYPE_CHECKING, List, Union, cast
 
 import dagster._check as check
 import pendulum
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterUserCodeProcessError
 from dagster._core.events import AssetKey
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
+from dagster._core.host_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from ..utils import assert_permission, assert_permission_for_location, capture_error
+from ..utils import BackfillParams, assert_permission, assert_permission_for_location, capture_error
 
 BACKFILL_CHUNK_SIZE = 25
 
 
 if TYPE_CHECKING:
-    from ...schema.backfill import GrapheneLaunchBackfillSuccess
+    from dagster_graphql.schema.util import ResolveInfo
+
+    from ...schema.backfill import (
+        GrapheneCancelBackfillSuccess,
+        GrapheneLaunchBackfillSuccess,
+        GrapheneResumeBackfillSuccess,
+    )
     from ...schema.errors import GraphenePartitionSetNotFoundError
 
 
-@capture_error
 def create_and_launch_partition_backfill(
-    graphene_info, backfill_params: Mapping[str, Any]
+    graphene_info: "ResolveInfo",
+    backfill_params: BackfillParams,
 ) -> Union["GrapheneLaunchBackfillSuccess", "GraphenePartitionSetNotFoundError"]:
     from ...schema.backfill import GrapheneLaunchBackfillSuccess
     from ...schema.errors import GraphenePartitionSetNotFoundError
@@ -74,6 +81,8 @@ def create_and_launch_partition_backfill(
             result = graphene_info.context.get_external_partition_names(
                 external_partition_set, instance=graphene_info.context.instance
             )
+            if isinstance(result, ExternalPartitionExecutionErrorData):
+                raise DagsterUserCodeProcessError.from_error_info(result.error)
             partition_names = result.partition_names
         elif backfill_params.get("partitionNames"):
             partition_names = backfill_params["partitionNames"]
@@ -165,14 +174,17 @@ def create_and_launch_partition_backfill(
 
 
 @capture_error
-def cancel_partition_backfill(graphene_info, backfill_id):
+def cancel_partition_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> "GrapheneCancelBackfillSuccess":
     from ...schema.backfill import GrapheneCancelBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    location_name = backfill.partition_set_origin.selector.location_name
+    partition_set_origin = check.not_none(backfill.partition_set_origin)
+    location_name = partition_set_origin.selector.location_name
     assert_permission_for_location(
         graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, location_name
     )
@@ -182,14 +194,17 @@ def cancel_partition_backfill(graphene_info, backfill_id):
 
 
 @capture_error
-def resume_partition_backfill(graphene_info, backfill_id):
+def resume_partition_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> "GrapheneResumeBackfillSuccess":
     from ...schema.backfill import GrapheneResumeBackfillSuccess
 
     backfill = graphene_info.context.instance.get_backfill(backfill_id)
     if not backfill:
         check.failed(f"No backfill found for id: {backfill_id}")
 
-    location_name = backfill.partition_set_origin.selector.location_name
+    partition_set_origin = check.not_none(backfill.partition_set_origin)
+    location_name = partition_set_origin.selector.location_name
     assert_permission_for_location(
         graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, location_name
     )

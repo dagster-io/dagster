@@ -24,11 +24,7 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph
-    from dagster._core.definitions.events import (
-        AssetKey,
-        AssetMaterialization,
-        AssetObservation,
-    )
+    from dagster._core.definitions.events import AssetKey
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
 
@@ -203,8 +199,7 @@ def compute_logical_data_version(
 def extract_data_version_from_entry(
     entry: EventLogEntry,
 ) -> Optional[DataVersion]:
-    event_data = _extract_event_data_from_entry(entry)
-    tags = event_data.tags or {}
+    tags = entry.tags or {}
     value = tags.get(DATA_VERSION_TAG) or tags.get(_OLD_DATA_VERSION_TAG)
     return None if value is None else DataVersion(value)
 
@@ -212,28 +207,8 @@ def extract_data_version_from_entry(
 def extract_data_provenance_from_entry(
     entry: EventLogEntry,
 ) -> Optional[DataProvenance]:
-    event_data = _extract_event_data_from_entry(entry)
-    tags = event_data.tags or {}
+    tags = entry.tags or {}
     return DataProvenance.from_tags(tags)
-
-
-def _extract_event_data_from_entry(
-    entry: EventLogEntry,
-) -> Union["AssetMaterialization", "AssetObservation"]:
-    from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-    from dagster._core.events import AssetObservationData, StepMaterializationData
-
-    data = check.not_none(entry.dagster_event).event_specific_data
-    event_data: Union[AssetMaterialization, AssetObservation]
-    if isinstance(data, StepMaterializationData):
-        event_data = data.materialization
-    elif isinstance(data, AssetObservationData):
-        event_data = data.asset_observation
-    else:
-        check.failed(f"Unexpected event type {type(data)}")
-
-    assert isinstance(event_data, (AssetMaterialization, AssetObservation))
-    return event_data
 
 
 # ########################

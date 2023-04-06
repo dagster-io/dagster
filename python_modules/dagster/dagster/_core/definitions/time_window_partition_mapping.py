@@ -153,14 +153,14 @@ class TimeWindowPartitionMapping(
                 "TimeWindowPartitionMappings can only operate on TimeWindowPartitionsDefinitions"
             )
 
-        # mypy requires this for some reason
-        from_partitions_def = cast(TimeWindowPartitionsDefinition, from_partitions_def)
-        to_partitions_def = cast(TimeWindowPartitionsDefinition, to_partitions_def)
-
-        if start_offset != 0 or end_offset != 0:
-            check.invariant(
-                from_partitions_def.cron_schedule == to_partitions_def.cron_schedule,
-                "Offset can't be used when cron schedules don't match",
+        if (start_offset != 0 or end_offset != 0) and (
+            from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
+        ):
+            raise DagsterInvalidDefinitionError(
+                "Can't use the start_offset or end_offset parameters of"
+                " TimeWindowPartitionMapping when the cron schedule of the upstream"
+                " PartitionsDefinition is different than the cron schedule of the downstream"
+                " one."
             )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:

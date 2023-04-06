@@ -158,7 +158,7 @@ const RowGrid = styled(Box)`
 const ScheduleSensorTagContainer = styled.div`
   width: 100%;
 
-  > .bp3-popover2-target {
+  > .bp4-popover2-target {
     width: 100%;
   }
 `;

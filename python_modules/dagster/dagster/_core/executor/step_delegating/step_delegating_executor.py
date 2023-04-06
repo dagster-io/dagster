@@ -6,7 +6,8 @@ from typing import Any, Dict, List, Optional, Sequence, cast
 import pendulum
 
 import dagster._check as check
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
@@ -212,11 +213,9 @@ class StepDelegatingExecutor(Executor):
                                 " because run will be resumed"
                             ),
                             EngineEventData(
-                                metadata_entries=[
-                                    MetadataEntry(
-                                        "steps_in_flight", value=str(running_steps.keys())
-                                    )
-                                ]
+                                metadata={
+                                    "steps_in_flight": MetadataValue.text(str(running_steps.keys()))
+                                },
                             ),
                         )
 

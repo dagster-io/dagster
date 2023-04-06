@@ -2,6 +2,7 @@ import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
@@ -17,7 +18,7 @@ import {RepoAddress} from '../workspace/types';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionState, PartitionStatus} from './PartitionStatus';
+import {PartitionStatus} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {allPartitionsRange} from './SpanRepresentation';
@@ -53,7 +54,7 @@ export const AssetJobPartitionsView: React.FC<{
     return {
       merged,
       total: allKeys.length,
-      missing: allKeys.filter((p) => p.state === PartitionState.MISSING).length,
+      missing: allKeys.filter((p) => p.state.includes(AssetPartitionStatus.MISSING)).length,
     };
   }, [assetHealth]);
 

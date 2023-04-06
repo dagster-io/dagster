@@ -17,7 +17,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._core.events import EngineEventData, MetadataEntry
+from dagster._core.events import EngineEventData
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
@@ -421,17 +421,17 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     ):
         # Extracted method to allow for subclasses to customize the launch reporting behavior
 
-        metadata_entries = []
+        metadata = {}
         if arn:
-            metadata_entries.append(MetadataEntry("ECS Task ARN", value=arn))
+            metadata["ECS Task ARN"] = arn
         if cluster:
-            metadata_entries.append(MetadataEntry("ECS Cluster", value=cluster))
+            metadata["ECS Cluster"] = cluster
 
-        metadata_entries.append(MetadataEntry("Run ID", value=run.run_id))
+        metadata["Run ID"] = run.run_id
         self._instance.report_engine_event(
             message="Launching run in ECS task",
             pipeline_run=run,
-            engine_event_data=EngineEventData(metadata_entries),
+            engine_event_data=EngineEventData(metadata),
             cls=self.__class__,
         )
 

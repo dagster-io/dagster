@@ -1,5 +1,6 @@
 import pandas as pd
 from dagster import DagsterEventType, In, file_relative_path, graph, op
+from dagster._core.definitions.metadata import MetadataValue
 from dagster_pandas import DataFrame
 
 
@@ -28,10 +29,7 @@ def test_basic_pd_df_metadata():
 
     assert input_event.step_input_data.input_name == "df"
 
-    metadata_entries = input_event.step_input_data.type_check_data.metadata_entries
+    metadata = input_event.step_input_data.type_check_data.metadata
 
-    assert metadata_entries[0].label == "row_count"
-    assert metadata_entries[0].value.text == "2"
-
-    assert metadata_entries[1].label == "metadata"
-    assert metadata_entries[1].value.data["columns"] == ["num1", "num2"]
+    assert metadata["row_count"] == MetadataValue.text("2")
+    assert metadata["metadata"].data["columns"] == ["num1", "num2"]

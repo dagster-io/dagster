@@ -220,7 +220,7 @@ def test_resolve_with_resources():
 
 
 def test_group_cached_assets():
-    """Test that with_prefix_or_group works properly on cacheable assets."""
+    """Test that with_attributes works properly on cacheable assets."""
 
     class MyCacheableAssets(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
@@ -244,7 +244,7 @@ def test_group_cached_assets():
                 for cd in data
             ]
 
-    my_cacheable_assets_cool = MyCacheableAssets("foo").with_prefix_or_group(
+    my_cacheable_assets_cool = MyCacheableAssets("foo").with_attributes(
         group_names_by_key={AssetKey("foo"): "my_cool_group"}
     )
 
@@ -274,7 +274,7 @@ def test_group_cached_assets():
 
 
 def test_multiple_wrapped_cached_assets():
-    """Test that multiple wrappers (with_prefix_or_group, with_resources) work properly on cacheable assets.
+    """Test that multiple wrappers (with_attributes, with_resources) work properly on cacheable assets.
     """
 
     @resource
@@ -282,16 +282,14 @@ def test_multiple_wrapped_cached_assets():
         return 3
 
     my_cacheable_assets_with_group_and_asset = [
-        x.with_prefix_or_group(
+        x.with_attributes(
             output_asset_key_replacements={
                 AssetKey("res_downstream"): AssetKey("res_downstream_too")
             }
         )
         for x in with_resources(
             [
-                x.with_prefix_or_group(
-                    group_names_by_key={AssetKey("res_midstream"): "my_cool_group"}
-                )
+                x.with_attributes(group_names_by_key={AssetKey("res_midstream"): "my_cool_group"})
                 for x in define_resource_dependent_cacheable_and_uncacheable_assets()
             ],
             {"foo": foo_resource},

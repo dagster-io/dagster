@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -48,6 +49,12 @@ if TYPE_CHECKING:
     from .backfill import PartitionBackfill
 
 
+class BackfillPartitionsStatus(Enum):
+    REQUESTED = "REQUESTED"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
 class AssetBackfillData(NamedTuple):
     """Has custom serialization instead of standard Dagster NamedTuple serialization because the
     asset graph is required to build the AssetGraphSubset objects.
@@ -61,9 +68,14 @@ class AssetBackfillData(NamedTuple):
     failed_and_downstream_subset: AssetGraphSubset
 
     def is_complete(self) -> bool:
+        """The asset backfill is complete when all runs to be requested have finished (success,
+        failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        per asset partition, the daemon continues to update the backfill data until all runs have
+        finished in order to display the final partition statuses in the UI.
+        """
         return (
             (
-                self.requested_subset | self.failed_and_downstream_subset
+                self.materialized_subset | self.failed_and_downstream_subset
             ).num_partitions_and_non_partitioned_assets
             == self.target_subset.num_partitions_and_non_partitioned_assets
         )
@@ -92,6 +104,40 @@ class AssetBackfillData(NamedTuple):
             return next(iter(asset_partition_nums))
         else:
             return None
+
+    def get_num_targeted_partitions_by_asset_key(self) -> Mapping[AssetKey, int]:
+        return {
+            asset_key: len(subset)
+            for asset_key, subset in self.target_subset.partitions_subsets_by_asset_key.items()
+        }
+
+    def get_partitions_status_counts_by_asset_key(
+        self,
+    ) -> Mapping[AssetKey, Mapping[BackfillPartitionsStatus, int]]:
+        """Returns a mapping from asset key to a mapping from status to count of partitions in that
+        status.
+
+        Only includes assets that are partitioned.
+        """
+        return {
+            asset_key: {
+                BackfillPartitionsStatus.COMPLETED: len(
+                    self.materialized_subset.get_partitions_subset(asset_key)
+                ),
+                BackfillPartitionsStatus.FAILED: len(
+                    self.failed_and_downstream_subset.get_partitions_subset(asset_key)
+                ),
+                BackfillPartitionsStatus.REQUESTED: len(
+                    self.requested_subset.get_partitions_subset(asset_key)
+                )
+                - (
+                    len(self.failed_and_downstream_subset.get_partitions_subset(asset_key))
+                    + len(self.materialized_subset.get_partitions_subset(asset_key))
+                ),
+            }
+            for asset_key in self.target_subset.asset_keys
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
+        }
 
     def get_partition_names(self) -> Optional[Sequence[str]]:
         """Only valid when the same number of partitions are targeted in every asset.
@@ -259,6 +305,10 @@ def execute_asset_backfill_iteration(
         result.backfill_data, dynamic_partitions_store=instance
     )
     if result.backfill_data.is_complete():
+        # The asset backfill is complete when all runs to be requested have finished (success,
+        # failure, or cancellation). Since the AssetBackfillData object stores materialization states
+        # per asset partition, the daemon continues to update the backfill data until all runs have
+        # finished in order to display the final partition statuses in the UI.
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
     pipeline_and_execution_plan_cache: Dict[
@@ -360,9 +410,9 @@ def submit_run_request(
 def _get_implicit_job_name_for_assets(
     asset_graph: ExternalAssetGraph, asset_keys: Sequence[AssetKey]
 ) -> Optional[str]:
-    job_names = set(asset_graph.get_job_names(asset_keys[0]))
+    job_names = set(asset_graph.get_materialization_job_names(asset_keys[0]))
     for asset_key in asset_keys[1:]:
-        job_names &= set(asset_graph.get_job_names(asset_key))
+        job_names &= set(asset_graph.get_materialization_job_names(asset_key))
 
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 

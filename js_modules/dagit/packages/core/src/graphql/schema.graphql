@@ -620,7 +620,7 @@ type Asset {
   id: String!
   key: AssetKey!
   assetMaterializations(
-    partitions: [String]
+    partitions: [String!]
     partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
@@ -628,7 +628,7 @@ type Asset {
     tags: [InputTag!]
   ): [MaterializationEvent!]!
   assetObservations(
-    partitions: [String]
+    partitions: [String!]
     partitionInLast: Int
     beforeTimestampMillis: String
     afterTimestampMillis: String
@@ -640,13 +640,13 @@ type Asset {
 type AssetNode {
   assetKey: AssetKey!
   assetMaterializations(
-    partitions: [String]
+    partitions: [String!]
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   assetMaterializationUsedData(timestampMillis: String!): [MaterializationUpstreamDataVersion!]!
   assetObservations(
-    partitions: [String]
+    partitions: [String!]
     beforeTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
@@ -668,7 +668,7 @@ type AssetNode {
   isSource: Boolean!
   jobNames: [String!]!
   jobs: [Pipeline!]!
-  latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
+  latestMaterializationByPartition(partitions: [String!]): [MaterializationEvent]!
   latestRunForPartition(partition: String!): Run
   assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
@@ -1918,6 +1918,7 @@ type ResourceDetails {
   parentResources: [NestedResourceEntry!]!
   resourceType: String!
   assetKeysUsing: [AssetKey!]!
+  jobsOpsUsing: [JobWithOps!]!
 }
 
 type ConfiguredValue {
@@ -1940,6 +1941,11 @@ type NestedResourceEntry {
 enum NestedResourceType {
   ANONYMOUS
   TOP_LEVEL
+}
+
+type JobWithOps {
+  job: Job!
+  opsUsing: [SolidHandle!]!
 }
 
 type RepositoryConnection {
@@ -2390,6 +2396,7 @@ type PartitionBackfill {
   error: PythonError
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
+  assetPartitionsStatusCounts: [AssetPartitionsStatusCounts!]!
   hasCancelPermission: Boolean!
   hasResumePermission: Boolean!
 }
@@ -2399,6 +2406,14 @@ enum BulkActionStatus {
   COMPLETED
   FAILED
   CANCELED
+}
+
+type AssetPartitionsStatusCounts {
+  assetKey: AssetKey!
+  numPartitionsTargeted: Int!
+  numPartitionsRequested: Int!
+  numPartitionsCompleted: Int!
+  numPartitionsFailed: Int!
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
@@ -2756,12 +2771,18 @@ type DagitQuery {
   graphOrError(selector: GraphSelector): GraphOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
-  schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
+  schedulesOrError(
+    repositorySelector: RepositorySelector!
+    scheduleStatus: InstigationStatus
+  ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
   allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
-  sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+  sensorsOrError(
+    repositorySelector: RepositorySelector!
+    sensorStatus: InstigationStatus
+  ): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
   partitionSetsOrError(

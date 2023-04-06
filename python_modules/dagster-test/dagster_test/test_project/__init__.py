@@ -3,9 +3,11 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
+from typing import Any, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import FileCodePointer
+from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.execution.api import create_execution_plan
@@ -22,6 +24,7 @@ from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
@@ -35,12 +38,16 @@ from dagster._utils import file_relative_path, git_repository_root
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
+def cleanup_memoized_results(
+    pipeline_def: PipelineDefinition, instance: DagsterInstance, run_config: Mapping[str, Any]
+) -> None:
     # Clean up any memoized outputs from the s3 bucket
     from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
     execution_plan = create_execution_plan(
-        pipeline_def, run_config=run_config, instance_ref=instance.get_ref(), mode=mode_str
+        pipeline_def,
+        run_config=run_config,
+        instance_ref=instance.get_ref(),
     )
 
     with build_resources(
@@ -111,9 +118,12 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(
-    pipeline_name, container_image=None, container_context=None, filename=None
-):
+def get_test_project_recon_job(
+    job_name: str,
+    container_image: Optional[str] = None,
+    container_context: Optional[Mapping[str, object]] = None,
+    filename: Optional[str] = None,
+) -> "ReOriginatedReconstructablePipelineForTest":
     filename = filename or "repo.py"
     return ReOriginatedReconstructablePipelineForTest(
         ReconstructableRepository.for_file(
@@ -121,7 +131,7 @@ def get_test_project_recon_pipeline(
             "define_demo_execution_repo",
             container_image=container_image,
             container_context=container_context,
-        ).get_reconstructable_pipeline(pipeline_name)
+        ).get_reconstructable_pipeline(job_name)
     )
 
 

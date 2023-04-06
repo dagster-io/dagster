@@ -9,7 +9,7 @@ from dagster import DagsterInvariantViolationError
 from dagster._annotations import experimental
 from dagster._config import Field, StringSource
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
@@ -211,9 +211,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
         return AssetMaterialization(
             asset_key=AssetKey([context.pipeline_name, context.step_key, context.name]),
-            metadata_entries=[
-                MetadataEntry("path", value=MetadataValue.path(os.path.abspath(filepath)))
-            ],
+            metadata={"path": MetadataValue.path(os.path.abspath(filepath))},
         )
 
     def load_input(self, context: InputContext) -> object:

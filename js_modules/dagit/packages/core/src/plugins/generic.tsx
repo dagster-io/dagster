@@ -37,7 +37,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
               overflow: 'scroll',
             }}
           >
-            <table className="bp3-html-table bp3-html-table-striped" style={{width: '100%'}}>
+            <table className="bp4-html-table bp4-html-table-striped" style={{width: '100%'}}>
               <thead>
                 <tr>
                   <th>Key</th>

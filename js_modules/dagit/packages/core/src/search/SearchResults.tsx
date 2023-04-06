@@ -23,6 +23,8 @@ const iconForType = (type: SearchResultType): IconName => {
       return 'sensors';
     case SearchResultType.Solid:
       return 'op';
+    case SearchResultType.Resource:
+      return 'resource';
     default:
       return 'source';
   }

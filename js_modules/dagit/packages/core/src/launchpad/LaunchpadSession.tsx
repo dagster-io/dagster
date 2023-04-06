@@ -308,11 +308,11 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                     },
                   ]
                 : []),
-              ...(currentSession?.base?.['presetName']
+              ...(currentSession?.base && (currentSession?.base as any)['presetName']
                 ? [
                     {
                       key: DagsterTag.PresetName,
-                      value: currentSession?.base?.['presetName'],
+                      value: (currentSession?.base as any)['presetName'],
                     },
                   ]
                 : []),
@@ -344,7 +344,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     const toSave: PipelineRunTag[] = [];
     tags.forEach((tag: PipelineRunTag) => {
       if (!(tag.key in tagDict)) {
-        tagDict[tag.key] = tag.value;
+        (tagDict as any)[tag.key] = tag.value;
         toSave.push(tag);
       }
     });

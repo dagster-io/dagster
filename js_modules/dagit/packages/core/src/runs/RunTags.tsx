@@ -69,7 +69,7 @@ export const RunTags: React.FC<{
     for (const tag of copiedTags) {
       const {key} = tag;
       if (renamedTags.hasOwnProperty(key)) {
-        tag.key = renamedTags[key];
+        tag.key = renamedTags[key as keyof typeof renamedTags];
       }
 
       if (

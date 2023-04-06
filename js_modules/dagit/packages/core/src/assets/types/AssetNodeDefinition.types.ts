@@ -22,6 +22,7 @@ export type AssetNodeDefinitionFragment = {
     name: string;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
   };
+  requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;

@@ -52,7 +52,7 @@ def define_inty_pipeline(using_file_system=False):
 
     pipeline = PipelineDefinition(
         name="basic_external_plan_execution",
-        solid_defs=[return_one, add_one, user_throw_exception],
+        node_defs=[return_one, add_one, user_throw_exception],
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
         mode_defs=[default_mode_def_for_test] if using_file_system else None,
     )

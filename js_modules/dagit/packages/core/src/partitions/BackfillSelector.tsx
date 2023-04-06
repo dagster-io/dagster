@@ -20,7 +20,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {PartitionDefinitionType} from '../graphql/types';
+import {PartitionDefinitionType, RunStatus} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -43,8 +43,7 @@ import {
   USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
-import {countsByState, PartitionStateCheckboxes} from './PartitionStateCheckboxes';
-import {PartitionState} from './PartitionStatus';
+import {countsByState, PartitionRunStatusCheckboxes} from './PartitionRunStatusCheckboxes';
 import {
   BackfillSelectorQuery,
   BackfillSelectorQueryVariables,
@@ -58,7 +57,7 @@ interface BackfillOptions {
 export const BackfillPartitionSelector: React.FC<{
   partitionSetName: string;
   partitionNames: string[];
-  partitionData: {[name: string]: PartitionState};
+  runStatusData: {[partitionName: string]: RunStatus};
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
   onCancel?: () => void;
@@ -70,24 +69,24 @@ export const BackfillPartitionSelector: React.FC<{
   onCancel,
   onSubmit,
   repoAddress,
-  partitionData,
+  runStatusData,
   pipelineName,
   partitionNames,
 }) => {
   const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
-    Object.keys(partitionData).filter(
-      (k) => !partitionData[k] || partitionData[k] === PartitionState.FAILURE,
+    Object.keys(runStatusData).filter(
+      (k) => !runStatusData[k] || runStatusData[k] === RunStatus.FAILURE,
     ),
   );
-  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
-    PartitionState.MISSING,
-    PartitionState.FAILURE,
+  const [stateFilters, setStateFilters] = React.useState<RunStatus[]>([
+    RunStatus.NOT_STARTED,
+    RunStatus.FAILURE,
   ]);
 
   const selected = React.useMemo(() => {
-    return range.filter((r) => stateFilters.includes(partitionData[r]));
-  }, [range, stateFilters, partitionData]);
+    return range.filter((r) => stateFilters.includes(runStatusData[r]));
+  }, [range, stateFilters, runStatusData]);
 
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
@@ -155,7 +154,7 @@ export const BackfillPartitionSelector: React.FC<{
     name: box.node.name,
   }));
 
-  const isFailed = (name: string) => partitionData[name] === PartitionState.FAILURE;
+  const isFailed = (name: string) => runStatusData[name] === RunStatus.FAILURE;
   const failedPartitions = partitionNames.filter(isFailed);
 
   const setRange = (selection: string[]) => {
@@ -171,7 +170,7 @@ export const BackfillPartitionSelector: React.FC<{
   const counts = countsByState(
     range.map((key) => ({
       partitionKey: key,
-      state: partitionData[key],
+      state: runStatusData[key],
     })),
   );
 
@@ -187,7 +186,7 @@ export const BackfillPartitionSelector: React.FC<{
             <DimensionRangeWizard
               selected={range}
               setSelected={setRange}
-              health={{partitionStateForKey: (key) => partitionData[key]}}
+              health={{runStatusForPartitionKey: (key) => runStatusData[key]}}
               partitionKeys={partitionNames}
               dimensionType={
                 isTimeseriesPartition(partitionNames[0])
@@ -196,21 +195,21 @@ export const BackfillPartitionSelector: React.FC<{
               }
             />
 
-            <PartitionStateCheckboxes
+            <PartitionRunStatusCheckboxes
               value={stateFilters}
+              onChange={setStateFilters}
               counts={counts}
               allowed={
                 options.fromFailure
-                  ? [PartitionState.FAILURE]
+                  ? [RunStatus.FAILURE]
                   : [
-                      PartitionState.MISSING,
-                      PartitionState.FAILURE,
-                      PartitionState.QUEUED,
-                      PartitionState.STARTED,
-                      PartitionState.SUCCESS,
+                      RunStatus.NOT_STARTED,
+                      RunStatus.FAILURE,
+                      RunStatus.QUEUED,
+                      RunStatus.STARTED,
+                      RunStatus.SUCCESS,
                     ]
               }
-              onChange={setStateFilters}
             />
           </Section>
 
@@ -227,7 +226,7 @@ export const BackfillPartitionSelector: React.FC<{
                   };
 
                   if (next.fromFailure) {
-                    setStateFilters([PartitionState.FAILURE]);
+                    setStateFilters([RunStatus.FAILURE]);
                   }
                   setQuery('');
                   setOptions(next);

@@ -10,10 +10,10 @@ import pytest
 from dagster import (
     AssetMaterialization,
     ResourceDefinition,
-    _check as check,
 )
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
@@ -125,7 +125,7 @@ def test_yield_unserializable_result():
 
 def test_in_job_manager_bad_op():
     with pytest.raises(
-        check.CheckError,
+        DagsterInvariantViolationError,
         match="hello_world_job has no op named foobar",
     ):
         with in_job_manager(node_handle=NodeHandle("foobar", None)) as _manager:

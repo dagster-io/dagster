@@ -3,7 +3,6 @@ from typing import (
     Any,
     NamedTuple,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,
@@ -11,7 +10,11 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+    MetadataUserInput,
+    normalize_metadata,
+)
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import (
     DagsterType,
@@ -64,7 +67,7 @@ class OutputDefinition:
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         code_version: Optional[str] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
@@ -79,10 +82,8 @@ class OutputDefinition:
             default=DEFAULT_IO_MANAGER_KEY,
         )
         self._code_version = check.opt_str_param(code_version, "code_version")
-        self._metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = check.is_list(
-            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
-        )
+        self._raw_metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        self._metadata = normalize_metadata(self._raw_metadata, allow_invalid=True)
 
     @property
     def name(self) -> str:
@@ -113,12 +114,8 @@ class OutputDefinition:
         return not self.is_required
 
     @property
-    def metadata(self) -> MetadataUserInput:
-        return self._metadata
-
-    @property
-    def metadata_entries(self) -> Sequence[MetadataEntry]:
-        return self._metadata_entries
+    def metadata(self) -> ArbitraryMetadataMapping:
+        return self._raw_metadata
 
     @property
     def is_dynamic(self) -> bool:
@@ -364,7 +361,7 @@ class Out(
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         code_version: Optional[str] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):

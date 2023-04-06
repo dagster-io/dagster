@@ -150,7 +150,7 @@ class Manager:
         dagster_run = unpack_value(pipeline_run_dict, DagsterRun)
 
         node_handle = NodeHandle.from_dict(node_handle_kwargs)
-        op = pipeline_def.get_solid(node_handle)
+        op = pipeline_def.get_node(node_handle)
         op_def = op.definition
 
         self.marshal_dir = marshal_dir

@@ -57,7 +57,7 @@ const remapName = (inName: string): string => {
   return inName;
 };
 
-const succinctType = (resourceType: string | undefined): string | null => {
+export const succinctType = (resourceType: string | undefined): string | null => {
   return resourceType?.split('.').pop() || null;
 };
 
@@ -110,7 +110,8 @@ export const ResourceRoot: React.FC<Props> = (props) => {
   const numUses =
     queryResult.data?.topLevelResourceDetailsOrError.__typename === 'ResourceDetails'
       ? queryResult.data.topLevelResourceDetailsOrError.parentResources.length +
-        queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length
+        queryResult.data.topLevelResourceDetailsOrError.assetKeysUsing.length +
+        queryResult.data.topLevelResourceDetailsOrError.jobsOpsUsing.length
       : 0;
 
   const tab = useRouteMatch<{tab?: string}>(['/locations/:repoPath/resources/:name/:tab?'])?.params
@@ -241,7 +242,7 @@ const ResourceConfig: React.FC<{
           <SectionHeader>
             <Subheading>Resource dependencies</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th style={{width: 120}}>Key</th>
@@ -366,7 +367,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Parent resources</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th>Resource</th>
@@ -397,7 +398,7 @@ const ResourceUses: React.FC<{
           <SectionHeader>
             <Subheading>Assets</Subheading>
           </SectionHeader>
-          <Table>
+          <Table $monospaceFont={false}>
             <thead>
               <tr>
                 <th>Asset key</th>
@@ -409,6 +410,83 @@ const ResourceUses: React.FC<{
                   <tr key={assetKey.path.join('/')}>
                     <td>
                       <AssetLink key={assetKey.path.join('/')} path={assetKey.path} icon="asset" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </Box>
+      )}
+      {resourceDetails.jobsOpsUsing.length > 0 && (
+        <Box>
+          <SectionHeader>
+            <Subheading>Jobs</Subheading>
+          </SectionHeader>
+          <Table $monospaceFont={false}>
+            <thead>
+              <tr>
+                <th>Job name</th>
+                <th>Ops</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resourceDetails.jobsOpsUsing.map((jobOps) => {
+                return (
+                  <tr key={jobOps.job.name}>
+                    <td>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          alignItems: 'center',
+                          display: 'inline-flex',
+                          gap: 8,
+                        }}
+                        style={{maxWidth: '100%'}}
+                      >
+                        <Icon name="job" color={Colors.Gray400} />
+
+                        <Link
+                          to={workspacePathFromAddress(repoAddress, `/jobs/${jobOps.job.name}`)}
+                        >
+                          <MiddleTruncate text={jobOps.job.name} />
+                        </Link>
+                      </Box>
+                    </td>
+                    <td>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          alignItems: 'center',
+                          display: 'inline-flex',
+                          gap: 8,
+                        }}
+                        style={{maxWidth: '100%'}}
+                      >
+                        {jobOps.opsUsing.map((op) => (
+                          <Box
+                            flex={{
+                              direction: 'row',
+                              alignItems: 'center',
+                              display: 'inline-flex',
+                              gap: 8,
+                            }}
+                            style={{maxWidth: '100%'}}
+                            key={op.handleID}
+                          >
+                            <Icon name="op" color={Colors.Gray400} />
+
+                            <Link
+                              to={workspacePathFromAddress(
+                                repoAddress,
+                                `/jobs/${jobOps.job.name}/${op.handleID.split('.').join('/')}`,
+                              )}
+                            >
+                              <MiddleTruncate text={op.solid.name} />
+                            </Link>
+                          </Box>
+                        ))}
+                      </Box>
                     </td>
                   </tr>
                 );
@@ -497,6 +575,18 @@ export const RESOURCE_DETAILS_FRAGMENT = gql`
     }
     assetKeysUsing {
       path
+    }
+    jobsOpsUsing {
+      job {
+        id
+        name
+      }
+      opsUsing {
+        handleID
+        solid {
+          name
+        }
+      }
     }
     resourceType
   }

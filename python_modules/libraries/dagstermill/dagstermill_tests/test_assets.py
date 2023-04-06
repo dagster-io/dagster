@@ -12,11 +12,9 @@ from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 
 def get_path(materialization_event):
-    for (
-        metadata_entry
-    ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.value, (NotebookMetadataValue, PathMetadataValue)):
-            return metadata_entry.value.path
+    for key, value in materialization_event.event_specific_data.materialization.metadata.items():
+        if isinstance(value, (NotebookMetadataValue, PathMetadataValue)):
+            return value.path
 
 
 def cleanup_result_notebook(result):

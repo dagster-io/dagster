@@ -71,7 +71,7 @@ export const TokenAndSuggestionProviders = () => {
       values: () => Object.keys(users),
       suggestionFilter: (typed: string, s: Suggestion) =>
         s.text.toLowerCase().includes(typed.toLowerCase()) ||
-        users[s.text].toLowerCase().includes(typed.toLowerCase()),
+        (users as any)[s.text].toLowerCase().includes(typed.toLowerCase()),
     },
   ];
 
@@ -102,7 +102,7 @@ export const CustomSuggestionRenderer = () => {
       suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
         <Group direction="row" spacing={8} alignItems="center">
-          <ColorSwatch $color={colors[suggestion.text]} />
+          <ColorSwatch $color={suggestion.text} />
           {suggestion.text}
         </Group>
       )}

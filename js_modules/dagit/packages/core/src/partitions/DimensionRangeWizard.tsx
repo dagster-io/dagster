@@ -13,9 +13,10 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {StateDot} from '../assets/AssetPartitionList';
-import {partitionStateAtIndex, Range} from '../assets/usePartitionHealthData';
+import {AssetPartitionStatusDot} from '../assets/AssetPartitionList';
+import {partitionStatusAtIndex} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType} from '../graphql/types';
+import {RunStatusDot} from '../runs/RunStatusDots';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
@@ -138,13 +139,15 @@ const OrdinalPartitionSelector: React.FC<{
   isDynamic,
   health,
 }) => {
-  const statusForPartitionKey = React.useCallback(
+  const dotForPartitionKey = React.useCallback(
     (partitionKey: string) => {
       const index = allPartitions.indexOf(partitionKey);
       if ('ranges' in health) {
-        return partitionStateAtIndex(health.ranges as Range[], index);
+        return <AssetPartitionStatusDot status={partitionStatusAtIndex(health.ranges, index)} />;
       } else {
-        return health.partitionStateForKey(partitionKey, index);
+        return (
+          <RunStatusDot size={10} status={health.runStatusForPartitionKey(partitionKey, index)} />
+        );
       }
     },
     [allPartitions, health],
@@ -169,7 +172,7 @@ const OrdinalPartitionSelector: React.FC<{
                         checked={dropdownItemProps.selected}
                         onChange={dropdownItemProps.toggle}
                       />
-                      <StateDot state={statusForPartitionKey(tag)} />
+                      {dotForPartitionKey(tag)}
                       <span>{tag}</span>
                     </Box>
                   }
@@ -177,7 +180,7 @@ const OrdinalPartitionSelector: React.FC<{
               </label>
             );
           },
-          [statusForPartitionKey],
+          [dotForPartitionKey],
         )}
         renderDropdown={React.useCallback(
           (dropdown, {width, allTags}: TagSelectorDropdownProps) => {

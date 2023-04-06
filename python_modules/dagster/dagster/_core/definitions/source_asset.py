@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import Protocol, TypeAlias
 
@@ -11,10 +11,8 @@ from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    ArbitraryMetadataMapping,
     MetadataMapping,
-    MetadataUserInput,
-    RawMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.op_definition import OpDefinition
@@ -71,7 +69,7 @@ class SourceAsset(ResourceAddable):
 
     Attributes:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
-        metadata_entries (List[MetadataEntry]): Metadata associated with the asset.
+        metadata (Mapping[str, MetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
         io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
@@ -84,7 +82,8 @@ class SourceAsset(ResourceAddable):
     """
 
     key: PublicAttr[AssetKey]
-    metadata_entries: Sequence[MetadataEntry]
+    metadata: PublicAttr[MetadataMapping]
+    raw_metadata: PublicAttr[ArbitraryMetadataMapping]
     io_manager_key: PublicAttr[Optional[str]]
     _io_manager_def: PublicAttr[Optional[IOManagerDefinition]]
     description: PublicAttr[Optional[str]]
@@ -97,12 +96,11 @@ class SourceAsset(ResourceAddable):
     def __init__(
         self,
         key: CoercibleToAssetKey,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[ArbitraryMetadataMapping] = None,
         io_manager_key: Optional[str] = None,
         io_manager_def: Optional[IOManagerDefinition] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        _metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         observe_fn: Optional[SourceAssetObserveFunction] = None,
@@ -116,9 +114,8 @@ class SourceAsset(ResourceAddable):
 
         self.key = AssetKey.from_coerceable(key)
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
-        self.metadata_entries = _metadata_entries or normalize_metadata(
-            metadata, [], allow_invalid=True
-        )
+        self.raw_metadata = metadata
+        self.metadata = normalize_metadata(metadata, allow_invalid=True)
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self._io_manager_def = check.opt_inst_param(
             io_manager_def, "io_manager_def", IOManagerDefinition
@@ -146,18 +143,6 @@ class SourceAsset(ResourceAddable):
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self._node_def = None
-
-    @public
-    @property
-    def metadata(self) -> MetadataMapping:
-        return {entry.label: entry.value for entry in self.metadata_entries}
-
-    @property
-    def raw_metadata(self) -> Dict[str, RawMetadataValue]:
-        return {
-            entry.label: cast(RawMetadataValue, entry.value.value)
-            for entry in self.metadata_entries
-        }
 
     def get_io_manager_key(self) -> str:
         return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
@@ -265,7 +250,7 @@ class SourceAsset(ResourceAddable):
                 io_manager_key=io_manager_key,
                 description=self.description,
                 partitions_def=self.partitions_def,
-                _metadata_entries=self.metadata_entries,
+                metadata=self.raw_metadata,
                 resource_defs=relevant_resource_defs,
                 group_name=self.group_name,
                 observe_fn=self.observe_fn,
@@ -283,7 +268,7 @@ class SourceAsset(ResourceAddable):
 
             return SourceAsset(
                 key=self.key,
-                _metadata_entries=self.metadata_entries,
+                metadata=self.raw_metadata,
                 io_manager_key=self.io_manager_key,
                 io_manager_def=self.io_manager_def,
                 description=self.description,
@@ -306,7 +291,7 @@ class SourceAsset(ResourceAddable):
         else:
             return (
                 self.key == other.key
-                and self.metadata_entries == other.metadata_entries
+                and self.raw_metadata == other.raw_metadata
                 and self.io_manager_key == other.io_manager_key
                 and self.description == other.description
                 and self.group_name == other.group_name

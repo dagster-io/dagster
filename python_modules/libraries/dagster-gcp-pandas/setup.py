@@ -37,6 +37,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-gcp{pin}",
+        "pandas<2",  # See: https://github.com/dagster-io/dagster/issues/13339
     ],
     extras_require={"test": ["pandas-gbq"]},
     zip_safe=False,

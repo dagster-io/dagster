@@ -99,7 +99,7 @@ def longitudinal_schedule():
         return {
             "ops": {
                 op.name: {"config": {"partition": start.to_date_string()}}
-                for op in longitudinal_job.solids
+                for op in longitudinal_job.nodes
             }
         }
 

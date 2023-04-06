@@ -42,7 +42,7 @@ export const IconColors = () => {
   const colorAtIndex = (index: number) => {
     const colorKey = colorKeys[index % numColors];
     if (colorKey) {
-      const colorAtKey = Colors[colorKey];
+      const colorAtKey = Colors[colorKey as keyof typeof Colors];
       if (colorAtKey) {
         return colorAtKey;
       }

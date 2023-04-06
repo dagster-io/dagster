@@ -40,7 +40,7 @@ export interface IStepAttempt {
 
 export interface IStepMetadata {
   // current state
-  state: IStepState;
+  state?: IStepState;
 
   // execution start and stop (user-code) inclusive of all retries
   start?: number;
@@ -94,7 +94,7 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
 export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   const logCaptureSteps = {};
   stepKeys.forEach(
-    (stepKey) => (logCaptureSteps[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
+    (stepKey) => ((logCaptureSteps as any)[stepKey] = {fileKey: stepKey, stepKeys: [stepKey]}),
   );
   return logCaptureSteps;
 };
@@ -262,14 +262,9 @@ export function extractMetadataFromLogs(
       const step =
         metadata.steps[stepKey] ||
         ({
-          state: IStepState.PREPARING,
+          state: undefined,
           attempts: [],
-          transitions: [
-            {
-              state: IStepState.PREPARING,
-              time: timestamp,
-            },
-          ],
+          transitions: [],
           start: undefined,
           end: undefined,
           markers: [],
@@ -285,7 +280,9 @@ export function extractMetadataFromLogs(
         }
       }
 
-      if (log.__typename === 'ExecutionStepStartEvent') {
+      if (log.__typename === 'StepWorkerStartingEvent') {
+        upsertState(step, timestamp, IStepState.PREPARING);
+      } else if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
         step.start = timestamp;
       } else if (log.__typename === 'ExecutionStepSuccessEvent') {

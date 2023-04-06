@@ -323,7 +323,7 @@ def dagster_event_sequence_for_step(
             UserFailureData(
                 label="intentional-failure",
                 description=failure.description,
-                metadata_entries=failure.metadata_entries,
+                metadata=failure.metadata,
             ),
         )
         if step_context.raise_on_error:

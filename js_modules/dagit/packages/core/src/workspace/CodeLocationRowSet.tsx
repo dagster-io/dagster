@@ -142,7 +142,7 @@ const ImageNameBox = styled(Box)`
   color: ${Colors.Gray700};
   font-size: 12px;
 
-  .bp3-popover2-target {
+  .bp4-popover2-target {
     overflow: hidden;
   }
 

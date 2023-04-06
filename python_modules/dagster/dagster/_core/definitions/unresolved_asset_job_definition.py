@@ -1,15 +1,12 @@
-import operator
 from collections import defaultdict
 from datetime import datetime
-from functools import reduce
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
-from dagster._core.selector.subset_selector import parse_clause
 from dagster._utils.backcompat import deprecation_warning
 
 from .asset_layer import build_asset_selection_job
@@ -26,6 +23,7 @@ if TYPE_CHECKING:
         SourceAsset,
     )
     from dagster._core.definitions.asset_graph import InternalAssetGraph
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 
 
 class UnresolvedAssetJobDefinition(
@@ -109,6 +107,12 @@ class UnresolvedAssetJobDefinition(
             PartitionedConfig,
         )
 
+        deprecation_warning(
+            "UnresolvedAssetJobDefinition.run_request_for_partition",
+            "2.0.0",
+            additional_warn_txt="Directly instantiate `RunRequest(partition_key=...)` instead.",
+        )
+
         if not self.partitions_def:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
@@ -129,7 +133,7 @@ class UnresolvedAssetJobDefinition(
             run_config
             if run_config is not None
             else partitioned_config.get_run_config_for_partition_key(
-                partition.name, instance=instance, current_time=current_time
+                partition.name, dynamic_partitions_store=instance, current_time=current_time
             )
         )
         run_request_tags = {
@@ -145,6 +149,7 @@ class UnresolvedAssetJobDefinition(
             run_config=run_config,
             tags=run_request_tags,
             asset_selection=asset_selection,
+            partition_key=partition_key,
         )
 
     def resolve(
@@ -234,36 +239,9 @@ class UnresolvedAssetJobDefinition(
         )
 
 
-def _selection_from_string(string: str) -> "AssetSelection":
-    from dagster._core.definitions import AssetSelection
-
-    if string == "*":
-        return AssetSelection.all()
-
-    parts = parse_clause(string)
-    if not parts:
-        check.failed(f"Invalid selection string: {string}")
-    u, item, d = parts
-
-    selection: AssetSelection = AssetSelection.keys(item)
-    if u:
-        selection = selection.upstream(u)
-    if d:
-        selection = selection.downstream(d)
-    return selection
-
-
 def define_asset_job(
     name: str,
-    selection: Optional[
-        Union[
-            str,
-            Sequence[str],
-            Sequence[AssetKey],
-            Sequence[Union["AssetsDefinition", "SourceAsset"]],
-            "AssetSelection",
-        ]
-    ] = None,
+    selection: Optional["CoercibleToAssetSelection"] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
@@ -378,34 +356,13 @@ def define_asset_job(
             )
 
     """
-    from dagster._core.definitions import AssetsDefinition, AssetSelection, SourceAsset
+    from dagster._core.definitions import AssetSelection
 
     # convert string-based selections to AssetSelection objects
-    resolved_selection: AssetSelection
     if selection is None:
         resolved_selection = AssetSelection.all()
-    elif isinstance(selection, str):
-        resolved_selection = _selection_from_string(selection)
-    elif isinstance(selection, AssetSelection):
-        resolved_selection = selection
-    elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
-        resolved_selection = reduce(
-            operator.or_, [_selection_from_string(cast(str, s)) for s in selection]
-        )
-    elif isinstance(selection, list) and all(
-        isinstance(el, (AssetsDefinition, SourceAsset)) for el in selection
-    ):
-        resolved_selection = AssetSelection.keys(
-            *(el.key for el in cast(Sequence[Union[AssetsDefinition, SourceAsset]], selection))
-        )
-    elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
-        resolved_selection = AssetSelection.keys(*cast(Sequence[AssetKey], selection))
     else:
-        check.failed(
-            "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
-            " Sequence[AssetsDefinition], Sequence[SourceAsset], AssetSelection. Was"
-            f" {type(selection)}."
-        )
+        resolved_selection = AssetSelection.from_coercible(selection)
 
     return UnresolvedAssetJobDefinition(
         name=name,

@@ -11,7 +11,13 @@ A sensor polls the Github API for new releases. When it finds one, it adds it to
 
 ## Getting started
 
-First, install the project as a Python package. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply.
+First, copy the project into your working directory:
+
+```bash
+dagster project from-example --name assets_dynamic_partitions
+````
+
+Then, install the project into your Python environment. By using the --editable flag, pip will install your Python package in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that, as you develop, local code changes will automatically apply.
 
 ```bash
 pip install -e ".[dev]"

@@ -1,28 +1,24 @@
 import pytest
 from dagster import AssetKey, DynamicOut, DynamicOutput, Out, Output, job, op
 from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.definitions.metadata import MetadataEntry
 
 
 def n_asset_keys(path, n):
     return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
 
 
-def check_materialization(materialization, asset_key, parent_assets=None, metadata_entries=None):
+def check_materialization(materialization, asset_key, parent_assets=None, metadata=None):
     event_data = materialization.event_specific_data
     assert event_data.materialization.asset_key == asset_key
-    assert sorted(event_data.materialization.metadata_entries) == sorted(metadata_entries or [])
+    assert sorted(event_data.materialization.metadata) == sorted(metadata or {})
     assert event_data.asset_lineage == (parent_assets or [])
 
 
 @pytest.mark.skip(reason="no longer supporting dynamic output asset keys")
 def test_dynamic_output_definition_single_partition_materialization():
-    entry1 = MetadataEntry("nrows", value=123)
-    entry2 = MetadataEntry("some value", value=3.21)
-
     @op(out={"output1": Out(asset_key=AssetKey("table1"))})
     def op1(_):
-        return Output(None, "output1", metadata_entries=[entry1])
+        return Output(None, "output1", metadata={"nrows": 123})
 
     @op(out={"output2": DynamicOut(asset_key=lambda context: AssetKey(context.mapping_key))})
     def op2(_, _input1):
@@ -31,7 +27,7 @@ def test_dynamic_output_definition_single_partition_materialization():
                 7,
                 mapping_key=str(i),
                 output_name="output2",
-                metadata_entries=[entry2],
+                metadata={"some value": 3.21},
             )
 
     @op
@@ -47,7 +43,7 @@ def test_dynamic_output_definition_single_partition_materialization():
 
     assert len(materializations) == 5
 
-    check_materialization(materializations[0], AssetKey(["table1"]), metadata_entries=[entry1])
+    check_materialization(materializations[0], AssetKey(["table1"]), metadata={"nrows": 123})
     seen_paths = set()
     for i in range(1, 5):
         path = materializations[i].asset_key.path
@@ -55,7 +51,7 @@ def test_dynamic_output_definition_single_partition_materialization():
         check_materialization(
             materializations[i],
             AssetKey(path),
-            metadata_entries=[entry2],
+            metadata={"some value": 3.21},
             parent_assets=[AssetLineageInfo(AssetKey(["table1"]))],
         )
     assert len(seen_paths) == 4

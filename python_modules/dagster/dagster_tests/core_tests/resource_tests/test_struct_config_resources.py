@@ -31,6 +31,7 @@ from dagster._config.structured_config import (
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter,
     ConfigurableResource,
+    ConfigurableResourceFactory,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -220,7 +221,7 @@ def test_abc_resource():
 def test_yield_in_resource_function():
     called = []
 
-    class ResourceWithCleanup(ConfigurableResource):
+    class ResourceWithCleanup(ConfigurableResourceFactory[bool]):
         idx: int
 
         def create_resource(self, context):
@@ -673,7 +674,7 @@ def test_nested_resources_runtime_config_complex():
 
 
 def test_resources_which_return():
-    class StringResource(ConfigurableResource[str]):
+    class StringResource(ConfigurableResourceFactory[str]):
         a_string: str
 
         def create_resource(self, context) -> str:
@@ -741,7 +742,7 @@ def test_nested_function_resource():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -779,7 +780,7 @@ def test_nested_function_resource_configured():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -831,7 +832,7 @@ def test_nested_function_resource_runtime_config():
 
         return output
 
-    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResourceFactory[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -994,7 +995,7 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: ConfigurableResource[str] |"
+            == "(self: StringDependentResource, a_string: ConfigurableResourceFactory[str] |"
             " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 

@@ -229,7 +229,7 @@ class AssetGraphSubset:
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
 
-        for asset_key in asset_graph.all_asset_keys:
+        for asset_key in asset_graph.non_source_asset_keys:
             partitions_def = asset_graph.get_partitions_def(asset_key)
             if partitions_def:
                 partitions_subsets_by_asset_key[

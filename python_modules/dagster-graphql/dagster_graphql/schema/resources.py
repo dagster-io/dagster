@@ -3,12 +3,14 @@ from typing import List
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
-from dagster._core.host_representation.external import ExternalResource
+from dagster._core.host_representation.external import ExternalRepository, ExternalResource
 from dagster._core.host_representation.external_data import (
     ExternalResourceConfigEnvVar,
     ExternalResourceValue,
     NestedResourceType,
+    ResourceJobUsageEntry,
 )
+from dagster._core.workspace.workspace import IWorkspace
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
@@ -16,6 +18,8 @@ from dagster_graphql.schema.errors import (
     GrapheneRepositoryNotFoundError,
     GrapheneResourceNotFoundError,
 )
+from dagster_graphql.schema.pipelines.pipeline import GrapheneJob
+from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handles
 from dagster_graphql.schema.util import non_null_list
 
 from .config_types import GrapheneConfigTypeField
@@ -61,6 +65,14 @@ class GrapheneNestedResourceEntry(graphene.ObjectType):
         name = "NestedResourceEntry"
 
 
+class GrapheneJobAndSpecificOps(graphene.ObjectType):
+    job = graphene.NonNull(GrapheneJob)
+    opsUsing = graphene.Field(non_null_list(GrapheneSolidHandle))
+
+    class Meta:
+        name = "JobWithOps"
+
+
 class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -86,6 +98,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
     )
     resourceType = graphene.NonNull(graphene.String)
     assetKeysUsing = graphene.Field(non_null_list(GrapheneAssetKey))
+    jobsOpsUsing = graphene.Field(non_null_list(GrapheneJobAndSpecificOps))
 
     class Meta:
         name = "ResourceDetails"
@@ -112,6 +125,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
         self._parent_resources = external_resource.parent_resources
         self.resourceType = external_resource.resource_type
         self._asset_keys_using = external_resource.asset_keys_using
+        self._job_ops_using = external_resource.job_ops_using
 
     def resolve_configFields(self, _graphene_info):
         return [
@@ -168,8 +182,26 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for name, attribute in self._parent_resources.items()
         ]
 
-    def resolve_assetKeysUsing(self, _graphene_info):
+    def resolve_assetKeysUsing(self, _graphene_info) -> List[GrapheneAssetKey]:
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
+
+    def _construct_job_and_specific_ops(
+        self, repo: ExternalRepository, entry: ResourceJobUsageEntry
+    ) -> GrapheneJobAndSpecificOps:
+        job = repo.get_full_external_job(entry.job_name)
+        handle_strs = {handle.to_string() for handle in entry.node_handles}
+        node_handles = [
+            handle
+            for handle_str, handle in build_solid_handles(job).items()
+            if handle_str in handle_strs
+        ]
+        return GrapheneJobAndSpecificOps(job=GrapheneJob(job), opsUsing=node_handles)
+
+    def resolve_jobsOpsUsing(self, graphene_info) -> List[GrapheneJobAndSpecificOps]:
+        context: IWorkspace = graphene_info.context
+        repo = context.get_code_location(self._location_name).get_repository(self._repository_name)
+
+        return [self._construct_job_and_specific_ops(repo, entry) for entry in self._job_ops_using]
 
 
 class GrapheneResourceDetailsOrError(graphene.Union):

@@ -161,6 +161,7 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange as PartitionKeyRange
 from .partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
+    DimensionPartitionMapping as DimensionPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,

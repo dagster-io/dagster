@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import time
 from contextlib import ExitStack
@@ -228,6 +229,19 @@ def test_input_signal_hang():
         [sys.executable, file_relative_path(__file__, "import_readline.py")],
     )
     please_dont_hang.communicate(timeout=10)
+
+
+def test_pdb_works():
+    please_dont_hang = open_ipc_subprocess(
+        [sys.executable, file_relative_path(__file__, "run_pdb.py")],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    stdout, _stderr = please_dont_hang.communicate(timeout=10, input=b"p foo\nquit\n")
+
+    assert "'HELLO'" in stdout.decode()
+    assert "bdb.BdbQuit" in stdout.decode()
 
 
 def test_interrupt_compute_log_tail_grandchild(

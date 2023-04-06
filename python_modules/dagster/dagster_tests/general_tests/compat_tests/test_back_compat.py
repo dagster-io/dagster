@@ -1,6 +1,7 @@
 # ruff: noqa: SLF001
 
 import datetime
+import json
 import os
 import re
 import sqlite3
@@ -25,7 +26,7 @@ from dagster import (
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
-from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
@@ -38,7 +39,6 @@ from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._daemon.types import DaemonHeartbeat
-from dagster._legacy import execute_pipeline, pipeline
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -169,14 +169,14 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         def noop_solid(_):
             pass
 
-        @pipeline
+        @job
         def noop_pipeline():
             noop_solid()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(noop_pipeline, instance=instance)
+            noop_pipeline.execute_in_process(instance=instance)
 
         assert len(instance.get_runs()) == 1
 
@@ -195,7 +195,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_pipeline.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -309,7 +309,7 @@ def test_mode_column_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
     with copy_directory(src_dir) as test_dir:
 
-        @pipeline
+        @job
         def _test():
             pass
 
@@ -470,7 +470,7 @@ def test_0_12_0_extract_asset_index_cols():
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
-    @pipeline
+    @job
     def asset_pipeline():
         asset_solid()
 
@@ -486,7 +486,7 @@ def test_0_12_0_extract_asset_index_cols():
             storage = instance._event_storage
 
             # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_pipeline.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -495,7 +495,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_pipeline.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -519,7 +519,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_pipeline.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
@@ -1217,11 +1217,36 @@ def test_load_old_materialization(asset_key: Optional[AssetKey]):
     ) == StepMaterializationData(
         materialization=AssetMaterialization(
             description="bar",
-            metadata_entries=[
-                MetadataEntry("baz", description="qux", entry_data=MetadataValue.text("quux"))
-            ],
+            metadata={"baz": MetadataValue.text("quux")},
             partition="alpha",
             asset_key=deserialized_asset_key,
         ),
         asset_lineage=[AssetLineageInfo(asset_key=AssetKey(["foo", "bar"]), partitions={"alpha"})],
     )
+
+
+# Prior to 1.2.5, metadata was stored on all classes as a `List[MetadataEntry]`. With 1.2.5 it
+# changed to `Dict[str, MetadataValue]`, with serdes-whitelisted classes using
+# `MetadataFieldSerializer` to serialize the dictionary as a list of `MetadataEntry` for backcompat.
+def test_metadata_serialization():
+    # We use `AssetMaterialization` as a stand-in for all classes using `MetadataFieldSerializer`.
+    mat = AssetMaterialization(
+        AssetKey(["foo"]),
+        metadata={"alpha": MetadataValue.text("beta"), "delta": MetadataValue.int(1)},
+    )
+    serialized_mat = serialize_value(mat)
+    assert json.loads(serialized_mat)["metadata_entries"] == [
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "alpha",
+            "description": None,
+            "entry_data": {"__class__": "TextMetadataEntryData", "text": "beta"},
+        },
+        {
+            "__class__": "EventMetadataEntry",
+            "label": "delta",
+            "description": None,
+            "entry_data": {"__class__": "IntMetadataEntryData", "value": 1},
+        },
+    ]
+    assert deserialize_value(serialized_mat, AssetMaterialization) == mat

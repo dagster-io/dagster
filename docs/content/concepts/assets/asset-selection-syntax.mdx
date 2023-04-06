@@ -13,7 +13,7 @@ To specify an asset selection as a string, Dagster supports a simple query synta
 
 It works as follows:
 
-- A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of <PyObject object="define_asset_job" />, where each clause is a separate element in a list.
+- A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of <PyObject object="define_asset_job" />, <PyObject object="materialize" />, and <PyObject object="materialize_to_memory" />, where each clause is a separate element in a list.
 - A clause can be an asset key, in which case that asset is selected.
 - An asset key with multiple components can be specified by inserting slashes between the components.
 - A clause can be an asset key preceded by `*`, in which case that asset and all of its ancestors (upstream dependencies) are selected.

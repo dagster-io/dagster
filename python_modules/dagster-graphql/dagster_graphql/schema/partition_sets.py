@@ -25,6 +25,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 
+from .asset_key import GrapheneAssetKey
 from .backfill import GraphenePartitionBackfill
 from .errors import (
     GrapheneDuplicateDynamicPartitionError,
@@ -119,6 +120,17 @@ class GraphenePartitionStatusesOrError(graphene.Union):
     class Meta:
         types = (GraphenePartitionStatuses, GraphenePythonError)
         name = "PartitionStatusesOrError"
+
+
+class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
+    class Meta:
+        name = "AssetPartitionsStatusCounts"
+
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    numPartitionsTargeted = graphene.NonNull(graphene.Int)
+    numPartitionsRequested = graphene.NonNull(graphene.Int)
+    numPartitionsCompleted = graphene.NonNull(graphene.Int)
+    numPartitionsFailed = graphene.NonNull(graphene.Int)
 
 
 class GraphenePartitionTagsOrError(graphene.Union):

@@ -89,7 +89,7 @@ def test_yielded_results_config_pandas(snapshot, job_def, ge_dir):
     mainexpect = expectations[0]
     assert mainexpect.success
     # purge system specific metadata for testing
-    metadata = mainexpect.metadata_entries[0].value.md_str.split("### Info")[0]
+    metadata = mainexpect.metadata["Expectation Results"].md_str.split("### Info")[0]
     snapshot.assert_match(metadata)
 
 
@@ -108,5 +108,5 @@ def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-a
     mainexpect = expectations[0]
     assert mainexpect.success
     # purge system specific metadata for testing
-    metadata = mainexpect.metadata_entries[0].value.md_str.split("### Info")[0]
+    metadata = mainexpect.metadata["Expectation Results"].md_str.split("### Info")[0]
     snapshot.assert_match(metadata)

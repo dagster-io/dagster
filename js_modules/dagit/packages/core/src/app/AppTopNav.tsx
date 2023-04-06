@@ -233,7 +233,7 @@ const GhostDaggy = () => (
 );
 
 const DaggyTooltip = styled(Tooltip)`
-  &.bp3-popover2-target {
+  &.bp4-popover2-target {
     display: inline-flex;
   }
 `;

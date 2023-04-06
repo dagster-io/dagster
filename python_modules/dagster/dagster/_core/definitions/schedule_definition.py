@@ -55,6 +55,7 @@ from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
 T = TypeVar("T")
 
 RunConfig: TypeAlias = Mapping[str, Any]
@@ -164,6 +165,7 @@ class ScheduleEvaluationContext:
         "_resources_cm",
         "_resources",
         "_cm_scope_entered",
+        "_repository_def",
     ]
 
     def __init__(
@@ -173,7 +175,10 @@ class ScheduleEvaluationContext:
         repository_name: Optional[str] = None,
         schedule_name: Optional[str] = None,
         resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        repository_def: Optional["RepositoryDefinition"] = None,
     ):
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
+
         self._exit_stack = ExitStack()
         self._instance = None
 
@@ -198,6 +203,9 @@ class ScheduleEvaluationContext:
         self._resource_defs = resources
         self._resources = None
         self._cm_scope_entered = False
+        self._repository_def = check.opt_inst_param(
+            repository_def, "repository_def", RepositoryDefinition
+        )
 
     def __enter__(self) -> "ScheduleEvaluationContext":
         self._cm_scope_entered = True
@@ -291,6 +299,14 @@ class ScheduleEvaluationContext:
     def log_key(self) -> Optional[List[str]]:
         return self._log_key
 
+    @property
+    def repository_def(self) -> "RepositoryDefinition":
+        if not self._repository_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to access repository_def, but no repository_def was provided."
+            )
+        return self._repository_def
+
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
@@ -306,6 +322,7 @@ def build_schedule_context(
     instance: Optional[DagsterInstance] = None,
     scheduled_execution_time: Optional[datetime] = None,
     resources: Optional[Mapping[str, "ResourceDefinition"]] = None,
+    repository_def: Optional["RepositoryDefinition"] = None,
 ) -> ScheduleEvaluationContext:
     """Builds schedule execution context using the provided parameters.
 
@@ -322,7 +339,6 @@ def build_schedule_context(
         .. code-block:: python
 
             context = build_schedule_context(instance)
-            daily_schedule.evaluate_tick(context)
 
     """
     check.opt_inst_param(instance, "instance", DagsterInstance)
@@ -333,6 +349,7 @@ def build_schedule_context(
             scheduled_execution_time, "scheduled_execution_time", datetime
         ),
         resources=resources,
+        repository_def=repository_def,
     )
 
 
@@ -704,6 +721,8 @@ class ScheduleDefinition:
             ScheduleExecutionData: Contains list of run requests, or skip message if present.
 
         """
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+
         check.inst_param(context, "context", ScheduleEvaluationContext)
         execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
@@ -744,16 +763,37 @@ class ScheduleDefinition:
             run_requests = result
             skip_message = None
 
-        # clone all the run requests with the required schedule tags
-        run_requests_with_schedule_tags = [
-            request.with_replaced_attrs(
-                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
+        dynamic_partitions_store = (
+            CachingDynamicPartitionsLoader(context.instance) if context.instance_ref else None
+        )
+
+        # clone all the run requests with resolved tags and config
+        resolved_run_requests = []
+        for run_request in run_requests:
+            if run_request.partition_key and not run_request.has_resolved_partition():
+                if context.repository_def is None:
+                    raise DagsterInvariantViolationError(
+                        "Must provide repository def to build_schedule_context when yielding"
+                        " partitioned run requests"
+                    )
+
+                scheduled_target = context.repository_def.get_job(self._target.pipeline_name)
+                resolved_request = run_request.with_resolved_tags_and_config(
+                    target_definition=scheduled_target,
+                    current_time=context.scheduled_execution_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+            else:
+                resolved_request = run_request
+
+            resolved_run_requests.append(
+                resolved_request.with_replaced_attrs(
+                    tags=merge_dicts(resolved_request.tags, DagsterRun.tags_for_schedule(self))
+                )
             )
-            for request in run_requests
-        ]
 
         return ScheduleExecutionData(
-            run_requests=run_requests_with_schedule_tags,
+            run_requests=resolved_run_requests,
             skip_message=skip_message,
             captured_log_key=context.log_key if context.has_captured_logs() else None,
         )

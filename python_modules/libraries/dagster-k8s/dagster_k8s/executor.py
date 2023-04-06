@@ -9,8 +9,9 @@ from dagster import (
     executor,
 )
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
+from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
@@ -256,9 +257,9 @@ class K8sStepHandler(StepHandler):
         yield DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
             message=f'Executing step "{step_key}" in Kubernetes job {job_name}.',
-            metadata_entries=[
-                MetadataEntry("Kubernetes Job name", value=job_name),
-            ],
+            metadata={
+                "Kubernetes Job name": MetadataValue.text(job_name),
+            },
         )
 
         self._api_client.batch_api.create_namespaced_job(

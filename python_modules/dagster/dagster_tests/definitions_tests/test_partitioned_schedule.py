@@ -403,12 +403,17 @@ def test_multipartitioned_job_schedule():
     def my_asset():
         return 1
 
-    my_schedule = build_schedule_from_partitioned_job(
-        define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
-    )
+    my_job = define_asset_job("multipartitions_job", [my_asset], partitions_def=multipartitions_def)
+    my_schedule = build_schedule_from_partitioned_job(my_job)
+
+    @repository
+    def my_repo():
+        return [my_asset, my_schedule, my_job]
+
     run_requests = my_schedule.evaluate_tick(
         build_schedule_context(
-            scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT)
+            scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT),
+            repository_def=my_repo,
         )
     ).run_requests
     assert len(run_requests) == 4

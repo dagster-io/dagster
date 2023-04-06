@@ -29,7 +29,7 @@ from dagster._loggers import default_loggers
 def create_creation_data(job_def):
     return RunConfigSchemaCreationData(
         job_def.name,
-        job_def.solids,
+        job_def.nodes,
         job_def.dependency_structure,
         job_def.mode_definition,
         logger_defs=default_loggers(),
@@ -275,7 +275,7 @@ def test_whole_environment():
 def test_solid_config_error():
     job_def = define_test_solids_config_pipeline()
     solid_dict_type = define_node_shape(
-        nodes=job_def.solids,
+        nodes=job_def.nodes,
         ignored_nodes=None,
         dependency_structure=job_def.dependency_structure,
         parent_handle=None,

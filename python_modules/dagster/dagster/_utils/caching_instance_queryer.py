@@ -13,6 +13,10 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_version import (
+    DataVersion,
+    extract_data_version_from_entry,
+)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
@@ -279,6 +283,57 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
     ####################
+    # OBSERVATIONS
+    ####################
+
+    @cached_method
+    def get_observation_record(
+        self,
+        *,
+        asset_key: AssetKey,
+        before_cursor: int,
+    ) -> Optional["EventLogRecord"]:
+        from dagster._core.event_api import EventRecordsFilter
+
+        return next(
+            iter(
+                self.instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_OBSERVATION,
+                        asset_key=asset_key,
+                        before_cursor=before_cursor,
+                    ),
+                    ascending=False,
+                )
+            )
+        )
+
+    @cached_method
+    def next_version_record(
+        self,
+        *,
+        asset_key: AssetKey,
+        after_cursor: int,
+        data_version: DataVersion,
+    ) -> Optional["EventLogRecord"]:
+        from dagster._core.event_api import EventRecordsFilter
+
+        for record in self.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=asset_key,
+                after_cursor=after_cursor,
+            ),
+            ascending=True,
+        ):
+            record_version = extract_data_version_from_entry(record.event_log_entry)
+            if record_version is not None and record_version != data_version:
+                return record
+
+        # no records found with a new data version
+        return None
+
+    ####################
     # RUNS
     ####################
 
@@ -410,6 +465,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 partitions_def_name
             ] = self.instance.get_dynamic_partitions(partitions_def_name)
         return self._dynamic_partitions_cache[partitions_def_name]
+
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return partition_key in self.get_dynamic_partitions(partitions_def_name)
 
     ####################
     # RECONCILIATION

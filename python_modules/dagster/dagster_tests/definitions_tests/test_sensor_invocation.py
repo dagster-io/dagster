@@ -8,12 +8,13 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetSelection,
-    BoolMetadataValue,
     DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
+    DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
+    Definitions,
     EventRecordsFilter,
     FreshnessPolicy,
     Output,
@@ -40,11 +41,14 @@ from dagster import (
     run_failure_sensor,
     run_status_sensor,
     sensor,
+    static_partitioned_config,
 )
 from dagster._config.structured_config import ConfigurableResource
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
 
 
@@ -194,22 +198,156 @@ def test_instance_access_with_mock():
 def test_sensor_w_no_job():
     @sensor()
     def no_job_sensor():
-        pass
+        return RunRequest(
+            run_key=None,
+            run_config=None,
+            tags=None,
+        )
 
     with pytest.raises(
         Exception,
         match=r".* Sensor evaluation function returned a RunRequest for a sensor lacking a "
         r"specified target .*",
     ):
-        no_job_sensor.check_valid_run_requests(
-            [
-                RunRequest(
-                    run_key=None,
-                    run_config=None,
-                    tags=None,
-                )
-            ]
-        )
+        with build_sensor_context() as context:
+            no_job_sensor.evaluate_tick(context)
+
+
+def test_validated_partitions():
+    @job(partitions_def=StaticPartitionsDefinition(["foo", "bar"]))
+    def my_job():
+        pass
+
+    @sensor(job=my_job)
+    def invalid_req_sensor():
+        return RunRequest(partition_key="nonexistent")
+
+    @sensor(job=my_job)
+    def valid_req_sensor():
+        return RunRequest(partition_key="foo", tags={"yay": "yay!"})
+
+    @repository
+    def my_repo():
+        return [my_job, invalid_req_sensor, valid_req_sensor]
+
+    with pytest.raises(DagsterInvariantViolationError, match="Must provide repository def"):
+        with build_sensor_context() as context:
+            invalid_req_sensor.evaluate_tick(context)
+
+    with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+        with build_sensor_context(repository_def=my_repo) as context:
+            invalid_req_sensor.evaluate_tick(context)
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        run_requests = valid_req_sensor.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        run_request = run_requests[0]
+        assert run_request.partition_key == "foo"
+        assert run_request.run_config == {}
+        assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
+        assert run_request.tags.get("yay") == "yay!"
+
+
+def test_partitioned_config_run_request():
+    def partition_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"partition": partition_key}}}}
+
+    @static_partitioned_config(partition_keys=["a", "b", "c", "d"])
+    def my_partitioned_config(partition_key: str):
+        return partition_fn(partition_key)
+
+    @op
+    def my_op():
+        pass
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    @sensor(job=my_job)
+    def valid_req_sensor():
+        return RunRequest(partition_key="a", tags={"yay": "yay!"})
+
+    @sensor(job=my_job)
+    def invalid_req_sensor():
+        return RunRequest(partition_key="nonexistent")
+
+    @sensor(job_name="my_job")
+    def job_str_target_sensor():
+        return RunRequest(partition_key="a", tags={"yay": "yay!"})
+
+    @sensor(job_name="my_job")
+    def invalid_job_str_target_sensor():
+        return RunRequest(partition_key="invalid")
+
+    @repository
+    def my_repo():
+        return [
+            my_job,
+            valid_req_sensor,
+            invalid_req_sensor,
+            job_str_target_sensor,
+            invalid_job_str_target_sensor,
+        ]
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        for valid_sensor in [valid_req_sensor, job_str_target_sensor]:
+            run_requests = valid_sensor.evaluate_tick(context).run_requests
+            assert len(run_requests) == 1
+            run_request = run_requests[0]
+            assert run_request.run_config == partition_fn("a")
+            assert run_request.tags.get(PARTITION_NAME_TAG) == "a"
+            assert run_request.tags.get("yay") == "yay!"
+
+        for invalid_sensor in [invalid_req_sensor, invalid_job_str_target_sensor]:
+            with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+                run_requests = invalid_sensor.evaluate_tick(context).run_requests
+
+
+def test_asset_selection_run_request_partition_key():
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def valid_req_sensor():
+        return RunRequest(partition_key="a")
+
+    @sensor(asset_selection=AssetSelection.keys("a_asset"))
+    def invalid_req_sensor():
+        return RunRequest(partition_key="b")
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a"]))
+    def a_asset():
+        return 1
+
+    daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def b_asset():
+        return 1
+
+    @asset(partitions_def=daily_partitions_def)
+    def c_asset():
+        return 1
+
+    @repository
+    def my_repo():
+        return [
+            a_asset,
+            b_asset,
+            c_asset,
+            valid_req_sensor,
+            invalid_req_sensor,
+            define_asset_job("a_job", [a_asset]),
+            define_asset_job("b_job", [b_asset]),
+        ]
+
+    with build_sensor_context(repository_def=my_repo) as context:
+        run_requests = valid_req_sensor.evaluate_tick(context).run_requests
+        assert len(run_requests) == 1
+        assert run_requests[0].partition_key == "a"
+        assert run_requests[0].tags.get(PARTITION_NAME_TAG) == "a"
+        assert run_requests[0].asset_selection == [a_asset.key]
+
+        with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
+            invalid_req_sensor.evaluate_tick(context)
 
 
 def test_run_status_sensor():
@@ -406,18 +544,19 @@ def test_multi_asset_sensor():
             context.advance_all_cursors()
             return RunRequest(run_key=context.cursor, run_config={})
 
-    @repository
-    def my_repo():
-        return [asset_a, asset_b, a_and_b_sensor]
+    defs = Definitions(assets=[asset_a, asset_b], sensors=[a_and_b_sensor])
+    my_repo = defs.get_repository_def()
 
-    with instance_for_test() as instance:
-        materialize([asset_a, asset_b], instance=instance)
-        ctx = build_multi_asset_sensor_context(
-            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
-            instance=instance,
-            repository_def=my_repo,
-        )
-        assert a_and_b_sensor(ctx).run_config == {}
+    for definitions, repository_def in [(defs, None), (None, my_repo)]:
+        with instance_for_test() as instance:
+            materialize([asset_a, asset_b], instance=instance)
+            ctx = build_multi_asset_sensor_context(
+                monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
+                instance=instance,
+                repository_def=repository_def,
+                definitions=definitions,
+            )
+            assert a_and_b_sensor(ctx).run_config == {}
 
 
 def test_multi_asset_sensor_selection():
@@ -506,7 +645,9 @@ def test_partitions_multi_asset_sensor_context():
         "yay", selection="daily_partitions_asset", partitions_def=daily_partitions_def
     )
 
-    @multi_asset_sensor(monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key])
+    @multi_asset_sensor(
+        monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key], job=asset_job
+    )
     def two_asset_sensor(context):
         partition_1 = next(
             iter(
@@ -538,8 +679,15 @@ def test_partitions_multi_asset_sensor_context():
             instance=instance,
             repository_def=my_repo,
         )
-        assert two_asset_sensor(ctx).tags["dagster/partition"] == "2022-08-01"
-        assert ctx.get_cursor_partition(AssetKey("daily_partitions_asset")) == "2022-08-01"
+        sensor_data = two_asset_sensor.evaluate_tick(ctx)
+        assert len(sensor_data.run_requests) == 1
+        assert sensor_data.run_requests[0].partition_key == "2022-08-01"
+        assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert (
+            ctx.cursor
+            == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 3, {}],'
+            ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 4, {}]}'
+        )
 
 
 @asset(partitions_def=DailyPartitionsDefinition("2022-07-01"))
@@ -1163,10 +1311,10 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[
                 my_asset.key
-            ].event_log_entry.dagster_event.materialization.metadata_entries[
-                0
-            ].value == BoolMetadataValue(
-                value=True
+            ].event_log_entry.dagster_event.materialization.metadata[
+                "evaluated"
+            ] == MetadataValue.bool(
+                True
             )
 
     @repository
@@ -1305,7 +1453,7 @@ def test_dynamic_partitions_sensor():
     @sensor(job=my_job)
     def test_sensor(context):
         context.instance.add_dynamic_partitions(dynamic_partitions_def.name, ["apple"])
-        return my_job.run_request_for_partition("apple", instance=context.instance)
+        return RunRequest(partition_key="apple")
 
     with instance_for_test() as instance:
         ctx = build_sensor_context(

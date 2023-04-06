@@ -27,7 +27,7 @@ def single_dagster_event(events, event_type):
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
     return PipelineDefinition(
         name=name,
-        solid_defs=solids,
+        node_defs=solids,
         description=deps,
         mode_defs=[mode_def(event_callback)],
     )
@@ -42,7 +42,7 @@ def test_empty_pipeline():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name="empty_pipeline", solid_defs=[], mode_defs=[mode_def(_event_callback)]
+        name="empty_pipeline", node_defs=[], mode_defs=[mode_def(_event_callback)]
     )
 
     result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}, "console": {}}})
@@ -72,8 +72,9 @@ def test_single_solid_pipeline_success():
 
     pipeline_def = PipelineDefinition(
         name="single_solid_pipeline",
-        solid_defs=[solid_one],
+        node_defs=[solid_one],
         mode_defs=[mode_def(_event_callback)],
+        tags={"foo": "bar"},
     )
 
     result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}})
@@ -83,6 +84,10 @@ def test_single_solid_pipeline_success():
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.pipeline_name == "single_solid_pipeline"
     assert start_event.dagster_event.solid_name == "solid_one"
+
+    # persisted logging tags contain pipeline_name but not pipeline_tags
+    assert start_event.dagster_event.logging_tags["pipeline_name"] == "single_solid_pipeline"
+    assert "pipeline_tags" not in start_event.dagster_event.logging_tags
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
@@ -109,7 +114,7 @@ def test_single_solid_pipeline_failure():
 
     pipeline_def = PipelineDefinition(
         name="single_solid_pipeline",
-        solid_defs=[solid_one],
+        node_defs=[solid_one],
         mode_defs=[mode_def(_event_callback)],
     )
 

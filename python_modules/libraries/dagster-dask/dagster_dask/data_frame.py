@@ -15,7 +15,6 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    MetadataEntry,
     Permissive,
     Selector,
     Shape,
@@ -502,10 +501,8 @@ def df_type_check(_, value):
         return TypeCheck(success=False)
     return TypeCheck(
         success=True,
-        metadata_entries=[
-            # string cast columns since they may be things like datetime
-            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
-        ],
+        # string cast columns since they may be things like datetime
+        metadata={"metadata": {"columns": list(map(str, value.columns))}},
     )
 
 

@@ -560,7 +560,7 @@ def test_execute_during_dst_transition_spring_forward(
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 0
 
-    for _ in range(2):
+    for _ in range(4):
         freeze_datetime = freeze_datetime.add(days=1)
         with pendulum.test(freeze_datetime):
             evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
@@ -571,17 +571,19 @@ def test_execute_during_dst_transition_spring_forward(
 
         wait_for_all_runs_to_start(instance)
 
-        assert instance.get_runs_count() == 3
+        assert instance.get_runs_count() == 5
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
+        assert len(ticks) == 5
 
         expected_datetimes_utc = [
-            to_timezone(create_pendulum_time(2019, 3, 11, 1, 30, 0, tz="US/Central"), "UTC"),
+            to_timezone(create_pendulum_time(2019, 3, 13, 2, 30, 0, tz="US/Central"), "UTC"),
+            to_timezone(create_pendulum_time(2019, 3, 12, 2, 30, 0, tz="US/Central"), "UTC"),
+            to_timezone(create_pendulum_time(2019, 3, 11, 2, 30, 0, tz="US/Central"), "UTC"),
             to_timezone(create_pendulum_time(2019, 3, 10, 3, 00, 0, tz="US/Central"), "UTC"),
             to_timezone(create_pendulum_time(2019, 3, 9, 2, 30, 0, tz="US/Central"), "UTC"),
         ]
 
-        for i in range(3):
+        for i in range(5):
             validate_tick(
                 ticks[i],
                 external_schedule,
@@ -598,9 +600,9 @@ def test_execute_during_dst_transition_spring_forward(
 
         # Verify idempotence
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
-        assert instance.get_runs_count() == 3
+        assert instance.get_runs_count() == 5
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 3
+        assert len(ticks) == 5
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())

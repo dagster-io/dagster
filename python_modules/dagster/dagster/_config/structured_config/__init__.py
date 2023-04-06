@@ -67,7 +67,7 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
-Self = TypeVar("Self", bound="ConfigurableResource")
+Self = TypeVar("Self", bound="ConfigurableResourceFactory")
 
 
 class MakeConfigCacheable(BaseModel):
@@ -378,7 +378,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
 def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
-    if isinstance(resource_def, (ConfigurableResource, PartialResource)):
+    if isinstance(resource_def, (ConfigurableResourceFactory, PartialResource)):
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
@@ -388,27 +388,57 @@ def attach_resource_id_to_key_mapping(
 
 
 @experimental
-class ConfigurableResource(
+class ConfigurableResourceFactory(
     Generic[TResValue],
     ResourceDefinition,
     Config,
     TypecheckAllowPartialResourceInitParams,
     AllowDelayedDependencies,
+    ABC,
     metaclass=BaseResourceMeta,
 ):
-    """Base class for Dagster resources that utilize structured config.
+    """Base class for creating and managing the lifecycle of Dagster resources that utilize structured config.
+
+    Users should directly inherit from this class when they want the object passed to user-defined
+    code (such as an asset or op) to be different than the object that defines the configuration
+    schema and is passed to the :py:class:`Definitions` object. Cases where this is useful include is
+    when the object passed to user code is:
+
+    * An existing class from a third-party library that the user does not control.
+    * A complex class that requires substantial internal state management or itself requires arguments beyond its config values.
+    * A class with expensive initialization that should not be invoked on code location load, but rather lazily on first use in an op or asset during a run.
+    * A class that you desire to be a plain Python class, rather than a Pydantic class, for whatever reason.
 
     This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`, and
-    provides a default implementation of the resource_fn that returns the resource itself.
+    must implement ``create_resource``, which creates the resource to pass to user code.
 
-    Example:
+    Example definition:
+
     .. code-block:: python
 
-        class WriterResource(ConfigurableResource):
-            prefix: str
+        class DatabaseResource(ConfigurableResourceFactory[Database]):
+            connection_uri: str
 
-            def output(self, text: str) -> None:
-                print(f"{self.prefix}{text}")
+            def create_resource(self, _init_context) -> Database:
+                # For example Database could be from a third-party library or require expensive setup.
+                # Or you could just prefer to separate the concerns of configuration and runtime representation
+                return Database(self.connection_uri)
+
+    To use a resource created by a factory in a pipeline, you must use the Resource type annotation.
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_database(database: Resource[Database]):
+            # Database used directly in user code
+            database.query("SELECT * FROM table")
+
+        defs = Definitions(
+            assets=[asset_that_uses_database],
+            resources={"database": DatabaseResource(connection_uri="some_uri")},
+        )
 
     """
 
@@ -447,6 +477,14 @@ class ConfigurableResource(
 
         self._nested_resources = {k: v for k, v in resource_pointers.items()}
 
+    @abstractmethod
+    def create_resource(self, context: InitResourceContext) -> TResValue:
+        """Returns the object that this resource hands to user code, accessible by ops or assets
+        through the context or resource parameters. This works like the function decorated
+        with @resource when using function-based resources.
+        """
+        raise NotImplementedError()
+
     @property
     def nested_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._nested_resources
@@ -458,7 +496,9 @@ class ConfigurableResource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def _with_updated_values(self, values: Mapping[str, Any]) -> "ConfigurableResource[TResValue]":
+    def _with_updated_values(
+        self, values: Mapping[str, Any]
+    ) -> "ConfigurableResourceFactory[TResValue]":
         """Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
@@ -467,7 +507,7 @@ class ConfigurableResource(
         # of this class. We can therefore safely pass in the values as kwargs.
         return self.__class__(**{**self._as_config_dict(), **values})
 
-    def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
+    def _resolve_and_update_env_vars(self) -> "ConfigurableResourceFactory[TResValue]":
         """Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
@@ -481,7 +521,7 @@ class ConfigurableResource(
 
     def _resolve_and_update_nested_resources(
         self, context: InitResourceContext
-    ) -> "ConfigurableResource[TResValue]":
+    ) -> "ConfigurableResourceFactory[TResValue]":
         """Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
@@ -527,13 +567,47 @@ class ConfigurableResource(
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
 
+
+@experimental
+class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
+    """Base class for Dagster resources that utilize structured config.
+
+    This class is a subclass of both :py:class:`ResourceDefinition` and :py:class:`Config`.
+
+    Example definition:
+
+    .. code-block:: python
+
+        class WriterResource(ConfigurableResource):
+            prefix: str
+
+            def output(self, text: str) -> None:
+                print(f"{self.prefix}{text}")
+
+        # which can be used in a pipeline like so:
+
+    Example usage:
+
+    .. code-block:: python
+
+        @asset
+        def asset_that_uses_writer(writer: WriterResource):
+            writer.output("text")
+
+        defs = Definitions(
+            assets=[asset_that_uses_writer],
+            resources={"writer": WriterResource(prefix="a_prefix")},
+        )
+
+    """
+
     def create_resource(self, context: InitResourceContext) -> TResValue:
         """Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
         with @resource when using function-based resources.
 
-        Default behavior for new class-based resources is to return itself, passing
-        the actual resource object to user code.
+        For ConfigurableResource, this function will return itself, passing
+        the actual ConfigurableResource object to user code.
         """
         return cast(TResValue, self)
 
@@ -554,9 +628,11 @@ class PartialResource(
     Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[ConfigurableResource[TResValue]]
+    resource_cls: Type[ConfigurableResourceFactory[TResValue]]
 
-    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
+    def __init__(
+        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+    ):
         resource_pointers, data_without_resources = separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -589,9 +665,14 @@ class PartialResource(
         return self._nested_resources
 
 
-ResourceOrPartial: TypeAlias = Union[ConfigurableResource[TResValue], PartialResource[TResValue]]
+ResourceOrPartial: TypeAlias = Union[
+    ConfigurableResourceFactory[TResValue], PartialResource[TResValue]
+]
 ResourceOrPartialOrValue: TypeAlias = Union[
-    ConfigurableResource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
+    ConfigurableResourceFactory[TResValue],
+    PartialResource[TResValue],
+    ResourceDefinition,
+    TResValue,
 ]
 
 
@@ -603,7 +684,7 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "ConfigurableResource", __owner: Any) -> V:
+    def __get__(self, obj: "ConfigurableResourceFactory", __owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
@@ -652,7 +733,9 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
 
 
 @experimental
-class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
+class ConfigurableIOManagerFactory(
+    ConfigurableResourceFactory[TIOManagerValue], IOManagerDefinition
+):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -663,7 +746,7 @@ class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOMana
     """
 
     def __init__(self, **data: Any):
-        ConfigurableResource.__init__(self, **data)
+        ConfigurableResourceFactory.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.initialize_and_run,
@@ -671,12 +754,17 @@ class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOMana
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager(context)
-
     @abstractmethod
     def create_io_manager(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function."""
+        raise NotImplementedError()
+
+    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
+        return self.create_io_manager(context)
+
+    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+        # I/O manager factories execute a different code path that does not
+        # call create_resource
         raise NotImplementedError()
 
     @classmethod
@@ -688,7 +776,9 @@ class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOMana
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
+    def __init__(
+        self, resource_cls: Type[ConfigurableResourceFactory[TResValue]], data: Dict[str, Any]
+    ):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,
@@ -744,6 +834,27 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
+def _get_inner_field_if_exists(
+    shape_type: PydanticShapeType, field: ModelField
+) -> Optional[ModelField]:
+    """Grabs the inner Pydantic field type for a data structure such as a list or dictionary.
+
+    Returns None for types which have no inner field.
+    """
+    # See https://github.com/pydantic/pydantic/blob/v1.10.3/pydantic/fields.py#L758 for
+    # where sub_fields is set.
+    if shape_type == SHAPE_SINGLETON:
+        return None
+    elif shape_type == SHAPE_LIST:
+        # List has a single subfield, which is the type of the list elements.
+        return check.not_none(field.sub_fields)[0]
+    elif shape_type in MAPPING_TYPES:
+        # Mapping has a single subfield, which is the type of the mapping values.
+        return check.not_none(field.sub_fields)[0]
+    else:
+        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field."""
     key_type = (
@@ -767,7 +878,13 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
         return Field(config=wrapped_config_type, description=inferred_field.description)
     else:
-        config_type = _config_type_for_pydantic_field(pydantic_field)
+        # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
+        inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
+        if inner_field:
+            config_type = _convert_pydantic_field(inner_field).config_type
+        else:
+            config_type = _config_type_for_pydantic_field(pydantic_field)
+
         wrapped_config_type = _wrap_config_type(
             shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
         )
@@ -998,6 +1115,6 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_dep_type=ResourceDependency,
-    resource_type=ConfigurableResource,
+    resource_type=ConfigurableResourceFactory,
     partial_resource_type=PartialResource,
 )

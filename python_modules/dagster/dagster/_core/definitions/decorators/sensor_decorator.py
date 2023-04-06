@@ -15,6 +15,7 @@ from ..multi_asset_sensor_definition import (
     MultiAssetMaterializationFunction,
     MultiAssetSensorDefinition,
 )
+from ..run_request import SensorResult
 from ..sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunction,
@@ -163,6 +164,15 @@ def asset_sensor(
                 for item in result:
                     yield item
             elif isinstance(result, (RunRequest, SkipReason)):
+                yield result
+
+            elif isinstance(result, SensorResult):
+                if result.cursor:
+                    raise DagsterInvariantViolationError(
+                        f"Error in asset sensor {sensor_name}: Sensor returned a SensorResult"
+                        " with a cursor value. The cursor is managed by the asset sensor and"
+                        " should not be modified by a user."
+                    )
                 yield result
 
             elif result is not None:

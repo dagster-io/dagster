@@ -89,7 +89,7 @@ export const TicksTable = ({
     encode: (states) => {
       const queryState = {};
       Object.keys(states).map((state) => {
-        queryState[state.toLowerCase()] = String(states[state]);
+        (queryState as any)[state.toLowerCase()] = String(states[state as keyof typeof states]);
       });
       return queryState;
     },
@@ -97,7 +97,7 @@ export const TicksTable = ({
       const status: ShownStatusState = {...DEFAULT_SHOWN_STATUS_STATE};
       Object.keys(DEFAULT_SHOWN_STATUS_STATE).forEach((state) => {
         if (state.toLowerCase() in queryState) {
-          status[state] = !(queryState[state.toLowerCase()] === 'false');
+          (status as any)[state] = !(queryState[state.toLowerCase()] === 'false');
         }
       });
 
@@ -108,7 +108,7 @@ export const TicksTable = ({
   const {flagSensorScheduleLogging} = useFeatureFlags();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = Object.keys(shownStates)
-    .filter((status) => shownStates[status])
+    .filter((status) => shownStates[status as keyof typeof shownStates])
     .map((status) => status as InstigationTickStatus);
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     TickHistoryQuery,

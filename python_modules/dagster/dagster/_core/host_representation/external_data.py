@@ -10,6 +10,7 @@ from enum import Enum
 from typing import (
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -49,12 +50,24 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, is_base_asset_job_name
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
-from dagster._core.definitions.dependency import NodeOutputHandle
+from dagster._core.definitions.dependency import (
+    GraphNode,
+    Node,
+    NodeHandle,
+    NodeOutputHandle,
+    OpNode,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
+from dagster._core.definitions.metadata import (
+    MetadataFieldSerializer,
+    MetadataUserInput,
+    MetadataValue,
+    normalize_metadata,
+)
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -917,6 +930,17 @@ class ExternalResourceConfigEnvVar(NamedTuple):
 ExternalResourceValue = Union[str, ExternalResourceConfigEnvVar]
 
 
+UNKNOWN_RESOURCE_TYPE = "Unknown"
+
+
+@whitelist_for_serdes
+class ResourceJobUsageEntry(NamedTuple):
+    """Stores information about where a resource is used in a job."""
+
+    job_name: str
+    node_handles: List[NodeHandle]
+
+
 @whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
@@ -932,6 +956,7 @@ class ExternalResourceData(
             ("resource_type", str),
             ("is_top_level", bool),
             ("asset_keys_using", List[AssetKey]),
+            ("job_ops_using", List[ResourceJobUsageEntry]),
         ],
     )
 ):
@@ -947,11 +972,12 @@ class ExternalResourceData(
         configured_values: Mapping[str, ExternalResourceValue],
         config_field_snaps: Sequence[ConfigFieldSnap],
         config_schema_snap: ConfigSchemaSnapshot,
-        nested_resources: Mapping[str, NestedResource],
-        parent_resources: Mapping[str, str],
-        resource_type: str,
+        nested_resources: Optional[Mapping[str, NestedResource]] = None,
+        parent_resources: Optional[Mapping[str, str]] = None,
+        resource_type: str = UNKNOWN_RESOURCE_TYPE,
         is_top_level: bool = True,
         asset_keys_using: Optional[Sequence[AssetKey]] = None,
+        job_ops_using: Optional[Sequence[ResourceJobUsageEntry]] = None,
     ):
         return super(ExternalResourceData, cls).__new__(
             cls,
@@ -977,11 +1003,13 @@ class ExternalResourceData(
                 check.opt_mapping_param(
                     nested_resources, "nested_resources", key_type=str, value_type=NestedResource
                 )
+                or {}
             ),
             parent_resources=dict(
                 check.opt_mapping_param(
                     parent_resources, "parent_resources", key_type=str, value_type=str
                 )
+                or {}
             ),
             is_top_level=check.bool_param(is_top_level, "is_top_level"),
             resource_type=check.str_param(resource_type, "resource_type"),
@@ -989,10 +1017,19 @@ class ExternalResourceData(
                 check.opt_sequence_param(asset_keys_using, "asset_keys_using", of_type=AssetKey)
             )
             or [],
+            job_ops_using=list(
+                check.opt_sequence_param(
+                    job_ops_using, "job_ops_using", of_type=ResourceJobUsageEntry
+                )
+            )
+            or [],
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
 class ExternalAssetNode(
     NamedTuple(
         "_ExternalAssetNode",
@@ -1013,7 +1050,7 @@ class ExternalAssetNode(
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
-            ("metadata_entries", Sequence[MetadataEntry]),
+            ("metadata", Mapping[str, MetadataValue]),
             ("group_name", Optional[str]),
             ("freshness_policy", Optional[FreshnessPolicy]),
             ("is_source", bool),
@@ -1023,6 +1060,7 @@ class ExternalAssetNode(
             # unique deployment-wide.
             ("atomic_execution_unit_id", Optional[str]),
             ("required_top_level_resources", Optional[Sequence[str]]),
+            ("auto_materialize_policy", Optional[AutoMaterializePolicy]),
         ],
     )
 ):
@@ -1047,13 +1085,14 @@ class ExternalAssetNode(
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
-        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         group_name: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         is_source: Optional[bool] = None,
         is_observable: bool = False,
         atomic_execution_unit_id: Optional[str] = None,
         required_top_level_resources: Optional[Sequence[str]] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
         if not op_names:
@@ -1089,8 +1128,8 @@ class ExternalAssetNode(
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
-            metadata_entries=check.opt_sequence_param(
-                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            metadata=normalize_metadata(
+                check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
             group_name=check.opt_str_param(group_name, "group_name"),
             freshness_policy=check.opt_inst_param(
@@ -1104,7 +1143,56 @@ class ExternalAssetNode(
             required_top_level_resources=check.opt_sequence_param(
                 required_top_level_resources, "required_top_level_resources", of_type=str
             ),
+            auto_materialize_policy=check.opt_inst_param(
+                auto_materialize_policy,
+                "auto_materialize_policy",
+                AutoMaterializePolicy,
+            ),
         )
+
+
+ResourceJobUsageMap = Dict[str, List[ResourceJobUsageEntry]]
+
+
+class NodeHandleResourceUse(NamedTuple):
+    resource_key: str
+    node_handle: NodeHandle
+
+
+def _get_resource_usage_from_node(
+    pipeline: PipelineDefinition,
+    node: Node,
+    parent_handle: Optional[NodeHandle] = None,
+) -> Iterable[NodeHandleResourceUse]:
+    handle = NodeHandle(node.name, parent_handle)
+    if isinstance(node, OpNode):
+        for resource_req in node.get_resource_requirements(pipeline.graph):
+            yield NodeHandleResourceUse(resource_req.key, handle)
+    elif isinstance(node, GraphNode):
+        for nested_node in node.definition.nodes:
+            yield from _get_resource_usage_from_node(pipeline, nested_node, handle)
+
+
+def _get_resource_job_usage(pipelines: Sequence[PipelineDefinition]) -> ResourceJobUsageMap:
+    resource_job_usage_map: Dict[str, List[ResourceJobUsageEntry]] = defaultdict(list)
+
+    for pipeline in pipelines:
+        pipeline_name = pipeline.name
+        if is_base_asset_job_name(pipeline_name):
+            continue
+
+        resource_usage: List[NodeHandleResourceUse] = []
+        for solid in pipeline.nodes_in_topological_order:
+            resource_usage += [use for use in _get_resource_usage_from_node(pipeline, solid)]
+        node_use_by_key: Dict[str, List[NodeHandle]] = defaultdict(list)
+        for use in resource_usage:
+            node_use_by_key[use.resource_key].append(use.node_handle)
+        for resource_key in node_use_by_key:
+            resource_job_usage_map[resource_key].append(
+                ResourceJobUsageEntry(pipeline.name, node_use_by_key[resource_key])
+            )
+
+    return resource_job_usage_map
 
 
 def external_repository_data_from_def(
@@ -1142,11 +1230,13 @@ def external_repository_data_from_def(
             if nested_resource.type == NestedResourceType.TOP_LEVEL:
                 inverted_nested_resources_map[nested_resource.name][resource_key] = attribute
 
-    resource_asset_usage_map = defaultdict(list)
+    resource_asset_usage_map: Dict[str, List[AssetKey]] = defaultdict(list)
     for asset in asset_graph:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
                 resource_asset_usage_map[resource_key].append(asset.asset_key)
+
+    resource_job_usage_map: ResourceJobUsageMap = _get_resource_job_usage(pipelines)
 
     return ExternalRepositoryData(
         name=repository_def.name,
@@ -1185,6 +1275,7 @@ def external_repository_data_from_def(
                     nested_resource_map[res_name],
                     inverted_nested_resources_map[res_name],
                     resource_asset_usage_map,
+                    resource_job_usage_map,
                 )
                 for res_name, res_data in resource_datas.items()
             ],
@@ -1210,6 +1301,7 @@ def external_asset_graph_from_defs(
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
     freshness_policy_by_asset_key: Dict[AssetKey, FreshnessPolicy] = dict()
     metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
+    auto_materialize_policy_by_asset_key: Dict[AssetKey, AutoMaterializePolicy] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
@@ -1259,6 +1351,7 @@ def external_asset_graph_from_defs(
         for assets_def in asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
+            auto_materialize_policy_by_asset_key.update(assets_def.auto_materialize_policies_by_key)
             descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
@@ -1286,10 +1379,6 @@ def external_asset_graph_from_defs(
 
     for source_asset in source_assets_by_key.values():
         if source_asset.key not in node_defs_by_asset_key:
-            # TODO: For now we are dropping partition metadata entries
-            metadata_entries = [
-                entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
-            ]
             asset_nodes.append(
                 ExternalAssetNode(
                     asset_key=source_asset.key,
@@ -1297,7 +1386,7 @@ def external_asset_graph_from_defs(
                     depended_by=list(dep_by[source_asset.key].values()),
                     job_names=[ASSET_BASE_JOB_PREFIX] if source_asset.node_def is not None else [],
                     op_description=source_asset.description,
-                    metadata_entries=metadata_entries,
+                    metadata=source_asset.metadata,
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
@@ -1321,17 +1410,13 @@ def external_asset_graph_from_defs(
         if isinstance(node_def, OpDefinition):
             required_top_level_resources = list(node_def.required_resource_keys)
 
-        asset_metadata_entries = (
-            cast(
-                Sequence,
-                normalize_metadata(
-                    metadata=metadata_by_asset_key[asset_key],
-                    metadata_entries=[],
-                    allow_invalid=True,
-                ),
+        asset_metadata = (
+            normalize_metadata(
+                metadata_by_asset_key[asset_key],
+                allow_invalid=True,
             )
             if asset_key in metadata_by_asset_key
-            else cast(Sequence, output_def.metadata_entries)
+            else output_def.metadata
         )
 
         job_names = [job_def.name for _, job_def in node_tuple_list]
@@ -1367,12 +1452,13 @@ def external_asset_graph_from_defs(
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
-                metadata_entries=asset_metadata_entries,
+                metadata=asset_metadata,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group
                 group_name=group_name_by_asset_key.get(asset_key, DEFAULT_GROUP_NAME),
                 freshness_policy=freshness_policy_by_asset_key.get(asset_key),
+                auto_materialize_policy=auto_materialize_policy_by_asset_key.get(asset_key),
                 atomic_execution_unit_id=atomic_execution_unit_ids_by_asset_key.get(asset_key),
                 required_top_level_resources=required_top_level_resources,
             )
@@ -1464,6 +1550,7 @@ def external_resource_data_from_def(
     nested_resources: Mapping[str, NestedResource],
     parent_resources: Mapping[str, str],
     resource_asset_usage_map: Mapping[str, List[AssetKey]],
+    resource_job_usage_map: ResourceJobUsageMap,
 ) -> ExternalResourceData:
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
 
@@ -1509,6 +1596,7 @@ def external_resource_data_from_def(
         parent_resources=parent_resources,
         is_top_level=True,
         asset_keys_using=resource_asset_usage_map.get(name, []),
+        job_ops_using=resource_job_usage_map.get(name, []),
         resource_type=resource_type,
     )
 

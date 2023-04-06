@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataEntry,
+    MetadataValue,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
@@ -66,6 +66,7 @@ from .external_data import (
     ExternalSensorMetadata,
     ExternalTargetData,
     NestedResource,
+    ResourceJobUsageEntry,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
@@ -429,7 +430,7 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.tags
 
     @property
-    def metadata(self) -> Sequence[MetadataEntry]:
+    def metadata(self) -> Mapping[str, MetadataValue]:
         return self._pipeline_index.pipeline_snapshot.metadata
 
     @property
@@ -597,6 +598,10 @@ class ExternalResource:
     @property
     def asset_keys_using(self) -> List[AssetKey]:
         return self._external_resource_data.asset_keys_using
+
+    @property
+    def job_ops_using(self) -> List[ResourceJobUsageEntry]:
+        return self._external_resource_data.job_ops_using
 
 
 class ExternalSchedule:

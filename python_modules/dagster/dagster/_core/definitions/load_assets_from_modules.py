@@ -6,11 +6,16 @@ from types import ModuleType
 from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .assets import AssetsDefinition
 from .cacheable_assets import CacheableAssetsDefinition
-from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .events import (
+    AssetKey,
+    CoercibleToAssetKeyPrefix,
+    check_opt_coercible_to_asset_key_prefix_param,
+)
 from .source_asset import SourceAsset
 
 
@@ -93,6 +98,8 @@ def load_assets_from_modules(
     modules: Iterable[ModuleType],
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets from the given modules.
 
@@ -104,46 +111,38 @@ def load_assets_from_modules(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
+    key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
+    freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
 
-    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
-    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
-    # at prefix-time it is not known that its dependency is one of the cacheable assets.
-    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
         cacheable_assets,
     ) = assets_from_modules(modules)
-    if key_prefix:
-        assets = prefix_assets(assets, key_prefix)
-        cacheable_assets = [
-            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
-        ]
-    if group_name:
-        assets = [
-            asset.with_prefix_or_group(
-                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
-            )
-            for asset in assets
-        ]
-        source_assets = [source_asset.with_group_name(group_name) for source_asset in source_assets]
-        cacheable_assets = [
-            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
-        ]
 
-    return [*assets, *source_assets, *cacheable_assets]
+    return assets_with_attributes(
+        assets,
+        source_assets,
+        cacheable_assets,
+        key_prefix=key_prefix,
+        group_name=group_name,
+        freshness_policy=freshness_policy,
+    )
 
 
 def load_assets_from_current_module(
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
@@ -155,6 +154,8 @@ def load_assets_from_current_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
@@ -169,6 +170,7 @@ def load_assets_from_current_module(
         [module],
         group_name=group_name,
         key_prefix=key_prefix,
+        freshness_policy=freshness_policy,
     )
 
 
@@ -198,6 +200,8 @@ def load_assets_from_package_module(
     package_module: ModuleType,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
@@ -212,42 +216,38 @@ def load_assets_from_package_module(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
-    key_prefix = check.opt_inst_param(key_prefix, "key_prefix", (str, list))
+    key_prefix = check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix")
+    freshness_policy = check.opt_inst_param(freshness_policy, "freshness_policy", FreshnessPolicy)
 
-    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
-    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
-    # at prefix-time it is not known that its dependency is one of the cacheable assets.
-    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
     (
         assets,
         source_assets,
         cacheable_assets,
     ) = assets_from_package_module(package_module)
-    if key_prefix:
-        assets = prefix_assets(assets, key_prefix)
-        cacheable_assets = [
-            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
-        ]
-    if group_name:
-        assets = list(with_group(assets, group_name))
-        source_assets = [asset.with_group_name(group_name) for asset in source_assets]
-        cacheable_assets = [
-            cached_asset.with_group_for_all(group_name) for cached_asset in cacheable_assets
-        ]
-
-    return [*assets, *source_assets, *cacheable_assets]
+    return assets_with_attributes(
+        assets,
+        source_assets,
+        cacheable_assets,
+        key_prefix=key_prefix,
+        group_name=group_name,
+        freshness_policy=freshness_policy,
+    )
 
 
 def load_assets_from_package_name(
     package_name: str,
     group_name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    *,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
@@ -260,6 +260,8 @@ def load_assets_from_package_name(
         key_prefix (Optional[Union[str, Sequence[str]]]):
             Prefix to prepend to the keys of the loaded assets. The returned assets will be copies
             of the loaded objects, with the prefix prepended.
+        freshness_policy (Optional[FreshnessPolicy]): FreshnessPolicy to apply to all the loaded
+            assets.
 
     Returns:
         Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -270,6 +272,7 @@ def load_assets_from_package_name(
         package_module,
         group_name=group_name,
         key_prefix=key_prefix,
+        freshness_policy=freshness_policy,
     )
 
 
@@ -346,7 +349,7 @@ def prefix_assets(
                 )
 
         result_assets.append(
-            assets_def.with_prefix_or_group(
+            assets_def.with_attributes(
                 output_asset_key_replacements=output_asset_key_replacements,
                 input_asset_key_replacements=input_asset_key_replacements,
             )
@@ -354,17 +357,41 @@ def prefix_assets(
     return result_assets
 
 
-def with_group(
-    assets_defs: Sequence[AssetsDefinition], group_name: Optional[str]
-) -> Sequence[AssetsDefinition]:
-    """Given a list of assets, groups them under the group_name."""
-    group_name = check.opt_str_param(group_name, "group_name")
-    if not group_name:
-        return assets_defs
+def assets_with_attributes(
+    assets_defs: Sequence[AssetsDefinition],
+    source_assets: Sequence[SourceAsset],
+    cacheable_assets: Sequence[CacheableAssetsDefinition],
+    key_prefix: Optional[Sequence[str]],
+    group_name: Optional[str],
+    freshness_policy: Optional[FreshnessPolicy],
+) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+    # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
+    # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
+    # at prefix-time it is not known that its dependency is one of the cacheable assets.
+    # https://github.com/dagster-io/dagster/pull/10389#pullrequestreview-1170913271
+    if key_prefix:
+        assets_defs = prefix_assets(assets_defs, key_prefix)
+        cacheable_assets = [
+            cached_asset.with_prefix_for_all(key_prefix) for cached_asset in cacheable_assets
+        ]
 
-    return [
-        assets_def.with_prefix_or_group(
-            group_names_by_key={asset_key: group_name for asset_key in assets_def.keys}
-        )
-        for assets_def in assets_defs
-    ]
+    if group_name or freshness_policy:
+        assets_defs = [
+            asset.with_attributes(
+                group_names_by_key={asset_key: group_name for asset_key in asset.keys}
+                if group_name
+                else None,
+                freshness_policy=freshness_policy,
+            )
+            for asset in assets_defs
+        ]
+        if group_name:
+            source_assets = [
+                source_asset.with_group_name(group_name) for source_asset in source_assets
+            ]
+        cacheable_assets = [
+            cached_asset.with_attributes_for_all(group_name, freshness_policy=freshness_policy)
+            for cached_asset in cacheable_assets
+        ]
+
+    return [*assets_defs, *source_assets, *cacheable_assets]

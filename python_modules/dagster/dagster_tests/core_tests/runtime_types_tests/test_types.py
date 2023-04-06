@@ -11,7 +11,6 @@ from dagster import (
     In,
     Int,
     List,
-    MetadataEntry,
     Optional,
     Out,
     String,
@@ -24,6 +23,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.types.dagster_type import (
     DagsterType,
     ListType,
@@ -412,10 +412,10 @@ def define_custom_dict(name, permitted_key_names):
                 )
         return TypeCheck(
             True,
-            metadata_entries=[
-                MetadataEntry("row_count", value=str(len(value))),
-                MetadataEntry("series_names", value=", ".join(value.keys())),
-            ],
+            metadata={
+                "row_count": MetadataValue.text(str(len(value))),
+                "series_names": MetadataValue.text(", ".join(value.keys())),
+            },
         )
 
     return DagsterType(key=name, name=name, type_check_fn=type_check_method)
@@ -489,9 +489,7 @@ def test_raise_on_error_type_check_returns_false():
 def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     FalsyType = DagsterType(
         name="FalsyType",
-        type_check_fn=lambda _, _val: TypeCheck(
-            success=False, metadata_entries=[MetadataEntry("bar", value="foo")]
-        ),
+        type_check_fn=lambda _, _val: TypeCheck(success=False, metadata={"bar": "foo"}),
     )
 
     @op(out=Out(FalsyType))
@@ -504,8 +502,8 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
 
     with pytest.raises(DagsterTypeCheckDidNotPass) as e:
         foo_job.execute_in_process()
-    assert e.value.metadata_entries[0].label == "bar"
-    assert e.value.metadata_entries[0].value.text == "foo"
+    assert "bar" in e.value.metadata
+    assert e.value.metadata["bar"].text == "foo"
     assert isinstance(e.value.dagster_type, DagsterType)
 
     pipeline_result = foo_job.execute_in_process(raise_on_error=False)
@@ -577,9 +575,7 @@ def test_raise_on_error_true_type_check_returns_true():
 def test_raise_on_error_true_type_check_returns_successful_type_check():
     TruthyExceptionType = DagsterType(
         name="TruthyExceptionType",
-        type_check_fn=lambda _, _val: TypeCheck(
-            success=True, metadata_entries=[MetadataEntry("bar", value="foo")]
-        ),
+        type_check_fn=lambda _, _val: TypeCheck(success=True, metadata={"bar": "foo"}),
     )
 
     @op(out=Out(TruthyExceptionType))
@@ -595,9 +591,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
     for event in pipeline_result.all_node_events:
         if event.event_type_value == DagsterEventType.STEP_OUTPUT.value:
             assert event.event_specific_data.type_check_data
-            assert event.event_specific_data.type_check_data.metadata_entries[0].label == "bar"
-            assert event.event_specific_data.type_check_data.metadata_entries[0].value.text == "foo"
-            assert event.event_specific_data.type_check_data.metadata_entries[0]
+            assert event.event_specific_data.type_check_data.metadata["bar"].text == "foo"
 
     pipeline_result = foo_job.execute_in_process(raise_on_error=False)
     assert pipeline_result.success

@@ -5,9 +5,11 @@ from typing import AbstractSet, Iterable, Union
 import pytest
 from dagster import (
     AssetIn,
+    AssetOut,
     DailyPartitionsDefinition,
     SourceAsset,
     TimeWindowPartitionMapping,
+    multi_asset,
 )
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.assets import AssetsDefinition
@@ -248,3 +250,18 @@ def test_self_dep():
     assert AssetSelection.keys("a").upstream(include_self=False).resolve([a]) == set()
     assert AssetSelection.keys("a").sources().resolve([a]) == {a.key}
     assert AssetSelection.keys("a").sinks().resolve([a]) == {a.key}
+
+
+def test_from_coercible_multi_asset():
+    @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()})
+    def my_multi_asset():
+        ...
+
+    @asset
+    def other_asset():
+        ...
+
+    assert (
+        AssetSelection.from_coercible([my_multi_asset]).resolve([my_multi_asset, other_asset])
+        == my_multi_asset.keys
+    )

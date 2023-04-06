@@ -2,8 +2,9 @@ import {Spinner, Box, Colors, Caption} from '@dagster-io/ui';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionState, PartitionStatus} from '../partitions/PartitionStatus';
+import {PartitionStatus} from '../partitions/PartitionStatus';
 
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
@@ -38,7 +39,7 @@ export const PartitionHealthSummary: React.FC<{
           : d.map((key) => [key]),
       [] as string[][],
     )
-    .filter((dkeys) => assetData.stateForKey(dkeys) === PartitionState.SUCCESS).length;
+    .filter((dkeys) => assetData.stateForKey(dkeys) === AssetPartitionStatus.MATERIALIZED).length;
 
   return (
     <Box color={Colors.Gray500}>

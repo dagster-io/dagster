@@ -524,7 +524,7 @@ def test_one_task_dag_to_job():
     job_def = make_dagster_job_from_airflow_dag(dag=dag)
 
     assert job_def.name == "dag_with_dot_dash"
-    assert len([job_def.solids]) == 1
+    assert len([job_def.nodes]) == 1
     result = job_def.execute_in_process()
 
     assert result.success

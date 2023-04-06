@@ -34,8 +34,8 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
     `${repoKey}-${ASSET_GROUPS_EXPANSION_STATE_STORAGE_KEY}`,
   );
 
-  const grouped: {[key: string]: Asset[]} = React.useMemo(() => {
-    const groups = {};
+  const grouped: Record<string, Asset[]> = React.useMemo(() => {
+    const groups: Record<string, Asset[]> = {};
     for (const asset of assets) {
       const groupName = asset.groupName || UNGROUPED_NAME;
       const assetsForGroup = groups[groupName] || [];

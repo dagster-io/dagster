@@ -85,7 +85,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             graphene_info,
             self._represented_pipeline,
             self._mode,
-            parse_run_config_input(runConfigData or {}, raise_on_error=False),
+            parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
         )
 
 

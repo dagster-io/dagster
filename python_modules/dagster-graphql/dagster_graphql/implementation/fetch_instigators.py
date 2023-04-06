@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
@@ -13,9 +13,18 @@ from .utils import capture_error
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
+    from ..schema.instigation import (
+        GrapheneInstigationEventConnection,
+        GrapheneInstigationState,
+        GrapheneInstigationStateNotFoundError,
+        GrapheneInstigationStates,
+    )
+
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", instigator_type=None):
+def get_unloadable_instigator_states_or_error(
+    graphene_info: "ResolveInfo", instigator_type: Optional[InstigatorType] = None
+) -> "GrapheneInstigationStates":
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
@@ -48,7 +57,9 @@ def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", inst
 
 
 @capture_error
-def get_instigator_state_or_error(graphene_info, selector):
+def get_instigator_state_or_error(
+    graphene_info: "ResolveInfo", selector: InstigatorSelector
+) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
     check.inst_param(selector, "selector", InstigatorSelector)
@@ -75,7 +86,7 @@ def get_instigator_state_or_error(graphene_info, selector):
     return GrapheneInstigationState(current_state)
 
 
-def get_tick_log_events(graphene_info, tick):
+def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigationEventConnection":
     from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
     from ..schema.logs.log_level import GrapheneLogLevel
 

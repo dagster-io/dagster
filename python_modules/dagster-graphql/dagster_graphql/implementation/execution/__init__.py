@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Optional, Sequence, Tuple,
 
 # re-exports
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
@@ -15,6 +16,9 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
+
+if TYPE_CHECKING:
+    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
 
 from ..utils import (
     assert_permission,
@@ -28,15 +32,28 @@ from .backfill import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.logs.compute_logs import GrapheneComputeLogFile
+    from dagster_graphql.schema.logs.compute_logs import (
+        GrapheneCapturedLogs,
+        GrapheneComputeLogFile,
+    )
     from dagster_graphql.schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
         GraphenePipelineRunLogsSubscriptionSuccess,
     )
     from dagster_graphql.schema.util import ResolveInfo
 
+    from ...schema.errors import GrapheneRunNotFoundError
+    from ...schema.roots.mutation import (
+        GrapheneAssetWipeSuccess,
+        GrapheneDeletePipelineRunSuccess,
+        GrapheneTerminateRunFailure,
+        GrapheneTerminateRunSuccess,
+    )
 
-def _force_mark_as_canceled(instance: DagsterInstance, run_id):
+
+def _force_mark_as_canceled(
+    instance: DagsterInstance, run_id: str
+) -> "GrapheneTerminateRunSuccess":
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
 
@@ -53,7 +70,9 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
 
 
-def terminate_pipeline_execution(graphene_info: "ResolveInfo", run_id, terminate_policy):
+def terminate_pipeline_execution(
+    graphene_info: "ResolveInfo", run_id: str, terminate_policy: "GrapheneTerminateRunPolicy"
+) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -129,7 +148,9 @@ def terminate_pipeline_execution(graphene_info: "ResolveInfo", run_id, terminate
 
 
 @capture_error
-def delete_pipeline_run(graphene_info: "ResolveInfo", run_id: str):
+def delete_pipeline_run(
+    graphene_info: "ResolveInfo", run_id: str
+) -> Union["GrapheneDeletePipelineRunSuccess", "GrapheneRunNotFoundError"]:
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.roots.mutation import GrapheneDeletePipelineRunSuccess
 
@@ -276,7 +297,7 @@ async def gen_compute_logs(
 
 async def gen_captured_log_data(
     graphene_info: "ResolveInfo", log_key: Sequence[str], cursor: Optional[str] = None
-):
+) -> AsyncIterator["GrapheneCapturedLogs"]:
     from ...schema.logs.compute_logs import from_captured_log_data
 
     instance = graphene_info.context.instance
@@ -305,7 +326,9 @@ async def gen_captured_log_data(
 
 
 @capture_error
-def wipe_assets(graphene_info: "ResolveInfo", asset_keys):
+def wipe_assets(
+    graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
+) -> "GrapheneAssetWipeSuccess":
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance

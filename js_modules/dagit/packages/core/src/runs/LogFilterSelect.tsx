@@ -39,7 +39,7 @@ export const LogFilterSelect: React.FC<Props> = ({options, onSetFilter}) => {
       content={
         <Menu style={{width: '180px'}} aria-label="filter-options">
           {levels.map((level) => {
-            const optionForLevel = options[level];
+            const optionForLevel = options[level as keyof typeof options];
             const {label, count, enabled} = optionForLevel;
             return (
               <MenuItem

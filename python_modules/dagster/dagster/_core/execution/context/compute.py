@@ -232,7 +232,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.log
 
     @property
-    def solid_handle(self) -> NodeHandle:
+    def node_handle(self) -> NodeHandle:
         """NodeHandle: The current solid's handle.
 
         :meta private:
@@ -245,7 +245,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         :meta private:
         """
-        return self.solid_handle
+        return self.node_handle
 
     @property
     def solid(self) -> Node:
@@ -254,7 +254,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         :meta private:
 
         """
-        return self._step_execution_context.pipeline_def.get_solid(self.solid_handle)
+        return self._step_execution_context.pipeline_def.get_node(self.node_handle)
 
     @property
     def op(self) -> Node:
@@ -274,7 +274,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op '{self.op.name}' does not have an assets definition."
@@ -318,7 +318,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
         if assets_def is None:
             return set()
         return assets_def.keys
@@ -331,13 +331,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         selected_outputs: Set[str] = set()
         for output_name in self.op.output_dict.keys():
             asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.solid_handle, output_name
+                self.node_handle, output_name
             )
             if any(  #  For graph-backed assets, check if a downstream asset is selected
                 [
                     asset_key in selected_asset_keys
                     for asset_key in self.job_def.asset_layer.downstream_dep_assets(
-                        self.solid_handle, output_name
+                        self.node_handle, output_name
                     )
                 ]
             ) or (asset_info and asset_info.key in selected_asset_keys):
@@ -398,7 +398,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 

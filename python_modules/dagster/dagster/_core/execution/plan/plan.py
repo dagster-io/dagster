@@ -199,7 +199,7 @@ class _PlanBuilder:
             )
 
         self._build_from_sorted_nodes(
-            pipeline_def.solids_in_topological_order,
+            pipeline_def.nodes_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
         )
@@ -428,7 +428,7 @@ def get_root_graph_input_source(
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromConfig(input_name=input_name, solid_handle=None)
+        return FromConfig(input_name=input_name, node_handle=None)
 
     if input_def.dagster_type.is_nothing:
         return None
@@ -469,9 +469,9 @@ def get_step_input_source(
     ):
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
-            return FromSourceAsset(solid_handle=handle, input_name=input_name)
+            return FromSourceAsset(node_handle=handle, input_name=input_name)
         elif input_def.root_manager_key or input_def.input_manager_key:
-            return FromRootInputManager(solid_handle=handle, input_name=input_name)
+            return FromRootInputManager(node_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         node_output_handle = dependency_structure.get_direct_dep(input_handle)
@@ -547,7 +547,7 @@ def get_step_input_source(
             )
 
     if node_config and input_name in node_config.inputs:
-        return FromConfig(solid_handle=handle, input_name=input_name)
+        return FromConfig(node_handle=handle, input_name=input_name)
 
     if node.container_maps_input(input_name):
         if parent_step_inputs is None:
@@ -561,7 +561,7 @@ def get_step_input_source(
         # else fall through to Nothing case or raise
 
     if node.definition.input_has_default(input_name):
-        return FromDefaultValue(solid_handle=handle, input_name=input_name)
+        return FromDefaultValue(node_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
     # the output of another solid or provided via run config.
@@ -1082,7 +1082,7 @@ class ExecutionPlan(
 
             step_outputs = [
                 StepOutput(
-                    check.not_none(step_output_snap.solid_handle),
+                    check.not_none(step_output_snap.node_handle),
                     step_output_snap.name,
                     step_output_snap.dagster_type_key,
                     check.not_none(step_output_snap.properties),
@@ -1405,8 +1405,8 @@ def _get_manager_key(
     pipeline_def: PipelineDefinition,
 ) -> str:
     step_output = _get_step_output(step_dict_by_key, step_output_handle)
-    node_handle = step_output.solid_handle
-    output_def = pipeline_def.get_solid(node_handle).output_def_named(step_output.name)
+    node_handle = step_output.node_handle
+    output_def = pipeline_def.get_node(node_handle).output_def_named(step_output.name)
     return output_def.io_manager_key
 
 

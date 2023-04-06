@@ -35,8 +35,8 @@ def test_environment_config():
 
 def test_pipeline_def():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == "ephemeral_dagstermill_pipeline"
-    assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids) == 1
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == "this_op"
+    assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.nodes) == 1
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.nodes[0].name == "this_op"
 
 
 def test_resources():

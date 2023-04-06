@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 @capture_error
 def get_top_level_resources_or_error(
-    graphene_info, repository_selector: RepositorySelector
+    graphene_info: "ResolveInfo", repository_selector: RepositorySelector
 ) -> "GrapheneResourceDetailsList":
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
@@ -41,7 +41,7 @@ def get_top_level_resources_or_error(
 
 @capture_error
 def get_resource_or_error(
-    graphene_info, resource_selector: ResourceSelector
+    graphene_info: "ResolveInfo", resource_selector: ResourceSelector
 ) -> "GrapheneResourceDetails":
     from ..schema.errors import GrapheneResourceNotFoundError
     from ..schema.resources import GrapheneResourceDetails

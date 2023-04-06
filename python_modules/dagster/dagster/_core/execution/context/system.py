@@ -25,6 +25,7 @@ from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.mode import ModeDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -38,6 +39,7 @@ from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
+    has_one_dimension_time_window_partitioning,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
@@ -145,15 +147,19 @@ class IPlanContext(ABC):
 
     @property
     def logging_tags(self) -> Mapping[str, str]:
-        return self.log.logging_metadata.to_tags()
+        return self.log.logging_metadata.all_tags()
+
+    @property
+    def event_tags(self) -> Mapping[str, str]:
+        return self.log.logging_metadata.event_tags()
 
     def has_tag(self, key: str) -> bool:
         check.str_param(key, "key")
-        return key in self.log.logging_metadata.pipeline_tags
+        return key in self.dagster_run.tags
 
     def get_tag(self, key: str) -> Optional[str]:
         check.str_param(key, "key")
-        return self.log.logging_metadata.pipeline_tags.get(key)
+        return self.dagster_run.tags.get(key)
 
 
 class PlanData(NamedTuple):
@@ -432,15 +438,18 @@ class PlanExecutionContext(IPlanContext):
     def partition_time_window(self) -> TimeWindow:
         partitions_def = self.partitions_def
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            check.failed(
-                (
-                    "Expected a TimeWindowPartitionsDefinition, but instead found"
-                    f" {type(partitions_def)}"
-                ),
+        if partitions_def is None:
+            raise DagsterInvariantViolationError("Partitions definition is not defined")
+
+        if not has_one_dimension_time_window_partitioning(partitions_def=partitions_def):
+            raise DagsterInvariantViolationError(
+                "Expected a TimeWindowPartitionsDefinition or MultiPartitionsDefinition with a"
+                f" single time dimension, but instead found {type(partitions_def)}"
             )
 
-        return partitions_def.time_window_for_partition_key(self.partition_key)
+        return cast(
+            Union[MultiPartitionsDefinition, TimeWindowPartitionsDefinition], partitions_def
+        ).time_window_for_partition_key(self.partition_key)
 
     @property
     def has_partition_key(self) -> bool:
@@ -578,7 +587,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
-            self.pipeline_def.get_solid(step_output.solid_handle)
+            self.pipeline_def.get_node(step_output.node_handle)
             .output_def_named(step_output.name)
             .io_manager_key
         )
@@ -1026,7 +1035,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         Raises an error if either of the following are true:
         - The output asset has no partitioning.
-        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+          MultiPartitionsDefinition with one time-partitioned dimension.
         """
         partitions_def = self._partitions_def_for_output(output_name)
 
@@ -1036,11 +1046,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 "partitioned asset."
             )
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        if not has_one_dimension_time_window_partitioning(partitions_def):
             raise ValueError(
                 "Tried to get asset partitions for an output that correponds to a partitioned "
-                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+                "asset that is not time-partitioned."
             )
+
+        partitions_def = cast(
+            Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
+        )
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????

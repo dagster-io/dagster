@@ -17,6 +17,7 @@ from dagster._config.config_type import (
 )
 from dagster._config.structured_config import (
     ConfigurableResource,
+    ConfigurableResourceFactory,
     infer_schema_from_config_class,
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
@@ -149,7 +150,9 @@ class ConfigurableDocumenter(DataDocumenter):
         config_field = None
         if isinstance(obj, ConfigurableDefinition):
             config_field = check.not_none(obj.config_schema).as_field()
-        elif inspect.isclass(obj) and issubclass(obj, ConfigurableResource):
+        elif inspect.isclass(obj) and (
+            issubclass(obj, ConfigurableResource) or issubclass(obj, ConfigurableResourceFactory)
+        ):
             config_field = infer_schema_from_config_class(obj)
         elif isinstance(obj, type) and issubclass(obj, ConfigurableClass):
             config_field = Field(obj.config_type())

@@ -1,7 +1,7 @@
 import json
 
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_slack import slack_resource
 from mock import patch
 
@@ -22,11 +22,11 @@ def test_slack_resource(mock_api_call):
 
         assert mock_api_call.called
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         slack_solid,
         run_config={
             "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
-        mode_def=ModeDefinition(resource_defs={"slack": slack_resource}),
+        resources={"slack": slack_resource},
     )
     assert result.success

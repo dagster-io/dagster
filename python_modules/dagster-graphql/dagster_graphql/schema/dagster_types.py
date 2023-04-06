@@ -60,7 +60,7 @@ def to_dagster_type(
                 dagster_type_meta.type_param_keys,
             )
         ),
-        metadata_entries=list(iterate_metadata_entries(dagster_type_meta.metadata_entries)),
+        metadata_entries=list(iterate_metadata_entries(dagster_type_meta.metadata)),
     )
 
     if dagster_type_meta.kind == DagsterTypeKind.LIST:

@@ -108,7 +108,6 @@ def test_create_reexecuted_run_from_failure(
 
     assert run.tags[RESUME_RETRY_TAG] == "true"
     assert set(run.step_keys_to_execute) == {"conditional_fail", "after_failure"}  # type: ignore
-
     instance.launch_run(run.run_id, workspace)
     run = poll_for_finished_run(instance, run.run_id)
 

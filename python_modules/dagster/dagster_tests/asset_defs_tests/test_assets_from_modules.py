@@ -6,6 +6,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
+    FreshnessPolicy,
     SourceAsset,
     asset,
     load_assets_from_current_module,
@@ -28,6 +29,14 @@ def check_asset_group(assets):
                 assert a.group_names_by_key.get(asset_key) == "my_cool_group"
         elif isinstance(a, SourceAsset):
             assert a.group_name == "my_cool_group"
+
+
+def check_freshness_policy(assets, freshness_policy):
+    for a in assets:
+        if isinstance(a, AssetsDefinition):
+            asset_keys = a.keys
+            for asset_key in asset_keys:
+                assert a.freshness_policies_by_key.get(asset_key) == freshness_policy, asset_key
 
 
 def check_asset_prefix(prefix, assets):
@@ -138,6 +147,22 @@ def test_respect_existing_groups():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         load_assets_from_current_module(group_name="yay")
+
+
+def test_load_assets_with_freshness_policy():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    assets = load_assets_from_modules(
+        [asset_package, module_with_assets],
+        freshness_policy=FreshnessPolicy(maximum_lag_minutes=50),
+    )
+    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
+
+    assets = load_assets_from_package_module(
+        asset_package, freshness_policy=FreshnessPolicy(maximum_lag_minutes=50)
+    )
+    check_freshness_policy(assets, FreshnessPolicy(maximum_lag_minutes=50))
 
 
 @pytest.mark.parametrize(

@@ -24,10 +24,10 @@ def n_asset_keys(path, n):
     return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
 
 
-def check_materialization(materialization, asset_key, parent_assets=None, metadata_entries=None):
+def check_materialization(materialization, asset_key, parent_assets=None, metadata=None):
     event_data = materialization.event_specific_data
     assert event_data.materialization.asset_key == asset_key
-    assert sorted(event_data.materialization.metadata_entries) == sorted(metadata_entries or [])
+    assert sorted(event_data.materialization.metadata) == metadata or {}
     assert event_data.asset_lineage == (parent_assets or [])
 
 
@@ -42,8 +42,8 @@ def test_io_manager_add_input_metadata():
 
             observations = context.get_observations()
             assert observations[0].asset_key == context.asset_key
-            assert observations[0].metadata_entries[0].label == "foo"
-            assert observations[1].metadata_entries[0].label == "baz"
+            assert "foo" in observations[0].metadata
+            assert "baz" in observations[1].metadata
             return 1
 
     @asset
@@ -77,10 +77,10 @@ def test_io_manager_add_input_metadata():
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     ][0]
     assert loaded_input_event
-    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
+    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata
     assert len(loaded_input_event_metadata) == 2
-    assert loaded_input_event_metadata[0].label == "foo"
-    assert loaded_input_event_metadata[1].label == "baz"
+    assert "foo" in loaded_input_event_metadata
+    assert "baz" in loaded_input_event_metadata
 
 
 def test_root_input_manager_add_input_metadata():
@@ -102,10 +102,10 @@ def test_root_input_manager_add_input_metadata():
     loaded_input_event = [
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     ][0]
-    metadata_entries = loaded_input_event.event_specific_data.metadata_entries
-    assert len(metadata_entries) == 2
-    assert metadata_entries[0].label == "foo"
-    assert metadata_entries[1].label == "baz"
+    metadata = loaded_input_event.event_specific_data.metadata
+    assert len(metadata) == 2
+    assert "foo" in metadata
+    assert "baz" in metadata
 
 
 def test_io_manager_single_partition_add_input_metadata():

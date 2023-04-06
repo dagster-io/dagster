@@ -34,7 +34,6 @@ from dagster import (
     IOManager,
     IOManagerDefinition,
     Map,
-    MetadataEntry,
     Noneable,
     Nothing,
     OpExecutionContext,
@@ -72,6 +71,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import In
@@ -535,7 +535,8 @@ def naughty_programmer_pipeline():
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
-            raise Exception("Even more outer exception") from e
+            # throw a Failure here so we can test metadata
+            raise Failure("Even more outer exception", metadata={"top_level": True}) from e
 
     throw_a_thing()
 
@@ -706,48 +707,39 @@ def materialization_pipeline():
         yield AssetMaterialization(
             asset_key="all_types",
             description="a materialization with all metadata types",
-            metadata_entries=[
-                MetadataEntry("text", value="text is cool"),
-                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
-                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
-                MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
-                MetadataEntry(
-                    "python function",
-                    value=MetadataValue.python_artifact(file_relative_path),
+            metadata={
+                "text": "text is cool",
+                "url": MetadataValue.url("https://bigty.pe/neato"),
+                "path": MetadataValue.path("/tmp/awesome"),
+                "json": {"is_dope": True},
+                "python class": MetadataValue.python_artifact(AssetMaterialization),
+                "python_function": MetadataValue.python_artifact(file_relative_path),
+                "float": 1.2,
+                "int": 1,
+                "float NaN": float("nan"),
+                "long int": LONG_INT,
+                "pipeline run": MetadataValue.dagster_run("fake_run_id"),
+                "my asset": AssetKey("my_asset"),
+                "table": MetadataValue.table(
+                    records=[
+                        TableRecord(dict(foo=1, bar=2)),
+                        TableRecord(dict(foo=3, bar=4)),
+                    ],
                 ),
-                MetadataEntry("float", value=1.2),
-                MetadataEntry("int", value=1),
-                MetadataEntry("float NaN", value=float("nan")),
-                MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
-                MetadataEntry("my asset", value=AssetKey("my_asset")),
-                MetadataEntry(
-                    "table",
-                    value=MetadataValue.table(
-                        records=[
-                            TableRecord(dict(foo=1, bar=2)),
-                            TableRecord(dict(foo=3, bar=4)),
-                        ],
-                    ),
-                ),
-                MetadataEntry(
-                    "table_schema",
-                    value=TableSchema(
-                        columns=[
-                            TableColumn(
-                                name="foo",
-                                type="integer",
-                                constraints=TableColumnConstraints(unique=True),
-                            ),
-                            TableColumn(name="bar", type="string"),
-                        ],
-                        constraints=TableConstraints(
-                            other=["some constraint"],
+                "table_schema": TableSchema(
+                    columns=[
+                        TableColumn(
+                            name="foo",
+                            type="integer",
+                            constraints=TableColumnConstraints(unique=True),
                         ),
+                        TableColumn(name="bar", type="string"),
+                    ],
+                    constraints=TableConstraints(
+                        other=["some constraint"],
                     ),
                 ),
-            ],
+            },
         )
         yield Output(None)
 

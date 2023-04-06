@@ -3,11 +3,11 @@ import responses
 from dagster import (
     AssetKey,
     FreshnessPolicy,
-    MetadataEntry,
     TableColumn,
     TableSchema,
     build_init_resource_context,
 )
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._legacy import build_assets_job
 from dagster_airbyte import airbyte_resource, build_airbyte_assets
@@ -83,19 +83,15 @@ def test_assets(schema_prefix):
         AssetKey(["some", "prefix", schema_prefix + "bar"]),
         AssetKey(["some", "prefix", schema_prefix + "baz"]),
     }
-    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
-    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
-    assert (
-        MetadataEntry(
-            "schema",
-            value=TableSchema(
-                columns=[
-                    TableColumn(name="a", type="str"),
-                    TableColumn(name="b", type="int"),
-                ]
-            ),
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
+    assert materializations[0].metadata["schema"] == MetadataValue.table_schema(
+        TableSchema(
+            columns=[
+                TableColumn(name="a", type="str"),
+                TableColumn(name="b", type="int"),
+            ]
         )
-        in materializations[0].metadata_entries
     )
 
 
@@ -183,20 +179,14 @@ def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy
         AssetKey(["some", "prefix", schema_prefix + "bar_baz"]),
         AssetKey(["some", "prefix", schema_prefix + "bar_qux"]),
     }
-    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
-    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
-    assert (
-        MetadataEntry(
-            "schema",
-            value=TableSchema(
-                columns=[
-                    TableColumn(name="a", type="str"),
-                    TableColumn(name="b", type="int"),
-                ]
-            ),
-        )
-        in materializations[0].metadata_entries
+    assert materializations[0].metadata["bytesEmitted"] == MetadataValue.int(1234)
+    assert materializations[0].metadata["recordsCommitted"] == MetadataValue.int(4321)
+    assert materializations[0].metadata["schema"].value == TableSchema(
+        columns=[
+            TableColumn(name="a", type="str"),
+            TableColumn(name="b", type="int"),
+        ]
     )
 
     # No metadata for normalized materializations, for now
-    assert not materializations[3].metadata_entries
+    assert not materializations[3].metadata

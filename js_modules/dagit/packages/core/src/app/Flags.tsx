@@ -27,7 +27,7 @@ type FlagMap = {
 export const useFeatureFlags = () => {
   return React.useMemo(() => {
     const flagSet = new Set(getFeatureFlags());
-    const all = {};
+    const all: Record<string, boolean> = {};
     for (const flag in FeatureFlag) {
       all[flag] = flagSet.has(flag as FeatureFlagType);
     }
