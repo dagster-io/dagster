@@ -239,7 +239,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         event_list: Sequence[DagsterEvent],
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -255,7 +255,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             container=node.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            job_def=pipeline_def,
+            job_def=job_def,
             handle=handle,
             output_capture=output_capture,
         )
