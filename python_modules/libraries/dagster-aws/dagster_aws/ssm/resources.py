@@ -159,7 +159,7 @@ class ParameterStoreResource(Boto3ResourceBase[Dict[str, str]]):
         if self.parameter_paths:
             results.append(
                 get_parameters_by_paths(
-                    ssm_manager, self.parameter_paths, self.with_decryption, recursive=True
+                    ssm_manager, self.parameter_paths, self.with_decryption, recursive=True  # type: ignore
                 )
             )
         if not results:

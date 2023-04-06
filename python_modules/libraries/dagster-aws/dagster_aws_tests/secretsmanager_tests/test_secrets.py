@@ -1,9 +1,15 @@
 import json
 import os
 
+import pytest
+from dagster import ResourceDefinition
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.test_utils import environ
-from dagster_aws.secretsmanager import get_secrets_from_arns, secretsmanager_secrets_resource
+from dagster_aws.secretsmanager import (
+    SecretsManagerSecretsResource,
+    get_secrets_from_arns,
+    secretsmanager_secrets_resource,
+)
 from dagster_aws.secretsmanager.secrets import get_tagged_secrets
 
 
@@ -28,6 +34,14 @@ def test_get_secrets_from_arns(mock_secretsmanager_resource):
         "bar_secret": bar_secret["ARN"],
         "baz_secret": baz_secret["ARN"],
     }
+
+
+@pytest.fixture(name="secretsmanager_secrets_resource_type", params=[True, False])
+def secretsmanager_secrets_resource_type_fixture(request) -> ResourceDefinition:
+    if request.param:
+        return secretsmanager_secrets_resource
+    else:
+        return SecretsManagerSecretsResource.configure_at_launch()
 
 
 def test_get_tagged_secrets(mock_secretsmanager_resource):
@@ -61,7 +75,9 @@ def test_get_tagged_secrets(mock_secretsmanager_resource):
     }
 
 
-def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
+def test_secretmanager_secrets_resource(
+    mock_secretsmanager_resource, secretsmanager_secrets_resource_type
+):
     foo_secret = mock_secretsmanager_resource.create_secret(
         Name="foo_secret", SecretString="foo_value", Tags=[{"Key": "dagster", "Value": "foo"}]
     )
@@ -76,22 +92,22 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
     )
 
     # Test various compbinations of secret ARNs and secret tags
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(config={"secrets": [foo_secret["ARN"]]})
     ) as secret_map:
         assert secret_map == {"foo_secret": "foo_value"}
 
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(config={"secrets": [foo_secret["ARN"], bar_secret["ARN"]]})
     ) as secret_map:
         assert secret_map == {"foo_secret": "foo_value", "bar_secret": "bar_value"}
 
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(config={"secrets_tag": "dagster"})
     ) as secret_map:
         assert secret_map == {"foo_secret": "foo_value", "baz_secret": "baz_value"}
 
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(
             config={"secrets_tag": "dagster", "secrets": [asdf_secret["ARN"]]}
         )
@@ -111,7 +127,7 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
     with environ({"foo_secret": "prior_foo_value"}):
         assert os.getenv("foo_secret") == "prior_foo_value"
 
-        with secretsmanager_secrets_resource(
+        with secretsmanager_secrets_resource_type(
             build_init_resource_context(
                 config={
                     "secrets_tag": "dagster",
@@ -136,7 +152,7 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
         Name="json_secret",
         SecretString=json.dumps(json_secret_obj),
     )
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(
             config={
                 "secrets": [json_secret["ARN"]],
@@ -152,7 +168,7 @@ def test_secretmanager_secrets_resource(mock_secretsmanager_resource):
     binary_secret = mock_secretsmanager_resource.create_secret(
         Name="binary_secret", SecretBinary=b"binary_value"
     )
-    with secretsmanager_secrets_resource(
+    with secretsmanager_secrets_resource_type(
         build_init_resource_context(
             config={
                 "secrets": [binary_secret["ARN"]],

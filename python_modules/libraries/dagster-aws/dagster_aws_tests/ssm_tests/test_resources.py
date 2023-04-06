@@ -1,11 +1,20 @@
 import os
 
-from dagster import build_init_resource_context
+import pytest
+from dagster import ResourceDefinition, build_init_resource_context
 from dagster._core.test_utils import environ
-from dagster_aws.ssm import parameter_store_resource
+from dagster_aws.ssm import ParameterStoreResource, parameter_store_resource
 
 
-def test_parameter_store_resource(mock_ssm_client):
+@pytest.fixture(name="parameter_store_resource_type", params=[True, False])
+def parameter_store_resource_type_fixture(request) -> ResourceDefinition:
+    if request.param:
+        return parameter_store_resource
+    else:
+        return ParameterStoreResource.configure_at_launch()
+
+
+def test_parameter_store_resource(mock_ssm_client, parameter_store_resource_type):
     mock_ssm_client.put_parameter(
         Name="foo_param1",
         Value="foo_value1",
@@ -36,12 +45,12 @@ def test_parameter_store_resource(mock_ssm_client):
         Type="String",
     )
     mock_ssm_client.put_parameter(Name="other/path/param3", Value="param_param3", Type="String")
-    with parameter_store_resource(
+    with parameter_store_resource_type(
         build_init_resource_context(config={"parameters": ["foo_param1", "foo_param2"]})
     ) as param_map:
         assert param_map == {"foo_param1": "foo_value1", "foo_param2": "foo_value2"}
 
-    with parameter_store_resource(
+    with parameter_store_resource_type(
         build_init_resource_context(config={"parameter_paths": ["path/based", "other/path"]})
     ) as param_map:
         assert param_map == {
@@ -50,7 +59,7 @@ def test_parameter_store_resource(mock_ssm_client):
             "other/path/param3": "param_param3",
         }
 
-    with parameter_store_resource(
+    with parameter_store_resource_type(
         build_init_resource_context(
             config={
                 "parameter_tags": [
@@ -61,7 +70,7 @@ def test_parameter_store_resource(mock_ssm_client):
     ) as param_map:
         assert param_map == {"foo_param1": "foo_value1", "foo_param2": "foo_value2"}
 
-    with parameter_store_resource(
+    with parameter_store_resource_type(
         build_init_resource_context(
             config={
                 "parameters": ["foo_param1"],
@@ -78,7 +87,7 @@ def test_parameter_store_resource(mock_ssm_client):
         }
 
 
-def test_parameters_added_to_environment(mock_ssm_client):
+def test_parameters_added_to_environment(mock_ssm_client, parameter_store_resource_type):
     mock_ssm_client.put_parameter(
         Name="foo_param1",
         Value="foo_value1",
@@ -95,7 +104,7 @@ def test_parameters_added_to_environment(mock_ssm_client):
     assert os.getenv("foo_param1") is None
     assert os.getenv("foo_param2") is None
 
-    with parameter_store_resource(
+    with parameter_store_resource_type(
         build_init_resource_context(
             config={"parameters": ["foo_param1"], "add_to_environment": True}
         )
@@ -106,7 +115,7 @@ def test_parameters_added_to_environment(mock_ssm_client):
     with environ({"foo_param2": "prior_foo2_value"}):
         assert os.getenv("foo_param2") == "prior_foo2_value"
 
-        with parameter_store_resource(
+        with parameter_store_resource_type(
             build_init_resource_context(
                 config={"parameters": ["foo_param2"], "add_to_environment": True}
             )
