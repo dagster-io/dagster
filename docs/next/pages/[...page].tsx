@@ -228,7 +228,7 @@ export const getStaticProps: GetStaticProps = async ({params}) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: latestAllVersionedPaths(), // only generate pages of latest version at build time
+    paths: latestAllVersionedPaths(true), // only generate pages of latest version at build time
     fallback: true,
   };
 }

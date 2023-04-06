@@ -6,6 +6,7 @@ import {useVersion, latestVersion, defaultVersion} from './useVersion';
 type NavEntry = {
   title: string;
   path: string;
+  nonMdx?: boolean;
   children?: NavEntry[];
   icon?: string;
   isUnversioned?: boolean;
@@ -59,14 +60,20 @@ export const latestAllPaths = () => {
     });
 };
 
-export const latestAllVersionedPaths = () => {
+export const latestAllVersionedPaths = (excludeNonMdx = false) => {
   const navigationForLatestVersion =
     defaultVersion === 'master' // when it's not in prod, the latest version defaults to master
       ? masterNavigation
       : versionedNavigation[defaultVersion];
 
   return flatten(navigationForLatestVersion)
-    .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isUnversioned)
+    .filter((n: NavEntry) => {
+      // exclude non-mdx pages in dynamic routes. we'll use the static routes instead for .md files
+      if (excludeNonMdx && n.nonMdx) {
+        return false;
+      }
+      return n.path && !n.isExternalLink && !n.isUnversioned;
+    })
     .map(({path}) => path.split('/').splice(1))
     .map((page: string[]) => {
       return {
