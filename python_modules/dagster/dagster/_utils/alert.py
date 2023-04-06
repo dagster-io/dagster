@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     )
 
 
-def _default_failure_email_body(context) -> str:
+def _default_failure_email_body(context: "RunFailureSensorContext") -> str:
     return "<br>".join(
         [
             f"Pipeline {context.dagster_run.job_name} failed!",
