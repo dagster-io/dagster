@@ -172,17 +172,17 @@ def execute_run_iterator(
 
 
 def execute_run(
-    pipeline: IJob,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
 ) -> PipelineExecutionResult:
-    """Executes an existing pipeline run synchronously.
+    """Executes an existing job run synchronously.
 
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (IPipeline): The pipeline to execute.
+        job (IJob): The job to execute.
         dagster_run (DagsterRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -191,7 +191,7 @@ def execute_run(
     Returns:
         PipelineExecutionResult: The result of the execution.
     """
-    if isinstance(pipeline, JobDefinition):
+    if isinstance(job, JobDefinition):
         raise DagsterInvariantViolationError(
             "execute_run requires a reconstructable job but received job definition directly"
             " instead. To support hand-off to other processes please wrap your definition in a call"
@@ -199,7 +199,7 @@ def execute_run(
             " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
-    check.inst_param(pipeline, "pipeline", IJob)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -219,17 +219,17 @@ def execute_run(
         ),
     )
     if dagster_run.solids_to_execute or dagster_run.asset_selection:
-        # when `execute_run` is directly called, the sub pipeline hasn't been created
+        # when `execute_run` is directly called, the sub job hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_job(
+        job = job.subset_for_execution_from_existing_job(
             frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
             dagster_run.asset_selection,
         )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructableJob):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
@@ -238,7 +238,7 @@ def execute_run(
         iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=orchestration_context_event_generator,
-            job=pipeline,
+            job=job,
             execution_plan=execution_plan,
             dagster_run=dagster_run,
             instance=instance,
@@ -251,12 +251,12 @@ def execute_run(
     event_list = list(_execute_run_iterable)
 
     return PipelineExecutionResult(
-        pipeline.get_definition(),
+        job.get_definition(),
         dagster_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(  # type: ignore
             execution_plan,
-            pipeline,
+            job,
             dagster_run.run_config,
             dagster_run,
             instance,
