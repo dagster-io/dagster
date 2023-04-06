@@ -1583,32 +1583,32 @@ failure_assets_job = build_assets_job(
 
 
 @asset
-def foo(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 5
 
 
 @asset
-def bar(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def bar(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
     return 10
 
 
 @asset
-def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def foo_bar(context: OpExecutionContext, foo, bar):
+    assert context.job_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
-def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data is not None
+def baz(context: OpExecutionContext, foo_bar):
+    assert context.job_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
-def unconnected(context):
-    assert context.pipeline_def.asset_selection_data is not None
+def unconnected(context: OpExecutionContext):
+    assert context.job_def.asset_selection_data is not None
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
