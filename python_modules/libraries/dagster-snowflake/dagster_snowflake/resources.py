@@ -381,7 +381,7 @@ class SnowflakeResource(ConfigurableResourceFactory):
         description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
     )
 
-    user: str = Field(..., description="User login name.")
+    user: str = Field(description="User login name.")
 
     password: Optional[str] = Field(default=None, description="User password.")
 
