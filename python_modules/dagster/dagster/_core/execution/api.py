@@ -868,7 +868,7 @@ class ExecuteRunWithPlanIterable:
             execution_context_manager, "execution_context_manager", ExecutionContextManager
         )
 
-        self.pipeline_context = None
+        self.job_context = None
 
     def __iter__(self) -> Iterator[DagsterEvent]:
         # Since interrupts can't be raised at arbitrary points safely, delay them until designated
@@ -878,13 +878,13 @@ class ExecuteRunWithPlanIterable:
         # process that performs the execution.
         with capture_interrupts():
             yield from self.execution_context_manager.prepare_context()
-            self.pipeline_context = self.execution_context_manager.get_context()
+            self.job_context = self.execution_context_manager.get_context()
             generator_closed = False
             try:
-                if self.pipeline_context:  # False if we had a pipeline init failure
+                if self.job_context:  # False if we had a pipeline init failure
                     yield from self.iterator(
                         execution_plan=self.execution_plan,
-                        pipeline_context=self.pipeline_context,
+                        pipeline_context=self.job_context,
                     )
             except GeneratorExit:
                 # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
