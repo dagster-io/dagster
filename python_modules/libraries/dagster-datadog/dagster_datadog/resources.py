@@ -1,5 +1,4 @@
 from dagster import ConfigurableResourceFactory, resource
-from dagster._config.structured_config import infer_schema_from_config_class
 from datadog import DogStatsd, initialize, statsd
 from pydantic import Field
 
