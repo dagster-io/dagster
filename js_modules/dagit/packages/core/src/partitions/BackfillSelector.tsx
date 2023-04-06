@@ -383,7 +383,7 @@ const LaunchBackfillButton: React.FC<{
     }
 
     if (data && data.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      onSuccess?.(data.launchPartitionBackfill.backfillId);
+      onSuccess?.(data.launchPartitionBackfill.backfillId, false);
     } else {
       onError?.(data);
     }
