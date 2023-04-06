@@ -32,6 +32,7 @@ from dagster._core.storage.pipeline_run import (
     TagBucket,
 )
 from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
@@ -860,7 +861,7 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
 
-    def test_wipe_tags(self, storage):
+    def test_wipe_tags(self, storage: RunStorage):
         if not self.can_delete_runs():
             pytest.skip("storage cannot delete")
 
@@ -876,7 +877,7 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert dict(storage.get_run_tags()) == {}
 
-    def test_write_conflicting_run_id(self, storage):
+    def test_write_conflicting_run_id(self, storage: RunStorage):
         double_run_id = "double_run_id"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
@@ -895,15 +896,15 @@ class TestRunStorage:
         fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
         assert fetched_pipeline_snapshot
         assert serialize_pp(fetched_pipeline_snapshot) == serialize_pp(pipeline_snapshot)
-        assert storage.has_pipeline_snapshot(pipeline_snapshot_id)
-        assert not storage.has_pipeline_snapshot("nope")
+        assert storage.has_job_snapshot(pipeline_snapshot_id)
+        assert not storage.has_job_snapshot("nope")
 
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(pipeline_snapshot_id)
 
-    def test_single_write_read_with_snapshot(self, storage):
+    def test_single_write_read_with_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
@@ -917,11 +918,11 @@ class TestRunStorage:
             job_snapshot_id=pipeline_snapshot_id,
         )
 
-        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+        assert not storage.has_job_snapshot(pipeline_snapshot_id)
 
         assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
 
-        assert serialize_pp(storage.get_pipeline_snapshot(pipeline_snapshot_id)) == serialize_pp(
+        assert serialize_pp(storage.get_job_snapshot(pipeline_snapshot_id)) == serialize_pp(
             pipeline_snapshot
         )
 
@@ -932,10 +933,10 @@ class TestRunStorage:
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(pipeline_snapshot_id)
             assert not storage.has_run(run_with_snapshot_id)
 
-    def test_single_write_with_missing_snapshot(self, storage):
+    def test_single_write_with_missing_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
@@ -948,7 +949,7 @@ class TestRunStorage:
         with pytest.raises(DagsterSnapshotDoesNotExist):
             storage.add_run(run_with_missing_snapshot)
 
-    def test_add_get_execution_snapshot(self, storage):
+    def test_add_get_execution_snapshot(self, storage: RunStorage):
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import snapshot_from_execution_plan
 
@@ -997,7 +998,7 @@ class TestRunStorage:
         assert len(some_runs) == 2
         assert count == 2
 
-    def test_fetch_run_group(self, storage):
+    def test_fetch_run_group(self, storage: RunStorage):
         assert storage
         root_run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
         runs = [root_run]
@@ -1050,7 +1051,7 @@ class TestRunStorage:
         assert run_group_one[0] == run_group_two[0]
         assert run_group_one[1] == run_group_two[1]
 
-    def test_fetch_run_group_not_found(self, storage):
+    def test_fetch_run_group_not_found(self, storage: RunStorage):
         assert storage
         run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
         storage.add_run(run)
@@ -1058,7 +1059,7 @@ class TestRunStorage:
         with pytest.raises(DagsterRunNotFoundError):
             storage.get_run_group(make_new_run_id())
 
-    def test_fetch_run_groups(self, storage):
+    def test_fetch_run_groups(self, storage: RunStorage):
         assert storage
         root_runs = [
             TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name="foo_pipeline")
@@ -1089,7 +1090,7 @@ class TestRunStorage:
             assert len(run_groups[root_run_id]["runs"]) == expected_group_lens[root_run_id]
             assert run_groups[root_run_id]["count"] == 6
 
-    def test_fetch_run_groups_filter(self, storage):
+    def test_fetch_run_groups_filter(self, storage: RunStorage):
         assert storage
 
         root_runs = [
@@ -1130,7 +1131,7 @@ class TestRunStorage:
             assert len(run_groups[root_run_id]["runs"]) == 2
             assert run_groups[root_run_id]["count"] == 5
 
-    def test_fetch_run_groups_ordering(self, storage):
+    def test_fetch_run_groups_ordering(self, storage: RunStorage):
         assert storage
 
         first_root_run = TestRunStorage.build_run(
@@ -1172,7 +1173,7 @@ class TestRunStorage:
         assert first_root_run.run_id in run_groups
         assert second_root_run.run_id not in run_groups
 
-    def test_partition_status(self, storage):
+    def test_partition_status(self, storage: RunStorage):
         one = TestRunStorage.build_run(
             run_id=make_new_run_id(),
             pipeline_name="foo_pipeline",
@@ -1261,7 +1262,7 @@ class TestRunStorage:
         stored_heartbeat = storage.get_daemon_heartbeats()[SensorDaemon.daemon_type()]
         assert stored_heartbeat == second_added_heartbeat
 
-    def test_wipe_heartbeats(self, storage):
+    def test_wipe_heartbeats(self, storage: RunStorage):
         self._skip_in_memory(storage)
 
         if not self.can_delete_runs():
@@ -1276,7 +1277,7 @@ class TestRunStorage:
         storage.add_daemon_heartbeat(added_heartbeat)
         storage.wipe_daemon_heartbeats()
 
-    def test_backfill(self, storage):
+    def test_backfill(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
         assert len(backfills) == 0
