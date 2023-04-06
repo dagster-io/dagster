@@ -2396,7 +2396,10 @@ def test_asset_selection(
 
 @pytest.mark.parametrize("executor", get_schedule_executors())
 def test_stale_asset_selection_never_materialized(
-    instance, workspace_context, external_repo, executor
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+    executor: ThreadPoolExecutor,
 ):
     freeze_datetime = feb_27_2019_one_second_to_midnight()
     external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
