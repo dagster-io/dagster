@@ -3,8 +3,40 @@ from unittest import mock
 
 import pytest
 from botocore import exceptions
-from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
-from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
+from dagster import (
+    DagsterResourceFunctionError,
+    In,
+    Out,
+    ResourceDefinition,
+    build_op_context,
+    configured,
+    job,
+    op,
+)
+from dagster_aws.s3 import (
+    S3FileHandle,
+    S3FileManager,
+    S3FileManagerResource,
+    S3Resource,
+    s3_file_manager,
+    s3_resource,
+)
+
+
+@pytest.fixture(name="s3_resource_type", params=[True, False])
+def s3_resource_type_fixture(request) -> ResourceDefinition:
+    if request.param:
+        return s3_resource
+    else:
+        return S3Resource.configure_at_launch()
+
+
+@pytest.fixture(name="s3_file_manager_resource_type", params=[True, False])
+def s3_file_manager_resource_type_fixture(request) -> ResourceDefinition:
+    if request.param:
+        return s3_file_manager
+    else:
+        return S3FileManagerResource.configure_at_launch()
 
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
@@ -36,7 +68,9 @@ def test_s3_file_manager_read(mock_s3_resource, mock_s3_bucket):
         assert file_obj.read() == body
 
 
-def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
+def test_depends_on_s3_resource_file_manager(
+    mock_s3_bucket, s3_resource_type, s3_file_manager_resource_type
+):
     bar_bytes = b"bar"
 
     @op(out=Out(S3FileHandle), required_resource_keys={"file_manager"})
@@ -52,7 +86,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
-    @job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
+    @job(resource_defs={"s3": s3_resource_type, "file_manager": s3_file_manager_resource_type})
     def s3_file_manager_test():
         accept_file(emit_file())
 
@@ -82,7 +116,9 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
 
 @mock.patch("boto3.session.Session.resource")
 @mock.patch("dagster_aws.s3.resources.S3FileManager")
-def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
+def test_s3_file_manager_resource(
+    MockS3FileManager, mock_boto3_resource, s3_file_manager_resource_type
+):
     did_it_run = dict(it_ran=False)
 
     resource_config = {
@@ -126,14 +162,14 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
         did_it_run["it_ran"] = True
 
     context = build_op_context(
-        resources={"file_manager": configured(s3_file_manager)(resource_config)}
+        resources={"file_manager": configured(s3_file_manager_resource_type)(resource_config)}
     )
     test_op(context)
 
     assert did_it_run["it_ran"]
 
 
-def test_s3_file_manager_resource_with_profile():
+def test_s3_file_manager_resource_with_profile(s3_file_manager_resource_type):
     resource_config = {
         "use_unsigned_session": True,
         "region_name": "us-west-1",
@@ -150,7 +186,7 @@ def test_s3_file_manager_resource_with_profile():
 
     with pytest.raises(DagsterResourceFunctionError) as e:
         context = build_op_context(
-            resources={"file_manager": configured(s3_file_manager)(resource_config)},
+            resources={"file_manager": configured(s3_file_manager_resource_type)(resource_config)},
         )
         test_op(context)
 

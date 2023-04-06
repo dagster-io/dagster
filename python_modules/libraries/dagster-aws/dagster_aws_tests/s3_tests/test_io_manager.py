@@ -1,3 +1,6 @@
+from typing import Any, Callable
+
+import pytest
 from dagster import (
     GraphIn,
     GraphOut,
@@ -5,6 +8,7 @@ from dagster import (
     Int,
     Out,
     Output,
+    ResourceDefinition,
     StaticPartitionsDefinition,
     VersionStrategy,
     asset,
@@ -18,8 +22,16 @@ from dagster import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
+
+
+@pytest.fixture(name="s3_io_manager_builder", params=[True, False])
+def s3_io_manager_builder_fixture(request) -> Callable[[Any], ResourceDefinition]:
+    if request.param:
+        return lambda _: s3_pickle_io_manager
+    else:
+        return lambda s3: S3PickleIOManager.configure_at_launch(s3_resource=s3)
 
 
 @resource
@@ -27,7 +39,7 @@ def s3_test_resource(_):
     return construct_s3_client(max_attempts=5)
 
 
-def define_inty_job():
+def define_inty_job(s3_io_manager_builder):
     @op(out=Out(Int))
     def return_one():
         return 1
@@ -41,7 +53,7 @@ def define_inty_job():
 
     @job(
         resource_defs={
-            "io_manager": s3_pickle_io_manager,
+            "io_manager": s3_io_manager_builder(s3_test_resource),
             "s3": s3_test_resource,
         }
     )
@@ -51,9 +63,9 @@ def define_inty_job():
     return basic_external_plan_execution
 
 
-def test_s3_pickle_io_manager_execution(mock_s3_bucket):
+def test_s3_pickle_io_manager_execution(mock_s3_bucket, s3_io_manager_builder):
     assert not len(list(mock_s3_bucket.objects.all()))
-    inty_job = define_inty_job()
+    inty_job = define_inty_job(s3_io_manager_builder)
 
     run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
 

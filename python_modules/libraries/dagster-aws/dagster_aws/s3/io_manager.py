@@ -1,18 +1,19 @@
 import io
 import pickle
-from typing import Sequence, Union
+from typing import Any, Sequence, Union
 
 from dagster import (
-    Field,
+    ConfigurableIOManagerFactory,
     InputContext,
     MemoizableIOManager,
     MetadataValue,
     OutputContext,
-    StringSource,
+    ResourceDependency,
     _check as check,
     io_manager,
 )
 from dagster._utils import PICKLE_PROTOCOL
+from pydantic import Field
 
 
 class PickledObjectS3IOManager(MemoizableIOManager):
@@ -100,11 +101,71 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
+class S3PickleIOManager(ConfigurableIOManagerFactory):
+    """Persistent IO manager using S3 for storage.
+
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for S3 and the backing bucket.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    With a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
+
+    Example usage:
+
+    .. code-block:: python
+
+        from dagster import asset, repository, with_resources
+        from dagster_aws.s3 import S3PickleIOManager, S3Resource
+
+
+        @asset
+        def asset1():
+            # create df ...
+            return df
+
+        @asset
+        def asset2(asset1):
+            return asset1[:5]
+
+        @repository
+        def repo():
+            return with_resources(
+                [asset1, asset2],
+                resource_defs={
+                    "io_manager": S3PickleIOManager(
+                        s3_resource=S3Resource(),
+                        s3_bucket="my-cool-bucket",
+                        s3_prefix="my-cool-prefix",
+                    )
+                },
+            )
+
+
+    """
+
+    s3_resource: ResourceDependency[Any]
+    s3_bucket: str = Field(description="S3 bucket to use for the file manager.")
+    s3_prefix: str = Field(
+        default="dagster", description="Prefix to use for the S3 bucket for this file manager."
+    )
+
+    def create_io_manager(self, context) -> PickledObjectS3IOManager:
+        return PickledObjectS3IOManager(
+            s3_bucket=self.s3_bucket,
+            s3_session=self.s3_resource,
+            s3_prefix=self.s3_prefix,
+        )
+
+
 @io_manager(
-    config_schema={
-        "s3_bucket": Field(StringSource),
-        "s3_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    },
+    config_schema=S3PickleIOManager.to_config_schema(),
     required_resource_keys={"s3"},
 )
 def s3_pickle_io_manager(init_context):
