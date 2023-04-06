@@ -23,7 +23,7 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {useTrackPageView} from '../../app/analytics';
-import {BulkActionStatus, PartitionBackfill, RunStatus} from '../../graphql/types';
+import {BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
