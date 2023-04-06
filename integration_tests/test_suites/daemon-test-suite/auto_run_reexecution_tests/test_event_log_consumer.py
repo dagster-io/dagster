@@ -39,7 +39,7 @@ def _create_success_event(instance, run):
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),

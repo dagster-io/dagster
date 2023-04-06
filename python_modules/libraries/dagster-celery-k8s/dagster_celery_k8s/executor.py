@@ -248,7 +248,7 @@ def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instanc
     event_record = EventLogEntry(
         user_message=str(err),
         level=logging.ERROR,
-        pipeline_name=pipeline_run.job_name,
+        job_name=pipeline_run.job_name,
         run_id=pipeline_run.run_id,
         error_info=None,
         step_key=step_key,

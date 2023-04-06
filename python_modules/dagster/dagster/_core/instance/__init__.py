@@ -207,7 +207,7 @@ class _EventListenerLogHandler(logging.Handler):
             elif event.run_id:
                 self._instance.report_engine_event(
                     "Exception while writing logger call to event log",
-                    job_name=event.pipeline_name,
+                    job_name=event.job_name,
                     run_id=event.run_id,
                     step_key=event.step_key,
                     engine_event_data=EngineEventData(
@@ -1937,7 +1937,7 @@ class DagsterInstance(DynamicPartitionsStore):
         event_record = EventLogEntry(
             user_message="",
             level=log_level,
-            pipeline_name=dagster_event.job_name,
+            job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
             timestamp=time.time(),

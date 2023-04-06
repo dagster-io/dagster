@@ -120,7 +120,7 @@ def report_starting_event(instance, run, timestamp):
     event_record = EventLogEntry(
         user_message="",
         level=logging.INFO,
-        pipeline_name=run.job_name,
+        job_name=run.job_name,
         run_id=run.run_id,
         error_info=None,
         timestamp=timestamp,

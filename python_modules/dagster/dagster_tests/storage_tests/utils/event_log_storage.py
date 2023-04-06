@@ -197,7 +197,7 @@ def _event_record(run_id, op_name, timestamp, event_type, event_specific_data=No
         run_id=run_id,
         timestamp=timestamp,
         step_key=step_handle.to_key(),
-        pipeline_name=pipeline_name,
+        job_name=pipeline_name,
         dagster_event=DagsterEvent(
             event_type.value,
             pipeline_name,

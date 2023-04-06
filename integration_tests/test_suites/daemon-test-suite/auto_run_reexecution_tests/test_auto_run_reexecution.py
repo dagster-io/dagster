@@ -52,7 +52,7 @@ def test_filter_runs_to_should_retry(instance):
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -162,7 +162,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=run.run_id,
         error_info=None,
         timestamp=time.time(),
@@ -196,7 +196,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=instance.run_coordinator.queue()[0].run_id,
         error_info=None,
         timestamp=time.time(),
@@ -220,7 +220,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     event_record = EventLogEntry(
         user_message="",
         level=logging.ERROR,
-        pipeline_name="foo",
+        job_name="foo",
         run_id=instance.run_coordinator.queue()[1].run_id,
         error_info=None,
         timestamp=time.time(),
