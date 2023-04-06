@@ -2,8 +2,8 @@ import base64
 import os
 
 import pytest
-from dagster import asset, materialize
-from dagster_gcp import bigquery_resource
+from dagster import EnvVar, asset, materialize
+from dagster_gcp import BigQueryResource, bigquery_resource
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -27,25 +27,32 @@ def test_authenticate_via_config():
         with open(old_gcp_creds_file, "r") as f:
             gcp_creds = f.read()
 
-        resource_defs = {
-            "bigquery": bigquery_resource.configured(
+        resources = [
+            BigQueryResource(
+                project=EnvVar("GCP_PROJECT_ID"),
+                gcp_credentials=base64.b64encode(str.encode(gcp_creds)).decode(),
+            ),
+            bigquery_resource.configured(
                 {
                     "project": os.getenv("GCP_PROJECT_ID"),
                     "gcp_credentials": base64.b64encode(str.encode(gcp_creds)).decode(),
                 }
+            ),
+        ]
+
+        for r in resources:
+            resource_defs = {"bigquery": r}
+
+            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
+
+            result = materialize(
+                [test_asset],
+                resources=resource_defs,
             )
-        }
+            passed = result.success
 
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-
-        result = materialize(
-            [test_asset],
-            resources=resource_defs,
-        )
-        passed = result.success
-
-        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
-        assert not os.path.exists(asset_info["gcp_creds_file"])
+            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
+            assert not os.path.exists(asset_info["gcp_creds_file"])
     finally:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
         assert passed
