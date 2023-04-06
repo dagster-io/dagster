@@ -158,7 +158,7 @@ class ExecutionStep(
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
-                    "pipeline_name": job_name,
+                    "job_name": job_name,
                     "solid_name": handle.node_handle.name,
                 },
                 check.opt_mapping_param(logging_tags, "logging_tags"),

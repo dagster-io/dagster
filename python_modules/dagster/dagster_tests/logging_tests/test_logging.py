@@ -196,7 +196,7 @@ def test_handler_in_log_manager(capsys):
 
 def test_handler_in_log_manager_with_tags(capsys):
     dl = _setup_test_two_handler_log_mgr()
-    dl = dl.with_tags(**{"pipeline_name": "test_job"})
+    dl = dl.with_tags(**{"job_name": "test_job"})
 
     dl.info("test")
     dl.warning("test")

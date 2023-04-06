@@ -95,7 +95,7 @@ def test_single_op_job_success():
     assert start_event.dagster_event.solid_name == "op_one"
 
     # persisted logging tags contain pipeline_name but not pipeline_tags
-    assert start_event.dagster_event.logging_tags["pipeline_name"] == "single_op_job"
+    assert start_event.dagster_event.logging_tags["job_name"] == "single_op_job"
     assert "pipeline_tags" not in start_event.dagster_event.logging_tags
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
@@ -188,7 +188,7 @@ def test_event_forward_compat_with_event_specific_data():
         ' been written by a newer version of Dagster. Original message: "howdy"'
     )
     assert result.event_type_value == DagsterEventType.ENGINE_EVENT.value
-    assert result.pipeline_name == "nonce"
+    assert result.job_name == "nonce"
     assert result.step_key == "future_step"
     assert (
         'Attempted to deserialize class "FutureEventData" which is not in the whitelist.'
@@ -207,7 +207,7 @@ def test_event_forward_compat_without_event_specific_data():
         ' been written by a newer version of Dagster. Original message: "howdy"'
     )
     assert result.event_type_value == DagsterEventType.ENGINE_EVENT.value
-    assert result.pipeline_name == "nonce"
+    assert result.job_name == "nonce"
     assert result.step_key == "future_step"
     assert (
         "'EVENT_TYPE_FROM_THE_FUTURE' is not a valid DagsterEventType"

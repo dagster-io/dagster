@@ -24,7 +24,7 @@ def test_run_config():
 
 def test_logging_tags():
     assert (
-        BARE_OUT_OF_PIPELINE_CONTEXT.logging_tags["pipeline_name"]
+        BARE_OUT_OF_PIPELINE_CONTEXT.logging_tags["job_name"]
         == "ephemeral_dagstermill_pipeline"
     )
 

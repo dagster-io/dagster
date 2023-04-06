@@ -186,7 +186,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
         run_id=logger_message.meta["run_id"],
         timestamp=logger_message.record.created,
         step_key=logger_message.meta.get("step_key"),
-        job_name=logger_message.meta.get("pipeline_name"),
+        job_name=logger_message.meta.get("job_name"),
         dagster_event=logger_message.meta.get("dagster_event"),
         error_info=None,
     )
