@@ -1,16 +1,16 @@
 from contextlib import contextmanager
+from typing import Any, Dict, List, Optional
 
 from dagster import (
-    Array,
-    Field,
-    Shape,
-    _check as check,
+    Config,
+    InitResourceContext,
     resource,
 )
 from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
+from pydantic import Field
 
-from dagster_aws.utils import BOTO3_SESSION_CONFIG
+from dagster_aws.utils import Boto3ResourceBase
 
 from .parameters import (
     construct_ssm_client,
@@ -20,8 +20,42 @@ from .parameters import (
 )
 
 
-@resource(BOTO3_SESSION_CONFIG)
-def ssm_resource(context):
+class SSMResource(Boto3ResourceBase[Any]):
+    """Resource that gives access to AWS Systems Manager Parameter Store.
+
+    The underlying Parameter Store session is created by calling
+    :py:func:`boto3.session.Session(profile_name) <boto3:boto3.session>`.
+    The returned resource object is a Systems Manager client, an instance of `botocore.client.ssm`.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import build_op_context, job, op
+            from dagster_aws.ssm import SSMResource
+
+            @op(required_resource_keys={'ssm'})
+            def example_ssm_op(context):
+                return context.resources.ssm.get_parameter(
+                    Name="a_parameter"
+                )
+
+            @job(resource_defs={'ssm': SSMResource(region_name='us-west-1')})
+            def example_job():
+                example_ssm_op()
+
+            example_job.execute_in_process()
+    """
+
+    def create_resource(self, context: InitResourceContext) -> Any:
+        return construct_ssm_client(
+            max_attempts=self.max_attempts,
+            region_name=self.region_name,
+            profile_name=self.profile_name,
+        )
+
+
+@resource(config_schema=SSMResource.to_config_schema())
+def ssm_resource(context) -> Any:
     """Resource that gives access to AWS Systems Manager Parameter Store.
 
     The underlying Parameter Store session is created by calling
@@ -71,75 +105,78 @@ def ssm_resource(context):
               # profile as specified in ~/.aws/credentials file
 
     """
-    return construct_ssm_client(
-        max_attempts=context.resource_config["max_attempts"],
-        region_name=context.resource_config.get("region_name"),
-        profile_name=context.resource_config.get("profile_name"),
+    return SSMResource.from_resource_context(context)
+
+
+class Tag(Config):
+    key: str = Field(description="Tag key to search for.")
+    values: Optional[List[str]] = Field(deafult=None, description="List")
+
+
+class ParameterStoreResource(Boto3ResourceBase[Dict[str, str]]):
+    parameters: List[str] = Field(
+        default=[], description="An array of AWS SSM Parameter Store parameter names to fetch."
     )
-
-
-tag_shape = Shape(
-    {
-        "key": Field(str, is_required=True, description="Tag key to search for."),
-        "values": Field(
-            [str],
-            is_required=False,
-            description=(
-                "List of tag values to match on. If no values are provided, "
-                "all parameters with the given tag key will be returned. Note: the "
-                "underlying AWS API will throw an exception when more than 10 "
-                "parameters match the tag filter query."
-            ),
+    parameter_tags: List[Tag] = Field(
+        default=[],
+        description=(
+            "AWS SSM Parameter store parameters with this tag will be fetched and made available."
         ),
-    }
-)
-
-
-@resource(
-    merge_dicts(
-        BOTO3_SESSION_CONFIG,
-        {
-            "parameters": Field(
-                Array(str),
-                is_required=False,
-                default_value=[],
-                description="An array of AWS SSM Parameter Store parameter names to fetch.",
-            ),
-            "parameter_tags": Field(
-                Array(tag_shape),
-                is_required=False,
-                default_value=[],
-                description=(
-                    "AWS SSM Parameter store parameters with this tag will be fetched and made"
-                    " available."
-                ),
-            ),
-            "parameter_paths": Field(
-                [str],
-                is_required=False,
-                default_value=[],
-                description="List of path prefixes to pull parameters from.",
-            ),
-            "with_decryption": Field(
-                bool,
-                is_required=False,
-                default_value=False,
-                description=(
-                    "Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter"
-                    " type is String or StringList"
-                ),
-            ),
-            "add_to_environment": Field(
-                bool,
-                is_required=False,
-                default_value=False,
-                description="Whether to mount the parameters as environment variables.",
-            ),
-        },
     )
-)
+    parameter_paths: List[str] = Field(
+        default=[], description="List of path prefixes to pull parameters from."
+    )
+    with_decryption: bool = Field(
+        default=False,
+        description=(
+            "Whether to decrypt parameters upon retrieval. Is ignored by AWS if parameter type is"
+            " String or StringList"
+        ),
+    )
+    add_to_environment: bool = Field(
+        default=False, description="Whether to add the parameters to the environment."
+    )
+
+    def create_resource(self, context: InitResourceContext) -> Any:
+        ssm_manager = construct_ssm_client(
+            max_attempts=self.max_attempts,
+            region_name=self.region_name,
+            profile_name=self.profile_name,
+        )
+
+        results = []
+        if self.parameters:
+            results.append(
+                get_parameters_by_name(ssm_manager, self.parameters, self.with_decryption)
+            )
+        if self.parameter_tags:
+            parameter_tag_inputs = [
+                {"key": tag.key, "values": tag.values} for tag in self.parameter_tags
+            ]
+            results.append(
+                get_parameters_by_tags(ssm_manager, parameter_tag_inputs, self.with_decryption)
+            )
+        if self.parameter_paths:
+            results.append(
+                get_parameters_by_paths(
+                    ssm_manager, self.parameter_paths, self.with_decryption, recursive=True
+                )
+            )
+        if not results:
+            parameter_values = {}
+        else:
+            if len(results) > 1:
+                parameter_values = merge_dicts(*results)
+            else:
+                parameter_values = results[0]
+
+        with environ(parameter_values if self.add_to_environment else {}):
+            yield parameter_values
+
+
+@resource(config_schema=ParameterStoreResource.to_config_schema())
 @contextmanager
-def parameter_store_resource(context):
+def parameter_store_resource(context) -> Any:
     """Resource that provides a dict which maps selected SSM Parameter Store parameters to
     their string values. Optionally sets selected parameters as environment variables.
 
@@ -206,42 +243,4 @@ def parameter_store_resource(context):
               # to false.
 
     """
-    add_to_environment = check.bool_param(
-        context.resource_config["add_to_environment"], "add_to_environment"
-    )
-    parameter_tags = check.opt_list_param(
-        context.resource_config["parameter_tags"], "parameter_tags", of_type=dict
-    )
-    parameters = check.list_param(context.resource_config["parameters"], "parameters", of_type=str)
-    parameter_paths = check.list_param(
-        context.resource_config["parameter_paths"], "parameter_paths", of_type=str
-    )
-    with_decryption = check.bool_param(
-        context.resource_config["with_decryption"], "with_decryption"
-    )
-
-    ssm_manager = construct_ssm_client(
-        max_attempts=context.resource_config["max_attempts"],
-        region_name=context.resource_config.get("region_name"),
-        profile_name=context.resource_config.get("profile_name"),
-    )
-
-    results = []
-    if parameters:
-        results.append(get_parameters_by_name(ssm_manager, parameters, with_decryption))
-    if parameter_tags:
-        results.append(get_parameters_by_tags(ssm_manager, parameter_tags, with_decryption))
-    if parameter_paths:
-        results.append(
-            get_parameters_by_paths(ssm_manager, parameter_paths, with_decryption, recursive=True)
-        )
-    if not results:
-        parameter_values = {}
-    else:
-        if len(results) > 1:
-            parameter_values = merge_dicts(*results)
-        else:
-            parameter_values = results[0]
-
-    with environ(parameter_values if add_to_environment else {}):
-        yield parameter_values
+    return ParameterStoreResource.from_resource_context(context)
