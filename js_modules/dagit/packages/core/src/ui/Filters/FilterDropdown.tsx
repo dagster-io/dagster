@@ -5,12 +5,20 @@ import {
   Icon,
   IconWrapper,
   Menu,
-  MenuItem,
+  MenuItem as _MenuItem,
   Popover,
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState, useEffect, useRef} from 'react';
+import {
+  atomFamily,
+  selectorFamily,
+  useRecoilValue,
+  useSetRecoilState,
+  useRecoilCallback,
+} from 'recoil';
 import styled, {createGlobalStyle} from 'styled-components/macro';
+import {v4 as uuidv4} from 'uuid';
 
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
@@ -23,10 +31,23 @@ interface FilterDropdownProps {
   setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
 
+const focusedIndexAtom = atomFamily<number, string>({
+  key: 'FilterDropdown:focusedIndex',
+  default: -1,
+});
+const isFocusedSelector = selectorFamily<boolean, {key: string; index: number}>({
+  key: 'FilterDropdown:isFocused',
+  get: ({key, index}) => ({get}) => get(focusedIndexAtom(key)) === index,
+});
+
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
+  const [menuKey, _] = React.useState(() => uuidv4());
+  const setFocusedItemIndex = useSetRecoilState(focusedIndexAtom(menuKey));
+  const isSearchInputFocused = useRecoilValue(
+    isFocusedSelector(React.useMemo(() => ({key: menuKey, index: -1}), [menuKey])),
+  );
   const [search, setSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterObject<any> | null>(null);
-  const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1);
 
   const {results, filteredFilters} = React.useMemo(() => {
     const filteredFilters = selectedFilter
@@ -67,14 +88,14 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         },
       });
     },
-    [setIsOpen, setPortaledElements],
+    [setFocusedItemIndex, setIsOpen, setPortaledElements],
   );
 
   React.useLayoutEffect(() => {
-    if (focusedItemIndex === -1) {
+    if (isSearchInputFocused) {
       inputRef.current?.focus();
     }
-  }, [focusedItemIndex]);
+  }, [isSearchInputFocused]);
 
   const allResultsJsx = React.useMemo(() => {
     if (selectedFilter) {
@@ -85,7 +106,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             key={`filter:${selectedFilter.name}:${result.key}`}
             onClick={() => selectValue(selectedFilter, result.value)}
             text={result.label}
-            active={resultIndex === focusedItemIndex}
+            index={resultIndex}
+            menuKey={menuKey}
           />
         ));
     }
@@ -106,8 +128,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
                 {filter.name}
               </Box>
             }
-            active={index === focusedItemIndex}
-            onFocus={() => setFocusedItemIndex(index)}
+            index={index}
+            menuKey={menuKey}
           />,
         );
       }
@@ -118,14 +140,23 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
             key={`filter:${filter.name}:${result.key}`}
             onClick={() => selectValue(filter, result.value)}
             text={result.label}
-            active={index === focusedItemIndex}
-            onFocus={() => setFocusedItemIndex(index)}
+            index={index}
+            menuKey={menuKey}
           />,
         );
       });
     });
     return jsxResults;
-  }, [filteredFilters, filters, results, search, selectValue, selectedFilter, focusedItemIndex]);
+  }, [
+    selectedFilter,
+    filters,
+    search,
+    menuKey,
+    selectValue,
+    filteredFilters,
+    results,
+    setFocusedItemIndex,
+  ]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -134,16 +165,17 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     inputRef.current?.focus();
   }, []);
 
-  const handleKeyUp = (event: React.KeyboardEvent) => {
+  const handleKeyUp = useRecoilCallback(({snapshot}) => async (event: React.KeyboardEvent) => {
     const maxIndex = allResultsJsx.length - 1;
 
-    if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
+    if (event.key === 'ArrowDown') {
       setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
       event.preventDefault();
-    } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
+    } else if (event.key === 'ArrowUp') {
       setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
       event.preventDefault();
     } else if (event.key === 'Enter') {
+      const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
       if (focusedItemIndex !== -1) {
         allResultsJsx[focusedItemIndex].props.onClick();
       }
@@ -160,7 +192,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     } else if (event.target === inputRef.current) {
       setFocusedItemIndex(-1);
     }
-  };
+  });
 
   return (
     <>
@@ -315,6 +347,25 @@ const TextInputWrapper = styled.div`
     }
   }
 `;
+
+type MenuItemProps = React.ComponentProps<typeof _MenuItem> & {
+  menuKey: string;
+  index: number;
+};
+const MenuItem = ({menuKey, index, ...rest}: MenuItemProps) => {
+  const divRef = React.useRef<HTMLDivElement | null>(null);
+  const isFocused = useRecoilValue(
+    isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
+  );
+  React.useLayoutEffect(() => {
+    divRef.current?.querySelector('a')?.focus();
+  }, [isFocused]);
+  return (
+    <div ref={divRef}>
+      <_MenuItem {...rest} active={isFocused} />
+    </div>
+  );
+};
 
 const SlashShortcut = styled.div`
   border-radius: 4px;
