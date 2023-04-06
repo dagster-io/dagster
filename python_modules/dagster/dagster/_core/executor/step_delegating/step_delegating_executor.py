@@ -84,8 +84,8 @@ class StepDelegatingExecutor(Executor):
             plan_context=plan_context,
             steps=steps,
             execute_step_args=ExecuteStepArgs(
-                pipeline_origin=plan_context.reconstructable_job.get_python_origin(),
-                pipeline_run_id=plan_context.dagster_run.run_id,
+                job_origin=plan_context.reconstructable_job.get_python_origin(),
+                run_id=plan_context.dagster_run.run_id,
                 step_keys_to_execute=[step.key for step in steps],
                 instance_ref=plan_context.plan_data.instance.get_ref(),
                 retry_mode=self.retries.for_inner_plan(),
