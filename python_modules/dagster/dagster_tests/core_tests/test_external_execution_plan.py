@@ -312,7 +312,7 @@ def test_using_repository_data():
 
         execute_plan(
             execution_plan=execution_plan,
-            pipeline=recon_job,
+            job=recon_job,
             dagster_run=run,
             instance=instance,
         )

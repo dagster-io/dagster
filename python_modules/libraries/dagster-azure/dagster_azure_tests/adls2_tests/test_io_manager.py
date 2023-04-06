@@ -113,7 +113,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryJob(job),
+            job=InMemoryJob(job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
@@ -185,7 +185,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, job, resolved_run_config),
-            pipeline=InMemoryJob(job),
+            job=InMemoryJob(job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
@@ -214,7 +214,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], job, resolved_run_config),
-            pipeline=InMemoryJob(job),
+            job=InMemoryJob(job),
             dagster_run=pipeline_run,
             run_config=run_config,
             instance=instance,

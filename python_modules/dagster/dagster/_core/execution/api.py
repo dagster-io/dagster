@@ -628,7 +628,7 @@ def execute_plan_iterator(
 
 def execute_plan(
     execution_plan: ExecutionPlan,
-    pipeline: IJob,
+    job: IJob,
     instance: DagsterInstance,
     dagster_run: DagsterRun,
     run_config: Optional[Mapping[str, object]] = None,
@@ -638,7 +638,7 @@ def execute_plan(
     execute_pipeline() above.
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IJob)
+    check.inst_param(job, "job", IJob)
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     run_config = check.opt_mapping_param(run_config, "run_config")
@@ -647,7 +647,7 @@ def execute_plan(
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
-            job=pipeline,
+            job=job,
             run_config=run_config,
             dagster_run=dagster_run,
             instance=instance,

@@ -100,7 +100,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys, inty_job, resolved_run_config),
-            pipeline=InMemoryJob(inty_job),
+            job=InMemoryJob(inty_job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
@@ -125,7 +125,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"], inty_job, resolved_run_config),
-            pipeline=InMemoryJob(inty_job),
+            job=InMemoryJob(inty_job),
             run_config=run_config,
             dagster_run=pipeline_run,
             instance=instance,
