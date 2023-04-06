@@ -302,7 +302,7 @@ def test_long_running_termination(
             assert len(run_failure_events) == 1
             event = run_failure_events[0].dagster_event
             assert event
-            assert event.message == "Exceeded maximum runtime of 500.0 seconds."
+            assert event.message == "Exceeded maximum runtime of 500 seconds."
 
 
 @pytest.mark.parametrize("failure_case", ["fail_termination", "termination_exception"])
@@ -352,7 +352,7 @@ def test_long_running_termination_failure(
         run_canceling_log = run_canceling_logs[0]
         assert (
             run_canceling_log.message
-            == "Canceling due to exceeding maximum runtime of 500.0 seconds."
+            == "Canceling due to exceeding maximum runtime of 500 seconds."
         )
 
         run_failure_events = instance.all_logs(run.run_id, of_type=DagsterEventType.RUN_FAILURE)
