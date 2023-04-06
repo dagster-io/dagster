@@ -5,7 +5,7 @@ description: Learn how to use I/O managers to save your data.
 
 # Tutorial, part six: Saving your data
 
-You've written a data pipeline using assets and had it rebuilt every hour by now. Currently, your assets are stored in a temporary folder that is deleted after closing the `dagster` process. **Note**: If you set up Dagster without the tutorial, you may have set a `DAGSTER_HOME` environment variable. If so, then your assets will be stored in that directory.
+You've written a data pipeline using assets that runs every hour. Currently, your assets are stored in a temporary folder that is deleted after closing the `dagster` process. **Note**: If you set up Dagster without the tutorial, you may have set a `DAGSTER_HOME` environment variable. If so, then your assets will be stored in that directory.
 
 You likely want to store your assets in places such as tables in your database or files in cloud storage. To do this, Dagster has I/O managers that enable reading and writing data to storage systems.
 
@@ -91,7 +91,7 @@ In addition to file storage systems, I/O managers can connect to any service fro
 
 In data engineering, a common asset is tabular data. These are often seen as database tables or DataFrames in-memory. In Dagster, I/O managers define the relationship between how data is saved as a table in the database and what in-memory data format to represent the data as.
 
-Dagster includes out-of-the-box IO managers for common databases, such as DuckDB. When a DataFrame is returned in an asset’s definition, it is translated into a database-compatible format. The I/O manager then runs a SQL query to write the data into the database.
+Dagster includes out-of-the-box I/O managers for common databases, such as DuckDB. When a DataFrame is returned in an asset’s definition, it is translated into a database-compatible format. The I/O manager then runs a SQL query to write the data into the database.
 
 Let’s modify our pipeline to store our `topstories` DataFrame as a table in DuckDB. We’ll use Dagster’s out-of-the-box I/O manager for DuckDB, an easy-to-set-up database that runs on your computer without any setup on your end.
 
