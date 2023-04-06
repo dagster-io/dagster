@@ -345,6 +345,37 @@ class SnowflakeConnection:
 
 
 class SnowflakeResource(ConfigurableResourceFactory):
+    """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
+    instance of :py:class:`SnowflakeConnection`.
+
+    A simple example of loading data into Snowflake and subsequently querying that data is shown below:
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import job, op
+            from dagster_snowflake import SnowflakeResource
+
+            @op(required_resource_keys={'snowflake'})
+            def get_one(snowflake_resource: Resource[SnowflakeConnection]):
+                snowflake_resource.execute_query('SELECT 1')
+
+            @job(resource_defs={
+                'snowflake_resource': SnowflakeResource(
+                    account=EnvVar("SNOWFLAKE_ACCOUNT"),
+                    user=EnvVar("SNOWFLAKE_USER"),
+                    password=EnvVar("SNOWFLAKE_PASSWORD")
+                    database="MY_DATABASE",
+                    schema="MY_SCHEMA",
+                    warehouse="MY_WAREHOUSE"
+                )}
+            )
+            def my_snowflake_job():
+                get_one()
+
+            my_snowflake_job.execute_in_process()
+    """
+
     account: Optional[str] = Field(
         default=None,
         description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
