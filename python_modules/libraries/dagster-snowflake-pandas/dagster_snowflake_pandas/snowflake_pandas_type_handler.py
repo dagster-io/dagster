@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Sequence, Type
+from typing import Mapping, Optional, Sequence, Type, overload
 
 import pandas as pd
 import pandas.core.dtypes.common as pd_core_dtypes_common
@@ -231,6 +231,17 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
                 ...
 
     """
+
+    @overload
+    def __init__(self, schema: str, *args, **kwargs):
+        ...
+
+    @overload
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def type_handlers() -> Sequence[DbTypeHandler]:
