@@ -2218,7 +2218,7 @@ def test_direct_asset_invocation_with_inputs() -> None:
     # We can input x and y as args
     assert (
         my_wacky_addition_asset_no_context(
-: MyResource(z=2)}), 4, 5
+            build_op_context(resources={"my_resource": MyResource(z=2)}), 4, 5
         )
         == 11
     )

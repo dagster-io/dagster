@@ -74,8 +74,17 @@ class DataDogClientResource(ConfigurableResourceFactory[DataDogClient]):
 
     """
 
-    api_key: str = Field(description="Datadog API key")
-    app_key: str = Field(description="Datadog application key")
+    api_key: str = Field(
+        description=(
+            "Datadog API key. See https://docs.datadoghq.com/account_management/api-app-keys/"
+        )
+    )
+    app_key: str = Field(
+        description=(
+            "Datadog application key. See"
+            " https://docs.datadoghq.com/account_management/api-app-keys/."
+        )
+    )
 
     def create_resource(self, _init_context) -> DataDogClient:
         return DataDogClient(self.api_key, self.app_key)
