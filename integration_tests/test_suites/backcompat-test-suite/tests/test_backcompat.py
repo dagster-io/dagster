@@ -252,7 +252,7 @@ def assert_runs_and_exists(
         pipeline_name=name
     )
     assert len(locations) == 1
-    assert locations[0].pipeline_name == name
+    assert locations[0].job_name == name
 
 
 def is_0_release(release: str) -> bool:
