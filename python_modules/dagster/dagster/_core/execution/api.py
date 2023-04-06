@@ -635,7 +635,7 @@ def execute_plan(
     retry_mode: Optional[RetryMode] = None,
 ) -> Sequence[DagsterEvent]:
     """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
-    execute_pipeline() above.
+    execute_job() above.
     """
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(job, "job", IJob)
@@ -666,7 +666,7 @@ def _check_job(job_arg: Union[JobDefinition, IJob]) -> IJob:
 
 
 def _get_execution_plan_from_run(
-    pipeline: IJob,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
 ) -> ExecutionPlan:
@@ -680,8 +680,8 @@ def _get_execution_plan_from_run(
     if (
         execution_plan_snapshot is not None
         and execution_plan_snapshot.can_reconstruct_plan
-        and pipeline.solids_to_execute == dagster_run.solids_to_execute
-        and pipeline.asset_selection == dagster_run.asset_selection
+        and job.solids_to_execute == dagster_run.solids_to_execute
+        and job.asset_selection == dagster_run.asset_selection
     ):
         return ExecutionPlan.rebuild_from_snapshot(
             dagster_run.job_name,
@@ -689,7 +689,7 @@ def _get_execution_plan_from_run(
         )
 
     return create_execution_plan(
-        pipeline,
+        job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
@@ -760,8 +760,8 @@ def job_execution_iterator(
     if not pipeline_context.resume_from_failure:
         yield DagsterEvent.job_start(pipeline_context)
 
-    pipeline_exception_info = None
-    pipeline_canceled_info = None
+    job_exception_info = None
+    job_canceled_info = None
     failed_steps = []
     generator_closed = False
     try:
@@ -779,22 +779,22 @@ def job_execution_iterator(
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
-        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
         if pipeline_context.raise_on_error:
             raise
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
-        pipeline_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
         if pipeline_context.raise_on_error:
             raise
     except BaseException:
-        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
         if pipeline_context.raise_on_error:
             raise  # finally block will run before this is re-raised
     finally:
-        if pipeline_canceled_info:
+        if job_canceled_info:
             reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
             if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
-                event = DagsterEvent.job_canceled(pipeline_context, pipeline_canceled_info)
+                event = DagsterEvent.job_canceled(pipeline_context, job_canceled_info)
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
                 # This happens if the run was force-terminated but was still able to send
                 # a cancellation request
@@ -828,13 +828,13 @@ def job_execution_iterator(
                         "Execution was interrupted unexpectedly. "
                         "No user initiated termination request was found, treating as failure."
                     ),
-                    pipeline_canceled_info,
+                    job_canceled_info,
                 )
-        elif pipeline_exception_info:
+        elif job_exception_info:
             event = DagsterEvent.job_failure(
                 pipeline_context,
                 "An exception was thrown during execution.",
-                pipeline_exception_info,
+                job_exception_info,
             )
         elif failed_steps:
             event = DagsterEvent.job_failure(
