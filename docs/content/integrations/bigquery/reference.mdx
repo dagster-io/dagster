@@ -387,7 +387,13 @@ defs = Definitions(
   When using the <code>bigquery_pyspark_io_manager</code> you may provide the{" "}
   <code>temporary_gcs_bucket</code> configuration. This will store the data is a
   temporary GCS bucket, then all of the data into BigQuery in one operation. If
-  not provided, data will be directly written to BigQuery.
+  not provided, data will be directly written to BigQuery. If you choose to use
+  a temporary GCS bucket, you must include the{" "}
+  <a href="https://github.com/GoogleCloudDataproc/hadoop-connectors/tree/master/gcs">
+    GCS Hadoop connector
+  </a>{" "}
+  in your Spark Session, in addition to the BigQuery connector (described
+  below).
 </Note>
 
 The `bigquery_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [BigQuery connector for Spark](https://cloud.google.com/dataproc/docs/tutorials/bigquery-connector-spark-example). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
@@ -512,17 +518,18 @@ defs = Definitions(
   <strong>Note:</strong> In order to load data from BigQuery as a PySpark
   DataFrame, the BigQuery PySpark connector will create a view containing the
   data. This will result in the creation of a temporary table in your BigQuery
-  dataset. See the BigQuery PySpark connector
+  dataset. See the BigQuery PySpark connector{" "}
   <a href="https://github.com/GoogleCloudDataproc/spark-bigquery-connector#reading-data-from-a-bigquery-query">
     documentation
-  </a> for more details.
+  </a>{" "}
+  for more details.
 </Note>
 
 ---
 
 ## Using Pandas and PySpark DataFrames with BigQuery
 
-If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_gcp" object="BigQueryIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods.
+If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_gcp" object="BigQueryIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `BigQueryIOManager`.
 
 ```python file=/integrations/bigquery/pandas_and_pyspark.py startafter=start_example endbefore=end_example
 from typing import Optional, Sequence, Type
@@ -547,7 +554,7 @@ class MyBigQueryIOManager(BigQueryIOManager):
 
     @staticmethod
     def default_load_type() -> Optional[Type]:
-        """If an asset is not annotated with an return type, defalut_load_type will be used to
+        """If an asset is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 
         In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
