@@ -336,7 +336,7 @@ class OpExecutionResult:
         node: OpNode,
         step_events_by_kind: Mapping[StepKind, Sequence[DagsterEvent]],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         check.inst_param(node, "node", OpNode)
@@ -349,7 +349,7 @@ class OpExecutionResult:
             "reconstruct_context",
         )
         self.output_capture = check.opt_dict_param(output_capture, "output_capture")
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        self.job_def = check.inst_param(job_def, "job_def", JobDefinition)
 
     @property
     def compute_input_event_dict(self) -> Mapping[str, DagsterEvent]:
@@ -602,7 +602,7 @@ class OpExecutionResult:
         if self.output_capture and step_output_handle in self.output_capture:
             return self.output_capture[step_output_handle]
         manager = context.get_io_manager(step_output_handle)
-        manager_key = context.execution_plan.get_manager_key(step_output_handle, self.pipeline_def)
+        manager_key = context.execution_plan.get_manager_key(step_output_handle, self.job_def)
         res = manager.load_input(
             context.for_input_manager(
                 name=None,  # type: ignore
