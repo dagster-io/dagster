@@ -936,9 +936,7 @@ def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type
         )
 
 
-def _config_type_for_pydantic_field(
-    pydantic_field: ModelField,
-) -> ConfigType:
+def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
     """Generates a Dagster ConfigType from a Pydantic field.
 
     Args:

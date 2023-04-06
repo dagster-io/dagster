@@ -69,19 +69,19 @@ class DagsterInvalidDeserializationVersionError(DagsterError):
 
 
 PYTHONIC_CONFIG_ERROR_VERBIAGE = """
-This value can be a:
+This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type
+    - A Pydantic discriminated union type (https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions)
 """
 
 PYTHONIC_RESOURCE_ADDITIONAL_TYPES = """
 
-If this value represents a resource dependency, its annotation must either:
+If this config type represents a resource dependency, its annotation must either:
     - Extend dagster.ConfigurableResource, dagster.ConfigurableIOManager, or
-    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[GitHub]
+    - Be wrapped in a ResourceDependency annotation, e.g. ResourceDependency[{invalid_type_str}]
 """
 
 
@@ -91,18 +91,21 @@ def _generate_pythonic_config_error_message(
     invalid_type: Any,
     is_resource: bool = False,
 ) -> str:
+    pythonic_config_error_verbiage = (
+        PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
+    ).format(invalid_type_str=invalid_type.__name__)
+
     return (
         """
 Error defining Dagster config class{config_class}{field_name}.
-Unable to resolve config type {invalid_type}.
+Unable to resolve config type {invalid_type} to a supported Dagster config type.
 
 {PYTHONIC_CONFIG_ERROR_VERBIAGE}"""
     ).format(
         config_class=f" {repr(config_class)}" if config_class else "",
         field_name=f" on field '{field_name}'" if field_name else "",
         invalid_type=repr(invalid_type),
-        PYTHONIC_CONFIG_ERROR_VERBIAGE=PYTHONIC_CONFIG_ERROR_VERBIAGE
-        + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else ""),
+        PYTHONIC_CONFIG_ERROR_VERBIAGE=pythonic_config_error_verbiage,
     )
 
 
