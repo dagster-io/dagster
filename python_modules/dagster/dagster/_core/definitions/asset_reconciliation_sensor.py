@@ -35,7 +35,6 @@ from dagster._utils.schedules import cron_string_iterator
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
 from .partition import PartitionsDefinition, PartitionsSubset
-from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
 from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
@@ -719,8 +718,8 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
 
 def reconcile(
-    repository_def: RepositoryDefinition,
-    asset_selection: AssetSelection,
+    asset_graph: AssetGraph,
+    target_asset_keys: AbstractSet[AssetKey],
     instance: "DagsterInstance",
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
@@ -730,16 +729,19 @@ def reconcile(
     current_time = pendulum.now("UTC")
 
     instance_queryer = CachingInstanceQueryer(instance=instance)
-    asset_graph = repository_def.asset_graph
 
     # fetch some data in advance to batch together some queries
-    relevant_asset_keys = list(asset_selection.upstream(depth=1).resolve(asset_graph))
-    instance_queryer.prefetch_asset_records(relevant_asset_keys)
-    instance_queryer.prefetch_asset_partition_counts(
-        relevant_asset_keys, after_cursor=cursor.latest_storage_id
+    target_parent_asset_keys = list(
+        {
+            parent
+            for target_asset_key in target_asset_keys
+            for parent in asset_graph.get_parents(target_asset_key)
+        }
     )
-
-    target_asset_keys = asset_selection.resolve(asset_graph)
+    instance_queryer.prefetch_asset_records(target_parent_asset_keys)
+    instance_queryer.prefetch_asset_partition_counts(
+        target_parent_asset_keys, after_cursor=cursor.latest_storage_id
+    )
 
     (
         asset_partitions_to_reconcile_for_freshness,
@@ -776,7 +778,7 @@ def reconcile(
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
         run_requests=run_requests,
-        asset_graph=repository_def.asset_graph,
+        asset_graph=asset_graph,
         newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
     )
@@ -942,16 +944,15 @@ def build_asset_reconciliation_sensor(
         default_status=default_status,
     )
     def _sensor(context):
+        asset_graph = context.repository_def.asset_graph
         cursor = (
-            AssetReconciliationCursor.from_serialized(
-                context.cursor, context.repository_def.asset_graph
-            )
+            AssetReconciliationCursor.from_serialized(context.cursor, asset_graph)
             if context.cursor
             else AssetReconciliationCursor.empty()
         )
         run_requests, updated_cursor = reconcile(
-            repository_def=context.repository_def,
-            asset_selection=asset_selection,
+            asset_graph=asset_graph,
+            target_asset_keys=asset_selection.resolve(asset_graph),
             instance=context.instance,
             cursor=cursor,
             run_tags=run_tags,

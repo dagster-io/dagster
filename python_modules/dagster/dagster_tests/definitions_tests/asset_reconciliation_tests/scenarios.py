@@ -1,6 +1,8 @@
 import contextlib
 import datetime
 import itertools
+import os
+import sys
 from typing import Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import mock
@@ -13,6 +15,7 @@ from dagster import (
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
     Field,
     Nothing,
     Output,
@@ -33,18 +36,25 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
 )
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import (
-    DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
     PartitionsSubset,
 )
+from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.test_utils import (
+    InProcessTestWorkspaceLoadTarget,
+    create_test_daemon_workspace_context,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 
@@ -65,7 +75,7 @@ class AssetReconciliationScenario(NamedTuple):
     active_backfill_targets: Optional[Sequence[Mapping[AssetKey, PartitionsSubset]]] = None
     expected_run_requests: Optional[Sequence[RunRequest]] = None
 
-    def do_scenario(self, instance):
+    def do_scenario(self, instance, scenario_name=None, with_daemon=False):
         test_time = self.current_time or pendulum.now()
 
         with pendulum.test(test_time) if self.current_time else contextlib.nullcontext():
@@ -107,7 +117,9 @@ class AssetReconciliationScenario(NamedTuple):
                 instance.add_backfill(backfill)
 
             if self.cursor_from is not None:
-                run_requests, cursor = self.cursor_from.do_scenario(instance)
+                run_requests, cursor = self.cursor_from.do_scenario(
+                    instance, scenario_name=scenario_name, with_daemon=with_daemon
+                )
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
                         repo.get_implicit_job_def_for_assets(run_request.asset_selection),
@@ -155,10 +167,41 @@ class AssetReconciliationScenario(NamedTuple):
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
         with pendulum.test(test_time):
+            # get asset_graph
+            if not with_daemon:
+                asset_graph = repo.asset_graph
+            else:
+                assert scenario_name is not None, "scenario_name must be provided for daemon runs"
+                with create_test_daemon_workspace_context(
+                    workspace_load_target=InProcessTestWorkspaceLoadTarget(
+                        InProcessCodeLocationOrigin(
+                            loadable_target_origin=LoadableTargetOrigin(
+                                executable_path=sys.executable,
+                                module_name="dagster_tests.definitions_tests.asset_reconciliation_tests.scenarios",
+                                working_directory=os.getcwd(),
+                                attribute="hacky_daemon_repo_" + scenario_name,
+                            ),
+                            location_name="test_location",
+                        ),
+                    ),
+                    instance=instance,
+                ) as workspace_context:
+                    workspace = workspace_context.create_request_context()
+                    assert (
+                        workspace.get_code_location_error("test_location") is None
+                    ), workspace.get_code_location_error("test_location")
+                    asset_graph = ExternalAssetGraph.from_workspace(workspace)
+
+            target_asset_keys = (
+                self.asset_selection.resolve(asset_graph)
+                if self.asset_selection
+                else asset_graph.non_source_asset_keys
+            )
+
             run_requests, cursor = reconcile(
-                repository_def=repo,
+                asset_graph=asset_graph,
+                target_asset_keys=target_asset_keys,
                 instance=instance,
-                asset_selection=self.asset_selection or AssetSelection.all(),
                 run_tags={},
                 cursor=cursor,
             )
@@ -308,63 +351,6 @@ def multi_asset_def(
 ######################################################################
 # The cases
 ######################################################################
-
-
-class FanInPartitionMapping(PartitionMapping):
-    def get_downstream_partitions_for_partitions(
-        self, upstream_partitions_subset, downstream_partitions_def, dynamic_partitions_store
-    ):
-        upstream_partition_keys = upstream_partitions_subset.get_partition_keys()
-        downstream_partition_keys = set(
-            upstream_partition_key.split("_")[0]
-            for upstream_partition_key in upstream_partition_keys
-        )
-        return DefaultPartitionsSubset(downstream_partitions_def, downstream_partition_keys)
-
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range,
-        downstream_partitions_def,
-        upstream_partitions_def,
-    ):
-        assert downstream_partition_key_range
-        assert downstream_partition_key_range.start == downstream_partition_key_range.end
-        downstream_partition_key = downstream_partition_key_range.start
-        return PartitionKeyRange(f"{downstream_partition_key}_1", f"{downstream_partition_key}_3")
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: Optional[PartitionsDefinition],
-        upstream_partitions_def: PartitionsDefinition,
-    ) -> PartitionKeyRange:
-        raise NotImplementedError()
-
-
-class FanOutPartitionMapping(PartitionMapping):
-    def get_upstream_partitions_for_partition_range(
-        self,
-        downstream_partition_key_range,
-        downstream_partitions_def,
-        upstream_partitions_def,
-    ):
-        assert downstream_partition_key_range
-        assert downstream_partition_key_range.start == downstream_partition_key_range.end
-        downstream_partition_key = downstream_partition_key_range.start
-        result = downstream_partition_key.split("_")[0]
-        return PartitionKeyRange(result, result)
-
-    def get_downstream_partitions_for_partition_range(
-        self,
-        upstream_partition_key_range,
-        downstream_partitions_def,
-        upstream_partitions_def,
-    ):
-        assert upstream_partition_key_range
-        assert upstream_partition_key_range.start == upstream_partition_key_range.end
-        upstream_partition_key = upstream_partition_key_range.start
-        return PartitionKeyRange(f"{upstream_partition_key}_1", f"{upstream_partition_key}_3")
-
 
 daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
 hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
@@ -526,14 +512,18 @@ two_assets_in_sequence_two_partitions = [
 two_assets_in_sequence_fan_in_partitions = [
     asset_def("asset1", partitions_def=fanned_out_partitions_def),
     asset_def(
-        "asset2", {"asset1": FanInPartitionMapping()}, partitions_def=one_partition_partitions_def
+        "asset2",
+        {"asset1": StaticPartitionMapping({"a_1": "a", "a_2": "a", "a_3": "a"})},
+        partitions_def=one_partition_partitions_def,
     ),
 ]
 
 two_assets_in_sequence_fan_out_partitions = [
     asset_def("asset1", partitions_def=one_partition_partitions_def),
     asset_def(
-        "asset2", {"asset1": FanOutPartitionMapping()}, partitions_def=fanned_out_partitions_def
+        "asset2",
+        {"asset1": StaticPartitionMapping({"a": ["a_1", "a_2", "a_3"]})},
+        partitions_def=fanned_out_partitions_def,
     ),
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
@@ -1342,3 +1332,11 @@ ASSET_RECONCILIATION_SCENARIOS = {
         expected_run_requests=[],
     ),
 }
+
+# put repos in the global namespace so that the daemon can load them with LoadableTargetOrigin
+for scenario_name, scenario in ASSET_RECONCILIATION_SCENARIOS.items():
+    d = Definitions(
+        assets=scenario.assets,
+    )
+
+    globals()["hacky_daemon_repo_" + scenario_name] = d.get_repository_def()
