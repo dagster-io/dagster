@@ -10,13 +10,7 @@ import {
   TextInput,
 } from '@dagster-io/ui';
 import React, {useState, useEffect, useRef} from 'react';
-import {
-  atomFamily,
-  selectorFamily,
-  useRecoilValue,
-  useSetRecoilState,
-  useRecoilCallback,
-} from 'recoil';
+import {atomFamily, selectorFamily, useRecoilValue, useSetRecoilState} from 'recoil';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 import {v4 as uuidv4} from 'uuid';
 
@@ -165,8 +159,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     inputRef.current?.focus();
   }, []);
 
-  const handleKeyUp = useRecoilCallback(
-    ({snapshot}) => async (event: React.KeyboardEvent) => {
+  const handleKeyUp = React.useCallback(
+    (event: React.KeyboardEvent) => {
       const maxIndex = allResultsJsx.length - 1;
 
       if (event.key === 'ArrowDown') {
@@ -176,10 +170,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
         event.preventDefault();
       } else if (event.key === 'Enter') {
-        const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
-        if (focusedItemIndex !== -1) {
-          allResultsJsx[focusedItemIndex].props.onClick();
-        }
         if (!selectedFilter) {
           setFocusedItemIndex(-1);
         }
@@ -194,9 +184,8 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         setFocusedItemIndex(-1);
       }
     },
-    [allResultsJsx],
+    [allResultsJsx.length, selectedFilter, setFocusedItemIndex, setIsOpen],
   );
-
   return (
     <>
       <TextInputWrapper>
@@ -366,7 +355,14 @@ const MenuItem = React.memo(({menuKey, index, ...rest}: MenuItemProps) => {
     }
   }, [isFocused]);
   return (
-    <div ref={divRef}>
+    <div
+      ref={divRef}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.currentTarget.querySelector('a')?.click();
+        }
+      }}
+    >
       <_MenuItem {...rest} active={isFocused} />
     </div>
   );
