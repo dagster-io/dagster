@@ -594,28 +594,28 @@ def _reexecute_job(
 
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
-    pipeline: IJob,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    check.inst_param(pipeline, "pipeline", IJob)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
 
-    if isinstance(pipeline, ReconstructableJob):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
         ExecuteRunWithPlanIterable(
             execution_plan=execution_plan,
             iterator=inner_plan_execution_iterator,
             execution_context_manager=PlanExecutionContextManager(
-                job=pipeline,
+                job=job,
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,
@@ -647,7 +647,7 @@ def execute_plan(
     return list(
         execute_plan_iterator(
             execution_plan=execution_plan,
-            pipeline=pipeline,
+            job=pipeline,
             run_config=run_config,
             dagster_run=dagster_run,
             instance=instance,

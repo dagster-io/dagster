@@ -59,7 +59,7 @@ def create_task(celery_app, **task_kwargs):
         events = [engine_event]
         for step_event in execute_plan_iterator(
             execution_plan=execution_plan,
-            pipeline=pipeline,
+            job=pipeline,
             dagster_run=pipeline_run,
             instance=instance,
             retry_mode=retry_mode,
