@@ -51,7 +51,6 @@ export const RUN_FRAGMENT = gql`
       }
     }
     pipelineSnapshotId
-    parentPipelineSnapshotId
     executionPlan {
       artifactsPersisted
       ...ExecutionPlanToGraphFragment

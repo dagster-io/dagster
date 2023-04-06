@@ -26,9 +26,9 @@ export type RunReExecutionQuery = {
         pipelineName: string;
         solidSelection: Array<string> | null;
         pipelineSnapshotId: string | null;
-        parentPipelineSnapshotId: string | null;
         stepKeysToExecute: Array<string> | null;
         updateTime: number | null;
+        parentPipelineSnapshotId: string | null;
         startTime: number | null;
         endTime: number | null;
         tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;

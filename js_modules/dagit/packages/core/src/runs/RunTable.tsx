@@ -181,7 +181,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     rootRunId
     parentRunId
     pipelineSnapshotId
-    parentPipelineSnapshotId
     pipelineName
     repositoryOrigin {
       id
