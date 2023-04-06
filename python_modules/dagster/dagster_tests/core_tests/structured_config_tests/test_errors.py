@@ -96,15 +96,15 @@ def test_invalid_config_class_directly_on_op() -> None:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match="""Error defining Dagster config class.
-Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'>.
+Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
-This value can be a:
+This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type""",
+    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
     ):
 
         @op
@@ -114,15 +114,15 @@ This value can be a:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match="""Error defining Dagster config class.
-Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'>.
+Unable to resolve config type <class 'test_errors.test_invalid_config_class_directly_on_op.<locals>.MyUnsupportedType'> to a supported Dagster config type.
 
 
-This value can be a:
+This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type""",
+    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
     ):
 
         @asset
@@ -134,15 +134,15 @@ def test_unsupported_primitive_config_type_directly_on_op() -> None:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match="""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\].
+Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
 
 
-This value can be a:
+This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type""",
+    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
     ):
 
         @op
@@ -152,15 +152,15 @@ This value can be a:
     with pytest.raises(
         DagsterInvalidPythonicConfigDefinitionError,
         match="""Error defining Dagster config class.
-Unable to resolve config type typing.Tuple\\[str, str\\].
+Unable to resolve config type typing.Tuple\\[str, str\\] to a supported Dagster config type.
 
 
-This value can be a:
+This config type can be a:
     - Python primitive type
         - int, float, bool, str, list
     - A Python Dict or List type containing other valid types
     - Custom data classes extending dagster.Config
-    - A Pydantic discriminated union type""",
+    - A Pydantic discriminated union type \\(https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions\\)""",
     ):
 
         @asset
