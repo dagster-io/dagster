@@ -25,7 +25,7 @@ from dagstermill.manager import Manager
 
 @contextlib.contextmanager
 def in_job_manager(
-    pipeline_name="hello_world_job",
+    job_name="hello_world_job",
     node_handle=NodeHandle("hello_world", None),
     step_key="hello_world",
     executable_dict=None,
@@ -44,7 +44,7 @@ def in_job_manager(
 
         pipeline_run_dict = pack_value(
             DagsterRun(
-                job_name=pipeline_name,
+                job_name=job_name,
                 run_id=run_id,
                 run_config=None,
                 step_keys_to_execute=None,
