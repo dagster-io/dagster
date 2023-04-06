@@ -6,6 +6,7 @@ import {MemoryRouter, Route} from 'react-router-dom';
 import {AnalyticsContext} from '../../../app/analytics';
 import {
   BulkActionStatus,
+  buildAssetBackfillData,
   buildAssetPartitionsStatusCounts,
   buildPartitionBackfill,
 } from '../../../graphql/types';
@@ -52,32 +53,34 @@ const CompletedResponse = buildBackfillDetailsQuery(
     backfillId: '1',
     status: BulkActionStatus.COMPLETED,
     timestamp: Date.now() / 1000 - 10000,
-    assetPartitionsStatusCounts: [
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 50,
-        numPartitionsFailed: 50,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 0,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 10,
-        numPartitionsFailed: 90,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 0,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 10,
-        numPartitionsFailed: 90,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 0,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 10,
-        numPartitionsFailed: 90,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 0,
-      }),
-    ],
+    assetBackfillData: buildAssetBackfillData({
+      assetPartitionsStatusCounts: [
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 50,
+          numPartitionsFailed: 50,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 0,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 10,
+          numPartitionsFailed: 90,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 0,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 10,
+          numPartitionsFailed: 90,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 0,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 10,
+          numPartitionsFailed: 90,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 0,
+        }),
+      ],
+    }),
   }),
 );
 
@@ -88,32 +91,34 @@ const InProgressResponse = buildBackfillDetailsQuery(
     status: BulkActionStatus.REQUESTED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
-    assetPartitionsStatusCounts: [
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-    ],
+    assetBackfillData: buildAssetBackfillData({
+      assetPartitionsStatusCounts: [
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+      ],
+    }),
   }),
 );
 
@@ -124,14 +129,16 @@ const CanceledResponse = buildBackfillDetailsQuery(
     status: BulkActionStatus.CANCELED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
-    assetPartitionsStatusCounts: [
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-    ],
+    assetBackfillData: buildAssetBackfillData({
+      assetPartitionsStatusCounts: [
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+      ],
+    }),
   }),
 );
 
@@ -142,13 +149,15 @@ const FailedResponse = buildBackfillDetailsQuery(
     status: BulkActionStatus.FAILED,
     timestamp: Date.now() / 1000 - 10000,
     endTimestamp: Date.now() / 1000 - 10,
-    assetPartitionsStatusCounts: [
-      buildAssetPartitionsStatusCounts({
-        numPartitionsCompleted: 25,
-        numPartitionsFailed: 25,
-        numPartitionsTargeted: 100,
-        numPartitionsRequested: 25,
-      }),
-    ],
+    assetBackfillData: buildAssetBackfillData({
+      assetPartitionsStatusCounts: [
+        buildAssetPartitionsStatusCounts({
+          numPartitionsCompleted: 25,
+          numPartitionsFailed: 25,
+          numPartitionsTargeted: 100,
+          numPartitionsRequested: 25,
+        }),
+      ],
+    }),
   }),
 );
