@@ -137,18 +137,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const handleKeyUp = (event: React.KeyboardEvent) => {
     const maxIndex = allResultsJsx.length - 1;
 
-    if (event.key === 'Tab') {
-      if (event.shiftKey) {
-        setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
-        event.preventDefault();
-      } else {
-        setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
-        event.preventDefault();
-      }
-    } else if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey)) {
       setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
       event.preventDefault();
-    } else if (event.key === 'ArrowUp') {
+    } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
       setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
       event.preventDefault();
     } else if (event.key === 'Enter') {
