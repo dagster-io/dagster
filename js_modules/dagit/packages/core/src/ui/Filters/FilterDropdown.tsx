@@ -5,7 +5,7 @@ import {
   Icon,
   IconWrapper,
   Menu,
-  MenuItem as _MenuItem,
+  MenuItem,
   Popover,
   TextInput,
 } from '@dagster-io/ui';
@@ -102,7 +102,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       return selectedFilter
         .getResults(search)
         .map((result, resultIndex) => (
-          <MenuItem
+          <FilterDropdownMenuItem
             key={`filter:${selectedFilter.name}:${result.key}`}
             onClick={() => selectValue(selectedFilter, result.value)}
             text={result.label}
@@ -116,7 +116,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       if (filteredFilters.includes(filter)) {
         const index = jsxResults.length;
         jsxResults.push(
-          <MenuItem
+          <FilterDropdownMenuItem
             key={`filter:${filter.name}`}
             onClick={() => {
               setSelectedFilter(filter);
@@ -136,7 +136,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       results[filter.name]?.forEach((result) => {
         const index = jsxResults.length;
         jsxResults.push(
-          <MenuItem
+          <FilterDropdownMenuItem
             key={`filter:${filter.name}:${result.key}`}
             onClick={() => selectValue(filter, result.value)}
             text={result.label}
@@ -348,28 +348,30 @@ const TextInputWrapper = styled.div`
   }
 `;
 
-type MenuItemProps = React.ComponentProps<typeof _MenuItem> & {
+type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   menuKey: string;
   index: number;
 };
-const MenuItem = React.memo(({menuKey, index, ...rest}: MenuItemProps) => {
-  const divRef = React.useRef<HTMLDivElement | null>(null);
-  const isFocused = useRecoilValue(
-    isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
-  );
-  React.useLayoutEffect(() => {
-    if (isFocused) {
-      divRef.current?.querySelector('a')?.focus();
-    }
-  }, [isFocused]);
-  return (
-    <div ref={divRef}>
-      <StyledMenuItem {...rest} active={isFocused} />
-    </div>
-  );
-});
+const FilterDropdownMenuItem = React.memo(
+  ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
+    const divRef = React.useRef<HTMLDivElement | null>(null);
+    const isFocused = useRecoilValue(
+      isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
+    );
+    React.useLayoutEffect(() => {
+      if (isFocused) {
+        divRef.current?.querySelector('a')?.focus();
+      }
+    }, [isFocused]);
+    return (
+      <div ref={divRef}>
+        <StyledMenuItem {...rest} active={isFocused} />
+      </div>
+    );
+  },
+);
 
-const StyledMenuItem = styled(_MenuItem)`
+const StyledMenuItem = styled(MenuItem)`
   &:focus {
     color: white;
     box-shadow: initial;
