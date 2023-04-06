@@ -137,7 +137,6 @@ export type PreviousRunsForScheduleQuery = {
           rootRunId: string | null;
           parentRunId: string | null;
           pipelineSnapshotId: string | null;
-          parentPipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
           startTime: number | null;
