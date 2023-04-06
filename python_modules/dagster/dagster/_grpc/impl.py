@@ -3,7 +3,7 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import Any, Generator, Iterator, Optional, Sequence, Tuple, Union
 
 import pendulum
 
@@ -171,12 +171,12 @@ def _instance_from_ref_for_dynamic_partitions(
 
 
 def _run_in_subprocess(
-    serialized_execute_run_args,
-    recon_pipeline,
-    termination_event,
+    serialized_execute_run_args: str,
+    recon_pipeline: ReconstructableJob,
+    termination_event: Any,
     subprocess_status_handler,
     run_event_handler,
-):
+) -> None:
     start_termination_thread(termination_event)
     try:
         execute_run_args = deserialize_value(serialized_execute_run_args, ExecuteExternalJobArgs)
