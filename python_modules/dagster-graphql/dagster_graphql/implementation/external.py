@@ -100,7 +100,7 @@ def get_external_execution_plan_or_raise(
     known_state: Optional[KnownExecutionState],
 ) -> ExternalExecutionPlan:
     return graphene_info.context.get_external_execution_plan(
-        external_pipeline=external_pipeline,
+        external_job=external_pipeline,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,

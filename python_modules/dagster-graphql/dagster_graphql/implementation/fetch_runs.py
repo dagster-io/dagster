@@ -359,7 +359,7 @@ def get_execution_plan(
     ensure_valid_config(external_pipeline, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_pipeline=external_pipeline,
+            external_job=external_pipeline,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,
