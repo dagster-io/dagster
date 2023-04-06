@@ -170,7 +170,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
         setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
         event.preventDefault();
-      } else if (event.key === 'Enter' || event.key === 'Space') {
+      } else if (event.key === 'Enter' || event.key === ' ') {
         const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
         if (focusedItemIndex === -1) {
           // They're typing in the search bar

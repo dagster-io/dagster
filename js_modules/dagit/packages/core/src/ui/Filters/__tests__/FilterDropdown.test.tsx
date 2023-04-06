@@ -202,7 +202,7 @@ describe('FilterDropdown Accessibility', () => {
     await testKeyboardNavigation(
       {key: 'Tab', code: 'Tab'},
       {key: 'Tab', code: 'Tab', shiftKey: true},
-      {key: 'Space', code: 'Space'},
+      {key: ' ', code: ' '},
     );
   });
 
