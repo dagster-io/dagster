@@ -312,7 +312,9 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         )
         return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
-        return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        return f"TRUNCATE {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+
+
 def _get_count_statement(table_slice: TableSlice) -> str:
     """Returns a SQL Statement that queries the number of rows affected by the delete statement."""
     if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:

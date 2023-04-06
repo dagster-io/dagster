@@ -113,7 +113,7 @@ def test_get_cleanup_statement():
         _get_cleanup_statement(
             TableSlice(database="database_abc", schema="schema1", table="table1")
         )
-        == "DELETE FROM database_abc.schema1.table1"
+        == "TRUNCATE database_abc.schema1.table1"
     )
 
 
