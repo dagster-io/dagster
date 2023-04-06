@@ -22,7 +22,7 @@ class StepHandlerContext:
         dagster_run: Optional[DagsterRun] = None,
     ) -> None:
         self._instance = instance
-        self._dagster_run = plan_context
+        self._plan_context = plan_context
         self._steps_by_key = {step.key: step for step in steps}
         self._execute_step_args = execute_step_args
         self._pipeline_run = dagster_run
@@ -52,7 +52,7 @@ class StepHandlerContext:
         return self._instance
 
     def get_step_context(self, step_key: str) -> IStepContext:
-        return self._dagster_run.for_step(self._steps_by_key[step_key])
+        return self._plan_context.for_step(self._steps_by_key[step_key])
 
 
 class CheckStepHealthResult(
