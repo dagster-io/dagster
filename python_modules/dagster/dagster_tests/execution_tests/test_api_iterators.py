@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from dagster import (
     DagsterEventType,
@@ -58,9 +60,9 @@ def simple_job():
 
 
 def test_execute_run_iterator():
-    records = []
+    records: List[EventLogEntry] = []
 
-    def event_callback(record):
+    def event_callback(record: EventLogEntry) -> None:
         assert isinstance(record, EventLogEntry)
         records.append(record)
 
@@ -93,9 +95,9 @@ def test_execute_run_iterator():
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
         messages = [record.user_message for record in records if not record.is_dagster_event]
-        job_failure_events = [event for event in events if event.is_pipeline_failure]
+        job_failure_events = [event for event in events if event.is_job_failure]
         assert len(job_failure_events) == 1
-        assert "GeneratorExit" in job_failure_events[0].pipeline_failure_data.error.message
+        assert "GeneratorExit" in job_failure_events[0].job_failure_data.error.message
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
