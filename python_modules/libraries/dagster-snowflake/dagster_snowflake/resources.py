@@ -544,7 +544,7 @@ class SnowflakeResource(ConfigurableResourceFactory):
     config_schema=infer_schema_from_config_class(SnowflakeResource),
     description="This resource is for connecting to the Snowflake data warehouse",
 )
-def snowflake_resource(context):
+def snowflake_resource(context) -> SnowflakeConnection:
     """A resource for connecting to the Snowflake data warehouse. The returned resource object is an
     instance of :py:class:`SnowflakeConnection`.
 
@@ -581,7 +581,7 @@ def snowflake_resource(context):
                 }
             )
     """
-    return SnowflakeConnection(context.resource_config, context.log)
+    return SnowflakeResource.from_resource_context(context)
 
 
 def _filter_password(args):
