@@ -91,9 +91,10 @@ def _generate_pythonic_config_error_message(
     invalid_type: Any,
     is_resource: bool = False,
 ) -> str:
+    invalid_type_name = getattr(invalid_type, "__name__", "<my type>")
     pythonic_config_error_verbiage = (
         PYTHONIC_CONFIG_ERROR_VERBIAGE + (PYTHONIC_RESOURCE_ADDITIONAL_TYPES if is_resource else "")
-    ).format(invalid_type_str=invalid_type.__name__)
+    ).format(invalid_type_str=invalid_type_name)
 
     return (
         """
