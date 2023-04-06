@@ -165,7 +165,12 @@ class GraphenePartition(graphene.ObjectType):
     class Meta:
         name = "Partition"
 
-    def __init__(self, external_repository_handle, external_partition_set, partition_name):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+        partition_name: str,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -260,7 +265,11 @@ class GraphenePartitionSet(graphene.ObjectType):
     class Meta:
         name = "PartitionSet"
 
-    def __init__(self, external_repository_handle, external_partition_set):
+    def __init__(
+        self,
+        external_repository_handle: RepositoryHandle,
+        external_partition_set: ExternalPartitionSet,
+    ):
         self._external_repository_handle = check.inst_param(
             external_repository_handle, "external_respository_handle", RepositoryHandle
         )
@@ -294,7 +303,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             reverse=reverse or False,
         )
 
-    def resolve_partition(self, graphene_info: ResolveInfo, partition_name):
+    def resolve_partition(self, graphene_info: ResolveInfo, partition_name: str):
         return get_partition_by_name(
             graphene_info,
             self._external_repository_handle,
