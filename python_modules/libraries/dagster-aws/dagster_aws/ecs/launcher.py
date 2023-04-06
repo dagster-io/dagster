@@ -471,7 +471,6 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             return False
 
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
-
         return True
 
     def _get_current_task_metadata(self):
