@@ -1,6 +1,7 @@
 import {render, fireEvent, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
+import {RecoilRoot} from 'recoil';
 
 import '@testing-library/jest-dom/extend-expect';
 import {FilterDropdown, FilterDropdownButton} from '../FilterDropdown';
@@ -41,11 +42,13 @@ beforeEach(() => {
 describe('FilterDropdown', () => {
   test('displays filter categories initially', () => {
     render(
-      <FilterDropdown
-        filters={mockFilters}
-        setIsOpen={jest.fn()}
-        setPortaledElements={jest.fn()}
-      />,
+      <RecoilRoot>
+        <FilterDropdown
+          filters={mockFilters}
+          setIsOpen={jest.fn()}
+          setPortaledElements={jest.fn()}
+        />
+      </RecoilRoot>,
     );
     expect(screen.getByText(/Type/g)).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
@@ -53,11 +56,13 @@ describe('FilterDropdown', () => {
 
   test('searches and displays matching filters', async () => {
     render(
-      <FilterDropdown
-        filters={mockFilters}
-        setIsOpen={jest.fn()}
-        setPortaledElements={jest.fn()}
-      />,
+      <RecoilRoot>
+        <FilterDropdown
+          filters={mockFilters}
+          setIsOpen={jest.fn()}
+          setPortaledElements={jest.fn()}
+        />
+      </RecoilRoot>,
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     fireEvent.change(searchInput, {target: {value: 'type'}});
@@ -69,11 +74,13 @@ describe('FilterDropdown', () => {
 
   test('displays no results when no filters match', async () => {
     render(
-      <FilterDropdown
-        filters={mockFilters}
-        setIsOpen={jest.fn()}
-        setPortaledElements={jest.fn()}
-      />,
+      <RecoilRoot>
+        <FilterDropdown
+          filters={mockFilters}
+          setIsOpen={jest.fn()}
+          setPortaledElements={jest.fn()}
+        />
+      </RecoilRoot>,
     );
     const searchInput = screen.getByPlaceholderText('Search filters...');
     fireEvent.change(searchInput, {target: {value: 'nonexistent'}});
@@ -83,7 +90,11 @@ describe('FilterDropdown', () => {
 
 describe('FilterDropdownButton', () => {
   test('opens and closes the dropdown on click', async () => {
-    render(<FilterDropdownButton filters={mockFilters} />);
+    render(
+      <RecoilRoot>
+        <FilterDropdownButton filters={mockFilters} />
+      </RecoilRoot>,
+    );
     const button = screen.getByRole('button');
     userEvent.click(button);
     await waitFor(() => {
@@ -96,7 +107,11 @@ describe('FilterDropdownButton', () => {
   });
 
   test('closes the dropdown when clicking outside', async () => {
-    render(<FilterDropdownButton filters={mockFilters} />);
+    render(
+      <RecoilRoot>
+        <FilterDropdownButton filters={mockFilters} />
+      </RecoilRoot>,
+    );
     const button = screen.getByRole('button');
     userEvent.click(button);
     await waitFor(() => {
@@ -111,7 +126,11 @@ describe('FilterDropdownButton', () => {
 
 describe('FilterDropdown Accessibility', () => {
   test('keyboard navigation and selection', async () => {
-    render(<FilterDropdownButton filters={mockFilters} />);
+    render(
+      <RecoilRoot>
+        <FilterDropdownButton filters={mockFilters} />
+      </RecoilRoot>,
+    );
 
     userEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeInTheDocument();
@@ -176,19 +195,27 @@ describe('FilterDropdown Accessibility', () => {
   });
 
   test('escape key behavior', async () => {
-    render(<FilterDropdownButton filters={mockFilters} />);
+    render(
+      <RecoilRoot>
+        <FilterDropdownButton filters={mockFilters} />
+      </RecoilRoot>,
+    );
 
     userEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeVisible();
 
     const input = screen.getByLabelText('Search filters');
+    expect(input).toHaveFocus();
 
     expect(screen.queryByText('Type 1')).toBeNull();
 
     fireEvent.keyUp(input, {key: 'ArrowDown', code: 'ArrowDown'});
+
     fireEvent.keyUp(input, {key: 'Enter', code: 'Enter'});
 
-    expect(screen.getByText('Type 1')).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByText('Type 1')).toBeVisible();
+    });
 
     fireEvent.keyUp(input, {key: 'Escape', code: 'Escape'});
 

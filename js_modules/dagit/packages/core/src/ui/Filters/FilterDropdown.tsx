@@ -165,34 +165,37 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     inputRef.current?.focus();
   }, []);
 
-  const handleKeyUp = useRecoilCallback(({snapshot}) => async (event: React.KeyboardEvent) => {
-    const maxIndex = allResultsJsx.length - 1;
+  const handleKeyUp = useRecoilCallback(
+    ({snapshot}) => async (event: React.KeyboardEvent) => {
+      const maxIndex = allResultsJsx.length - 1;
 
-    if (event.key === 'ArrowDown') {
-      setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
-      event.preventDefault();
-    } else if (event.key === 'ArrowUp') {
-      setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
-      event.preventDefault();
-    } else if (event.key === 'Enter') {
-      const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
-      if (focusedItemIndex !== -1) {
-        allResultsJsx[focusedItemIndex].props.onClick();
-      }
-      if (!selectedFilter) {
+      if (event.key === 'ArrowDown') {
+        setFocusedItemIndex((prevIndex) => (prevIndex === maxIndex ? -1 : prevIndex + 1));
+        event.preventDefault();
+      } else if (event.key === 'ArrowUp') {
+        setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
+        event.preventDefault();
+      } else if (event.key === 'Enter') {
+        const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
+        if (focusedItemIndex !== -1) {
+          allResultsJsx[focusedItemIndex].props.onClick();
+        }
+        if (!selectedFilter) {
+          setFocusedItemIndex(-1);
+        }
+      } else if (event.key === 'Escape') {
+        if (selectedFilter) {
+          setSelectedFilter(null);
+          setFocusedItemIndex(-1);
+        } else {
+          setIsOpen(false);
+        }
+      } else if (event.target === inputRef.current) {
         setFocusedItemIndex(-1);
       }
-    } else if (event.key === 'Escape') {
-      if (selectedFilter) {
-        setSelectedFilter(null);
-        setFocusedItemIndex(-1);
-      } else {
-        setIsOpen(false);
-      }
-    } else if (event.target === inputRef.current) {
-      setFocusedItemIndex(-1);
-    }
-  });
+    },
+    [allResultsJsx],
+  );
 
   return (
     <>
@@ -352,20 +355,22 @@ type MenuItemProps = React.ComponentProps<typeof _MenuItem> & {
   menuKey: string;
   index: number;
 };
-const MenuItem = ({menuKey, index, ...rest}: MenuItemProps) => {
+const MenuItem = React.memo(({menuKey, index, ...rest}: MenuItemProps) => {
   const divRef = React.useRef<HTMLDivElement | null>(null);
   const isFocused = useRecoilValue(
     isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
   );
   React.useLayoutEffect(() => {
-    divRef.current?.querySelector('a')?.focus();
+    if (isFocused) {
+      divRef.current?.querySelector('a')?.focus();
+    }
   }, [isFocused]);
   return (
     <div ref={divRef}>
       <_MenuItem {...rest} active={isFocused} />
     </div>
   );
-};
+});
 
 const SlashShortcut = styled.div`
   border-radius: 4px;
