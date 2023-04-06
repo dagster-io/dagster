@@ -2,7 +2,7 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterator, NamedTuple, Optional
+from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple
 
 import pendulum
 import pytest
@@ -21,7 +21,7 @@ from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import WorkspaceFileTarget
+from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
@@ -82,8 +82,9 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 
 @contextmanager
 def instance_with_single_code_location_multiple_repos_with_sensors(
-    overrides=None, workspace_load_target=None
-) -> Generator[tuple, None, None]:
+    overrides: Optional[Mapping[str, Any]] = None,
+    workspace_load_target: Optional[WorkspaceLoadTarget] = None,
+) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, ExternalRepository]]]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
@@ -96,7 +97,7 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 
 @contextmanager
 def instance_with_multiple_code_locations(
-    overrides=None, workspace_load_target=None
+    overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
 ) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
