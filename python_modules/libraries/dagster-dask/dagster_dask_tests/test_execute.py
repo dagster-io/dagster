@@ -191,7 +191,7 @@ def test_dask_terminate():
         )
 
         for event in execute_run_iterator(
-            pipeline=reconstructable(sleepy_dask_job),
+            i_job=reconstructable(sleepy_dask_job),
             dagster_run=dagster_run,
             instance=instance,
         ):

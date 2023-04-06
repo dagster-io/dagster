@@ -67,12 +67,12 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(
-    pipeline: IJob,
+    job: IJob,
     dagster_run: DagsterRun,
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
-    check.inst_param(pipeline, "pipeline", IJob)
+    check.inst_param(job, "job", IJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -142,14 +142,14 @@ def execute_run_iterator(
         # when `execute_run_iterator` is directly called, the sub pipeline hasn't been created
         # note that when we receive the solids to execute via DagsterRun, it won't support
         # solid selection query syntax
-        pipeline = pipeline.subset_for_execution_from_existing_job(
+        job = job.subset_for_execution_from_existing_job(
             frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
             asset_selection=dagster_run.asset_selection,
         )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
-    if isinstance(pipeline, ReconstructableJob):
-        pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    execution_plan = _get_execution_plan_from_run(job, dagster_run, instance)
+    if isinstance(job, ReconstructableJob):
+        job = job.with_repository_load_data(execution_plan.repository_load_data)
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -157,7 +157,7 @@ def execute_run_iterator(
             iterator=job_execution_iterator,
             execution_context_manager=PlanOrchestrationContextManager(
                 context_event_generator=orchestration_context_event_generator,
-                job=pipeline,
+                job=job,
                 execution_plan=execution_plan,
                 dagster_run=dagster_run,
                 instance=instance,
