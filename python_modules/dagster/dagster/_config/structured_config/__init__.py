@@ -143,6 +143,11 @@ class Config(MakeConfigCacheable):
                 output[key] = value
         return output
 
+    @classmethod
+    def to_config_schema(cls) -> DefinitionConfigSchema:
+        """Converts the config structure represented by this class into a DefinitionConfigSchema."""
+        return DefinitionConfigSchema(infer_schema_from_config_class(cls))
+
 
 @experimental
 class PermissiveConfig(Config):
@@ -566,6 +571,26 @@ class ConfigurableResourceFactory(
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource(context)
+
+    @classmethod
+    def from_resource_context(cls, context: InitResourceContext) -> TResValue:
+        """Creates a new instance of this resource from a populated InitResourceContext.
+        Useful when creating a resource from a function-based resource, for backwards
+        compatibility purposes.
+
+        Example usage:
+
+        .. code-block:: python
+
+            class MyResource(ConfigurableResource):
+                my_str: str
+
+            @resource(config_schema=MyResource.to_config_schema())
+            def my_resource(context: InitResourceContext) -> MyResource:
+                return MyResource.from_resource_context(context)
+
+        """
+        return cls(**context.resource_config).create_resource(context)
 
 
 @experimental
