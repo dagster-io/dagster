@@ -1,5 +1,4 @@
 from dagster import ConfigurableResourceFactory, resource
-from dagster._config.structured_config import infer_schema_from_config_class
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
 from twilio.rest import Client
@@ -27,8 +26,8 @@ class TwilioResource(ConfigurableResourceFactory[Client]):
 
 
 @resource(
-    config_schema=infer_schema_from_config_class(TwilioResource),
+    config_schema=TwilioResource.to_config_schema(),
     description="This resource is for connecting to Twilio",
 )
 def twilio_resource(context: InitResourceContext) -> Client:
-    return TwilioResource(**context.resource_config).create_resource(context=context)
+    return TwilioResource.from_resource_context(context)
