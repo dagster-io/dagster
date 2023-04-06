@@ -337,7 +337,9 @@ def create_backfill_run(
     )
 
 
-def _fetch_last_run(instance, external_partition_set, partition_name):
+def _fetch_last_run(
+    instance: DagsterInstance, external_partition_set: ExternalPartitionSet, partition_name: str
+) -> Optional[DagsterRun]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
     check.str_param(partition_name, "partition_name")
