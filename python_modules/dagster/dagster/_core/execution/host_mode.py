@@ -161,59 +161,59 @@ def host_mode_execution_context_event_generator(
 
 
 def execute_run_host_mode(
-    pipeline: ReconstructableJob,
-    pipeline_run: DagsterRun,
+    recon_job: ReconstructableJob,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ) -> Sequence[DagsterEvent]:
-    check.inst_param(pipeline, "pipeline", ReconstructableJob)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(recon_job, "recon_job", ReconstructableJob)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     executor_defs = executor_defs if executor_defs is not None else [multi_or_in_process_executor]
 
-    if pipeline_run.status == DagsterRunStatus.CANCELED:
+    if dagster_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
             message,
-            pipeline_run,
+            dagster_run,
         )
         raise DagsterInvariantViolationError(message)
 
     check.invariant(
-        pipeline_run.status == DagsterRunStatus.NOT_STARTED
-        or pipeline_run.status == DagsterRunStatus.STARTING,
+        dagster_run.status == DagsterRunStatus.NOT_STARTED
+        or dagster_run.status == DagsterRunStatus.STARTING,
         desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.job_name, pipeline_run.run_id, pipeline_run.status
+            dagster_run.job_name, dagster_run.run_id, dagster_run.status
         ),
     )
 
-    pipeline = pipeline.subset_for_execution_from_existing_job(
-        solids_to_execute=frozenset(pipeline_run.solids_to_execute)
-        if pipeline_run.solids_to_execute
+    recon_job = recon_job.subset_for_execution_from_existing_job(
+        solids_to_execute=frozenset(dagster_run.solids_to_execute)
+        if dagster_run.solids_to_execute
         else None,
-        asset_selection=pipeline_run.asset_selection,
+        asset_selection=dagster_run.asset_selection,
     )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
-        check.not_none(pipeline_run.execution_plan_snapshot_id)
+        check.not_none(dagster_run.execution_plan_snapshot_id)
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
-        pipeline_run.job_name,
+        dagster_run.job_name,
         execution_plan_snapshot,
     )
-    pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
+    recon_job = recon_job.with_repository_load_data(execution_plan.repository_load_data)
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
         iterator=job_execution_iterator,
         execution_context_manager=PlanOrchestrationContextManager(
             context_event_generator=host_mode_execution_context_event_generator,
-            job=pipeline,
+            job=recon_job,
             execution_plan=execution_plan,
-            run_config=pipeline_run.run_config,
-            dagster_run=pipeline_run,
+            run_config=dagster_run.run_config,
+            dagster_run=dagster_run,
             instance=instance,
             raise_on_error=raise_on_error,
             executor_defs=executor_defs,
