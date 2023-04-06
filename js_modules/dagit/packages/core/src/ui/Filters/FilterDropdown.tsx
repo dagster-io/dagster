@@ -161,10 +161,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
   const handleKeyDown = useRecoilCallback(
     ({snapshot}) => async (event: React.KeyboardEvent) => {
       const maxIndex = allResultsJsx.length - 1;
