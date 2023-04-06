@@ -45,12 +45,12 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", fn_name)
 
     with instance_for_test() as instance:
         try:
             with execute_job(
-                job=recon_pipeline,
+                job=recon_job,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
@@ -289,13 +289,13 @@ def test_error_notebook():
         assert len(result.get_failed_step_keys()) > 0
 
     result = None
-    recon_pipeline = ReconstructableJob.for_module("dagstermill.examples.repository", "error_job")
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", "error_job")
 
     # test that the notebook is saved on failure
     with instance_for_test() as instance:
         try:
             result = execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
                 raise_on_error=False,

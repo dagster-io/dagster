@@ -25,7 +25,7 @@ def coodinator(instance):
 
 
 def create_run(instance, external_pipeline, **kwargs):
-    pipeline_args = merge_dicts(
+    job_args = merge_dicts(
         {
             "pipeline_name": "foo",
             "external_pipeline_origin": external_pipeline.get_external_origin(),
@@ -33,18 +33,18 @@ def create_run(instance, external_pipeline, **kwargs):
         },
         kwargs,
     )
-    return create_run_for_test(instance, **pipeline_args)
+    return create_run_for_test(instance, **job_args)
 
 
 def test_submit_run(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
-        external_pipeline = (
+        external_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
             .get_full_external_job("foo")
         )
 
-        run = create_run(instance, external_pipeline, run_id="foo-1")
+        run = create_run(instance, external_job, run_id="foo-1")
         returned_run = coodinator.submit_run(SubmitRunContext(run, workspace))
         assert returned_run.run_id == "foo-1"
         assert returned_run.status == DagsterRunStatus.STARTING
@@ -57,15 +57,13 @@ def test_submit_run(instance, coodinator):
 
 def test_submit_run_checks_status(instance, coodinator):
     with get_bar_workspace(instance) as workspace:
-        external_pipeline = (
+        external_job = (
             workspace.get_code_location("bar_code_location")
             .get_repository("bar_repo")
             .get_full_external_job("foo")
         )
 
-        run = create_run(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.STARTED
-        )
+        run = create_run(instance, external_job, run_id="foo-1", status=DagsterRunStatus.STARTED)
         coodinator.submit_run(SubmitRunContext(run, workspace))
 
         # assert that runs not in a NOT_STARTED state are not launched

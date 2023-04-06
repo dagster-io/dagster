@@ -35,9 +35,9 @@ def test_mode_snap(snapshot):
     def a_job():
         pass
 
-    pipeline_snapshot = JobSnapshot.from_job_def(a_job)
-    assert len(pipeline_snapshot.mode_def_snaps) == 1
-    mode_def_snap = pipeline_snapshot.mode_def_snaps[0]
+    job_snapshot = JobSnapshot.from_job_def(a_job)
+    assert len(job_snapshot.mode_def_snaps) == 1
+    mode_def_snap = job_snapshot.mode_def_snaps[0]
 
     snapshot.assert_match(serialize_value(mode_def_snap))
 

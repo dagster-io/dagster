@@ -52,7 +52,7 @@ class TestQueuedRunCoordinator:
         return location.get_repository("bar_repo").get_full_external_job("foo")
 
     def create_run_for_test(self, instance, external_pipeline, **kwargs):
-        pipeline_args = merge_dicts(
+        job_args = merge_dicts(
             {
                 "pipeline_name": "foo",
                 "external_pipeline_origin": external_pipeline.get_external_origin(),
@@ -60,7 +60,7 @@ class TestQueuedRunCoordinator:
             },
             kwargs,
         )
-        return create_run_for_test(instance, **pipeline_args)
+        return create_run_for_test(instance, **job_args)
 
     def test_config(self):
         with environ({"MAX_RUNS": "10", "DEQUEUE_INTERVAL": "7"}):

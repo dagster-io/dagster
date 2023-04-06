@@ -87,10 +87,10 @@ def test_host_run_worker():
             run_config=run_config,
         )
 
-        recon_pipeline = reconstructable(job_with_resources)
+        recon_job = reconstructable(job_with_resources)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.job_name),
+            ExplodingTestPipeline(recon_job.repository, recon_job.job_name),
             dagster_run,
             instance,
             executor_defs=[multiprocess_executor],
@@ -135,10 +135,10 @@ def test_custom_executor_fn():
             run_config=run_config,
         )
 
-        recon_pipeline = reconstructable(job_with_resources)
+        recon_job = reconstructable(job_with_resources)
 
         execute_run_host_mode(
-            ExplodingTestPipeline(recon_pipeline.repository, recon_pipeline.job_name),
+            ExplodingTestPipeline(recon_job.repository, recon_job.job_name),
             dagster_run,
             instance,
             executor_defs=[test_executor],

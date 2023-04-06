@@ -41,7 +41,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert "__dm_input_names" in parameters
 
         context_args = parameters["__dm_context"]
-        pipeline_context_args = dict(
+        job_context_args = dict(
             executable_dict=parameters["__dm_executable_dict"],
             job_run_dict=parameters["__dm_pipeline_run_dict"],
             node_handle_kwargs=parameters["__dm_node_handle_kwargs"],
@@ -50,10 +50,10 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
             **context_args,
         )
 
-        for key in pipeline_context_args:
-            pipeline_context_args[key] = _seven.json.dumps(pipeline_context_args[key])
+        for key in job_context_args:
+            job_context_args[key] = _seven.json.dumps(job_context_args[key])
 
-        content = INJECTED_BOILERPLATE.format(job_context_args=pipeline_context_args)
+        content = INJECTED_BOILERPLATE.format(job_context_args=job_context_args)
 
         for input_name in parameters["__dm_input_names"]:
             dm_load_input_call = f"__dm_dagstermill._load_input_parameter('{input_name}')"

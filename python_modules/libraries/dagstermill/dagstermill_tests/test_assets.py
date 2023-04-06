@@ -33,12 +33,12 @@ def cleanup_result_notebook(result: ExecutionResult):
 @contextmanager
 def exec_for_test(job_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructableJob.for_module("dagstermill.examples.repository", job_name)
+    recon_job = ReconstructableJob.for_module("dagstermill.examples.repository", job_name)
 
     with instance_for_test() as instance:
         try:
             with execute_job(
-                recon_pipeline,
+                recon_job,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,

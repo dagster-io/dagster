@@ -14,22 +14,22 @@ def load_pipeline_via_cli_runner(cli_args):
     @click.command(name="test_pipeline_command")
     @job_target_argument
     def command(**kwargs):
-        with get_external_job_from_kwargs(DagsterInstance.get(), "", kwargs) as external_pipeline:
-            capture_result["external_pipeline"] = external_pipeline
+        with get_external_job_from_kwargs(DagsterInstance.get(), "", kwargs) as external_job:
+            capture_result["external_pipeline"] = external_job
 
     with instance_for_test():
         runner = CliRunner()
         result = runner.invoke(command, cli_args)
 
-    external_pipeline = capture_result["external_pipeline"]
-    return result, external_pipeline
+    external_job = capture_result["external_pipeline"]
+    return result, external_job
 
 
 def successfully_load_pipeline_via_cli(cli_args):
-    result, external_pipeline = load_pipeline_via_cli_runner(cli_args)
+    result, external_job = load_pipeline_via_cli_runner(cli_args)
     assert result.exit_code == 0, result
-    assert isinstance(external_pipeline, ExternalJob)
-    return external_pipeline
+    assert isinstance(external_job, ExternalJob)
+    return external_job
 
 
 PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE = file_relative_path(
@@ -56,9 +56,9 @@ def get_all_loading_combos():
 
 @pytest.mark.parametrize("cli_args", get_all_loading_combos())
 def test_valid_loading_combos_single_pipeline_code_location(cli_args):
-    external_pipeline = successfully_load_pipeline_via_cli(cli_args)
-    assert isinstance(external_pipeline, ExternalJob)
-    assert external_pipeline.name == "hello_world_job"
+    external_job = successfully_load_pipeline_via_cli(cli_args)
+    assert isinstance(external_job, ExternalJob)
+    assert external_job.name == "hello_world_job"
 
 
 def test_repository_target_argument_one_repo_and_specified_wrong():

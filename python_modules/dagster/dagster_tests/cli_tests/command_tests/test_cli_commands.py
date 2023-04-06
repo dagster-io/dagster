@@ -826,9 +826,9 @@ def test_run_delete_force(force_flag):
 
 def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
-        pipeline_result = foo_job.execute_in_process(instance=instance)
+        job_result = foo_job.execute_in_process(instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        result = runner.invoke(run_delete_command, args=[job_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output
         assert result.exit_code == 1
 

@@ -271,8 +271,8 @@ def get_external_pipeline_subset_result(
             op_selection=solid_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
         )
-        external_pipeline_data = external_job_data_from_def(definition)
-        return ExternalJobSubsetResult(success=True, external_job_data=external_pipeline_data)
+        external_job_data = external_job_data_from_def(definition)
+        return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
     except Exception:
         return ExternalJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())

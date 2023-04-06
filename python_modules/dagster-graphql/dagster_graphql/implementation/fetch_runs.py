@@ -340,9 +340,9 @@ def validate_pipeline_config(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, run_config)
-    return GraphenePipelineConfigValidationValid(pipeline_name=external_pipeline.name)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
+    return GraphenePipelineConfigValidationValid(pipeline_name=external_job.name)
 
 
 @capture_error
@@ -355,11 +355,11 @@ def get_execution_plan(
 
     check.inst_param(selector, "selector", JobSubsetSelector)
 
-    external_pipeline = get_external_job_or_raise(graphene_info, selector)
-    ensure_valid_config(external_pipeline, run_config)
+    external_job = get_external_job_or_raise(graphene_info, selector)
+    ensure_valid_config(external_job, run_config)
     return GrapheneExecutionPlan(
         graphene_info.context.get_external_execution_plan(
-            external_job=external_pipeline,
+            external_job=external_job,
             run_config=run_config,
             step_keys_to_execute=None,
             known_state=None,

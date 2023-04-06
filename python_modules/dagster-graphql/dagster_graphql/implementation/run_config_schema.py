@@ -32,10 +32,10 @@ def resolve_run_config_schema_or_error(
     if mode and mode != DEFAULT_MODE_NAME:
         return GrapheneModeNotFoundError(selector=selector, mode=mode)
 
-    external_pipeline = get_external_job_or_raise(graphene_info, selector)
+    external_job = get_external_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
-        represented_pipeline=external_pipeline,
+        represented_pipeline=external_job,
         mode=DEFAULT_MODE_NAME,
     )
 

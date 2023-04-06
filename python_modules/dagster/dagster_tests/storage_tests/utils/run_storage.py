@@ -213,13 +213,13 @@ class TestRunStorage:
         assert storage
         job_def_a = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         job_def_b = GraphDefinition(name="some_other_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot_a = job_def_a.get_job_snapshot()
-        pipeline_snapshot_b = job_def_b.get_job_snapshot()
-        pipeline_snapshot_a_id = create_job_snapshot_id(pipeline_snapshot_a)
-        pipeline_snapshot_b_id = create_job_snapshot_id(pipeline_snapshot_b)
+        job_snapshot_a = job_def_a.get_job_snapshot()
+        job_snapshot_b = job_def_b.get_job_snapshot()
+        job_snapshot_a_id = create_job_snapshot_id(job_snapshot_a)
+        job_snapshot_b_id = create_job_snapshot_id(job_snapshot_b)
 
-        assert storage.add_job_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
-        assert storage.add_job_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
+        assert storage.add_job_snapshot(job_snapshot_a) == job_snapshot_a_id
+        assert storage.add_job_snapshot(job_snapshot_b) == job_snapshot_b_id
 
         one = make_new_run_id()
         two = make_new_run_id()
@@ -227,22 +227,22 @@ class TestRunStorage:
             TestRunStorage.build_run(
                 run_id=one,
                 pipeline_name="some_pipeline",
-                pipeline_snapshot_id=pipeline_snapshot_a_id,
+                pipeline_snapshot_id=job_snapshot_a_id,
             )
         )
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=two,
                 pipeline_name="some_other_pipeline",
-                pipeline_snapshot_id=pipeline_snapshot_b_id,
+                pipeline_snapshot_id=job_snapshot_b_id,
             )
         )
         assert len(storage.get_runs()) == 2
-        runs_a = storage.get_runs(RunsFilter(snapshot_id=pipeline_snapshot_a_id))
+        runs_a = storage.get_runs(RunsFilter(snapshot_id=job_snapshot_a_id))
         assert len(runs_a) == 1
         assert runs_a[0].run_id == one
 
-        runs_b = storage.get_runs(RunsFilter(snapshot_id=pipeline_snapshot_b_id))
+        runs_b = storage.get_runs(RunsFilter(snapshot_id=job_snapshot_b_id))
         assert len(runs_b) == 1
         assert runs_b[0].run_id == two
 
@@ -889,41 +889,41 @@ class TestRunStorage:
 
     def test_add_get_snapshot(self, storage):
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-        pipeline_snapshot = job_def.get_job_snapshot()
-        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
+        job_snapshot = job_def.get_job_snapshot()
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
 
-        assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
-        fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
-        assert fetched_pipeline_snapshot
-        assert serialize_pp(fetched_pipeline_snapshot) == serialize_pp(pipeline_snapshot)
-        assert storage.has_job_snapshot(pipeline_snapshot_id)
+        assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
+        fetch_job_snapshot = storage.get_job_snapshot(job_snapshot_id)
+        assert fetch_job_snapshot
+        assert serialize_pp(fetch_job_snapshot) == serialize_pp(job_snapshot)
+        assert storage.has_job_snapshot(job_snapshot_id)
         assert not storage.has_job_snapshot("nope")
 
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_job_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(job_snapshot_id)
 
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = "lkasjdflkjasdf"
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = job_def.get_job_snapshot()
+        job_snapshot = job_def.get_job_snapshot()
 
-        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
 
         run_with_snapshot = DagsterRun(
             run_id=run_with_snapshot_id,
             job_name=job_def.name,
-            job_snapshot_id=pipeline_snapshot_id,
+            job_snapshot_id=job_snapshot_id,
         )
 
-        assert not storage.has_job_snapshot(pipeline_snapshot_id)
+        assert not storage.has_job_snapshot(job_snapshot_id)
 
-        assert storage.add_job_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+        assert storage.add_job_snapshot(job_snapshot) == job_snapshot_id
 
-        assert serialize_pp(storage.get_job_snapshot(pipeline_snapshot_id)) == serialize_pp(
-            pipeline_snapshot
+        assert serialize_pp(storage.get_job_snapshot(job_snapshot_id)) == serialize_pp(
+            job_snapshot
         )
 
         storage.add_run(run_with_snapshot)
@@ -933,7 +933,7 @@ class TestRunStorage:
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_job_snapshot(pipeline_snapshot_id)
+            assert not storage.has_job_snapshot(job_snapshot_id)
             assert not storage.has_run(run_with_snapshot_id)
 
     def test_single_write_with_missing_snapshot(self, storage: RunStorage):
@@ -1311,7 +1311,7 @@ class TestRunStorage:
         run_to_add = TestRunStorage.build_run(pipeline_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
-        dagster_pipeline_start_event = DagsterEvent(
+        dagster_job_start_event = DagsterEvent(
             message="a message",
             event_type_value=DagsterEventType.PIPELINE_START.value,
             job_name="pipeline_name",
@@ -1321,7 +1321,7 @@ class TestRunStorage:
             logging_tags=None,
         )
 
-        storage.handle_run_event(run_id, dagster_pipeline_start_event)
+        storage.handle_run_event(run_id, dagster_job_start_event)
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
@@ -1368,16 +1368,16 @@ class TestRunStorage:
 
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
-        pipeline_snapshot = job_def.get_job_snapshot()
-        pipeline_snapshot_id = create_job_snapshot_id(pipeline_snapshot)
-        new_pipeline_snapshot_id = f"{pipeline_snapshot_id}-new-snapshot"
+        job_snapshot = job_def.get_job_snapshot()
+        job_snapshot_id = create_job_snapshot_id(job_snapshot)
+        new_job_snapshot_id = f"{job_snapshot_id}-new-snapshot"
 
-        storage.add_snapshot(pipeline_snapshot, snapshot_id=new_pipeline_snapshot_id)
-        assert not storage.has_snapshot(pipeline_snapshot_id)
-        assert storage.has_snapshot(new_pipeline_snapshot_id)
+        storage.add_snapshot(job_snapshot, snapshot_id=new_job_snapshot_id)
+        assert not storage.has_snapshot(job_snapshot_id)
+        assert storage.has_snapshot(new_job_snapshot_id)
 
         execution_plan = create_execution_plan(job_def)
-        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_pipeline_snapshot_id)
+        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_job_snapshot_id)
         ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
         new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"
 

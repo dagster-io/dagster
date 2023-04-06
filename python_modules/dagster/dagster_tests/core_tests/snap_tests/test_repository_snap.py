@@ -42,11 +42,11 @@ def test_repository_snap_all_props():
     assert len(external_repo_data.external_job_datas) == 1
     assert isinstance(external_repo_data.external_job_datas[0], ExternalJobData)
 
-    pipeline_snapshot = external_repo_data.external_job_datas[0].job_snapshot
-    assert isinstance(pipeline_snapshot, JobSnapshot)
-    assert pipeline_snapshot.name == "noop_job"
-    assert pipeline_snapshot.description is None
-    assert pipeline_snapshot.tags == {}
+    job_snapshot = external_repo_data.external_job_datas[0].job_snapshot
+    assert isinstance(job_snapshot, JobSnapshot)
+    assert job_snapshot.name == "noop_job"
+    assert job_snapshot.description is None
+    assert job_snapshot.tags == {}
 
 
 def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:

@@ -186,13 +186,13 @@ def test_reconstruct_from_origin():
         ),
     )
 
-    recon_pipeline = recon_job_from_origin(origin)
+    recon_job = recon_job_from_origin(origin)
 
-    assert recon_pipeline.job_name == origin.job_name
-    assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
-    assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
-    assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
-    assert recon_pipeline.repository.container_context == origin.repository_origin.container_context
+    assert recon_job.job_name == origin.job_name
+    assert recon_job.repository.pointer == origin.repository_origin.code_pointer
+    assert recon_job.repository.container_image == origin.repository_origin.container_image
+    assert recon_job.repository.executable_path == origin.repository_origin.executable_path
+    assert recon_job.repository.container_context == origin.repository_origin.container_context
 
 
 def test_reconstructable_memoize():

@@ -305,7 +305,7 @@ def test_execute_plan_iterator():
         records.append(record)
 
     with instance_for_test() as instance:
-        pipeline = GraphDefinition(
+        job_def = GraphDefinition(
             name="basic_resource_pipeline",
             node_defs=[resource_op],
         ).to_job(
@@ -314,16 +314,16 @@ def test_execute_plan_iterator():
         )
         run_config = {"loggers": {"callback": {}}}
 
-        execution_plan = create_execution_plan(pipeline, run_config=run_config)
+        execution_plan = create_execution_plan(job_def, run_config=run_config)
         dagster_run = instance.create_run_for_job(
-            job_def=pipeline,
+            job_def=job_def,
             run_config={"loggers": {"callback": {}}},
             execution_plan=execution_plan,
         )
 
         iterator = execute_plan_iterator(
             execution_plan,
-            InMemoryJob(pipeline),
+            InMemoryJob(job_def),
             dagster_run,
             instance,
             run_config=run_config,
@@ -342,13 +342,13 @@ def test_execute_plan_iterator():
 
 def test_run_fails_while_loading_code():
     with instance_for_test() as instance:
-        recon_pipeline = reconstructable(simple_job)
+        recon_job = reconstructable(simple_job)
         run = instance.create_run_for_job(
             job_def=simple_job,
             run_config={},
         )
 
-        gen_execute_run = core_execute_run(recon_pipeline, run, instance, inject_env_vars=False)
+        gen_execute_run = core_execute_run(recon_job, run, instance, inject_env_vars=False)
 
         # Run is moved to failure while the code is still loading
         instance.run_storage.handle_run_event(

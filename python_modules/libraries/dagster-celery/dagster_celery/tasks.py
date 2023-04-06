@@ -27,7 +27,7 @@ def create_task(celery_app, **task_kwargs):
 
         instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
 
-        pipeline = ReconstructableJob.from_dict(executable_dict)
+        recon_job = ReconstructableJob.from_dict(executable_dict)
         retry_mode = execute_step_args.retry_mode
 
         dagster_run = instance.get_run_by_id(execute_step_args.run_id)
@@ -36,7 +36,7 @@ def create_task(celery_app, **task_kwargs):
         step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
         execution_plan = create_execution_plan(
-            pipeline,
+            recon_job,
             dagster_run.run_config,
             step_keys_to_execute=execute_step_args.step_keys_to_execute,
             known_state=execute_step_args.known_state,
@@ -59,7 +59,7 @@ def create_task(celery_app, **task_kwargs):
         events = [engine_event]
         for step_event in execute_plan_iterator(
             execution_plan=execution_plan,
-            job=pipeline,
+            job=recon_job,
             dagster_run=dagster_run,
             instance=instance,
             retry_mode=retry_mode,
