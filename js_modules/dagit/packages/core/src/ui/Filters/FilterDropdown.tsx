@@ -9,7 +9,7 @@ import {
   Popover,
   TextInput,
 } from '@dagster-io/ui';
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   useRecoilCallback,
   atomFamily,
@@ -170,12 +170,17 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       } else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey)) {
         setFocusedItemIndex((prevIndex) => (prevIndex === -1 ? maxIndex : prevIndex - 1));
         event.preventDefault();
-      } else if (event.key === 'Enter') {
+      } else if (event.key === 'Enter' || event.key === 'Space') {
         const focusedItemIndex = await snapshot.getPromise(focusedIndexAtom(menuKey));
-        allResultsJsx[focusedItemIndex]?.props.onClick?.();
+        if (focusedItemIndex === -1) {
+          // They're typing in the search bar
+          return;
+        }
+        event.preventDefault();
         if (!selectedFilter) {
           setFocusedItemIndex(-1);
         }
+        allResultsJsx[focusedItemIndex]?.props.onClick?.();
       } else if (event.key === 'Escape') {
         if (selectedFilter) {
           setSelectedFilter(null);
@@ -359,9 +364,18 @@ const FilterDropdownMenuItem = React.memo(
         divRef.current?.querySelector('a')?.focus();
       }
     }, [isFocused]);
+    const [hovered, setHovered] = React.useState(false);
     return (
-      <div ref={divRef}>
-        <StyledMenuItem {...rest} active={isFocused} />
+      <div
+        ref={divRef}
+        onMouseEnter={() => {
+          setHovered(true);
+        }}
+        onMouseLeave={() => {
+          setHovered(false);
+        }}
+      >
+        <StyledMenuItem {...rest} active={hovered || isFocused} />
       </div>
     );
   },

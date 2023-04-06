@@ -125,7 +125,7 @@ describe('FilterDropdownButton', () => {
 });
 
 describe('FilterDropdown Accessibility', () => {
-  const testKeyboardNavigation = async (nextKey: any, prevKey: any) => {
+  const testKeyboardNavigation = async (nextKey: any, prevKey: any, enterKey: any) => {
     render(
       <RecoilRoot>
         <FilterDropdownButton filters={mockFilters} />
@@ -138,50 +138,50 @@ describe('FilterDropdown Accessibility', () => {
     const input = screen.getByLabelText('Search filters');
     expect(input).toHaveFocus();
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
       expect(screen.getByText('Type').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
       expect(screen.getByText('Status').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, prevKey);
+    fireEvent.keyDown(document.activeElement!, prevKey);
     await waitFor(() => {
       expect(screen.getByText('Type').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
       expect(screen.getByText('Status').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     expect(input).toHaveFocus();
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
       expect(screen.getByText('Type').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
       expect(screen.getByText('Status').closest('a')).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    fireEvent.keyDown(document.activeElement!, enterKey);
 
     await waitFor(() => {
       expect(input).toHaveFocus();
     });
 
-    fireEvent.keyDown(input, nextKey);
-    fireEvent.keyDown(input, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
+    fireEvent.keyDown(document.activeElement!, nextKey);
 
     expect(screen.getByText('Inactive').closest('a')).toHaveFocus();
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    fireEvent.keyDown(document.activeElement!, enterKey);
 
     await waitFor(() => {
       expect(mockFilters[1].onSelect).toHaveBeenCalled();
@@ -193,6 +193,7 @@ describe('FilterDropdown Accessibility', () => {
     await testKeyboardNavigation(
       {key: 'ArrowDown', code: 'ArrowDown'},
       {key: 'ArrowUp', code: 'ArrowUp'},
+      {key: 'Enter', code: 'Enter'},
     );
   });
 
@@ -201,6 +202,7 @@ describe('FilterDropdown Accessibility', () => {
     await testKeyboardNavigation(
       {key: 'Tab', code: 'Tab'},
       {key: 'Tab', code: 'Tab', shiftKey: true},
+      {key: 'Space', code: 'Space'},
     );
   });
 
@@ -219,19 +221,19 @@ describe('FilterDropdown Accessibility', () => {
 
     expect(screen.queryByText('Type 1')).toBeNull();
 
-    fireEvent.keyDown(input, {key: 'ArrowDown', code: 'ArrowDown'});
+    fireEvent.keyDown(document.activeElement!, {key: 'ArrowDown', code: 'ArrowDown'});
 
-    fireEvent.keyDown(input, {key: 'Enter', code: 'Enter'});
+    fireEvent.keyDown(document.activeElement!, {key: 'Enter', code: 'Enter'});
 
     await waitFor(() => {
       expect(screen.getByText('Type 1')).toBeVisible();
     });
 
-    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+    fireEvent.keyDown(document.activeElement!, {key: 'Escape', code: 'Escape'});
 
     expect(screen.queryByText('Type 1')).toBeNull();
 
-    fireEvent.keyDown(input, {key: 'Escape', code: 'Escape'});
+    fireEvent.keyDown(document.activeElement!, {key: 'Escape', code: 'Escape'});
     await waitFor(() => {
       expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
