@@ -71,6 +71,10 @@ poetry add dagster dagit
     href="/getting-started/create-new-project"
   ></ArticleListItem>
   <ArticleListItem
+    title="Dagster project files"
+    href="/getting-started/project-file-reference"
+  ></ArticleListItem>
+  <ArticleListItem
     title="Running Dagster locally"
     href="/guides/running-dagster-locally"
   ></ArticleListItem>
