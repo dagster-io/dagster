@@ -56,7 +56,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         repository_load_data,
     ):
         self.run_config = run_config
-        self.pipeline_run = pipeline_run
+        self.dagster_run = dagster_run
         self.step_key = step_key
         self.instance_ref = instance_ref
         self.term_event = term_event
@@ -77,11 +77,11 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 repository_load_data=self.repository_load_data,
             )
 
-            log_manager = create_context_free_log_manager(instance, self.pipeline_run)
+            log_manager = create_context_free_log_manager(instance, self.dagster_run)
 
             yield DagsterEvent.step_worker_started(
                 log_manager,
-                self.pipeline_run.job_name,
+                self.dagster_run.job_name,
                 message=f'Executing step "{self.step_key}" in subprocess.',
                 metadata={
                     "pid": MetadataValue.text(str(os.getpid())),
@@ -92,7 +92,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
             yield from execute_plan_iterator(
                 execution_plan,
                 pipeline,
-                self.pipeline_run,
+                self.dagster_run,
                 run_config=self.run_config,
                 retry_mode=self.retry_mode.for_inner_plan(),
                 instance=instance,
