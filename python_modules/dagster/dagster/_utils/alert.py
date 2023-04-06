@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 def _default_failure_email_body(context) -> str:
     return "<br>".join(
         [
-            f"Pipeline {context.pipeline_run.job_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
+            f"Pipeline {context.dagster_run.job_name} failed!",
+            f"Run ID: {context.dagster_run.run_id}",
+            f"Mode: {context.dagster_run.mode}",
             f"Error: {context.failure_event.message}",
         ]
     )
