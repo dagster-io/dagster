@@ -1,9 +1,8 @@
 from dagster_pyspark import pyspark_resource
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
-    SparkSession,
 )
 from pyspark.sql.types import (
     DoubleType,
@@ -12,7 +11,7 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import Definitions, EnvVar, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
@@ -40,15 +39,13 @@ def iris_dataset(context) -> DataFrame:
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
-            }
+        "io_manager": SnowflakePySparkIOManager(
+            account="abc1234.us-east-1",
+            user=EnvVar("SNOWFLAKE_USER"),
+            password=EnvVar("SNOWFLAKE_PASSWORD"),
+            database="FLOWERS",
+            warehouse="PLANTS",
+            schema="IRIS",
         ),
         "pyspark": pyspark_resource.configured(
             {"spark_conf": {"spark.jars.packages": SNOWFLAKE_JARS}}

@@ -22,7 +22,7 @@ defs = Definitions(
             database="FLOWERS",  # required
             role="writer",  # optional, defaults to the default role for the account
             warehouse="PLANTS",  # optional, defaults to default warehouse for the account
-            schema="IRIS,",  # optional, defaults to PUBLIC
+            schema="IRIS",  # optional, defaults to PUBLIC
         )
     },
 )
