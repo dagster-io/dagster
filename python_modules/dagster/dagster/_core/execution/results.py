@@ -55,7 +55,7 @@ class GraphExecutionResult:
         container: GraphDefinition,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         handle: Optional[NodeHandle] = None,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
@@ -65,7 +65,7 @@ class GraphExecutionResult:
             reconstruct_context,
             "reconstruct_context",
         )
-        self.pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        self.job_def = check.inst_param(job_def, "job_def", JobDefinition)
         self.handle = check.opt_inst_param(handle, "handle", NodeHandle)
         self.output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
@@ -155,7 +155,7 @@ class GraphExecutionResult:
                 events,
                 events_by_kind,
                 self.reconstruct_context,
-                self.pipeline_def,
+                self.job_def,
                 handle=handle.with_ancestor(self.handle),
                 output_capture=self.output_capture,
             )
@@ -170,7 +170,7 @@ class GraphExecutionResult:
                 node,
                 events_by_kind,
                 self.reconstruct_context,
-                self.pipeline_def,
+                self.job_def,
                 output_capture=self.output_capture,
             )
         else:
@@ -222,7 +222,7 @@ class PipelineExecutionResult(GraphExecutionResult):
             container=pipeline_def.graph,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            pipeline_def=pipeline_def,
+            job_def=pipeline_def,
             output_capture=output_capture,
         )
 
@@ -255,7 +255,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             container=node.definition,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            pipeline_def=pipeline_def,
+            job_def=pipeline_def,
             handle=handle,
             output_capture=output_capture,
         )
