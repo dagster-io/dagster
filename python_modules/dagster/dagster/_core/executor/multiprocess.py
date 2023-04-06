@@ -2,7 +2,7 @@ import multiprocessing
 import os
 import sys
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
 from dagster import (
     _check as check,
@@ -39,21 +39,25 @@ from .child_process_executor import (
     execute_child_process_command,
 )
 
+if TYPE_CHECKING:
+    from dagster._core.instance.ref import InstanceRef
+    from dagster._core.storage.pipeline_run import DagsterRun
+
 DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
 class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
         self,
-        run_config,
-        pipeline_run,
-        step_key,
-        instance_ref,
-        term_event,
-        recon_pipeline,
-        retry_mode,
-        known_state,
-        repository_load_data,
+        run_config: Mapping[str, object],
+        pipeline_run: "DagsterRun",
+        step_key: str,
+        instance_ref: "InstanceRef",
+        term_event: Any,
+        recon_pipeline: ReconstructableJob,
+        retry_mode: RetryMode,
+        known_state: Optional[KnownExecutionState],
+        repository_load_data: Optional[RepositoryLoadData],
     ):
         self.run_config = run_config
         self.dagster_run = dagster_run
