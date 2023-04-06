@@ -14,7 +14,7 @@ defs = Definitions(
         "io_manager": SnowflakePandasIOManager(
             database="SANDBOX",
             schema="JAMIE",
-            account="na94824.us-east-1",
+            account=EnvVar("SNOWFLAKE_ACCOUNT"),
             user="jamie@elementl.com",
             password=EnvVar("SNOWFLAKE_PASSWORD"),
             warehouse="ELEMENTL",
