@@ -559,7 +559,9 @@ class SensorDefinition:
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
         self._description = check.opt_str_param(description, "description")
-        self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+        self._targets: Sequence[Union[RepoRelativeTarget, DirectTarget]] = check.opt_list_param(
+            targets, "targets", (DirectTarget, RepoRelativeTarget)
+        )
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
         )
