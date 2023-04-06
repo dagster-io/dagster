@@ -30,7 +30,7 @@ class AirflowPersistentDatabase(AirflowDatabase):
 
     @staticmethod
     def _initialize_database(uri: str, connections: List[Connection] = []):
-        if is_airflow_2_loaded_in_environment():
+        if is_airflow_2_loaded_in_environment("2.3.0"):
             os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"] = uri
             importlib.reload(airflow.configuration)
             importlib.reload(airflow.settings)

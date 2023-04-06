@@ -94,7 +94,7 @@ describe('CustomConfirmationProvider', () => {
       jest.advanceTimersByTime(1000);
     });
 
-    const dialogContainers = document.querySelectorAll('.bp3-dialog');
+    const dialogContainers = document.querySelectorAll('.bp4-dialog');
     expect(dialogContainers).toHaveLength(0);
   });
 });

@@ -474,10 +474,10 @@ class CachingDataTimeResolver:
 
         data_times = set(self.get_data_time_by_key_for_record(latest_record, current_time).values())
 
-        if None in data_times:
+        if None in data_times or not data_times:
             return None
 
-        return min(cast(AbstractSet[datetime.datetime], data_times))
+        return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
 
     def get_current_minutes_late(
         self,

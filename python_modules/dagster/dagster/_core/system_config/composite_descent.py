@@ -353,7 +353,7 @@ def raise_composite_descent_config_error(
         stack=":".join(descent_stack.handle.path),
     )
     message += (
-        'Solid "{solid_name}" with definition "{solid_def_name}" has a '
+        f'Op "{solid.name}" with definition "{solid.definition.name}" has a '
         "configuration error. "
         "It has produced config a via its config_fn that fails to "
         "pass validation in the solids that it contains. "
@@ -361,9 +361,6 @@ def raise_composite_descent_config_error(
         "produce correct config for its constiuent solids in all cases. The correct "
         "resolution is to fix the mapping function. Details on the error (and the paths "
         'on this error are relative to config mapping function "root", not the entire document): '
-    ).format(
-        solid_name=solid.name,
-        solid_def_name=solid.definition.name,
     )
 
     raise DagsterInvalidConfigError(message, evr.errors, failed_config_value)

@@ -221,19 +221,6 @@ mysql_extra_cmds = [
 ]
 
 
-dbt_extra_cmds = [
-    "pushd python_modules/libraries/dagster-dbt/dagster_dbt_tests",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-    # Can't use host networking on buildkite and communicate via localhost
-    # between these sibling containers, so pass along the ip.
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db-dbt", "POSTGRES_TEST_DB_DBT_HOST"
-    ),
-    "popd",
-]
-
-
 def k8s_extra_cmds(version: str, _) -> List[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
@@ -432,7 +419,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
-        pytest_extra_cmds=dbt_extra_cmds,
         # dbt-core does not yet support python 3.10
         unsupported_python_versions=[
             AvailablePythonVersion.V3_10,

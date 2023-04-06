@@ -1753,6 +1753,12 @@ export type JobOrPipelineSelector = {
   solidSelection?: InputMaybe<Array<Scalars['String']>>;
 };
 
+export type JobWithOps = {
+  __typename: 'JobWithOps';
+  job: Job;
+  opsUsing: Array<SolidHandle>;
+};
+
 export type JsonMetadataEntry = MetadataEntry & {
   __typename: 'JsonMetadataEntry';
   description: Maybe<Scalars['String']>;
@@ -2883,6 +2889,7 @@ export type ResourceDetails = {
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
   isTopLevel: Scalars['Boolean'];
+  jobsOpsUsing: Array<JobWithOps>;
   name: Scalars['String'];
   nestedResources: Array<NestedResourceEntry>;
   parentResources: Array<NestedResourceEntry>;
@@ -7480,6 +7487,31 @@ export const buildJobOrPipelineSelector = (
   };
 };
 
+export const buildJobWithOps = (
+  overrides?: Partial<JobWithOps>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'JobWithOps'} & JobWithOps => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JobWithOps');
+  return {
+    __typename: 'JobWithOps',
+    job:
+      overrides && overrides.hasOwnProperty('job')
+        ? overrides.job!
+        : relationshipsToOmit.has('Job')
+        ? ({} as Job)
+        : buildJob({}, relationshipsToOmit),
+    opsUsing:
+      overrides && overrides.hasOwnProperty('opsUsing')
+        ? overrides.opsUsing!
+        : [
+            relationshipsToOmit.has('SolidHandle')
+              ? ({} as SolidHandle)
+              : buildSolidHandle({}, relationshipsToOmit),
+          ],
+  };
+};
+
 export const buildJsonMetadataEntry = (
   overrides?: Partial<JsonMetadataEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10344,6 +10376,14 @@ export const buildResourceDetails = (
     description:
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'laudantium',
     isTopLevel: overrides && overrides.hasOwnProperty('isTopLevel') ? overrides.isTopLevel! : false,
+    jobsOpsUsing:
+      overrides && overrides.hasOwnProperty('jobsOpsUsing')
+        ? overrides.jobsOpsUsing!
+        : [
+            relationshipsToOmit.has('JobWithOps')
+              ? ({} as JobWithOps)
+              : buildJobWithOps({}, relationshipsToOmit),
+          ],
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'praesentium',
     nestedResources:
       overrides && overrides.hasOwnProperty('nestedResources')

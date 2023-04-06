@@ -1,7 +1,14 @@
 import {gql, useMutation} from '@apollo/client';
-// eslint-disable-next-line no-restricted-imports
-import {TextArea} from '@blueprintjs/core';
-import {ButtonLink, Button, Colors, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
+import {
+  ButtonLink,
+  Button,
+  Colors,
+  DialogBody,
+  DialogFooter,
+  Dialog,
+  Group,
+  TextArea,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
@@ -78,6 +85,7 @@ export const EditCursorDialog: React.FC<{
       <DialogBody>
         <TextArea
           value={cursorValue}
+          $resize="vertical"
           onChange={(e) => setCursorValue(e.target.value)}
           style={{width: '100%'}}
         />

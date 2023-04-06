@@ -55,6 +55,10 @@ else:
     from pathlib2 import Path
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.repository_definition.repository_definition import (
+        RepositoryDefinition,
+    )
     from dagster._core.events import DagsterEvent
 
 K = TypeVar("K")
@@ -684,3 +688,49 @@ def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
 
 def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
     return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[True] = ...,
+) -> "RepositoryDefinition":
+    ...
+
+
+@overload
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = ...,
+    repository: Optional["RepositoryDefinition"] = ...,
+    error_on_none: Literal[False] = ...,
+) -> Optional["RepositoryDefinition"]:
+    ...
+
+
+def normalize_to_repository(
+    definitions_or_repository: Optional[Union["Definitions", "RepositoryDefinition"]] = None,
+    repository: Optional["RepositoryDefinition"] = None,
+    error_on_none: bool = True,
+) -> Optional["RepositoryDefinition"]:
+    """Normalizes the arguments that take a RepositoryDefinition or Definitions object to a
+    RepositoryDefinition.
+
+    This is intended to handle both the case where a single argument takes a
+    `Union[RepositoryDefinition, Definitions]` or separate keyword arguments accept
+    `RepositoryDefinition` or `Definitions`.
+    """
+    from dagster._core.definitions.definitions_class import Definitions
+
+    if (definitions_or_repository and repository) or (
+        error_on_none and not (definitions_or_repository or repository)
+    ):
+        check.failed("Exactly one of `definitions` or `repository_def` must be provided.")
+    elif isinstance(definitions_or_repository, Definitions):
+        return definitions_or_repository.get_repository_def()
+    elif definitions_or_repository:
+        return definitions_or_repository
+    elif repository:
+        return repository
+    else:
+        return None

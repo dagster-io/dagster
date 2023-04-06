@@ -91,16 +91,22 @@ class AssetBackfillData(NamedTuple):
             self.target_subset.filter_asset_keys(root_asset_keys).iterate_asset_partitions()
         )
 
-    def get_target_root_partitions_subset(self) -> Optional[PartitionsSubset]:
-        root_asset_keys = (
-            AssetSelection.keys(*self.target_subset.asset_keys)
+    def get_target_root_partitions_subset(self) -> PartitionsSubset:
+        """Returns the most upstream partitions subset that was targeted by the backfill."""
+        partitioned_asset_keys = {
+            asset_key
+            for asset_key in self.target_subset.asset_keys
+            if self.target_subset.asset_graph.get_partitions_def(asset_key) is not None
+        }
+
+        root_partitioned_asset_keys = (
+            AssetSelection.keys(*partitioned_asset_keys)
             .sources()
             .resolve(self.target_subset.asset_graph)
         )
 
-        # An asset backfill must target the same partitions for the root assets
-        # Return the partitions subset for the first root asset
-        return self.target_subset.get_partitions_subset(next(iter(root_asset_keys)))
+        # Return the targeted partitions for the root partitioned asset keys
+        return self.target_subset.get_partitions_subset(next(iter(root_partitioned_asset_keys)))
 
     def get_num_partitions(self) -> Optional[int]:
         """Only valid when the same number of partitions are targeted in every asset.

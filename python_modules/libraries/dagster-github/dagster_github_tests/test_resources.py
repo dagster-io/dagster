@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
 
@@ -35,7 +35,7 @@ def test_github_resource_get_installations():
             )
             context.resources.github.get_installations()
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         github_solid,
         run_config={
             "resources": {
@@ -48,7 +48,7 @@ def test_github_resource_get_installations():
                 }
             }
         },
-        mode_def=ModeDefinition(resource_defs={"github": github_resource}),
+        resources={"github": github_resource},
     )
     assert result.success
 
@@ -67,7 +67,7 @@ def test_github_resource_get_installations_with_hostname():
             )
             context.resources.github.get_installations()
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         github_solid,
         run_config={
             "resources": {
@@ -81,7 +81,7 @@ def test_github_resource_get_installations_with_hostname():
                 }
             }
         },
-        mode_def=ModeDefinition(resource_defs={"github": github_resource}),
+        resources={"github": github_resource},
     )
     assert result.success
 
@@ -122,7 +122,7 @@ def test_github_resource_create_issue():
                 body="body",
             )
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         github_solid,
         run_config={
             "resources": {
@@ -135,7 +135,7 @@ def test_github_resource_create_issue():
                 }
             }
         },
-        mode_def=ModeDefinition(resource_defs={"github": github_resource}),
+        resources={"github": github_resource},
     )
     assert result.success
 
@@ -173,7 +173,7 @@ def test_github_resource_execute():
                 variables={"repo_name": "dagster", "repo_owner": "dagster-io"},
             )
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         github_solid,
         run_config={
             "resources": {
@@ -187,7 +187,7 @@ def test_github_resource_execute():
                 }
             }
         },
-        mode_def=ModeDefinition(resource_defs={"github": github_resource}),
+        resources={"github": github_resource},
     )
     assert result.success
 

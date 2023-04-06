@@ -275,12 +275,12 @@ const PopoverStyle = createGlobalStyle`
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-    .bp3-popover2-content {
+    .bp4-popover2-content {
       border-radius: 8px;
     }
   }
   
-  .bp3-overlay-content {
+  .bp4-overlay-content {
     max-width: 100%;
   }
 `;

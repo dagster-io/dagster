@@ -201,3 +201,13 @@ def test_unpartitioned_downstream_of_dynamic_asset():
             materialize([dynamic1], instance=instance, partition_key=partition)
 
         materialize([unpartitioned, dynamic1], instance=instance, partition_key=partitions[-1])
+
+
+def test_has_partition_key():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    with instance_for_test() as instance:
+        instance.add_dynamic_partitions(partitions_def.name, ["apple", "banana"])
+        assert partitions_def.has_partition_key("apple", dynamic_partitions_store=instance)
+        assert partitions_def.has_partition_key("banana", dynamic_partitions_store=instance)
+        assert not partitions_def.has_partition_key("peach", dynamic_partitions_store=instance)

@@ -3,6 +3,10 @@
 Resources
 =========
 
+.. autoclass:: ConfigurableResource
+
+.. autoclass:: ConfigurableResourceFactory
+
 .. autodecorator:: resource
 
 .. autoclass:: ResourceDefinition

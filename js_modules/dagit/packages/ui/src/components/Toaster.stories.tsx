@@ -35,6 +35,7 @@ export const Sizes = () => {
         onClick={() =>
           SharedToaster.show({
             intent: Intent.SUCCESS,
+            timeout: 300000,
             message: (
               <div>
                 Created backfill job:{' '}
@@ -52,6 +53,7 @@ export const Sizes = () => {
         onClick={() =>
           SharedToaster.show({
             intent: Intent.DANGER,
+            timeout: 300000,
             message: 'This is an error message',
             icon: 'error',
           })

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
+    Iterator,
     Mapping,
     NamedTuple,
     NoReturn,
@@ -241,7 +241,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     def create_single_location(
         self,
         instance: "DagsterInstance",
-    ) -> Generator["CodeLocation", None, None]:
+    ) -> Iterator["GrpcServerCodeLocation"]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
         from .code_location import GrpcServerCodeLocation

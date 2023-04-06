@@ -101,7 +101,7 @@ export const errorDisplay = (status: InstigationStatus, runningScheduleCount: nu
   return (
     <Popover
       interactionKind="hover"
-      popoverClassName="bp3-popover-content-sizing"
+      popoverClassName="bp4-popover-content-sizing"
       position="right"
       content={
         <Box flex={{direction: 'column', gap: 8}} padding={12}>

@@ -244,7 +244,7 @@ const RunRow: React.FC<{
   };
 
   return (
-    <Row key={run.runId} highlighted={!!isHighlighted}>
+    <Row highlighted={!!isHighlighted}>
       <td>
         {canTerminateOrDelete && onToggleChecked ? (
           <Checkbox checked={!!checked} onChange={onChange} />

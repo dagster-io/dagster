@@ -316,7 +316,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionSetOrError"]["__typename"] == "PartitionSet"
         assert len(result.data["partitionSetOrError"]["backfills"]) == 1
         assert result.data["partitionSetOrError"]["backfills"][0]["backfillId"] == backfill_id
-        assert result.data["partitionSetOrError"]["backfills"][0]["isAssetBackfill"] == False
+        assert result.data["partitionSetOrError"]["backfills"][0]["isAssetBackfill"] is False
 
     def test_launch_partial_backfill(self, graphql_context):
         # execute a full pipeline, without the failure environment variable

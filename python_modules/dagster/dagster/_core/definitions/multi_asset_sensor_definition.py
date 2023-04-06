@@ -30,6 +30,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._utils import normalize_to_repository
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey
@@ -44,6 +45,7 @@ from .target import ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.event_log.base import EventLogRecord
@@ -182,7 +184,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets monitored
             by the sensor. If an AssetSelection object is provided, it will only apply to assets
             within the Definitions that this sensor is part of.
-        repository_def (RepositoryDefinition): The repository that the sensor belongs to.
+        repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
+            If needed by the sensor top-level resource definitions will be pulled from this repository.
+            You can provide either this or `definitions`.
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
         cursor (Optional[str]): The cursor, passed back from the last sensor evaluation via
             the cursor attribute of SkipReason and RunRequest. Must be a dictionary of asset key
@@ -194,6 +198,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            If needed by the sensor, top-level resource definitions will be pulled from these
+            definitions. You can provide either this or `repository_def`.
 
     Example:
         .. code-block:: python
@@ -212,13 +219,19 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         last_run_key: Optional[str],
         cursor: Optional[str],
         repository_name: Optional[str],
-        repository_def: "RepositoryDefinition",
+        repository_def: Optional["RepositoryDefinition"],
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
         instance: Optional[DagsterInstance] = None,
+        definitions: Optional["Definitions"] = None,
     ):
+        from dagster._core.definitions.definitions_class import Definitions
+        from dagster._core.definitions.repository_definition import RepositoryDefinition
         from dagster._core.storage.event_log.base import EventLogRecord
 
-        self._repository_def = repository_def
+        self._repository_def = normalize_to_repository(
+            check.opt_inst_param(definitions, "definitions", Definitions),
+            check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+        )
         self._monitored_asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
             repo_assets = self._repository_def.assets_defs_by_key.values()
@@ -915,12 +928,14 @@ def get_cursor_from_latest_materializations(
 
 @experimental
 def build_multi_asset_sensor_context(
-    repository_def: "RepositoryDefinition",
+    *,
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
+    repository_def: Optional["RepositoryDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
     cursor: Optional[str] = None,
     repository_name: Optional[str] = None,
     cursor_from_latest_materializations: bool = False,
+    definitions: Optional["Definitions"] = None,
 ) -> MultiAssetSensorEvaluationContext:
     """Builds multi asset sensor execution context for testing purposes using the provided parameters.
 
@@ -929,16 +944,19 @@ def build_multi_asset_sensor_context(
     error.
 
     Args:
-        repository_def (RepositoryDefinition): The repository definition that the sensor belongs to.
         monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets monitored
             by the sensor. If an AssetSelection object is provided, it will only apply to assets
             within the Definitions that this sensor is part of.
+        repository_def (RepositoryDefinition): `RepositoryDefinition` object that
+            the sensor is defined in. Must provide `definitions` if this is not provided.
         instance (Optional[DagsterInstance]): The dagster instance configured to run the sensor.
         cursor (Optional[str]): A string cursor to provide to the evaluation of the sensor. Must be
             a dictionary of asset key strings to ints that has been converted to a json string
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         cursor_from_latest_materializations (bool): If True, the cursor will be set to the latest
             materialization for each monitored asset. By default, set to False.
+        definitions (Optional[Definitions]): `Definitions` object that the sensor is defined in.
+            Must provide `repository_def` if this is not provided.
 
     Examples:
         .. code-block:: python
@@ -952,11 +970,15 @@ def build_multi_asset_sensor_context(
 
     """
     from dagster._core.definitions import RepositoryDefinition
+    from dagster._core.definitions.definitions_class import Definitions
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+    repository_def = normalize_to_repository(
+        check.opt_inst_param(definitions, "definitions", Definitions),
+        check.opt_inst_param(repository_def, "repository_def", RepositoryDefinition),
+    )
 
     check.bool_param(cursor_from_latest_materializations, "cursor_from_latest_materializations")
 

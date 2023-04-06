@@ -16,7 +16,6 @@ from dagster import (
     op,
     resource,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
 
@@ -179,7 +178,7 @@ def test_output_for_node_not_found():
     result = basic.execute_in_process()
     assert result.success
 
-    with pytest.raises(KeyError, match="name_doesnt_exist"):
+    with pytest.raises(DagsterInvariantViolationError, match="name_doesnt_exist"):
         result.output_for_node("op_exists", "name_doesnt_exist")
 
     with pytest.raises(
@@ -187,7 +186,9 @@ def test_output_for_node_not_found():
     ):
         result.output_value("name_doesnt_exist")
 
-    with pytest.raises(CheckError, match="basic has no op named op_doesnt_exist"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="basic has no op named op_doesnt_exist"
+    ):
         result.output_for_node("op_doesnt_exist")
 
 

@@ -750,3 +750,38 @@ def test_failure_cache_concurrent_materializations():
         )
         # run_1 is still in progress, but run_2 started after and failed, so we move on
         assert cached_status.earliest_in_progress_materialization_event_id is None
+
+
+def test_failed_partitioned_asset_converted_to_multipartitioned():
+    daily_def = DailyPartitionsDefinition("2023-01-01")
+
+    @asset(
+        partitions_def=daily_def,
+    )
+    def my_asset():
+        raise Exception("oops")
+
+    with instance_for_test() as created_instance:
+        my_job = define_asset_job("asset_job", partitions_def=daily_def).resolve([my_asset], [])
+
+        my_job.execute_in_process(
+            instance=created_instance, partition_key="2023-01-01", raise_on_error=False
+        )
+
+        my_asset._partitions_def = MultiPartitionsDefinition(  # noqa: SLF001
+            partitions_defs={
+                "a": DailyPartitionsDefinition("2023-01-01"),
+                "b": StaticPartitionsDefinition(["a", "b"]),
+            }
+        )
+        my_job = define_asset_job("asset_job").resolve([my_asset], [])
+        asset_graph = AssetGraph.from_assets([my_asset])
+        asset_key = AssetKey("my_asset")
+
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
+        failed_subset = cached_status.deserialize_failed_partition_subsets(
+            asset_graph.get_partitions_def(asset_key)
+        )
+        assert failed_subset.get_partition_keys() == set()

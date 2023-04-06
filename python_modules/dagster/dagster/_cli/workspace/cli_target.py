@@ -68,8 +68,7 @@ ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
 
 def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
     raise UsageError(
-        msg
-        or "Invalid set of CLI arguments for loading repository/pipeline. See --help for details."
+        msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
     )
 
 

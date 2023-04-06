@@ -53,12 +53,12 @@ import {
   USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from '../partitions/BackfillMessaging';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
+import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {
   executionParamsForAssetJob,
   LaunchAssetsChoosePartitionsTarget,
@@ -186,15 +186,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const keysInSelection = React.useMemo(
     () =>
       explodePartitionKeysInSelection(selections, (dimensionKeys: string[]) => {
-        // Note: If the merged asset health for a given partition is "partial", we want
-        // to group it into "missing" within the backfill UI. We don't have a fine-grained
-        // way to run just the missing assets within the partition.
-        //
-        // The alternative would be to offer a "Partial" checkbox alongside "Missing",
-        // but defining missing as "missing for /any/ asset I've selected" is simpler.
-        //
-        const state = displayedHealth.stateForKey(dimensionKeys);
-        return state === PartitionState.SUCCESS_MISSING ? PartitionState.MISSING : state;
+        let states = displayedHealth.stateForKey(dimensionKeys);
+        if (!(states instanceof Array)) {
+          states = [states];
+        }
+        return states;
       }),
     [selections, displayedHealth],
   );
@@ -207,7 +203,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     () =>
       missingFailedOnly
         ? keysInSelection.filter((key) =>
-            [PartitionState.MISSING, PartitionState.FAILURE].includes(key.state),
+            [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED].some((state) =>
+              key.state.includes(state),
+            ),
           )
         : keysInSelection,
     [keysInSelection, missingFailedOnly],
@@ -661,7 +659,9 @@ const UpstreamUnavailableWarning: React.FC<{
   const upstreamUnavailable = (singleDimensionKey: string) =>
     upstreamAssetHealth.some((a) => {
       // If the key is not undefined, it's present in the partition key space of the asset
-      return a.stateForKey([singleDimensionKey]) === PartitionState.MISSING;
+      return (
+        a.dimensions.length && a.stateForKey([singleDimensionKey]) === AssetPartitionStatus.MISSING
+      );
     });
 
   const upstreamUnavailableSpans =

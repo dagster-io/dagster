@@ -1,10 +1,15 @@
 from typing import Dict, Optional, cast
 
 import pypd
-from dagster import Field, resource
+from dagster import ConfigurableResource, resource
+from dagster._annotations import quiet_experimental_warnings
+from dagster._config.structured_config import infer_schema_from_config_class
+from pydantic import Field as PyField
 
 
-class PagerDutyService:
+class PagerDutyService(ConfigurableResource):
+    """This resource is for posting events to PagerDuty."""
+
     """Integrates with PagerDuty via the pypd library.
 
     See:
@@ -16,8 +21,14 @@ class PagerDutyService:
     for documentation and more information.
     """
 
-    def __init__(self, routing_key: str):
-        self.routing_key = routing_key
+    routing_key: str = PyField(
+        ...,
+        description=(
+            "The routing key provisions access to your PagerDuty service. You"
+            "will need to include the integration key for your new integration, as a"
+            "routing_key in the event payload."
+        ),
+    )
 
     def EventV2_create(
         self,
@@ -150,25 +161,19 @@ class PagerDutyService:
 
 
 @resource(
-    {
-        "routing_key": Field(
-            str,
-            description="""The routing key provisions access to your PagerDuty service. You
-                    will need to include the integration key for your new integration, as a
-                    routing_key in the event payload.""",
-        )
-    },
+    config_schema=infer_schema_from_config_class(PagerDutyService),
     description="""This resource is for posting events to PagerDuty.""",
 )
-def pagerduty_resource(context):
+@quiet_experimental_warnings
+def pagerduty_resource(context) -> PagerDutyService:
     """A resource for posting events (alerts) to PagerDuty.
 
     Example:
         .. code-block:: python
 
-            @op(required_resource_keys={'pagerduty'})
-            def pagerduty_op(context):
-                context.resources.pagerduty.EventV2_create(
+            @op
+            def pagerduty_op(pagerduty: PagerDutyService):
+                pagerduty.EventV2_create(
                     summary='alert from dagster'
                     source='localhost',
                     severity='error',
@@ -187,4 +192,4 @@ def pagerduty_resource(context):
                 }
             )
     """
-    return PagerDutyService(context.resource_config.get("routing_key"))
+    return PagerDutyService(**context.resource_config)

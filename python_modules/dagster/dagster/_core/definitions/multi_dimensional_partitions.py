@@ -295,6 +295,33 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             for partitions_tuple in itertools.product(*partition_sequences)
         ]
 
+    def filter_valid_partition_keys(
+        self, partition_keys: Set[str], dynamic_partitions_store: DynamicPartitionsStore
+    ) -> Set[MultiPartitionKey]:
+        partition_keys_by_dimension = {
+            dim.name: dim.partitions_def.get_partition_keys(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+            for dim in self.partitions_defs
+        }
+        validated_partitions = set()
+        for partition_key in partition_keys:
+            partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
+            if len(partition_key_strs) != len(self.partitions_defs):
+                continue
+
+            multipartition_key = MultiPartitionKey(
+                {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
+            )
+
+            if all(
+                key in partition_keys_by_dimension.get(dim, [])
+                for dim, key in multipartition_key.keys_by_dimension.items()
+            ):
+                validated_partitions.add(partition_key)
+
+        return validated_partitions
+
     def __eq__(self, other):
         return (
             isinstance(other, MultiPartitionsDefinition)

@@ -25,6 +25,5 @@ from dagster._core.storage.fs_io_manager import (
     fs_io_manager as fs_io_manager,
 )
 from dagster._utils.test import (
-    execute_solid as execute_solid,
     execute_solid_within_pipeline as execute_solid_within_pipeline,
 )

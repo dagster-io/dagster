@@ -418,11 +418,20 @@ class InstanceRef(
             config_value, "scheduler", defaults["scheduler"]
         )
 
-        run_coordinator_data = configurable_class_data_or_default(
-            config_value,
-            "run_coordinator",
-            defaults["run_coordinator"],
-        )
+        if config_value.get("run_queue"):
+            run_coordinator_data = configurable_class_data(
+                {
+                    "module": "dagster.core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": config_value["run_queue"],
+                }
+            )
+        else:
+            run_coordinator_data = configurable_class_data_or_default(
+                config_value,
+                "run_coordinator",
+                defaults["run_coordinator"],
+            )
 
         run_launcher_data = configurable_class_data_or_default(
             config_value,

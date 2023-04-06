@@ -352,7 +352,7 @@ const OpListItem = styled.div<{selected: boolean}>`
   padding: 12px 24px;
   user-select: none;
 
-  & > code.bp3-code {
+  & > code.bp4-code {
     color: ${Colors.Gray800};
     background: transparent;
     font-family: ${FontFamily.monospace};

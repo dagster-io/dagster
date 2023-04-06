@@ -8,7 +8,7 @@ import {IconName, Icon} from './Icon';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
-    .bp3-toast {
+    .bp4-toast {
       padding: 6px;
       border-radius: 8px;
       font-size: 14px;
@@ -17,24 +17,31 @@ export const GlobalToasterStyle = createGlobalStyle`
       background-color: ${Colors.Gray700};
     }
 
-    .bp3-button-group {
+    .bp4-button-group {
       padding: 2px;
     }
   
-    .bp3-toast-message {
+    .bp4-toast-message {
       display: flex;
       align-items: center;
       padding: 6px;
       gap: 8px;
     }
 
-    .bp3-toast.bp3-intent-success {
-      background-color: ${Colors.Blue500};
+    .bp4-toast.bp4-intent-success,
+    .bp4-toast.bp4-intent-success .bp4-button {
+      background-color: ${Colors.Blue500} !important;
     }
 
-    .bp3-toast.bp3-intent-warning,
-    .bp3-toast.bp3-intent-danger {
-      background-color: ${Colors.Red500};
+    .bp4-toast.bp4-intent-warning,
+    .bp4-toast.bp4-intent-warning .bp4-button,
+    .bp4-toast.bp4-intent-danger,
+    .bp4-toast.bp4-intent-danger .bp4-button {
+      background-color: ${Colors.Red500} !important;
+    }
+
+    .bp4-toast .bp4-icon-cross {
+      color: ${Colors.Gray100};
     }
   }
 `;

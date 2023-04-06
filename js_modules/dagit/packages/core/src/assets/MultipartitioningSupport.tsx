@@ -1,11 +1,15 @@
-import {PartitionDefinitionType} from '../graphql/types';
-import {PartitionState} from '../partitions/PartitionStatus';
+import isEqual from 'lodash/isEqual';
+import uniq from 'lodash/uniq';
 
+import {PartitionDefinitionType} from '../graphql/types';
+
+import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
   PartitionDimensionSelection,
   Range,
+  PartitionHealthDataMerged,
 } from './usePartitionHealthData';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
@@ -32,13 +36,11 @@ the asset health bar you see is a flattened representation of the health of all 
 "show per-asset health" button beneath.
 
 */
-export function mergedAssetHealth(
-  assetHealth: PartitionHealthData[],
-): Omit<PartitionHealthData, 'assetKey' | 'ranges' | 'isRangeDataInverted'> {
+export function mergedAssetHealth(assetHealth: PartitionHealthData[]): PartitionHealthDataMerged {
   if (!assetHealth.length) {
     return {
       dimensions: [],
-      stateForKey: () => PartitionState.MISSING,
+      stateForKey: () => [AssetPartitionStatus.MISSING],
       rangesForSingleDimension: () => [],
     };
   }
@@ -68,7 +70,7 @@ export function mergedAssetHealth(
       type: dimension.type,
     })),
     stateForKey: (dimensionKeys: string[]) =>
-      mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
+      uniq(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
         dimensions[dimensionIdx].partitionKeys,
@@ -77,18 +79,6 @@ export function mergedAssetHealth(
         ),
       ),
   };
-}
-
-export function mergedStates(states: PartitionState[]): PartitionState {
-  if (states.includes(PartitionState.FAILURE)) {
-    return PartitionState.FAILURE;
-  } else if (states.includes(PartitionState.MISSING) && states.includes(PartitionState.SUCCESS)) {
-    return PartitionState.SUCCESS_MISSING;
-  } else if (states.includes(PartitionState.SUCCESS_MISSING)) {
-    return PartitionState.SUCCESS_MISSING;
-  } else {
-    return states[0];
-  }
 }
 
 /**
@@ -125,7 +115,7 @@ export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
   return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length);
 }
 
-export type Transition = {idx: number; delta: number; state: PartitionState};
+export type Transition = {idx: number; delta: number; state: AssetPartitionStatus[]};
 
 export function assembleRangesFromTransitions(
   allKeys: string[],
@@ -133,9 +123,7 @@ export function assembleRangesFromTransitions(
   maxOverlap: number,
 ) {
   // sort the input array, this algorithm does not work unless the transitions are in order
-  const transitions = [...transitionsUnsorted].sort(
-    (a, b) => a.idx - b.idx || `${a.state}`.localeCompare(`${b.state}`),
-  );
+  const transitions = [...transitionsUnsorted].sort((a, b) => a.idx - b.idx || b.delta - a.delta);
 
   // walk the transitions array and apply the transitions to a counter, creating an array of just the changes
   // in the number of currently-overlapping ranges. (eg: how many of the assets are materialized at this time).
@@ -143,45 +131,61 @@ export function assembleRangesFromTransitions(
   // FROM: [{idx: 0, delta: 1}, {idx: 0, delta: 1}, {idx: 3, delta: 1}, {idx: 10, delta: -1}]
   //   TO: [{idx: 0, depth: 2}, {idx: 3, depth: 3}, {idx: 10, depth: 2}]
   //
-  const depths: {idx: number; failure: number; success: number; success_missing: 0}[] = [];
+  const depths: {
+    idx: number;
+    [AssetPartitionStatus.FAILED]: number;
+    [AssetPartitionStatus.MATERIALIZING]: number;
+    [AssetPartitionStatus.MATERIALIZED]: number;
+    [AssetPartitionStatus.MISSING]: number;
+  }[] = [];
   for (const transition of transitions) {
-    const last = depths[depths.length - 1];
-    if (last && last.idx === transition.idx) {
-      (last as any)[transition.state] = ((last as any)[transition.state] || 0) + transition.delta;
-    } else {
-      depths.push({
-        ...(last || {}),
-        idx: transition.idx,
-        [transition.state]: ((last as any)?.[transition.state] || 0) + transition.delta,
-      });
+    for (const state of transition.state) {
+      const last = depths[depths.length - 1];
+      if (last && last.idx === transition.idx) {
+        last[state] = (last[state] || 0) + transition.delta;
+      } else {
+        depths.push({
+          ...(last || emptyAssetPartitionStatusCounts()),
+          [state]: (last?.[state] || 0) + transition.delta,
+          idx: transition.idx,
+        });
+      }
     }
   }
 
   // Ok! This array of depth values IS our SUCCESS vs. SUCCESS_MISSING range state. We just need to flatten it one
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
   //
-  const result: (Omit<Range, 'value'> & {value: PartitionState})[] = [];
-  for (const {idx, success, failure, success_missing} of depths) {
-    const value =
-      success === maxOverlap
-        ? PartitionState.SUCCESS
-        : failure > 0
-        ? PartitionState.FAILURE
-        : success > 0 || success_missing > 0
-        ? PartitionState.SUCCESS_MISSING
-        : PartitionState.MISSING;
+  const result: Range[] = [];
+
+  for (const {idx, MATERIALIZED, FAILED, MATERIALIZING, MISSING} of depths) {
+    const value: AssetPartitionStatus[] = [];
+    if (FAILED > 0) {
+      value.push(AssetPartitionStatus.FAILED);
+    }
+    if (MATERIALIZED > 0) {
+      value.push(AssetPartitionStatus.MATERIALIZED);
+    }
+    if (MATERIALIZING > 0) {
+      value.push(AssetPartitionStatus.MATERIALIZING);
+    }
+    if (MISSING > 0 || FAILED + MATERIALIZED + MATERIALIZING < maxOverlap) {
+      value.push(AssetPartitionStatus.MISSING);
+    }
 
     const last = result[result.length - 1];
 
-    if (last?.value !== value) {
+    if (!isEqual(last?.value, value)) {
       if (last) {
         last.end = {idx: idx - 1, key: allKeys[idx - 1]};
       }
       result.push({start: {idx, key: allKeys[idx]}, end: {idx, key: allKeys[idx]}, value});
     }
   }
-
-  return result.filter((range) => range.value !== PartitionState.MISSING) as Range[];
+  return result.filter(
+    (range) =>
+      range.start.idx < allKeys.length && !isEqual(range.value, [AssetPartitionStatus.MISSING]),
+  );
 }
 
 export function partitionDefinitionsEqual(
@@ -196,7 +200,7 @@ export function partitionDefinitionsEqual(
 
 export function explodePartitionKeysInSelection(
   selections: PartitionDimensionSelection[],
-  stateForKey: (dimensionKeys: string[]) => PartitionState,
+  stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus[],
 ) {
   if (selections.length === 0) {
     return [];
@@ -210,7 +214,7 @@ export function explodePartitionKeysInSelection(
     });
   }
   if (selections.length === 2) {
-    const all: {partitionKey: string; state: PartitionState}[] = [];
+    const all: {partitionKey: string; state: AssetPartitionStatus[]}[] = [];
     for (const key of selections[0].selectedKeys) {
       for (const subkey of selections[1].selectedKeys) {
         all.push({

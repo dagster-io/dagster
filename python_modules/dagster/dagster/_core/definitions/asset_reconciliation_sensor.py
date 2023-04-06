@@ -266,34 +266,35 @@ def find_parent_materialized_asset_partitions(
         if asset_graph.is_source(asset_key):
             continue
 
+        partitions_def = asset_graph.get_partitions_def(asset_key)
         latest_record = instance_queryer.get_latest_materialization_record(
             asset_key, after_cursor=latest_storage_id
         )
         if latest_record is None:
             continue
 
-        for child in asset_graph.get_children_partitions(
-            instance_queryer,
-            asset_key,
-            latest_record.partition_key,
-        ):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
-            ):
-                result_asset_partitions.add(child)
-
-        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
-            result_latest_storage_id = latest_record.storage_id
-
-        # for partitioned assets, we'll want the set of all asset partitions that have been
-        # materialized since the latest_storage_id, not just the most recent
-        partitions_def = asset_graph.get_partitions_def(asset_key)
-        if partitions_def is not None:
-            partitions_subset = partitions_def.empty_subset().with_partition_keys(
-                instance_queryer.get_materialized_partitions(
+        if partitions_def is None:
+            for child in asset_graph.get_children_partitions(instance_queryer, asset_key):
+                if (
+                    child.asset_key in target_asset_keys
+                    and not instance_queryer.is_asset_planned_for_run(latest_record.run_id, child)
+                ):
+                    result_asset_partitions.add(child)
+        else:
+            # for partitioned assets, we want the set of all asset partitions that have been
+            # materialized since the latest_storage_id, not just the most recent
+            materialized_partitions = [
+                partition_key
+                for partition_key in instance_queryer.get_materialized_partitions(
                     asset_key, after_cursor=latest_storage_id
                 )
+                if partitions_def.has_partition_key(
+                    partition_key, dynamic_partitions_store=instance_queryer
+                )
+            ]
+
+            partitions_subset = partitions_def.empty_subset().with_partition_keys(
+                materialized_partitions
             )
             for child in asset_graph.get_children(asset_key):
                 child_partitions_def = asset_graph.get_partitions_def(child)
@@ -334,6 +335,9 @@ def find_parent_materialized_asset_partitions(
                                 latest_partition_record.run_id, child
                             ):
                                 result_asset_partitions.add(child_asset_partition)
+
+        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
+            result_latest_storage_id = latest_record.storage_id
 
     return (result_asset_partitions, result_latest_storage_id)
 

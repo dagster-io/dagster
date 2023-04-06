@@ -145,9 +145,10 @@ def launch_run_over_graphql(
     pipeline_name,
     repository_name="demo_execution_repo",
     code_location_name="user-code-deployment-1",
-    mode="default",
     solid_selection=None,
+    tags=None,
 ):
+    tags = tags or {}
     variables = json.dumps(
         {
             "executionParams": {
@@ -158,7 +159,9 @@ def launch_run_over_graphql(
                     "solidSelection": solid_selection,
                 },
                 "runConfigData": run_config,
-                "mode": mode,
+                "executionMetadata": {
+                    "tags": [{"key": key, "value": value} for key, value in tags.items()]
+                },
             }
         }
     )
