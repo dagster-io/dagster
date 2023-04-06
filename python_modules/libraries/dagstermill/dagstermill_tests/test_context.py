@@ -15,7 +15,7 @@ def test_tags():
 
 def test_run_id():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.run_id is not None
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_run.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.run.run_id == BARE_OUT_OF_PIPELINE_CONTEXT.run_id
 
 
 def test_run_config():
@@ -34,9 +34,9 @@ def test_environment_config():
 
 
 def test_pipeline_def():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == "ephemeral_dagstermill_pipeline"
-    assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.nodes) == 1
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.nodes[0].name == "this_op"
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.job_def.name == "ephemeral_dagstermill_pipeline"
+    assert len(BARE_OUT_OF_PIPELINE_CONTEXT.job_def.nodes) == 1
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.job_def.nodes[0].name == "this_op"
 
 
 def test_resources():

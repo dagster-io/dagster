@@ -23,17 +23,15 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     def __init__(
         self,
-        pipeline_context: PlanExecutionContext,
-        pipeline_def: JobDefinition,
+        job_context: PlanExecutionContext,
+        job_def: JobDefinition,
         resource_keys_to_init: AbstractSet[str],
         op_name: str,
         node_handle: NodeHandle,
         op_config: Any = None,
     ):
-        self._pipeline_context = check.inst_param(
-            pipeline_context, "pipeline_context", PlanExecutionContext
-        )
-        self._pipeline_def = check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        self._job_context = check.inst_param(job_context, "job_context", PlanExecutionContext)
+        self._job_def = check.inst_param(job_def, "job_def", JobDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
@@ -51,7 +49,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             bool
         """
         check.str_param(key, "key")
-        return self._pipeline_context.has_tag(key)
+        return self._job_context.has_tag(key)
 
     def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag defined on the context.
@@ -63,44 +61,35 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             str
         """
         check.str_param(key, "key")
-        return self._pipeline_context.get_tag(key)
+        return self._job_context.get_tag(key)
 
     @public
     @property
     def run_id(self) -> str:
         """str: The run_id for the context."""
-        return self._pipeline_context.run_id
+        return self._job_context.run_id
 
     @public
     @property
     def run_config(self) -> Mapping[str, Any]:
         """dict: The run_config for the context."""
-        return self._pipeline_context.run_config
+        return self._job_context.run_config
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
         """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context."""
-        return self._pipeline_context.resolved_run_config
+        return self._job_context.resolved_run_config
 
     @public
     @property
     def logging_tags(self) -> Mapping[str, str]:
         """dict: The logging tags for the context."""
-        return self._pipeline_context.logging_tags
+        return self._job_context.logging_tags
 
     @public
     @property
     def job_name(self) -> str:
-        return self._pipeline_context.job_name
-
-    @property
-    def pipeline_name(self) -> str:
-        deprecation_warning(
-            "DagstermillExecutionContext.pipeline_name",
-            "0.17.0",
-            "use the 'job_name' property instead.",
-        )
-        return self.job_name
+        return self._job_context.job_name
 
     @public
     @property
@@ -109,34 +98,14 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
         This will be a dagstermill-specific shim.
         """
-        return cast(
-            JobDefinition,
-            check.inst(
-                self._pipeline_def,
-                JobDefinition,
-                "Accessing job_def inside a legacy pipeline. Use pipeline_def instead.",
-            ),
-        )
-
-    @property
-    def pipeline_def(self) -> JobDefinition:
-        """:class:`dagster.PipelineDefinition`: The pipeline definition for the context.
-
-        This will be a dagstermill-specific shim.
-        """
-        deprecation_warning(
-            "DagstermillExecutionContext.pipeline_def",
-            "0.17.0",
-            "use the 'job_def' property instead.",
-        )
-        return self._pipeline_def
+        return self._job_def
 
     @property
     def resources(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
         resources.
         """
-        return self._pipeline_context.scoped_resources_builder.build(
+        return self._job_context.scoped_resources_builder.build(
             required_resource_keys=self._resource_keys_to_init,
         )
 
@@ -144,16 +113,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def run(self) -> DagsterRun:
         """:class:`dagster.DagsterRun`: The job run for the context."""
-        return cast(DagsterRun, self._pipeline_context.dagster_run)
-
-    @property
-    def pipeline_run(self) -> DagsterRun:
-        deprecation_warning(
-            "DagstermillExecutionContext.pipeline_run",
-            "0.17.0",
-            "use the 'run' property instead.",
-        )
-        return self.run
+        return cast(DagsterRun, self._job_context.dagster_run)
 
     @property
     def log(self) -> DagsterLogManager:
@@ -161,7 +121,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
         Call, e.g., ``log.info()`` to log messages through the Dagster machinery.
         """
-        return self._pipeline_context.log
+        return self._job_context.log
 
     @public
     @property
@@ -203,8 +163,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
     def __init__(
         self,
-        pipeline_context: PlanExecutionContext,
-        pipeline_def: JobDefinition,
+        job_context: PlanExecutionContext,
+        job_def: JobDefinition,
         resource_keys_to_init: AbstractSet[str],
         op_name: str,
         step_context: StepExecutionContext,
@@ -213,8 +173,8 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
     ):
         self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
         super().__init__(
-            pipeline_context,
-            pipeline_def,
+            job_context,
+            job_def,
             resource_keys_to_init,
             op_name,
             node_handle,

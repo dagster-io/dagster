@@ -74,7 +74,7 @@ def in_job_manager(
 def test_get_out_of_job_context():
     context = dagstermill.get_context(resource_defs={"list": ResourceDefinition(lambda _: [])})
 
-    assert context.pipeline_name == "ephemeral_dagstermill_pipeline"
+    assert context.job_name == "ephemeral_dagstermill_pipeline"
     assert context.resources.list == []
 
 

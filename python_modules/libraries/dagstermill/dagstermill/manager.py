@@ -176,8 +176,8 @@ class Manager:
             raise_on_error=True,
         ) as pipeline_context:
             self.context = DagstermillRuntimeExecutionContext(
-                pipeline_context=pipeline_context,
-                pipeline_def=pipeline_def,
+                job_context=pipeline_context,
+                job_def=pipeline_def,
                 op_config=run_config.get("ops", {}).get(op.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
@@ -276,8 +276,8 @@ class Manager:
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(
-                pipeline_context=pipeline_context,
-                pipeline_def=pipeline_def,
+                job_context=pipeline_context,
+                job_def=job_def,
                 op_config=op_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
