@@ -209,20 +209,20 @@ class PipelineExecutionResult(GraphExecutionResult):
 
     def __init__(
         self,
-        pipeline_def: JobDefinition,
+        job_def: JobDefinition,
         run_id: str,
         event_list: Sequence[DagsterEvent],
         reconstruct_context: ReconstructContextFn,
         output_capture: Optional[Dict[StepOutputHandle, object]] = None,
     ):
         self.run_id = check.str_param(run_id, "run_id")
-        check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
+        check.inst_param(job_def, "job_def", JobDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline_def.graph,
+            container=job_def.graph,
             event_list=event_list,
             reconstruct_context=reconstruct_context,
-            job_def=pipeline_def,
+            job_def=job_def,
             output_capture=output_capture,
         )
 
