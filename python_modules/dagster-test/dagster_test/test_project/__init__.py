@@ -171,14 +171,14 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
 
 class ReOriginatedExternalPipelineForTest(ExternalJob):
     def __init__(
-        self, external_pipeline, container_image=None, container_context=None, filename=None
+        self, external_job: ExternalJob, container_image=None, container_context=None, filename=None
     ):
         self._container_image = container_image
         self._container_context = container_context
         self._filename = filename or "repo.py"
         super(ReOriginatedExternalPipelineForTest, self).__init__(
-            external_pipeline.external_job_data,
-            external_pipeline.repository_handle,
+            external_job.external_job_data,
+            external_job.repository_handle,
         )
 
     def get_python_origin(self):
@@ -201,7 +201,7 @@ class ReOriginatedExternalPipelineForTest(ExternalJob):
             ),
         )
 
-    def get_external_origin(self):
+    def get_external_origin(self) -> ExternalJobOrigin:
         """Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
@@ -227,7 +227,7 @@ class ReOriginatedExternalPipelineForTest(ExternalJob):
 class ReOriginatedExternalScheduleForTest(ExternalSchedule):
     def __init__(
         self,
-        external_schedule,
+        external_schedule: ExternalSchedule,
         container_image=None,
     ):
         self._container_image = container_image
