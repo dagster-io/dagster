@@ -50,21 +50,17 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         through this type """
         name = "RunConfigSchema"
 
-    def __init__(self, represented_pipeline, mode):
+    def __init__(self, represented_job: RepresentedJob, mode: str):
         super().__init__()
-        self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedJob
-        )
+        self._represented_job = check.inst_param(represented_job, "represented_job", RepresentedJob)
         self._mode = check.str_param(mode, "mode")
 
     def resolve_allConfigTypes(self, _graphene_info: ResolveInfo):
         return sorted(
             list(
                 map(
-                    lambda key: to_config_type(
-                        self._represented_pipeline.config_schema_snapshot, key
-                    ),
-                    self._represented_pipeline.config_schema_snapshot.all_config_keys,
+                    lambda key: to_config_type(self._represented_job.config_schema_snapshot, key),
+                    self._represented_job.config_schema_snapshot.all_config_keys,
                 )
             ),
             key=lambda ct: ct.key,
@@ -72,8 +68,8 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
     def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
-            self._represented_pipeline.config_schema_snapshot,
-            self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key,
+            self._represented_job.config_schema_snapshot,
+            self._represented_job.get_mode_def_snap(self._mode).root_config_key,
         )
 
     def resolve_isRunConfigValid(
@@ -83,7 +79,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     ):
         return resolve_is_run_config_valid(
             graphene_info,
-            self._represented_pipeline,
+            self._represented_job,
             self._mode,
             parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
         )

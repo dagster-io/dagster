@@ -17,14 +17,14 @@ class GraphenePipelineSnapshot(GrapheneIPipelineSnapshotMixin, graphene.ObjectTy
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot, GraphenePipelineReference)
         name = "PipelineSnapshot"
 
-    def __init__(self, represented_pipeline):
+    def __init__(self, represented_job: RepresentedJob):
         super().__init__()
-        self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedJob
+        self._represented_job = check.inst_param(
+            represented_job, "represented_pipeline", RepresentedJob
         )
 
-    def get_represented_pipeline(self) -> RepresentedJob:
-        return self._represented_pipeline
+    def get_represented_job(self) -> RepresentedJob:
+        return self._represented_job
 
 
 class GraphenePipelineSnapshotOrError(graphene.Union):

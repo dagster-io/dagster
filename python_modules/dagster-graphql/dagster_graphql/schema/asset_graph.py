@@ -178,7 +178,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
     _node_definition_snap: Optional[Union[GraphDefSnap, OpDefSnap]]
-    _external_pipeline: Optional[ExternalJob]
+    _external_job: Optional[ExternalJob]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
@@ -286,7 +286,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
         )
-        self._external_pipeline = None  # lazily loaded
+        self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
@@ -320,16 +320,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return loader
 
-    def get_external_pipeline(self) -> ExternalJob:
-        if self._external_pipeline is None:
+    def get_external_job(self) -> ExternalJob:
+        if self._external_job is None:
             check.invariant(
                 len(self._external_asset_node.job_names) >= 1,
                 "Asset must be part of at least one job",
             )
-            self._external_pipeline = self._external_repository.get_full_external_job(
+            self._external_job = self._external_repository.get_full_external_job(
                 self._external_asset_node.job_names[0]
             )
-        return self._external_pipeline
+        return self._external_job
 
     def get_node_definition_snap(
         self,
@@ -341,7 +341,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 or self._external_asset_node.graph_name
                 or self._external_asset_node.op_name
             )
-            self._node_definition_snap = self.get_external_pipeline().get_node_def_snap(node_key)
+            self._node_definition_snap = self.get_external_job().get_node_def_snap(node_key)
         # weird mypy bug causes mistyped _node_definition_snap
         return check.not_none(self._node_definition_snap)
 
@@ -423,7 +423,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 inv.node_def_name
                 for inv in node_def_snap.dep_structure_snapshot.node_invocation_snaps
             ]
-            external_pipeline = self.get_external_pipeline()
+            external_pipeline = self.get_external_job()
             constituent_resource_key_sets = [
                 self.get_required_resource_keys_rec(external_pipeline.get_node_def_snap(name))
                 for name in constituent_node_names
@@ -563,7 +563,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_configField(self, _graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
         return (
             GrapheneConfigTypeField(
@@ -886,7 +886,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         node_def_snap = self.get_node_definition_snap()
         if isinstance(node_def_snap, OpDefSnap):
             return GrapheneSolidDefinition(external_pipeline, node_def_snap.name)
@@ -978,7 +978,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ]:
         if self.is_source_asset():
             return None
-        external_pipeline = self.get_external_pipeline()
+        external_pipeline = self.get_external_job()
         output_name = self.external_asset_node.output_name
         if output_name:
             for output_def in self.get_node_definition_snap().output_def_snaps:

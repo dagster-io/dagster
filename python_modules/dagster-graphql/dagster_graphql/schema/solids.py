@@ -39,15 +39,13 @@ class GrapheneInputDefinition(graphene.ObjectType):
     class Meta:
         name = "InputDefinition"
 
-    def __init__(
-        self, represented_pipeline: RepresentedJob, solid_def_name: str, input_def_name: str
-    ):
-        self._represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedJob
+    def __init__(self, represented_job: RepresentedJob, solid_def_name: str, input_def_name: str):
+        self._represented_job = check.inst_param(
+            represented_job, "represented_pipeline", RepresentedJob
         )
         check.str_param(solid_def_name, "solid_def_name")
         check.str_param(input_def_name, "input_def_name")
-        solid_def_snap = self._represented_pipeline.get_node_def_snap(solid_def_name)
+        solid_def_snap = self._represented_job.get_node_def_snap(solid_def_name)
         self._input_def_snap = solid_def_snap.get_input_snap(input_def_name)
         super().__init__(
             name=self._input_def_snap.name,
@@ -56,13 +54,13 @@ class GrapheneInputDefinition(graphene.ObjectType):
 
     def resolve_type(self, _graphene_info: ResolveInfo) -> GrapheneDagsterTypeUnion:
         return to_dagster_type(
-            self._represented_pipeline.job_snapshot, self._input_def_snap.dagster_type_key
+            self._represented_job.job_snapshot, self._input_def_snap.dagster_type_key
         )
 
     def resolve_solid_definition(
         self, _graphene_info: ResolveInfo
     ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
-        return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+        return build_solid_definition(self._represented_job, self._solid_def_snap.name)
 
     def resolve_metadata_entries(self, _graphene_info):
         return list(iterate_metadata_entries(self._input_def_snap.metadata))

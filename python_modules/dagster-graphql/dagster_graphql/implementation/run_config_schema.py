@@ -35,7 +35,7 @@ def resolve_run_config_schema_or_error(
     external_job = get_external_job_or_raise(graphene_info, selector)
 
     return GrapheneRunConfigSchema(
-        represented_pipeline=external_job,
+        represented_job=external_job,
         mode=DEFAULT_MODE_NAME,
     )
 

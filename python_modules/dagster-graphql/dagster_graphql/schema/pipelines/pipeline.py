@@ -581,7 +581,7 @@ class GrapheneIPipelineSnapshotMixin:
     # Graphene has some strange properties that make it so that you cannot
     # implement ABCs nor use properties in an overridable way. So the way
     # the mixin works is that the target classes have to have a method
-    # get_represented_pipeline()
+    # get_represented_job()
     #
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
@@ -616,23 +616,23 @@ class GrapheneIPipelineSnapshotMixin:
     class Meta:
         name = "IPipelineSnapshotMixin"
 
-    def get_represented_pipeline(self) -> RepresentedJob:
+    def get_represented_job(self) -> RepresentedJob:
         raise NotImplementedError()
 
     def resolve_pipeline_snapshot_id(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().identifying_job_snapshot_id
+        return self.get_represented_job().identifying_job_snapshot_id
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().identifying_job_snapshot_id
+        return self.get_represented_job().identifying_job_snapshot_id
 
     def resolve_name(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().name
+        return self.get_represented_job().name
 
     def resolve_description(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().description
+        return self.get_represented_job().description
 
     def resolve_dagster_types(self, _graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         return sorted(
             list(
                 map(
@@ -647,7 +647,7 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_dagster_type_or_error(
         self, _graphene_info: ResolveInfo, dagsterTypeName: str
     ) -> GrapheneDagsterTypeUnion:
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
 
         if not represented_pipeline.has_dagster_type_named(dagsterTypeName):
             raise UserFacingGraphQLError(
@@ -660,14 +660,14 @@ class GrapheneIPipelineSnapshotMixin:
         )
 
     def resolve_solids(self, _graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         return build_solids(
             represented_pipeline,
             represented_pipeline.dep_structure_index,
         )
 
     def resolve_modes(self, _graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         return [
             GrapheneMode(
                 represented_pipeline.config_schema_snapshot,
@@ -682,12 +682,12 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
     ) -> Optional[GrapheneSolidHandle]:
-        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
+        return build_solid_handles(self.get_represented_job()).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
     ) -> Sequence[GrapheneSolidHandle]:
-        handles = build_solid_handles(self.get_represented_pipeline())
+        handles = build_solid_handles(self.get_represented_job())
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
@@ -701,23 +701,23 @@ class GrapheneIPipelineSnapshotMixin:
         return [handles[key] for key in sorted(handles)]
 
     def resolve_tags(self, _graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
 
     def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().solid_selection
+        return self.get_represented_job().solid_selection
 
     def resolve_runs(
         self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> Sequence[GrapheneRun]:
-        pipeline = self.get_represented_pipeline()
+        pipeline = self.get_represented_job()
         if isinstance(pipeline, ExternalJob):
             runs_filter = RunsFilter(
                 job_name=pipeline.name,
@@ -730,7 +730,7 @@ class GrapheneIPipelineSnapshotMixin:
         return get_runs(graphene_info, runs_filter, cursor, limit)
 
     def resolve_schedules(self, graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         if not isinstance(represented_pipeline, ExternalJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # schedules
@@ -741,7 +741,7 @@ class GrapheneIPipelineSnapshotMixin:
         return schedules
 
     def resolve_sensors(self, graphene_info: ResolveInfo):
-        represented_pipeline = self.get_represented_pipeline()
+        represented_pipeline = self.get_represented_job()
         if not isinstance(represented_pipeline, ExternalJob):
             # this is an historical pipeline snapshot, so there are not any associated running
             # sensors
@@ -752,14 +752,14 @@ class GrapheneIPipelineSnapshotMixin:
         return sensors
 
     def resolve_parent_snapshot_id(self, _graphene_info: ResolveInfo):
-        lineage_snapshot = self.get_represented_pipeline().job_snapshot.lineage_snapshot
+        lineage_snapshot = self.get_represented_job().job_snapshot.lineage_snapshot
         if lineage_snapshot:
             return lineage_snapshot.parent_snapshot_id
         else:
             return None
 
     def resolve_graph_name(self, _graphene_info: ResolveInfo):
-        return self.get_represented_pipeline().get_graph_name()
+        return self.get_represented_job().get_graph_name()
 
 
 class GrapheneIPipelineSnapshot(graphene.Interface):
@@ -844,11 +844,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_pipeline, batch_loader=None):
+    def __init__(self, external_job: ExternalJob, batch_loader=None):
         super().__init__()
-        self._external_pipeline = check.inst_param(
-            external_pipeline, "external_pipeline", ExternalJob
-        )
+        self._external_job = check.inst_param(external_job, "external_job", ExternalJob)
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple pipelines
         self._batch_loader = check.opt_inst_param(
@@ -856,30 +854,30 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         )
 
     def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._external_pipeline.get_external_origin_id()
+        return self._external_job.get_external_origin_id()
 
-    def get_represented_pipeline(self) -> RepresentedJob:
-        return self._external_pipeline
+    def get_represented_job(self) -> RepresentedJob:
+        return self._external_job
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [
-            GraphenePipelinePreset(preset, self._external_pipeline.name)
-            for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
+            GraphenePipelinePreset(preset, self._external_job.name)
+            for preset in sorted(self._external_job.active_presets, key=lambda item: item.name)
         ]
 
     def resolve_isJob(self, _graphene_info: ResolveInfo):
         return True
 
     def resolve_isAssetJob(self, graphene_info: ResolveInfo):
-        handle = self._external_pipeline.repository_handle
+        handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
-        return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
+        return bool(repository.get_external_asset_nodes(self._external_job.name))
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from ..external import GrapheneRepository
 
-        handle = self._external_pipeline.repository_handle
+        handle = self._external_job.repository_handle
         location = graphene_info.context.get_code_location(handle.location_name)
         return GrapheneRepository(
             graphene_info.context.instance,
@@ -892,9 +890,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     ) -> Sequence[GrapheneRun]:
         # override the implementation to use the batch run loader
         if not cursor and limit and self._batch_loader:
-            records = self._batch_loader.get_run_records_for_job(
-                self._external_pipeline.name, limit
-            )
+            records = self._batch_loader.get_run_records_for_job(self._external_job.name, limit)
             return [GrapheneRun(record) for record in records]
 
         # otherwise, fall back to the default implementation
