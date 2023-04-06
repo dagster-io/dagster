@@ -356,7 +356,7 @@ class SnowflakeResource(ConfigurableResourceFactory):
             from dagster import job, op
             from dagster_snowflake import SnowflakeResource
 
-            @op(required_resource_keys={'snowflake'})
+            @op
             def get_one(snowflake_resource: Resource[SnowflakeConnection]):
                 snowflake_resource.execute_query('SELECT 1')
 
