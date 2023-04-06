@@ -55,7 +55,7 @@ def in_job_manager(
         try:
             with safe_tempfile_path() as output_log_file_path:
                 context_dict = {
-                    "pipeline_run_dict": pipeline_run_dict,
+                    "job_run_dict": pipeline_run_dict,
                     "node_handle_kwargs": node_handle._asdict(),
                     "executable_dict": executable_dict,
                     "marshal_dir": marshal_dir,
@@ -65,7 +65,7 @@ def in_job_manager(
                     "step_key": step_key,
                 }
 
-                manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))
+                manager.reconstitute_job_context(**dict(context_dict, **kwargs))
                 yield manager
         finally:
             shutil.rmtree(marshal_dir)

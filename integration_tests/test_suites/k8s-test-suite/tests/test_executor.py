@@ -222,7 +222,7 @@ def _launch_executor_run(
     assert "PIPELINE_SUCCESS" in result, f"no match, result: {result}"
 
     updated_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run_id)
-    assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()
+    assert updated_run.tags[DOCKER_IMAGE_TAG] == get_test_project_docker_image()  # type: ignore  # (possible none)
 
     events = dagster_instance_for_k8s_run_launcher.all_logs(run_id)
     assert len(_get_step_execution_events(events)) == num_steps
