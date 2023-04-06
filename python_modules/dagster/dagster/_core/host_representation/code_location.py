@@ -388,7 +388,7 @@ class InProcessCodeLocation(CodeLocation):
         check.opt_inst_param(instance, "instance", DagsterInstance)
 
         execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_job(
+            job=self.get_reconstructable_job(
                 external_job.repository_handle.repository_name, external_job.name
             ).subset_for_execution_from_existing_job(
                 external_job.solids_to_execute,

@@ -997,7 +997,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         else:
             execution_plan = create_execution_plan(
-                pipeline=InMemoryJob(job_def),
+                job=InMemoryJob(job_def),
                 run_config=run_config,
                 instance_ref=self.get_ref() if self.is_persistent else None,
                 tags=tags,

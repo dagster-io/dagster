@@ -64,7 +64,7 @@ def create_test_pipeline_execution_context(
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
     pipeline_run = DagsterRun(job_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
+    execution_plan = create_execution_plan(job=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(
         InMemoryJob(pipeline_def),
         execution_plan,

@@ -703,7 +703,7 @@ def _get_execution_plan_from_run(
 
 
 def create_execution_plan(
-    pipeline: Union[IJob, JobDefinition],
+    job: Union[IJob, JobDefinition],
     run_config: Optional[Mapping[str, object]] = None,
     step_keys_to_execute: Optional[Sequence[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
@@ -711,13 +711,13 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-    pipeline = _check_pipeline(pipeline)
+    pipeline = _check_pipeline(job)
 
     # If you have repository_load_data, make sure to use it when building plan
-    if isinstance(pipeline, ReconstructableJob) and repository_load_data is not None:
-        pipeline = pipeline.with_repository_load_data(repository_load_data)
+    if isinstance(job, ReconstructableJob) and repository_load_data is not None:
+        job = job.with_repository_load_data(repository_load_data)
 
-    pipeline_def = pipeline.get_definition()
+    pipeline_def = job.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", JobDefinition)
     run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
@@ -736,7 +736,7 @@ def create_execution_plan(
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config)
 
     return ExecutionPlan.build(
-        pipeline,
+        job,
         resolved_run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
