@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Mapping, Optional, Sequence, Type, cast
+from typing import Mapping, Optional, Sequence, Type, cast, overload
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.structured_config import (
@@ -195,6 +195,17 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
             " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
         ),
     )
+
+    @overload
+    def __init__(self, schema: str, *args, **kwargs):
+        ...
+
+    @overload
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     @abstractmethod

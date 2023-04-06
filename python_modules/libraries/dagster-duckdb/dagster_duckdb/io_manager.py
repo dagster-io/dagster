@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
-from typing import Optional, Sequence, Type, cast
+from typing import Optional, Sequence, Type, cast, overload
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
@@ -161,6 +161,17 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     schema_: Optional[str] = Field(
         default=None, alias="schema", description="Name of the schema to use."
     )  # schema is a reserved word for pydantic
+
+    @overload
+    def __init__(self, schema: str, *args, **kwargs):
+        ...
+
+    @overload
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     @abstractmethod
