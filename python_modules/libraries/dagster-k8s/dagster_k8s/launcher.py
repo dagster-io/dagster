@@ -192,13 +192,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return cls(inst_data=inst_data, **config_value)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     def get_container_context_for_run(self, pipeline_run: DagsterRun) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(pipeline_run, self, include_run_tags=True)
 
-    def _launch_k8s_job_with_args(self, job_name, args, run) -> None:
+    def _launch_k8s_job_with_args(
+        self, job_name: str, args: Optional[Sequence[str]], run: DagsterRun
+    ) -> None:
         container_context = self.get_container_context_for_run(run)
 
         pod_name = job_name
