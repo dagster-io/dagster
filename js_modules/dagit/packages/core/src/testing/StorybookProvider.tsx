@@ -10,6 +10,7 @@ import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 const typeDefs = loader('../graphql/schema.graphql');
 
 interface Props {
+  children: React.ReactNode;
   routerProps?: MemoryRouterProps;
   apolloProps?: ApolloTestProps;
 }

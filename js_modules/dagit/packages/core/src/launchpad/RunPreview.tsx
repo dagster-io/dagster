@@ -585,11 +585,13 @@ const ErrorRow: React.FC<{
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
 }> = ({error, onHighlight}) => {
-  let message = error;
+  let message: React.ReactNode = null;
   let target: ValidationError | null = null;
   if (isValidationError(error)) {
     message = error.message;
     target = error;
+  } else {
+    message = error;
   }
 
   let displayed = message;

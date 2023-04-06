@@ -215,7 +215,7 @@ const TimestampColumnContainer = styled.div`
   }
 `;
 
-export const EventTypeColumn: React.FC = (props) => {
+export const EventTypeColumn = (props: {children: React.ReactNode}) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <EventTypeColumnContainer style={{width: widths.eventType}}>

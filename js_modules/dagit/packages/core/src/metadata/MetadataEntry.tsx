@@ -317,6 +317,7 @@ const PythonArtifactLink = ({
 );
 
 const MetadataEntryModalAction: React.FC<{
+  children: React.ReactNode;
   label: string;
   content: () => React.ReactNode;
   copyContent: () => string;

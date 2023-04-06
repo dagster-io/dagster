@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface ISidebarSectionProps {
+  children: React.ReactNode;
   title: string;
   collapsedByDefault?: boolean;
 }

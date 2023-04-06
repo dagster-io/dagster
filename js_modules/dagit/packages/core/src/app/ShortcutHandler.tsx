@@ -77,6 +77,8 @@ window.addEventListener('blur', () => {
 });
 
 interface ShortcutHandlerProps {
+  children: React.ReactNode;
+
   // Optionally pass onGlobalKeyDown to receive every global key event
   onGlobalKeyDown?: (event: KeyboardEvent) => void;
 

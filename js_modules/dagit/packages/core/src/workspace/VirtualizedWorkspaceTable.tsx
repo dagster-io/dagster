@@ -55,7 +55,7 @@ export const LoadingOrNone: React.FC<{
   );
 };
 
-export const CaptionText: React.FC = ({children}) => {
+export const CaptionText = ({children}: {children: React.ReactNode}) => {
   return (
     <CaptionTextContainer>
       <Caption>{children}</Caption>

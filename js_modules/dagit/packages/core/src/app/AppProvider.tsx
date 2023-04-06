@@ -95,6 +95,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 export interface AppProviderProps {
+  children: React.ReactNode;
   appCache: InMemoryCache;
   config: {
     apolloLinks: ApolloLink[];

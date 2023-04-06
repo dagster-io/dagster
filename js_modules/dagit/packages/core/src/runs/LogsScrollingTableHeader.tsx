@@ -22,7 +22,7 @@ export const ColumnWidthsContext = React.createContext({
 });
 
 export class ColumnWidthsProvider extends React.Component<
-  {onWidthsChanged: (widths: typeof ColumnWidths) => void},
+  {children: React.ReactNode; onWidthsChanged: (widths: typeof ColumnWidths) => void},
   typeof ColumnWidths
 > {
   state = ColumnWidths;
@@ -47,7 +47,7 @@ export class ColumnWidthsProvider extends React.Component<
   }
 }
 
-interface HeaderProps extends React.HTMLProps<HTMLDivElement> {
+interface HeaderProps extends Omit<React.HTMLProps<HTMLDivElement>, 'onResize'> {
   width: number;
   handleSide?: 'left' | 'right';
   onResize?: (width: number) => void;

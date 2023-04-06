@@ -16,6 +16,7 @@ type AppNavLinkType = {
   element: React.ReactNode;
 };
 interface Props {
+  children?: React.ReactNode;
   searchPlaceholder: string;
   rightOfSearchBar?: React.ReactNode;
   showStatusWarningIcon?: boolean;
@@ -144,7 +145,7 @@ export const AppTopNavLogo: React.FC = () => {
   }, [nav]);
 
   const onKeyDown = React.useCallback(
-    (e) => {
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if (e.key === 'Escape' && nav.isOpen) {
         nav.close();
       }

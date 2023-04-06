@@ -13,7 +13,7 @@ import styled from 'styled-components/macro';
 
 interface MenuLinkProps
   extends CommonMenuItemProps,
-    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus'>,
+    Omit<React.ComponentProps<typeof MenuItem>, 'icon' | 'onClick' | 'onFocus' | 'target'>,
     LinkProps {}
 
 /**

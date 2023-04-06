@@ -62,7 +62,10 @@ export const AssetNode: React.FC<{
   );
 }, isEqual);
 
-const AssetNodeStatusBox: React.FC<{background: string}> = ({background, children}) => (
+const AssetNodeStatusBox: React.FC<{background: string; children: React.ReactNode}> = ({
+  background,
+  children,
+}) => (
   <Box
     padding={{horizontal: 8}}
     style={{

@@ -73,7 +73,7 @@ export const Suggest = <T,>(props: Props<T>) => {
   return (
     <BlueprintSuggest<T>
       {...rest}
-      inputProps={inputProps}
+      inputProps={inputProps as any}
       itemListRenderer={(props) => (
         <List
           style={{outline: 'none', marginRight: -5, paddingRight: 5}}
