@@ -1,5 +1,5 @@
 from gzip import GzipFile
-from typing import Tuple
+from typing import List, Tuple
 
 import click
 from tqdm import tqdm
@@ -66,7 +66,7 @@ def export_command(run_id, output_file):
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
 def import_command(input_files: Tuple[str, ...]):
-    debug_payloads = []
+    debug_payloads: List[DebugRunPayload] = []
     for input_file in input_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
