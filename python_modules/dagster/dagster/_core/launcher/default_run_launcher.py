@@ -1,5 +1,5 @@
 import time
-from typing import Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 
 from typing_extensions import Self
 
@@ -19,6 +19,10 @@ from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
+
+if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 # note: this class is a top level export, so we defer many imports til use for performance
@@ -50,7 +54,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         return DefaultRunLauncher(inst_data=inst_data)
 
     @staticmethod
-    def launch_run_from_grpc_client(instance, run, grpc_client):
+    def launch_run_from_grpc_client(
+        instance: "DagsterInstance", run: DagsterRun, grpc_client: "DagsterGrpcClient"
+    ):
         # defer for perf
         from dagster._grpc.types import ExecuteExternalJobArgs, StartRunResult
 
