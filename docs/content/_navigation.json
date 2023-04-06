@@ -725,8 +725,6 @@
             "path": "/guides/running-dagster-locally"
           },
           {
-<<<<<<< HEAD
-=======
             "title": "Understanding assets, ops, and graphs",
             "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
           },
@@ -800,7 +798,6 @@
             "path": "/guides/dagster/ml-pipeline"
           },
           {
->>>>>>> 1ef7544449 (route nonMdx)
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
           },

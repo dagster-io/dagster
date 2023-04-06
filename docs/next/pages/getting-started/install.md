@@ -2,12 +2,11 @@
 title: Installing Dagster | Dagster Docs
 description: Install Dagster
 ---
-
 # {% $markdoc.frontmatter.title %}
 
 ## Requirements
 
-{% partial file="DagsterVersion.mdx" /%}
+{% partial file="DagsterVersion.md" /%}
 
 To check that Python and the pip package manager are already installed in your environment, you can run:
 
@@ -15,6 +14,8 @@ To check that Python and the pip package manager are already installed in your e
 python --version
 pip --version
 ```
+
+### test right side bar
 
 ---
 
