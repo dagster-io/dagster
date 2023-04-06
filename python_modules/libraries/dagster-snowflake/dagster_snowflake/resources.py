@@ -502,8 +502,8 @@ class SnowflakeResource(ConfigurableResourceFactory):
         ),
     )
 
-    paramstyle: str = Field(
-        default="pyformat",
+    paramstyle: Optional[str] = Field(
+        default=None,
         description=(
             "pyformat by default for client side binding. Specify qmark or numeric to "
             "change bind variable formats for server side binding."
@@ -552,7 +552,7 @@ class SnowflakeResource(ConfigurableResourceFactory):
     @validator("paramstyle")
     def validate_paramstyle(cls, v):
         valid_config = ["pyformat", "qmark", "numeric"]
-        if v not in valid_config:
+        if v is not None and v not in valid_config:
             raise DagsterInvalidConfigError(
                 "Snowflake Resource: 'paramstyle' configuration value must be one of:"
                 f" {','.join(valid_config)}"
