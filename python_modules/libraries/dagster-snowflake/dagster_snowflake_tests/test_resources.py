@@ -49,7 +49,6 @@ def test_snowflake_resource(snowflake_connect, resource):
         database="TESTDB",
         schema="TESTSCHEMA",
         warehouse="TINY_WAREHOUSE",
-        paramstyle="pyformat",
     )
 
 
@@ -106,7 +105,6 @@ def test_snowflake_resource_from_envvars(snowflake_connect, resource):
             database="TESTDB",
             schema="TESTSCHEMA",
             warehouse="TINY_WAREHOUSE",
-            paramstyle="pyformat",
         )
 
 
