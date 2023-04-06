@@ -1,9 +1,11 @@
+import datetime
 import os
 import sys
 import time
 from unittest import mock
 
 from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.host_representation import InProcessCodeLocationOrigin
@@ -57,6 +59,9 @@ partitioned_source = SourceAsset(
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     non_argument_deps={"partitioned_source"},
+    auto_materialize_policy=AutoMaterializePolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
+    ),
 )
 def downstream_of_partitioned_source():
     pass
@@ -237,4 +242,14 @@ def test_get_implicit_job_name_for_assets():
             ]
         )
         is None
+    )
+
+
+def test_auto_materialize_policy():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+
+    assert asset_graph.get_auto_materialize_policy(
+        AssetKey("downstream_of_partitioned_source")
+    ) == AutoMaterializePolicy.eager(
+        time_window_partition_scope=datetime.timedelta(days=1, hours=7)
     )
