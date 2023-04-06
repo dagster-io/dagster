@@ -2244,7 +2244,7 @@ def test_from_resource_context_and_to_config_field() -> None:
         def create_resource(self, context) -> str:
             return self.a_string + "bar"
 
-    @resource(config_schema=StringResource.to_config_field())
+    @resource(config_schema=StringResource.to_config_schema())
     def string_resource_function_style(context: InitResourceContext) -> str:
         return StringResource.from_resource_context(context)
 
@@ -2259,7 +2259,7 @@ def test_from_resource_context_and_to_config_field_complex() -> None:
         a_list_of_ints: List[int]
         a_map_of_lists_of_maps_of_floats: Mapping[str, List[Mapping[str, float]]]
 
-    @resource(config_schema=MyComplexConfigResource.to_config_field())
+    @resource(config_schema=MyComplexConfigResource.to_config_schema())
     def complex_config_resource_function_style(
         context: InitResourceContext,
     ) -> MyComplexConfigResource:

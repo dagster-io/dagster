@@ -144,9 +144,9 @@ class Config(MakeConfigCacheable):
         return output
 
     @classmethod
-    def to_config_field(cls) -> Field:
-        """Converts the config structure represented by this class into a Dagster config field."""
-        return infer_schema_from_config_class(cls)
+    def to_config_schema(cls) -> DefinitionConfigSchema:
+        """Converts the config structure represented by this class into a DefinitionConfigSchema."""
+        return DefinitionConfigSchema(infer_schema_from_config_class(cls))
 
 
 @experimental
