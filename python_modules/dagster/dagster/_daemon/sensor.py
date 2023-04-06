@@ -611,8 +611,8 @@ def _evaluate_sensor(
             else:
                 check.failed(f"Unexpected action {request.action} for dynamic partition request")
     if not sensor_runtime_data.run_requests:
-        if sensor_runtime_data.pipeline_run_reactions:
-            for pipeline_run_reaction in sensor_runtime_data.pipeline_run_reactions:
+        if sensor_runtime_data.dagster_run_reactions:
+            for pipeline_run_reaction in sensor_runtime_data.dagster_run_reactions:
                 origin_run_id = check.not_none(pipeline_run_reaction.dagster_run).run_id
                 if pipeline_run_reaction.error:
                     context.logger.error(

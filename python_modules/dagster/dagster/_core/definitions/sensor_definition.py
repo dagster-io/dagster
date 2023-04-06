@@ -856,7 +856,9 @@ class SensorDefinition:
         return self._asset_selection
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(
+    storage_field_names={"dagster_run_reactions": "pipeline_run_reactions"},
+)
 class SensorExecutionData(
     NamedTuple(
         "_SensorExecutionData",
@@ -864,7 +866,7 @@ class SensorExecutionData(
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
-            ("pipeline_run_reactions", Optional[Sequence[DagsterRunReaction]]),
+            ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
             ("captured_log_key", Optional[Sequence[str]]),
             (
                 "dynamic_partitions_requests",
@@ -875,12 +877,14 @@ class SensorExecutionData(
         ],
     )
 ):
+    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
+
     def __new__(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
-        pipeline_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
+        dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
         captured_log_key: Optional[Sequence[str]] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
@@ -889,9 +893,7 @@ class SensorExecutionData(
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
-        check.opt_sequence_param(
-            pipeline_run_reactions, "pipeline_run_reactions", DagsterRunReaction
-        )
+        check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
         check.opt_list_param(captured_log_key, "captured_log_key", str)
         check.opt_sequence_param(
             dynamic_partitions_requests,
@@ -906,7 +908,7 @@ class SensorExecutionData(
             run_requests=run_requests,
             skip_message=skip_message,
             cursor=cursor,
-            pipeline_run_reactions=pipeline_run_reactions,
+            dagster_run_reactions=dagster_run_reactions,
             captured_log_key=captured_log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
         )
