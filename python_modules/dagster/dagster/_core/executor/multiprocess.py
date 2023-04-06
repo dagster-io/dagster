@@ -50,7 +50,7 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
         self,
         run_config: Mapping[str, object],
-        pipeline_run: "DagsterRun",
+        dagster_run: "DagsterRun",
         step_key: str,
         instance_ref: "InstanceRef",
         term_event: Any,
@@ -341,7 +341,7 @@ def execute_step_out_of_process(
 ) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
-        pipeline_run=step_context.dagster_run,
+        dagster_run=step_context.dagster_run,
         step_key=step.key,
         instance_ref=step_context.instance.get_ref(),
         term_event=term_events[step.key],

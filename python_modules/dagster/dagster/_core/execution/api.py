@@ -747,7 +747,7 @@ def create_execution_plan(
 
 
 def job_execution_iterator(
-    pipeline_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    job_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
 ) -> Iterator[DagsterEvent]:
     """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
@@ -757,22 +757,22 @@ def job_execution_iterator(
         execution_plan (ExecutionPlan):
     """
     # TODO: restart event?
-    if not pipeline_context.resume_from_failure:
-        yield DagsterEvent.job_start(pipeline_context)
+    if not job_context.resume_from_failure:
+        yield DagsterEvent.job_start(job_context)
 
     job_exception_info = None
     job_canceled_info = None
     failed_steps = []
     generator_closed = False
     try:
-        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
+        for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
                 failed_steps.append(event.step_key)
             elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
 
             # Telemetry
-            log_dagster_event(event, pipeline_context)
+            log_dagster_event(event, job_context)
 
             yield event
     except GeneratorExit:
@@ -780,35 +780,35 @@ def job_execution_iterator(
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
         job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        if job_context.raise_on_error:
             raise
     except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         job_canceled_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        if job_context.raise_on_error:
             raise
     except BaseException:
         job_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
-        if pipeline_context.raise_on_error:
+        if job_context.raise_on_error:
             raise  # finally block will run before this is re-raised
     finally:
         if job_canceled_info:
-            reloaded_run = pipeline_context.instance.get_run_by_id(pipeline_context.run_id)
+            reloaded_run = job_context.instance.get_run_by_id(job_context.run_id)
             if reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELING:
-                event = DagsterEvent.job_canceled(pipeline_context, job_canceled_info)
+                event = DagsterEvent.job_canceled(job_context, job_canceled_info)
             elif reloaded_run and reloaded_run.status == DagsterRunStatus.CANCELED:
                 # This happens if the run was force-terminated but was still able to send
                 # a cancellation request
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     (
                         "Computational resources were cleaned up after the run was forcibly marked"
                         " as canceled."
                     ),
                     EngineEventData(),
                 )
-            elif pipeline_context.instance.run_will_resume(pipeline_context.run_id):
+            elif job_context.instance.run_will_resume(job_context.run_id):
                 event = DagsterEvent.engine_event(
-                    pipeline_context,
+                    job_context,
                     (
                         "Execution was interrupted unexpectedly. No user initiated termination"
                         " request was found, not treating as failure because run will be resumed."
@@ -823,7 +823,7 @@ def job_execution_iterator(
                 )
             else:
                 event = DagsterEvent.job_failure(
-                    pipeline_context,
+                    job_context,
                     (
                         "Execution was interrupted unexpectedly. "
                         "No user initiated termination request was found, treating as failure."
@@ -832,17 +832,17 @@ def job_execution_iterator(
                 )
         elif job_exception_info:
             event = DagsterEvent.job_failure(
-                pipeline_context,
+                job_context,
                 "An exception was thrown during execution.",
                 job_exception_info,
             )
         elif failed_steps:
             event = DagsterEvent.job_failure(
-                pipeline_context,
+                job_context,
                 f"Steps failed: {failed_steps}.",
             )
         else:
-            event = DagsterEvent.job_success(pipeline_context)
+            event = DagsterEvent.job_success(job_context)
         if not generator_closed:
             yield event
 
