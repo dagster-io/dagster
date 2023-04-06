@@ -19,8 +19,13 @@ from .utils import execute, execute_script_file
 
 class OutputType(Enum):
     STREAM = "STREAM"
+    """Stream script stdout/stderr."""
+
     BUFFER = "BUFFER"
+    """Buffer shell script stdout/stderr, then log upon completion."""
+
     NONE = "NONE"
+    """No logging."""
 
 
 class ShellOpConfig(Config):
