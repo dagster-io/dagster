@@ -1,9 +1,16 @@
 import os
+from typing import Dict
 
 import pytest
-from dagster import ResourceDefinition, build_init_resource_context
+from dagster import (
+    Resource,
+    ResourceDefinition,
+    asset,
+    build_init_resource_context,
+    materialize,
+)
 from dagster._core.test_utils import environ
-from dagster_aws.ssm import ParameterStoreResource, parameter_store_resource
+from dagster_aws.ssm import ParameterStoreResource, ParameterStoreTag, parameter_store_resource
 
 
 @pytest.fixture(name="parameter_store_resource_type", params=[True, False])
@@ -12,6 +19,57 @@ def parameter_store_resource_type_fixture(request) -> ResourceDefinition:
         return parameter_store_resource
     else:
         return ParameterStoreResource.configure_at_launch()
+
+
+def test_parameter_store_resource_structured_tags(mock_ssm_client) -> None:
+    # Test using the structured input to ParameterStoreResource using the ParameterStoreTag input
+    mock_ssm_client.put_parameter(
+        Name="foo_param1",
+        Value="foo_value1",
+        Type="String",
+        Tags=[{"Key": "foo_tag_key", "Value": "foo_tag_value1"}],
+    )
+    mock_ssm_client.put_parameter(
+        Name="foo_param2",
+        Value="foo_value2",
+        Type="String",
+        Tags=[{"Key": "foo_tag_key", "Value": "foo_tag_value2"}],
+    )
+    mock_ssm_client.put_parameter(
+        Name="bar_param",
+        Value="bar_value",
+        Tags=[{"Key": "bar_tag_key", "Value": "bar_tag_value"}],
+        Type="String",
+    )
+    mock_ssm_client.put_parameter(
+        Name="path/based/param1",
+        Value="path_param1",
+        Tags=[{"Key": "foo_tag_key", "Value": "foo_tag_value3"}],
+        Type="String",
+    )
+    mock_ssm_client.put_parameter(
+        Name="path/based/param1/nested",
+        Value="path_param2",
+        Type="String",
+    )
+
+    @asset
+    def my_parameter_store_asset(parameter_store: Resource[Dict[str, str]]):
+        assert parameter_store == {"foo_param1": "foo_value1", "foo_param2": "foo_value2"}
+
+    result = materialize(
+        assets=[my_parameter_store_asset],
+        resources={
+            "parameter_store": ParameterStoreResource(
+                parameter_tags=[
+                    ParameterStoreTag(
+                        key="foo_tag_key", values=["foo_tag_value1", "foo_tag_value2"]
+                    )
+                ]
+            ),
+        },
+    )
+    assert result.success
 
 
 def test_parameter_store_resource(mock_ssm_client, parameter_store_resource_type):

@@ -108,7 +108,7 @@ def ssm_resource(context) -> Any:
     return SSMResource.from_resource_context(context)
 
 
-class Tag(Config):
+class ParameterStoreTag(Config):
     key: str = Field(description="Tag key to search for.")
     values: Optional[List[str]] = Field(deafult=None, description="List")
 
@@ -117,7 +117,7 @@ class ParameterStoreResource(Boto3ResourceBase[Dict[str, str]]):
     parameters: List[str] = Field(
         default=[], description="An array of AWS SSM Parameter Store parameter names to fetch."
     )
-    parameter_tags: List[Tag] = Field(
+    parameter_tags: List[ParameterStoreTag] = Field(
         default=[],
         description=(
             "AWS SSM Parameter store parameters with this tag will be fetched and made available."
