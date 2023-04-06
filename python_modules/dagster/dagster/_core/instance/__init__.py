@@ -5,7 +5,6 @@ import logging.config
 import os
 import sys
 import time
-import warnings
 import weakref
 from collections import defaultdict
 from enum import Enum
@@ -410,11 +409,6 @@ class DagsterInstance(DynamicPartitionsStore):
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
         run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
-        if run_monitoring_enabled and not self.run_launcher.supports_check_run_worker_health:
-            run_monitoring_enabled = False
-            warnings.warn(
-                "The configured run launcher does not support run monitoring, disabling it.",
-            )
         self._run_monitoring_enabled = run_monitoring_enabled
         if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
             check.invariant(
