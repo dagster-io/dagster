@@ -145,6 +145,8 @@ def create_run_for_test(
     parent_pipeline_snapshot=None,
     external_pipeline_origin=None,
     pipeline_code_origin=None,
+    asset_selection=None,
+    solid_selection=None,
 ):
     return instance.create_run(
         pipeline_name=pipeline_name,
@@ -162,8 +164,8 @@ def create_run_for_test(
         parent_pipeline_snapshot=parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
-        asset_selection=None,
-        solid_selection=None,
+        asset_selection=asset_selection,
+        solid_selection=solid_selection,
     )
 
 
