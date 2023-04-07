@@ -24,16 +24,6 @@ interface FilterDropdownProps {
   setPortaledElements: React.Dispatch<React.SetStateAction<JSX.Element[]>>;
 }
 
-window.debug = () => {
-  console.log({stats});
-};
-const stats = {
-  render: 0,
-  renderMenu: 0,
-  renderMenuItem: 0,
-  getResults: 0,
-};
-
 export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: FilterDropdownProps) => {
   const [menuKey, _] = React.useState(() => uuidv4());
   const [focusedItemIndex, setFocusedItemIndex] = React.useState(-1);
