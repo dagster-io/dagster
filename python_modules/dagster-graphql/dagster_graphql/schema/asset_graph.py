@@ -8,6 +8,7 @@ from dagster import (
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
+    StaleCauseCategory,
     StaleStatus,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -84,10 +85,14 @@ if TYPE_CHECKING:
     from .external import GrapheneRepository
 
 GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
+GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
+    StaleCauseCategory, name="StaleCauseCategory"
+)
 
 
 class GrapheneAssetStaleCause(graphene.ObjectType):
     key = graphene.NonNull(GrapheneAssetKey)
+    category = graphene.NonNull(GrapheneAssetStaleCauseCategory)
     reason = graphene.NonNull(graphene.String)
     dependency = graphene.Field(GrapheneAssetKey)
 
@@ -578,6 +583,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneAssetStaleCause(
                 GrapheneAssetKey(path=cause.key.path),
+                cause.category,
                 cause.reason,
                 GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
             )

@@ -154,6 +154,7 @@ GET_ASSET_DATA_VERSIONS = """
             staleStatus
             staleCauses {
                 key { path }
+                category
                 reason
                 dependency { path }
             }

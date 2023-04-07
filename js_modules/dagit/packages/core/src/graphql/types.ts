@@ -3587,10 +3587,17 @@ export type SolidStepStatusUnavailableError = Error & {
 
 export type StaleCause = {
   __typename: 'StaleCause';
+  category: StaleCauseCategory;
   dependency: Maybe<AssetKey>;
   key: AssetKey;
   reason: Scalars['String'];
 };
+
+export enum StaleCauseCategory {
+  CODE = 'CODE',
+  DATA = 'DATA',
+  DEPENDENCIES = 'DEPENDENCIES',
+}
 
 export enum StaleStatus {
   FRESH = 'FRESH',
@@ -12033,6 +12040,10 @@ export const buildStaleCause = (
   relationshipsToOmit.add('StaleCause');
   return {
     __typename: 'StaleCause',
+    category:
+      overrides && overrides.hasOwnProperty('category')
+        ? overrides.category!
+        : StaleCauseCategory.CODE,
     dependency:
       overrides && overrides.hasOwnProperty('dependency')
         ? overrides.dependency!

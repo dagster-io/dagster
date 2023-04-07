@@ -222,8 +222,15 @@ class StaleStatus(Enum):
     FRESH = "FRESH"
 
 
+class StaleCauseCategory(Enum):
+    CODE = "CODE"
+    DATA = "DATA"
+    DEPENDENCIES = "DEPENDENCIES"
+
+
 class StaleCause(NamedTuple):
     key: AssetKey
+    category: StaleCauseCategory
     reason: str
     dependency: Optional[AssetKey] = None
     children: Optional[Sequence["StaleCause"]] = None
@@ -300,12 +307,13 @@ class CachingStaleStatusResolver:
 
         if provenance:
             if code_version and code_version != provenance.code_version:
-                yield StaleCause(key, "updated code version")
+                yield StaleCause(key, StaleCauseCategory.CODE, "updated code version")
 
             removed_deps = set(provenance.input_data_versions.keys()) - set(dependency_keys)
             for dep_key in removed_deps:
                 yield StaleCause(
                     key,
+                    StaleCauseCategory.DEPENDENCIES,
                     "removed dependency",
                     dep_key,
                 )
@@ -314,6 +322,7 @@ class CachingStaleStatusResolver:
             if self._get_status(key=dep_key) == StaleStatus.STALE:
                 yield StaleCause(
                     key,
+                    StaleCauseCategory.DATA,
                     "stale dependency",
                     dep_key,
                     self._get_stale_causes(key=dep_key),
@@ -322,6 +331,7 @@ class CachingStaleStatusResolver:
                 if dep_key not in provenance.input_data_versions:
                     yield StaleCause(
                         key,
+                        StaleCauseCategory.DEPENDENCIES,
                         "new dependency",
                         dep_key,
                     )
@@ -330,11 +340,13 @@ class CachingStaleStatusResolver:
                 ):
                     yield StaleCause(
                         key,
+                        StaleCauseCategory.DATA,
                         "updated dependency data version",
                         dep_key,
                         [
                             StaleCause(
                                 dep_key,
+                                StaleCauseCategory.DATA,
                                 "updated data version",
                             )
                         ],
@@ -345,15 +357,17 @@ class CachingStaleStatusResolver:
                 dep_materialization = self._get_latest_materialization_event(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
-                    yield StaleCause(key, "new input", dep_key)
+                    yield StaleCause(key, StaleCauseCategory.DATA, "new input", dep_key)
                 elif dep_materialization.timestamp > materialization_time:
                     yield StaleCause(
                         key,
+                        StaleCauseCategory.DATA,
                         "updated dependency timestamp",
                         dep_key,
                         [
                             StaleCause(
                                 dep_key,
+                                StaleCauseCategory.DATA,
                                 "updated timestamp",
                             )
                         ],
