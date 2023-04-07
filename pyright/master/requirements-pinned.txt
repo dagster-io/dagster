@@ -9,7 +9,7 @@ aniso8601==9.0.1
 ansiwrap==0.8.4
 anyio==3.6.2
 apache-airflow==2.3.0
-apache-airflow-providers-apache-spark==3.0.0
+apache-airflow-providers-apache-spark==4.0.1
 apache-airflow-providers-cncf-kubernetes==5.2.2
 apache-airflow-providers-common-sql==1.3.4
 apache-airflow-providers-docker==3.5.1
