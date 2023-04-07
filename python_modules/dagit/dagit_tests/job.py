@@ -1,10 +1,7 @@
-from dagster import In, Out, repository
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.schedule_decorator import schedule
-from dagster._legacy import pipeline
+from dagster import In, Int, Out, job, op, repository, schedule
 
 
-@op(ins={"num": In(int)}, out=Out(int))
+@op(ins={"num": In(Int)}, out=Out(Int))
 def add_one(num):
     return num + 1
 
@@ -14,9 +11,9 @@ def mult_two(num):
     return num * 2
 
 
-@pipeline
+@job
 def math():
-    return mult_two(num=add_one())
+    mult_two(num=add_one())
 
 
 @schedule(
