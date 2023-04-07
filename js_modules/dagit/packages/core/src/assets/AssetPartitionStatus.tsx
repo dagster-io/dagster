@@ -62,7 +62,7 @@ export const assetPartitionStatusesToStyle = (status: AssetPartitionStatus[]): C
   const b = assetPartitionStatusToColor(status[1]);
 
   return {
-    background: `linear-gradient(135deg, ${a} 25%, ${b} 25%, ${b} 50%, ${a} 50%, ${a} 75%, ${b} 75%, ${b} 100%)`,
+    backgroundImage: `linear-gradient(135deg, ${a} 25%, ${b} 25%, ${b} 50%, ${a} 50%, ${a} 75%, ${b} 75%, ${b} 100%)`,
     backgroundSize: '8.49px 8.49px',
   };
 };
