@@ -931,10 +931,10 @@ reveal_type(my_outer.inner)
         mypy_out = get_mypy_type_output(filename)
 
         # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
-        assert pyright_out[0] == "(self: InnerResource, a_string: str) -> None"
+        assert pyright_out[0] == "(self: InnerResource, *, a_string: str) -> None"
         assert (
             pyright_out[1]
-            == "(self: OuterResource, inner: InnerResource | PartialResource[InnerResource],"
+            == "(self: OuterResource, *, inner: InnerResource | PartialResource[InnerResource],"
             " a_bool: bool) -> None"
         )
 
@@ -995,7 +995,7 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: ConfigurableResourceFactory[str] |"
+            == "(self: StringDependentResource, *, a_string: ConfigurableResourceFactory[str] |"
             " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
