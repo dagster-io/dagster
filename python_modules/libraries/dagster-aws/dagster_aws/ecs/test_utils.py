@@ -49,7 +49,9 @@ class CustomECSRunLauncher(EcsRunLauncher):
     ) -> Mapping[str, str]:
         return {"cpu": "4096", "memory": "16384"}
 
-    def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:
+    def _get_task_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, Any]:
         return {"ephemeralStorage": {"sizeInGiB": 128}}
 
     def report_launch_events(

@@ -82,13 +82,11 @@ def test_merge(
 
     assert merged.container_name == "bar"
 
-    assert merged.run_resources == {
-        "cpu": "256",
-        "memory": "8192",
-    }
+    assert merged.run_resources == {"cpu": "256", "memory": "8192", "ephemeral_storage": 100}
     assert merged.server_resources == {
         "cpu": "2048",
         "memory": "4096",
+        "ephemeral_storage": 25,
     }
 
     assert merged.task_role_arn == "other-task-role"

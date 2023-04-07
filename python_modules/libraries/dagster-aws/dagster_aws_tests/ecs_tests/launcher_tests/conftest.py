@@ -167,6 +167,7 @@ def instance_with_resources(instance_cm):
             "run_resources": {
                 "cpu": "1024",
                 "memory": "2048",
+                "ephemeral_storage": 50,
             }
         }
     ) as dagster_instance:
@@ -191,6 +192,22 @@ def instance_dont_use_current_task(instance_cm, subnet, monkeypatch):
     ) as dagster_instance:
         # Not running in an ECS task
         monkeypatch.setenv("ECS_CONTAINER_METADATA_URI_V4", None)
+        yield dagster_instance
+
+
+@pytest.fixture
+def instance_fargate_spot(instance_cm):
+    with instance_cm(
+        config={
+            "run_task_kwargs": {
+                "capacityProviderStrategy": [
+                    {
+                        "capacityProvider": "FARGATE_SPOT",
+                    }
+                ],
+            },
+        }
+    ) as dagster_instance:
         yield dagster_instance
 
 
@@ -381,10 +398,12 @@ def container_context_config(configured_secret):
             "run_resources": {
                 "cpu": "4096",
                 "memory": "8192",
+                "ephemeral_storage": 100,
             },
             "server_resources": {
                 "cpu": "1024",
                 "memory": "2048",
+                "ephemeral_storage": 25,
             },
             "task_role_arn": "fake-task-role",
             "execution_role_arn": "fake-execution-role",
