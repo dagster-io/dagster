@@ -5,7 +5,11 @@ import graphene
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
-from dagster._core.execution.backfill import BackfillPartitionsStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BackfillPartitionsStatus,
+    BulkActionStatus,
+    PartitionBackfill,
+)
 from dagster._core.host_representation.external import ExternalPartitionSet
 from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
