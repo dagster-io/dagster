@@ -499,7 +499,7 @@ const ResourceUses: React.FC<{
   );
 };
 
-export const ResourceEntry: React.FC<{
+const ResourceEntry: React.FC<{
   name: string;
   url?: string;
   description?: string;
@@ -525,7 +525,7 @@ export const ResourceEntry: React.FC<{
   );
 };
 
-export const RightInfoPanel = styled.div`
+const RightInfoPanel = styled.div`
   position: relative;
 
   height: 100%;
@@ -536,11 +536,12 @@ export const RightInfoPanel = styled.div`
   background: ${Colors.White};
 `;
 
-export const RightInfoPanelContent = styled.div`
+const RightInfoPanelContent = styled.div`
   flex: 1;
   overflow-y: auto;
 `;
-export const RESOURCE_DETAILS_FRAGMENT = gql`
+
+const RESOURCE_DETAILS_FRAGMENT = gql`
   fragment ResourceDetailsFragment on ResourceDetails {
     name
     description

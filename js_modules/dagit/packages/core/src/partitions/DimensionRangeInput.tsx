@@ -62,7 +62,8 @@ export const DimensionRangeInput: React.FC<{
     />
   );
 };
-export function placeholderForPartitions(names: string[], isTimeseries: boolean) {
+
+function placeholderForPartitions(names: string[], isTimeseries: boolean) {
   if (names.length === 0) {
     return '';
   }

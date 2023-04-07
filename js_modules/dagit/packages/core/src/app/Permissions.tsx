@@ -95,10 +95,10 @@ export const extractPermissions = (
   };
 };
 
-export type PermissionsMap = ReturnType<typeof extractPermissions>;
+type PermissionsMap = ReturnType<typeof extractPermissions>;
 
-export type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
-export type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
+type PermissionBooleans = Record<keyof PermissionsMap, boolean>;
+type PermissionDisabledReasons = Record<keyof PermissionsMap, string>;
 export type PermissionsState = {
   permissions: PermissionBooleans;
   disabledReasons: PermissionDisabledReasons;

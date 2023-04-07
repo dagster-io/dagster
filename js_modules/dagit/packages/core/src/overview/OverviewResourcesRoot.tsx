@@ -189,7 +189,7 @@ const buildBuckets = (data?: OverviewResourcesQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-export const OVERVIEW_RESOURCES_QUERY = gql`
+const OVERVIEW_RESOURCES_QUERY = gql`
   query OverviewResourcesQuery {
     workspaceOrError {
       ... on Workspace {

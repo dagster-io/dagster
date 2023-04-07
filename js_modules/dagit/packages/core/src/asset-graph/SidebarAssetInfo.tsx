@@ -227,7 +227,7 @@ const AssetCatalogLink = styled(Link)`
   white-space: nowrap;
 `;
 
-export const SIDEBAR_ASSET_FRAGMENT = gql`
+const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description

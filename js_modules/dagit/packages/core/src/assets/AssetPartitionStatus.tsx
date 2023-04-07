@@ -36,7 +36,7 @@ export const assetPartitionStatusToText = (status: AssetPartitionStatus) => {
   }
 };
 
-export const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
+const assetPartitionStatusToColor = (status: AssetPartitionStatus) => {
   switch (status) {
     case AssetPartitionStatus.MATERIALIZED:
       return Colors.Green500;

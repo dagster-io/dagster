@@ -127,7 +127,7 @@ type WithDataProps = {
   applyingEmptyDefault: boolean;
 } & Props;
 
-export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
+const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
   options,
   setOptions,
   explorerPath,

@@ -31,7 +31,7 @@ const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}
   return <Box className={className}>{displayName}</Box>;
 };
 
-export const DagsterTypeName = styled(_DagsterTypeName)`
+const DagsterTypeName = styled(_DagsterTypeName)`
   font-family: ${FontFamily.monospace};
   font-size: 16px;
   overflow: hidden;

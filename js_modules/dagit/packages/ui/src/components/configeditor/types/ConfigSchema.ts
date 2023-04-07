@@ -2,7 +2,7 @@
  * This is a manual copy of the config schema type generated for Dagit.
  */
 
-export interface ConfigSchema_rootConfigType {
+interface ConfigSchema_rootConfigType {
   __typename:
     | 'EnumConfigType'
     | 'CompositeConfigType'
@@ -14,7 +14,7 @@ export interface ConfigSchema_rootConfigType {
   key: string;
 }
 
-export interface ConfigSchema_allConfigTypes_ArrayConfigType {
+interface ConfigSchema_allConfigTypes_ArrayConfigType {
   __typename: 'ArrayConfigType';
   key: string;
   description: string | null;
@@ -23,7 +23,7 @@ export interface ConfigSchema_allConfigTypes_ArrayConfigType {
 }
 
 // Separated from `ArrayConfigType` manually to improve refinement.
-export interface ConfigSchema_allConfigTypes_NullableConfigType {
+interface ConfigSchema_allConfigTypes_NullableConfigType {
   __typename: 'NullableConfigType';
   key: string;
   description: string | null;
@@ -31,7 +31,7 @@ export interface ConfigSchema_allConfigTypes_NullableConfigType {
   typeParamKeys: string[];
 }
 
-export interface ConfigSchema_allConfigTypes_RegularConfigType {
+interface ConfigSchema_allConfigTypes_RegularConfigType {
   __typename: 'RegularConfigType';
   key: string;
   description: string | null;
@@ -49,13 +49,13 @@ export interface ConfigSchema_allConfigTypes_MapConfigType {
   keyLabelName: string | null;
 }
 
-export interface ConfigSchema_allConfigTypes_EnumConfigType_values {
+interface ConfigSchema_allConfigTypes_EnumConfigType_values {
   __typename: 'EnumConfigValue';
   value: string;
   description: string | null;
 }
 
-export interface ConfigSchema_allConfigTypes_EnumConfigType {
+interface ConfigSchema_allConfigTypes_EnumConfigType {
   __typename: 'EnumConfigType';
   key: string;
   description: string | null;
@@ -65,7 +65,7 @@ export interface ConfigSchema_allConfigTypes_EnumConfigType {
   values: ConfigSchema_allConfigTypes_EnumConfigType_values[];
 }
 
-export interface ConfigSchema_allConfigTypes_CompositeConfigType_fields {
+interface ConfigSchema_allConfigTypes_CompositeConfigType_fields {
   __typename: 'ConfigTypeField';
   name: string;
   description: string | null;
@@ -83,7 +83,7 @@ export interface ConfigSchema_allConfigTypes_CompositeConfigType {
   fields: ConfigSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export interface ConfigSchema_allConfigTypes_ScalarUnionConfigType {
+interface ConfigSchema_allConfigTypes_ScalarUnionConfigType {
   __typename: 'ScalarUnionConfigType';
   key: string;
   description: string | null;

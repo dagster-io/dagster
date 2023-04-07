@@ -116,7 +116,7 @@ export const VirtualizedRepoAssetTable: React.FC<Props> = ({repoAddress, assets}
   );
 };
 
-export const GroupNameRow: React.FC<{
+const GroupNameRow: React.FC<{
   repoAddress: RepoAddress;
   groupName: string;
   assetCount: number;
@@ -194,7 +194,7 @@ const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parse
 /**
  * Use localStorage to persist the expanded/collapsed visual state of asset groups.
  */
-export const useAssetGroupExpansionState = (storageKey: string) => {
+const useAssetGroupExpansionState = (storageKey: string) => {
   const {basePath} = React.useContext(AppContext);
   const [expandedKeys, setExpandedKeys] = useStateWithStorage<string[]>(
     `${basePath}:dagit.${storageKey}`,

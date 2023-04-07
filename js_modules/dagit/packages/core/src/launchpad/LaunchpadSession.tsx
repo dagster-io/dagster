@@ -784,7 +784,7 @@ const SessionSettingsSpacer = styled.div`
   width: 5px;
 `;
 
-export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
+const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
       ...LaunchpadSessionRunConfigSchemaFragment

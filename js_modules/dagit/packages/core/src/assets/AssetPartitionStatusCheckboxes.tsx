@@ -3,21 +3,7 @@ import * as React from 'react';
 
 import {testId} from '../testing/testId';
 
-import {
-  AssetPartitionStatus,
-  assetPartitionStatusToText,
-  emptyAssetPartitionStatusCounts,
-} from './AssetPartitionStatus';
-
-export function countsByState(
-  partitionKeysForCounts: {partitionKey: string; state: AssetPartitionStatus}[],
-) {
-  const result = emptyAssetPartitionStatusCounts();
-  for (const key of partitionKeysForCounts) {
-    result[key.state] = (result[key.state] || 0) + 1;
-  }
-  return result;
-}
+import {AssetPartitionStatus, assetPartitionStatusToText} from './AssetPartitionStatus';
 
 export const AssetPartitionStatusCheckboxes: React.FC<{
   counts: {[status: string]: number};

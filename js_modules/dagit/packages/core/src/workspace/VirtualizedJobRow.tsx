@@ -90,7 +90,6 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
                   repoAddress={repoAddress}
                 />
               </ScheduleSensorTagContainer>
-              {/* {schedules.length ? <NextTick schedules={schedules} /> : null} */}
             </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} />

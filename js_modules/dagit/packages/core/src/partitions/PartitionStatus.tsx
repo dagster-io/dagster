@@ -26,7 +26,7 @@ const MIN_SPAN_WIDTH = 8;
 // In the latter case, this component will call the getter function you provide
 // and assemble ranges by itself for display.
 //
-export type PartitionStatusHealthSourceAssets = {
+type PartitionStatusHealthSourceAssets = {
   ranges: Range[];
 };
 export type PartitionStatusHealthSourceOps = {
@@ -316,7 +316,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
 // This type is similar to a partition health "Range", but this component is also
 // used by backfill UI and backfills can have a wider range of partition states,
 // so this type allows the entire enum.
-export type ColorSegment = {
+type ColorSegment = {
   start: {idx: number; key: string};
   end: {idx: number; key: string};
   style: React.CSSProperties;

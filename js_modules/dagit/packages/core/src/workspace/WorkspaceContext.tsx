@@ -34,7 +34,7 @@ export interface DagsterRepoOption {
   repository: Repository;
 }
 
-export type WorkspaceState = {
+type WorkspaceState = {
   error: PythonErrorFragment | null;
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
@@ -286,7 +286,7 @@ const useVisibleRepos = (
 
 // Public
 
-export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
+const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
 
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {

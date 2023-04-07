@@ -56,7 +56,7 @@ export const CapturedOrExternalLogPanel: React.FC<CapturedOrExternalLogPanelProp
   },
 );
 
-export const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
+const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
 const slice = (s: string) =>
   s.length < MAX_STREAMING_LOG_BYTES ? s : s.slice(-MAX_STREAMING_LOG_BYTES);
@@ -231,7 +231,7 @@ const CAPTURED_LOGS_QUERY = gql`
   }
 `;
 
-export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
+const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
   ({logKey, visibleIOType, onSetDownloadUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);

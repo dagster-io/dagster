@@ -28,7 +28,7 @@ type JobMetadata = {
   runsForAssetScan: RunMetadataFragment[];
 };
 
-export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
+function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
   const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
