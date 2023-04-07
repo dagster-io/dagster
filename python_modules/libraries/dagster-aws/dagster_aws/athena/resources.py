@@ -14,7 +14,7 @@ from dagster import (
     resource,
 )
 from dagster._core.execution.context.init import InitResourceContext
-from pydantic import Field as PyField
+from pydantic import Field
 
 
 class AthenaError(Exception):
@@ -199,33 +199,33 @@ class FakeAthenaClient(AthenaClient):
 
 
 class BaseAthenaResource(ConfigurableResourceFactory[AthenaClient]):
-    workgroup: str = PyField(
-        "primary",
+    workgroup: str = Field(
+        default="primary",
         description=(
             "The Athena WorkGroup to use."
             " https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html"
         ),
     )
-    polling_interval: int = PyField(
-        5,
+    polling_interval: int = Field(
+        default=5,
         description=(
             "Time in seconds between checks to see if a query execution is finished. 5 seconds"
             " by default. Must be non-negative."
         ),
     )
-    max_polls: int = PyField(
-        120,
+    max_polls: int = Field(
+        default=120,
         description=(
             "Number of times to poll before timing out. 120 attempts by default. When coupled"
             " with the default polling_interval, queries will timeout after 10 minutes (120 * 5"
             " seconds). Must be greater than 0."
         ),
     )
-    aws_access_key_id: Optional[str] = PyField(
-        None, description="AWS access key ID for authentication purposes."
+    aws_access_key_id: Optional[str] = Field(
+        default=None, description="AWS access key ID for authentication purposes."
     )
-    aws_secret_access_key: Optional[str] = PyField(
-        None, description="AWS secret access key for authentication purposes."
+    aws_secret_access_key: Optional[str] = Field(
+        default=None, description="AWS secret access key for authentication purposes."
     )
 
 

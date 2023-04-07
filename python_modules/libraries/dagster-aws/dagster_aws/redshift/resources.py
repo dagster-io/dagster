@@ -12,7 +12,7 @@ from dagster._config.structured_config import (
     ConfigurableResourceFactory,
 )
 from dagster._core.execution.context.init import InitResourceContext
-from pydantic import Field as PyField
+from pydantic import Field
 
 
 class RedshiftError(Exception):
@@ -301,23 +301,23 @@ class RedshiftResource(ConfigurableResourceFactory[RedshiftClient]):
 
     """
 
-    host: str = PyField(..., description="Redshift host")
-    port: int = PyField(5439, description="Redshift port")
-    user: Optional[str] = PyField(None, description="Username for Redshift connection")
-    password: Optional[str] = PyField(None, description="Password for Redshift connection")
-    database: Optional[str] = PyField(
-        None,
+    host: str = Field(description="Redshift host")
+    port: int = Field(default=5439, description="Redshift port")
+    user: Optional[str] = Field(default=None, description="Username for Redshift connection")
+    password: Optional[str] = Field(default=None, description="Password for Redshift connection")
+    database: Optional[str] = Field(
+        default=None,
         description=(
             "Name of the default database to use. After login, you can use USE DATABASE to change"
             " the database."
         ),
     )
-    autocommit: Optional[bool] = PyField(None, description="Whether to autocommit queries")
-    connect_timeout: int = PyField(
-        5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
+    autocommit: Optional[bool] = Field(default=None, description="Whether to autocommit queries")
+    connect_timeout: int = Field(
+        default=5, description="Timeout for connection to Redshift cluster. Defaults to 5 seconds."
     )
-    sslmode: str = PyField(
-        "require",
+    sslmode: str = Field(
+        default="require",
         description=(
             "SSL mode to use. See the Redshift documentation for reference:"
             " https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-ssl-support.html"
