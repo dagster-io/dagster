@@ -31,7 +31,11 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import (
+    DagsterInvalidConfigDefinitionError,
+    DagsterInvalidConfigError,
+    DagsterInvalidPythonicConfigDefinitionError,
+)
 from dagster._core.execution.context.init import InitResourceContext
 
 try:
@@ -880,8 +884,15 @@ def _get_inner_field_if_exists(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
-    """Transforms a Pydantic field into a corresponding Dagster config field."""
+def _convert_pydantic_field(pydantic_field: ModelField, model_cls: Optional[Type] = None) -> Field:
+    """Transforms a Pydantic field into a corresponding Dagster config field.
+
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+        model_cls (Optional[Type]): The Pydantic model class that the field belongs to. This is
+            used for error messages.
+    """
     key_type = (
         _config_type_for_pydantic_field(pydantic_field.key_field)
         if pydantic_field.key_field
@@ -906,7 +917,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         # For certain data structure types, we need to grab the inner Pydantic field (e.g. List type)
         inner_field = _get_inner_field_if_exists(pydantic_field.shape, pydantic_field)
         if inner_field:
-            config_type = _convert_pydantic_field(inner_field).config_type
+            config_type = _convert_pydantic_field(inner_field, model_cls=model_cls).config_type
         else:
             config_type = _config_type_for_pydantic_field(pydantic_field)
 
@@ -926,10 +937,24 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
 
 
 def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
-    return _config_type_for_type_on_pydantic_field(pydantic_field.type_)
+    """Generates a Dagster ConfigType from a Pydantic field.
+
+    Args:
+        pydantic_field (ModelField): The Pydantic field to convert.
+    """
+    return _config_type_for_type_on_pydantic_field(
+        pydantic_field.type_,
+    )
 
 
-def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+def _config_type_for_type_on_pydantic_field(
+    potential_dagster_type: Any,
+) -> ConfigType:
+    """Generates a Dagster ConfigType from a Pydantic field's Python type.
+
+    Args:
+        potential_dagster_type (Any): The Python type of the Pydantic field.
+    """
     # special case pydantic constrained types to their source equivalents
     if safe_is_subclass(potential_dagster_type, ConstrainedStr):
         return StringSource
@@ -1103,7 +1128,18 @@ def infer_schema_from_config_class(
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
-            fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
+            try:
+                fields[pydantic_field.alias] = _convert_pydantic_field(
+                    pydantic_field,
+                )
+            except DagsterInvalidConfigDefinitionError as e:
+                raise DagsterInvalidPythonicConfigDefinitionError(
+                    config_class=model_cls,
+                    field_name=pydantic_field.name,
+                    invalid_type=e.current_value,
+                    is_resource=model_cls is not None
+                    and safe_is_subclass(model_cls, ConfigurableResourceFactory),
+                )
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
