@@ -1,4 +1,4 @@
-import {RunStatus, StaleStatus, StaleCause} from '../graphql/types';
+import {RunStatus, StaleStatus, StaleCause, StaleCauseCategory} from '../graphql/types';
 
 import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNode.types';
@@ -10,6 +10,7 @@ export const MockStaleReason: StaleCause = {
     __typename: 'AssetKey',
   },
   reason: 'stale input',
+  category: StaleCauseCategory.DATA,
   dependency: {
     path: ['asset0'],
     __typename: 'AssetKey',

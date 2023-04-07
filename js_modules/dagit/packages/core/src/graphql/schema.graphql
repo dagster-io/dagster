@@ -803,8 +803,15 @@ enum StaleStatus {
 
 type StaleCause {
   key: AssetKey!
+  category: StaleCauseCategory!
   reason: String!
   dependency: AssetKey
+}
+
+enum StaleCauseCategory {
+  CODE
+  DATA
+  DEPENDENCIES
 }
 
 enum EvaluationErrorReason {
