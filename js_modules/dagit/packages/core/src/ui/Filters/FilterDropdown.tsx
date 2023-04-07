@@ -137,8 +137,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
         const index = jsxResults.length;
         jsxResults.push(
           <FilterDropdownMenuItem
-            key={`filter:${filter.name}:${result.key}`}
-            onClick={() => selectValue(filter, result.value)}
+            key={`filter-result:${filter.name}:${result.key}`}
+            onClick={() => {
+              selectValue(filter, result.value);
+            }}
             text={result.label}
             index={index}
             menuKey={menuKey}
@@ -177,9 +179,6 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           return;
         }
         event.preventDefault();
-        if (!selectedFilter) {
-          setFocusedItemIndex(-1);
-        }
         allResultsJsx[focusedItemIndex]?.props.onClick?.();
       } else if (event.key === 'Escape') {
         if (selectedFilter) {
@@ -359,23 +358,9 @@ const FilterDropdownMenuItem = React.memo(
     const isFocused = useRecoilValue(
       isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
     );
-    React.useLayoutEffect(() => {
-      if (isFocused) {
-        divRef.current?.querySelector('a')?.focus();
-      }
-    }, [isFocused]);
-    const [hovered, setHovered] = React.useState(false);
     return (
-      <div
-        ref={divRef}
-        onMouseEnter={() => {
-          setHovered(true);
-        }}
-        onMouseLeave={() => {
-          setHovered(false);
-        }}
-      >
-        <StyledMenuItem {...rest} active={hovered || isFocused} />
+      <div ref={divRef}>
+        <StyledMenuItem {...rest} active={isFocused} />
       </div>
     );
   },

@@ -140,22 +140,22 @@ describe('FilterDropdown Accessibility', () => {
 
     fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, prevKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, nextKey);
@@ -163,12 +163,12 @@ describe('FilterDropdown Accessibility', () => {
 
     fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Type').closest('a')).toHaveFocus();
+      expect(screen.getByText('Type').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, nextKey);
     await waitFor(() => {
-      expect(screen.getByText('Status').closest('a')).toHaveFocus();
+      expect(screen.getByText('Status').closest('a')).toHaveClass('bp4-active');
     });
 
     fireEvent.keyDown(document.activeElement!, enterKey);
@@ -180,7 +180,7 @@ describe('FilterDropdown Accessibility', () => {
     fireEvent.keyDown(document.activeElement!, nextKey);
     fireEvent.keyDown(document.activeElement!, nextKey);
 
-    expect(screen.getByText('Inactive').closest('a')).toHaveFocus();
+    expect(screen.getByText('Inactive').closest('a')).toHaveClass('bp4-active');
     fireEvent.keyDown(document.activeElement!, enterKey);
 
     await waitFor(() => {
