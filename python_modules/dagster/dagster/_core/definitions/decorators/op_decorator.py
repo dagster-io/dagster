@@ -27,7 +27,6 @@ from dagster._core.decorator_utils import (
 from dagster._core.definitions.inference import infer_input_props
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
-    validate_resource_annotated_function,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
@@ -76,6 +75,8 @@ class _Op:
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
+        from dagster._config.structured_config import validate_resource_annotated_function
+
         from ..op_definition import OpDefinition
 
         validate_resource_annotated_function(fn)

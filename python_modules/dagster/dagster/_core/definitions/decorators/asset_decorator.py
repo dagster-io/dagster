@@ -23,7 +23,6 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
-    validate_resource_annotated_function,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -280,6 +279,8 @@ class _Asset:
         self.code_version = code_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
+        from dagster._config.structured_config import validate_resource_annotated_function
+
         validate_resource_annotated_function(fn)
         asset_name = self.name or fn.__name__
 

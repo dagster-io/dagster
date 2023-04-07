@@ -15,7 +15,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
-    validate_resource_annotated_function,
 )
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
@@ -102,6 +101,8 @@ def schedule(
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
+        from dagster._config.structured_config import validate_resource_annotated_function
+
         check.callable_param(fn, "fn")
         validate_resource_annotated_function(fn)
 

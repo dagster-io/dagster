@@ -31,7 +31,6 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
-    validate_resource_annotated_function,
 )
 from dagster._core.definitions.resource_definition import (
     Resources,
@@ -498,6 +497,8 @@ class SensorDefinition:
         asset_selection: Optional[AssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
     ):
+        from dagster._config.structured_config import validate_resource_annotated_function
+
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
