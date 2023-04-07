@@ -163,19 +163,19 @@ def test_hook_resource_error():
 
 
 def test_success_hook():
-    called_hook_to_solids = defaultdict(list)
+    called_hook_to_ops = defaultdict(list)
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @success_hook(name="a_named_success_hook")
     def named_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @success_hook(required_resource_keys={"resource_a"})
     def success_hook_resource(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
     @op
@@ -184,7 +184,7 @@ def test_success_hook():
 
     @op
     def failed_op(_):
-        # this solid shouldn't trigger success hooks
+        # this op shouldn't trigger success hooks
         raise SomeUserException()
 
     a_job = GraphDefinition(
@@ -207,34 +207,34 @@ def test_success_hook():
     result = a_job.execute_in_process(raise_on_error=False)
     assert not result.success
 
-    # test if hooks are run for the given solids
-    assert "succeeded_op_with_hook" in called_hook_to_solids["a_success_hook"]
-    assert "succeeded_op_with_hook" in called_hook_to_solids["a_named_success_hook"]
-    assert "succeeded_op_with_hook" in called_hook_to_solids["success_hook_resource"]
-    assert "failed_op_with_hook" not in called_hook_to_solids["a_success_hook"]
-    assert "failed_op_with_hook" not in called_hook_to_solids["a_named_success_hook"]
+    # test if hooks are run for the given ops
+    assert "succeeded_op_with_hook" in called_hook_to_ops["a_success_hook"]
+    assert "succeeded_op_with_hook" in called_hook_to_ops["a_named_success_hook"]
+    assert "succeeded_op_with_hook" in called_hook_to_ops["success_hook_resource"]
+    assert "failed_op_with_hook" not in called_hook_to_ops["a_success_hook"]
+    assert "failed_op_with_hook" not in called_hook_to_ops["a_named_success_hook"]
 
 
 def test_failure_hook():
-    called_hook_to_solids = defaultdict(list)
+    called_hook_to_ops = defaultdict(list)
 
     @failure_hook
     def a_failure_hook(context):
         assert isinstance(context.instance, DagsterInstance)
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @failure_hook(name="a_named_failure_hook")
     def named_failure_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @failure_hook(required_resource_keys={"resource_a"})
     def failure_hook_resource(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
     @op
     def succeeded_op(_):
-        # this solid shouldn't trigger failure hooks
+        # this op shouldn't trigger failure hooks
         pass
 
     @op
@@ -260,24 +260,24 @@ def test_failure_hook():
 
     result = a_job.execute_in_process(raise_on_error=False)
     assert not result.success
-    # test if hooks are run for the given solids
-    assert "failed_op_with_hook" in called_hook_to_solids["a_failure_hook"]
-    assert "failed_op_with_hook" in called_hook_to_solids["a_named_failure_hook"]
-    assert "failed_op_with_hook" in called_hook_to_solids["failure_hook_resource"]
-    assert "succeeded_op_with_hook" not in called_hook_to_solids["a_failure_hook"]
-    assert "succeeded_op_with_hook" not in called_hook_to_solids["a_named_failure_hook"]
+    # test if hooks are run for the given ops
+    assert "failed_op_with_hook" in called_hook_to_ops["a_failure_hook"]
+    assert "failed_op_with_hook" in called_hook_to_ops["a_named_failure_hook"]
+    assert "failed_op_with_hook" in called_hook_to_ops["failure_hook_resource"]
+    assert "succeeded_op_with_hook" not in called_hook_to_ops["a_failure_hook"]
+    assert "succeeded_op_with_hook" not in called_hook_to_ops["a_named_failure_hook"]
 
 
 def test_failure_hook_framework_exception():
-    called_hook_to_solids = defaultdict(list)
+    called_hook_to_ops = defaultdict(list)
 
     @failure_hook
     def a_failure_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @op
     def my_op(_):
-        # this solid shouldn't trigger failure hooks
+        # this op shouldn't trigger failure hooks
         pass
 
     @job(hooks={a_failure_hook})
@@ -293,9 +293,9 @@ def test_failure_hook_framework_exception():
         assert not result.success
 
         # Hook runs when a framework error
-        assert "my_op" in called_hook_to_solids["a_failure_hook"]
+        assert "my_op" in called_hook_to_ops["a_failure_hook"]
 
-        called_hook_to_solids = defaultdict(list)
+        called_hook_to_ops = defaultdict(list)
 
         # Does not run if the execution is interrupted
         mocked_event_sequence.side_effect = DagsterExecutionInterruptedError(
@@ -305,8 +305,8 @@ def test_failure_hook_framework_exception():
         result = my_job.execute_in_process(raise_on_error=False)
         assert not result.success
 
-        # test if hooks are run for the given solids
-        assert "my_op" not in called_hook_to_solids["a_failure_hook"]
+        # test if hooks are run for the given ops
+        assert "my_op" not in called_hook_to_ops["a_failure_hook"]
 
 
 def test_success_hook_event():
@@ -395,16 +395,16 @@ def foo():
     noop()
 
 
-def test_pipelines_with_hooks_are_reconstructable():
+def test_jobs_with_hooks_are_reconstructable():
     assert reconstructable(foo)
 
 
 def test_hook_decorator():
-    called_hook_to_solids = defaultdict(list)
+    called_hook_to_ops = defaultdict(list)
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @op
     def a_op(_):
@@ -446,7 +446,7 @@ def test_hook_with_resource_to_resource_dep():
     def basic_op():
         pass
 
-    # Check that resource-to-resource dependency is caught when providing hook to solid
+    # Check that resource-to-resource dependency is caught when providing hook to op
     @job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
     def basic_job():
         basic_op.with_hooks({hook_requires_b})()
@@ -455,15 +455,15 @@ def test_hook_with_resource_to_resource_dep():
     assert result.success
     assert called.get("basic_op")
 
-    # Check that resource-to-resource dependency is caught when providing hook to pipeline
+    # Check that resource-to-resource dependency is caught when providing hook to job
     @job(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
     def basic_job_gonna_use_hooks():
         basic_op()
 
     called = {}
-    basic_hook_pipeline = basic_job_gonna_use_hooks.with_hooks({hook_requires_b})
+    basic_hook_job = basic_job_gonna_use_hooks.with_hooks({hook_requires_b})
 
-    result = basic_hook_pipeline.execute_in_process()
+    result = basic_hook_job.execute_in_process()
     assert result.success
     assert called.get("basic_op")
 
@@ -537,11 +537,11 @@ def test_multiproc_hook_resource_deps():
 
 
 def test_hook_decorator_graph_job_op():
-    called_hook_to_solids = defaultdict(list)
+    called_hook_to_ops = defaultdict(list)
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.op.name)
+        called_hook_to_ops[context.hook_def.name].append(context.op.name)
 
     @op
     def my_op(_):
@@ -552,7 +552,7 @@ def test_hook_decorator_graph_job_op():
         my_op()
 
     assert a_graph.to_job(hooks={a_success_hook}).execute_in_process().success
-    assert called_hook_to_solids["a_success_hook"][0] == "my_op"
+    assert called_hook_to_ops["a_success_hook"][0] == "my_op"
 
 
 def test_job_hook_context_job_name():

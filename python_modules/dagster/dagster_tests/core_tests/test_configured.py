@@ -1,6 +1,4 @@
-from dagster import resource
-from dagster._core.definitions.decorators import op
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
+from dagster import job, op, resource
 
 
 def test_configured_solids_and_resources():
@@ -20,19 +18,15 @@ def test_configured_solids_and_resources():
     def emit_creature(context):
         return context.resource_config["creature"]
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "animal": emit_creature.configured({"creature": "dog"}),
-                    "plant": emit_creature.configured({"creature": "tree"}),
-                }
-            )
-        ]
+    @job(
+        resource_defs={
+            "animal": emit_creature.configured({"creature": "dog"}),
+            "plant": emit_creature.configured({"creature": "tree"}),
+        }
     )
-    def mypipeline():
+    def myjob():
         return emit_greet_salutation(), emit_greet_howdy()
 
-    result = execute_pipeline(mypipeline)
+    result = myjob.execute_in_process()
 
     assert result.success

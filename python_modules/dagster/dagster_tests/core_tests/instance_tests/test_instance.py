@@ -40,7 +40,6 @@ from dagster._core.test_utils import (
     environ,
     instance_for_test,
 )
-from dagster._legacy import PipelineDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
@@ -52,20 +51,24 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = create_run_for_test(instance, pipeline_name="foo_pipeline", run_id="new_run")
+    run = create_run_for_test(instance, pipeline_name="foo_job", run_id="new_run")
 
-    assert instance.get_runs() == [pipeline_run]
+    assert instance.get_runs() == [run]
 
-    assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
+    assert instance.get_run_by_id(run.run_id) == run
 
 
 def do_test_single_write_read(instance):
     run_id = "some_run_id"
-    pipeline_def = PipelineDefinition(name="some_pipeline", node_defs=[])
-    instance.create_run_for_pipeline(pipeline_def=pipeline_def, run_id=run_id)
+
+    @job
+    def job_def():
+        pass
+
+    instance.create_run_for_pipeline(pipeline_def=job_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
-    assert run.pipeline_name == "some_pipeline"
+    assert run.pipeline_name == "job_def"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
     assert list(instance.get_runs()) == []
@@ -231,7 +234,7 @@ def noop_job():
     noop_op()
 
 
-def test_create_pipeline_snapshot():
+def test_create_job_snapshot():
     with instance_for_test() as instance:
         result = execute_job(reconstructable(noop_job), instance=instance)
         assert result.success
@@ -271,7 +274,7 @@ def test_submit_run():
         }
     ) as instance:
         with get_bar_workspace(instance) as workspace:
-            external_pipeline = (
+            external_job = (
                 workspace.get_code_location("bar_code_location")
                 .get_repository("bar_repo")
                 .get_full_external_job("foo")
@@ -279,10 +282,10 @@ def test_submit_run():
 
             run = create_run_for_test(
                 instance=instance,
-                pipeline_name=external_pipeline.name,
+                pipeline_name=external_job.name,
                 run_id="foo-bar",
-                external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                external_pipeline_origin=external_job.get_external_origin(),
+                pipeline_code_origin=external_job.get_python_origin(),
             )
 
             instance.submit_run(run.run_id, workspace)

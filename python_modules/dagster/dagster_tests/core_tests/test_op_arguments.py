@@ -77,7 +77,7 @@ def test_solid_input_arguments():
         pass
 
     @op(ins={"_x": In()})
-    def _context_partial_inputs_1(context, _x):
+    def _context_partial_inputs(context, _x):
         pass
 
     @op(ins={"x": In()})

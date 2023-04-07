@@ -26,10 +26,11 @@ from dagster import (
     TimeWindow,
     asset,
     build_op_context,
+    graph,
+    job,
     op,
     resource,
 )
-from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -40,83 +41,80 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster._legacy import (
-    pipeline,
-)
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
-def test_solid_invocation_no_arg():
+def test_op_invocation_no_arg():
     @op
-    def basic_solid():
+    def basic_op():
         return 5
 
-    result = basic_solid()
+    result = basic_op()
     assert result == 5
 
-    basic_solid(build_op_context())
+    basic_op(build_op_context())
 
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Too many input arguments were provided for op 'basic_solid'. This may be because an"
+            "Too many input arguments were provided for op 'basic_op'. This may be because an"
             " argument was provided for the context parameter, but no context parameter was defined"
             " for the op."
         ),
     ):
-        basic_solid(None)
+        basic_op(None)
 
     # Ensure alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Too many input arguments were provided for op 'aliased_basic_solid'. This may be"
-            " because an argument was provided for the context parameter, but no context parameter"
-            " was defined for the op."
+            "Too many input arguments were provided for op 'aliased_basic_op'. This may be because"
+            " an argument was provided for the context parameter, but no context parameter was"
+            " defined for the op."
         ),
     ):
-        basic_solid.alias("aliased_basic_solid")(None)
+        basic_op.alias("aliased_basic_op")(None)
 
 
-def test_solid_invocation_none_arg():
+def test_op_invocation_none_arg():
     @op
-    def basic_solid(_):
+    def basic_op(_):
         return 5
 
-    result = basic_solid(None)
+    result = basic_op(None)
     assert result == 5
 
 
-def test_solid_invocation_context_arg():
+def test_op_invocation_context_arg():
     @op
-    def basic_solid(context):
+    def basic_op(context):
         context.log.info("yay")
 
-    basic_solid(None)
-    basic_solid(build_op_context())
-    basic_solid(context=None)
-    basic_solid(context=build_op_context())
+    basic_op(None)
+    basic_op(build_op_context())
+    basic_op(context=None)
+    basic_op(context=build_op_context())
 
 
-def test_solid_invocation_empty_run_config():
+def test_op_invocation_empty_run_config():
     @op
-    def basic_solid(context):
+    def basic_op(context):
         assert context.run_config is not None
         assert context.run_config == {"resources": {}}
 
-    basic_solid(context=build_op_context())
+    basic_op(context=build_op_context())
 
 
-def test_solid_invocation_run_config_with_config():
+def test_op_invocation_run_config_with_config():
     @op(config_schema={"foo": str})
-    def basic_solid(context):
+    def basic_op(context):
         assert context.run_config
-        assert context.run_config["ops"] == {"basic_solid": {"config": {"foo": "bar"}}}
+        assert context.run_config["ops"] == {"basic_op": {"config": {"foo": "bar"}}}
 
-    basic_solid(build_op_context(op_config={"foo": "bar"}))
+    basic_op(build_op_context(op_config={"foo": "bar"}))
 
 
-def test_solid_invocation_out_of_order_input_defs():
+def test_op_invocation_out_of_order_input_defs():
     @op(ins={"x": In(), "y": In()})
     def check_correct_order(y, x):
         assert y == 6
@@ -127,9 +125,9 @@ def test_solid_invocation_out_of_order_input_defs():
     check_correct_order(6, x=5)
 
 
-def test_solid_invocation_with_resources():
+def test_op_invocation_with_resources():
     @op(required_resource_keys={"foo"})
-    def solid_requires_resources(context):
+    def op_requires_resources(context):
         assert context.resources.foo == "bar"
         return context.resources.foo
 
@@ -137,43 +135,43 @@ def test_solid_invocation_with_resources():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'solid_requires_resources' has context argument, but no "
+            "Compute function of op 'op_requires_resources' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
-        solid_requires_resources()
+        op_requires_resources()
 
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'aliased_solid_requires_resources' has context argument, but no"
-            " context was provided when invoking."
+            "Compute function of op 'aliased_op_requires_resources' has context argument, but no "
+            "context was provided when invoking."
         ),
     ):
-        solid_requires_resources.alias("aliased_solid_requires_resources")()
+        op_requires_resources.alias("aliased_op_requires_resources")()
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='op "solid_requires_resources" has required resources, but no context was provided.',
+        match='op "op_requires_resources" has required resources, but no context was provided.',
     ):
-        solid_requires_resources(None)
+        op_requires_resources(None)
 
     # Ensure that error is raised when we attempt to invoke with a context without the required
     # resource.
     context = build_op_context()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'solid_requires_resources' was not provided",
+        match="resource with key 'foo' required by op 'op_requires_resources' was not provided",
     ):
-        solid_requires_resources(context)
+        op_requires_resources(context)
 
     context = build_op_context(resources={"foo": "bar"})
-    assert solid_requires_resources(context) == "bar"
+    assert op_requires_resources(context) == "bar"
 
 
-def test_solid_invocation_with_cm_resource():
+def test_op_invocation_with_cm_resource():
     teardown_log = []
 
     @resource
@@ -184,27 +182,27 @@ def test_solid_invocation_with_cm_resource():
             teardown_log.append("collected")
 
     @op(required_resource_keys={"cm_resource"})
-    def solid_requires_cm_resource(context):
+    def op_requires_cm_resource(context):
         return context.resources.cm_resource
 
-    # Attempt to use solid context as fxn with cm resource should fail
+    # Attempt to use op context as fxn with cm resource should fail
     context = build_op_context(resources={"cm_resource": cm_resource})
     with pytest.raises(DagsterInvariantViolationError):
-        solid_requires_cm_resource(context)
+        op_requires_cm_resource(context)
 
     del context
     assert teardown_log == ["collected"]
 
-    # Attempt to use solid context as cm with cm resource should succeed
+    # Attempt to use op context as cm with cm resource should succeed
     with build_op_context(resources={"cm_resource": cm_resource}) as context:
-        assert solid_requires_cm_resource(context) == "foo"
+        assert op_requires_cm_resource(context) == "foo"
 
     assert teardown_log == ["collected", "collected"]
 
 
-def test_solid_invocation_with_config():
+def test_op_invocation_with_config():
     @op(config_schema={"foo": str})
-    def solid_requires_config(context):
+    def op_requires_config(context):
         assert context.op_config["foo"] == "bar"
         return 5
 
@@ -212,28 +210,28 @@ def test_solid_invocation_with_config():
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'solid_requires_config' has context argument, but no "
+            "Compute function of op 'op_requires_config' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
-        solid_requires_config()
+        op_requires_config()
 
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'aliased_solid_requires_config' has context argument, but no "
+            "Compute function of op 'aliased_op_requires_config' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
-        solid_requires_config.alias("aliased_solid_requires_config")()
+        op_requires_config.alias("aliased_op_requires_config")()
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='op "solid_requires_config" has required config schema, but no context was provided.',
+        match='op "op_requires_config" has required config schema, but no context was provided.',
     ):
-        solid_requires_config(None)
+        op_requires_config(None)
 
     # Ensure that error is raised when context does not have the required config.
     context = build_op_context()
@@ -241,41 +239,41 @@ def test_solid_invocation_with_config():
         DagsterInvalidConfigError,
         match="Error in config for op",
     ):
-        solid_requires_config(context)
+        op_requires_config(context)
 
     # Ensure that error is raised when attempting to execute and no context is provided, even when
     # configured
     with pytest.raises(
         DagsterInvalidInvocationError,
         match=(
-            "Compute function of op 'configured_solid' has context argument, but no "
+            "Compute function of op 'configured_op' has context argument, but no "
             "context was provided when invoking."
         ),
     ):
-        solid_requires_config.configured({"foo": "bar"}, name="configured_solid")()
+        op_requires_config.configured({"foo": "bar"}, name="configured_op")()
 
-    # Ensure that if you configure the solid, you can provide a none-context.
-    result = solid_requires_config.configured({"foo": "bar"}, name="configured_solid")(None)
+    # Ensure that if you configure the op, you can provide a none-context.
+    result = op_requires_config.configured({"foo": "bar"}, name="configured_op")(None)
     assert result == 5
 
-    result = solid_requires_config(build_op_context(op_config={"foo": "bar"}))
+    result = op_requires_config(build_op_context(op_config={"foo": "bar"}))
     assert result == 5
 
 
-def test_solid_invocation_default_config():
+def test_op_invocation_default_config():
     @op(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
-    def solid_requires_config(context):
+    def op_requires_config(context):
         assert context.op_config["foo"] == "bar"
         return context.op_config["foo"]
 
-    assert solid_requires_config(None) == "bar"
+    assert op_requires_config(None) == "bar"
 
     @op(config_schema=Field(str, is_required=False, default_value="bar"))
-    def solid_requires_config_val(context):
+    def op_requires_config_val(context):
         assert context.op_config == "bar"
         return context.op_config
 
-    assert solid_requires_config_val(None) == "bar"
+    assert op_requires_config_val(None) == "bar"
 
     @op(
         config_schema={
@@ -283,31 +281,31 @@ def test_solid_invocation_default_config():
             "baz": str,
         }
     )
-    def solid_requires_config_partial(context):
+    def op_requires_config_partial(context):
         assert context.op_config["foo"] == "bar"
         assert context.op_config["baz"] == "bar"
         return context.op_config["foo"] + context.op_config["baz"]
 
-    assert solid_requires_config_partial(build_op_context(op_config={"baz": "bar"})) == "barbar"
+    assert op_requires_config_partial(build_op_context(op_config={"baz": "bar"})) == "barbar"
 
 
-def test_solid_invocation_dict_config():
+def test_op_invocation_dict_config():
     @op(config_schema=dict)
-    def solid_requires_dict(context):
+    def op_requires_dict(context):
         assert context.op_config == {"foo": "bar"}
         return context.op_config
 
-    assert solid_requires_dict(build_op_context(op_config={"foo": "bar"})) == {"foo": "bar"}
+    assert op_requires_dict(build_op_context(op_config={"foo": "bar"})) == {"foo": "bar"}
 
     @op(config_schema=Noneable(dict))
-    def solid_noneable_dict(context):
+    def op_noneable_dict(context):
         return context.op_config
 
-    assert solid_noneable_dict(build_op_context()) is None
-    assert solid_noneable_dict(None) is None
+    assert op_noneable_dict(build_op_context()) is None
+    assert op_noneable_dict(None) is None
 
 
-def test_solid_invocation_kitchen_sink_config():
+def test_op_invocation_kitchen_sink_config():
     @op(
         config_schema={
             "str_field": str,
@@ -325,7 +323,7 @@ def test_solid_invocation_kitchen_sink_config():
     def kitchen_sink(context):
         return context.op_config
 
-    solid_config_one = {
+    op_config_one = {
         "str_field": "kjf",
         "int_field": 2,
         "list_int": [3],
@@ -336,61 +334,61 @@ def test_solid_invocation_kitchen_sink_config():
         "optional_list_of_optional_string": ["foo", None],
     }
 
-    assert kitchen_sink(build_op_context(op_config=solid_config_one)) == solid_config_one
+    assert kitchen_sink(build_op_context(op_config=op_config_one)) == op_config_one
 
 
-def test_solid_with_inputs():
+def test_op_with_inputs():
     @op
-    def solid_with_inputs(x, y):
+    def op_with_inputs(x, y):
         assert x == 5
         assert y == 6
         return x + y
 
-    assert solid_with_inputs(5, 6) == 11
-    assert solid_with_inputs(x=5, y=6) == 11
-    assert solid_with_inputs(5, y=6) == 11
-    assert solid_with_inputs(y=6, x=5) == 11
+    assert op_with_inputs(5, 6) == 11
+    assert op_with_inputs(x=5, y=6) == 11
+    assert op_with_inputs(5, y=6) == 11
+    assert op_with_inputs(y=6, x=5) == 11
 
     # Check for proper error when incorrect number of inputs is provided.
     with pytest.raises(
         DagsterInvalidInvocationError, match='No value provided for required input "y".'
     ):
-        solid_with_inputs(5)
+        op_with_inputs(5)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for op 'solid_with_inputs'",
+        match="Too many input arguments were provided for op 'op_with_inputs'",
     ):
-        solid_with_inputs(5, 6, 7)
+        op_with_inputs(5, 6, 7)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for op 'solid_with_inputs'",
+        match="Too many input arguments were provided for op 'op_with_inputs'",
     ):
-        solid_with_inputs(5, 6, z=7)
+        op_with_inputs(5, 6, z=7)
 
-    # Check for proper error when incorrect number of inputs is provided.
+    # Check for proper error when input missing.
     with pytest.raises(
         DagsterInvalidInvocationError, match='No value provided for required input "y".'
     ):
-        solid_with_inputs(5)
+        op_with_inputs(5, z=5)
 
 
-def test_failing_solid():
+def test_failing_op():
     @op
-    def solid_fails():
+    def op_fails():
         raise Exception("Oh no!")
 
     with pytest.raises(
         Exception,
         match="Oh no!",
     ):
-        solid_fails()
+        op_fails()
 
 
 def test_attempted_invocation_in_composition():
     @op
-    def basic_solid(_x):
+    def basic_op(_x):
         pass
 
     msg = (
@@ -402,27 +400,27 @@ def test_attempted_invocation_in_composition():
         match=msg,
     ):
 
-        @pipeline
-        def _pipeline_will_fail():
-            basic_solid(5)
+        @job
+        def _job_will_fail():
+            basic_op(5)
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=msg,
     ):
 
-        @pipeline
-        def _pipeline_will_fail_again():
-            basic_solid(_x=5)
+        @job
+        def _job_will_fail_again():
+            basic_op(_x=5)
 
 
-def test_async_solid():
+def test_async_op():
     @op
-    async def aio_solid():
+    async def aio_op():
         await asyncio.sleep(0.01)
         return "done"
 
-    assert asyncio.run(aio_solid()) == "done"
+    assert asyncio.run(aio_op()) == "done"
 
 
 def test_async_gen_invocation():
@@ -444,87 +442,102 @@ def test_async_gen_invocation():
 
 
 def test_multiple_outputs_iterator():
-    @op(out={"1": Out(int), "2": Out(int)})
-    def solid_multiple_outputs():
+    @op(
+        out={
+            "1": Out(
+                int,
+            ),
+            "2": Out(
+                int,
+            ),
+        }
+    )
+    def op_multiple_outputs():
         yield Output(2, output_name="2")
         yield Output(1, output_name="1")
 
-    # Ensure that solid works both with execute_solid and invocation
-    result = wrap_op_in_graph_and_execute(solid_multiple_outputs)
+    # Ensure that op works both with wrap_op_in_graph_and_execute and invocation
+    result = wrap_op_in_graph_and_execute(op_multiple_outputs)
     assert result.success
 
-    outputs = list(solid_multiple_outputs())
+    outputs = list(op_multiple_outputs())
     assert outputs[0].value == 2
     assert outputs[1].value == 1
 
 
 def test_wrong_output():
     @op
-    def solid_wrong_output():
+    def op_wrong_output():
         return Output(5, output_name="wrong_name")
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="explicitly named 'wrong_name'",
     ):
-        wrap_op_in_graph_and_execute(solid_wrong_output)
+        wrap_op_in_graph_and_execute(op_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="explicitly named 'wrong_name'",
     ):
-        solid_wrong_output()
+        op_wrong_output()
 
 
 def test_optional_output_return():
     @op(
         out={
             "1": Out(int, is_required=False),
-            "2": Out(int),
+            "2": Out(
+                int,
+            ),
         }
     )
-    def solid_multiple_outputs_not_sent():
+    def op_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        solid_multiple_outputs_not_sent()
+        op_multiple_outputs_not_sent()
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(op_multiple_outputs_not_sent)
 
 
 def test_optional_output_yielded():
     @op(
         out={
             "1": Out(int, is_required=False),
-            "2": Out(int),
+            "2": Out(
+                int,
+            ),
         }
     )
-    def solid_multiple_outputs_not_sent():
+    def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
-    assert list(solid_multiple_outputs_not_sent())[0].value == 2
+    assert list(op_multiple_outputs_not_sent())[0].value == 2
 
 
 def test_optional_output_yielded_async():
     @op(
         out={
             "1": Out(int, is_required=False),
-            "2": Out(int),
+            "2": Out(
+                int,
+            ),
         }
     )
-    async def solid_multiple_outputs_not_sent():
+    async def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
     async def get_results():
         res = []
-        async for output in solid_multiple_outputs_not_sent():
+        async for output in op_multiple_outputs_not_sent():
             res.append(output)
         return res
 
@@ -533,65 +546,73 @@ def test_optional_output_yielded_async():
 
 
 def test_missing_required_output_generator():
-    # Test missing required output from a generator solid
+    # Test missing required output from a generator op
     @op(
         out={
-            "1": Out(int),
-            "2": Out(int),
+            "1": Out(
+                int,
+            ),
+            "2": Out(
+                int,
+            ),
         }
     )
-    def solid_multiple_outputs_not_sent():
+    def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
         match=(
-            'Core compute for op "solid_multiple_outputs_not_sent" did not return an output '
+            'Core compute for op "op_multiple_outputs_not_sent" did not return an output '
             'for non-optional output "1"'
         ),
     ):
-        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(op_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'solid_multiple_outputs_not_sent' did not return an output "
+            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
             "for non-optional output '1'"
         ),
     ):
-        list(solid_multiple_outputs_not_sent())
+        list(op_multiple_outputs_not_sent())
 
 
 def test_missing_required_output_generator_async():
-    # Test missing required output from an async generator solid
+    # Test missing required output from an async generator op
     @op(
         out={
-            "1": Out(int),
-            "2": Out(int),
+            "1": Out(
+                int,
+            ),
+            "2": Out(
+                int,
+            ),
         }
     )
-    async def solid_multiple_outputs_not_sent():
+    async def op_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
         match=(
-            'Core compute for op "solid_multiple_outputs_not_sent" did not return an output '
+            'Core compute for op "op_multiple_outputs_not_sent" did not return an output '
             'for non-optional output "1"'
         ),
     ):
-        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(op_multiple_outputs_not_sent)
 
     async def get_results():
         res = []
-        async for output in solid_multiple_outputs_not_sent():
+        async for output in op_multiple_outputs_not_sent():
             res.append(output)
         return res
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Invocation of op 'solid_multiple_outputs_not_sent' did not return an output "
+            "Invocation of op 'op_multiple_outputs_not_sent' did not return an output "
             "for non-optional output '1'"
         ),
     ):
@@ -605,20 +626,20 @@ def test_missing_required_output_return():
             "2": Out(int),
         }
     )
-    def solid_multiple_outputs_not_sent():
+    def op_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        wrap_op_in_graph_and_execute(solid_multiple_outputs_not_sent)
+        wrap_op_in_graph_and_execute(op_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match="has multiple outputs, but only one output was returned",
     ):
-        solid_multiple_outputs_not_sent()
+        op_multiple_outputs_not_sent()
 
 
 def test_output_sent_multiple_times():
@@ -627,21 +648,21 @@ def test_output_sent_multiple_times():
             "1": Out(int),
         }
     )
-    def solid_yields_twice():
+    def op_yields_twice():
         yield Output(1, "1")
         yield Output(2, "1")
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match='Compute for op "solid_yields_twice" returned an output "1" multiple times',
+        match='Compute for op "op_yields_twice" returned an output "1" multiple times',
     ):
-        wrap_op_in_graph_and_execute(solid_yields_twice)
+        wrap_op_in_graph_and_execute(op_yields_twice)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of op 'solid_yields_twice' yielded an output '1' multiple times",
+        match="Invocation of op 'op_yields_twice' yielded an output '1' multiple times",
     ):
-        list(solid_yields_twice())
+        list(op_yields_twice())
 
 
 @pytest.mark.parametrize(
@@ -653,48 +674,48 @@ def test_output_sent_multiple_times():
         ("pipeline_name", None),
         ("mode_def", None),
         ("node_handle", None),
-        ("solid", None),
+        ("op", None),
         ("get_step_execution_context", None),
     ],
 )
 def test_invalid_properties_on_context(property_or_method_name, val_to_pass):
     @op
-    def solid_fails_getting_property(context):
+    def op_fails_getting_property(context):
         result = getattr(context, property_or_method_name)
         # for the case where property_or_method_name is a method, getting an attribute won't cause
         # an error, but invoking the method should.
         result(val_to_pass) if val_to_pass else result()
 
     with pytest.raises(DagsterInvalidPropertyError):
-        solid_fails_getting_property(None)
+        op_fails_getting_property(None)
 
 
-def test_solid_retry_requested():
+def test_op_retry_requested():
     @op
-    def solid_retries():
+    def op_retries():
         raise RetryRequested()
 
     with pytest.raises(RetryRequested):
-        solid_retries()
+        op_retries()
 
 
-def test_solid_failure():
+def test_op_failure():
     @op
-    def solid_fails():
+    def op_fails():
         raise Failure("oops")
 
     with pytest.raises(Failure, match="oops"):
-        solid_fails()
+        op_fails()
 
 
 def test_yielded_asset_materialization():
     @op
-    def solid_yields_materialization(_):
+    def op_yields_materialization(_):
         yield AssetMaterialization(asset_key=AssetKey(["fake"]))
         yield Output(5)
         yield AssetMaterialization(asset_key=AssetKey(["fake2"]))
 
-    events = list(solid_yields_materialization(None))
+    events = list(op_yields_materialization(None))
     outputs = [event for event in events if isinstance(event, Output)]
     assert outputs[0].value == 5
     materializations = [
@@ -706,17 +727,17 @@ def test_yielded_asset_materialization():
 
 
 def test_input_type_check():
-    @op(ins={"x": In(int)})
-    def solid_takes_input(x):
+    @op(ins={"x": In(dagster_type=int)})
+    def op_takes_input(x):
         return x + 1
 
-    assert solid_takes_input(5) == 6
+    assert op_takes_input(5) == 6
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
         match='Description: Value "foo" of python type "str" must be a int.',
     ):
-        solid_takes_input("foo")
+        op_takes_input("foo")
 
 
 def test_output_type_check():
@@ -733,51 +754,51 @@ def test_output_type_check():
 
 def test_pending_node_invocation():
     @op
-    def basic_solid_to_hook():
+    def basic_op_to_hook():
         return 5
 
-    assert basic_solid_to_hook.with_hooks(set())() == 5
+    assert basic_op_to_hook.with_hooks(set())() == 5
 
     @op
-    def basic_solid_with_tag(context):
+    def basic_op_with_tag(context):
         assert context.has_tag("foo")
         return context.get_tag("foo")
 
-    assert basic_solid_with_tag.tag({"foo": "bar"})(None) == "bar"
+    assert basic_op_with_tag.tag({"foo": "bar"})(None) == "bar"
 
 
 def test_graph_invocation_out_of_composition():
     @op
-    def basic_solid():
+    def basic_op():
         return 5
 
     @graph
-    def composite():
-        basic_solid()
+    def the_graph():
+        basic_op()
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "Attempted to call graph 'composite' outside of a composition function."
-            " Invoking graphs is only valid in a function decorated with @job or"
-            " @graph."
+            "Attempted to call graph "
+            "'the_graph' outside of a composition function. Invoking graphs is only valid in a "
+            "function decorated with @job or @graph."
         ),
     ):
-        composite()
+        the_graph()
 
 
 def test_pipeline_invocation():
-    @pipeline
-    def basic_pipeline():
+    @job
+    def basic_job():
         pass
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to call pipeline "
-        "'basic_pipeline' directly. Pipelines should be invoked by using an execution API function "
-        r"\(e.g. `execute_pipeline`\).",
+        match="Attempted to call job "
+        "'basic_job' directly. Jobs should be invoked by using an execution API function "
+        r"\(e.g. `job.execute_in_process`\).",
     ):
-        basic_pipeline()
+        basic_job()
 
 
 @op
@@ -793,7 +814,7 @@ def test_coroutine_asyncio_invocation():
     asyncio.run(my_coroutine_test())
 
 
-def test_solid_invocation_nothing_deps():
+def test_op_invocation_nothing_deps():
     @op(ins={"start": In(Nothing)})
     def nothing_dep():
         return 5
@@ -821,13 +842,7 @@ def test_solid_invocation_nothing_deps():
     # Ensure that not providing nothing dependency also works.
     assert nothing_dep() == 5
 
-    @op(
-        ins={
-            "x": In(),
-            "y": In(Nothing),
-            "z": In(),
-        }
-    )
+    @op(ins={"x": In(), "y": In(Nothing), "z": In()})
     def sandwiched_nothing_dep(x, z):
         return x + z
 
@@ -845,12 +860,7 @@ def test_solid_invocation_nothing_deps():
 
 
 def test_dynamic_output_gen():
-    @op(
-        out={
-            "a": DynamicOut(is_required=False),
-            "b": Out(is_required=False),
-        }
-    )
+    @op(out={"a": DynamicOut(is_required=False), "b": Out(is_required=False)})
     def my_dynamic():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
         yield DynamicOutput(value=2, mapping_key="2", output_name="a")
@@ -866,12 +876,7 @@ def test_dynamic_output_gen():
 
 
 def test_dynamic_output_async_gen():
-    @op(
-        out={
-            "a": DynamicOut(is_required=False),
-            "b": Out(is_required=False),
-        }
-    )
+    @op(out={"a": DynamicOut(is_required=False), "b": Out(is_required=False)})
     async def aio_gen():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
         yield DynamicOutput(value=2, mapping_key="2", output_name="a")
@@ -895,11 +900,7 @@ def test_dynamic_output_async_gen():
 
 
 def test_dynamic_output_non_gen():
-    @op(
-        out={
-            "a": DynamicOut(is_required=False),
-        }
-    )
+    @op(out={"a": DynamicOut(is_required=False)})
     def should_not_work():
         return DynamicOutput(value=1, mapping_key="1", output_name="a")
 
@@ -936,7 +937,7 @@ def test_dynamic_output_async_non_gen():
         wrap_op_in_graph_and_execute(should_not_work())
 
 
-def test_solid_invocation_with_bad_resources(capsys):
+def test_op_invocation_with_bad_resources(capsys):
     @resource
     def bad_resource(_):
         if 1 == 1:
@@ -944,7 +945,7 @@ def test_solid_invocation_with_bad_resources(capsys):
         yield "foo"
 
     @op(required_resource_keys={"my_resource"})
-    def solid_requires_resource(context):
+    def op_requires_resource(context):
         return context.resources.my_resource
 
     with pytest.raises(
@@ -952,7 +953,7 @@ def test_solid_invocation_with_bad_resources(capsys):
         match="Error executing resource_fn on ResourceDefinition my_resource",
     ):
         with build_op_context(resources={"my_resource": bad_resource}) as context:
-            assert solid_requires_resource(context) == "foo"
+            assert op_requires_resource(context) == "foo"
 
     captured = capsys.readouterr()
     # make sure there are no exceptions in the context destructor (__del__)
@@ -966,7 +967,7 @@ def test_build_context_with_resources_config(context_builder):
         assert context.resource_config == "foo"
 
     @op(required_resource_keys={"my_resource"})
-    def my_solid(context):
+    def my_op(context):
         assert context.run_config["resources"]["my_resource"] == {"config": "foo"}
 
     context = context_builder(
@@ -974,7 +975,7 @@ def test_build_context_with_resources_config(context_builder):
         resources_config={"my_resource": {"config": "foo"}},
     )
 
-    my_solid(context)
+    my_op(context)
 
     # bad resource config case
 
