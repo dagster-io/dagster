@@ -5,7 +5,11 @@ import graphene
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
-from dagster._core.execution.backfill import BackfillPartitionsStatus, PartitionBackfill
+from dagster._core.execution.backfill import (
+    BackfillPartitionsStatus,
+    BulkActionStatus,
+    PartitionBackfill,
+)
 from dagster._core.host_representation.external import ExternalPartitionSet
 from dagster._core.storage.pipeline_run import RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
@@ -133,6 +137,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     partitionSetName = graphene.Field(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
+    endTimestamp = graphene.Field(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
@@ -228,6 +233,16 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
+
+    def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
+        if self._backfill_job.status == BulkActionStatus.REQUESTED:
+            # if it's still in progress then there is no end time
+            return None
+        records = self._get_records(graphene_info)
+        max_end_time = 0
+        for record in records:
+            max_end_time = max(record.end_time or 0, max_end_time)
+        return max_end_time
 
     def resolve_isValidSerialization(self, _graphene_info: ResolveInfo) -> bool:
         return self._backfill_job.is_valid_serialization(_graphene_info.context)

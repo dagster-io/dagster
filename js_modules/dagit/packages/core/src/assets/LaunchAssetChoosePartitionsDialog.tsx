@@ -364,7 +364,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
+      showBackfillSuccessToast(
+        history,
+        launchBackfillData?.launchPartitionBackfill.backfillId,
+        target.type === 'pureWithAnchorAsset',
+      );
       setOpen(false);
     } else {
       showBackfillErrorToast(launchBackfillData);

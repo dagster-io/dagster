@@ -103,18 +103,24 @@ export const BackfillRow = ({
     return {counts, statuses};
   }, [data]);
 
-  const runsUrl = runsPathWithFilters([
-    {
-      token: 'tag',
-      value: `dagster/backfill=${backfill.backfillId}`,
-    },
-  ]);
-
   return (
     <tr>
       <td style={{width: 120}}>
         <Mono style={{fontSize: '16px', lineHeight: '18px'}}>
-          <Link to={runsUrl}>{backfill.backfillId}</Link>
+          <Link
+            to={
+              backfill.isAssetBackfill
+                ? `/overview/backfills/${backfill.backfillId}`
+                : runsPathWithFilters([
+                    {
+                      token: 'tag',
+                      value: `dagster/backfill=${backfill.backfillId}`,
+                    },
+                  ])
+            }
+          >
+            {backfill.backfillId}
+          </Link>
         </Mono>
       </td>
       <td style={{width: 220}}>

@@ -6,6 +6,7 @@ export type BackfillTableFragment = {
   __typename: 'PartitionBackfill';
   backfillId: string;
   status: Types.BulkActionStatus;
+  isAssetBackfill: boolean;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   numCancelable: number;

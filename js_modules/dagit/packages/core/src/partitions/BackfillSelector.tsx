@@ -119,7 +119,7 @@ export const BackfillPartitionSelector: React.FC<{
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(history, backfillId);
+    showBackfillSuccessToast(history, backfillId, false);
     onLaunch?.(backfillId, query);
   };
 
@@ -332,7 +332,7 @@ const LaunchBackfillButton: React.FC<{
   reexecutionSteps?: string[];
   fromFailure?: boolean;
   tags?: PipelineRunTag[];
-  onSuccess?: (backfillId: string) => void;
+  onSuccess?: (backfillId: string, isPureAssetBackfill: boolean) => void;
   onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
@@ -383,7 +383,7 @@ const LaunchBackfillButton: React.FC<{
     }
 
     if (data && data.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      onSuccess?.(data.launchPartitionBackfill.backfillId);
+      onSuccess?.(data.launchPartitionBackfill.backfillId, false);
     } else {
       onError?.(data);
     }
