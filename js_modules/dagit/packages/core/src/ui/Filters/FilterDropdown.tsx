@@ -194,8 +194,16 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
     [allResultsJsx.length, selectedFilter, setFocusedItemIndex, setIsOpen],
   );
 
+  const focusedItemIndex = useRecoilValue(focusedIndexAtom(menuKey));
+
   return (
-    <>
+    <div
+      aria-activedescendant={
+        focusedItemIndex !== -1 ? itemId(menuKey, focusedItemIndex) : undefined
+      }
+      role="combobox"
+      aria-expanded="true"
+    >
       <TextInputWrapper>
         <TextInput
           type="text"
@@ -226,7 +234,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           )}
         </DropdownMenuContainer>
       </Menu>
-    </>
+    </div>
   );
 };
 
@@ -359,7 +367,7 @@ const FilterDropdownMenuItem = React.memo(
       isFocusedSelector(React.useMemo(() => ({key: menuKey, index}), [index, menuKey])),
     );
     return (
-      <div ref={divRef}>
+      <div ref={divRef} role="option" id={itemId(menuKey, index)}>
         <StyledMenuItem {...rest} active={isFocused} />
       </div>
     );
@@ -396,3 +404,7 @@ const PopoverStyle = createGlobalStyle`
     max-width: 100%;
   }
 `;
+
+function itemId(menuKey: string, index: number) {
+  return `item-${menuKey}-${index}`;
+}
