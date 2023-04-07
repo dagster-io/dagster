@@ -397,6 +397,9 @@ class UpstreamAssetSelection(AssetSelection):
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         selection = self._child.resolve_inner(asset_graph)
+        if len(selection) == 0:
+            return selection
+
         all_upstream = operator.sub(
             reduce(
                 operator.or_,
