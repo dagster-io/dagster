@@ -1,7 +1,14 @@
 from typing import Tuple
 
 import pytest
-from dagster import Config, asset, op, schedule, sensor
+from dagster import (
+    Config,
+    Field as DagsterField,
+    asset,
+    op,
+    schedule,
+    sensor,
+)
 from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceFactory
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
@@ -315,3 +322,36 @@ def test_annotate_with_bare_resource_def() -> None:
         @asset
         def my_asset(my_resource: MyResourceDef):
             pass
+
+
+def test_using_dagster_field_by_mistake_config() -> None:
+    class MyConfig(Config):
+        my_str: str = DagsterField(str, description="This is a string")  # type: ignore
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+            " definition. 'dagster.Field' should only be used in legacy Dagster config schemas. Did"
+            " you mean to use 'pydantic.Field' instead?"
+        ),
+    ):
+
+        @op
+        def my_op(config: MyConfig):
+            pass
+
+
+def test_using_dagster_field_by_mistake_resource() -> None:
+    class MyResource(ConfigurableResource):
+        my_str: str = DagsterField(str, description="This is a string")  # type: ignore
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+            " definition. 'dagster.Field' should only be used in legacy Dagster config schemas. Did"
+            " you mean to use 'pydantic.Field' instead?"
+        ),
+    ):
+        MyResource(my_str="foo")

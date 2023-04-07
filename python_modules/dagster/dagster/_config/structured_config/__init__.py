@@ -1140,6 +1140,13 @@ def infer_schema_from_config_class(
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
         if pydantic_field.name not in fields_to_omit:
+            if isinstance(pydantic_field.default, Field):
+                raise DagsterInvalidDefinitionError(
+                    "Using 'dagster.Field' is not supported within a Pythonic config or resource"
+                    " definition. 'dagster.Field' should only be used in legacy Dagster config"
+                    " schemas. Did you mean to use 'pydantic.Field' instead?"
+                )
+
             try:
                 fields[pydantic_field.alias] = _convert_pydantic_field(
                     pydantic_field,
