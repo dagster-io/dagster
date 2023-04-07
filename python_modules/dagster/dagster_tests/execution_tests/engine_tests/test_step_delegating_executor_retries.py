@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
 from dagster._config import Permissive
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.api import execute_job
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
@@ -104,34 +104,34 @@ def retry_job():
 def test_retries_no_check_step_health_during_wait():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(retry_job),
             instance=instance,
             run_config={
                 "execution": {"config": {}},
                 "ops": {"retry_op": {"config": {"fails_before_pass": 1}}},
             },
-        )
-        TestStepHandler.wait_for_processes()
-    assert result.success
+        ) as result:
+            TestStepHandler.wait_for_processes()
+            assert result.success
 
 
 def test_retries_exhausted():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        result = execute_pipeline(
+        with execute_job(
             reconstructable(retry_job),
             instance=instance,
             run_config={
                 "execution": {"config": {}},
                 "ops": {"retry_op": {"config": {"fails_before_pass": 2}}},
             },
-        )
-        TestStepHandler.wait_for_processes()
-    assert not result.success
-    assert not [
-        e
-        for e in result.event_list
-        if "Attempted to mark step retry_op as complete that was not known to be in flight"
-        in str(e)
-    ]
+        ) as result:
+            TestStepHandler.wait_for_processes()
+            assert not result.success
+            assert not [
+                e
+                for e in result.all_events
+                if "Attempted to mark step retry_op as complete that was not known to be in flight"
+                in str(e)
+            ]

@@ -17,9 +17,11 @@ from dagster import (
     reconstructable,
     resource,
 )
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
-from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, execute_pipeline_iterator, pipeline
+from dagster._core.execution.api import execute_job, execute_run_iterator
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
 
@@ -47,8 +49,8 @@ def should_not_start(_context):
     assert False
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
-def write_files_pipeline():
+@job
+def write_files_job():
     write_a_file.alias("write_1")()
     write_a_file.alias("write_2")()
     write_a_file.alias("write_3")()
@@ -59,8 +61,8 @@ def write_files_pipeline():
 
 
 def test_single_proc_interrupt():
-    @pipeline
-    def write_a_file_pipeline():
+    @job
+    def write_a_file_job():
         write_a_file()
 
     with safe_tempfile_path() as success_tempfile:
@@ -72,12 +74,12 @@ def test_single_proc_interrupt():
 
         # next time the launched thread wakes up it will send a keyboard
         # interrupt
-        for result in execute_pipeline_iterator(
-            write_a_file_pipeline,
-            run_config={"solids": {"write_a_file": {"config": {"tempfile": success_tempfile}}}},
-        ):
-            result_types.append(result.event_type)
-            result_messages.append(result.message)
+        for event in write_a_file_job.execute_in_process(
+            run_config={"ops": {"write_a_file": {"config": {"tempfile": success_tempfile}}}},
+            raise_on_error=False,
+        ).all_events:
+            result_types.append(event.event_type)
+            result_messages.append(event.message)
 
         assert DagsterEventType.STEP_FAILURE in result_types
         assert DagsterEventType.PIPELINE_FAILURE in result_types
@@ -104,30 +106,28 @@ def test_interrupt_multiproc():
             # launch a thread that waits until the file is written to launch an interrupt
             Thread(target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)).start()
 
-            results = []
-
-            # launch a pipeline that writes a file and loops infinitely
+            # launch a job that writes a file and loops infinitely
             # next time the launched thread wakes up it will send a keyboard
             # interrupt
-            for result in execute_pipeline_iterator(
-                reconstructable(write_files_pipeline),
+            with execute_job(
+                reconstructable(write_files_job),
                 run_config={
-                    "solids": {
+                    "ops": {
                         "write_1": {"config": {"tempfile": file_1}},
                         "write_2": {"config": {"tempfile": file_2}},
                         "write_3": {"config": {"tempfile": file_3}},
                         "write_4": {"config": {"tempfile": file_4}},
                     },
-                    "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
+                    "execution": {"config": {"multiprocess": {"max_concurrent": 4}}},
                 },
                 instance=instance,
-            ):
-                results.append(result)
-
-            assert [result.event_type for result in results].count(
-                DagsterEventType.STEP_FAILURE
-            ) == 4
-            assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
+            ) as result:
+                assert [event.event_type for event in result.all_events].count(
+                    DagsterEventType.STEP_FAILURE
+                ) == 4
+                assert DagsterEventType.PIPELINE_FAILURE in [
+                    event.event_type for event in result.all_events
+                ]
 
 
 def test_interrupt_resource_teardown():
@@ -143,37 +143,42 @@ def test_interrupt_resource_teardown():
             cleaned.append("A")
 
     @op(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
-    def write_a_file_resource_solid(context):
+    def write_a_file_resource_op(context):
         with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
 
         while True:
             time.sleep(0.1)
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
-    def write_a_file_pipeline():
-        write_a_file_resource_solid()
+    @job(resource_defs={"a": resource_a}, executor_def=in_process_executor)
+    def write_a_file_job():
+        write_a_file_resource_op()
 
-    with safe_tempfile_path() as success_tempfile:
-        # launch a thread the waits until the file is written to launch an interrupt
-        Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
+    with instance_for_test() as instance:
+        with safe_tempfile_path() as success_tempfile:
+            # launch a thread the waits until the file is written to launch an interrupt
+            Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 
-        results = []
-        # launch a pipeline that writes a file and loops infinitely
-        # next time the launched thread wakes up it will send an interrupt
-        for result in execute_pipeline_iterator(
-            write_a_file_pipeline,
-            run_config={
-                "solids": {
-                    "write_a_file_resource_solid": {"config": {"tempfile": success_tempfile}}
-                }
-            },
-        ):
-            results.append(result.event_type)
+            dagster_run = instance.create_run_for_pipeline(
+                write_a_file_job,
+                run_config={
+                    "ops": {"write_a_file_resource_op": {"config": {"tempfile": success_tempfile}}}
+                },
+            )
 
-        assert DagsterEventType.STEP_FAILURE in results
-        assert DagsterEventType.PIPELINE_FAILURE in results
-        assert "A" in cleaned
+            results = []
+            # launch a pipeline that writes a file and loops infinitely
+            # next time the launched thread wakes up it will send an interrupt
+            for event in execute_run_iterator(
+                InMemoryPipeline(write_a_file_job),
+                dagster_run,
+                instance=instance,
+            ):
+                results.append(event.event_type)
+
+            assert DagsterEventType.STEP_FAILURE in results
+            assert DagsterEventType.PIPELINE_FAILURE in results
+            assert "A" in cleaned
 
 
 def _send_interrupt_to_self():
@@ -314,7 +319,7 @@ def write_and_spin_if_missing(context):
     raise Failure("Timed out, file removed")
 
 
-@job(op_retry_policy=RetryPolicy(max_retries=1))
+@job(op_retry_policy=RetryPolicy(max_retries=1), executor_def=in_process_executor)
 def policy_job():
     write_and_spin_if_missing()
 
@@ -343,8 +348,7 @@ def test_retry_policy():
         path = os.path.join(tempdir, "target.tmp")
         Thread(target=_send_int, args=(path,)).start()
         with instance_for_test(temp_dir=tempdir) as instance:
-            result = execute_pipeline(
-                reconstructable(policy_job),
+            result = policy_job.execute_in_process(
                 run_config={"ops": {"write_and_spin_if_missing": {"config": {"path": path}}}},
                 instance=instance,
             )
