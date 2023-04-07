@@ -339,14 +339,8 @@ type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
 };
 const FilterDropdownMenuItem = React.memo(
   ({menuKey, index, ...rest}: FilterDropdownMenuItemProps) => {
-    const divRef = React.useRef<HTMLDivElement | null>(null);
     return (
-      <div
-        ref={divRef}
-        role="option"
-        id={itemId(menuKey, index)}
-        aria-selected={rest.active ? 'true' : 'false'}
-      >
+      <div role="option" id={itemId(menuKey, index)} aria-selected={rest.active ? 'true' : 'false'}>
         <StyledMenuItem {...rest} />
       </div>
     );
